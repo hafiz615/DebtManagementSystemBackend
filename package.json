@@ -1,0 +1,42 @@
+{
+  "name": "debt-settlement-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node build/src/app.js",
+    "dev": "nodemon src/app.ts",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/body-parser": "^1.19.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/lodash": "^4.17.0",
+    "@types/node": "20.11.5",
+    "eslint": "^9.0.0",
+    "gts": "^5.3.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1605.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "gts": "^5.3.0",
+    "joi": "^17.12.3",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "mongoose": "^8.3.2"
+  }
+}
