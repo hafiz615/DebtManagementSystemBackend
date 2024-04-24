@@ -1,0 +1,61 @@
+import * as _ from 'lodash';
+import * as jwt from 'jsonwebtoken';
+import {NextFunction, Request, Response} from 'express';
+import dotenv from 'dotenv';
+import responseHelper from '../utils/responseHelper.util';
+import constants from '../utils/constants.util';
+import TokenService from '../api/services/token.service';
+import GlobalVariables from '../global';
+dotenv.config();
+class Authorize {
+  validateAuth = (req: Request | any, res: Response, next: NextFunction) => {
+    if (!req.headers.authorization) {
+      return res
+        .status(constants.CODE.FORBIDDEN)
+        .send(
+          responseHelper.get4xxResponse(
+            constants.Messages.AUTHENTICATION_REQUIRED
+          )
+        );
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    if (token) {
+      // verifies secret and checks exp
+      return jwt.verify(
+        token,
+        process.env.jwtKey!,
+        async function (err: any, decoded: any) {
+          if (err || typeof decoded === 'string') {
+            return res
+              .status(constants.CODE.UNAUTHORIZED)
+              .send(
+                responseHelper.get4xxResponse(
+                  constants.Messages.AUTHENTICATION_REQUIRED
+                )
+              );
+          }
+
+          const exists = await new TokenService().validateToken(
+            token,
+            decoded?.userId
+          );
+          if (exists === null) {
+            return res
+              .status(constants.CODE.FORBIDDEN)
+              .send(
+                responseHelper.get4xxResponse(
+                  constants.Messages.AUTHENTICATION_ERROR
+                )
+              );
+          }
+          GlobalVariables.userId = String(exists._id);
+          GlobalVariables.email = exists.email;
+
+          return next();
+        }
+      );
+    }
+  };
+}
+
+export default new Authorize();
