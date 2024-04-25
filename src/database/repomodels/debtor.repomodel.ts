@@ -1,4 +1,5 @@
 import mongoose, {Schema} from 'mongoose';
+import commonUtil from '../../utils/common.util';
 
 export class Debtor {
   basicInformation = {
@@ -26,4 +27,6 @@ export class Debtor {
     address: '',
   };
   contacts = Array<mongoose.Schema.Types.ObjectId>();
+  createdAt = commonUtil.getCurrentDate();
+  updatedAt = commonUtil.getCurrentDate();
 }

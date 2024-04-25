@@ -1,3 +1,5 @@
+import commonUtil from '../../utils/common.util';
+
 export class Case {
   debtor = '';
   creditor = '';
@@ -5,7 +7,7 @@ export class Case {
   lastPaymentDate = '';
   paidAmount = 0;
   remaining = 0;
-  documents = Array<string>();
+  documents = Array<{key: ''; originalFileName: ''}>();
   paymentPlanStartDate = '';
   intervals = Array<{
     amount: 0;
@@ -14,4 +16,6 @@ export class Case {
     frequencyProgress: 0;
     timePeriod: '';
   }>();
+  createdAt = commonUtil.getCurrentDate();
+  updatedAt = commonUtil.getCurrentDate();
 }
