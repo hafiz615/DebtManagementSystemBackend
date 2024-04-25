@@ -1,11 +1,4 @@
-import {
-  AggregateOptions,
-  PipelineStage,
-  PopulateOptions,
-  ProjectionType,
-  QueryOptions,
-  UpdateQuery,
-} from 'mongoose';
+import {PopulateOptions, ProjectionType, QueryOptions} from 'mongoose';
 import {FilterQuery} from 'mongoose';
 
 export interface IBaseRepository<D> {

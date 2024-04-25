@@ -1,7 +1,6 @@
 import {sign} from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import {User} from '../../database/models/user.model';
 import {UserRepository} from '../repository/user/user.repository';
 import {IUser} from '../../database/interfaces/user.interface';
 dotenv.config();

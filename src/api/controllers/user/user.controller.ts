@@ -57,7 +57,9 @@ class UserController {
 
   getUser = async (req: Request | any, res: Response) => {
     try {
-      const response = await this.userService.getUser(req.body.email);
+      const response = await this.userService.getUser(
+        req.body.email ? req.body.email : ''
+      );
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)

@@ -9,7 +9,7 @@ const upload = multer({storage});
 
 router.post(
   '/files',
-  //   authorize.validateAuth,
+  authorize.validateAuth,
   upload.array('files'),
   uploadController.uploadFiles
 );
