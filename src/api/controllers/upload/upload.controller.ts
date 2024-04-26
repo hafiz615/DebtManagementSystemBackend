@@ -17,7 +17,7 @@ class UploadController {
           .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
-      return res.status(constants.CODE.CREATED).send(
+      return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],

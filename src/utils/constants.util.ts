@@ -27,7 +27,12 @@ export default {
     UPLOAD_FILES_FAILURE: 'Unable to upload files',
     UPLOAD_FILES_SUCCESS: 'Files uploaded successfully',
     ATTATCH_FILE_ERROR: 'Please attatch atleast one file to upload',
+    INVALID_LINK: 'Invitation link may be expired or is invalid',
+    VALID_LINK: 'Invitation link verified successfully',
+    SEND_INVITATION_LINK_200: 'Invitation link sent successfully',
   },
+  ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
+  ACCOUNT_INVITATION_BASE_LINK: 'https://dev-app.beinghumans.co/set-password',
   passwordRegex:
     /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
   failureRegisterMessage: (name: string): string => `${name} not registered!`,

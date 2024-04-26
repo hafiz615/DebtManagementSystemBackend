@@ -13,7 +13,11 @@ const userModel: Schema = new Schema({
     unique: true,
     immutable: true,
   },
-  token: {
+  jwtToken: {
+    type: String,
+    select: false,
+  },
+  verifyToken: {
     type: String,
     select: false,
   },
