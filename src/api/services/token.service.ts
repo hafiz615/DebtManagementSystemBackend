@@ -31,7 +31,7 @@ class TokenService {
   }
 
   async validateToken(token: string, userId: string) {
-    const user = await this.userRepository.getById<IUser>(userId, '+token');
+    const user = await this.userRepository.getById<IUser>(userId, '+jwtToken');
     return user?.jwtToken === token ? user : null;
   }
 

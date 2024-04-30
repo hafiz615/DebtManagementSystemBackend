@@ -1,8 +1,9 @@
 import mongoose, {Document} from 'mongoose';
 
-interface documents {
+export interface IKeyFile {
   key: string;
   originalFileName: string;
+  url?: string;
 }
 export interface ICase extends Document {
   debtor: mongoose.Schema.Types.ObjectId;
@@ -11,7 +12,7 @@ export interface ICase extends Document {
   lastPayment: string;
   paidAmount: number;
   remaining: number;
-  documents: Array<documents>;
+  documents: Array<IKeyFile>;
   paymentPlanStartDate: string;
   intervals: Array<{
     amount: number;
