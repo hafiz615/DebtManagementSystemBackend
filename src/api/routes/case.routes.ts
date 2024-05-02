@@ -6,7 +6,7 @@ const router = Router();
 
 router.post(
   '/createCase',
-  //   authorize.validateAuth,
+  authorize.validateAuth,
   caseValidate.validateCase,
   caseController.createCase
 );
