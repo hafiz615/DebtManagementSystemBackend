@@ -1,9 +1,6 @@
-import mongoose, {
-  AggregateOptions,
+import {
   FilterQuery,
   Model,
-  PipelineStage,
-  PopulateOption,
   PopulateOptions,
   ProjectionType,
   QueryOptions,
@@ -47,7 +44,7 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     populate?: PopulateOptions | (PopulateOptions | string)[],
     lean = true
   ): Promise<T | null> {
-    const query = this.model.findOne(filter || {}, projectField || {});
+    const query = this.model.findOne(filter, projectField);
     select && query.select(select);
     populate && query.populate(populate);
     lean && query.lean();

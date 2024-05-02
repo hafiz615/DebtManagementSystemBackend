@@ -1,8 +1,4 @@
-import {
-  PutObjectCommand,
-  S3Client,
-  PutObjectCommandOutput,
-} from '@aws-sdk/client-s3';
+import {PutObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import AWS from 'aws-sdk';
 import caseUtil from './case.util';
 class UploadUtil {
