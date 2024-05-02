@@ -56,6 +56,21 @@ class Authorize {
       );
     }
   };
+
+  validateVerifyToken(token: string) {
+    let validity = false;
+    jwt.verify(
+      token,
+      process.env.verifyKey!,
+      function (err: any, decoded: any) {
+        if (err || typeof decoded === 'string') {
+          validity = false;
+        }
+        validity = true;
+      }
+    );
+    return validity;
+  }
 }
 
 export default new Authorize();

@@ -4,7 +4,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  token: string;
+  jwtToken: string;
+  verifyToken: string;
   role: string;
   isActive: boolean;
   SSID: string;

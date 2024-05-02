@@ -10,6 +10,29 @@ class UserController {
     this.userService = new UserService();
   }
 
+  createUser = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.createUser(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.CREATED).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.CREATED,
+          data: response[1],
+          message: constants.successRegisterMessage('User'),
+        })
+      );
+    } catch (error: any) {
+      console.log(error.message);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   signIn = async (req: Request, res: Response) => {
     try {
       const {email, password} = req.body;
@@ -107,6 +130,57 @@ class UserController {
         statusCode: constants.CODE.OK,
         data: response[1],
         message: constants.successDeleteMessage('User'),
+      })
+    );
+  };
+
+  verifyInvitationLink = async (req: Request, res: Response) => {
+    const response = await this.userService.verifyInvitationLink(
+      String(req.query.token) ? String(req.query.token) : ''
+    );
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.Messages.VALID_LINK,
+      })
+    );
+  };
+
+  resendInvitationLink = async (req: Request, res: Response) => {
+    const response = await this.userService.resendInvitationLink(
+      req.body.email ? req.body.email : ''
+    );
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.Messages.SEND_INVITATION_LINK_200,
+      })
+    );
+  };
+  updatePassword = async (req: Request, res: Response) => {
+    const response = await this.userService.updatePassword(req);
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.successUpdateMessage('User'),
       })
     );
   };

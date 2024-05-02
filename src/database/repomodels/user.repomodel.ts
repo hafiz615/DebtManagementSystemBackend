@@ -4,7 +4,8 @@ export class User {
   email = '';
   password = '';
   role = '';
-  token = '';
+  jwtToken = '';
+  verifyToken = '';
   isActive = false;
   createdBy = '';
   SSID = '';
