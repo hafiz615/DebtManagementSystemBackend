@@ -11,6 +11,7 @@ import {User} from '../../database/repomodels/user.repomodel';
 import {DataCopier} from '../../utils/dataCopier.util';
 import EmailUtil from '../../utils/email.util';
 import authorize from '../../middleware/authorize.middleware';
+import constantsUtil from '../../utils/constants.util';
 
 class UserService {
   private userRepository: UserRepository;
@@ -165,6 +166,23 @@ class UserService {
     }
     return [true, updatedUser];
   }
+
+  getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {
+    let users = await this.userRepository.getAll<IUser>(
+      {role: {$ne: 'Admin'}},
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      Number(req.query.page),
+      Number(req.query.limit)
+    );
+    if (!users.length) {
+      return [false, constantsUtil.notFoundMessage('Users')];
+    }
+    return [true, users];
+  };
 }
 
 export default UserService;

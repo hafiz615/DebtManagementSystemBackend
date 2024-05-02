@@ -184,6 +184,22 @@ class UserController {
       })
     );
   };
+
+  getAllUsers = async (req: Request, res: Response) => {
+    const response = await this.userService.getAllUsers(req);
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.successFoundMessage('Users'),
+      })
+    );
+  };
 }
 
 export default new UserController();

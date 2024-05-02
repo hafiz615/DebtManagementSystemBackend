@@ -21,5 +21,6 @@ router.delete(
 );
 router.post('/verifyInvitationLink', userController.verifyInvitationLink);
 router.post('/resendInvitationLink', userController.resendInvitationLink);
+router.get('/getAllUsers', authorize.validateAuth, userController.getAllUsers);
 
 export default router;
