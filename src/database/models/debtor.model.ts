@@ -84,6 +84,14 @@ const debtorModel: Schema = new Schema({
     type: Array<mongoose.Schema.Types.ObjectId>,
     ref: 'Contacts',
   },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+  updatedAt: {
+    type: Date,
+    required: true,
+  },
 });
 
 export const Debtor = mongoose.model<IDebtor>('Debtors', debtorModel);

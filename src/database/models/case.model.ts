@@ -28,8 +28,14 @@ const caseModel: Schema = new Schema({
     required: true,
   },
   documents: {
-    type: Array<String>,
+    type: [
+      {
+        key: {type: String, required: true},
+        originalFileName: {type: String, required: true},
+      },
+    ],
   },
+
   paymentPlanStartDate: {
     type: Date,
     required: true,
@@ -44,6 +50,14 @@ const caseModel: Schema = new Schema({
         timePeriod: {type: String, required: true},
       },
     ],
+  },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+  updatedAt: {
+    type: Date,
+    required: true,
   },
 });
 

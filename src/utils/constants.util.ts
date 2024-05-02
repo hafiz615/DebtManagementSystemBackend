@@ -26,6 +26,7 @@ export default {
     EXCEPTION: 'We ran into an error. Please try again later',
     UPLOAD_FILES_FAILURE: 'Unable to upload files',
     UPLOAD_FILES_SUCCESS: 'Files uploaded successfully',
+    ATTATCH_FILE_ERROR: 'Please attatch atleast one file to upload',
   },
   passwordRegex:
     /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,

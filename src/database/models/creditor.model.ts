@@ -84,6 +84,14 @@ const creditorModel: Schema = new Schema({
     type: Array<mongoose.Schema.Types.ObjectId>,
     ref: 'Contacts',
   },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+  updatedAt: {
+    type: Date,
+    required: true,
+  },
 });
 
 export const Creditor = mongoose.model<ICreditor>('Creditors', creditorModel);

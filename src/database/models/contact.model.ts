@@ -35,6 +35,14 @@ const contactModel: Schema = new Schema({
   zipCode: {
     type: String,
   },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+  updatedAt: {
+    type: Date,
+    required: true,
+  },
 });
 
 export const Contact = mongoose.model<IContact>('Contacts', contactModel);

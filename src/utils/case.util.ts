@@ -37,18 +37,13 @@ class CaseUtil {
 
   async createDebtor(data: IDebtor) {
     const newDebtor = new Debtor();
-    console.log(newDebtor, 'newDebtorrrrrrrr');
-    console.log(data, 'dataaaaaaaaa');
     const validatedDebtor = DataCopier.copy(newDebtor, data);
-    console.log(validatedDebtor, 'validatedDebtor');
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }
 
   async createCreditor(data: ICreditor) {
     const newCreditor = new Creditor();
-    console.log(data, 'dataaaaaaaaa');
     const validatedCreditor = DataCopier.copy(newCreditor, data);
-    console.log(validatedCreditor, 'validatedCreditor');
     return await this.creditorRepository.create<ICreditor>(validatedCreditor);
   }
 

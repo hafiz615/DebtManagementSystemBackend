@@ -10,4 +10,6 @@ export interface IContact extends Document {
   state: string;
   city: string;
   zipCode: string;
+  createdAt: string;
+  updatedAt: string;
 }
