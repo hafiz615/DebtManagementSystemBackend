@@ -32,6 +32,7 @@ const caseModel: Schema = new Schema({
       {
         key: {type: String, required: true},
         originalFileName: {type: String, required: true},
+        url: {type: String, default: ''},
       },
     ],
   },

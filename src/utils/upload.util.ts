@@ -33,10 +33,10 @@ class UploadUtil {
     return s3FileKeys;
   }
 
-  async getS3FileSignedUrl(file: string): Promise<string> {
+  async getS3FileSignedUrl(key: string): Promise<string> {
     let params = {
       Bucket: 'debt-settlement-documents',
-      Key: file,
+      Key: key,
     };
     return await this.s3.getSignedUrlPromise('getObject', params);
   }

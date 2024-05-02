@@ -43,7 +43,7 @@ export default {
     `${name} deleted successfully!`,
   successUpdateMessage: (name: string): string =>
     `${name} updated successfully!`,
-  notFoundMessage: (name: string): string => `${name} was not found!`,
+  notFoundMessage: (name: string): string => `${name} not found successfully!`,
   alreadyExistsMessage: (name: string): string => `${name} already exists!`,
   successFoundMessage: (name: string): string =>
     `${name} returned successfully!`,

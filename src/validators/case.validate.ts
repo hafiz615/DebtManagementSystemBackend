@@ -86,7 +86,12 @@ class CaseValidate {
       lastPaymentDate: Joi.date(),
       paidAmount: Joi.number().required(),
       remaining: Joi.number().required(),
-      documents: Joi.array().items(Joi.string().allow('')).optional(),
+      documents: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
       paymentPlanStartDate: Joi.date().required(),
       intervals: Joi.array().items(
         Joi.object({
