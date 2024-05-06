@@ -49,6 +49,7 @@ const caseModel: Schema = new Schema({
         frequency: {type: Number, required: true},
         frequencyProgress: {type: Number, default: 0},
         timePeriod: {type: String, required: true},
+        status: {type: String, default: 'Pending'},
       },
     ],
   },
