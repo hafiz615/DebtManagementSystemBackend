@@ -49,9 +49,9 @@ class CaseService {
     req.body.debtor = debtor ? debtor._id : req.query.debtor;
     req.body.creditor = creditor ? creditor._id : req.query.creditor;
     const newCase = new Case();
-    console.log(newCase);
     const validatedCase = DataCopier.copy(newCase, req.body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
+    await caseUtil.createPayment(caseCreated);
     return [true, caseCreated];
   };
 

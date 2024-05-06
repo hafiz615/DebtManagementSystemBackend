@@ -15,6 +15,7 @@ export class Case {
     frequency: 0;
     frequencyProgress: 0;
     timePeriod: '';
+    status: '';
   }>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
