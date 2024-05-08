@@ -15,7 +15,7 @@ export class Debtor {
     address: '',
   };
   businessInformation = {
-    organizationName: '',
+    companyName: '',
     EIN: '',
     businessCategory: '',
     description: '',

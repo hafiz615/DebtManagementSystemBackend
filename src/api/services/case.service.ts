@@ -22,15 +22,14 @@ class CaseService {
     req: Request
   ): Promise<[boolean, Partial<ICase> | string]> => {
     let contactIds = null;
-    let debtor,
-      creditor = null;
+    let debtor = null;
+    let creditor = null;
     if (req.query.debtor === 'null') {
       contactIds = await caseUtil.createContacts(
         req.body.debtor.contacts as IContact[]
       );
       const debtorData = {
-        basicInformation: req.body.debtor.basicInformation,
-        businessInformation: req.body.debtor.businessInformation,
+        ...req.body.debtor,
         contacts: contactIds,
       };
       debtor = await caseUtil.createDebtor(debtorData as IDebtor);
@@ -40,8 +39,7 @@ class CaseService {
         req.body.creditor.contacts as IContact[]
       );
       const creditorData = {
-        basicInformation: req.body.creditor.basicInformation,
-        businessInformation: req.body.creditor.businessInformation,
+        ...req.body.creditor,
         contacts: contactIds,
       };
       creditor = await caseUtil.createCreditor(creditorData as ICreditor);

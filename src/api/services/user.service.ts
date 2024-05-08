@@ -26,11 +26,12 @@ class UserService {
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
     const userExist = await this.userRepository.getOne<IUser>({
-      $or: [{email: req.body.email}, {phone: req.body.phone}],
+      $or: [{email: req.body.email.toLowerCase()}, {phone: req.body.phone}],
     });
     if (userExist) {
       return [false, constants.alreadyExistsMessage('User')];
     }
+    req.body.email = req.body.email.toLowerCase();
     const newUser = new User();
     const validatedUser = DataCopier.copy(newUser, req.body as IUser);
     console.log(validatedUser);
@@ -52,7 +53,7 @@ class UserService {
     password: string
   ): Promise<[boolean, {user: Partial<IUser>; token: string} | string]> {
     const userExist = await userUtil.checkUserAndComparePassword(
-      email,
+      email.toLowerCase(),
       password
     );
     if (!userExist) return [false, constants.Messages.INVALID];

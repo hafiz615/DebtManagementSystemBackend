@@ -44,7 +44,7 @@ const debtorModel: Schema = new Schema({
     },
   },
   businessInformation: {
-    organizationName: {
+    companyName: {
       type: String,
       required: true,
     },
