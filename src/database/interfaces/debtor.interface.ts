@@ -1,7 +1,7 @@
 import mongoose, {Document} from 'mongoose';
 
 interface businessInformation {
-  organizationName: string;
+  companyName: string;
   EIN: string;
   businessCategory: string;
   description: string;
