@@ -20,7 +20,7 @@ class Debtor {
             address: '',
         };
         this.businessInformation = {
-            organizationName: '',
+            companyName: '',
             EIN: '',
             businessCategory: '',
             description: '',

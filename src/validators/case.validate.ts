@@ -19,7 +19,7 @@ class CaseValidate {
           address: Joi.string().allow(''),
         }),
         businessInformation: Joi.object({
-          organizationName: Joi.string().required(),
+          companyName: Joi.string().required(),
           EIN: Joi.string().required(),
           businessCategory: Joi.string().allow(''),
           description: Joi.string().allow(''),
@@ -48,25 +48,11 @@ class CaseValidate {
         basicInformation: Joi.object({
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
-          SSID: Joi.string().required(),
-          country: Joi.string().allow(''),
-          state: Joi.string().allow(''),
-          city: Joi.string().allow(''),
-          zipCode: Joi.string().allow(''),
           phone: Joi.string().allow(''),
-          address: Joi.string().allow(''),
         }),
         businessInformation: Joi.object({
-          organizationName: Joi.string().required(),
-          EIN: Joi.string().required(),
+          companyName: Joi.string().required(),
           businessCategory: Joi.string().allow(''),
-          description: Joi.string().allow(''),
-          country: Joi.string().allow(''),
-          state: Joi.string().allow(''),
-          city: Joi.string().allow(''),
-          zipCode: Joi.string().allow(''),
-          phone: Joi.string().allow(''),
-          address: Joi.string().allow(''),
         }),
         contacts: Joi.array().items(
           Joi.object({
@@ -81,6 +67,12 @@ class CaseValidate {
             zipCode: Joi.string().allow(''),
           })
         ),
+        notes: Joi.string(),
+        lastFundedDate: Joi.date().required(),
+        historicalRange: Joi.object({
+          minimum: Joi.number().required(),
+          maximum: Joi.number().required(),
+        }),
       }).optional(),
       totalDebt: Joi.number().required(),
       lastPaymentDate: Joi.date(),

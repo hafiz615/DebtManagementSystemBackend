@@ -13,12 +13,12 @@ class CaseService {
     constructor() {
         this.createCase = async (req) => {
             let contactIds = null;
-            let debtor, creditor = null;
+            let debtor = null;
+            let creditor = null;
             if (req.query.debtor === 'null') {
                 contactIds = await case_util_1.default.createContacts(req.body.debtor.contacts);
                 const debtorData = {
-                    basicInformation: req.body.debtor.basicInformation,
-                    businessInformation: req.body.debtor.businessInformation,
+                    ...req.body.debtor,
                     contacts: contactIds,
                 };
                 debtor = await case_util_1.default.createDebtor(debtorData);
@@ -26,8 +26,7 @@ class CaseService {
             if (req.query.creditor === 'null') {
                 contactIds = await case_util_1.default.createContacts(req.body.creditor.contacts);
                 const creditorData = {
-                    basicInformation: req.body.creditor.basicInformation,
-                    businessInformation: req.body.creditor.businessInformation,
+                    ...req.body.creditor,
                     contacts: contactIds,
                 };
                 creditor = await case_util_1.default.createCreditor(creditorData);

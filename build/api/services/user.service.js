@@ -30,11 +30,12 @@ class UserService {
     }
     async createUser(req) {
         const userExist = await this.userRepository.getOne({
-            $or: [{ email: req.body.email }, { phone: req.body.phone }],
+            $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
         });
         if (userExist) {
             return [false, constants_util_1.default.alreadyExistsMessage('User')];
         }
+        req.body.email = req.body.email.toLowerCase();
         const newUser = new user_repomodel_1.User();
         const validatedUser = dataCopier_util_1.DataCopier.copy(newUser, req.body);
         console.log(validatedUser);
@@ -51,7 +52,7 @@ class UserService {
         return [true, (0, lodash_1.omit)(user.toJSON(), 'password', 'jwtToken', 'verifyToken')];
     }
     async signIn(email, password) {
-        const userExist = await user_util_1.default.checkUserAndComparePassword(email, password);
+        const userExist = await user_util_1.default.checkUserAndComparePassword(email.toLowerCase(), password);
         if (!userExist)
             return [false, constants_util_1.default.Messages.INVALID];
         const token = await this.tokenService.create(userExist._id);

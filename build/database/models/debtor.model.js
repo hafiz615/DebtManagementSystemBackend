@@ -68,7 +68,7 @@ const debtorModel = new mongoose_1.Schema({
         },
     },
     businessInformation: {
-        organizationName: {
+        companyName: {
             type: String,
             required: true,
         },

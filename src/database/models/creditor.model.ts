@@ -12,77 +12,42 @@ const creditorModel: Schema = new Schema({
       required: true,
       unique: true,
     },
-    SSID: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    country: {
-      type: String,
-    },
-    state: {
-      type: String,
-    },
-    city: {
-      type: String,
-    },
-    zipCode: {
-      type: String,
-    },
-    status: {
-      type: String,
-      enum: ['Customer', ' On hold', 'Canceled', 'Declared Bankrupcy'],
-      default: 'Customer',
-    },
     phone: {
       type: String,
       required: true,
       unique: true,
     },
-    address: {
-      type: String,
-    },
   },
   businessInformation: {
-    organizationName: {
+    companyName: {
       type: String,
       required: true,
-    },
-    EIN: {
-      type: String,
-      required: true,
-      unique: true,
     },
     businessCategory: {
       type: String,
       required: true,
     },
-    description: {
-      type: String,
-    },
-    country: {
-      type: String,
-    },
-    state: {
-      type: String,
-    },
-    city: {
-      type: String,
-    },
-    zipCode: {
-      type: String,
-    },
-    phone: {
-      type: String,
-      unique: true,
-    },
-    address: {
-      type: String,
-    },
   },
   contacts: {
     type: Array<mongoose.Schema.Types.ObjectId>,
     ref: 'Contacts',
+  },
+  notes: {
+    type: String,
+  },
+  lastFundedDate: {
+    type: Date,
+    required: true,
+  },
+  historicalRange: {
+    minimum: {
+      type: Number,
+      required: true,
+    },
+    maximum: {
+      type: Number,
+      required: true,
+    },
   },
   createdAt: {
     type: Date,
