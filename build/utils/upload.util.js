@@ -27,7 +27,11 @@ class UploadUtil {
             };
             const command = new client_s3_1.PutObjectCommand(params);
             uploadPromises.push(this.s3Client.send(command));
-            s3FileKeys.push({ key: key, originalFileName: file.originalname });
+            s3FileKeys.push({
+                key: key,
+                originalFileName: file.originalname,
+                url: await this.getS3FileSignedUrl(key),
+            });
         }
         await Promise.all(uploadPromises);
         return s3FileKeys;

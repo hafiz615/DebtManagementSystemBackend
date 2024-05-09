@@ -275,43 +275,43 @@ class PaymentService {
     if (!days) days = 3;
     let currentDate = commonUtil.getCurrentDate();
     const payments: IPayment[] = await this.getAllPayments(currentDate, days);
-    const cases = await this.getUpcomingPaymentsQuery(currentDate, days);
-    if (!payments.length && !cases.length) {
+    if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
     const paymentsObj = await paymentUtil.getFilteredPayments(payments);
-    const upcomingPayments = await paymentUtil.getFilteredUpcomingPayments(
-      cases,
-      currentDate
-    );
-    paymentsObj['upcomingPayments'] = upcomingPayments;
     return [true, paymentsObj];
   }
 
   private async getAllPayments(currentDate: string, days: number) {
     const startDate = new Date(
       new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
-    );
+    ).toUTCString();
     return await this.paymentRepository.getAll<IPayment>(
       {
         $and: [
           {
             $or: [
-              {captured: 'failed'},
-              {authorized: 'failed'},
-              {authorized: 'success'},
-              {captured: 'success'},
+              {captured: 'Failed'},
+              {authorized: 'Failed'},
+              {authorized: 'Success'},
+              {captured: 'Success'},
+              {status: 'Upcoming'},
             ],
           },
-          {dueDate: {$lte: startDate}},
+          {
+            dueDate: {
+              $gte: startDate,
+              $lte: currentDate,
+            },
+          },
         ],
       },
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
       undefined,
       {createdAt: -1},
       {
         path: 'caseId',
-        select: '_id',
+        select: ['_id', 'caseOwner', 'totalDebt'],
         populate: {
           path: 'debtor',
           select: ['basicInformation.fullName', 'basicInformation.SSID'],
@@ -320,47 +320,32 @@ class PaymentService {
     );
   }
 
-  private async getUpcomingPaymentsQuery(
-    currentDate: string,
-    days: number
-  ): Promise<ICase[]> {
-    const endDate = new Date(
-      new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000
-    ).toUTCString();
-    return await this.caseRepository.getAll<ICase>(
-      {
-        intervals: {
-          $elemMatch: {startDate: {$gt: currentDate, $lte: endDate}},
-        },
-      },
-      undefined,
-      undefined,
-      undefined,
-      {
-        path: 'debtor',
-        select: 'basicInformation.fullName basicInformation.SSID',
-      }
-    );
+  async getCasePayments(id: string): Promise<[boolean, {} | string]> {
+    const payments: IPayment[] = await this.getAllPaymentsByCaseId(id);
+    if (!payments.length) {
+      return [false, constants.notFoundMessage('Payments')];
+    }
+    const paymentsObj = await paymentUtil.getFilteredPayments(payments);
+    return [true, paymentsObj];
   }
 
-  async getCaseUpcomingPayments(
-    id: string
-  ): Promise<[boolean, ICase[] | string]> {
-    const tempCase = await this.caseRepository.getById<ICase>(
-      id,
-      undefined,
-      undefined,
+  private async getAllPaymentsByCaseId(id: string) {
+    return await this.paymentRepository.getAll<IPayment>(
       {
-        path: 'debtor',
-        select: 'basicInformation.fullName basicInformation.SSID',
+        caseId: id,
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      undefined,
+      {createdAt: -1},
+      {
+        path: 'caseId',
+        select: ['_id', 'caseOwner', 'totalDebt'],
+        populate: {
+          path: 'debtor',
+          select: ['basicInformation.fullName', 'basicInformation.SSID'],
+        },
       }
     );
-    const upcomingPayments =
-      await paymentUtil.getFilteredUpcomingPaymentsCase(tempCase);
-    if (!upcomingPayments.length) {
-      return [false, constants.notFoundMessage('Upcoming payments')];
-    }
-    return [true, upcomingPayments];
   }
 }
 

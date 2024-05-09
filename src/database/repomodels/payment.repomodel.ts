@@ -2,9 +2,9 @@ import commonUtil from '../../utils/common.util';
 
 export class Payment {
   caseId = '';
-  authorized = '';
-  captured = '';
-  status = '';
+  authorized = 'Pending';
+  captured = 'Pending';
+  status = 'Upcoming';
   amount = 0;
   dueDate = '';
   frequency = 0;

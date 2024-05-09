@@ -22,8 +22,8 @@ class UserUtil {
       {email},
       '+password'
     );
+    if (!userExist) return false;
     if (
-      !userExist ||
       !userExist.isActive ||
       (userExist && !(await compare(password, userExist.password)))
     ) {

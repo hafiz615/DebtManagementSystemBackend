@@ -34,11 +34,9 @@ class PaymentController {
     }
   };
 
-  getCaseUpcomingPayments = async (req: Request, res: Response) => {
+  getCasePayments = async (req: Request, res: Response) => {
     try {
-      const response = await this.paymentService.getCaseUpcomingPayments(
-        req.params.id
-      );
+      const response = await this.paymentService.getCasePayments(req.params.id);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)

@@ -11,9 +11,9 @@ router.get(
 );
 
 router.get(
-  '/getCaseUpcomingPayments/:id',
+  '/getCasePayments/:id',
   authorize.validateAuth,
-  paymentController.getCaseUpcomingPayments
+  paymentController.getCasePayments
 );
 
 export default router;

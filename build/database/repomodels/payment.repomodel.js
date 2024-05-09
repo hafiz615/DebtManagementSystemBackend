@@ -8,9 +8,9 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Payment {
     constructor() {
         this.caseId = '';
-        this.authorized = '';
-        this.captured = '';
-        this.status = '';
+        this.authorized = 'Pending';
+        this.captured = 'Pending';
+        this.status = 'Upcoming';
         this.amount = 0;
         this.dueDate = '';
         this.frequency = 0;

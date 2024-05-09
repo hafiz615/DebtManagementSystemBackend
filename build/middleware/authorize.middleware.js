@@ -58,6 +58,7 @@ class Authorize {
                     }
                     global_1.default.userId = String(exists._id);
                     global_1.default.email = exists.email;
+                    global_1.default.role = exists.role;
                     return next();
                 });
             }

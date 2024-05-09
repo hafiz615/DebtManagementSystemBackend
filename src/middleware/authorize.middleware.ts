@@ -50,6 +50,7 @@ class Authorize {
           }
           GlobalVariables.userId = String(exists._id);
           GlobalVariables.email = exists.email;
+          GlobalVariables.role = exists.role;
 
           return next();
         }

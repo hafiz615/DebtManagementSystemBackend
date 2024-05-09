@@ -254,59 +254,60 @@ class PaymentService {
             days = 3;
         let currentDate = common_util_1.default.getCurrentDate();
         const payments = await this.getAllPayments(currentDate, days);
-        const cases = await this.getUpcomingPaymentsQuery(currentDate, days);
-        if (!payments.length && !cases.length) {
+        if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
         const paymentsObj = await payment_util_1.default.getFilteredPayments(payments);
-        const upcomingPayments = await payment_util_1.default.getFilteredUpcomingPayments(cases, currentDate);
-        paymentsObj['upcomingPayments'] = upcomingPayments;
         return [true, paymentsObj];
     }
     async getAllPayments(currentDate, days) {
-        const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000);
+        const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
         return await this.paymentRepository.getAll({
             $and: [
                 {
                     $or: [
-                        { captured: 'failed' },
-                        { authorized: 'failed' },
-                        { authorized: 'success' },
-                        { captured: 'success' },
+                        { captured: 'Failed' },
+                        { authorized: 'Failed' },
+                        { authorized: 'Success' },
+                        { captured: 'Success' },
+                        { status: 'Upcoming' },
                     ],
                 },
-                { dueDate: { $lte: startDate } },
+                {
+                    dueDate: {
+                        $gte: startDate,
+                        $lte: currentDate,
+                    },
+                },
             ],
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured', undefined, { createdAt: -1 }, {
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
-            select: '_id',
+            select: ['_id', 'caseOwner', 'totalDebt'],
             populate: {
                 path: 'debtor',
                 select: ['basicInformation.fullName', 'basicInformation.SSID'],
             },
         });
     }
-    async getUpcomingPaymentsQuery(currentDate, days) {
-        const endDate = new Date(new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000).toUTCString();
-        return await this.caseRepository.getAll({
-            intervals: {
-                $elemMatch: { startDate: { $gt: currentDate, $lte: endDate } },
-            },
-        }, undefined, undefined, undefined, {
-            path: 'debtor',
-            select: 'basicInformation.fullName basicInformation.SSID',
-        });
-    }
-    async getCaseUpcomingPayments(id) {
-        const tempCase = await this.caseRepository.getById(id, undefined, undefined, {
-            path: 'debtor',
-            select: 'basicInformation.fullName basicInformation.SSID',
-        });
-        const upcomingPayments = await payment_util_1.default.getFilteredUpcomingPaymentsCase(tempCase);
-        if (!upcomingPayments.length) {
-            return [false, constants_util_1.default.notFoundMessage('Upcoming payments')];
+    async getCasePayments(id) {
+        const payments = await this.getAllPaymentsByCaseId(id);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
-        return [true, upcomingPayments];
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments);
+        return [true, paymentsObj];
+    }
+    async getAllPaymentsByCaseId(id) {
+        return await this.paymentRepository.getAll({
+            caseId: id,
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
+            path: 'caseId',
+            select: ['_id', 'caseOwner', 'totalDebt'],
+            populate: {
+                path: 'debtor',
+                select: ['basicInformation.fullName', 'basicInformation.SSID'],
+            },
+        });
     }
 }
 exports.default = PaymentService;
