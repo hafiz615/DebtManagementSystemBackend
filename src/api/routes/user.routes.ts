@@ -4,7 +4,12 @@ import userController from '../controllers/user/user.controller';
 import authorize from '../../middleware/authorize.middleware';
 const router = Router();
 
-router.post('/createUser', userValidate.createUser, userController.createUser);
+router.post(
+  '/createUser',
+  authorize.validateAuth,
+  userValidate.createUser,
+  userController.createUser
+);
 router.post('/signIn', userValidate.signIn, userController.signIn);
 router.get('/getUserById', authorize.validateAuth, userController.getUserById);
 router.get('/getUser', userController.getUser);
