@@ -85,8 +85,8 @@ class CaseValidate {
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().required(),
                 startDate: joi_1.default.date().required(),
-                frequency: joi_1.default.number().required(),
-                timePeriod: joi_1.default.string().valid('Weekly', 'Monthly', 'Custom'),
+                frequency: joi_1.default.number().optional(),
+                timePeriod: joi_1.default.string().valid('Weekly', 'Monthly', 'Custom', 'Fortnightly'),
             })),
         });
         const { error } = schema.validate(req.body);

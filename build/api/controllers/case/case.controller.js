@@ -58,8 +58,8 @@ class CaseController {
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
-                return res.status(constants_util_1.default.CODE.CREATED).send(responseHelper_util_1.default.get2xxResponse({
-                    statusCode: constants_util_1.default.CODE.CREATED,
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
                     message: constants_util_1.default.successFoundMessage('Case'),
                 }));

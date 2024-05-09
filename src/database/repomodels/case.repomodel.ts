@@ -1,6 +1,10 @@
 import commonUtil from '../../utils/common.util';
 
 export class Case {
+  caseOwner = '';
+  caseCode = '';
+  createdBy = '';
+  status = 'Pending';
   debtor = '';
   creditor = '';
   totalDebt = 0;
@@ -13,9 +17,7 @@ export class Case {
     amount: 0;
     startDate: '';
     frequency: 0;
-    frequencyProgress: 0;
     timePeriod: '';
-    status: '';
   }>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

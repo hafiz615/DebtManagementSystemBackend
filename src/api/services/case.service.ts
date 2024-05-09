@@ -9,6 +9,7 @@ import {Case} from '../../database/repomodels/case.repomodel';
 import {ICase, IKeyFile} from '../../database/interfaces/case.interface';
 import constantsUtil from '../../utils/constants.util';
 import UploadUtil from '../../utils/upload.util';
+import GlobalVariables from '../../global';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -47,6 +48,9 @@ class CaseService {
     req.body.debtor = debtor ? debtor._id : req.query.debtor;
     req.body.creditor = creditor ? creditor._id : req.query.creditor;
     const newCase = new Case();
+    newCase.caseOwner = GlobalVariables.role;
+    newCase.createdBy = GlobalVariables.email;
+    newCase.caseCode = await caseUtil.getCaseCode();
     const validatedCase = DataCopier.copy(newCase, req.body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
     await caseUtil.createPayment(caseCreated);
@@ -93,7 +97,12 @@ class CaseService {
       const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
       doc.url = url;
     }
-    return [true, findCase];
+    const creditors = await caseUtil.getAllCreditorsOfDebtor(
+      findCase.debtor as any
+    );
+    const tempCase: any = findCase;
+    tempCase['creditors'] = creditors;
+    return [true, tempCase];
   };
 }
 

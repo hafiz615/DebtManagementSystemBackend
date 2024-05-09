@@ -10,11 +10,13 @@ export interface IInterval {
   amount: number;
   startDate: string;
   frequency: number;
-  frequencyProgress: number;
   timePeriod: string;
-  status: string;
 }
 export interface ICase extends Document {
+  caseOwner: string;
+  caseCode: string;
+  createdBy: string;
+  status: string;
   debtor: mongoose.Schema.Types.ObjectId;
   creditor: mongoose.Schema.Types.ObjectId;
   totalDebt: number;

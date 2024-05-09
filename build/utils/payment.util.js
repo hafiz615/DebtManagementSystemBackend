@@ -7,6 +7,9 @@ const common_util_1 = __importDefault(require("./common.util"));
 class PaymentUtil {
     async getFilteredPayments(payments) {
         const transformedArray = payments.map(obj => ({
+            status: obj.status,
+            caseOwner: obj.caseId.caseOwner,
+            totalDebt: obj.caseId.totalDebt,
             fullName: obj.caseId.debtor.basicInformation.fullName,
             SSID: obj.caseId.debtor.basicInformation.SSID,
             authorized: obj.authorized,
@@ -15,16 +18,19 @@ class PaymentUtil {
             dueDate: obj.dueDate,
             failedReasonAuthorization: obj.failedReasonAuthorization,
             failedReasonCaptured: obj.failedReasonCaptured,
+            tryDate: obj.rescheduled,
         }));
-        const failedPayments = transformedArray.filter(payment => payment.captured === 'failed');
-        const successPayments = transformedArray.filter(payment => payment.captured === 'success');
-        const failedAuthorizations = transformedArray.filter(payment => payment.authorized === 'failed');
-        const successAuthorizations = transformedArray.filter(payment => payment.authorized === 'success');
+        const failedPayments = transformedArray.filter(payment => payment.captured === 'Failed');
+        const successPayments = transformedArray.filter(payment => payment.captured === 'Success');
+        const failedAuthorizations = transformedArray.filter(payment => payment.authorized === 'Failed');
+        const successAuthorizations = transformedArray.filter(payment => payment.authorized === 'Success');
+        const upcomingPayments = transformedArray.filter(payment => payment.status === 'Upcoming');
         return {
             failedPayments: failedPayments,
             successPayments: successPayments,
             failedAuthorizations: failedAuthorizations,
             successAuthorizations: successAuthorizations,
+            upcomingPayments: upcomingPayments,
         };
     }
     async getFilteredUpcomingPayments(cases, currentDate) {

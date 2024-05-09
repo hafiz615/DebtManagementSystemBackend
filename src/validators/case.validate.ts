@@ -89,8 +89,13 @@ class CaseValidate {
         Joi.object({
           amount: Joi.number().required(),
           startDate: Joi.date().required(),
-          frequency: Joi.number().required(),
-          timePeriod: Joi.string().valid('Weekly', 'Monthly', 'Custom'),
+          frequency: Joi.number().optional(),
+          timePeriod: Joi.string().valid(
+            'Weekly',
+            'Monthly',
+            'Custom',
+            'Fortnightly'
+          ),
         })
       ),
     });

@@ -20,8 +20,9 @@ class UserUtil {
     }
     async checkUserAndComparePassword(email, password) {
         const userExist = await this.userRepository.getOne({ email }, '+password');
-        if (!userExist ||
-            !userExist.isActive ||
+        if (!userExist)
+            return false;
+        if (!userExist.isActive ||
             (userExist && !(await (0, bcryptjs_1.compare)(password, userExist.password)))) {
             return false;
         }

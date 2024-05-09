@@ -13,18 +13,21 @@ import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import {Payment} from '../database/repomodels/payment.repomodel';
 import {IPayment} from '../database/interfaces/payment.interface';
+import {CaseRepository} from '../api/repository/case/case.repository';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
   private debtRepository: DebtorRepository;
   private creditorRepository: CreditorRepository;
   private paymentRepository: PaymentRepository;
+  private caseRepository: CaseRepository;
 
   constructor() {
     this.contactRepository = new ContactRepository();
     this.debtRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
     this.paymentRepository = new PaymentRepository();
+    this.caseRepository = new CaseRepository();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -62,23 +65,41 @@ class CaseUtil {
 
   async createPayment(data: ICase) {
     const payment = new Payment();
+    const paymentsArray = [];
+    let tempPayment = null;
     for (const interval of data.intervals) {
-      if (interval.frequency === 0 && interval.status === 'Pending') {
+      if (interval.frequency === 0) {
         payment.dueDate = interval.startDate;
-        await this.populatePayment(data._id, payment, interval);
+        tempPayment = await this.populatePayment(
+          data._id,
+          payment,
+          interval,
+          0
+        );
+        paymentsArray.push(tempPayment);
       }
-      if (interval.frequency != 0 && interval.status === 'Pending') {
-        payment.dueDate = payment.dueDate
-          ? payment.dueDate
-          : await this.getDatePayment(
+      if (interval.frequency != 0) {
+        for (let i = 1; i <= interval.frequency; i++) {
+          if (i === 1) {
+            payment.dueDate = interval.startDate;
+          } else {
+            payment.dueDate = await this.getDatePayment(
               interval.startDate,
               interval.timePeriod,
-              payment.frequency
+              i
             );
-        await this.populatePayment(data._id, payment, interval);
+          }
+          tempPayment = await this.populatePayment(
+            data._id,
+            payment,
+            interval,
+            i
+          );
+          paymentsArray.push(tempPayment);
+        }
       }
     }
-    await this.paymentRepository.create<IPayment>(payment as any);
+    await this.paymentRepository.createMany<IPayment>(paymentsArray);
   }
 
   async getDatePayment(
@@ -105,12 +126,45 @@ class CaseUtil {
     return currentDate.toString();
   }
 
-  async populatePayment(caseId: string, payment: Payment, interval: any) {
+  async populatePayment(
+    caseId: string,
+    payment: Payment,
+    interval: any,
+    frequency: number
+  ) {
     payment.amount = interval.amount;
-    payment.frequency = interval.frequencyProgress + 1;
+    payment.frequency = frequency;
     payment.caseId = caseId;
     payment.intervalId = String(interval._id);
+    return {...payment};
+  }
+
+  async getCaseCode() {
+    const cases = await this.caseRepository.getAll<ICase>({}, {}, undefined);
+    if (!cases.length) return 'CASE-001';
+    let caseCode = cases[cases.length - 1].caseCode;
+    return (
+      'CASE-' +
+      (parseInt(caseCode.split('-')[1]) + 1).toString().padStart(3, '0')
+    );
+  }
+
+  async getAllCreditorsOfDebtor(debtor: IDebtor) {
+    const cases = await this.caseRepository.getAll<ICase>(
+      {debtor: debtor._id},
+      'totalDebt caseCode status',
+      undefined,
+      undefined,
+      {path: 'creditor', select: ['basicInformation.fullName']}
+    );
+
+    const tempCases: any = cases;
+    return tempCases.map(obj => ({
+      totalDebt: obj.totalDebt,
+      caseCode: obj.caseCode,
+      status: obj.status,
+      name: obj.creditor.basicInformation.fullName,
+    }));
   }
 }
-
 export default new CaseUtil();

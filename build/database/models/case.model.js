@@ -47,6 +47,23 @@ const caseModel = new mongoose_1.Schema({
         type: Number,
         required: true,
     },
+    status: {
+        type: String,
+        required: true,
+        default: 'Pending',
+    },
+    caseOwner: {
+        type: String,
+        required: true,
+    },
+    caseCode: {
+        type: String,
+        required: true,
+    },
+    createdBy: {
+        type: String,
+        required: true,
+    },
     remaining: {
         type: Number,
         required: true,
@@ -69,10 +86,8 @@ const caseModel = new mongoose_1.Schema({
             {
                 amount: { type: Number, required: true },
                 startDate: { type: Date, required: true },
-                frequency: { type: Number, required: true },
-                frequencyProgress: { type: Number, default: 0 },
+                frequency: { type: Number, default: 0 },
                 timePeriod: { type: String, required: true },
-                status: { type: String, default: 'Pending' },
             },
         ],
     },
