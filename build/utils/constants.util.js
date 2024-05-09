@@ -33,7 +33,7 @@ exports.default = {
         SEND_INVITATION_LINK_200: 'Invitation link sent successfully',
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
-    ACCOUNT_INVITATION_BASE_LINK: 'https://dev-app.beinghumans.co/set-password',
+    ACCOUNT_INVITATION_BASE_LINK: 'http://localhost:3000/set-password',
     passwordRegex: /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
     failureRegisterMessage: (name) => `${name} not registered!`,
     successRegisterMessage: (name) => `${name} registered successfully!`,
