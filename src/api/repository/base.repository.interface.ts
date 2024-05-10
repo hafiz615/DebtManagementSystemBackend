@@ -28,7 +28,10 @@ export interface IBaseRepository<D> {
   ): Promise<T | null>;
   create<T>(entity: D): Promise<T>;
   updateById<T>(id: string, updateQuery: QueryOptions<T>): Promise<T | null>;
-  updateByOne<T>(filter: FilterQuery<T>, entity: Partial<D>): Promise<T | null>;
+  updateByOne<T>(
+    filter: FilterQuery<T>,
+    updateQuery: QueryOptions<T>
+  ): Promise<T | null>;
   delete<T>(filter?: FilterQuery<T>): Promise<boolean>;
   deleteMany<T>(filter?: FilterQuery<T>): Promise<boolean>;
   getCount<T>(filter?: FilterQuery<T>): Promise<number>;

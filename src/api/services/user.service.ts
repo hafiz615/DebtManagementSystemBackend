@@ -4,7 +4,6 @@ import TokenService from './token.service';
 import {omit} from 'lodash';
 import {UserRepository} from '../repository/user/user.repository';
 import constants from '../../utils/constants.util';
-import GlobalVariables from '../../global';
 import commonUtil from '../../utils/common.util';
 import userUtil from '../../utils/user.util';
 import {User} from '../../database/repomodels/user.repomodel';
@@ -70,10 +69,8 @@ class UserService {
     ];
   }
 
-  async getUserById(): Promise<[boolean, IUser | string]> {
-    const user = await this.userRepository.getById<IUser>(
-      GlobalVariables.userId
-    );
+  async getUserById(id: string): Promise<[boolean, IUser | string]> {
+    const user = await this.userRepository.getById<IUser>(id);
     if (!user) {
       return [false, constants.notFoundMessage('User')];
     }
@@ -94,9 +91,10 @@ class UserService {
       if (!checkPassword) return [false, constants.Messages.PASSWORD_FORMAT];
       req.body.password = await commonUtil.hashPassword(req.body.password);
     }
-    const user = await this.userRepository.updateUserByIdOrEmail(
-      req.body.email,
-      req.body as IUser
+    const bodyUser = req.body as IUser;
+    const user = await this.userRepository.updateByOne<IUser>(
+      {email: req.body.email},
+      {...bodyUser}
     );
     if (!user) {
       return [false, constants.notFoundMessage('User')];
@@ -104,13 +102,10 @@ class UserService {
     return [true, user];
   }
 
-  async deleteUserById(): Promise<[boolean, IUser | string]> {
-    const user = await this.userRepository.updateById<IUser>(
-      GlobalVariables.userId,
-      {
-        isActive: false,
-      }
-    );
+  async deleteUserById(id: string): Promise<[boolean, IUser | string]> {
+    const user = await this.userRepository.updateById<IUser>(id, {
+      isActive: false,
+    });
     if (!user) {
       return [false, constants.notFoundMessage('User')];
     }
@@ -158,10 +153,12 @@ class UserService {
     let user = req.body as IUser;
     user.isActive = true;
     user.verifyToken = '';
-    const updatedUser = await this.userRepository.updateUserByIdOrEmail(
-      req.body.email,
-      user
+    console.log(user, 'userrrrrrrrr');
+    const updatedUser = await this.userRepository.updateByOne<IUser>(
+      {email: req.body.email},
+      {...user}
     );
+    console.log(updatedUser);
     if (!updatedUser) {
       return [false, constants.notFoundMessage('User')];
     }

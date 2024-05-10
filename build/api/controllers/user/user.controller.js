@@ -52,7 +52,8 @@ class UserController {
         };
         this.getUserById = async (req, res) => {
             try {
-                const response = await this.userService.getUserById();
+                const reqTemp = req;
+                const response = await this.userService.getUserById(reqTemp.id);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
@@ -104,7 +105,8 @@ class UserController {
             }));
         };
         this.deleteUserById = async (req, res) => {
-            const response = await this.userService.deleteUserById();
+            const reqTemp = req;
+            const response = await this.userService.deleteUserById(reqTemp.id);
             if (!response[0]) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)

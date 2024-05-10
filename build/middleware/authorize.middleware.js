@@ -31,7 +31,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const responseHelper_util_1 = __importDefault(require("../utils/responseHelper.util"));
 const constants_util_1 = __importDefault(require("../utils/constants.util"));
 const token_service_1 = __importDefault(require("../api/services/token.service"));
-const global_1 = __importDefault(require("../global"));
 dotenv_1.default.config();
 class Authorize {
     constructor() {
@@ -56,9 +55,9 @@ class Authorize {
                             .status(constants_util_1.default.CODE.FORBIDDEN)
                             .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_ERROR));
                     }
-                    global_1.default.userId = String(exists._id);
-                    global_1.default.email = exists.email;
-                    global_1.default.role = exists.role;
+                    req.id = String(exists._id);
+                    req.email = exists.email;
+                    req.role = exists.role;
                     return next();
                 });
             }

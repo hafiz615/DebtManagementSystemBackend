@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import responseHelper from '../utils/responseHelper.util';
 import constants from '../utils/constants.util';
 import TokenService from '../api/services/token.service';
-import GlobalVariables from '../global';
 dotenv.config();
 class Authorize {
   validateAuth = (req: Request | any, res: Response, next: NextFunction) => {
@@ -48,10 +47,9 @@ class Authorize {
                 )
               );
           }
-          GlobalVariables.userId = String(exists._id);
-          GlobalVariables.email = exists.email;
-          GlobalVariables.role = exists.role;
-
+          req.id = String(exists._id);
+          req.email = exists.email;
+          req.role = exists.role;
           return next();
         }
       );

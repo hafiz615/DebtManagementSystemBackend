@@ -7,7 +7,6 @@ const token_service_1 = __importDefault(require("./token.service"));
 const lodash_1 = require("lodash");
 const user_repository_1 = require("../repository/user/user.repository");
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
-const global_1 = __importDefault(require("../../global"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const user_util_1 = __importDefault(require("../../utils/user.util"));
 const user_repomodel_1 = require("../../database/repomodels/user.repomodel");
@@ -67,8 +66,8 @@ class UserService {
             },
         ];
     }
-    async getUserById() {
-        const user = await this.userRepository.getById(global_1.default.userId);
+    async getUserById(id) {
+        const user = await this.userRepository.getById(id);
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
@@ -88,14 +87,15 @@ class UserService {
                 return [false, constants_util_1.default.Messages.PASSWORD_FORMAT];
             req.body.password = await common_util_1.default.hashPassword(req.body.password);
         }
-        const user = await this.userRepository.updateUserByIdOrEmail(req.body.email, req.body);
+        const bodyUser = req.body;
+        const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
         return [true, user];
     }
-    async deleteUserById() {
-        const user = await this.userRepository.updateById(global_1.default.userId, {
+    async deleteUserById(id) {
+        const user = await this.userRepository.updateById(id, {
             isActive: false,
         });
         if (!user) {
@@ -140,7 +140,9 @@ class UserService {
         let user = req.body;
         user.isActive = true;
         user.verifyToken = '';
-        const updatedUser = await this.userRepository.updateUserByIdOrEmail(req.body.email, user);
+        console.log(user, 'userrrrrrrrr');
+        const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user });
+        console.log(updatedUser);
         if (!updatedUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }

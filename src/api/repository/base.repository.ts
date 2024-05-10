@@ -85,17 +85,11 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
 
   async updateByOne<T>(
     filter: FilterQuery<T>,
-    entity: Partial<D>
+    updateQuery: QueryOptions<T>
   ): Promise<T | null> {
-    return (
-      ((await this.model.findOneAndUpdate(
-        filter,
-        {entity},
-        {
-          new: true,
-        }
-      )) as T) || null
-    );
+    return await this.model.findOneAndUpdate(filter, updateQuery, {
+      new: true,
+    });
   }
 
   async delete<T>(filter?: FilterQuery<T>): Promise<boolean> {

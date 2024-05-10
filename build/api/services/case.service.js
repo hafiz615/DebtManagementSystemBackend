@@ -9,7 +9,6 @@ const case_util_1 = __importDefault(require("../../utils/case.util"));
 const case_repomodel_1 = require("../../database/repomodels/case.repomodel");
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const upload_util_1 = __importDefault(require("../../utils/upload.util"));
-const global_1 = __importDefault(require("../../global"));
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -35,8 +34,9 @@ class CaseService {
             req.body.debtor = debtor ? debtor._id : req.query.debtor;
             req.body.creditor = creditor ? creditor._id : req.query.creditor;
             const newCase = new case_repomodel_1.Case();
-            newCase.caseOwner = global_1.default.role;
-            newCase.createdBy = global_1.default.email;
+            const reqTemp = req;
+            newCase.caseOwner = reqTemp.role;
+            newCase.createdBy = reqTemp.email;
             newCase.caseCode = await case_util_1.default.getCaseCode();
             const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, req.body);
             const caseCreated = await this.caseRepository.create(validatedCase);

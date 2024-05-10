@@ -43,10 +43,10 @@ class BaseRepository {
             new: true,
         });
     }
-    async updateByOne(filter, entity) {
-        return ((await this.model.findOneAndUpdate(filter, { entity }, {
+    async updateByOne(filter, updateQuery) {
+        return await this.model.findOneAndUpdate(filter, updateQuery, {
             new: true,
-        })) || null);
+        });
     }
     async delete(filter) {
         const result = await this.model.deleteOne(filter).exec();
