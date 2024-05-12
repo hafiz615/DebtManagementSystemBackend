@@ -55,8 +55,7 @@ const debtorModel = new mongoose_1.Schema({
         },
         status: {
             type: String,
-            enum: ['Customer', ' On hold', 'Canceled', 'Declared Bankrupcy'],
-            default: 'Customer',
+            enum: ['Customer', 'On hold', 'Canceled', 'Declared Bankrupcy'],
         },
         phone: {
             type: String,

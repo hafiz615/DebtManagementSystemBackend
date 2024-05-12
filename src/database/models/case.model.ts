@@ -26,7 +26,6 @@ const caseModel: Schema = new Schema({
   status: {
     type: String,
     required: true,
-    default: 'Pending',
   },
   caseOwner: {
     type: String,
@@ -52,11 +51,6 @@ const caseModel: Schema = new Schema({
         url: {type: String, default: ''},
       },
     ],
-  },
-
-  paymentPlanStartDate: {
-    type: Date,
-    required: true,
   },
   intervals: {
     type: [

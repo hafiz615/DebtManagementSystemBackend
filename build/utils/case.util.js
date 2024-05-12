@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
 const contact_repository_1 = require("../api/repository/contact/contact.repository");
@@ -11,6 +14,10 @@ const dataCopier_util_1 = require("./dataCopier.util");
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
 const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
 const case_repository_1 = require("../api/repository/case/case.repository");
+const debtor_service_1 = __importDefault(require("../api/services/debtor.service"));
+const creditor_service_1 = __importDefault(require("../api/services/creditor.service"));
+const case_repomodel_1 = require("../database/repomodels/case.repomodel");
+const constants_util_1 = __importDefault(require("./constants.util"));
 class CaseUtil {
     constructor() {
         this.contactRepository = new contact_repository_1.ContactRepository();
@@ -18,6 +25,8 @@ class CaseUtil {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.debtorService = new debtor_service_1.default();
+        this.creditorService = new creditor_service_1.default();
     }
     async createContacts(data) {
         const validatedContacts = [];
@@ -113,6 +122,64 @@ class CaseUtil {
             status: obj.status,
             name: obj.creditor.basicInformation.fullName,
         }));
+    }
+    async createCase(body, role, email) {
+        let contactIds = null;
+        let debtor = null;
+        let creditor = null;
+        const getDebtor = await this.debtorService.getDebtor(body.debtor.basicInformation.email);
+        const getCreditor = await this.creditorService.getCreditor(body.creditor.basicInformation.email);
+        if (!getDebtor[0]) {
+            contactIds = await this.createContacts(body.debtor.contacts);
+            const debtorData = {
+                ...body.debtor,
+                contacts: contactIds,
+            };
+            debtor = await this.createDebtor(debtorData);
+        }
+        if (!getCreditor[0]) {
+            contactIds = await this.createContacts(body.creditor.contacts);
+            const creditorData = {
+                ...body.creditor,
+                contacts: contactIds,
+            };
+            creditor = await this.createCreditor(creditorData);
+        }
+        if (getDebtor[0])
+            debtor = getDebtor[1];
+        if (getCreditor[0])
+            creditor = getCreditor[1];
+        body.debtor = debtor?._id;
+        body.creditor = creditor?._id;
+        const newCase = new case_repomodel_1.Case();
+        newCase.caseOwner = role;
+        newCase.createdBy = email;
+        newCase.caseCode = await this.getCaseCode();
+        const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
+        const caseCreated = await this.caseRepository.create(validatedCase);
+        await this.createPayment(caseCreated);
+        return caseCreated;
+    }
+    async checkCasePayment(body) {
+        if (body.remaining !== body.totalDebt - body.paidAmount) {
+            return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
+        }
+        let amount = 0;
+        for (const interval of body.intervals) {
+            if (!interval.frequency) {
+                amount += interval.amount;
+            }
+            if (interval.frequency != 0) {
+                for (let i = 0; i < interval.frequency; i++) {
+                    amount += interval.amount;
+                }
+            }
+        }
+        console.log(amount);
+        if (amount !== body.remaining) {
+            return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
+        }
+        return [true, ''];
     }
 }
 exports.default = new CaseUtil();

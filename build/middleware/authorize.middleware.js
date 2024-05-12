@@ -62,6 +62,14 @@ class Authorize {
                 });
             }
         };
+        this.validateRole = (req, res, next) => {
+            if (req.role !== 'Admin') {
+                return res
+                    .status(constants_util_1.default.CODE.FORBIDDEN)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.ROLE_ACCESS));
+            }
+            return next();
+        };
     }
     validateVerifyToken(token) {
         let validity = false;

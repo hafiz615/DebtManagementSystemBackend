@@ -13,6 +13,9 @@ class CaseValidate {
           SSID: Joi.string().required(),
           country: Joi.string().allow(''),
           state: Joi.string().allow(''),
+          status: Joi.string()
+            .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
+            .required(),
           city: Joi.string().allow(''),
           zipCode: Joi.string().allow(''),
           phone: Joi.string().allow(''),
@@ -78,13 +81,13 @@ class CaseValidate {
       lastPaymentDate: Joi.date(),
       paidAmount: Joi.number().required(),
       remaining: Joi.number().required(),
+      status: Joi.string().required(),
       documents: Joi.array().items(
         Joi.object({
           key: Joi.string().required(),
           originalFileName: Joi.string().required(),
         }).optional()
       ),
-      paymentPlanStartDate: Joi.date().required(),
       intervals: Joi.array().items(
         Joi.object({
           amount: Joi.number().required(),
@@ -99,6 +102,18 @@ class CaseValidate {
         })
       ),
     });
+    if (req.query.bulk === 'true') {
+      const cases = req.body.cases;
+      for (const tempCase of cases) {
+        const {error} = schema.validate(tempCase);
+        if (error) {
+          return res
+            .status(constants.CODE.BAD_REQUEST)
+            .send(responseHelper.get4xxResponse(error.details[0].message));
+        }
+      }
+      return next();
+    }
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

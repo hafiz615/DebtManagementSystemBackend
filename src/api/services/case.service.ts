@@ -9,51 +9,49 @@ import {Case} from '../../database/repomodels/case.repomodel';
 import {ICase, IKeyFile} from '../../database/interfaces/case.interface';
 import constantsUtil from '../../utils/constants.util';
 import UploadUtil from '../../utils/upload.util';
+import DebtorService from './debtor.service';
+import CreditorService from './creditor.service';
 
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
+  private debtorService: DebtorService;
+  private creditorService: CreditorService;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
+    this.debtorService = new DebtorService();
+    this.creditorService = new CreditorService();
   }
   createCase = async (
     req: Request
-  ): Promise<[boolean, Partial<ICase> | string]> => {
-    let contactIds = null;
-    let debtor = null;
-    let creditor = null;
-    if (req.query.debtor === 'null') {
-      contactIds = await caseUtil.createContacts(
-        req.body.debtor.contacts as IContact[]
-      );
-      const debtorData = {
-        ...req.body.debtor,
-        contacts: contactIds,
-      };
-      debtor = await caseUtil.createDebtor(debtorData as IDebtor);
-    }
-    if (req.query.creditor === 'null') {
-      contactIds = await caseUtil.createContacts(
-        req.body.creditor.contacts as IContact[]
-      );
-      const creditorData = {
-        ...req.body.creditor,
-        contacts: contactIds,
-      };
-      creditor = await caseUtil.createCreditor(creditorData as ICreditor);
-    }
-    req.body.debtor = debtor ? debtor._id : req.query.debtor;
-    req.body.creditor = creditor ? creditor._id : req.query.creditor;
-    const newCase = new Case();
+  ): Promise<[boolean, ICase | ICase[] | string]> => {
     const reqTemp: any = req;
-    newCase.caseOwner = reqTemp.role;
-    newCase.createdBy = reqTemp.email;
-    newCase.caseCode = await caseUtil.getCaseCode();
-    const validatedCase = DataCopier.copy(newCase, req.body);
-    const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
-    await caseUtil.createPayment(caseCreated);
+    if (req.query.bulk === 'true') {
+      const casesArray: ICase[] = [];
+      for (const tempCase of req.body.cases) {
+        const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
+        if (!checkCasePayment[0]) return checkCasePayment;
+        const caseCreated = await caseUtil.createCase(
+          tempCase,
+          reqTemp.role,
+          reqTemp.email
+        );
+        casesArray.push(caseCreated);
+      }
+      if (!casesArray.length)
+        return [false, constantsUtil.failureAddMessage('cases')];
+      return [true, casesArray];
+    }
+    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
+    if (!checkCasePayment[0]) return checkCasePayment;
+    const caseCreated = await caseUtil.createCase(
+      req.body,
+      reqTemp.role,
+      reqTemp.email
+    );
+    if (!caseCreated) return [false, constantsUtil.failureAddMessage('case')];
     return [true, caseCreated];
   };
 

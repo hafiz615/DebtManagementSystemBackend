@@ -140,13 +140,13 @@ class UserService {
         let user = req.body;
         user.isActive = true;
         user.verifyToken = '';
-        console.log(user, 'userrrrrrrrr');
+        const token = await this.tokenService.create(findUser._id);
+        user.jwtToken = token;
         const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user });
-        console.log(updatedUser);
         if (!updatedUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
-        return [true, updatedUser];
+        return [true, { user: updatedUser, token: token }];
     }
 }
 exports.default = UserService;

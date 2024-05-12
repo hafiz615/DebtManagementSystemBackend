@@ -50,7 +50,6 @@ const caseModel = new mongoose_1.Schema({
     status: {
         type: String,
         required: true,
-        default: 'Pending',
     },
     caseOwner: {
         type: String,
@@ -76,10 +75,6 @@ const caseModel = new mongoose_1.Schema({
                 url: { type: String, default: '' },
             },
         ],
-    },
-    paymentPlanStartDate: {
-        type: Date,
-        required: true,
     },
     intervals: {
         type: [

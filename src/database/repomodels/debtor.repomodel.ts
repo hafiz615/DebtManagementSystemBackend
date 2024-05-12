@@ -10,7 +10,7 @@ export class Debtor {
     state: '',
     city: '',
     zipCode: '',
-    status: 'Customer',
+    status: '',
     phone: '',
     address: '',
   };
