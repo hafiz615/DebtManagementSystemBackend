@@ -14,6 +14,10 @@ import {ICase} from '../database/interfaces/case.interface';
 import {Payment} from '../database/repomodels/payment.repomodel';
 import {IPayment} from '../database/interfaces/payment.interface';
 import {CaseRepository} from '../api/repository/case/case.repository';
+import DebtorService from '../api/services/debtor.service';
+import CreditorService from '../api/services/creditor.service';
+import {Case} from '../database/repomodels/case.repomodel';
+import constantsUtil from './constants.util';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -21,6 +25,8 @@ class CaseUtil {
   private creditorRepository: CreditorRepository;
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
+  private debtorService: DebtorService;
+  private creditorService: CreditorService;
 
   constructor() {
     this.contactRepository = new ContactRepository();
@@ -28,6 +34,8 @@ class CaseUtil {
     this.creditorRepository = new CreditorRepository();
     this.paymentRepository = new PaymentRepository();
     this.caseRepository = new CaseRepository();
+    this.debtorService = new DebtorService();
+    this.creditorService = new CreditorService();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -165,6 +173,73 @@ class CaseUtil {
       status: obj.status,
       name: obj.creditor.basicInformation.fullName,
     }));
+  }
+
+  async createCase(body: any, role: string, email: string) {
+    let contactIds = null;
+    let debtor: IDebtor = null;
+    let creditor: ICreditor = null;
+    const getDebtor = await this.debtorService.getDebtor(
+      body.debtor.basicInformation.email
+    );
+    const getCreditor = await this.creditorService.getCreditor(
+      body.creditor.basicInformation.email
+    );
+
+    if (!getDebtor[0]) {
+      contactIds = await this.createContacts(
+        body.debtor.contacts as IContact[]
+      );
+      const debtorData = {
+        ...body.debtor,
+        contacts: contactIds,
+      };
+      debtor = await this.createDebtor(debtorData as IDebtor);
+    }
+    if (!getCreditor[0]) {
+      contactIds = await this.createContacts(
+        body.creditor.contacts as IContact[]
+      );
+      const creditorData = {
+        ...body.creditor,
+        contacts: contactIds,
+      };
+      creditor = await this.createCreditor(creditorData as ICreditor);
+    }
+    if (getDebtor[0]) debtor = getDebtor[1] as IDebtor;
+    if (getCreditor[0]) creditor = getCreditor[1] as ICreditor;
+    body.debtor = debtor?._id;
+    body.creditor = creditor?._id;
+    const newCase = new Case();
+    newCase.caseOwner = role;
+    newCase.createdBy = email;
+    newCase.caseCode = await this.getCaseCode();
+    const validatedCase = DataCopier.copy(newCase, body);
+    const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
+    await this.createPayment(caseCreated);
+    return caseCreated;
+  }
+
+  async checkCasePayment(body: any): Promise<[boolean, string]> {
+    if (body.remaining !== body.totalDebt - body.paidAmount) {
+      return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
+    }
+    let amount = 0;
+    for (const interval of body.intervals) {
+      if (!interval.frequency) {
+        amount += interval.amount;
+      }
+      if (interval.frequency != 0) {
+        for (let i = 0; i < interval.frequency; i++) {
+          amount += interval.amount;
+        }
+      }
+    }
+    console.log(amount);
+    if (amount !== body.remaining) {
+      return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
+    }
+    return [true, ''];
   }
 }
 export default new CaseUtil();

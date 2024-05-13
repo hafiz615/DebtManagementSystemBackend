@@ -8,7 +8,7 @@ const user_validate_1 = __importDefault(require("../../validators/user.validate"
 const user_controller_1 = __importDefault(require("../controllers/user/user.controller"));
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const router = (0, express_1.Router)();
-router.post('/createUser', authorize_middleware_1.default.validateAuth, user_validate_1.default.createUser, user_controller_1.default.createUser);
+router.post('/createUser', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_validate_1.default.createUser, user_controller_1.default.createUser);
 router.post('/signIn', user_validate_1.default.signIn, user_controller_1.default.signIn);
 router.get('/getUserById', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUserById);
 router.get('/getUser', user_controller_1.default.getUser);

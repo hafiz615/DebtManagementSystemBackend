@@ -142,7 +142,9 @@ class UserService {
     return [true, user];
   }
 
-  async updatePassword(req: Request): Promise<[boolean, IUser | string]> {
+  async updatePassword(
+    req: Request
+  ): Promise<[boolean, {user: IUser; token: string} | string]> {
     const findUser = await this.userRepository.getOne<IUser>({
       verifyToken: req.query.token,
     });
@@ -153,16 +155,16 @@ class UserService {
     let user = req.body as IUser;
     user.isActive = true;
     user.verifyToken = '';
-    console.log(user, 'userrrrrrrrr');
+    const token = await this.tokenService.create(findUser._id);
+    user.jwtToken = token;
     const updatedUser = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
       {...user}
     );
-    console.log(updatedUser);
     if (!updatedUser) {
       return [false, constants.notFoundMessage('User')];
     }
-    return [true, updatedUser];
+    return [true, {user: updatedUser, token: token}];
   }
 
   getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {

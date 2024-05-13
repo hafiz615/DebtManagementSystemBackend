@@ -30,6 +30,8 @@ export default {
     INVALID_LINK: 'Invitation link may be expired or is invalid',
     VALID_LINK: 'Invitation link verified successfully',
     SEND_INVITATION_LINK_200: 'Invitation link sent successfully',
+    ROLE_ACCESS: 'You are not authorized to perform this action!',
+    PAYMENT_CALCULATION_ERROR: 'Payment calculation is not correct!',
   },
   ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
   ACCOUNT_INVITATION_BASE_LINK: 'http://localhost:3000/set-password',
@@ -39,6 +41,7 @@ export default {
   successRegisterMessage: (name: string): string =>
     `${name} registered successfully!`,
   successAddMessage: (name: string): string => `${name} added successfully!`,
+  failureAddMessage: (name: string): string => `Unable to add ${name}`,
   successDeleteMessage: (name: string): string =>
     `${name} deleted successfully!`,
   successUpdateMessage: (name: string): string =>

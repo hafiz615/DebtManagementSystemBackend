@@ -10,7 +10,7 @@ class Case {
         this.caseOwner = '';
         this.caseCode = '';
         this.createdBy = '';
-        this.status = 'Pending';
+        this.status = '';
         this.debtor = '';
         this.creditor = '';
         this.totalDebt = 0;
@@ -18,7 +18,6 @@ class Case {
         this.paidAmount = 0;
         this.remaining = 0;
         this.documents = Array();
-        this.paymentPlanStartDate = '';
         this.intervals = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

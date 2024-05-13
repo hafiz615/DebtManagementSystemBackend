@@ -16,6 +16,9 @@ class CaseValidate {
                     SSID: joi_1.default.string().required(),
                     country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
+                    status: joi_1.default.string()
+                        .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
+                        .required(),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
                     phone: joi_1.default.string().allow(''),
@@ -77,11 +80,11 @@ class CaseValidate {
             lastPaymentDate: joi_1.default.date(),
             paidAmount: joi_1.default.number().required(),
             remaining: joi_1.default.number().required(),
+            status: joi_1.default.string().required(),
             documents: joi_1.default.array().items(joi_1.default.object({
                 key: joi_1.default.string().required(),
                 originalFileName: joi_1.default.string().required(),
             }).optional()),
-            paymentPlanStartDate: joi_1.default.date().required(),
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().required(),
                 startDate: joi_1.default.date().required(),
@@ -89,6 +92,18 @@ class CaseValidate {
                 timePeriod: joi_1.default.string().valid('Weekly', 'Monthly', 'Custom', 'Fortnightly'),
             })),
         });
+        if (req.query.bulk === 'true') {
+            const cases = req.body.cases;
+            for (const tempCase of cases) {
+                const { error } = schema.validate(tempCase);
+                if (error) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+                }
+            }
+            return next();
+        }
         const { error } = schema.validate(req.body);
         if (!error) {
             return next();

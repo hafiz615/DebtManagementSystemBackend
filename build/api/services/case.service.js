@@ -3,44 +3,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
-const case_repomodel_1 = require("../../database/repomodels/case.repomodel");
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const upload_util_1 = __importDefault(require("../../utils/upload.util"));
+const debtor_service_1 = __importDefault(require("./debtor.service"));
+const creditor_service_1 = __importDefault(require("./creditor.service"));
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
-            let contactIds = null;
-            let debtor = null;
-            let creditor = null;
-            if (req.query.debtor === 'null') {
-                contactIds = await case_util_1.default.createContacts(req.body.debtor.contacts);
-                const debtorData = {
-                    ...req.body.debtor,
-                    contacts: contactIds,
-                };
-                debtor = await case_util_1.default.createDebtor(debtorData);
-            }
-            if (req.query.creditor === 'null') {
-                contactIds = await case_util_1.default.createContacts(req.body.creditor.contacts);
-                const creditorData = {
-                    ...req.body.creditor,
-                    contacts: contactIds,
-                };
-                creditor = await case_util_1.default.createCreditor(creditorData);
-            }
-            req.body.debtor = debtor ? debtor._id : req.query.debtor;
-            req.body.creditor = creditor ? creditor._id : req.query.creditor;
-            const newCase = new case_repomodel_1.Case();
             const reqTemp = req;
-            newCase.caseOwner = reqTemp.role;
-            newCase.createdBy = reqTemp.email;
-            newCase.caseCode = await case_util_1.default.getCaseCode();
-            const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, req.body);
-            const caseCreated = await this.caseRepository.create(validatedCase);
-            await case_util_1.default.createPayment(caseCreated);
+            if (req.query.bulk === 'true') {
+                const casesArray = [];
+                for (const tempCase of req.body.cases) {
+                    const checkCasePayment = await case_util_1.default.checkCasePayment(tempCase);
+                    if (!checkCasePayment[0])
+                        return checkCasePayment;
+                    const caseCreated = await case_util_1.default.createCase(tempCase, reqTemp.role, reqTemp.email);
+                    casesArray.push(caseCreated);
+                }
+                if (!casesArray.length)
+                    return [false, constants_util_1.default.failureAddMessage('cases')];
+                return [true, casesArray];
+            }
+            const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
+            if (!checkCasePayment[0])
+                return checkCasePayment;
+            const caseCreated = await case_util_1.default.createCase(req.body, reqTemp.role, reqTemp.email);
+            if (!caseCreated)
+                return [false, constants_util_1.default.failureAddMessage('case')];
             return [true, caseCreated];
         };
         this.getAllCases = async (req) => {
@@ -75,6 +66,8 @@ class CaseService {
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
+        this.debtorService = new debtor_service_1.default();
+        this.creditorService = new creditor_service_1.default();
     }
 }
 exports.default = CaseService;

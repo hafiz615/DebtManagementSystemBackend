@@ -4,7 +4,7 @@ export class Case {
   caseOwner = '';
   caseCode = '';
   createdBy = '';
-  status = 'Pending';
+  status = '';
   debtor = '';
   creditor = '';
   totalDebt = 0;
@@ -12,7 +12,6 @@ export class Case {
   paidAmount = 0;
   remaining = 0;
   documents = Array<{key: ''; originalFileName: ''; url: ''}>();
-  paymentPlanStartDate = '';
   intervals = Array<{
     amount: 0;
     startDate: '';

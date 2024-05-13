@@ -70,6 +70,15 @@ class Authorize {
     );
     return validity;
   }
+
+  validateRole = (req: Request | any, res: Response, next: NextFunction) => {
+    if (req.role !== 'Admin') {
+      return res
+        .status(constants.CODE.FORBIDDEN)
+        .send(responseHelper.get4xxResponse(constants.Messages.ROLE_ACCESS));
+    }
+    return next();
+  };
 }
 
 export default new Authorize();

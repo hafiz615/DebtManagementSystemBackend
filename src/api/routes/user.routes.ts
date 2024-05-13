@@ -7,6 +7,7 @@ const router = Router();
 router.post(
   '/createUser',
   authorize.validateAuth,
+  authorize.validateRole,
   userValidate.createUser,
   userController.createUser
 );

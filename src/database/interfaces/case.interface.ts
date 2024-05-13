@@ -24,7 +24,6 @@ export interface ICase extends Document {
   paidAmount: number;
   remaining: number;
   documents: Array<IKeyFile>;
-  paymentPlanStartDate: string;
   intervals: Array<IInterval>;
   createdAt: string;
   updatedAt: string;
