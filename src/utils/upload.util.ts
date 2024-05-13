@@ -1,15 +1,25 @@
 import {PutObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import AWS from 'aws-sdk';
 import caseUtil from './case.util';
+import dotenv from 'dotenv';
+dotenv.config();
 class UploadUtil {
   private s3Client: S3Client;
   private s3: AWS.S3;
 
   constructor() {
     this.s3Client = new S3Client({
+      credentials: {
+        secretAccessKey: process.env.secretAccessKey,
+        accessKeyId: process.env.accessKeyId,
+      },
       region: 'us-east-1',
     });
     this.s3 = new AWS.S3({
+      credentials: {
+        secretAccessKey: process.env.secretAccessKey,
+        accessKeyId: process.env.accessKeyId,
+      },
       region: 'us-east-1',
     });
   }
