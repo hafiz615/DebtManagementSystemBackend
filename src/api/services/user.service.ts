@@ -33,7 +33,6 @@ class UserService {
     req.body.email = req.body.email.toLowerCase();
     const newUser = new User();
     const validatedUser = DataCopier.copy(newUser, req.body as IUser);
-    console.log(validatedUser);
     const user = await this.userRepository.create<IUser>(validatedUser);
     if (!user) {
       return [false, constants.failureRegisterMessage('User')];

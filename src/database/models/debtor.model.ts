@@ -50,7 +50,6 @@ const debtorModel: Schema = new Schema({
     EIN: {
       type: String,
       required: true,
-      unique: true,
     },
     businessCategory: {
       type: String,

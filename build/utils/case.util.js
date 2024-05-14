@@ -127,9 +127,30 @@ class CaseUtil {
         let contactIds = null;
         let debtor = null;
         let creditor = null;
-        const getDebtor = await this.debtorService.getDebtor(body.debtor.basicInformation.email);
-        const getCreditor = await this.creditorService.getCreditor(body.creditor.basicInformation.email);
-        if (!getDebtor[0]) {
+        const getDebtor = await this.debtRepository.getOne({
+            $or: [
+                {
+                    'basicInformation.email': body.debtor.basicInformation.email.toLowerCase(),
+                },
+                {
+                    'basicInformation.SSID': body.debtor.basicInformation.SSID,
+                },
+                {
+                    'basicInformation.phone': body.debtor.basicInformation.phone,
+                },
+            ],
+        });
+        const getCreditor = await this.creditorRepository.getOne({
+            $or: [
+                {
+                    'basicInformation.email': body.creditor.basicInformation.email.toLowerCase(),
+                },
+                {
+                    'basicInformation.phone': body.creditor.basicInformation.phone,
+                },
+            ],
+        });
+        if (!getDebtor) {
             contactIds = await this.createContacts(body.debtor.contacts);
             const debtorData = {
                 ...body.debtor,
@@ -137,7 +158,7 @@ class CaseUtil {
             };
             debtor = await this.createDebtor(debtorData);
         }
-        if (!getCreditor[0]) {
+        if (!getCreditor) {
             contactIds = await this.createContacts(body.creditor.contacts);
             const creditorData = {
                 ...body.creditor,
@@ -145,10 +166,10 @@ class CaseUtil {
             };
             creditor = await this.createCreditor(creditorData);
         }
-        if (getDebtor[0])
-            debtor = getDebtor[1];
-        if (getCreditor[0])
-            creditor = getCreditor[1];
+        if (getDebtor)
+            debtor = getDebtor;
+        if (getCreditor)
+            creditor = getCreditor;
         body.debtor = debtor?._id;
         body.creditor = creditor?._id;
         const newCase = new case_repomodel_1.Case();
@@ -175,11 +196,57 @@ class CaseUtil {
                 }
             }
         }
-        console.log(amount);
         if (amount !== body.remaining) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
         return [true, ''];
+    }
+    async getClientsList(cases) {
+        const seenDebtor = new Set();
+        const result = [];
+        const mappingIndex = {};
+        const mappingCreditors = {};
+        let seenCreditor = new Set();
+        let index = 0;
+        for (const tempCase of cases) {
+            let debtorId = String(tempCase.debtor._id);
+            let creditorId = String(tempCase.creditor);
+            if (seenDebtor.has(debtorId)) {
+                let index = mappingIndex[debtorId];
+                let creditorSet = mappingCreditors[debtorId];
+                let resultObj = result[index];
+                if (!creditorSet.has(creditorId)) {
+                    resultObj.creditors += 1;
+                    creditorSet.add(creditorId);
+                    mappingCreditors[debtorId] = creditorSet;
+                }
+                result[index] = {
+                    cases: resultObj.cases + 1,
+                    creditors: resultObj.creditors,
+                    name: resultObj.name,
+                    status: resultObj.status,
+                    totalDebt: resultObj.totalDebt + tempCase.totalDebt,
+                    id: resultObj.id,
+                };
+            }
+            else {
+                seenDebtor.add(debtorId);
+                seenCreditor.add(creditorId);
+                result.push({
+                    cases: 1,
+                    creditors: 1,
+                    name: tempCase.debtor.basicInformation.fullName,
+                    status: tempCase.debtor.basicInformation.status,
+                    totalDebt: tempCase.totalDebt,
+                    id: debtorId,
+                });
+                mappingIndex[debtorId] = index;
+                index += 1;
+                mappingCreditors[debtorId] = seenCreditor;
+                seenCreditor = new Set();
+            }
+        }
+        return result;
     }
 }
 exports.default = new CaseUtil();

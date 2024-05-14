@@ -9,9 +9,18 @@ class CreditorService {
     this.creditorRepository = new CreditorRepository();
   }
 
-  async getCreditor(email: string): Promise<[boolean, ICreditor | string]> {
+  async getCreditor(text: string): Promise<[boolean, ICreditor | string]> {
     const creditor = await this.creditorRepository.getOne<ICreditor>(
-      {'basicInformation.email': email},
+      {
+        $or: [
+          {
+            'basicInformation.email': text.toLowerCase(),
+          },
+          {
+            'basicInformation.phone': text,
+          },
+        ],
+      },
       undefined,
       undefined,
       ['contacts']

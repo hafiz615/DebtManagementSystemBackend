@@ -9,8 +9,17 @@ class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
-    async getCreditor(email) {
-        const creditor = await this.creditorRepository.getOne({ 'basicInformation.email': email }, undefined, undefined, ['contacts']);
+    async getCreditor(text) {
+        const creditor = await this.creditorRepository.getOne({
+            $or: [
+                {
+                    'basicInformation.email': text.toLowerCase(),
+                },
+                {
+                    'basicInformation.phone': text,
+                },
+            ],
+        }, undefined, undefined, ['contacts']);
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }
