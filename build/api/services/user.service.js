@@ -87,6 +87,7 @@ class UserService {
             req.body.password = await common_util_1.default.hashPassword(req.body.password);
         }
         const bodyUser = req.body;
+        delete bodyUser.isActive;
         const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];

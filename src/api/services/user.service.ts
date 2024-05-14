@@ -91,6 +91,7 @@ class UserService {
       req.body.password = await commonUtil.hashPassword(req.body.password);
     }
     const bodyUser = req.body as IUser;
+    delete bodyUser.isActive;
     const user = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
       {...bodyUser}

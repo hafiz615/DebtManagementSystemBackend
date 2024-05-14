@@ -10,11 +10,11 @@ const authorize_middleware_1 = __importDefault(require("../../middleware/authori
 const router = (0, express_1.Router)();
 router.post('/createUser', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_validate_1.default.createUser, user_controller_1.default.createUser);
 router.post('/signIn', user_validate_1.default.signIn, user_controller_1.default.signIn);
-router.get('/getUserById', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUserById);
+router.get('/getUserById/:id', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.getUserById);
 router.get('/getUser', user_controller_1.default.getUser);
-router.put('/updateUserById', authorize_middleware_1.default.validateAuth, user_controller_1.default.updateUser);
+router.put('/updateUser', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.updateUser);
 router.put('/updatePassword', user_controller_1.default.updatePassword);
-router.delete('/deleteUserById', authorize_middleware_1.default.validateAuth, user_controller_1.default.deleteUserById);
+router.delete('/deleteUserById/:id', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.deleteUserById);
 router.post('/verifyInvitationLink', user_controller_1.default.verifyInvitationLink);
 router.post('/resendInvitationLink', user_controller_1.default.resendInvitationLink);
 router.get('/getAllUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getAllUsers);
