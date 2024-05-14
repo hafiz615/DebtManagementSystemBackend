@@ -73,14 +73,14 @@ class CaseValidate {
         notes: Joi.string(),
         lastFundedDate: Joi.date().required(),
         historicalRange: Joi.object({
-          minimum: Joi.number().required(),
-          maximum: Joi.number().required(),
+          minimum: Joi.number().strict().required(),
+          maximum: Joi.number().strict().required(),
         }),
       }).optional(),
-      totalDebt: Joi.number().required(),
+      totalDebt: Joi.number().strict().required(),
       lastPaymentDate: Joi.date(),
-      paidAmount: Joi.number().required(),
-      remaining: Joi.number().required(),
+      paidAmount: Joi.number().strict().required(),
+      remaining: Joi.number().strict().required(),
       status: Joi.string().required(),
       documents: Joi.array().items(
         Joi.object({
@@ -90,7 +90,7 @@ class CaseValidate {
       ),
       intervals: Joi.array().items(
         Joi.object({
-          amount: Joi.number().required(),
+          amount: Joi.number().strict().required(),
           startDate: Joi.date().required(),
           frequency: Joi.number().optional(),
           timePeriod: Joi.string().valid(

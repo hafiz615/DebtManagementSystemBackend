@@ -25,7 +25,6 @@ class UploadController {
         })
       );
     } catch (error: any) {
-      console.log(error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));

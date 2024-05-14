@@ -12,7 +12,7 @@ class CreditorController {
   getCreditor = async (req: Request, res: Response) => {
     try {
       const response = await this.creditorService.getCreditor(
-        req.body.email ? req.body.email : ''
+        req.body.text ? req.body.text : ''
       );
       if (!response[0]) {
         return res

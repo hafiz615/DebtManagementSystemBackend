@@ -10,7 +10,7 @@ class CreditorController {
     constructor() {
         this.getCreditor = async (req, res) => {
             try {
-                const response = await this.creditorService.getCreditor(req.body.email ? req.body.email : '');
+                const response = await this.creditorService.getCreditor(req.body.text ? req.body.text : '');
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)

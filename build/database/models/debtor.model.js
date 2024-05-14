@@ -74,7 +74,6 @@ const debtorModel = new mongoose_1.Schema({
         EIN: {
             type: String,
             required: true,
-            unique: true,
         },
         businessCategory: {
             type: String,

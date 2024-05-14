@@ -41,7 +41,6 @@ class UploadUtil {
       s3FileKeys.push({
         key: key,
         originalFileName: file.originalname,
-        url: await this.getS3FileSignedUrl(key),
       });
     }
     await Promise.all(uploadPromises);
