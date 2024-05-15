@@ -4,7 +4,7 @@ import creditorController from '../controllers/creditor/creditor.controller';
 
 const router = Router();
 
-router.get(
+router.post(
   '/getCreditor',
   authorize.validateAuth,
   creditorController.getCreditor
