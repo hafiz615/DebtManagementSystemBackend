@@ -59,6 +59,10 @@ class BaseRepository {
     async getCount(filter) {
         return (await this.model.countDocuments(filter || {})) || 0;
     }
+    async applyAggregate(aggregate, options) {
+        const response = await this.model.aggregate(aggregate, options).exec();
+        return response;
+    }
 }
 exports.BaseRepository = BaseRepository;
 //# sourceMappingURL=base.repository.js.map

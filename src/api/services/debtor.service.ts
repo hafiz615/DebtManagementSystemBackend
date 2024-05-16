@@ -4,6 +4,7 @@ import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {CaseRepository} from '../repository/case/case.repository';
 import {Request} from 'express';
 import caseUtil from '../../utils/case.util';
+import {ICase} from '../../database/interfaces/case.interface';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -39,19 +40,27 @@ class DebtorService {
     return [true, debtor];
   }
 
-  async listing(req: Request) {
-    const cases: any = await this.caseRepository.getAll(
-      {},
+  async listingDetails(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    const cases = await this.caseRepository.getAll<ICase>(
+      {debtor: req.params.id},
       undefined,
       undefined,
       undefined,
-      ['debtor'],
+      ['debtor', {path: 'creditor', select: ['basicInformation.fullName']}],
       undefined,
       Number(req.query.page),
       Number(req.query.limit)
     );
-    const result = await caseUtil.getClientsList(cases);
-    return [true, result];
+    const clientDetails = await caseUtil.getClientDetails(cases);
+    return [true, {debtor: debtor.basicInformation, ...clientDetails}];
+  }
+
+  async searchListing(req: Request) {
+    const pipeline = await caseUtil.getClientListingPipeline(req);
+    const clientDetails =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
+    return [true, clientDetails];
   }
 }
 

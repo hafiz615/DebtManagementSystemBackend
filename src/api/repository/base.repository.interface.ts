@@ -1,4 +1,10 @@
-import {PopulateOptions, ProjectionType, QueryOptions} from 'mongoose';
+import {
+  AggregateOptions,
+  PipelineStage,
+  PopulateOptions,
+  ProjectionType,
+  QueryOptions,
+} from 'mongoose';
 import {FilterQuery} from 'mongoose';
 
 export interface IBaseRepository<D> {
@@ -35,4 +41,8 @@ export interface IBaseRepository<D> {
   delete<T>(filter?: FilterQuery<T>): Promise<boolean>;
   deleteMany<T>(filter?: FilterQuery<T>): Promise<boolean>;
   getCount<T>(filter?: FilterQuery<T>): Promise<number>;
+  applyAggregate<T>(
+    aggregate?: PipelineStage[],
+    options?: AggregateOptions
+  ): Promise<T>;
 }

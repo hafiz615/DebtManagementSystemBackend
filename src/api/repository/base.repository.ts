@@ -1,6 +1,8 @@
 import {
+  AggregateOptions,
   FilterQuery,
   Model,
+  PipelineStage,
   PopulateOptions,
   ProjectionType,
   QueryOptions,
@@ -103,5 +105,13 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
   }
   async getCount<T>(filter?: FilterQuery<T>): Promise<number> {
     return (await this.model.countDocuments(filter || {})) || 0;
+  }
+
+  async applyAggregate<T>(
+    aggregate?: PipelineStage[],
+    options?: AggregateOptions
+  ): Promise<T> {
+    const response = await this.model.aggregate(aggregate, options).exec();
+    return response as T;
   }
 }
