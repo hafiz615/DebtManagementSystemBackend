@@ -7,7 +7,8 @@ const express_1 = require("express");
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const debtor_controller_1 = __importDefault(require("../controllers/debtor/debtor.controller"));
 const router = (0, express_1.Router)();
-router.get('/getDebtor', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtor);
-router.get('/listing', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.listing);
+router.post('/getDebtor', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtor);
+router.get('/listing/details/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.listingDetails);
+router.get('/listing/search', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.searchListing);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

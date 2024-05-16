@@ -25,7 +25,7 @@ class CaseController {
             catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getAllCases = async (req, res) => {

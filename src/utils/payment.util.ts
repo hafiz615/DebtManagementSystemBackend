@@ -1,8 +1,3 @@
-import {PaymentRepository} from '../api/repository/payment/payment.repository';
-import {ICase} from '../database/interfaces/case.interface';
-import {IPayment} from '../database/interfaces/payment.interface';
-import commonUtil from './common.util';
-
 class PaymentUtil {
   async getFilteredPayments(payments: any) {
     const transformedArray = payments.map(obj => ({
@@ -19,6 +14,11 @@ class PaymentUtil {
       failedReasonCaptured: obj.failedReasonCaptured,
       tryDate: obj.rescheduled,
     }));
+
+    return this.getFilteredPaymentsObj(transformedArray);
+  }
+
+  async getFilteredPaymentsObj(transformedArray: any) {
     const failedPayments = transformedArray.filter(
       payment => payment.captured === 'Failed'
     );
@@ -42,46 +42,6 @@ class PaymentUtil {
       successAuthorizations: successAuthorizations,
       upcomingPayments: upcomingPayments,
     };
-  }
-
-  async getFilteredUpcomingPayments(cases: ICase[], currentDate: string) {
-    const upcomingPayments = [];
-    const buildUpcomingPayment = {};
-    for (const tempCase of cases) {
-      tempCase.intervals.forEach(interval => {
-        if (
-          new Date(interval.startDate).getTime() >
-          new Date(currentDate).getTime()
-        ) {
-          const debtor: any = tempCase.debtor;
-          buildUpcomingPayment['amount'] = interval.amount;
-          buildUpcomingPayment['dueDate'] = interval.startDate;
-          buildUpcomingPayment['fullName'] = debtor.basicInformation.fullName;
-          buildUpcomingPayment['SSID'] = debtor.basicInformation.SSID;
-          upcomingPayments.push(buildUpcomingPayment);
-        }
-      });
-    }
-    return upcomingPayments;
-  }
-
-  async getFilteredUpcomingPaymentsCase(tempCase: ICase) {
-    let currentDate = commonUtil.getCurrentDate();
-    const upcomingPayments = [];
-    const buildUpcomingPayment = {};
-    tempCase.intervals.forEach(interval => {
-      if (
-        new Date(interval.startDate).getTime() > new Date(currentDate).getTime()
-      ) {
-        const debtor: any = tempCase.debtor;
-        buildUpcomingPayment['amount'] = interval.amount;
-        buildUpcomingPayment['dueDate'] = interval.startDate;
-        buildUpcomingPayment['fullName'] = debtor.basicInformation.fullName;
-        buildUpcomingPayment['SSID'] = debtor.basicInformation.SSID;
-        upcomingPayments.push(buildUpcomingPayment);
-      }
-    });
-    return upcomingPayments;
   }
 }
 export default new PaymentUtil();

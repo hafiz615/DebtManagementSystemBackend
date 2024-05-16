@@ -18,6 +18,8 @@ import DebtorService from '../api/services/debtor.service';
 import CreditorService from '../api/services/creditor.service';
 import {Case} from '../database/repomodels/case.repomodel';
 import constantsUtil from './constants.util';
+import paymentUtil from './payment.util';
+import {Request} from 'express';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -289,6 +291,7 @@ class CaseUtil {
       } else {
         seenDebtor.add(debtorId);
         seenCreditor.add(creditorId);
+        console.log(tempCase, 'tempcaseeee');
         result.push({
           cases: 1,
           creditors: 1,
@@ -304,6 +307,205 @@ class CaseUtil {
       }
     }
     return result;
+  }
+
+  async getClientDetails(cases: any) {
+    const caseIds = cases.map((tempCase: ICase) => {
+      return String(tempCase._id);
+    });
+    const payments = await this.paymentRepository.getAll<IPayment>({
+      caseId: caseIds,
+    });
+    const filteredPayments = await paymentUtil.getFilteredPaymentsObj(payments);
+    const resultObj = {};
+    const result = [];
+    let caseIndex = 0,
+      bin = 0;
+    let objectCreated = false;
+    while (true) {
+      if (
+        bin === filteredPayments.upcomingPayments.length &&
+        caseIndex === caseIds.length
+      ) {
+        break;
+      }
+      if (
+        caseIds[caseIndex] ===
+        String(filteredPayments.upcomingPayments[bin]?.caseId)
+      ) {
+        if (!objectCreated) {
+          resultObj['creditor'] =
+            cases[caseIndex].creditor.basicInformation.fullName;
+          resultObj['totalDebt'] = cases[caseIndex].totalDebt;
+          resultObj['upcomingDebt'] =
+            filteredPayments.upcomingPayments[bin].amount;
+          resultObj['upcomingAuthDate'] = new Date(
+            filteredPayments.upcomingPayments[bin].dueDate
+          )
+            .toISOString()
+            .split('T')[0];
+          resultObj['caseOwner'] = cases[caseIndex].caseOwner;
+          result.push(resultObj);
+          objectCreated = true;
+        }
+        bin += 1;
+      } else {
+        if (!objectCreated) {
+          resultObj['creditor'] =
+            cases[caseIndex].creditor.basicInformation.fullName;
+          resultObj['totalDebt'] = cases[caseIndex].totalDebt;
+          resultObj['upcomingDebt'] = 0;
+          resultObj['upcomingAuthDate'] = '-';
+          resultObj['caseOwner'] = cases[caseIndex].caseOwner;
+          result.push(resultObj);
+        }
+        caseIndex += 1;
+        objectCreated = false;
+      }
+    }
+    bin = 0;
+    caseIndex = 0;
+    let findSuccess = false;
+    let finalResult = [];
+    while (true) {
+      if (
+        bin === filteredPayments.successPayments.length &&
+        caseIndex === caseIds.length
+      ) {
+        break;
+      }
+      if (
+        caseIds[caseIndex] ===
+        String(filteredPayments.successPayments[bin]?.caseId)
+      ) {
+        bin += 1;
+        findSuccess = true;
+      } else {
+        if (findSuccess) {
+          let temp = {...result[caseIndex]};
+          temp['lastPaymentDate'] = new Date(
+            filteredPayments.successPayments[bin - 1].dueDate
+          )
+            .toISOString()
+            .split('T')[0];
+          temp['lastPayment'] =
+            filteredPayments.successPayments[bin - 1].amount;
+          finalResult.push(temp);
+        }
+        if (!findSuccess) {
+          let temp = {...result[caseIndex]};
+          temp['lastPaymentDate'] = '-';
+          temp['lastPayment'] = 0;
+          finalResult.push(temp);
+        }
+        caseIndex += 1;
+        findSuccess = false;
+      }
+    }
+    const countPayments = {
+      failedAuthorizations: filteredPayments.failedAuthorizations.length,
+      failedPayments: filteredPayments.failedPayments.length,
+      successAuthorizations: filteredPayments.successAuthorizations.length,
+      successPayments: filteredPayments.successPayments.length,
+    };
+
+    return {columns: finalResult, paymentsCount: countPayments};
+  }
+
+  async getClientListingPipeline(req: Request) {
+    let page = 1;
+    let limit = 10;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    const filters = await this.getClientListingFilters(req);
+    console.log(filters);
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'debtors',
+          localField: 'debtor',
+          foreignField: '_id',
+          as: 'debtor',
+        },
+      },
+      {
+        $unwind: '$debtor',
+      },
+      {
+        $match: filters[1],
+      },
+      {
+        $group: {
+          _id: {$toString: '$debtor._id'},
+          debtorName: {$first: '$debtor.basicInformation.fullName'},
+          totalCases: {$sum: 1},
+          totalCreditors: {$addToSet: '$creditor'},
+          totalDebt: {$sum: '$totalDebt'},
+          status: {$first: '$debtor.basicInformation.status'},
+        },
+      },
+      {
+        $project: {
+          id: '$_id',
+          _id: 0,
+          debtorName: 1,
+          totalCases: 1,
+          totalCreditors: {$size: '$totalCreditors'}, // Count unique creditors
+          totalDebt: 1,
+          status: 1,
+        },
+      },
+      {
+        $match: filters[0],
+      },
+      {
+        $skip: (page - 1) * limit,
+      },
+      {
+        $limit: limit,
+      },
+    ];
+    console.log(pipeline);
+    return pipeline;
+  }
+
+  async getClientListingFilters(req: Request) {
+    const queryFilter = {};
+    const querySearch = {};
+    if (req.query.filter === 'true') {
+      let filter = req.body.filter;
+      if (filter.totalDebt) {
+        queryFilter['totalDebt'] = {
+          $gte: filter.totalDebt.min,
+          $lte: filter.totalDebt.max,
+        };
+      }
+      if (filter.totalCases) {
+        queryFilter['totalCases'] = {
+          $gte: filter.totalCases.min,
+          $lte: filter.totalCases.max,
+        };
+      }
+      if (filter.totalCreditors) {
+        queryFilter['totalCreditors'] = {
+          $gte: filter.totalCreditors.min,
+          $lte: filter.totalCreditors.max,
+        };
+      }
+    }
+    if (req.query.search === 'true') {
+      querySearch['$or'] = [
+        {'debtor.basicInformation.fullName': req.body.text},
+        {'debtor.basicInformation.status': req.body.text},
+      ];
+    }
+    return [queryFilter, querySearch];
   }
 }
 export default new CaseUtil();

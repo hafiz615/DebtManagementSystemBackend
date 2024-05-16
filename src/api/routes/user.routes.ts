@@ -12,17 +12,24 @@ router.post(
   userController.createUser
 );
 router.post('/signIn', userValidate.signIn, userController.signIn);
-router.get('/getUserById', authorize.validateAuth, userController.getUserById);
+router.get(
+  '/getUserById/:id',
+  authorize.validateAuth,
+  authorize.validateRole,
+  userController.getUserById
+);
 router.get('/getUser', userController.getUser);
 router.put(
-  '/updateUserById',
+  '/updateUser',
   authorize.validateAuth,
+  authorize.validateRole,
   userController.updateUser
 );
 router.put('/updatePassword', userController.updatePassword);
 router.delete(
-  '/deleteUserById',
+  '/deleteUserById/:id',
   authorize.validateAuth,
+  authorize.validateRole,
   userController.deleteUserById
 );
 router.post('/verifyInvitationLink', userController.verifyInvitationLink);

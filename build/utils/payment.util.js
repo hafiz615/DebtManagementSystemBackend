@@ -1,9 +1,5 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const common_util_1 = __importDefault(require("./common.util"));
 class PaymentUtil {
     async getFilteredPayments(payments) {
         const transformedArray = payments.map(obj => ({
@@ -20,6 +16,9 @@ class PaymentUtil {
             failedReasonCaptured: obj.failedReasonCaptured,
             tryDate: obj.rescheduled,
         }));
+        return this.getFilteredPaymentsObj(transformedArray);
+    }
+    async getFilteredPaymentsObj(transformedArray) {
         const failedPayments = transformedArray.filter(payment => payment.captured === 'Failed');
         const successPayments = transformedArray.filter(payment => payment.captured === 'Success');
         const failedAuthorizations = transformedArray.filter(payment => payment.authorized === 'Failed');
@@ -32,40 +31,6 @@ class PaymentUtil {
             successAuthorizations: successAuthorizations,
             upcomingPayments: upcomingPayments,
         };
-    }
-    async getFilteredUpcomingPayments(cases, currentDate) {
-        const upcomingPayments = [];
-        const buildUpcomingPayment = {};
-        for (const tempCase of cases) {
-            tempCase.intervals.forEach(interval => {
-                if (new Date(interval.startDate).getTime() >
-                    new Date(currentDate).getTime()) {
-                    const debtor = tempCase.debtor;
-                    buildUpcomingPayment['amount'] = interval.amount;
-                    buildUpcomingPayment['dueDate'] = interval.startDate;
-                    buildUpcomingPayment['fullName'] = debtor.basicInformation.fullName;
-                    buildUpcomingPayment['SSID'] = debtor.basicInformation.SSID;
-                    upcomingPayments.push(buildUpcomingPayment);
-                }
-            });
-        }
-        return upcomingPayments;
-    }
-    async getFilteredUpcomingPaymentsCase(tempCase) {
-        let currentDate = common_util_1.default.getCurrentDate();
-        const upcomingPayments = [];
-        const buildUpcomingPayment = {};
-        tempCase.intervals.forEach(interval => {
-            if (new Date(interval.startDate).getTime() > new Date(currentDate).getTime()) {
-                const debtor = tempCase.debtor;
-                buildUpcomingPayment['amount'] = interval.amount;
-                buildUpcomingPayment['dueDate'] = interval.startDate;
-                buildUpcomingPayment['fullName'] = debtor.basicInformation.fullName;
-                buildUpcomingPayment['SSID'] = debtor.basicInformation.SSID;
-                upcomingPayments.push(buildUpcomingPayment);
-            }
-        });
-        return upcomingPayments;
     }
 }
 exports.default = new PaymentUtil();

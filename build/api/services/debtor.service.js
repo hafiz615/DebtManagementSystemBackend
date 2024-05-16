@@ -31,10 +31,16 @@ class DebtorService {
         }
         return [true, debtor];
     }
-    async listing(req) {
-        const cases = await this.caseRepository.getAll({}, undefined, undefined, undefined, ['debtor'], undefined, Number(req.query.page), Number(req.query.limit));
-        const result = await case_util_1.default.getClientsList(cases);
-        return [true, result];
+    async listingDetails(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        const cases = await this.caseRepository.getAll({ debtor: req.params.id }, undefined, undefined, undefined, ['debtor', { path: 'creditor', select: ['basicInformation.fullName'] }], undefined, Number(req.query.page), Number(req.query.limit));
+        const clientDetails = await case_util_1.default.getClientDetails(cases);
+        return [true, { debtor: debtor.basicInformation, ...clientDetails }];
+    }
+    async searchListing(req) {
+        const pipeline = await case_util_1.default.getClientListingPipeline(req);
+        const clientDetails = await this.caseRepository.applyAggregate(pipeline);
+        return [true, clientDetails];
     }
 }
 exports.default = DebtorService;
