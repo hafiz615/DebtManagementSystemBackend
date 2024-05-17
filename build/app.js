@@ -15,7 +15,11 @@ class App {
         this.database = new database_config_1.Database();
     }
     config() {
-        this.app.use((0, cors_1.default)());
+        const corsOptions = {
+            origin: 'https://debt-management-system-front-end.vercel.app', // Allow only your frontend domain
+            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        };
+        this.app.use((0, cors_1.default)(corsOptions));
         this.app.use(body_parser_1.default.json());
         this.app.use(body_parser_1.default.urlencoded({ extended: false }));
         (0, base_route_1.default)(this.app);

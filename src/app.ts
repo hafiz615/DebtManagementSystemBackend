@@ -15,7 +15,11 @@ class App {
   }
 
   private config(): void {
-    this.app.use(cors());
+    const corsOptions = {
+      origin: 'https://debt-management-system-front-end.vercel.app', // Allow only your frontend domain
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    };
+    this.app.use(cors(corsOptions));
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({extended: false}));
     setup(this.app);
