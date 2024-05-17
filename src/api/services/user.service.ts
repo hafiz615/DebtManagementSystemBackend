@@ -172,7 +172,7 @@ class UserService {
       {role: {$ne: 'Admin'}},
       undefined,
       undefined,
-      undefined,
+      {createdAt: -1},
       undefined,
       undefined,
       Number(req.query.page),

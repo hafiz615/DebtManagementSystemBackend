@@ -6,38 +6,54 @@ import Joi from 'joi';
 class CaseValidate {
   async validateCase(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
+      documents: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
       debtor: Joi.object({
         basicInformation: Joi.object({
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
-          SSID: Joi.string().required(),
-          country: Joi.string().allow(''),
-          state: Joi.string().allow(''),
+          SSID: Joi.string()
+            .pattern(/^\d{9}$/)
+            .required(),
+          country: Joi.string().required(),
+          state: Joi.string().required(),
           status: Joi.string()
             .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
             .required(),
-          city: Joi.string().allow(''),
-          zipCode: Joi.string().allow(''),
-          phone: Joi.string().allow(''),
-          address: Joi.string().allow(''),
+          city: Joi.string().required(),
+          zipCode: Joi.string().required(),
+          phone: Joi.string()
+            .pattern(/^\d{10,11}$/)
+            .required(),
+          address: Joi.string().required(),
         }),
         businessInformation: Joi.object({
           companyName: Joi.string().required(),
-          EIN: Joi.string().required(),
-          businessCategory: Joi.string().allow(''),
+          EIN: Joi.string()
+            .pattern(/^\d{9}$/)
+            .required(),
+          businessCategory: Joi.string().required(),
           description: Joi.string().allow(''),
-          country: Joi.string().allow(''),
-          state: Joi.string().allow(''),
-          city: Joi.string().allow(''),
-          zipCode: Joi.string().allow(''),
-          phone: Joi.string().allow(''),
-          address: Joi.string().allow(''),
+          country: Joi.string().required(),
+          state: Joi.string().required(),
+          city: Joi.string().required(),
+          zipCode: Joi.string().required(),
+          phone: Joi.string()
+            .pattern(/^\d{10,11}$/)
+            .required(),
+          address: Joi.string().required(),
         }),
         contacts: Joi.array().items(
           Joi.object({
             name: Joi.string().required(),
             title: Joi.string().required(),
-            phone: Joi.string().allow(''),
+            phone: Joi.string()
+              .pattern(/^\d{10,11}$/)
+              .required(),
             email: Joi.string().email().required(),
             relationWithDebtor: Joi.string().allow(''),
             country: Joi.string().allow(''),
@@ -51,17 +67,21 @@ class CaseValidate {
         basicInformation: Joi.object({
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
-          phone: Joi.string().allow(''),
+          phone: Joi.string()
+            .pattern(/^\d{10,11}$/)
+            .required(),
         }),
         businessInformation: Joi.object({
           companyName: Joi.string().required(),
-          businessCategory: Joi.string().allow(''),
+          businessCategory: Joi.string().required(),
         }),
         contacts: Joi.array().items(
           Joi.object({
             name: Joi.string().required(),
             title: Joi.string().required(),
-            phone: Joi.string().allow(''),
+            phone: Joi.string()
+              .pattern(/^\d{10,11}$/)
+              .required(),
             email: Joi.string().email().required(),
             relationWithDebtor: Joi.string().allow(''),
             country: Joi.string().allow(''),
@@ -70,35 +90,26 @@ class CaseValidate {
             zipCode: Joi.string().allow(''),
           })
         ),
-        notes: Joi.string(),
+        notes: Joi.string().allow(''),
         lastFundedDate: Joi.date().required(),
         historicalRange: Joi.object({
           minimum: Joi.number().strict().required(),
           maximum: Joi.number().strict().required(),
         }),
-      }).optional(),
+      }).required(),
       totalDebt: Joi.number().strict().required(),
       lastPaymentDate: Joi.date(),
       paidAmount: Joi.number().strict().required(),
       remaining: Joi.number().strict().required(),
       status: Joi.string().required(),
-      documents: Joi.array().items(
-        Joi.object({
-          key: Joi.string().required(),
-          originalFileName: Joi.string().required(),
-        }).optional()
-      ),
       intervals: Joi.array().items(
         Joi.object({
           amount: Joi.number().strict().required(),
           startDate: Joi.date().required(),
           frequency: Joi.number().optional(),
-          timePeriod: Joi.string().valid(
-            'Weekly',
-            'Monthly',
-            'Custom',
-            'Fortnightly'
-          ),
+          timePeriod: Joi.string()
+            .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly')
+            .required(),
         })
       ),
     });

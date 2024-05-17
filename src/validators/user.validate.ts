@@ -11,11 +11,15 @@ class UserRequests {
       role: Joi.string().valid('Negotiator', 'Manager').required(),
       isActive: Joi.string(),
       createdBy: Joi.string().required(),
-      SSID: Joi.string(),
-      dateOfBirth: Joi.date(),
-      phone: Joi.string(),
-      gender: Joi.string(),
-      address: Joi.string(),
+      SSID: Joi.string()
+        .pattern(/^[a-zA-Z0-9]+$/)
+        .required(),
+      dateOfBirth: Joi.date().required(),
+      phone: Joi.string()
+        .pattern(/^\d{10,11}$/)
+        .required(),
+      gender: Joi.string().valid('Male', 'Female', 'Other').required(),
+      address: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

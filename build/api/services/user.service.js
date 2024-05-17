@@ -17,7 +17,7 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
-            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' } }, undefined, undefined, undefined, undefined, undefined, Number(req.query.page), Number(req.query.limit));
+            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' } }, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
             if (!users.length) {
                 return [false, constants_util_2.default.notFoundMessage('Users')];
             }
