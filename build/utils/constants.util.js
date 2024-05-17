@@ -35,7 +35,7 @@ exports.default = {
         PAYMENT_CALCULATION_ERROR: 'Payment calculation is not correct!',
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
-    ACCOUNT_INVITATION_BASE_LINK: 'http://localhost:3000/set-password',
+    ACCOUNT_INVITATION_BASE_LINK: 'https://debt-management-system-front-end.vercel.app/set-password',
     passwordRegex: /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
     failureRegisterMessage: (name) => `${name} not registered!`,
     successRegisterMessage: (name) => `${name} registered successfully!`,
