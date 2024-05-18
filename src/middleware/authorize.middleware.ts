@@ -36,7 +36,8 @@ class Authorize {
 
           const exists = await new TokenService().validateToken(
             token,
-            decoded?.userId
+            decoded?.userId,
+            decoded?.sessionId
           );
           if (exists === null) {
             return res

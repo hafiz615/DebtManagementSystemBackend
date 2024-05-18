@@ -9,10 +9,11 @@ const user_repository_1 = require("../repository/user/user.repository");
 dotenv_1.default.config();
 class TokenService {
     constructor() {
-        this.create = async (userId) => {
+        this.create = async (userId, uuid) => {
             try {
                 const accessToken = this.generateJwtToken({
                     userId: userId,
+                    sessionId: uuid,
                 }, process.env.jwtKey);
                 return accessToken;
             }
@@ -39,9 +40,12 @@ class TokenService {
         });
         return token;
     }
-    async validateToken(token, userId) {
-        const user = await this.userRepository.getById(userId, '+jwtToken');
-        return user?.jwtToken === token ? user : null;
+    async validateToken(token, userId, sessionId) {
+        const user = await this.userRepository.getOne({
+            _id: userId,
+            sessionIds: { $in: [sessionId] },
+        });
+        return user ? user : null;
     }
 }
 exports.default = TokenService;

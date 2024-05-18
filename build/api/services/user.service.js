@@ -14,6 +14,7 @@ const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
+const uuid_1 = require("uuid");
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
@@ -47,15 +48,16 @@ class UserService {
         await this.userRepository.updateById(user._id, {
             verifyToken: token,
         });
-        return [true, (0, lodash_1.omit)(user.toJSON(), 'password', 'jwtToken', 'verifyToken')];
+        return [true, (0, lodash_1.omit)(user.toJSON(), 'password', 'sessionIds', 'verifyToken')];
     }
     async signIn(email, password) {
         const userExist = await user_util_1.default.checkUserAndComparePassword(email.toLowerCase(), password);
         if (!userExist)
             return [false, constants_util_1.default.Messages.INVALID];
-        const token = await this.tokenService.create(userExist._id);
+        const uuid = (0, uuid_1.v4)();
+        const token = await this.tokenService.create(userExist._id, uuid);
         await this.userRepository.updateById(userExist._id, {
-            jwtToken: token,
+            $push: { sessionIds: uuid },
         });
         return [
             true,
@@ -140,8 +142,9 @@ class UserService {
         let user = req.body;
         user.isActive = true;
         user.verifyToken = '';
-        const token = await this.tokenService.create(findUser._id);
-        user.jwtToken = token;
+        const uuid = (0, uuid_1.v4)();
+        const token = await this.tokenService.create(findUser._id, uuid);
+        user.sessionIds = [uuid];
         const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user });
         if (!updatedUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];

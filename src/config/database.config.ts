@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 let dbconfig =
   'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
+
 export class Database {
   protected dbUri: string;
 

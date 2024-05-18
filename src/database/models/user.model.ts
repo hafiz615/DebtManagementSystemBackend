@@ -13,10 +13,6 @@ const userModel: Schema = new Schema({
     unique: true,
     immutable: true,
   },
-  jwtToken: {
-    type: String,
-    select: false,
-  },
   verifyToken: {
     type: String,
     select: false,
@@ -45,6 +41,10 @@ const userModel: Schema = new Schema({
   },
   address: {
     type: String,
+  },
+  sessionIds: {
+    type: Array<String>,
+    select: false,
   },
   createdAt: {
     type: Date,

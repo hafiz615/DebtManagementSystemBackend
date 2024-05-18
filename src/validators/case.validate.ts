@@ -62,7 +62,7 @@ class CaseValidate {
             zipCode: Joi.string().allow(''),
           })
         ),
-      }).optional(),
+      }),
       creditor: Joi.object({
         basicInformation: Joi.object({
           fullName: Joi.string().required(),
@@ -96,7 +96,7 @@ class CaseValidate {
           minimum: Joi.number().strict().required(),
           maximum: Joi.number().strict().required(),
         }),
-      }).required(),
+      }),
       totalDebt: Joi.number().strict().required(),
       lastPaymentDate: Joi.date(),
       paidAmount: Joi.number().strict().required(),
@@ -108,7 +108,7 @@ class CaseValidate {
           startDate: Joi.date().required(),
           frequency: Joi.number().optional(),
           timePeriod: Joi.string()
-            .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly')
+            .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
             .required(),
         })
       ),

@@ -120,6 +120,9 @@ class CaseUtil {
     const currentDate = new Date(date);
 
     switch (timePeriod.toLowerCase()) {
+      case 'daily':
+        currentDate.setDate(currentDate.getDate() + number);
+        break;
       case 'weekly':
         currentDate.setDate(currentDate.getDate() + number * 7);
         break;
@@ -291,7 +294,6 @@ class CaseUtil {
       } else {
         seenDebtor.add(debtorId);
         seenCreditor.add(creditorId);
-        console.log(tempCase, 'tempcaseeee');
         result.push({
           cases: 1,
           creditors: 1,
@@ -424,7 +426,6 @@ class CaseUtil {
       limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
     const filters = await this.getClientListingFilters(req);
-    console.log(filters);
     const pipeline = [
       {
         $lookup: {
@@ -471,7 +472,6 @@ class CaseUtil {
         $limit: limit,
       },
     ];
-    console.log(pipeline);
     return pipeline;
   }
 

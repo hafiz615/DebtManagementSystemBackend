@@ -11,7 +11,6 @@ class User {
         this.email = '';
         this.password = '';
         this.role = '';
-        this.jwtToken = '';
         this.verifyToken = '';
         this.isActive = false;
         this.createdBy = '';
@@ -20,6 +19,7 @@ class User {
         this.phone = '';
         this.gender = '';
         this.address = '';
+        this.sessionIds = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

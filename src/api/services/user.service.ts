@@ -11,7 +11,7 @@ import {DataCopier} from '../../utils/dataCopier.util';
 import EmailUtil from '../../utils/email.util';
 import authorize from '../../middleware/authorize.middleware';
 import constantsUtil from '../../utils/constants.util';
-
+import {v4 as uuidv4} from 'uuid';
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
@@ -43,7 +43,7 @@ class UserService {
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
     });
-    return [true, omit(user.toJSON(), 'password', 'jwtToken', 'verifyToken')];
+    return [true, omit(user.toJSON(), 'password', 'sessionIds', 'verifyToken')];
   }
 
   async signIn(
@@ -55,9 +55,10 @@ class UserService {
       password
     );
     if (!userExist) return [false, constants.Messages.INVALID];
-    const token = await this.tokenService.create(userExist._id);
+    const uuid = uuidv4();
+    const token = await this.tokenService.create(userExist._id, uuid);
     await this.userRepository.updateById<IUser>(userExist._id, {
-      jwtToken: token,
+      $push: {sessionIds: uuid},
     });
     return [
       true,
@@ -155,8 +156,9 @@ class UserService {
     let user = req.body as IUser;
     user.isActive = true;
     user.verifyToken = '';
-    const token = await this.tokenService.create(findUser._id);
-    user.jwtToken = token;
+    const uuid = uuidv4();
+    const token = await this.tokenService.create(findUser._id, uuid);
+    user.sessionIds = [uuid];
     const updatedUser = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
       {...user}

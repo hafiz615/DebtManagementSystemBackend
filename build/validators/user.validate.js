@@ -15,7 +15,7 @@ class UserRequests {
             isActive: joi_1.default.string(),
             createdBy: joi_1.default.string().required(),
             SSID: joi_1.default.string()
-                .pattern(/^[a-zA-Z0-9]+$/)
+                .pattern(/^\d{9}$/)
                 .required(),
             dateOfBirth: joi_1.default.date().required(),
             phone: joi_1.default.string()

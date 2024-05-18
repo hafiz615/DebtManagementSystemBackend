@@ -12,7 +12,7 @@ class UserRequests {
       isActive: Joi.string(),
       createdBy: Joi.string().required(),
       SSID: Joi.string()
-        .pattern(/^[a-zA-Z0-9]+$/)
+        .pattern(/^\d{9}$/)
         .required(),
       dateOfBirth: Joi.date().required(),
       phone: Joi.string()
