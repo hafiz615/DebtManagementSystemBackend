@@ -43,6 +43,7 @@ export default {
     `${name} registered successfully!`,
   successAddMessage: (name: string): string => `${name} added successfully!`,
   failureAddMessage: (name: string): string => `Unable to add ${name}`,
+  failureUpdateMessage: (name: string): string => `Unable to update ${name}`,
   successDeleteMessage: (name: string): string =>
     `${name} deleted successfully!`,
   successUpdateMessage: (name: string): string =>

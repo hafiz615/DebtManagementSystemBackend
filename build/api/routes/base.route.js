@@ -9,6 +9,7 @@ const upload_routes_1 = __importDefault(require("./upload.routes"));
 const debtor_routes_1 = __importDefault(require("./debtor.routes"));
 const creditor_routes_1 = __importDefault(require("./creditor.routes"));
 const payment_routes_1 = __importDefault(require("./payment.routes"));
+const settings_routes_1 = __importDefault(require("./settings.routes"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
     app.use('/api/v1/case', case_routes_1.default);
@@ -16,6 +17,7 @@ function setup(app) {
     app.use('/api/v1/debtor', debtor_routes_1.default);
     app.use('/api/v1/creditor', creditor_routes_1.default);
     app.use('/api/v1/payment', payment_routes_1.default);
+    app.use('/api/v1/settings', settings_routes_1.default);
 }
 exports.default = setup;
 //# sourceMappingURL=base.route.js.map
