@@ -62,6 +62,12 @@ const caseModel: Schema = new Schema({
       },
     ],
   },
+  customFields: {
+    type: Array<{
+      name: {type: String};
+      value: {type: Schema.Types.Mixed};
+    }>,
+  },
   createdAt: {
     type: Date,
     required: true,

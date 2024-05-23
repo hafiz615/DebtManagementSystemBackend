@@ -26,25 +26,21 @@ class SettingsController {
         })
       );
     } catch (error) {
+      console.log(error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
 
-  addCustomFields = async (req: Request, res: Response) => {
+  getSettings = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.addSettings(req);
-      if (!response[0]) {
-        return res
-          .status(constants.CODE.BAD_REQUEST)
-          .send(responseHelper.get4xxResponse(response[1]));
-      }
+      const response = await this.settingsService.getSettings();
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Settings'),
+          message: 'Settings!',
         })
       );
     } catch (error) {
@@ -53,9 +49,10 @@ class SettingsController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
-  editCustomFields = async (req: Request, res: Response) => {
+
+  addCustomField = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.addSettings(req);
+      const response = await this.settingsService.addCustomField(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -65,7 +62,29 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Settings'),
+          message: constants.successAddMessage('Custom field'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+  editCustomField = async (req: Request, res: Response) => {
+    try {
+      const response = await this.settingsService.editCustomField(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Custom field'),
         })
       );
     } catch (error) {
@@ -74,9 +93,11 @@ class SettingsController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
-  getCustomFields = async (req: Request, res: Response) => {
+  getCustomFieldsByTarget = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.addSettings(req);
+      const response = await this.settingsService.getCustomFieldsByTarget(
+        String(req.query.target)
+      );
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -86,10 +107,56 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Settings'),
+          message: constants.successFoundMessage('Custom fields'),
         })
       );
     } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+  addCustomFieldByTarget = async (req: Request, res: Response) => {
+    try {
+      const response = await this.settingsService.addCustomFieldByTarget(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successAddMessage('Custom field'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  removeCustomFieldByTarget = async (req: Request, res: Response) => {
+    try {
+      const response =
+        await this.settingsService.removeCustomFieldByTarget(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successDeleteMessage('Custom field'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -97,7 +164,7 @@ class SettingsController {
   };
   deleteCustomField = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.addSettings(req);
+      const response = await this.settingsService.deleteCustomField(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -107,7 +174,7 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Settings'),
+          message: constants.successDeleteMessage('Custom field'),
         })
       );
     } catch (error) {

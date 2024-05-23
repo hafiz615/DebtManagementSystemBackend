@@ -1,73 +1,110 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Settings = void 0;
-class Notify {
-    constructor() {
-        this.email = false;
-        this.sms = false;
-        this.template = '';
-        this.sendTo = {
-            admin: false,
-            manager: false,
-            negotiator: false,
-            debtor: false,
-            creditor: false,
-        };
-    }
-}
-class RetryInterval {
-    constructor() {
-        this.unit = '';
-        this.value = 0;
-        this.maxRetry = 0;
-        this.retryCount = 0;
-    }
-}
-class UnitVal {
-    constructor() {
-        this.unit = '';
-        this.value = 0;
-    }
-}
-class EmailNotify {
-    constructor() {
-        this.name = '';
-        this.event = '';
-        this.html = '';
-    }
-}
-class SmsNotify {
-    constructor() {
-        this.name = '';
-        this.event = '';
-        this.text = '';
-    }
-}
 class Settings {
     constructor() {
         this.paymentsAuthorizations = {
-            failedAuthorizations: Notify,
-            successfulAuthorizations: Notify,
-            failedPayments: Notify,
-            successPayments: Notify,
-            upcomingPayments: Notify,
+            failedAuthorizations: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            successfulAuthorizations: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            failedPayments: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            successPayments: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            upcomingPayments: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
             retryInterval: {
-                failedAuthorization: RetryInterval,
-                failedPayment: RetryInterval,
+                failedAuthorization: {
+                    unit: '',
+                    value: 0,
+                    maxRetry: 0,
+                    retryCount: 0,
+                },
+                failedPayment: {
+                    unit: '',
+                    value: 0,
+                    maxRetry: 0,
+                    retryCount: 0,
+                },
             },
             authorizationInterval: {
-                custom: UnitVal,
-                daily: UnitVal,
-                weekly: UnitVal,
-                fortnightly: UnitVal,
-                monthly: UnitVal,
+                custom: {
+                    unit: '',
+                    value: 0,
+                },
+                daily: {
+                    unit: '',
+                    value: 0,
+                },
+                weekly: {
+                    unit: '',
+                    value: 0,
+                },
+                fortnightly: {
+                    unit: '',
+                    value: 0,
+                },
+                monthly: {
+                    unit: '',
+                    value: 0,
+                },
             },
         };
         this.notificationTemplates = {
             email: Array(),
             sms: Array(),
         };
-        this.customFields = Array();
     }
 }
 exports.Settings = Settings;

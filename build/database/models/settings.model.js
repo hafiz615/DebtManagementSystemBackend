@@ -248,9 +248,6 @@ const settignsModel = new mongoose_1.Schema({
             type: (Array),
         },
     },
-    customFields: {
-        type: (Array),
-    },
 });
 exports.Settings = mongoose_1.default.model('Settings', settignsModel);
 //# sourceMappingURL=settings.model.js.map

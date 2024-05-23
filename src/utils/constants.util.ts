@@ -32,6 +32,7 @@ export default {
     SEND_INVITATION_LINK_200: 'Invitation link sent successfully',
     ROLE_ACCESS: 'You are not authorized to perform this action!',
     PAYMENT_CALCULATION_ERROR: 'Payment calculation is not correct!',
+    INVALID_FIELD: ' is invalid',
   },
   ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
   ACCOUNT_INVITATION_BASE_LINK:
@@ -44,6 +45,7 @@ export default {
   successAddMessage: (name: string): string => `${name} added successfully!`,
   failureAddMessage: (name: string): string => `Unable to add ${name}`,
   failureUpdateMessage: (name: string): string => `Unable to update ${name}`,
+  failureDeleteMessage: (name: string): string => `Unable to delete ${name}`,
   successDeleteMessage: (name: string): string =>
     `${name} deleted successfully!`,
   successUpdateMessage: (name: string): string =>

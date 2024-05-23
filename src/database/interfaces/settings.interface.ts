@@ -51,12 +51,14 @@ interface IEmailNotify {
   name: string;
   event: string;
   html: string;
+  templateId: string;
 }
 
 interface ISmsNotify {
   name: string;
   event: string;
   text: string;
+  templateId: string;
 }
 
 interface INotificationTemplates {
@@ -64,16 +66,7 @@ interface INotificationTemplates {
   sms: Array<ISmsNotify>;
 }
 
-interface ICustomFields {
-  name: string;
-  type: string;
-  target: string;
-  description: string;
-  shared: boolean;
-}
-
 export interface ISettings extends Document {
   paymentsAuthorizations: IPaymentsAuthorizations;
   notificationTemplates: INotificationTemplates;
-  customFields: Array<ICustomFields>;
 }

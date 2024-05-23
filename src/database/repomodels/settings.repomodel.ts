@@ -1,68 +1,114 @@
-class Notify {
-  email = false;
-  sms = false;
-  template = '';
-  sendTo = {
-    admin: false,
-    manager: false,
-    negotiator: false,
-    debtor: false,
-    creditor: false,
-  };
-}
-
-class RetryInterval {
-  unit = '';
-  value = 0;
-  maxRetry = 0;
-  retryCount = 0;
-}
-
-class UnitVal {
-  unit = '';
-  value = 0;
-}
-
-class EmailNotify {
-  name = '';
-  event = '';
-  html = '';
-}
-
-class SmsNotify {
-  name = '';
-  event = '';
-  text = '';
-}
-
 export class Settings {
   paymentsAuthorizations = {
-    failedAuthorizations: Notify,
-    successfulAuthorizations: Notify,
-    failedPayments: Notify,
-    successPayments: Notify,
-    upcomingPayments: Notify,
+    failedAuthorizations: {
+      email: false,
+      sms: false,
+      template: '',
+      sendTo: {
+        admin: false,
+        manager: false,
+        negotiator: false,
+        debtor: false,
+        creditor: false,
+      },
+    },
+    successfulAuthorizations: {
+      email: false,
+      sms: false,
+      template: '',
+      sendTo: {
+        admin: false,
+        manager: false,
+        negotiator: false,
+        debtor: false,
+        creditor: false,
+      },
+    },
+    failedPayments: {
+      email: false,
+      sms: false,
+      template: '',
+      sendTo: {
+        admin: false,
+        manager: false,
+        negotiator: false,
+        debtor: false,
+        creditor: false,
+      },
+    },
+    successPayments: {
+      email: false,
+      sms: false,
+      template: '',
+      sendTo: {
+        admin: false,
+        manager: false,
+        negotiator: false,
+        debtor: false,
+        creditor: false,
+      },
+    },
+    upcomingPayments: {
+      email: false,
+      sms: false,
+      template: '',
+      sendTo: {
+        admin: false,
+        manager: false,
+        negotiator: false,
+        debtor: false,
+        creditor: false,
+      },
+    },
     retryInterval: {
-      failedAuthorization: RetryInterval,
-      failedPayment: RetryInterval,
+      failedAuthorization: {
+        unit: '',
+        value: 0,
+        maxRetry: 0,
+        retryCount: 0,
+      },
+      failedPayment: {
+        unit: '',
+        value: 0,
+        maxRetry: 0,
+        retryCount: 0,
+      },
     },
     authorizationInterval: {
-      custom: UnitVal,
-      daily: UnitVal,
-      weekly: UnitVal,
-      fortnightly: UnitVal,
-      monthly: UnitVal,
+      custom: {
+        unit: '',
+        value: 0,
+      },
+      daily: {
+        unit: '',
+        value: 0,
+      },
+      weekly: {
+        unit: '',
+        value: 0,
+      },
+      fortnightly: {
+        unit: '',
+        value: 0,
+      },
+      monthly: {
+        unit: '',
+        value: 0,
+      },
     },
   };
   notificationTemplates = {
-    email: Array<EmailNotify>(),
-    sms: Array<SmsNotify>(),
+    email: Array<{
+      name: '';
+      event: '';
+      html: '';
+      templateId: '';
+    }>(),
+    sms: Array<{
+      name: '';
+      event: '';
+      text: '';
+      templateId: '';
+    }>(),
   };
-  customFields = Array<{
-    name: '';
-    type: '';
-    target: '';
-    description: '';
-    shared: '';
-  }>();
 }

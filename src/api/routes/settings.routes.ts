@@ -1,31 +1,50 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import settingsController from '../controllers/setting/settings.controller';
+import customFieldValidate from '../../validators/customField.validate';
 
 const router = Router();
 
-router.post(
+router.patch(
   '/addSettings',
   authorize.validateAuth,
   settingsController.addSettings
 );
-router.post(
-  '/addCustomFields',
+
+router.get(
+  '/getSettings',
   authorize.validateAuth,
-  settingsController.addCustomFields
+  settingsController.getSettings
+);
+
+router.post(
+  '/addCustomField',
+  authorize.validateAuth,
+  customFieldValidate.addCustomField,
+  settingsController.addCustomField
+);
+router.put(
+  '/editCustomField/:id',
+  authorize.validateAuth,
+  settingsController.editCustomField
+);
+router.get(
+  '/getCustomFieldsByTarget',
+  authorize.validateAuth,
+  settingsController.getCustomFieldsByTarget
 );
 router.post(
-  '/editCustomFields',
+  '/addCustomFieldByTarget',
   authorize.validateAuth,
-  settingsController.editCustomFields
+  settingsController.addCustomFieldByTarget
 );
-router.post(
-  '/getCustomFields',
+router.delete(
+  '/removeCustomFieldByTarget',
   authorize.validateAuth,
-  settingsController.getCustomFields
+  settingsController.removeCustomFieldByTarget
 );
-router.post(
-  '/deleteCustomField',
+router.delete(
+  '/deleteCustomField/:id',
   authorize.validateAuth,
   settingsController.deleteCustomField
 );

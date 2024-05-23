@@ -218,14 +218,11 @@ const settignsModel: Schema = new Schema({
   },
   notificationTemplates: {
     email: {
-      type: Array<{name: ''; event: ''; html: ''}>,
+      type: Array<{name: ''; event: ''; html: ''; templateId: ''}>,
     },
     sms: {
-      type: Array<{name: ''; event: ''; text: ''}>,
+      type: Array<{name: ''; event: ''; text: ''; templateId: ''}>,
     },
-  },
-  customFields: {
-    type: Array<{name: ''; type: ''; target: ''; description: ''; shared: ''}>,
   },
 });
 

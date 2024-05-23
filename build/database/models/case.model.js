@@ -86,6 +86,9 @@ const caseModel = new mongoose_1.Schema({
             },
         ],
     },
+    customFields: {
+        type: (Array),
+    },
     createdAt: {
         type: Date,
         required: true,
