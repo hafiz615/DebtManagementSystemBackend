@@ -62,6 +62,21 @@ class DebtorService {
       await this.caseRepository.applyAggregate<ICase>(pipeline);
     return [true, clientDetails];
   }
+
+  async updateDebtor(req: Request): Promise<[boolean, IDebtor | string]> {
+    const bodyDebtor = req?.body as IDebtor;
+    const debtor = await this.debtorRepository.updateByOne<IDebtor>(
+      {
+        'basicInformation.email':
+          req?.body?.basicInformation?.email.toLowerCase(),
+      },
+      {...bodyDebtor}
+    );
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    return [true, debtor];
+  }
 }
 
 export default DebtorService;

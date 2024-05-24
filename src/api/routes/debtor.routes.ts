@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import debtorController from '../controllers/debtor/debtor.controller';
+import debtor from '../../middleware/debtor.middleware';
 
 const router = Router();
 
@@ -15,5 +16,10 @@ router.get(
   authorize.validateAuth,
   debtorController.searchListing
 );
-
+router.put(
+  '/updateDebtor',
+  authorize.validateAuth,
+  debtor.validateDebtor,
+  debtorController.updateDebtor
+);
 export default router;

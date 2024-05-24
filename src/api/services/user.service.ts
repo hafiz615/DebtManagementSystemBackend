@@ -182,6 +182,18 @@ class UserService {
     return [true, users];
   };
 
+  signOut = async (req: Request): Promise<[boolean, IUser[] | string]> => {
+    const reqTemp: any = req;
+    const userId = reqTemp?.id;
+    const sessionId = reqTemp?.sessionId;
+
+    await this.userRepository.updateById<IUser>(userId, {
+      $pull: {sessionIds: sessionId},
+    });
+
+    return [true, []];
+  };
+
   async resetPassword(req: Request): Promise<[boolean, IUser | string]> {
     const {currentPassword, newPassword} = req.body;
 
