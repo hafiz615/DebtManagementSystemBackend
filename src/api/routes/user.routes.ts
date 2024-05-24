@@ -26,6 +26,11 @@ router.put(
   userController.updateUser
 );
 router.put('/updatePassword', userController.updatePassword);
+router.put(
+  '/resetPassword',
+  authorize.validateAuth,
+  userController.resetPassword
+);
 router.delete(
   '/deleteUserById/:id',
   authorize.validateAuth,

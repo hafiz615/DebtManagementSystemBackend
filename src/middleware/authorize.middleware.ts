@@ -49,7 +49,7 @@ class Authorize {
               );
           }
           req.id = String(exists._id);
-          req.email = exists.email;
+          req.email = exists.email.toLowerCase();
           req.role = exists.role;
           return next();
         }

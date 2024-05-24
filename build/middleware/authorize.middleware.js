@@ -56,7 +56,7 @@ class Authorize {
                             .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_ERROR));
                     }
                     req.id = String(exists._id);
-                    req.email = exists.email;
+                    req.email = exists.email.toLowerCase();
                     req.role = exists.role;
                     return next();
                 });

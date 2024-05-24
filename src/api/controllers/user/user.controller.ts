@@ -117,6 +117,22 @@ class UserController {
     );
   };
 
+  resetPassword = async (req: Request, res: Response) => {
+    const response = await this.userService.resetPassword(req);
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.successUpdateMessage('Password'),
+      })
+    );
+  };
+
   deleteUserById = async (req: Request, res: Response) => {
     const response = await this.userService.deleteUserById(req.params.id);
     if (!response[0]) {

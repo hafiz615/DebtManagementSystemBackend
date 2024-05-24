@@ -82,14 +82,9 @@ class UserService {
         return [true, user];
     }
     async updateUser(req) {
-        if (req.body.password) {
-            const checkPassword = await user_util_1.default.checkPassword(req.body.password);
-            if (!checkPassword)
-                return [false, constants_util_1.default.Messages.PASSWORD_FORMAT];
-            req.body.password = await common_util_1.default.hashPassword(req.body.password);
-        }
         const bodyUser = req.body;
         delete bodyUser.isActive;
+        delete bodyUser.password;
         const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
@@ -150,6 +145,27 @@ class UserService {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
         return [true, { user: updatedUser, token: token }];
+    }
+    async resetPassword(req) {
+        const { currentPassword, newPassword } = req.body;
+        const reqTemp = req;
+        const comparePassword = await user_util_1.default.checkUserAndComparePassword(reqTemp.email, currentPassword);
+        if (!comparePassword)
+            return [false, 'Invalid password!'];
+        const checkPassword = await user_util_1.default.checkPassword(newPassword);
+        if (!checkPassword)
+            return [false, 'New ' + constants_util_1.default.Messages.PASSWORD_FORMAT];
+        if (currentPassword === newPassword) {
+            return [false, 'Current and new password are same'];
+        }
+        const hashPassword = await common_util_1.default.hashPassword(newPassword);
+        const updateUser = await this.userRepository.updateById(reqTemp.id, {
+            password: hashPassword,
+        });
+        if (!updateUser) {
+            return [false, constants_util_1.default.failureUpdateMessage('password')];
+        }
+        return [true, updateUser];
     }
 }
 exports.default = UserService;
