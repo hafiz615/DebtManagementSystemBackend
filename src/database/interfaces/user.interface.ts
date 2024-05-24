@@ -4,7 +4,6 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  jwtToken: string;
   verifyToken: string;
   role: string;
   isActive: boolean;
@@ -13,6 +12,7 @@ export interface IUser extends Document {
   phone: string;
   gender: string;
   address: string;
+  sessionIds: Array<string>;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

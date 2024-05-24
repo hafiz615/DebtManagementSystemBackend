@@ -11,7 +11,7 @@ import {DataCopier} from '../../utils/dataCopier.util';
 import EmailUtil from '../../utils/email.util';
 import authorize from '../../middleware/authorize.middleware';
 import constantsUtil from '../../utils/constants.util';
-
+import {v4 as uuidv4} from 'uuid';
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
@@ -43,7 +43,7 @@ class UserService {
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
     });
-    return [true, omit(user.toJSON(), 'password', 'jwtToken', 'verifyToken')];
+    return [true, omit(user.toJSON(), 'password', 'sessionIds', 'verifyToken')];
   }
 
   async signIn(
@@ -55,9 +55,10 @@ class UserService {
       password
     );
     if (!userExist) return [false, constants.Messages.INVALID];
-    const token = await this.tokenService.create(userExist._id);
+    const uuid = uuidv4();
+    const token = await this.tokenService.create(userExist._id, uuid);
     await this.userRepository.updateById<IUser>(userExist._id, {
-      jwtToken: token,
+      $push: {sessionIds: uuid},
     });
     return [
       true,
@@ -85,13 +86,9 @@ class UserService {
   }
 
   async updateUser(req: Request): Promise<[boolean, IUser | string]> {
-    if (req.body.password) {
-      const checkPassword = await userUtil.checkPassword(req.body.password);
-      if (!checkPassword) return [false, constants.Messages.PASSWORD_FORMAT];
-      req.body.password = await commonUtil.hashPassword(req.body.password);
-    }
     const bodyUser = req.body as IUser;
     delete bodyUser.isActive;
+    delete bodyUser.password;
     const user = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
       {...bodyUser}
@@ -155,8 +152,9 @@ class UserService {
     let user = req.body as IUser;
     user.isActive = true;
     user.verifyToken = '';
-    const token = await this.tokenService.create(findUser._id);
-    user.jwtToken = token;
+    const uuid = uuidv4();
+    const token = await this.tokenService.create(findUser._id, uuid);
+    user.sessionIds = [uuid];
     const updatedUser = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
       {...user}
@@ -172,7 +170,7 @@ class UserService {
       {role: {$ne: 'Admin'}},
       undefined,
       undefined,
-      undefined,
+      {createdAt: -1},
       undefined,
       undefined,
       Number(req.query.page),
@@ -183,6 +181,31 @@ class UserService {
     }
     return [true, users];
   };
+
+  async resetPassword(req: Request): Promise<[boolean, IUser | string]> {
+    const {currentPassword, newPassword} = req.body;
+
+    const reqTemp: any = req;
+    const comparePassword = await userUtil.checkUserAndComparePassword(
+      reqTemp.email,
+      currentPassword
+    );
+    if (!comparePassword) return [false, 'Invalid password!'];
+    const checkPassword = await userUtil.checkPassword(newPassword);
+    if (!checkPassword)
+      return [false, 'New ' + constants.Messages.PASSWORD_FORMAT];
+    if (currentPassword === newPassword) {
+      return [false, 'Current and new password are same'];
+    }
+    const hashPassword = await commonUtil.hashPassword(newPassword);
+    const updateUser = await this.userRepository.updateById<IUser>(reqTemp.id, {
+      password: hashPassword,
+    });
+    if (!updateUser) {
+      return [false, constants.failureUpdateMessage('password')];
+    }
+    return [true, updateUser];
+  }
 }
 
 export default UserService;

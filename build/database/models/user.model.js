@@ -40,10 +40,6 @@ const userModel = new mongoose_1.Schema({
         unique: true,
         immutable: true,
     },
-    jwtToken: {
-        type: String,
-        select: false,
-    },
     verifyToken: {
         type: String,
         select: false,
@@ -72,6 +68,10 @@ const userModel = new mongoose_1.Schema({
     },
     address: {
         type: String,
+    },
+    sessionIds: {
+        type: (Array),
+        select: false,
     },
     createdAt: {
         type: Date,

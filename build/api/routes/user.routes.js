@@ -14,6 +14,7 @@ router.get('/getUserById/:id', authorize_middleware_1.default.validateAuth, auth
 router.get('/getUser', user_controller_1.default.getUser);
 router.put('/updateUser', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.updateUser);
 router.put('/updatePassword', user_controller_1.default.updatePassword);
+router.put('/resetPassword', authorize_middleware_1.default.validateAuth, user_controller_1.default.resetPassword);
 router.delete('/deleteUserById/:id', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.deleteUserById);
 router.post('/verifyInvitationLink', user_controller_1.default.verifyInvitationLink);
 router.post('/resendInvitationLink', user_controller_1.default.resendInvitationLink);

@@ -9,37 +9,51 @@ const joi_1 = __importDefault(require("joi"));
 class CaseValidate {
     async validateCase(req, res, next) {
         const schema = joi_1.default.object({
+            documents: joi_1.default.array().items(joi_1.default.object({
+                key: joi_1.default.string().required(),
+                originalFileName: joi_1.default.string().required(),
+            }).optional()),
             debtor: joi_1.default.object({
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
-                    SSID: joi_1.default.string().required(),
-                    country: joi_1.default.string().allow(''),
-                    state: joi_1.default.string().allow(''),
+                    SSID: joi_1.default.string()
+                        .pattern(/^\d{9}$/)
+                        .required(),
+                    country: joi_1.default.string().required(),
+                    state: joi_1.default.string().required(),
                     status: joi_1.default.string()
                         .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
                         .required(),
-                    city: joi_1.default.string().allow(''),
-                    zipCode: joi_1.default.string().allow(''),
-                    phone: joi_1.default.string().allow(''),
-                    address: joi_1.default.string().allow(''),
+                    city: joi_1.default.string().required(),
+                    zipCode: joi_1.default.string().required(),
+                    phone: joi_1.default.string()
+                        .pattern(/^\d{10,11}$/)
+                        .required(),
+                    address: joi_1.default.string().required(),
                 }),
                 businessInformation: joi_1.default.object({
                     companyName: joi_1.default.string().required(),
-                    EIN: joi_1.default.string().required(),
-                    businessCategory: joi_1.default.string().allow(''),
+                    EIN: joi_1.default.string()
+                        .pattern(/^\d{9}$/)
+                        .required(),
+                    businessCategory: joi_1.default.string().required(),
                     description: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
-                    state: joi_1.default.string().allow(''),
-                    city: joi_1.default.string().allow(''),
-                    zipCode: joi_1.default.string().allow(''),
-                    phone: joi_1.default.string().allow(''),
-                    address: joi_1.default.string().allow(''),
+                    country: joi_1.default.string().required(),
+                    state: joi_1.default.string().required(),
+                    city: joi_1.default.string().required(),
+                    zipCode: joi_1.default.string().required(),
+                    phone: joi_1.default.string()
+                        .pattern(/^\d{10,11}$/)
+                        .required(),
+                    address: joi_1.default.string().required(),
                 }),
                 contacts: joi_1.default.array().items(joi_1.default.object({
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
-                    phone: joi_1.default.string().allow(''),
+                    phone: joi_1.default.string()
+                        .pattern(/^\d{10,11}$/)
+                        .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
                     country: joi_1.default.string().allow(''),
@@ -47,21 +61,25 @@ class CaseValidate {
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
                 })),
-            }).optional(),
+            }),
             creditor: joi_1.default.object({
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
-                    phone: joi_1.default.string().allow(''),
+                    phone: joi_1.default.string()
+                        .pattern(/^\d{10,11}$/)
+                        .required(),
                 }),
                 businessInformation: joi_1.default.object({
                     companyName: joi_1.default.string().required(),
-                    businessCategory: joi_1.default.string().allow(''),
+                    businessCategory: joi_1.default.string().required(),
                 }),
                 contacts: joi_1.default.array().items(joi_1.default.object({
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
-                    phone: joi_1.default.string().allow(''),
+                    phone: joi_1.default.string()
+                        .pattern(/^\d{10,11}$/)
+                        .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
                     country: joi_1.default.string().allow(''),
@@ -69,27 +87,25 @@ class CaseValidate {
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
                 })),
-                notes: joi_1.default.string(),
+                notes: joi_1.default.string().allow(''),
                 lastFundedDate: joi_1.default.date().required(),
                 historicalRange: joi_1.default.object({
                     minimum: joi_1.default.number().strict().required(),
                     maximum: joi_1.default.number().strict().required(),
                 }),
-            }).optional(),
+            }),
             totalDebt: joi_1.default.number().strict().required(),
             lastPaymentDate: joi_1.default.date(),
             paidAmount: joi_1.default.number().strict().required(),
             remaining: joi_1.default.number().strict().required(),
             status: joi_1.default.string().required(),
-            documents: joi_1.default.array().items(joi_1.default.object({
-                key: joi_1.default.string().required(),
-                originalFileName: joi_1.default.string().required(),
-            }).optional()),
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),
                 startDate: joi_1.default.date().required(),
                 frequency: joi_1.default.number().optional(),
-                timePeriod: joi_1.default.string().valid('Weekly', 'Monthly', 'Custom', 'Fortnightly'),
+                timePeriod: joi_1.default.string()
+                    .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+                    .required(),
             })),
         });
         if (req.query.bulk === 'true') {

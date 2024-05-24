@@ -10,11 +10,15 @@ class TokenService {
   constructor() {
     this.userRepository = new UserRepository();
   }
-  create = async (userId: mongoose.Types.ObjectId): Promise<string> => {
+  create = async (
+    userId: mongoose.Types.ObjectId,
+    uuid: string
+  ): Promise<string> => {
     try {
       const accessToken = this.generateJwtToken(
         {
           userId: userId,
+          sessionId: uuid,
         },
         process.env.jwtKey!
       );
@@ -30,9 +34,12 @@ class TokenService {
     return token;
   }
 
-  async validateToken(token: string, userId: string) {
-    const user = await this.userRepository.getById<IUser>(userId, '+jwtToken');
-    return user?.jwtToken === token ? user : null;
+  async validateToken(token: string, userId: string, sessionId: string) {
+    const user = await this.userRepository.getOne<IUser>({
+      _id: userId,
+      sessionIds: {$in: [sessionId]},
+    });
+    return user ? user : null;
   }
 
   createVerifyToken = async (email: string) => {

@@ -4,7 +4,6 @@ export class User {
   email = '';
   password = '';
   role = '';
-  jwtToken = '';
   verifyToken = '';
   isActive = false;
   createdBy = '';
@@ -13,6 +12,7 @@ export class User {
   phone = '';
   gender = '';
   address = '';
+  sessionIds = Array<string>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
+const settings_controller_1 = __importDefault(require("../controllers/setting/settings.controller"));
+const customField_validate_1 = __importDefault(require("../../validators/customField.validate"));
+const router = (0, express_1.Router)();
+router.patch('/addSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.addSettings);
+router.get('/getSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getSettings);
+router.post('/addCustomField', authorize_middleware_1.default.validateAuth, customField_validate_1.default.addCustomField, settings_controller_1.default.addCustomField);
+router.put('/editCustomField/:id', authorize_middleware_1.default.validateAuth, settings_controller_1.default.editCustomField);
+router.get('/getCustomFieldsByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getCustomFieldsByTarget);
+router.post('/addCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.addCustomFieldByTarget);
+router.delete('/removeCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.removeCustomFieldByTarget);
+router.delete('/deleteCustomField/:id', authorize_middleware_1.default.validateAuth, settings_controller_1.default.deleteCustomField);
+exports.default = router;
+//# sourceMappingURL=settings.routes.js.map

@@ -1,0 +1,111 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Settings = void 0;
+class Settings {
+    constructor() {
+        this.paymentsAuthorizations = {
+            failedAuthorizations: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            successfulAuthorizations: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            failedPayments: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            successPayments: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            upcomingPayments: {
+                email: false,
+                sms: false,
+                template: '',
+                sendTo: {
+                    admin: false,
+                    manager: false,
+                    negotiator: false,
+                    debtor: false,
+                    creditor: false,
+                },
+            },
+            retryInterval: {
+                failedAuthorization: {
+                    unit: '',
+                    value: 0,
+                    maxRetry: 0,
+                    retryCount: 0,
+                },
+                failedPayment: {
+                    unit: '',
+                    value: 0,
+                    maxRetry: 0,
+                    retryCount: 0,
+                },
+            },
+            authorizationInterval: {
+                custom: {
+                    unit: '',
+                    value: 0,
+                },
+                daily: {
+                    unit: '',
+                    value: 0,
+                },
+                weekly: {
+                    unit: '',
+                    value: 0,
+                },
+                fortnightly: {
+                    unit: '',
+                    value: 0,
+                },
+                monthly: {
+                    unit: '',
+                    value: 0,
+                },
+            },
+        };
+        this.notificationTemplates = {
+            email: Array(),
+            sms: Array(),
+        };
+    }
+}
+exports.Settings = Settings;
+//# sourceMappingURL=settings.repomodel.js.map

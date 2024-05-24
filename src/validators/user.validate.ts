@@ -11,11 +11,15 @@ class UserRequests {
       role: Joi.string().valid('Negotiator', 'Manager').required(),
       isActive: Joi.string(),
       createdBy: Joi.string().required(),
-      SSID: Joi.string(),
-      dateOfBirth: Joi.date(),
-      phone: Joi.string(),
-      gender: Joi.string(),
-      address: Joi.string(),
+      SSID: Joi.string()
+        .pattern(/^\d{9}$/)
+        .required(),
+      dateOfBirth: Joi.date().required(),
+      phone: Joi.string()
+        .pattern(/^\d{10,11}$/)
+        .required(),
+      gender: Joi.string().valid('Male', 'Female', 'Other').required(),
+      address: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -41,7 +45,11 @@ class UserRequests {
     } else {
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.details[0].message));
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
     }
   }
 }
