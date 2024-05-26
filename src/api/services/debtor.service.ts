@@ -20,13 +20,19 @@ class DebtorService {
       {
         $or: [
           {
-            'basicInformation.email': text.toLowerCase(),
+            'basicInformation.email': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
           {
-            'basicInformation.SSID': text,
+            'basicInformation.SSID': {
+              $regex: new RegExp(text), // Case-insensitive match for SSID
+            },
           },
           {
-            'basicInformation.phone': text,
+            'basicInformation.phone': {
+              $regex: new RegExp(text), // Case-insensitive match for phone
+            },
           },
         ],
       },
@@ -41,36 +47,26 @@ class DebtorService {
   }
 
   async listingDetails(req: Request) {
-    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
-    const cases = await this.caseRepository.getAll<ICase>(
-      {debtor: req.params.id},
-      undefined,
-      undefined,
-      undefined,
-      ['debtor', {path: 'creditor', select: ['basicInformation.fullName']}],
-      undefined,
-      Number(req.query.page),
-      Number(req.query.limit)
-    );
-    const clientDetails = await caseUtil.getClientDetails(cases);
-    return [true, {debtor: debtor.basicInformation, ...clientDetails}];
+    const casesCount = await this.caseRepository.getCount<ICase>({
+      debtor: req.params.id,
+    });
+    const clientDetails = await caseUtil.getClientDetails(req);
+    return [true, {...clientDetails, debtorTotalCases: casesCount}];
   }
 
   async searchListing(req: Request) {
+    const debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+
     const pipeline = await caseUtil.getClientListingPipeline(req);
     const clientDetails =
       await this.caseRepository.applyAggregate<ICase>(pipeline);
-    return [true, clientDetails];
+    return [true, {clientDetails: clientDetails, debtorsCount: debtorsCount}];
   }
 
   async updateDebtor(req: Request): Promise<[boolean, IDebtor | string]> {
-    const bodyDebtor = req?.body as IDebtor;
-    const debtor = await this.debtorRepository.updateByOne<IDebtor>(
-      {
-        'basicInformation.email':
-          req?.body?.basicInformation?.email.toLowerCase(),
-      },
-      {...bodyDebtor}
+    const debtor = await this.debtorRepository.updateById<IDebtor>(
+      req.params.id,
+      {...req.body}
     );
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];

@@ -1,6 +1,6 @@
 import {NextFunction, Request, Response} from 'express';
-import constants from '../utils/constants.util';
-import responseHelper from '../utils/responseHelper.util';
+import constants from '../../utils/constants.util';
+import responseHelper from '../../utils/responseHelper.util';
 import Joi from 'joi';
 class CustomFieldRequest {
   async addCustomField(req: Request, res: Response, next: NextFunction) {

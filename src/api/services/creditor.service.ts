@@ -15,10 +15,14 @@ class CreditorService {
       {
         $or: [
           {
-            'basicInformation.email': text.toLowerCase(),
+            'basicInformation.email': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
           {
-            'basicInformation.phone': text,
+            'basicInformation.phone': {
+              $regex: new RegExp(text), // Case-insensitive match for phone
+            },
           },
         ],
       },
@@ -32,13 +36,9 @@ class CreditorService {
     return [true, creditor];
   }
   async updateCreditor(req: Request): Promise<[boolean, ICreditor | string]> {
-    const bodyCreditor = req?.body as ICreditor;
-    const creditor = await this.creditorRepository.updateByOne<ICreditor>(
-      {
-        'basicInformation.email':
-          req?.body?.basicInformation?.email.toLowerCase(),
-      },
-      {...bodyCreditor}
+    const creditor = await this.creditorRepository.updateById<ICreditor>(
+      req.params.id,
+      {...req.body}
     );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];

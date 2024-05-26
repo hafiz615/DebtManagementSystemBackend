@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import settingsController from '../controllers/setting/settings.controller';
-import customFieldValidate from '../../validators/customField.validate';
+import customFieldValidate from '../../middleware/validators/customField.validate';
 
 const router = Router();
 

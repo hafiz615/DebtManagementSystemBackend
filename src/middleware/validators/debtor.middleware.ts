@@ -1,11 +1,11 @@
 import {NextFunction, Request, Response} from 'express';
 import dotenv from 'dotenv';
-import responseHelper from '../utils/responseHelper.util';
-import constants from '../utils/constants.util';
+import responseHelper from '../../utils/responseHelper.util';
+import constants from '../../utils/constants.util';
 import Joi from 'joi';
 
 dotenv.config();
-class Authorize {
+class DebtorRequests {
   validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
       basicInformation: Joi.object({
@@ -54,4 +54,4 @@ class Authorize {
   };
 }
 
-export default new Authorize();
+export default new DebtorRequests();

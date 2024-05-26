@@ -167,7 +167,7 @@ class UserService {
 
   getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {
     let users = await this.userRepository.getAll<IUser>(
-      {role: {$ne: 'Admin'}},
+      {role: {$ne: 'Admin'}, isActive: true},
       undefined,
       undefined,
       {createdAt: -1},

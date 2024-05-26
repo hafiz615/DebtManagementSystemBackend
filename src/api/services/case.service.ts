@@ -102,6 +102,25 @@ class CaseService {
     tempCase['creditors'] = creditors;
     return [true, tempCase];
   };
+
+  updateCase = async (
+    req: Request
+  ): Promise<[boolean, Partial<ICase> | string]> => {
+    await caseUtil.updateContacts(req.body.debtor.contacts as IContact[]);
+    await caseUtil.updateDebtor(req.body.debtor as IDebtor);
+    await caseUtil.updateContacts(req.body.creditor.contacts as IContact[]);
+    await caseUtil.updateCreditor(req.body.creditor as ICreditor);
+    delete req.body.debtor;
+    delete req.body.creditor;
+    const caseUpdated = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      req.body
+    );
+    if (!caseUpdated) {
+      return [false, constantsUtil.notFoundMessage('Case')];
+    }
+    return [true, caseUpdated];
+  };
 }
 
 export default CaseService;

@@ -18,11 +18,20 @@ const uuid_1 = require("uuid");
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
-            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' } }, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
+            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' }, isActive: true }, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
             if (!users.length) {
                 return [false, constants_util_2.default.notFoundMessage('Users')];
             }
             return [true, users];
+        };
+        this.signOut = async (req) => {
+            const reqTemp = req;
+            const userId = reqTemp?.id;
+            const sessionId = reqTemp?.sessionId;
+            await this.userRepository.updateById(userId, {
+                $pull: { sessionIds: sessionId },
+            });
+            return [true, []];
         };
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
