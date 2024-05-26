@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import userValidate from '../../validators/user.validate';
+import userValidate from '../../middleware/validators/user.validate';
 import userController from '../controllers/user/user.controller';
 import authorize from '../../middleware/authorize.middleware';
 const router = Router();
@@ -40,5 +40,6 @@ router.delete(
 router.post('/verifyInvitationLink', userController.verifyInvitationLink);
 router.post('/resendInvitationLink', userController.resendInvitationLink);
 router.get('/getAllUsers', authorize.validateAuth, userController.getAllUsers);
+router.post('/logout', authorize.validateAuth, userController.signOut);
 
 export default router;

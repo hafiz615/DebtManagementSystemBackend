@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const settings_controller_1 = __importDefault(require("../controllers/setting/settings.controller"));
-const customField_validate_1 = __importDefault(require("../../validators/customField.validate"));
+const customField_validate_1 = __importDefault(require("../../middleware/validators/customField.validate"));
 const router = (0, express_1.Router)();
 router.patch('/addSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.addSettings);
 router.get('/getSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getSettings);

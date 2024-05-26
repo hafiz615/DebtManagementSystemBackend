@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import caseController from '../controllers/case/case.controller';
-import caseValidate from '../../validators/case.validate';
+import caseValidate from '../../middleware/validators/case.validate';
 const router = Router();
 
 router.post(
@@ -16,6 +16,12 @@ router.get(
   '/getCaseById/:id',
   authorize.validateAuth,
   caseController.getCaseById
+);
+router.put(
+  '/updateCase/:id',
+  authorize.validateAuth,
+  caseValidate.validateCase,
+  caseController.updateCase
 );
 
 export default router;

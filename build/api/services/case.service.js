@@ -64,6 +64,19 @@ class CaseService {
             tempCase['creditors'] = creditors;
             return [true, tempCase];
         };
+        this.updateCase = async (req) => {
+            await case_util_1.default.updateContacts(req.body.debtor.contacts);
+            await case_util_1.default.updateDebtor(req.body.debtor);
+            await case_util_1.default.updateContacts(req.body.creditor.contacts);
+            await case_util_1.default.updateCreditor(req.body.creditor);
+            delete req.body.debtor;
+            delete req.body.creditor;
+            const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            return [true, caseUpdated];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.debtorService = new debtor_service_1.default();

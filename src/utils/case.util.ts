@@ -20,6 +20,7 @@ import {Case} from '../database/repomodels/case.repomodel';
 import constantsUtil from './constants.util';
 import paymentUtil from './payment.util';
 import {Request} from 'express';
+import mongoose from 'mongoose';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -253,9 +254,11 @@ class CaseUtil {
         amount += interval.amount;
       }
       if (interval.frequency != 0) {
-        for (let i = 0; i < interval.frequency; i++) {
-          amount += interval.amount;
-        }
+        // for (let i = 0; i < interval.frequency; i++) {
+        //   amount += interval.amount;
+        // }
+        let multipliedAmount = interval.frequency * interval.amount;
+        amount += multipliedAmount;
       }
     }
     if (amount !== body.remaining) {
@@ -311,112 +314,441 @@ class CaseUtil {
     return result;
   }
 
-  async getClientDetails(cases: any) {
-    const caseIds = cases.map((tempCase: ICase) => {
-      return String(tempCase._id);
-    });
-    const payments = await this.paymentRepository.getAll<IPayment>({
-      caseId: caseIds,
-    });
-    const filteredPayments = await paymentUtil.getFilteredPaymentsObj(payments);
-    const resultObj = {};
-    const result = [];
-    let caseIndex = 0,
-      bin = 0;
-    let objectCreated = false;
-    while (true) {
-      if (
-        bin === filteredPayments.upcomingPayments.length &&
-        caseIndex === caseIds.length
-      ) {
-        break;
-      }
-      if (
-        caseIds[caseIndex] ===
-        String(filteredPayments.upcomingPayments[bin]?.caseId)
-      ) {
-        if (!objectCreated) {
-          resultObj['creditor'] =
-            cases[caseIndex].creditor.basicInformation.fullName;
-          resultObj['totalDebt'] = cases[caseIndex].totalDebt;
-          resultObj['upcomingDebt'] =
-            filteredPayments.upcomingPayments[bin].amount;
-          resultObj['upcomingAuthDate'] = new Date(
-            filteredPayments.upcomingPayments[bin].dueDate
-          )
-            .toISOString()
-            .split('T')[0];
-          resultObj['caseOwner'] = cases[caseIndex].caseOwner;
-          result.push(resultObj);
-          objectCreated = true;
-        }
-        bin += 1;
-      } else {
-        if (!objectCreated) {
-          resultObj['creditor'] =
-            cases[caseIndex].creditor.basicInformation.fullName;
-          resultObj['totalDebt'] = cases[caseIndex].totalDebt;
-          resultObj['upcomingDebt'] = 0;
-          resultObj['upcomingAuthDate'] = '-';
-          resultObj['caseOwner'] = cases[caseIndex].caseOwner;
-          result.push(resultObj);
-        }
-        caseIndex += 1;
-        objectCreated = false;
-      }
+  // async getClientDetails(cases: any) {
+  //   const caseIds = cases.map((tempCase: ICase) => {
+  //     return String(tempCase._id);
+  //   });
+  //   const payments = await this.paymentRepository.getAll<IPayment>({
+  //     caseId: caseIds,
+  //   });
+  //   const filteredPayments = await paymentUtil.getFilteredPaymentsObj(payments);
+  //   const resultObj = {};
+  //   const result = [];
+  //   let caseIndex = 0,
+  //     bin = 0;
+  //   let objectCreated = false;
+  //   while (true) {
+  //     if (
+  //       bin === filteredPayments.upcomingPayments.length &&
+  //       caseIndex === caseIds.length
+  //     ) {
+  //       break;
+  //     }
+  //     if (
+  //       caseIds[caseIndex] ===
+  //       String(filteredPayments.upcomingPayments[bin]?.caseId)
+  //     ) {
+  //       if (!objectCreated) {
+  //         resultObj['creditor'] =
+  //           cases[caseIndex].creditor.basicInformation.fullName;
+  //         resultObj['totalDebt'] = cases[caseIndex].totalDebt;
+  //         resultObj['upcomingDebt'] =
+  //           filteredPayments.upcomingPayments[bin].amount;
+  //         resultObj['upcomingAuthDate'] = new Date(
+  //           filteredPayments.upcomingPayments[bin].dueDate
+  //         )
+  //           .toISOString()
+  //           .split('T')[0];
+  //         resultObj['caseOwner'] = cases[caseIndex].caseOwner;
+  //         result.push(resultObj);
+  //         objectCreated = true;
+  //       }
+  //       bin += 1;
+  //     } else {
+  //       if (!objectCreated) {
+  //         resultObj['creditor'] =
+  //           cases[caseIndex].creditor.basicInformation.fullName;
+  //         resultObj['totalDebt'] = cases[caseIndex].totalDebt;
+  //         resultObj['upcomingDebt'] = 0;
+  //         resultObj['upcomingAuthDate'] = '-';
+  //         resultObj['caseOwner'] = cases[caseIndex].caseOwner;
+  //         result.push(resultObj);
+  //       }
+  //       caseIndex += 1;
+  //       objectCreated = false;
+  //     }
+  //   }
+  //   bin = 0;
+  //   caseIndex = 0;
+  //   let findSuccess = false;
+  //   let finalResult = [];
+  //   while (true) {
+  //     if (
+  //       bin === filteredPayments.successPayments.length &&
+  //       caseIndex === caseIds.length
+  //     ) {
+  //       break;
+  //     }
+  //     if (
+  //       caseIds[caseIndex] ===
+  //       String(filteredPayments.successPayments[bin]?.caseId)
+  //     ) {
+  //       bin += 1;
+  //       findSuccess = true;
+  //     } else {
+  //       if (findSuccess) {
+  //         let temp = {...result[caseIndex]};
+  //         temp['lastPaymentDate'] = new Date(
+  //           filteredPayments.successPayments[bin - 1].dueDate
+  //         )
+  //           .toISOString()
+  //           .split('T')[0];
+  //         temp['lastPayment'] =
+  //           filteredPayments.successPayments[bin - 1].amount;
+  //         finalResult.push(temp);
+  //       }
+  //       if (!findSuccess) {
+  //         let temp = {...result[caseIndex]};
+  //         temp['lastPaymentDate'] = '-';
+  //         temp['lastPayment'] = 0;
+  //         finalResult.push(temp);
+  //       }
+  //       caseIndex += 1;
+  //       findSuccess = false;
+  //     }
+  //   }
+  //   const countPayments = {
+  //     failedAuthorizations: filteredPayments.failedAuthorizations.length,
+  //     failedPayments: filteredPayments.failedPayments.length,
+  //     successAuthorizations: filteredPayments.successAuthorizations.length,
+  //     successPayments: filteredPayments.successPayments.length,
+  //   };
+
+  //   return {columns: finalResult, paymentsCount: countPayments};
+  // }
+
+  async getClientDetails(req: Request) {
+    const convertedDebtorId = new mongoose.Types.ObjectId(req.params.id);
+    const pipeline = [
+      {
+        $match: {debtor: convertedDebtorId},
+      },
+      {
+        $lookup: {
+          from: 'debtors',
+          localField: 'debtor',
+          foreignField: '_id',
+          as: 'debtorDetails',
+        },
+      },
+      {
+        $unwind: '$debtorDetails',
+      },
+      {
+        $lookup: {
+          from: 'creditors',
+          localField: 'creditor',
+          foreignField: '_id',
+          as: 'creditorDetails',
+        },
+      },
+      {
+        $unwind: '$creditorDetails',
+      },
+      {
+        $lookup: {
+          from: 'payments',
+          localField: '_id',
+          foreignField: 'caseId',
+          as: 'payments',
+        },
+      },
+      {
+        $addFields: {
+          lastPayment: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Success']},
+                },
+              },
+              -1,
+            ],
+          },
+          upcomingPayment: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Pending']},
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$debtor',
+          caseHistory: {
+            $push: {
+              _id: '$_id',
+              creditorName: '$creditorDetails.basicInformation.fullName',
+              totalDebt: '$totalDebt',
+              lastPayment: '$lastPayment.amount',
+              lastPaymentDate: {
+                $dateToString: {
+                  format: '%Y-%m-%d',
+                  date: '$lastPayment.dueDate',
+                },
+              },
+              upcomingPayment: '$upcomingPayment.amount',
+              upcomingPaymentDate: {
+                $dateToString: {
+                  format: '%Y-%m-%d',
+                  date: '$upcomingPayment.dueDate',
+                },
+              },
+              caseOwner: '$caseOwner',
+              outstandingDebt: {
+                $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
+              },
+            },
+          },
+          debtorDetails: {$first: '$debtorDetails'},
+          failedPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Failed']},
+                },
+              },
+            },
+          },
+          failedAuthorizations: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Failed']},
+                },
+              },
+            },
+          },
+          successfulPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Success']},
+                },
+              },
+            },
+          },
+          successfulAuthorizations: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Success']},
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          caseHistory: 1,
+          debtor: {
+            SSN: '$debtorDetails.basicInformation.SSID',
+            companyName: '$debtorDetails.businessInformation.companyName',
+            email: '$debtorDetails.basicInformation.email',
+            status: '$debtorDetails.basicInformation.status',
+            address: '$debtorDetails.basicInformation.address',
+            outstandingDebt: {
+              $sum: '$caseHistory.outstandingDebt',
+            },
+            totalDebt: {
+              $sum: '$caseHistory.totalDebt',
+            },
+          },
+          paymentCounts: {
+            failedPayments: '$failedPayments',
+            failedAuthorizations: '$failedAuthorizations',
+            successfulPayments: '$successfulPayments',
+            successfulAuthorizations: '$successfulAuthorizations',
+          },
+        },
+      },
+    ];
+
+    const results = await this.caseRepository.applyAggregate(pipeline);
+    results[0].caseHistory = await this.filterAndPaginateCaseHistory(
+      results[0].caseHistory,
+      req
+    );
+    return results[0];
+  }
+  async filterAndPaginateCaseHistory(caseHistory: [], req: Request) {
+    let page = 1;
+    let limit = 5;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
     }
-    bin = 0;
-    caseIndex = 0;
-    let findSuccess = false;
-    let finalResult = [];
-    while (true) {
-      if (
-        bin === filteredPayments.successPayments.length &&
-        caseIndex === caseIds.length
-      ) {
-        break;
-      }
-      if (
-        caseIds[caseIndex] ===
-        String(filteredPayments.successPayments[bin]?.caseId)
-      ) {
-        bin += 1;
-        findSuccess = true;
-      } else {
-        if (findSuccess) {
-          let temp = {...result[caseIndex]};
-          temp['lastPaymentDate'] = new Date(
-            filteredPayments.successPayments[bin - 1].dueDate
-          )
-            .toISOString()
-            .split('T')[0];
-          temp['lastPayment'] =
-            filteredPayments.successPayments[bin - 1].amount;
-          finalResult.push(temp);
-        }
-        if (!findSuccess) {
-          let temp = {...result[caseIndex]};
-          temp['lastPaymentDate'] = '-';
-          temp['lastPayment'] = 0;
-          finalResult.push(temp);
-        }
-        caseIndex += 1;
-        findSuccess = false;
-      }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
-    const countPayments = {
-      failedAuthorizations: filteredPayments.failedAuthorizations.length,
-      failedPayments: filteredPayments.failedPayments.length,
-      successAuthorizations: filteredPayments.successAuthorizations.length,
-      successPayments: filteredPayments.successPayments.length,
+    // Helper function to apply text search
+    const applyTextSearch = (caseObj: any, text: string | RegExp) => {
+      const regex = new RegExp(text, 'i');
+      return regex.test(caseObj.creditorName) || regex.test(caseObj.caseOwner);
     };
 
-    return {columns: finalResult, paymentsCount: countPayments};
+    // Helper function to apply numeric/date filters
+    const applyFilters = (caseObj: any, filters: any) => {
+      if (
+        filters.totalDebt &&
+        (caseObj.totalDebt < filters.totalDebt.min ||
+          caseObj.totalDebt > filters.totalDebt.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.lastPaymentAmount &&
+        (caseObj.lastPayment < filters.lastPaymentAmount.min ||
+          caseObj.lastPayment > filters.lastPaymentAmount.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.lastPaymentDate &&
+        (new Date(caseObj.lastPaymentDate) < filters.lastPaymentDate.start ||
+          new Date(caseObj.lastPaymentDate) > filters.lastPaymentDate.end)
+      ) {
+        return false;
+      }
+      if (
+        filters.upcomingPaymentAmount &&
+        (caseObj.upcomingPayment < filters.upcomingPaymentAmount.min ||
+          caseObj.upcomingPayment > filters.upcomingPaymentAmount.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.upcomingPaymentDate &&
+        (new Date(caseObj.upcomingPaymentDate) <
+          filters.upcomingPaymentDate.start ||
+          new Date(caseObj.upcomingPaymentDate) >
+            filters.upcomingPaymentDate.end)
+      ) {
+        return false;
+      }
+      if (
+        filters.outstandingDebt &&
+        (caseObj.outstandingDebt < filters.outstandingDebt.min ||
+          caseObj.outstandingDebt > filters.outstandingDebt.max)
+      ) {
+        return false;
+      }
+      return true;
+    };
+    let text = '',
+      filters = {};
+    if (req.query.search === 'true') {
+      text = req.body.text;
+    }
+    if (req.query.filter === 'true') {
+      filters = req.body.filters;
+    }
+    // Apply text search and filters
+    let filteredCaseHistory = caseHistory.filter(caseObj => {
+      const textMatches = !text || applyTextSearch(caseObj, text);
+      const filtersMatch =
+        Object.keys(filters).length === 0 || applyFilters(caseObj, filters);
+      return textMatches && filtersMatch;
+    });
+
+    // Apply pagination
+    const paginatedCaseHistory = filteredCaseHistory.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+
+    return paginatedCaseHistory;
+  }
+  async getClientDetailsFilters(req: Request) {
+    const filterConditions = [];
+
+    if (req.query.filter === 'true') {
+      const filters = req.body.filters;
+      // Add filters for numeric/date ranges if provided
+      if (filters.totalDebt) {
+        filterConditions.push({
+          totalDebt: {$gte: filters.totalDebt.min, $lte: filters.totalDebt.max},
+        });
+      }
+      if (filters.lastPaymentAmount) {
+        filterConditions.push({
+          lastPayment: {
+            $gte: filters.lastPaymentAmount.min,
+            $lte: filters.lastPaymentAmount.max,
+          },
+        });
+      }
+      if (filters.lastPaymentDate) {
+        filterConditions.push({
+          lastPaymentDate: {
+            $gte: filters.lastPaymentDate.start,
+            $lte: filters.lastPaymentDate.end,
+          },
+        });
+      }
+      if (filters.upcomingPaymentAmount) {
+        filterConditions.push({
+          upcomingPayment: {
+            $gte: filters.upcomingPaymentAmount.min,
+            $lte: filters.upcomingPaymentAmount.max,
+          },
+        });
+      }
+      if (filters.upcomingPaymentDate) {
+        filterConditions.push({
+          upcomingPaymentDate: {
+            $gte: filters.upcomingPaymentDate.start,
+            $lte: filters.upcomingPaymentDate.end,
+          },
+        });
+      }
+      if (filters.outstandingDebt) {
+        filterConditions.push({
+          outstandingDebt: {
+            $gte: filters.outstandingDebt.min,
+            $lte: filters.outstandingDebt.max,
+          },
+        });
+      }
+    }
+
+    if (req.query.search === 'true') {
+      const text = req.body.text;
+      console.log('i am hereeeeeee');
+      console.log(text);
+      if (text) {
+        console.log('i am hereeeeeee');
+        filterConditions.push({
+          $or: [{creditorName: {$regex: text}}, {caseOwner: {$regex: text}}],
+        });
+      }
+    }
+    console.log(filterConditions, 'pplplplplp');
+    return filterConditions;
   }
 
   async getClientListingPipeline(req: Request) {
     let page = 1;
-    let limit = 10;
+    let limit = 5;
 
     // Check if pageNumber and pageSize are provided and valid
     if (req.query.page && !isNaN(Number(req.query.page))) {
@@ -506,6 +838,24 @@ class CaseUtil {
       ];
     }
     return [queryFilter, querySearch];
+  }
+
+  async updateContacts(data: IContact[]) {
+    for (const contact of data) {
+      await this.contactRepository.updateById<IContact>(contact._id, {
+        ...contact,
+      });
+    }
+  }
+
+  async updateDebtor(data: IDebtor) {
+    return await this.debtRepository.updateById<IDebtor>(data._id, {...data});
+  }
+
+  async updateCreditor(data: ICreditor) {
+    return await this.creditorRepository.updateById<ICreditor>(data._id, {
+      ...data,
+    });
   }
 }
 export default new CaseUtil();

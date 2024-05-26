@@ -215,6 +215,22 @@ class UserController {
       })
     );
   };
+
+  signOut = async (req: Request, res: Response) => {
+    const response = await this.userService.signOut(req);
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: 'User logged out successfully!',
+      })
+    );
+  };
 }
 
 export default new UserController();

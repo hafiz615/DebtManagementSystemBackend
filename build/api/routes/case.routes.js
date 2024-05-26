@@ -6,10 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const case_controller_1 = __importDefault(require("../controllers/case/case.controller"));
-const case_validate_1 = __importDefault(require("../../validators/case.validate"));
+const case_validate_1 = __importDefault(require("../../middleware/validators/case.validate"));
 const router = (0, express_1.Router)();
 router.post('/createCase', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCase, case_controller_1.default.createCase);
 router.get('/getAllCases', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAllCases);
 router.get('/getCaseById/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCaseById);
+router.put('/updateCase/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCase, case_controller_1.default.updateCase);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

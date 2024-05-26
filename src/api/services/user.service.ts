@@ -167,7 +167,7 @@ class UserService {
 
   getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {
     let users = await this.userRepository.getAll<IUser>(
-      {role: {$ne: 'Admin'}},
+      {role: {$ne: 'Admin'}, isActive: true},
       undefined,
       undefined,
       {createdAt: -1},
@@ -180,6 +180,18 @@ class UserService {
       return [false, constantsUtil.notFoundMessage('Users')];
     }
     return [true, users];
+  };
+
+  signOut = async (req: Request): Promise<[boolean, IUser[] | string]> => {
+    const reqTemp: any = req;
+    const userId = reqTemp?.id;
+    const sessionId = reqTemp?.sessionId;
+
+    await this.userRepository.updateById<IUser>(userId, {
+      $pull: {sessionIds: sessionId},
+    });
+
+    return [true, []];
   };
 
   async resetPassword(req: Request): Promise<[boolean, IUser | string]> {

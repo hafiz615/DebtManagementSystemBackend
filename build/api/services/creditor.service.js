@@ -13,13 +13,24 @@ class CreditorService {
         const creditor = await this.creditorRepository.getOne({
             $or: [
                 {
-                    'basicInformation.email': text.toLowerCase(),
+                    'basicInformation.email': {
+                        $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+                    },
                 },
                 {
-                    'basicInformation.phone': text,
+                    'basicInformation.phone': {
+                        $regex: new RegExp(text), // Case-insensitive match for phone
+                    },
                 },
             ],
         }, undefined, undefined, ['contacts']);
+        if (!creditor) {
+            return [false, constants_util_1.default.notFoundMessage('Creditor')];
+        }
+        return [true, creditor];
+    }
+    async updateCreditor(req) {
+        const creditor = await this.creditorRepository.updateById(req.params.id, { ...req.body });
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }
