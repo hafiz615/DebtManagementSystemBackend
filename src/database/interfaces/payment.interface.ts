@@ -12,6 +12,10 @@ export interface IPayment extends Document {
   failedReasonAuthorization: string;
   failedReasonCaptured: string;
   rescheduled: string;
+  transactionId: string;
+  retries: number;
+  commission: number;
+  creditorAmount: number;
   createdAt: string;
   updatedAt: string;
 }

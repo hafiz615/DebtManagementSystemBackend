@@ -106,6 +106,12 @@ const debtorModel = new mongoose_1.Schema({
         type: (Array),
         ref: 'Contacts',
     },
+    transactionTypes: {
+        type: (Array),
+    },
+    customerVaultId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

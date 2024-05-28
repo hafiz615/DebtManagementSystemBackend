@@ -18,6 +18,9 @@ class Payment {
         this.failedReasonAuthorization = '';
         this.failedReasonCaptured = '';
         this.rescheduled = '';
+        this.retries = 0;
+        this.commission = 0;
+        this.creditorAmount = 0;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

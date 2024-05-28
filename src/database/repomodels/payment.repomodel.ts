@@ -12,6 +12,10 @@ export class Payment {
   failedReasonAuthorization = '';
   failedReasonCaptured = '';
   rescheduled = '';
+  transactionId: '';
+  retries = 0;
+  commission = 0;
+  creditorAmount = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

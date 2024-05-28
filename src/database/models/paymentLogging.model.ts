@@ -1,0 +1,33 @@
+import mongoose, {Schema} from 'mongoose';
+import {IPaymentLogging} from '../interfaces/paymentLogging.interface';
+const paymentLogging: Schema = new Schema({
+  cronId: {
+    type: String,
+  },
+  paymentId: {
+    type: String,
+  },
+  caseId: {
+    type: String,
+  },
+  userId: {
+    type: String,
+  },
+  failReason: {
+    type: String,
+  },
+  successReason: {
+    type: String,
+  },
+  transactionId: {
+    type: String,
+  },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+});
+export const PaymentLogging = mongoose.model<IPaymentLogging>(
+  'paymentLogging',
+  paymentLogging
+);

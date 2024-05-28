@@ -82,6 +82,12 @@ const debtorModel: Schema = new Schema({
     type: Array<mongoose.Schema.Types.ObjectId>,
     ref: 'Contacts',
   },
+  transactionTypes: {
+    type: Array<{name: ''; priority: ''}>,
+  },
+  customerVaultId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

@@ -65,6 +65,18 @@ const PaymentModel = new mongoose_1.Schema({
     rescheduled: {
         type: String,
     },
+    transactionId: {
+        type: String,
+    },
+    retries: {
+        type: Number,
+    },
+    commission: {
+        type: Number,
+    },
+    creditorAmount: {
+        type: Number,
+    },
     createdAt: {
         type: Date,
         required: true,

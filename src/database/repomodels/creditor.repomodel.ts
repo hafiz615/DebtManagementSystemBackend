@@ -17,6 +17,8 @@ export class Creditor {
     minimum: 0,
     maximum: 0,
   };
+  transactionTypes: Array<{name: ''; priority: ''}>;
+  customerVaultId: '';
   contacts = Array<mongoose.Schema.Types.ObjectId>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

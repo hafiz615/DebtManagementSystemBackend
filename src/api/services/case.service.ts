@@ -11,18 +11,22 @@ import constantsUtil from '../../utils/constants.util';
 import UploadUtil from '../../utils/upload.util';
 import DebtorService from './debtor.service';
 import CreditorService from './creditor.service';
+import {ITargetCustomFields} from '../../database/interfaces/customField.interface';
+import {TargetCFRepository} from '../repository/targetCustomFields/targetCF.repository';
 
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
   private debtorService: DebtorService;
   private creditorService: CreditorService;
+  private targetCFRepository: TargetCFRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
     this.debtorService = new DebtorService();
     this.creditorService = new CreditorService();
+    this.targetCFRepository = new TargetCFRepository();
   }
   createCase = async (
     req: Request
@@ -98,8 +102,12 @@ class CaseService {
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
       findCase.debtor as any
     );
+    const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
+      target: 'case',
+    });
     const tempCase: any = findCase;
     tempCase['creditors'] = creditors;
+    tempCase['customFields'] = temp ? temp.customFields : [];
     return [true, tempCase];
   };
 

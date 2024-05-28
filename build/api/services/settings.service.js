@@ -57,7 +57,16 @@ class SettingsService {
     async getSettings() {
         const findSettings = await this.settingsRepository.getAll();
         const customFields = await this.customFieldsRepository.getAll();
-        findSettings[0].paymentsAuthorizations;
+        if (!findSettings.length) {
+            return [
+                true,
+                {
+                    paymentsAuthorizations: null,
+                    notificationTemplates: null,
+                    customFileds: customFields,
+                },
+            ];
+        }
         return [
             true,
             {

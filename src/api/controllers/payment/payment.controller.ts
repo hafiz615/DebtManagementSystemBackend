@@ -45,7 +45,7 @@ class PaymentController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Upcoming payments'),
+          message: constants.successFoundMessage('Case payments'),
         })
       );
     } catch (error: any) {

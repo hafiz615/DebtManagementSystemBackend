@@ -23,70 +23,34 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Creditor = void 0;
+exports.PaymentLogging = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const creditorModel = new mongoose_1.Schema({
-    basicInformation: {
-        fullName: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-        },
-        phone: {
-            type: String,
-            required: true,
-            unique: true,
-        },
-    },
-    businessInformation: {
-        companyName: {
-            type: String,
-            required: true,
-        },
-        businessCategory: {
-            type: String,
-            required: true,
-        },
-    },
-    contacts: {
-        type: (Array),
-        ref: 'Contacts',
-    },
-    notes: {
+const paymentLogging = new mongoose_1.Schema({
+    cronId: {
         type: String,
     },
-    lastFundedDate: {
-        type: Date,
-        required: true,
+    paymentId: {
+        type: String,
     },
-    historicalRange: {
-        minimum: {
-            type: Number,
-            required: true,
-        },
-        maximum: {
-            type: Number,
-            required: true,
-        },
+    caseId: {
+        type: String,
     },
-    transactionTypes: {
-        type: (Array),
+    userId: {
+        type: String,
     },
-    customerVaultId: {
+    failReason: {
+        type: String,
+    },
+    successReason: {
+        type: String,
+    },
+    transactionId: {
         type: String,
     },
     createdAt: {
         type: Date,
         required: true,
     },
-    updatedAt: {
-        type: Date,
-        required: true,
-    },
 });
-exports.Creditor = mongoose_1.default.model('Creditors', creditorModel);
-//# sourceMappingURL=creditor.model.js.map
+exports.PaymentLogging = mongoose_1.default.model('paymentLogging', paymentLogging);
+//# sourceMappingURL=paymentLogging.model.js.map

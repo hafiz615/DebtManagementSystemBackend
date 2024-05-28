@@ -9,6 +9,7 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const upload_util_1 = __importDefault(require("../../utils/upload.util"));
 const debtor_service_1 = __importDefault(require("./debtor.service"));
 const creditor_service_1 = __importDefault(require("./creditor.service"));
+const targetCF_repository_1 = require("../repository/targetCustomFields/targetCF.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -60,8 +61,12 @@ class CaseService {
                 doc.url = url;
             }
             const creditors = await case_util_1.default.getAllCreditorsOfDebtor(findCase.debtor);
+            const temp = await this.targetCFRepository.getOne({
+                target: 'case',
+            });
             const tempCase = findCase;
             tempCase['creditors'] = creditors;
+            tempCase['customFields'] = temp ? temp.customFields : [];
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
@@ -81,6 +86,7 @@ class CaseService {
         this.uploadUtil = new upload_util_1.default();
         this.debtorService = new debtor_service_1.default();
         this.creditorService = new creditor_service_1.default();
+        this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
     }
 }
 exports.default = CaseService;

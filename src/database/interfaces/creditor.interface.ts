@@ -20,6 +20,8 @@ export interface ICreditor extends Document {
     minimum: number;
     maximum: number;
   };
+  transactionTypes: Array<{name: string; priority: string}>;
+  customerVaultId: string;
   createdAt: string;
   updatedAt: string;
 }

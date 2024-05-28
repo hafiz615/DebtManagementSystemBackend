@@ -51,6 +51,9 @@ class DebtorService {
       debtor: req.params.id,
     });
     const clientDetails = await caseUtil.getClientDetails(req);
+    if (!clientDetails) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
     return [true, {...clientDetails, debtorTotalCases: casesCount}];
   }
 

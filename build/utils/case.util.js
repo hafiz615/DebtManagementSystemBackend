@@ -420,6 +420,12 @@ class CaseUtil {
                 },
             },
             {
+                $addFields: {
+                    lastPayment: { $ifNull: ['$lastPayment', null] },
+                    upcomingPayment: { $ifNull: ['$upcomingPayment', null] },
+                },
+            },
+            {
                 $group: {
                     _id: '$debtor',
                     caseHistory: {
@@ -427,18 +433,18 @@ class CaseUtil {
                             _id: '$_id',
                             creditorName: '$creditorDetails.basicInformation.fullName',
                             totalDebt: '$totalDebt',
-                            lastPayment: '$lastPayment.amount',
+                            lastPayment: { $ifNull: ['$lastPayment.amount', null] },
                             lastPaymentDate: {
                                 $dateToString: {
                                     format: '%Y-%m-%d',
-                                    date: '$lastPayment.dueDate',
+                                    date: { $ifNull: ['$lastPayment.dueDate', null] },
                                 },
                             },
-                            upcomingPayment: '$upcomingPayment.amount',
+                            upcomingPayment: { $ifNull: ['$upcomingPayment.amount', null] },
                             upcomingPaymentDate: {
                                 $dateToString: {
                                     format: '%Y-%m-%d',
-                                    date: '$upcomingPayment.dueDate',
+                                    date: { $ifNull: ['$upcomingPayment.dueDate', null] },
                                 },
                             },
                             caseOwner: '$caseOwner',
@@ -499,6 +505,7 @@ class CaseUtil {
                     caseHistory: 1,
                     debtor: {
                         SSN: '$debtorDetails.basicInformation.SSID',
+                        fullName: '$debtorDetails.basicInformation.fullName',
                         companyName: '$debtorDetails.businessInformation.companyName',
                         email: '$debtorDetails.basicInformation.email',
                         status: '$debtorDetails.basicInformation.status',
@@ -520,8 +527,10 @@ class CaseUtil {
             },
         ];
         const results = await this.caseRepository.applyAggregate(pipeline);
-        results[0].caseHistory = await this.filterAndPaginateCaseHistory(results[0].caseHistory, req);
-        return results[0];
+        if (results[0]?.caseHistory) {
+            results[0].caseHistory = await this.filterAndPaginateCaseHistory(results[0]?.caseHistory, req);
+        }
+        return results.length ? results[0] : null;
     }
     async filterAndPaginateCaseHistory(caseHistory, req) {
         let page = 1;
