@@ -1,4 +1,11 @@
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+
 class PaymentUtil {
+  private paymentRepository: PaymentRepository;
+
+  constructor() {
+    this.paymentRepository = new PaymentRepository();
+  }
   async getFilteredPayments(payments: any) {
     const transformedArray = payments.map(obj => ({
       status: obj.status,
@@ -42,6 +49,120 @@ class PaymentUtil {
       successAuthorizations: successAuthorizations,
       upcomingPayments: upcomingPayments,
     };
+  }
+
+  async getAllCronJobPayments() {
+    const pipeline = [
+      {
+        $facet: {
+          pendingAuthorized: [
+            {$match: {authorized: 'Pending'}},
+            {
+              $project: {
+                _id: 0, // You can project other fields as necessary
+                caseId: 1,
+                authorized: 1,
+                captured: 1,
+                status: 1,
+                amount: 1,
+                dueDate: 1,
+                frequency: 1,
+                intervalId: 1,
+                failedReasonAuthorization: 1,
+                failedReasonCaptured: 1,
+                rescheduled: 1,
+                transactionId: 1,
+                retries: 1,
+                commission: 1,
+                creditorAmount: 1,
+                timePeriod: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          pendingCaptured: [
+            {$match: {authorized: 'Success', captured: 'Pending'}},
+            {
+              $project: {
+                _id: 0,
+                caseId: 1,
+                authorized: 1,
+                captured: 1,
+                status: 1,
+                amount: 1,
+                dueDate: 1,
+                frequency: 1,
+                intervalId: 1,
+                failedReasonAuthorization: 1,
+                failedReasonCaptured: 1,
+                rescheduled: 1,
+                transactionId: 1,
+                retries: 1,
+                commission: 1,
+                creditorAmount: 1,
+                timePeriod: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          failedAuthorized: [
+            {$match: {authorized: 'Failed'}},
+            {
+              $project: {
+                _id: 0,
+                caseId: 1,
+                authorized: 1,
+                captured: 1,
+                status: 1,
+                amount: 1,
+                dueDate: 1,
+                frequency: 1,
+                intervalId: 1,
+                failedReasonAuthorization: 1,
+                failedReasonCaptured: 1,
+                rescheduled: 1,
+                transactionId: 1,
+                retries: 1,
+                commission: 1,
+                creditorAmount: 1,
+                timePeriod: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          failedCaptured: [
+            {$match: {authorized: 'Success', captured: 'Failed'}},
+            {
+              $project: {
+                _id: 0,
+                caseId: 1,
+                authorized: 1,
+                captured: 1,
+                status: 1,
+                amount: 1,
+                dueDate: 1,
+                frequency: 1,
+                intervalId: 1,
+                failedReasonAuthorization: 1,
+                failedReasonCaptured: 1,
+                rescheduled: 1,
+                transactionId: 1,
+                retries: 1,
+                commission: 1,
+                creditorAmount: 1,
+                timePeriod: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+        },
+      },
+    ];
+    return await this.paymentRepository.applyAggregate(pipeline);
   }
 }
 export default new PaymentUtil();

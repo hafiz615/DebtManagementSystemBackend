@@ -107,6 +107,7 @@ class CaseUtil {
         payment.frequency = frequency;
         payment.caseId = caseId;
         payment.intervalId = String(interval._id);
+        payment.timePeriod = interval.timePeriod;
         return { ...payment };
     }
     async getCaseCode() {

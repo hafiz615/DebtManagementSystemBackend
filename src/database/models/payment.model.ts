@@ -52,6 +52,9 @@ const PaymentModel: Schema = new Schema({
   creditorAmount: {
     type: Number,
   },
+  timePeriod: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

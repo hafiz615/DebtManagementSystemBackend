@@ -16,6 +16,7 @@ export class Payment {
   retries = 0;
   commission = 0;
   creditorAmount = 0;
+  timePeriod = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

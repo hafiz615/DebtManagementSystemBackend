@@ -16,6 +16,7 @@ export interface IPayment extends Document {
   retries: number;
   commission: number;
   creditorAmount: number;
+  timePeriod: string;
   createdAt: string;
   updatedAt: string;
 }

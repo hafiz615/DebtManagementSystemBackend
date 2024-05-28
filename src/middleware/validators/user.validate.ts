@@ -27,7 +27,11 @@ class UserRequests {
     } else {
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.details[0].message));
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
     }
   }
   async signIn(req: Request, res: Response, next: NextFunction) {

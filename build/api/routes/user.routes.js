@@ -12,7 +12,7 @@ router.post('/createUser', authorize_middleware_1.default.validateAuth, authoriz
 router.post('/signIn', user_validate_1.default.signIn, user_controller_1.default.signIn);
 router.get('/getUserById/:id', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.getUserById);
 router.get('/getUser', user_controller_1.default.getUser);
-router.put('/updateUser', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.updateUser);
+router.put('/updateUser', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_validate_1.default.createUser, user_controller_1.default.updateUser);
 router.put('/updatePassword', user_controller_1.default.updatePassword);
 router.put('/resetPassword', authorize_middleware_1.default.validateAuth, user_controller_1.default.resetPassword);
 router.delete('/deleteUserById/:id', authorize_middleware_1.default.validateAuth, authorize_middleware_1.default.validateRole, user_controller_1.default.deleteUserById);

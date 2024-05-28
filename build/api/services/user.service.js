@@ -18,7 +18,7 @@ const uuid_1 = require("uuid");
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
-            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' }, isActive: true }, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
+            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' }, isDeleted: false }, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
             if (!users.length) {
                 return [false, constants_util_2.default.notFoundMessage('Users')];
             }
@@ -38,26 +38,34 @@ class UserService {
         this.emailUtil = new email_util_1.default();
     }
     async createUser(req) {
-        const userExist = await this.userRepository.getOne({
+        let user = null;
+        user = await this.userRepository.getOne({
             $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
         });
-        if (userExist) {
-            return [false, constants_util_1.default.alreadyExistsMessage('User')];
+        if (user && !user.isDeleted) {
+            if (user.email === req.body.email.toLowerCase()) {
+                return [false, constants_util_1.default.alreadyExistsMessage('Email')];
+            }
+            return [false, constants_util_1.default.alreadyExistsMessage('Phone')];
         }
-        req.body.email = req.body.email.toLowerCase();
-        const newUser = new user_repomodel_1.User();
-        const validatedUser = dataCopier_util_1.DataCopier.copy(newUser, req.body);
-        const user = await this.userRepository.create(validatedUser);
         if (!user) {
-            return [false, constants_util_1.default.failureRegisterMessage('User')];
+            req.body.email = req.body.email.toLowerCase();
+            const newUser = new user_repomodel_1.User();
+            const validatedUser = dataCopier_util_1.DataCopier.copy(newUser, req.body);
+            user = await this.userRepository.create(validatedUser);
+            if (!user) {
+                return [false, constants_util_1.default.failureRegisterMessage('User')];
+            }
         }
         const token = await this.tokenService.createVerifyToken(user.email);
         const invitationLink = await user_util_1.default.getInvitationLink(token);
         await this.emailUtil.sendInvitationLink(user, invitationLink);
-        await this.userRepository.updateById(user._id, {
-            verifyToken: token,
+        req.body.verifyToken = token;
+        req.body.isDeleted = false;
+        let updatedUser = await this.userRepository.updateById(user._id, {
+            ...req.body,
         });
-        return [true, (0, lodash_1.omit)(user.toJSON(), 'password', 'sessionIds', 'verifyToken')];
+        return [true, updatedUser];
     }
     async signIn(email, password) {
         const userExist = await user_util_1.default.checkUserAndComparePassword(email.toLowerCase(), password);
@@ -102,7 +110,9 @@ class UserService {
     }
     async deleteUserById(id) {
         const user = await this.userRepository.updateById(id, {
+            isDeleted: true,
             isActive: false,
+            password: '',
         });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];

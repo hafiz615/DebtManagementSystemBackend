@@ -77,6 +77,9 @@ const PaymentModel = new mongoose_1.Schema({
     creditorAmount: {
         type: Number,
     },
+    timePeriod: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

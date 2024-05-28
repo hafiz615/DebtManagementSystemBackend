@@ -76,23 +76,23 @@ export class Settings {
     },
     authorizationInterval: {
       custom: {
-        unit: '',
+        unit: 'hours',
         value: 0,
       },
       daily: {
-        unit: '',
+        unit: 'hours',
         value: 0,
       },
       weekly: {
-        unit: '',
+        unit: 'days',
         value: 0,
       },
       fortnightly: {
-        unit: '',
+        unit: 'days',
         value: 0,
       },
       monthly: {
-        unit: '',
+        unit: 'days',
         value: 0,
       },
     },

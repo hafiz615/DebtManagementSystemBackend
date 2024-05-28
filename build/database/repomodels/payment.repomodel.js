@@ -21,6 +21,7 @@ class Payment {
         this.retries = 0;
         this.commission = 0;
         this.creditorAmount = 0;
+        this.timePeriod = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

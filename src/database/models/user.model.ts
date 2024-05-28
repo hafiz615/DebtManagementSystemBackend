@@ -46,6 +46,7 @@ const userModel: Schema = new Schema({
     type: Array<String>,
     select: false,
   },
+  isDeleted: {type: Boolean},
   createdAt: {
     type: Date,
     required: true,
