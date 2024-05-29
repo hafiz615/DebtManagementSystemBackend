@@ -6,10 +6,12 @@ class PaymentLogging {
         this.cronId = '';
         this.paymentId = '';
         this.caseId = '';
-        this.userId = '';
+        this.debtor = '';
         this.failReason = '';
         this.successReason = '';
         this.transactionId = '';
+        this.creditor = '';
+        this.paymentType = '';
         this.createdAt = '';
     }
 }

@@ -10,7 +10,7 @@ const paymentLogging: Schema = new Schema({
   caseId: {
     type: String,
   },
-  userId: {
+  debtor: {
     type: String,
   },
   failReason: {
@@ -20,6 +20,12 @@ const paymentLogging: Schema = new Schema({
     type: String,
   },
   transactionId: {
+    type: String,
+  },
+  creditor: {
+    type: String,
+  },
+  paymentType: {
     type: String,
   },
   createdAt: {

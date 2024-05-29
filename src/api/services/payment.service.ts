@@ -116,18 +116,19 @@ class PaymentService {
     );
   }
 
-  async authorizeCreditCard() {
+  async authorizeCreditCard(amount: number, customer_vault_id: string) {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
     const params = {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
       customer_vault_id: '1922739712',
       type: 'auth',
-      amount: '20.00',
+      amount: '0.00',
     };
 
     try {
       const response = await axios.get(url, {params});
       console.log('Response:', response.data);
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error making request:', error.message);

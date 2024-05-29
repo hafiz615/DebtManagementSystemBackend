@@ -76,6 +76,12 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     return (await this.model.insertMany(datasets)) as T[];
   }
 
+  async updateMany<T>(filter: FilterQuery<T>, updateQuery: QueryOptions<T>) {
+    return await this.model.updateMany(filter, updateQuery, {
+      new: true,
+    });
+  }
+
   async updateById<T>(
     id: string,
     updateQuery: QueryOptions<T>

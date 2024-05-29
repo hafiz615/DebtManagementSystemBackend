@@ -43,9 +43,37 @@ class PaymentUtil {
                     pendingAuthorized: [
                         { $match: { authorized: 'Pending' } },
                         {
+                            $lookup: {
+                                from: 'cases',
+                                localField: 'caseId',
+                                foreignField: '_id',
+                                as: 'caseDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails' },
+                        {
+                            $lookup: {
+                                from: 'debtors',
+                                localField: 'caseDetails.debtor',
+                                foreignField: '_id',
+                                as: 'caseDetails.debtorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.debtorDetails' },
+                        {
+                            $lookup: {
+                                from: 'creditors',
+                                localField: 'caseDetails.creditor',
+                                foreignField: '_id',
+                                as: 'caseDetails.creditorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.creditorDetails' },
+                        {
                             $project: {
-                                _id: 0, // You can project other fields as necessary
+                                _id: 1,
                                 caseId: 1,
+                                caseDetails: 1,
                                 authorized: 1,
                                 captured: 1,
                                 status: 1,
@@ -69,9 +97,37 @@ class PaymentUtil {
                     pendingCaptured: [
                         { $match: { authorized: 'Success', captured: 'Pending' } },
                         {
+                            $lookup: {
+                                from: 'cases',
+                                localField: 'caseId',
+                                foreignField: '_id',
+                                as: 'caseDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails' },
+                        {
+                            $lookup: {
+                                from: 'debtors',
+                                localField: 'caseDetails.debtor',
+                                foreignField: '_id',
+                                as: 'caseDetails.debtorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.debtorDetails' },
+                        {
+                            $lookup: {
+                                from: 'creditors',
+                                localField: 'caseDetails.creditor',
+                                foreignField: '_id',
+                                as: 'caseDetails.creditorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.creditorDetails' },
+                        {
                             $project: {
                                 _id: 0,
                                 caseId: 1,
+                                caseDetails: 1,
                                 authorized: 1,
                                 captured: 1,
                                 status: 1,
@@ -95,9 +151,37 @@ class PaymentUtil {
                     failedAuthorized: [
                         { $match: { authorized: 'Failed' } },
                         {
+                            $lookup: {
+                                from: 'cases',
+                                localField: 'caseId',
+                                foreignField: '_id',
+                                as: 'caseDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails' },
+                        {
+                            $lookup: {
+                                from: 'debtors',
+                                localField: 'caseDetails.debtor',
+                                foreignField: '_id',
+                                as: 'caseDetails.debtorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.debtorDetails' },
+                        {
+                            $lookup: {
+                                from: 'creditors',
+                                localField: 'caseDetails.creditor',
+                                foreignField: '_id',
+                                as: 'caseDetails.creditorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.creditorDetails' },
+                        {
                             $project: {
                                 _id: 0,
                                 caseId: 1,
+                                caseDetails: 1,
                                 authorized: 1,
                                 captured: 1,
                                 status: 1,
@@ -121,9 +205,37 @@ class PaymentUtil {
                     failedCaptured: [
                         { $match: { authorized: 'Success', captured: 'Failed' } },
                         {
+                            $lookup: {
+                                from: 'cases',
+                                localField: 'caseId',
+                                foreignField: '_id',
+                                as: 'caseDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails' },
+                        {
+                            $lookup: {
+                                from: 'debtors',
+                                localField: 'caseDetails.debtor',
+                                foreignField: '_id',
+                                as: 'caseDetails.debtorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.debtorDetails' },
+                        {
+                            $lookup: {
+                                from: 'creditors',
+                                localField: 'caseDetails.creditor',
+                                foreignField: '_id',
+                                as: 'caseDetails.creditorDetails',
+                            },
+                        },
+                        { $unwind: '$caseDetails.creditorDetails' },
+                        {
                             $project: {
                                 _id: 0,
                                 caseId: 1,
+                                caseDetails: 1,
                                 authorized: 1,
                                 captured: 1,
                                 status: 1,

@@ -110,13 +110,20 @@ class CaseValidate {
         });
         if (req.query.bulk === 'true') {
             const cases = req.body.cases;
-            for (const tempCase of cases) {
-                const { error } = schema.validate(tempCase);
-                if (error) {
-                    return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
-                        .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            if (Array.isArray(cases)) {
+                for (const tempCase of cases) {
+                    const { error } = schema.validate(tempCase);
+                    if (error) {
+                        return res
+                            .status(constants_util_1.default.CODE.BAD_REQUEST)
+                            .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+                    }
                 }
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse('Please provide cases array'));
             }
             return next();
         }

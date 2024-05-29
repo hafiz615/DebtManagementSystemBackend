@@ -35,7 +35,7 @@ const paymentLogging = new mongoose_1.Schema({
     caseId: {
         type: String,
     },
-    userId: {
+    debtor: {
         type: String,
     },
     failReason: {
@@ -45,6 +45,12 @@ const paymentLogging = new mongoose_1.Schema({
         type: String,
     },
     transactionId: {
+        type: String,
+    },
+    creditor: {
+        type: String,
+    },
+    paymentType: {
         type: String,
     },
     createdAt: {

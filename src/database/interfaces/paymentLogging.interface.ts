@@ -4,9 +4,11 @@ export interface IPaymentLogging extends Document {
   cronId: string;
   paymentId: string;
   caseId: string;
-  userId: string;
+  debtor: string;
   failReason: string;
   successReason: string;
   transactionId: string;
+  creditor: string;
+  paymentType: string;
   createdAt: string;
 }

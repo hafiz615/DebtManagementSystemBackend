@@ -2,9 +2,11 @@ export class PaymentLogging {
   cronId = '';
   paymentId = '';
   caseId = '';
-  userId = '';
+  debtor = '';
   failReason = '';
   successReason = '';
   transactionId = '';
+  creditor = '';
+  paymentType = '';
   createdAt = '';
 }
