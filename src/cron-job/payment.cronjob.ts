@@ -131,24 +131,48 @@ class CronJob {
           payment.amount,
           ''
         );
-        // const transactionId = new URLSearchParams(response).get(
-        //   'transactionid'
-        // );
-        // console.log(transactionId, 'transactionId');
-        // await this.paymentRepository.updateById<IPayment>(payment._id, {
-        //   transactionId: transactionId,
-        // });
-        // const responseText = new URLSearchParams(response).get('responsetext');
-        // const paymentLogging = new PaymentLogging();
-        // paymentLogging.caseId = String(payment.caseId);
-        // paymentLogging.createdAt = commonUtil.getCurrentDate();
-        // paymentLogging.paymentId = String(payment._id);
-        // paymentLogging.cronId = cronId;
-        // paymentLogging.successReason = responseText;
-        // paymentLogging.transactionId = transactionId;
-        // paymentLogging.paymentType = 'Credit Auth';
-        // paymentLogging.debtor = String(payment.caseDetails.debtor);
-        // await this.paymentLoggingRepository.create(paymentLogging as any);
+        const responseNum = new URLSearchParams(response).get('response');
+        if (responseNum === '1') {
+          const transactionId = new URLSearchParams(response).get(
+            'transactionid'
+          );
+          const responseText = new URLSearchParams(response).get(
+            'responsetext'
+          );
+          console.log(transactionId, 'transactionId');
+          await this.paymentRepository.updateById<IPayment>(payment._id, {
+            transactionId: transactionId,
+            authorized: 'Success',
+          });
+
+          //   const paymentLogging = new PaymentLogging();
+          //   paymentLogging.caseId = String(payment.caseId);
+          //   paymentLogging.createdAt = commonUtil.getCurrentDate();
+          //   paymentLogging.paymentId = String(payment._id);
+          //   paymentLogging.cronId = cronId;
+          //   paymentLogging.successReason = responseText;
+          //   paymentLogging.transactionId = transactionId;
+          //   paymentLogging.paymentType = 'Credit Auth';
+          //   paymentLogging.debtor = String(payment.caseDetails.debtor);
+          //   await this.paymentLoggingRepository.create(paymentLogging as any);
+          // } else {
+          //   await this.paymentRepository.updateById<IPayment>(payment._id, {
+          //     ,
+          //   });
+          //   const responseText = new URLSearchParams(response).get(
+          //     'responsetext'
+          //   );
+          //   const paymentLogging = new PaymentLogging();
+          //   paymentLogging.caseId = String(payment.caseId);
+          //   paymentLogging.createdAt = commonUtil.getCurrentDate();
+          //   paymentLogging.paymentId = String(payment._id);
+          //   paymentLogging.cronId = cronId;
+          //   paymentLogging.successReason = responseText;
+          //   paymentLogging.transactionId = transactionId;
+          //   paymentLogging.paymentType = 'Credit Auth';
+          //   paymentLogging.debtor = String(payment.caseDetails.debtor);
+          //   await this.paymentLoggingRepository.create(paymentLogging as any);
+        }
       }
       break;
     }

@@ -190,21 +190,23 @@ class CaseUtil {
         if (body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
-        let amount = 0;
-        for (const interval of body.intervals) {
-            if (!interval.frequency) {
-                amount += interval.amount;
+        if (body && body.intervals && body.intervals.length) {
+            let amount = 0;
+            for (const interval of body.intervals) {
+                if (!interval.frequency) {
+                    amount += interval.amount;
+                }
+                if (interval.frequency != 0) {
+                    // for (let i = 0; i < interval.frequency; i++) {
+                    //   amount += interval.amount;
+                    // }
+                    let multipliedAmount = interval.frequency * interval.amount;
+                    amount += multipliedAmount;
+                }
             }
-            if (interval.frequency != 0) {
-                // for (let i = 0; i < interval.frequency; i++) {
-                //   amount += interval.amount;
-                // }
-                let multipliedAmount = interval.frequency * interval.amount;
-                amount += multipliedAmount;
+            if (amount !== body.remaining) {
+                return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
             }
-        }
-        if (amount !== body.remaining) {
-            return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
         return [true, ''];
     }

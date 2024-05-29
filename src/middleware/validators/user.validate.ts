@@ -10,7 +10,7 @@ class UserRequests {
       email: Joi.string().email().required(),
       role: Joi.string().valid('Negotiator', 'Manager').required(),
       isActive: Joi.string(),
-      createdBy: Joi.string().required(),
+      createdBy: Joi.string(),
       SSID: Joi.string()
         .pattern(/^\d{9}$/)
         .required(),
