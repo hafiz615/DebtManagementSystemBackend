@@ -154,9 +154,6 @@ const settignsModel: Schema = new Schema({
         maxRetry: {
           type: Number,
         },
-        retryCount: {
-          type: Number,
-        },
       },
       failedPayment: {
         unit: {
@@ -166,9 +163,6 @@ const settignsModel: Schema = new Schema({
           type: Number,
         },
         maxRetry: {
-          type: Number,
-        },
-        retryCount: {
           type: Number,
         },
       },

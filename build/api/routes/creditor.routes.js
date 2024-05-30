@@ -9,6 +9,6 @@ const creditor_controller_1 = __importDefault(require("../controllers/creditor/c
 const creditor_middleware_1 = __importDefault(require("../../middleware/validators/creditor.middleware"));
 const router = (0, express_1.Router)();
 router.post('/getCreditor', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.getCreditor);
-router.put('/updateCreditor', authorize_middleware_1.default.validateAuth, creditor_middleware_1.default.validateCreditor, creditor_controller_1.default.updateCreditor);
+router.put('/updateCreditor/:id', authorize_middleware_1.default.validateAuth, creditor_middleware_1.default.validateCreditor, creditor_controller_1.default.updateCreditor);
 exports.default = router;
 //# sourceMappingURL=creditor.routes.js.map

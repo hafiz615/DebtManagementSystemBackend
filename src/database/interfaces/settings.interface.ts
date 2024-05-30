@@ -18,7 +18,6 @@ interface IRetryIntervalObj {
   unit: string;
   value: number;
   maxRetry: number;
-  retryCount: number;
 }
 interface IRetryInterval {
   failedAuthorization: IRetryIntervalObj;

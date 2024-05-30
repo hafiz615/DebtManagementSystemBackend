@@ -178,9 +178,6 @@ const settignsModel = new mongoose_1.Schema({
                 maxRetry: {
                     type: Number,
                 },
-                retryCount: {
-                    type: Number,
-                },
             },
             failedPayment: {
                 unit: {
@@ -190,9 +187,6 @@ const settignsModel = new mongoose_1.Schema({
                     type: Number,
                 },
                 maxRetry: {
-                    type: Number,
-                },
-                retryCount: {
                     type: Number,
                 },
             },

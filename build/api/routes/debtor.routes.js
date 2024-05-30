@@ -11,6 +11,6 @@ const router = (0, express_1.Router)();
 router.post('/getDebtor', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtor);
 router.get('/listing/details/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.listingDetails);
 router.get('/listing/search', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.searchListing);
-router.put('/updateDebtor', authorize_middleware_1.default.validateAuth, debtor_middleware_1.default.validateDebtor, debtor_controller_1.default.updateDebtor);
+router.put('/updateDebtor/:id', authorize_middleware_1.default.validateAuth, debtor_middleware_1.default.validateDebtor, debtor_controller_1.default.updateDebtor);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

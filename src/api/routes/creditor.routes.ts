@@ -11,7 +11,7 @@ router.post(
   creditorController.getCreditor
 );
 router.put(
-  '/updateCreditor',
+  '/updateCreditor/:id',
   authorize.validateAuth,
   creditor.validateCreditor,
   creditorController.updateCreditor

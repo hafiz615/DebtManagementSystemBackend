@@ -65,13 +65,11 @@ export class Settings {
         unit: '',
         value: 0,
         maxRetry: 0,
-        retryCount: 0,
       },
       failedPayment: {
         unit: '',
         value: 0,
         maxRetry: 0,
-        retryCount: 0,
       },
     },
     authorizationInterval: {

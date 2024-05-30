@@ -10,8 +10,10 @@ class PaymentUtil {
             status: obj.status,
             caseOwner: obj.caseId.caseOwner,
             totalDebt: obj.caseId.totalDebt,
-            fullName: obj.caseId.debtor.basicInformation.fullName,
-            SSID: obj.caseId.debtor.basicInformation.SSID,
+            fullName: obj.caseId.debtor
+                ? obj.caseId.debtor.basicInformation.fullName
+                : '',
+            SSID: obj.caseId.debtor ? obj.caseId.debtor.basicInformation.SSID : '',
             authorized: obj.authorized,
             captured: obj.captured,
             amount: obj.amount,
