@@ -99,8 +99,8 @@ class CaseValidate {
             paidAmount: joi_1.default.number().strict().required(),
             remaining: joi_1.default.number().strict().required(),
             status: joi_1.default.string().required(),
-            weeklyBudget: joi_1.default.number().required(),
-            commissionPaidAlready: joi_1.default.boolean().required(),
+            // weeklyBudget: Joi.number().required(),
+            // commissionPaidAlready: Joi.boolean().required(),
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),
                 startDate: joi_1.default.date().required(),
