@@ -10,7 +10,10 @@ const settignsModel: Schema = new Schema({
       sms: {
         type: Boolean,
       },
-      template: {
+      smsTemplate: {
+        type: String,
+      },
+      emailTemplate: {
         type: String,
       },
       sendTo: {
@@ -38,7 +41,10 @@ const settignsModel: Schema = new Schema({
       sms: {
         type: Boolean,
       },
-      template: {
+      smsTemplate: {
+        type: String,
+      },
+      emailTemplate: {
         type: String,
       },
       sendTo: {
@@ -66,7 +72,10 @@ const settignsModel: Schema = new Schema({
       sms: {
         type: Boolean,
       },
-      template: {
+      smsTemplate: {
+        type: String,
+      },
+      emailTemplate: {
         type: String,
       },
       sendTo: {
@@ -94,7 +103,10 @@ const settignsModel: Schema = new Schema({
       sms: {
         type: Boolean,
       },
-      template: {
+      smsTemplate: {
+        type: String,
+      },
+      emailTemplate: {
         type: String,
       },
       sendTo: {
@@ -122,7 +134,10 @@ const settignsModel: Schema = new Schema({
       sms: {
         type: Boolean,
       },
-      template: {
+      smsTemplate: {
+        type: String,
+      },
+      emailTemplate: {
         type: String,
       },
       sendTo: {

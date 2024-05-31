@@ -63,7 +63,7 @@ class SettingsService {
                 {
                     paymentsAuthorizations: null,
                     notificationTemplates: null,
-                    customFileds: customFields,
+                    customFields: customFields,
                 },
             ];
         }
@@ -72,7 +72,7 @@ class SettingsService {
             {
                 paymentsAuthorizations: findSettings[0].paymentsAuthorizations,
                 notificationTemplates: findSettings[0].notificationTemplates,
-                customFileds: customFields,
+                customFields: customFields,
             },
         ];
     }

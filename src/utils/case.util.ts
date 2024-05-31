@@ -21,6 +21,7 @@ import constantsUtil from './constants.util';
 import paymentUtil from './payment.util';
 import {Request} from 'express';
 import mongoose from 'mongoose';
+import {AnyARecord} from 'dns';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -78,14 +79,22 @@ class CaseUtil {
     const payment = new Payment();
     const paymentsArray = [];
     let tempPayment = null;
+    let commission = 0;
     for (const interval of data.intervals) {
       if (interval.frequency === 0) {
         payment.dueDate = interval.startDate;
+        if (!data.commissionPaidAlready) {
+          commission = await this.calculateCommision(
+            interval,
+            data.weeklyBudget
+          );
+        }
         tempPayment = await this.populatePayment(
           data._id,
           payment,
           interval,
-          0
+          0,
+          commission
         );
         paymentsArray.push(tempPayment);
       }
@@ -100,17 +109,60 @@ class CaseUtil {
               i
             );
           }
+          if (!data.commissionPaidAlready) {
+            commission = await this.calculateCommision(
+              interval,
+              data.weeklyBudget
+            );
+          }
           tempPayment = await this.populatePayment(
             data._id,
             payment,
             interval,
-            i
+            i,
+            commission
           );
           paymentsArray.push(tempPayment);
         }
       }
     }
     await this.paymentRepository.createMany<IPayment>(paymentsArray);
+  }
+
+  async calculateCommision(
+    interval: any,
+    weeklyBudget: number
+  ): Promise<number> {
+    switch (interval.timePeriod.toLowerCase()) {
+      case 'custom':
+        return weeklyBudget <= interval.amount
+          ? 0
+          : weeklyBudget - interval.amount;
+      case 'daily':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission / interval.frequency).toFixed(2));
+        }
+        return 0;
+      case 'weekly':
+        return weeklyBudget <= interval.amount
+          ? 0
+          : weeklyBudget - interval.amount;
+      case 'monthly':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission * 4).toFixed(2));
+        }
+        return 0;
+      case 'fortnightly':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission * 2).toFixed(2));
+        }
+        return 0;
+      default:
+        throw new Error('Invalid time period');
+    }
   }
 
   async getDatePayment(
@@ -144,13 +196,15 @@ class CaseUtil {
     caseId: string,
     payment: Payment,
     interval: any,
-    frequency: number
+    frequency: number,
+    commission: number
   ) {
     payment.amount = interval.amount;
     payment.frequency = frequency;
     payment.caseId = caseId;
     payment.intervalId = String(interval._id);
     payment.timePeriod = interval.timePeriod;
+    payment.commission = commission;
     return {...payment};
   }
 
@@ -239,6 +293,11 @@ class CaseUtil {
     newCase.caseOwner = role;
     newCase.createdBy = email;
     newCase.caseCode = await this.getCaseCode();
+    if (!body.commissionPaidAlready) {
+      newCase.commissionCalculated = parseInt(
+        (body.totalDebt * 0.19).toFixed(2)
+      );
+    }
     const validatedCase = DataCopier.copy(newCase, body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
     await this.createPayment(caseCreated);

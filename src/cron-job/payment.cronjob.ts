@@ -45,23 +45,6 @@ class CronJob {
     await this.pendingCaptured(payments, cronId);
     await this.failedAuthorized(payments, cronId, settings);
     await this.failedCaptured(payments, cronId, settings);
-    // const failedAuthorized = payments[0].failedAuthorized.filter(
-    //   (payment: IPayment) => {
-    //     const interval =
-    //       authorizationInterval[payment.timePeriod.toLowerCase()];
-    //     return this.shouldAuthorize(interval.unit, interval.value, payment);
-    //   }
-    // );
-    // console.log(failedAuthorized, 'failedAuthorized');
-
-    // const failedCaptured = payments[0].failedCaptured.filter(
-    //   (payment: IPayment) => {
-    //     const interval =
-    //       authorizationInterval[payment.timePeriod.toLowerCase()];
-    //     return this.shouldAuthorize(interval.unit, interval.value, payment);
-    //   }
-    // );
-    // console.log(failedCaptured, 'failedCaptured');
   }
   shouldAuthorize(unit: string, value: number, payment: IPayment): boolean {
     const dueDate = new Date(payment.dueDate);
@@ -134,51 +117,6 @@ class CronJob {
     );
     console.log(pendingAuthorized, 'pendingAuthorizedd');
     await this.processAuthorized(pendingAuthorized, cronId, false);
-    // const paymentType = 'Credit Card';
-    // for (const payment of pendingAuthorized) {
-    //   console.log('calculation');
-    //   if (paymentType === 'Credit Card') {
-    //     console.log(payment.amount, 'payment.amount');
-    //     const response = await this.paymentService.authorizeCreditCard(
-    //       payment.amount,
-    //       ''
-    //     );
-    //     const responseNum = new URLSearchParams(response).get('response');
-    //     const responseText = new URLSearchParams(response).get('responsetext');
-    //     const paymentLogging = new PaymentLogging();
-
-    //     if (responseNum === '1') {
-    //       const transactionId = new URLSearchParams(response).get(
-    //         'transactionid'
-    //       );
-    //       console.log(transactionId, 'transactionId');
-    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //         transactionId: transactionId,
-    //         authorized: 'Success',
-    //         status: 'Pending',
-    //       });
-
-    //       paymentLogging.successReason = responseText;
-    //       paymentLogging.transactionId = transactionId;
-    //     } else {
-    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //         authorized: 'Failed',
-    //         status: 'Pending',
-    //       });
-    //       const responseText = new URLSearchParams(response).get(
-    //         'responsetext'
-    //       );
-    //       paymentLogging.failReason = responseText;
-    //     }
-    //     paymentLogging.caseId = String(payment.caseId);
-    //     paymentLogging.createdAt = commonUtil.getCurrentDate();
-    //     paymentLogging.paymentId = String(payment._id);
-    //     paymentLogging.cronId = cronId;
-    //     paymentLogging.paymentType = 'Credit Auth';
-    //     paymentLogging.debtor = String(payment.caseDetails.debtor);
-    //     await this.paymentLoggingRepository.create(paymentLogging as any);
-    //   }
-    // }
   }
 
   async pendingCaptured(payments: any, cronId: string) {
@@ -189,47 +127,6 @@ class CronJob {
       }
     );
     await this.processCapture(pendingCaptured, cronId, false);
-    // const paymentType = 'Credit Card';
-    // for (const payment of pendingCaptured) {
-    //   if (paymentType === 'Credit Card') {
-    //     const response = await this.paymentService.captureCreditCard(
-    //       '',
-    //       payment.transactionId
-    //     );
-    //     const responseNum = new URLSearchParams(response).get('response');
-    //     const responseText = new URLSearchParams(response).get('responsetext');
-    //     const paymentLogging = new PaymentLogging();
-
-    //     if (responseNum === '1') {
-    //       const transactionId = new URLSearchParams(response).get(
-    //         'transactionid'
-    //       );
-    //       console.log(transactionId, 'transactionId');
-    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //         captured: 'Success',
-    //         status: 'Success',
-    //       });
-
-    //       paymentLogging.successReason = responseText;
-    //       paymentLogging.transactionId = transactionId;
-    //     } else {
-    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //         captured: 'Failed',
-    //       });
-    //       const responseText = new URLSearchParams(response).get(
-    //         'responsetext'
-    //       );
-    //       paymentLogging.failReason = responseText;
-    //     }
-    //     paymentLogging.caseId = String(payment.caseId);
-    //     paymentLogging.createdAt = commonUtil.getCurrentDate();
-    //     paymentLogging.paymentId = String(payment._id);
-    //     paymentLogging.cronId = cronId;
-    //     paymentLogging.paymentType = 'Credit Capture';
-    //     paymentLogging.debtor = String(payment.caseDetails.debtor);
-    //     await this.paymentLoggingRepository.create(paymentLogging as any);
-    //   }
-    // }
   }
 
   retry(unit: string, value: number, payment: IPayment): boolean {
@@ -291,54 +188,136 @@ class CronJob {
           payment.amount,
           ''
         );
-        const responseNum = new URLSearchParams(response).get('response');
-        const responseText = new URLSearchParams(response).get('responsetext');
-        const paymentLogging = new PaymentLogging();
-        const updateObjPayment = {};
-        if (responseNum === '1') {
-          const transactionId = new URLSearchParams(response).get(
-            'transactionid'
-          );
-          console.log(transactionId, 'transactionId');
-          updateObjPayment['transactionId'] = transactionId;
-          updateObjPayment['authorized'] = 'Success';
-          updateObjPayment['status'] = 'Pending';
-          // await this.paymentRepository.updateById<IPayment>(payment._id, {
-          //   transactionId: transactionId,
-          //   authorized: 'Success',
-          //   status: 'Pending',
-          // });
-
-          paymentLogging.successReason = responseText;
-          paymentLogging.transactionId = transactionId;
-        } else {
-          updateObjPayment['authorized'] = 'Failed';
-          updateObjPayment['status'] = 'Pending';
-          updateObjPayment['failedReasonAuthorization'] = responseText;
-          // await this.paymentRepository.updateById<IPayment>(payment._id, {
-          //   authorized: 'Failed',
-          //   status: 'Pending',
-          // });
-          paymentLogging.failReason = responseText;
-        }
-        if (retryPlus)
-          updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
-
-        await this.paymentRepository.updateById<IPayment>(
-          payment._id,
-          updateObjPayment
+        await this.processAuthorizedResponse(
+          payment,
+          response,
+          retryPlus,
+          cronId,
+          0
         );
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = commonUtil.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.cronId = cronId;
-        paymentLogging.paymentType = 'Credit Auth';
-        paymentLogging.debtor = String(payment.caseDetails.debtor);
-        await this.paymentLoggingRepository.create(paymentLogging as any);
+        const commission = await this.checkCommission(payment);
+        if (commission) {
+          const response = await this.paymentService.authorizeCreditCard(
+            commission,
+            ''
+          );
+          await this.processAuthorizedResponse(
+            payment,
+            response,
+            retryPlus,
+            cronId,
+            commission
+          );
+        }
+        // const responseNum = new URLSearchParams(response).get('response');
+        // const responseText = new URLSearchParams(response).get('responsetext');
+        // const paymentLogging = new PaymentLogging();
+        // const updateObjPayment = {};
+        // if (responseNum === '1') {
+        //   const transactionId = new URLSearchParams(response).get(
+        //     'transactionid'
+        //   );
+        //   console.log(transactionId, 'transactionId');
+        //   updateObjPayment['debtorTransId'] = transactionId;
+        //   updateObjPayment['authorized'] = 'Success';
+        //   updateObjPayment['status'] = 'Pending';
+        //   // await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //   //   transactionId: transactionId,
+        //   //   authorized: 'Success',
+        //   //   status: 'Pending',
+        //   // });
+
+        //   paymentLogging.successReason = responseText;
+        // } else {
+        //   updateObjPayment['authorized'] = 'Failed';
+        //   updateObjPayment['status'] = 'Pending';
+        //   updateObjPayment['failedReasonAuthorization'] = responseText;
+        //   // await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //   //   authorized: 'Failed',
+        //   //   status: 'Pending',
+        //   // });
+        //   paymentLogging.failReason = responseText;
+        // }
+        // if (retryPlus)
+        //   updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
+
+        // await this.paymentRepository.updateById<IPayment>(
+        //   payment._id,
+        //   updateObjPayment
+        // );
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.cronId = cronId;
+        // paymentLogging.paymentType = 'Credit Auth';
+        // paymentLogging.debtor = String(payment.caseDetails.debtor);
+        // await this.paymentLoggingRepository.create(paymentLogging as any);
       }
     }
   }
 
+  async processAuthorizedResponse(
+    payment: any,
+    response: any,
+    retryPlus: boolean,
+    cronId: string,
+    commission: number
+  ) {
+    const responseNum = new URLSearchParams(response).get('response');
+    const responseText = new URLSearchParams(response).get('responsetext');
+    const paymentLogging = new PaymentLogging();
+    const updateObjPayment = {};
+    if (responseNum === '1') {
+      const transactionId = new URLSearchParams(response).get('transactionid');
+      console.log(transactionId, 'transactionId');
+      updateObjPayment['debtorTransId'] = transactionId;
+      updateObjPayment['authorized'] = 'Success';
+      updateObjPayment['status'] = 'Pending';
+      // await this.paymentRepository.updateById<IPayment>(payment._id, {
+      //   transactionId: transactionId,
+      //   authorized: 'Success',
+      //   status: 'Pending',
+      // });
+
+      paymentLogging.successReason = responseText;
+    } else {
+      updateObjPayment['authorized'] = 'Failed';
+      updateObjPayment['status'] = 'Pending';
+      updateObjPayment['failedReasonAuthorization'] = responseText;
+      // await this.paymentRepository.updateById<IPayment>(payment._id, {
+      //   authorized: 'Failed',
+      //   status: 'Pending',
+      // });
+      paymentLogging.failReason = responseText;
+    }
+    if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
+
+    await this.paymentRepository.updateById<IPayment>(
+      payment._id,
+      updateObjPayment
+    );
+    paymentLogging.caseId = String(payment.caseId);
+    paymentLogging.createdAt = commonUtil.getCurrentDate();
+    paymentLogging.paymentId = String(payment._id);
+    paymentLogging.cronId = cronId;
+    paymentLogging.paymentType = 'Credit Auth';
+    paymentLogging.debtor = String(payment.caseDetails.debtor);
+    await this.paymentLoggingRepository.create(paymentLogging as any);
+  }
+
+  async checkCommission(payment: any) {
+    if (!payment.commission) return payment.commission;
+    const totalCommision = payment.caseDetails.commissionCalculated;
+    const commissionPaid = payment.caseDetails.commissionPaying;
+    if ((totalCommision | 0) === ((commissionPaid + payment.commission) | 0))
+      return 0;
+    if ((totalCommision | 0) < ((commissionPaid + payment.commission) | 0)) {
+      const temp = totalCommision - (commissionPaid + payment.commission);
+      const remaining = payment.commission - temp;
+      return remaining;
+    }
+    return payment.commision;
+  }
   async failedCaptured(payments: any, cronId: string, settings: ISettings[]) {
     const {retryInterval} = settings.length
       ? settings[0].paymentsAuthorizations
@@ -368,7 +347,7 @@ class CronJob {
       if (paymentType === 'Credit Card') {
         const response = await this.paymentService.captureCreditCard(
           '',
-          payment.transactionId
+          payment.debtorTransId
         );
         const responseNum = new URLSearchParams(response).get('response');
         const responseText = new URLSearchParams(response).get('responsetext');
@@ -386,7 +365,6 @@ class CronJob {
           //   status: 'Success',
           // });
           paymentLogging.successReason = responseText;
-          paymentLogging.transactionId = transactionId;
         } else {
           updateObjPayment['captured'] = 'Failed';
           updateObjPayment['failedReasonCaptured'] = responseText;

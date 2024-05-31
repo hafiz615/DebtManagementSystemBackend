@@ -7,7 +7,8 @@ class Settings {
             failedAuthorizations: {
                 email: false,
                 sms: false,
-                template: '',
+                smsTemplate: '',
+                emailTemplate: '',
                 sendTo: {
                     admin: false,
                     manager: false,
@@ -19,7 +20,8 @@ class Settings {
             successfulAuthorizations: {
                 email: false,
                 sms: false,
-                template: '',
+                smsTemplate: '',
+                emailTemplate: '',
                 sendTo: {
                     admin: false,
                     manager: false,
@@ -31,7 +33,8 @@ class Settings {
             failedPayments: {
                 email: false,
                 sms: false,
-                template: '',
+                smsTemplate: '',
+                emailTemplate: '',
                 sendTo: {
                     admin: false,
                     manager: false,
@@ -43,7 +46,8 @@ class Settings {
             successPayments: {
                 email: false,
                 sms: false,
-                template: '',
+                smsTemplate: '',
+                emailTemplate: '',
                 sendTo: {
                     admin: false,
                     manager: false,
@@ -55,7 +59,8 @@ class Settings {
             upcomingPayments: {
                 email: false,
                 sms: false,
-                template: '',
+                smsTemplate: '',
+                emailTemplate: '',
                 sendTo: {
                     admin: false,
                     manager: false,

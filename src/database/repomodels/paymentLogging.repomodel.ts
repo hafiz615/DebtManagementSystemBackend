@@ -5,7 +5,6 @@ export class PaymentLogging {
   debtor = '';
   failReason = '';
   successReason = '';
-  transactionId = '';
   creditor = '';
   paymentType = '';
   createdAt = '';

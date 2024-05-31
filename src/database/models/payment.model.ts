@@ -40,16 +40,22 @@ const PaymentModel: Schema = new Schema({
   rescheduled: {
     type: String,
   },
-  transactionId: {
+  debtorTransId: {
     type: String,
   },
-  retries: {
+  commissionTransId: {
+    type: String,
+  },
+  retriesAuth: {
+    type: Number,
+  },
+  retriesCapture: {
     type: Number,
   },
   commission: {
     type: Number,
   },
-  creditorAmount: {
+  calculatedCommision: {
     type: Number,
   },
   timePeriod: {

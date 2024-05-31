@@ -34,7 +34,10 @@ const settignsModel = new mongoose_1.Schema({
             sms: {
                 type: Boolean,
             },
-            template: {
+            smsTemplate: {
+                type: String,
+            },
+            emailTemplate: {
                 type: String,
             },
             sendTo: {
@@ -62,7 +65,10 @@ const settignsModel = new mongoose_1.Schema({
             sms: {
                 type: Boolean,
             },
-            template: {
+            smsTemplate: {
+                type: String,
+            },
+            emailTemplate: {
                 type: String,
             },
             sendTo: {
@@ -90,7 +96,10 @@ const settignsModel = new mongoose_1.Schema({
             sms: {
                 type: Boolean,
             },
-            template: {
+            smsTemplate: {
+                type: String,
+            },
+            emailTemplate: {
                 type: String,
             },
             sendTo: {
@@ -118,7 +127,10 @@ const settignsModel = new mongoose_1.Schema({
             sms: {
                 type: Boolean,
             },
-            template: {
+            smsTemplate: {
+                type: String,
+            },
+            emailTemplate: {
                 type: String,
             },
             sendTo: {
@@ -146,7 +158,10 @@ const settignsModel = new mongoose_1.Schema({
             sms: {
                 type: Boolean,
             },
-            template: {
+            smsTemplate: {
+                type: String,
+            },
+            emailTemplate: {
                 type: String,
             },
             sendTo: {

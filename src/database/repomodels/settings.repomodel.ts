@@ -3,7 +3,8 @@ export class Settings {
     failedAuthorizations: {
       email: false,
       sms: false,
-      template: '',
+      smsTemplate: '',
+      emailTemplate: '',
       sendTo: {
         admin: false,
         manager: false,
@@ -15,7 +16,8 @@ export class Settings {
     successfulAuthorizations: {
       email: false,
       sms: false,
-      template: '',
+      smsTemplate: '',
+      emailTemplate: '',
       sendTo: {
         admin: false,
         manager: false,
@@ -27,7 +29,8 @@ export class Settings {
     failedPayments: {
       email: false,
       sms: false,
-      template: '',
+      smsTemplate: '',
+      emailTemplate: '',
       sendTo: {
         admin: false,
         manager: false,
@@ -39,7 +42,8 @@ export class Settings {
     successPayments: {
       email: false,
       sms: false,
-      template: '',
+      smsTemplate: '',
+      emailTemplate: '',
       sendTo: {
         admin: false,
         manager: false,
@@ -51,7 +55,8 @@ export class Settings {
     upcomingPayments: {
       email: false,
       sms: false,
-      template: '',
+      smsTemplate: '',
+      emailTemplate: '',
       sendTo: {
         admin: false,
         manager: false,

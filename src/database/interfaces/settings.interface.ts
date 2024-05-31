@@ -10,7 +10,8 @@ interface ISendTo {
 interface INotify {
   email: boolean;
   sms: boolean;
-  template: string;
+  smsTemplate: string;
+  emailTemplate: string;
   sendTo: ISendTo;
 }
 

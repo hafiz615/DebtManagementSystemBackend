@@ -13,8 +13,10 @@ export class Payment {
   failedReasonCaptured = '';
   rescheduled = '';
   debtorTransId = '';
-  retries = 0;
+  retriesAuth = 0;
+  retriesCapture = 0;
   commission = 0;
+  calculatedCommision = 0;
   commissionTransId = '';
   timePeriod = '';
   createdAt = commonUtil.getCurrentDate();

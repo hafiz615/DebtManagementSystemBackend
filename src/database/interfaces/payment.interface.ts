@@ -16,7 +16,8 @@ export interface IPayment extends Document {
   retriesAuth: number;
   retriesCapture: number;
   commission: number;
-  creditorAmount: number;
+  calculatedCommision: number;
+  commissionTransId: string;
   timePeriod: string;
   createdAt: string;
   updatedAt: string;

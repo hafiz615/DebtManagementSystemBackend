@@ -19,8 +19,10 @@ class Payment {
         this.failedReasonCaptured = '';
         this.rescheduled = '';
         this.debtorTransId = '';
-        this.retries = 0;
+        this.retriesAuth = 0;
+        this.retriesCapture = 0;
         this.commission = 0;
+        this.calculatedCommision = 0;
         this.commissionTransId = '';
         this.timePeriod = '';
         this.createdAt = common_util_1.default.getCurrentDate();

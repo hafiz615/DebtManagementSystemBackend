@@ -61,10 +61,14 @@ class CaseUtil {
         const payment = new payment_repomodel_1.Payment();
         const paymentsArray = [];
         let tempPayment = null;
+        let commission = 0;
         for (const interval of data.intervals) {
             if (interval.frequency === 0) {
                 payment.dueDate = interval.startDate;
-                tempPayment = await this.populatePayment(data._id, payment, interval, 0);
+                if (!data.commissionPaidAlready) {
+                    commission = await this.calculateCommision(interval, data.weeklyBudget);
+                }
+                tempPayment = await this.populatePayment(data._id, payment, interval, 0, commission);
                 paymentsArray.push(tempPayment);
             }
             if (interval.frequency != 0) {
@@ -75,12 +79,47 @@ class CaseUtil {
                     else {
                         payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i);
                     }
-                    tempPayment = await this.populatePayment(data._id, payment, interval, i);
+                    if (!data.commissionPaidAlready) {
+                        commission = await this.calculateCommision(interval, data.weeklyBudget);
+                    }
+                    tempPayment = await this.populatePayment(data._id, payment, interval, i, commission);
                     paymentsArray.push(tempPayment);
                 }
             }
         }
         await this.paymentRepository.createMany(paymentsArray);
+    }
+    async calculateCommision(interval, weeklyBudget) {
+        switch (interval.timePeriod.toLowerCase()) {
+            case 'custom':
+                return weeklyBudget <= interval.amount
+                    ? 0
+                    : weeklyBudget - interval.amount;
+            case 'daily':
+                if (weeklyBudget > interval.amount) {
+                    const totalCommission = weeklyBudget - interval.amount;
+                    return parseInt((totalCommission / interval.frequency).toFixed(2));
+                }
+                return 0;
+            case 'weekly':
+                return weeklyBudget <= interval.amount
+                    ? 0
+                    : weeklyBudget - interval.amount;
+            case 'monthly':
+                if (weeklyBudget > interval.amount) {
+                    const totalCommission = weeklyBudget - interval.amount;
+                    return parseInt((totalCommission * 4).toFixed(2));
+                }
+                return 0;
+            case 'fortnightly':
+                if (weeklyBudget > interval.amount) {
+                    const totalCommission = weeklyBudget - interval.amount;
+                    return parseInt((totalCommission * 2).toFixed(2));
+                }
+                return 0;
+            default:
+                throw new Error('Invalid time period');
+        }
     }
     async getDatePayment(date, timePeriod, number) {
         const currentDate = new Date(date);
@@ -102,12 +141,13 @@ class CaseUtil {
         }
         return currentDate.toString();
     }
-    async populatePayment(caseId, payment, interval, frequency) {
+    async populatePayment(caseId, payment, interval, frequency, commission) {
         payment.amount = interval.amount;
         payment.frequency = frequency;
         payment.caseId = caseId;
         payment.intervalId = String(interval._id);
         payment.timePeriod = interval.timePeriod;
+        payment.commission = commission;
         return { ...payment };
     }
     async getCaseCode() {
@@ -181,6 +221,9 @@ class CaseUtil {
         newCase.caseOwner = role;
         newCase.createdBy = email;
         newCase.caseCode = await this.getCaseCode();
+        if (!body.commissionPaidAlready) {
+            newCase.commissionCalculated = parseInt((body.totalDebt * 0.19).toFixed(2));
+        }
         const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
         const caseCreated = await this.caseRepository.create(validatedCase);
         await this.createPayment(caseCreated);
