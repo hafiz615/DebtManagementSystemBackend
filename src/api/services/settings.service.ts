@@ -56,9 +56,14 @@ class SettingsService {
         req.body.notificationTemplates.sms[num - 1].templateId =
           'Template-' + num.toString().padStart(3, '0');
       }
-      settigns = await this.settingsRepository.updateById(findSettings[0].id, {
-        ...req.body,
-      });
+      const mergedSettings = await settingsUtil.mergeSettings(
+        findSettings[0],
+        req.body
+      );
+      settigns = await this.settingsRepository.updateById(
+        findSettings[0].id,
+        mergedSettings
+      );
     }
     if (!settigns) {
       return [false, constants.failureUpdateMessage('settings')];
@@ -148,29 +153,15 @@ class SettingsService {
     );
   }
 
-  /**
-   * Updates the custom fields for a specific target.
-   *
-   * @param req - The Express request object containing the target and updated custom fields.
-   * @returns A Promise that resolves to a tuple containing a boolean indicating success and the updated target custom fields or an error message.
-   *
-   * @remarks
-   * This method updates the custom fields for a specific target in the database.
-   * It checks if the target is provided in the request query parameters.
-   * If the target is missing, it returns an error message.
-   * It then updates the target custom field with the new custom fields array using the `targetCFRepository.updateByOne` method.
-   * If the target custom field is not found, it returns an error message.
-   * Otherwise, it returns the updated target custom fields.
-   */
   async updateCustomFieldByTarget(
     req: Request
   ): Promise<[boolean, ITargetCustomFields | string]> {
-    if (!req.query.target) {
-      return [false, 'Target is missing'];
-    }
+    if (!req.query.target) return [false, 'Target is missing'];
     const target = String(req.query.target);
     const updatedCustomFields = req.body.customFields;
 
+    if (!updatedCustomFields || !updatedCustomFields.length)
+      return [false, 'CustomFields missing!'];
     // Update the target custom field with the new custom fields array
     const targetCF =
       await this.targetCFRepository.updateByOne<ITargetCustomFields>(
@@ -179,7 +170,7 @@ class SettingsService {
       );
 
     if (!targetCF) {
-      return [false, constants.notFoundMessage('custom fields for target')];
+      return [false, constants.failureUpdateMessage('custom fields')];
     }
 
     return [true, targetCF];

@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Database = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
-let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
+let dbconfig = 'mongodb://165.227.188.235:27018/debt-settlement?authSource=admin';
 class Database {
     constructor() {
         this.dbUri = dbconfig;
