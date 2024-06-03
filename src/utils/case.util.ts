@@ -21,6 +21,7 @@ import constantsUtil from './constants.util';
 import paymentUtil from './payment.util';
 import {Request} from 'express';
 import mongoose from 'mongoose';
+import {AnyARecord} from 'dns';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -78,14 +79,22 @@ class CaseUtil {
     const payment = new Payment();
     const paymentsArray = [];
     let tempPayment = null;
+    let commission = 0;
     for (const interval of data.intervals) {
       if (interval.frequency === 0) {
         payment.dueDate = interval.startDate;
+        if (!data.commissionPaidAlready) {
+          commission = await this.calculateCommision(
+            interval,
+            data.weeklyBudget
+          );
+        }
         tempPayment = await this.populatePayment(
           data._id,
           payment,
           interval,
-          0
+          0,
+          commission
         );
         paymentsArray.push(tempPayment);
       }
@@ -100,17 +109,60 @@ class CaseUtil {
               i
             );
           }
+          if (!data.commissionPaidAlready) {
+            commission = await this.calculateCommision(
+              interval,
+              data.weeklyBudget
+            );
+          }
           tempPayment = await this.populatePayment(
             data._id,
             payment,
             interval,
-            i
+            i,
+            commission
           );
           paymentsArray.push(tempPayment);
         }
       }
     }
     await this.paymentRepository.createMany<IPayment>(paymentsArray);
+  }
+
+  async calculateCommision(
+    interval: any,
+    weeklyBudget: number
+  ): Promise<number> {
+    switch (interval.timePeriod.toLowerCase()) {
+      case 'custom':
+        return weeklyBudget <= interval.amount
+          ? 0
+          : weeklyBudget - interval.amount;
+      case 'daily':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission / interval.frequency).toFixed(2));
+        }
+        return 0;
+      case 'weekly':
+        return weeklyBudget <= interval.amount
+          ? 0
+          : weeklyBudget - interval.amount;
+      case 'monthly':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission * 4).toFixed(2));
+        }
+        return 0;
+      case 'fortnightly':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission * 2).toFixed(2));
+        }
+        return 0;
+      default:
+        throw new Error('Invalid time period');
+    }
   }
 
   async getDatePayment(
@@ -144,12 +196,15 @@ class CaseUtil {
     caseId: string,
     payment: Payment,
     interval: any,
-    frequency: number
+    frequency: number,
+    commission: number
   ) {
     payment.amount = interval.amount;
     payment.frequency = frequency;
     payment.caseId = caseId;
     payment.intervalId = String(interval._id);
+    payment.timePeriod = interval.timePeriod;
+    payment.commission = commission;
     return {...payment};
   }
 
@@ -238,6 +293,11 @@ class CaseUtil {
     newCase.caseOwner = role;
     newCase.createdBy = email;
     newCase.caseCode = await this.getCaseCode();
+    if (!body.commissionPaidAlready) {
+      newCase.commissionCalculated = parseInt(
+        (body.totalDebt * 0.19).toFixed(2)
+      );
+    }
     const validatedCase = DataCopier.copy(newCase, body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
     await this.createPayment(caseCreated);
@@ -248,21 +308,23 @@ class CaseUtil {
     if (body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
-    let amount = 0;
-    for (const interval of body.intervals) {
-      if (!interval.frequency) {
-        amount += interval.amount;
+    if (body && body.intervals && body.intervals.length) {
+      let amount = 0;
+      for (const interval of body.intervals) {
+        if (!interval.frequency) {
+          amount += interval.amount;
+        }
+        if (interval.frequency != 0) {
+          // for (let i = 0; i < interval.frequency; i++) {
+          //   amount += interval.amount;
+          // }
+          let multipliedAmount = interval.frequency * interval.amount;
+          amount += multipliedAmount;
+        }
       }
-      if (interval.frequency != 0) {
-        // for (let i = 0; i < interval.frequency; i++) {
-        //   amount += interval.amount;
-        // }
-        let multipliedAmount = interval.frequency * interval.amount;
-        amount += multipliedAmount;
+      if (amount !== body.remaining) {
+        return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
       }
-    }
-    if (amount !== body.remaining) {
-      return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
     return [true, ''];
   }
@@ -482,6 +544,12 @@ class CaseUtil {
         },
       },
       {
+        $addFields: {
+          lastPayment: {$ifNull: ['$lastPayment', null]},
+          upcomingPayment: {$ifNull: ['$upcomingPayment', null]},
+        },
+      },
+      {
         $group: {
           _id: '$debtor',
           caseHistory: {
@@ -489,18 +557,18 @@ class CaseUtil {
               _id: '$_id',
               creditorName: '$creditorDetails.basicInformation.fullName',
               totalDebt: '$totalDebt',
-              lastPayment: '$lastPayment.amount',
+              lastPayment: {$ifNull: ['$lastPayment.amount', null]},
               lastPaymentDate: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: '$lastPayment.dueDate',
+                  date: {$ifNull: ['$lastPayment.dueDate', null]},
                 },
               },
-              upcomingPayment: '$upcomingPayment.amount',
+              upcomingPayment: {$ifNull: ['$upcomingPayment.amount', null]},
               upcomingPaymentDate: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: '$upcomingPayment.dueDate',
+                  date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
               caseOwner: '$caseOwner',
@@ -561,6 +629,7 @@ class CaseUtil {
           caseHistory: 1,
           debtor: {
             SSN: '$debtorDetails.basicInformation.SSID',
+            fullName: '$debtorDetails.basicInformation.fullName',
             companyName: '$debtorDetails.businessInformation.companyName',
             email: '$debtorDetails.basicInformation.email',
             status: '$debtorDetails.basicInformation.status',
@@ -582,12 +651,15 @@ class CaseUtil {
       },
     ];
 
-    const results = await this.caseRepository.applyAggregate(pipeline);
-    results[0].caseHistory = await this.filterAndPaginateCaseHistory(
-      results[0].caseHistory,
-      req
-    );
-    return results[0];
+    const results: any = await this.caseRepository.applyAggregate(pipeline);
+    if (results[0]?.caseHistory) {
+      results[0].caseHistory = await this.filterAndPaginateCaseHistory(
+        results[0]?.caseHistory,
+        req
+      );
+    }
+
+    return results.length ? results[0] : null;
   }
   async filterAndPaginateCaseHistory(caseHistory: [], req: Request) {
     let page = 1;

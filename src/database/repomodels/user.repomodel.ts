@@ -12,6 +12,7 @@ export class User {
   phone = '';
   gender = '';
   address = '';
+  isDeleted = false;
   sessionIds = Array<string>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

@@ -23,6 +23,7 @@ router.put(
   '/updateUser',
   authorize.validateAuth,
   authorize.validateRole,
+  userValidate.createUser,
   userController.updateUser
 );
 router.put('/updatePassword', userController.updatePassword);

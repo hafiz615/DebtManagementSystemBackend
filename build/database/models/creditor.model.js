@@ -73,6 +73,12 @@ const creditorModel = new mongoose_1.Schema({
             required: true,
         },
     },
+    transactionTypes: {
+        type: (Array),
+    },
+    customerVaultId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

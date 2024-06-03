@@ -10,7 +10,7 @@ class UserRequests {
       email: Joi.string().email().required(),
       role: Joi.string().valid('Negotiator', 'Manager').required(),
       isActive: Joi.string(),
-      createdBy: Joi.string().required(),
+      createdBy: Joi.string(),
       SSID: Joi.string()
         .pattern(/^\d{9}$/)
         .required(),
@@ -27,7 +27,11 @@ class UserRequests {
     } else {
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.details[0].message));
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
     }
   }
   async signIn(req: Request, res: Response, next: NextFunction) {

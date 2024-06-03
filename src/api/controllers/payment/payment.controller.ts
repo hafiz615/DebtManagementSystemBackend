@@ -27,6 +27,7 @@ class PaymentController {
         })
       );
     } catch (error: any) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -45,7 +46,7 @@ class PaymentController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Upcoming payments'),
+          message: constants.successFoundMessage('Case payments'),
         })
       );
     } catch (error: any) {

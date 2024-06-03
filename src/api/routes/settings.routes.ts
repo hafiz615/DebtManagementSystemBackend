@@ -38,6 +38,11 @@ router.post(
   authorize.validateAuth,
   settingsController.addCustomFieldByTarget
 );
+router.put(
+  '/updateCustomFieldByTarget',
+  authorize.validateAuth,
+  settingsController.updateCustomFieldByTarget
+);
 router.delete(
   '/removeCustomFieldByTarget',
   authorize.validateAuth,

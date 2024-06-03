@@ -31,6 +31,11 @@ class DebtorController {
         this.listingDetails = async (req, res) => {
             try {
                 const response = await this.debtorService.listingDetails(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],

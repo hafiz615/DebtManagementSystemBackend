@@ -14,6 +14,7 @@ router.post('/addCustomField', authorize_middleware_1.default.validateAuth, cust
 router.put('/editCustomField/:id', authorize_middleware_1.default.validateAuth, settings_controller_1.default.editCustomField);
 router.get('/getCustomFieldsByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getCustomFieldsByTarget);
 router.post('/addCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.addCustomFieldByTarget);
+router.put('/updateCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.updateCustomFieldByTarget);
 router.delete('/removeCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.removeCustomFieldByTarget);
 router.delete('/deleteCustomField/:id', authorize_middleware_1.default.validateAuth, settings_controller_1.default.deleteCustomField);
 exports.default = router;

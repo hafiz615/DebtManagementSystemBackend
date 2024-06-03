@@ -56,9 +56,14 @@ class SettingsService {
         req.body.notificationTemplates.sms[num - 1].templateId =
           'Template-' + num.toString().padStart(3, '0');
       }
-      settigns = await this.settingsRepository.updateById(findSettings[0].id, {
-        ...req.body,
-      });
+      const mergedSettings = await settingsUtil.mergeSettings(
+        findSettings[0],
+        req.body
+      );
+      settigns = await this.settingsRepository.updateById(
+        findSettings[0].id,
+        mergedSettings
+      );
     }
     if (!settigns) {
       return [false, constants.failureUpdateMessage('settings')];
@@ -70,13 +75,22 @@ class SettingsService {
     const findSettings = await this.settingsRepository.getAll<ISettings>();
     const customFields =
       await this.customFieldsRepository.getAll<ICustomField>();
-    findSettings[0].paymentsAuthorizations;
+    if (!findSettings.length) {
+      return [
+        true,
+        {
+          paymentsAuthorizations: null,
+          notificationTemplates: null,
+          customFields: customFields,
+        },
+      ];
+    }
     return [
       true,
       {
         paymentsAuthorizations: findSettings[0].paymentsAuthorizations,
         notificationTemplates: findSettings[0].notificationTemplates,
-        customFileds: customFields,
+        customFields: customFields,
       },
     ];
   }
@@ -137,6 +151,29 @@ class SettingsService {
       req.body,
       target
     );
+  }
+
+  async updateCustomFieldByTarget(
+    req: Request
+  ): Promise<[boolean, ITargetCustomFields | string]> {
+    if (!req.query.target) return [false, 'Target is missing'];
+    const target = String(req.query.target);
+    const updatedCustomFields = req.body.customFields;
+
+    if (!updatedCustomFields || !updatedCustomFields.length)
+      return [false, 'CustomFields missing!'];
+    // Update the target custom field with the new custom fields array
+    const targetCF =
+      await this.targetCFRepository.updateByOne<ITargetCustomFields>(
+        {target: target},
+        {$set: {customFields: updatedCustomFields}}
+      );
+
+    if (!targetCF) {
+      return [false, constants.failureUpdateMessage('custom fields')];
+    }
+
+    return [true, targetCF];
   }
 
   async removeCustomFieldByTarget(

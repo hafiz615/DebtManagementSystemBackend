@@ -29,6 +29,8 @@ export interface IDebtor extends Document {
   basicInformation: basicInformation;
   businessInformation: businessInformation;
   contacts: Array<mongoose.Schema.Types.ObjectId>;
+  transactionTypes: Array<{name: string; priority: string}>;
+  customerVaultId: string;
   createdAt: string;
   updatedAt: string;
 }

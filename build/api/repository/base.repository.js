@@ -38,6 +38,11 @@ class BaseRepository {
         const datasets = entities.map(entity => ({ ...entity }));
         return (await this.model.insertMany(datasets));
     }
+    async updateMany(filter, updateQuery) {
+        return await this.model.updateMany(filter, updateQuery, {
+            new: true,
+        });
+    }
     async updateById(id, updateQuery) {
         return await this.model.findByIdAndUpdate({ _id: id }, updateQuery, {
             new: true,

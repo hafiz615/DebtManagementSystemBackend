@@ -24,26 +24,34 @@ class UserService {
   }
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
-    const userExist = await this.userRepository.getOne<IUser>({
+    let user = null;
+    user = await this.userRepository.getOne<IUser>({
       $or: [{email: req.body.email.toLowerCase()}, {phone: req.body.phone}],
     });
-    if (userExist) {
-      return [false, constants.alreadyExistsMessage('User')];
+    if (user && !user.isDeleted) {
+      if (user.email === req.body.email.toLowerCase()) {
+        return [false, constants.alreadyExistsMessage('Email')];
+      }
+      return [false, constants.alreadyExistsMessage('Phone')];
     }
-    req.body.email = req.body.email.toLowerCase();
-    const newUser = new User();
-    const validatedUser = DataCopier.copy(newUser, req.body as IUser);
-    const user = await this.userRepository.create<IUser>(validatedUser);
     if (!user) {
-      return [false, constants.failureRegisterMessage('User')];
+      req.body.email = req.body.email.toLowerCase();
+      const newUser = new User();
+      const validatedUser = DataCopier.copy(newUser, req.body as IUser);
+      user = await this.userRepository.create<IUser>(validatedUser);
+      if (!user) {
+        return [false, constants.failureRegisterMessage('User')];
+      }
     }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
     await this.emailUtil.sendInvitationLink(user, invitationLink);
-    await this.userRepository.updateById<IUser>(user._id, {
-      verifyToken: token,
+    req.body.verifyToken = token;
+    req.body.isDeleted = false;
+    let updatedUser = await this.userRepository.updateById<IUser>(user._id, {
+      ...req.body,
     });
-    return [true, omit(user.toJSON(), 'password', 'sessionIds', 'verifyToken')];
+    return [true, updatedUser];
   }
 
   async signIn(
@@ -101,7 +109,9 @@ class UserService {
 
   async deleteUserById(id: string): Promise<[boolean, IUser | string]> {
     const user = await this.userRepository.updateById<IUser>(id, {
+      isDeleted: true,
       isActive: false,
+      password: '',
     });
     if (!user) {
       return [false, constants.notFoundMessage('User')];
@@ -167,7 +177,7 @@ class UserService {
 
   getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {
     let users = await this.userRepository.getAll<IUser>(
-      {role: {$ne: 'Admin'}, isActive: true},
+      {role: {$ne: 'Admin'}, isDeleted: false},
       undefined,
       undefined,
       {createdAt: -1},

@@ -73,6 +73,7 @@ const userModel = new mongoose_1.Schema({
         type: (Array),
         select: false,
     },
+    isDeleted: { type: Boolean },
     createdAt: {
         type: Date,
         required: true,

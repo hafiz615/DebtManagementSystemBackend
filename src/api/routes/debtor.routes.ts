@@ -17,7 +17,7 @@ router.get(
   debtorController.searchListing
 );
 router.put(
-  '/updateDebtor',
+  '/updateDebtor/:id',
   authorize.validateAuth,
   debtor.validateDebtor,
   debtorController.updateDebtor

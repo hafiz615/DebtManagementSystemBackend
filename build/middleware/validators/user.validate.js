@@ -13,7 +13,7 @@ class UserRequests {
             email: joi_1.default.string().email().required(),
             role: joi_1.default.string().valid('Negotiator', 'Manager').required(),
             isActive: joi_1.default.string(),
-            createdBy: joi_1.default.string().required(),
+            createdBy: joi_1.default.string(),
             SSID: joi_1.default.string()
                 .pattern(/^\d{9}$/)
                 .required(),
@@ -31,7 +31,7 @@ class UserRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
     async signIn(req, res, next) {

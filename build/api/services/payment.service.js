@@ -8,247 +8,12 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const payment_util_1 = __importDefault(require("../../utils/payment.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const payment_repository_1 = require("../repository/payment/payment.repository");
+const axios_1 = __importDefault(require("axios"));
 class PaymentService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
     }
-    //   async authorization() {
-    //     var merchantAuthenticationType =
-    //       new APIContracts.MerchantAuthenticationType();
-    //     merchantAuthenticationType.setName('');
-    //     merchantAuthenticationType.setTransactionKey('');
-    //     var creditCard = new APIContracts.CreditCardType();
-    //     creditCard.setCardNumber('4242424242424242');
-    //     creditCard.setExpirationDate('0835');
-    //     creditCard.setCardCode('999');
-    //     var paymentType = new APIContracts.PaymentType();
-    //     var billTo = new APIContracts.CustomerAddressType();
-    //     billTo.setFirstName('Ellen');
-    //     billTo.setLastName('Johnson');
-    //     billTo.setCompany('Souveniropolis');
-    //     billTo.setAddress('14 Main Street');
-    //     billTo.setCity('Pecan Springs');
-    //     billTo.setState('TX');
-    //     billTo.setZip('44628');
-    //     billTo.setCountry('USA');
-    //     var transactionRequestType = new APIContracts.TransactionRequestType();
-    //     transactionRequestType.setTransactionType(
-    //       APIContracts.TransactionTypeEnum.AUTHONLYTRANSACTION
-    //     );
-    //     transactionRequestType.setPayment(paymentType);
-    //     transactionRequestType.setAmount(5);
-    //     transactionRequestType.setBillTo(billTo);
-    //     var createRequest = new APIContracts.CreateTransactionRequest();
-    //     createRequest.setMerchantAuthentication(merchantAuthenticationType);
-    //     createRequest.setTransactionRequest(transactionRequestType);
-    //     var ctrl = new APIControllers.CreateTransactionController(
-    //       createRequest.getJSON()
-    //     );
-    //     ctrl.execute(function () {
-    //       var apiResponse = ctrl.getResponse();
-    //       var response = new APIContracts.CreateTransactionResponse(apiResponse);
-    //       //pretty print response
-    //       console.log(JSON.stringify(response, null, 2));
-    //       if (response != null) {
-    //         if (
-    //           response.getMessages().getResultCode() ==
-    //           APIContracts.MessageTypeEnum.OK
-    //         ) {
-    //           if (response.getTransactionResponse().getMessages() != null) {
-    //             console.log(
-    //               'Successfully created transaction with Transaction ID: ' +
-    //                 response.getTransactionResponse().getTransId()
-    //             );
-    //             console.log(
-    //               'Response Code: ' +
-    //                 response.getTransactionResponse().getResponseCode()
-    //             );
-    //             console.log(
-    //               'Message Code: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getMessages()
-    //                   .getMessage()[0]
-    //                   .getCode()
-    //             );
-    //             console.log(
-    //               'Description: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getMessages()
-    //                   .getMessage()[0]
-    //                   .getDescription()
-    //             );
-    //           } else {
-    //             console.log('Failed Transaction.');
-    //             if (response.getTransactionResponse().getErrors() != null) {
-    //               console.log(
-    //                 'Error Code: ' +
-    //                   response
-    //                     .getTransactionResponse()
-    //                     .getErrors()
-    //                     .getError()[0]
-    //                     .getErrorCode()
-    //               );
-    //               console.log(
-    //                 'Error message: ' +
-    //                   response
-    //                     .getTransactionResponse()
-    //                     .getErrors()
-    //                     .getError()[0]
-    //                     .getErrorText()
-    //               );
-    //             }
-    //           }
-    //         } else {
-    //           console.log('Failed Transaction.');
-    //           if (
-    //             response.getTransactionResponse() != null &&
-    //             response.getTransactionResponse().getErrors() != null
-    //           ) {
-    //             console.log(
-    //               'Error Code: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getErrors()
-    //                   .getError()[0]
-    //                   .getErrorCode()
-    //             );
-    //             console.log(
-    //               'Error message: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getErrors()
-    //                   .getError()[0]
-    //                   .getErrorText()
-    //             );
-    //           } else {
-    //             console.log(
-    //               'Error Code: ' + response.getMessages().getMessage()[0].getCode()
-    //             );
-    //             console.log(
-    //               'Error message: ' +
-    //                 response.getMessages().getMessage()[0].getText()
-    //             );
-    //           }
-    //         }
-    //       } else {
-    //         console.log('Null Response.');
-    //       }
-    //     });
-    //   }
-    //   async capture() {
-    //     var merchantAuthenticationType =
-    //       new APIContracts.MerchantAuthenticationType();
-    //     merchantAuthenticationType.setName('');
-    //     merchantAuthenticationType.setTransactionKey('');
-    //     var transactionRequestType = new APIContracts.TransactionRequestType();
-    //     transactionRequestType.setTransactionType(
-    //       APIContracts.TransactionTypeEnum.PRIORAUTHCAPTURETRANSACTION
-    //     );
-    //     transactionRequestType.setRefTransId('');
-    //     var createRequest = new APIContracts.CreateTransactionRequest();
-    //     createRequest.setMerchantAuthentication(merchantAuthenticationType);
-    //     createRequest.setTransactionRequest(transactionRequestType);
-    //     //pretty print request
-    //     console.log(JSON.stringify(createRequest.getJSON(), null, 2));
-    //     var ctrl = new APIControllers.CreateTransactionController(
-    //       createRequest.getJSON()
-    //     );
-    //     ctrl.execute(function () {
-    //       var apiResponse = ctrl.getResponse();
-    //       var response = new APIContracts.CreateTransactionResponse(apiResponse);
-    //       //pretty print response
-    //       console.log(JSON.stringify(response, null, 2));
-    //       if (response != null) {
-    //         if (
-    //           response.getMessages().getResultCode() ==
-    //           APIContracts.MessageTypeEnum.OK
-    //         ) {
-    //           if (response.getTransactionResponse().getMessages() != null) {
-    //             console.log(
-    //               'Successfully created transaction with Transaction ID: ' +
-    //                 response.getTransactionResponse().getTransId()
-    //             );
-    //             console.log(
-    //               'Response Code: ' +
-    //                 response.getTransactionResponse().getResponseCode()
-    //             );
-    //             console.log(
-    //               'Message Code: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getMessages()
-    //                   .getMessage()[0]
-    //                   .getCode()
-    //             );
-    //             console.log(
-    //               'Description: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getMessages()
-    //                   .getMessage()[0]
-    //                   .getDescription()
-    //             );
-    //           } else {
-    //             console.log('Failed Transaction.');
-    //             if (response.getTransactionResponse().getErrors() != null) {
-    //               console.log(
-    //                 'Error Code: ' +
-    //                   response
-    //                     .getTransactionResponse()
-    //                     .getErrors()
-    //                     .getError()[0]
-    //                     .getErrorCode()
-    //               );
-    //               console.log(
-    //                 'Error message: ' +
-    //                   response
-    //                     .getTransactionResponse()
-    //                     .getErrors()
-    //                     .getError()[0]
-    //                     .getErrorText()
-    //               );
-    //             }
-    //           }
-    //         } else {
-    //           console.log('Failed Transaction. ');
-    //           if (
-    //             response.getTransactionResponse() != null &&
-    //             response.getTransactionResponse().getErrors() != null
-    //           ) {
-    //             console.log(
-    //               'Error Code: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getErrors()
-    //                   .getError()[0]
-    //                   .getErrorCode()
-    //             );
-    //             console.log(
-    //               'Error message: ' +
-    //                 response
-    //                   .getTransactionResponse()
-    //                   .getErrors()
-    //                   .getError()[0]
-    //                   .getErrorText()
-    //             );
-    //           } else {
-    //             console.log(
-    //               'Error Code: ' + response.getMessages().getMessage()[0].getCode()
-    //             );
-    //             console.log(
-    //               'Error message: ' +
-    //                 response.getMessages().getMessage()[0].getText()
-    //             );
-    //           }
-    //         }
-    //       } else {
-    //         console.log('Null Response.');
-    //       }
-    //     });
-    //   }
     async getHomePayments(days) {
         if (!days)
             days = 3;
@@ -295,7 +60,19 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
         const paymentsObj = await payment_util_1.default.getFilteredPayments(payments);
-        return [true, paymentsObj];
+        let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
+        paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        upcomingAmount = paymentsObj.upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        failedAmount = paymentsObj.failedPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        const paymentCounts = {
+            failedPayments: paymentsObj.failedPayments.length,
+            successPayments: paymentsObj.successPayments.length,
+            failedAuthorizations: paymentsObj.failedAuthorizations.length,
+            successAuthorizations: paymentsObj.successAuthorizations.length,
+            paidAmount: paidAmount,
+            remainingAmount: upcomingAmount + failedAmount,
+        };
+        return [true, { transactions: paymentsObj, paymentCounts: paymentCounts }];
     }
     async getAllPaymentsByCaseId(id) {
         return await this.paymentRepository.getAll({
@@ -308,6 +85,87 @@ class PaymentService {
                 select: ['basicInformation.fullName', 'basicInformation.SSID'],
             },
         });
+    }
+    async authorizeCreditCard(amount, customer_vault_id) {
+        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const params = {
+            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            customer_vault_id: '1922739712',
+            type: 'auth',
+            amount: '0.00',
+        };
+        try {
+            const response = await axios_1.default.get(url, { params });
+            console.log('Response:', response.data);
+            return response.data;
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
+    }
+    async captureCreditCard(customer_vault_id, transactionId) {
+        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const params = {
+            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            customer_vault_id: '1922739712',
+            transaction_id: '9561304895',
+            stored_credential_indicator: 'used',
+            type: 'capture',
+        };
+        try {
+            const response = await axios_1.default.get(url, { params });
+            console.log('Response:', response.data);
+            return response.data;
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
+    }
+    async creditAmount() {
+        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const params = {
+            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            customer_vault_id: '1922739712',
+            type: 'credit',
+            amount: '10.00',
+        };
+        try {
+            const response = await axios_1.default.get(url, { params });
+            console.log('Response:', response.data);
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
     }
 }
 exports.default = PaymentService;

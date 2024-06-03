@@ -31,6 +31,8 @@ class Debtor {
             phone: '',
             address: '',
         };
+        this.transactionTypes = Array();
+        this.customerVaultId = '';
         this.contacts = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

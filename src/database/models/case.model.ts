@@ -68,6 +68,18 @@ const caseModel: Schema = new Schema({
       value: {type: Schema.Types.Mixed};
     }>,
   },
+  weeklyBudget: {
+    type: Number,
+  },
+  commissionPaidAlready: {
+    type: Boolean,
+  },
+  commissionCalculated: {
+    type: Number,
+  },
+  commissionPaying: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     required: true,

@@ -14,6 +14,7 @@ export interface IUser extends Document {
   address: string;
   sessionIds: Array<string>;
   createdBy: string;
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

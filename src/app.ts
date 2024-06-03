@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import {Database} from './config/database.config';
 import setup from './api/routes/base.route';
+import paymentCronjob from './cron-job/payment.cronjob';
 
 class App {
   protected app: Application;
@@ -26,6 +27,7 @@ class App {
     this.app.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
+    // paymentCronjob.getFilteredPayment();
   }
 }
 

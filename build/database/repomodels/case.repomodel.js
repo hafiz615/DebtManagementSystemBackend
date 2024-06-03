@@ -19,6 +19,10 @@ class Case {
         this.remaining = 0;
         this.documents = Array();
         this.intervals = Array();
+        this.weeklyBudget = 0;
+        this.commissionPaidAlready = false;
+        this.commissionCalculated = 0;
+        this.commissionPaying = 0;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

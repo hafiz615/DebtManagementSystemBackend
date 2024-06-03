@@ -45,6 +45,34 @@ class SettingsUtil {
         }
         return [true, targetCF];
     }
+    async mergeSettings(settings, body) {
+        const paymentsAuthorizations = [
+            'failedAuthorizations',
+            'successfulAuthorizations',
+            'failedPayments',
+            'successPayments',
+            'upcomingPayments',
+            'retryInterval',
+            'authorizationInterval',
+        ];
+        const notificationTemplates = ['sms', 'email'];
+        if (body.paymentsAuthorizations) {
+            paymentsAuthorizations.forEach(key => {
+                if (!body.paymentsAuthorizations.hasOwnProperty(key)) {
+                    body.paymentsAuthorizations[key] =
+                        settings.paymentsAuthorizations[key];
+                }
+            });
+        }
+        if (body.notificationTemplates) {
+            notificationTemplates.forEach(key => {
+                if (!body.notificationTemplates.hasOwnProperty(key)) {
+                    body.notificationTemplates[key] = settings.notificationTemplates[key];
+                }
+            });
+        }
+        return body;
+    }
 }
 exports.default = new SettingsUtil();
 //# sourceMappingURL=settings.util.js.map

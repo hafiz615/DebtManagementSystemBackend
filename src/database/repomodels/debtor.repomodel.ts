@@ -26,6 +26,8 @@ export class Debtor {
     phone: '',
     address: '',
   };
+  transactionTypes = Array<{name: ''; priority: ''}>();
+  customerVaultId = '';
   contacts = Array<mongoose.Schema.Types.ObjectId>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

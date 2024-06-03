@@ -19,6 +19,7 @@ class User {
         this.phone = '';
         this.gender = '';
         this.address = '';
+        this.isDeleted = false;
         this.sessionIds = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

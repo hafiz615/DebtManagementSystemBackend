@@ -25,6 +25,10 @@ export interface ICase extends Document {
   remaining: number;
   documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
+  weeklyBudget: number;
+  commissionPaidAlready: boolean;
+  commissionCalculated: number;
+  commissionPaying: number;
   createdAt: string;
   updatedAt: string;
 }
