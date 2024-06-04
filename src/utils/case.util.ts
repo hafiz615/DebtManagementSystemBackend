@@ -83,18 +83,11 @@ class CaseUtil {
     for (const interval of data.intervals) {
       if (interval.frequency === 0) {
         payment.dueDate = interval.startDate;
-        if (!data.commissionPaidAlready) {
-          commission = await this.calculateCommision(
-            interval,
-            data.weeklyBudget
-          );
-        }
         tempPayment = await this.populatePayment(
           data._id,
           payment,
           interval,
-          0,
-          commission
+          0
         );
         paymentsArray.push(tempPayment);
       }
@@ -109,18 +102,11 @@ class CaseUtil {
               i
             );
           }
-          if (!data.commissionPaidAlready) {
-            commission = await this.calculateCommision(
-              interval,
-              data.weeklyBudget
-            );
-          }
           tempPayment = await this.populatePayment(
             data._id,
             payment,
             interval,
-            i,
-            commission
+            i
           );
           paymentsArray.push(tempPayment);
         }
@@ -196,15 +182,13 @@ class CaseUtil {
     caseId: string,
     payment: Payment,
     interval: any,
-    frequency: number,
-    commission: number
+    frequency: number
   ) {
     payment.amount = interval.amount;
     payment.frequency = frequency;
     payment.caseId = caseId;
     payment.intervalId = String(interval._id);
     payment.timePeriod = interval.timePeriod;
-    payment.commission = commission;
     return {...payment};
   }
 
@@ -265,10 +249,26 @@ class CaseUtil {
         },
       ],
     });
+    let weeklyBudgetObj: {
+      status: boolean;
+      commission: number;
+      totalCommission: number;
+    };
     if (!getDebtor) {
+      if (!body.commissionPaidAlready) {
+        weeklyBudgetObj = await this.checkWeeklyBudget(body, false, null);
+        if (!weeklyBudgetObj.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+      }
       contactIds = await this.createContacts(
         body.debtor.contacts as IContact[]
       );
+      body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+      body.debtor.weeklyCommission = weeklyBudgetObj.commission;
       const debtorData = {
         ...body.debtor,
         contacts: contactIds,
@@ -285,7 +285,24 @@ class CaseUtil {
       };
       creditor = await this.createCreditor(creditorData as ICreditor);
     }
-    if (getDebtor) debtor = getDebtor as IDebtor;
+    if (getDebtor) {
+      debtor = getDebtor;
+      if (!body.commissionPaidAlready) {
+        weeklyBudgetObj = await this.checkWeeklyBudget(body, true, getDebtor);
+        if (!weeklyBudgetObj.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+        body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+        body.debtor.weeklyCommission = weeklyBudgetObj.commission;
+        await this.debtRepository.updateById<IDebtor>(
+          getDebtor._id,
+          body.debtor
+        );
+      }
+    }
     if (getCreditor) creditor = getCreditor as ICreditor;
     body.debtor = debtor?._id;
     body.creditor = creditor?._id;
@@ -293,17 +310,69 @@ class CaseUtil {
     newCase.caseOwner = role;
     newCase.createdBy = email;
     newCase.caseCode = await this.getCaseCode();
-    if (!body.commissionPaidAlready) {
-      newCase.commissionCalculated = parseInt(
-        (body.totalDebt * 0.19).toFixed(2)
-      );
-    }
     const validatedCase = DataCopier.copy(newCase, body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
     await this.createPayment(caseCreated);
-    return caseCreated;
+    if (!caseCreated) {
+      return [false, constantsUtil.failureAddMessage('case')];
+    }
+    return [true, caseCreated];
   }
 
+  async checkWeeklyBudget(body: any, debtorFound: boolean, debtor: IDebtor) {
+    const interval = body.intervals[0];
+    const weeklyBudget = body.debtor.weeklyBudget;
+    let debt = body.totalDebt;
+    let amount = 0;
+    amount = await this.getWeeklyAmount(interval);
+    if (!debtorFound) {
+      return amount >= weeklyBudget
+        ? {
+            status: false,
+            commission: 0,
+            totalCommission: 0,
+          }
+        : {
+            status: true,
+            commission: weeklyBudget - amount,
+            totalCommission: parseInt((debt * 0.19).toFixed(2)),
+          };
+    }
+    const cases = await this.caseRepository.getAll<ICase>({
+      debtor: debtor._id,
+    });
+    cases.forEach(async (caseTemp: ICase) => {
+      amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+      debt += caseTemp.totalDebt;
+    });
+    return amount >= weeklyBudget
+      ? {
+          status: false,
+          commission: 0,
+          totalCommission: 0,
+        }
+      : {
+          status: true,
+          commission: weeklyBudget - amount,
+          totalCommission: parseInt((debt * 0.19).toFixed(2)),
+        };
+  }
+  async getWeeklyAmount(interval: any) {
+    switch (interval.timePeriod.toLowerCase()) {
+      case 'custom':
+        return interval.amount;
+      case 'daily':
+        return interval.amount * interval.frequency;
+      case 'weekly':
+        return interval.amount;
+      case 'monthly':
+        return parseInt((interval.amount / 4).toFixed(2));
+      case 'fortnightly':
+        return parseInt((interval.amount / 2).toFixed(2));
+      default:
+        throw new Error('Invalid time period');
+    }
+  }
   async checkCasePayment(body: any): Promise<[boolean, string]> {
     if (body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
@@ -375,109 +444,6 @@ class CaseUtil {
     }
     return result;
   }
-
-  // async getClientDetails(cases: any) {
-  //   const caseIds = cases.map((tempCase: ICase) => {
-  //     return String(tempCase._id);
-  //   });
-  //   const payments = await this.paymentRepository.getAll<IPayment>({
-  //     caseId: caseIds,
-  //   });
-  //   const filteredPayments = await paymentUtil.getFilteredPaymentsObj(payments);
-  //   const resultObj = {};
-  //   const result = [];
-  //   let caseIndex = 0,
-  //     bin = 0;
-  //   let objectCreated = false;
-  //   while (true) {
-  //     if (
-  //       bin === filteredPayments.upcomingPayments.length &&
-  //       caseIndex === caseIds.length
-  //     ) {
-  //       break;
-  //     }
-  //     if (
-  //       caseIds[caseIndex] ===
-  //       String(filteredPayments.upcomingPayments[bin]?.caseId)
-  //     ) {
-  //       if (!objectCreated) {
-  //         resultObj['creditor'] =
-  //           cases[caseIndex].creditor.basicInformation.fullName;
-  //         resultObj['totalDebt'] = cases[caseIndex].totalDebt;
-  //         resultObj['upcomingDebt'] =
-  //           filteredPayments.upcomingPayments[bin].amount;
-  //         resultObj['upcomingAuthDate'] = new Date(
-  //           filteredPayments.upcomingPayments[bin].dueDate
-  //         )
-  //           .toISOString()
-  //           .split('T')[0];
-  //         resultObj['caseOwner'] = cases[caseIndex].caseOwner;
-  //         result.push(resultObj);
-  //         objectCreated = true;
-  //       }
-  //       bin += 1;
-  //     } else {
-  //       if (!objectCreated) {
-  //         resultObj['creditor'] =
-  //           cases[caseIndex].creditor.basicInformation.fullName;
-  //         resultObj['totalDebt'] = cases[caseIndex].totalDebt;
-  //         resultObj['upcomingDebt'] = 0;
-  //         resultObj['upcomingAuthDate'] = '-';
-  //         resultObj['caseOwner'] = cases[caseIndex].caseOwner;
-  //         result.push(resultObj);
-  //       }
-  //       caseIndex += 1;
-  //       objectCreated = false;
-  //     }
-  //   }
-  //   bin = 0;
-  //   caseIndex = 0;
-  //   let findSuccess = false;
-  //   let finalResult = [];
-  //   while (true) {
-  //     if (
-  //       bin === filteredPayments.successPayments.length &&
-  //       caseIndex === caseIds.length
-  //     ) {
-  //       break;
-  //     }
-  //     if (
-  //       caseIds[caseIndex] ===
-  //       String(filteredPayments.successPayments[bin]?.caseId)
-  //     ) {
-  //       bin += 1;
-  //       findSuccess = true;
-  //     } else {
-  //       if (findSuccess) {
-  //         let temp = {...result[caseIndex]};
-  //         temp['lastPaymentDate'] = new Date(
-  //           filteredPayments.successPayments[bin - 1].dueDate
-  //         )
-  //           .toISOString()
-  //           .split('T')[0];
-  //         temp['lastPayment'] =
-  //           filteredPayments.successPayments[bin - 1].amount;
-  //         finalResult.push(temp);
-  //       }
-  //       if (!findSuccess) {
-  //         let temp = {...result[caseIndex]};
-  //         temp['lastPaymentDate'] = '-';
-  //         temp['lastPayment'] = 0;
-  //         finalResult.push(temp);
-  //       }
-  //       caseIndex += 1;
-  //       findSuccess = false;
-  //     }
-  //   }
-  //   const countPayments = {
-  //     failedAuthorizations: filteredPayments.failedAuthorizations.length,
-  //     failedPayments: filteredPayments.failedPayments.length,
-  //     successAuthorizations: filteredPayments.successAuthorizations.length,
-  //     successPayments: filteredPayments.successPayments.length,
-  //   };
-
-  //   return {columns: finalResult, paymentsCount: countPayments};
-  // }
 
   async getClientDetails(req: Request) {
     const convertedDebtorId = new mongoose.Types.ObjectId(req.params.id);

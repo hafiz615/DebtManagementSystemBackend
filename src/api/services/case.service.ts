@@ -37,12 +37,14 @@ class CaseService {
       for (const tempCase of req.body.cases) {
         const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
         if (!checkCasePayment[0]) return checkCasePayment;
-        const caseCreated = await caseUtil.createCase(
+        const result = await caseUtil.createCase(
           tempCase,
           reqTemp.role,
           reqTemp.email
         );
-        casesArray.push(caseCreated);
+        if (result[0]) {
+          casesArray.push(result[1] as ICase);
+        }
       }
       if (!casesArray.length)
         return [false, constantsUtil.failureAddMessage('cases')];
@@ -50,13 +52,13 @@ class CaseService {
     }
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
-    const caseCreated = await caseUtil.createCase(
+    const result = await caseUtil.createCase(
       req.body,
       reqTemp.role,
       reqTemp.email
     );
-    if (!caseCreated) return [false, constantsUtil.failureAddMessage('case')];
-    return [true, caseCreated];
+    if (!result[0]) return [false, result[1] as string];
+    return [true, result[1] as ICase];
   };
 
   getAllCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {

@@ -18,10 +18,7 @@ export class Case {
     frequency: 0;
     timePeriod: '';
   }>();
-  weeklyBudget = 0;
   commissionPaidAlready = false;
-  commissionCalculated = 0;
-  commissionPaying = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

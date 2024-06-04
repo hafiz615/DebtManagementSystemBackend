@@ -31,6 +31,13 @@ export interface IDebtor extends Document {
   contacts: Array<mongoose.Schema.Types.ObjectId>;
   transactionTypes: Array<{name: string; priority: string}>;
   customerVaultId: string;
+  weeklyBudget: number;
+  totalCommission: number;
+  commissionPaid: number;
+  weeklyCommission: number;
+  weeklyCommissionPaid: boolean;
+  weeklyCommissionDate: string;
+  commissionPaymentId: string;
   createdAt: string;
   updatedAt: string;
 }
