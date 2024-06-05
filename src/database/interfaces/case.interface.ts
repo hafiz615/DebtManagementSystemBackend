@@ -14,6 +14,8 @@ export interface IInterval {
 }
 export interface ICase extends Document {
   caseOwner: string;
+  negotiator: string;
+  manager: string;
   caseCode: string;
   createdBy: string;
   status: string;

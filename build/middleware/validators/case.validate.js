@@ -99,8 +99,8 @@ class CaseValidate {
             paidAmount: joi_1.default.number().strict().required(),
             remaining: joi_1.default.number().strict().required(),
             status: joi_1.default.string().required(),
-            // weeklyBudget: Joi.number().required(),
-            // commissionPaidAlready: Joi.boolean().required(),
+            weeklyBudget: joi_1.default.number(),
+            feePayment: joi_1.default.string().valid('paidViaCash', 'toPay', 'paidViaThirdParty'),
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),
                 startDate: joi_1.default.date().required(),
@@ -118,7 +118,8 @@ class CaseValidate {
                     if (error) {
                         return res
                             .status(constants_util_1.default.CODE.BAD_REQUEST)
-                            .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+                            .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label +
+                            constants_util_1.default.Messages.INVALID_FIELD));
                     }
                 }
             }
@@ -129,6 +130,25 @@ class CaseValidate {
             }
             return next();
         }
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async validateCaseAbout(req, res, next) {
+        const schema = joi_1.default.object({
+            status: joi_1.default.string()
+                .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
+                .required(),
+            caseOwner: joi_1.default.string().required(),
+            negotiator: joi_1.default.string().required(),
+            manager: joi_1.default.string().required(),
+        });
         const { error } = schema.validate(req.body);
         if (!error) {
             return next();

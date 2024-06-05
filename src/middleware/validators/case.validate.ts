@@ -102,8 +102,12 @@ class CaseValidate {
       paidAmount: Joi.number().strict().required(),
       remaining: Joi.number().strict().required(),
       status: Joi.string().required(),
-      // weeklyBudget: Joi.number().required(),
-      // commissionPaidAlready: Joi.boolean().required(),
+      weeklyBudget: Joi.number(),
+      feePayment: Joi.string().valid(
+        'paidViaCash',
+        'toPay',
+        'paidViaThirdParty'
+      ),
       intervals: Joi.array().items(
         Joi.object({
           amount: Joi.number().strict().required(),
@@ -123,7 +127,12 @@ class CaseValidate {
           if (error) {
             return res
               .status(constants.CODE.BAD_REQUEST)
-              .send(responseHelper.get4xxResponse(error.details[0].message));
+              .send(
+                responseHelper.get4xxResponse(
+                  error.details[0].context.label +
+                    constants.Messages.INVALID_FIELD
+                )
+              );
           }
         }
       } else {
@@ -133,6 +142,29 @@ class CaseValidate {
       }
       return next();
     }
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async validateCaseAbout(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      status: Joi.string()
+        .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
+        .required(),
+      caseOwner: Joi.string().required(),
+      negotiator: Joi.string().required(),
+      manager: Joi.string().required(),
+    });
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

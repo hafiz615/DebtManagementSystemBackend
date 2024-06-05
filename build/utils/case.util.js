@@ -159,9 +159,10 @@ class CaseUtil {
             caseCode: obj.caseCode,
             status: obj.status,
             name: obj.creditor.basicInformation.fullName,
+            caseId: String(obj._id),
         }));
     }
-    async createCase(body, role, email) {
+    async createCase(body, name, email) {
         let contactIds = null;
         let debtor = null;
         let creditor = null;
@@ -236,7 +237,9 @@ class CaseUtil {
         body.debtor = debtor?._id;
         body.creditor = creditor?._id;
         const newCase = new case_repomodel_1.Case();
-        newCase.caseOwner = role;
+        newCase.caseOwner = name;
+        newCase.negotiator = name;
+        newCase.manager = name;
         newCase.createdBy = email;
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
@@ -767,8 +770,18 @@ class CaseUtil {
         }
         if (req.query.search === 'true') {
             querySearch['$or'] = [
-                { 'debtor.basicInformation.fullName': req.body.text },
-                { 'debtor.basicInformation.status': req.body.text },
+                {
+                    'debtor.basicInformation.fullName': {
+                        $regex: req.body.text,
+                        $options: 'i',
+                    },
+                },
+                {
+                    'debtor.basicInformation.status': {
+                        $regex: req.body.text,
+                        $options: 'i',
+                    },
+                },
             ];
         }
         return [queryFilter, querySearch];

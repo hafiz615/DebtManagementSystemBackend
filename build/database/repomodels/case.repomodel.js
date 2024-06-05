@@ -8,6 +8,8 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Case {
     constructor() {
         this.caseOwner = '';
+        this.negotiator = '';
+        this.manager = '';
         this.caseCode = '';
         this.createdBy = '';
         this.status = '';

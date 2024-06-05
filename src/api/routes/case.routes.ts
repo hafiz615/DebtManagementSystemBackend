@@ -23,5 +23,11 @@ router.put(
   caseValidate.validateCase,
   caseController.updateCase
 );
+router.put(
+  '/updateCaseAbout/:id',
+  authorize.validateAuth,
+  caseValidate.validateCaseAbout,
+  caseController.updateCaseAbout
+);
 
 export default router;

@@ -41,6 +41,31 @@ class CreditorService {
     return [true, creditor];
   }
   async updateCreditor(req: Request): Promise<[boolean, ICreditor | string]> {
+    const email = req.body.creditor.basicInformation.email.toLowerCase();
+    const getCreditor = await this.creditorRepository.getOne<ICreditor>({
+      $or: [
+        {
+          'basicInformation.email': email,
+        },
+        {
+          'basicInformation.phone': req.body.creditor.basicInformation.phone,
+        },
+      ],
+    });
+    if (getCreditor) {
+      if (getCreditor.basicInformation.email === email) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            'Creditor with basicInformation.email'
+          ),
+        ];
+      }
+      return [
+        false,
+        constants.alreadyExistsMessage('Creditor with basicInformation.phone'),
+      ];
+    }
     const creditor = await this.creditorRepository.updateById<ICreditor>(
       req.params.id,
       {...req.body}

@@ -54,7 +54,7 @@ class CaseService {
     if (!checkCasePayment[0]) return checkCasePayment;
     const result = await caseUtil.createCase(
       req.body,
-      reqTemp.role,
+      reqTemp.name,
       reqTemp.email
     );
     if (!result[0]) return [false, result[1] as string];
@@ -122,6 +122,19 @@ class CaseService {
     await caseUtil.updateCreditor(req.body.creditor as ICreditor);
     delete req.body.debtor;
     delete req.body.creditor;
+    const caseUpdated = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      req.body
+    );
+    if (!caseUpdated) {
+      return [false, constantsUtil.notFoundMessage('Case')];
+    }
+    return [true, caseUpdated];
+  };
+
+  updateCaseAbout = async (
+    req: Request
+  ): Promise<[boolean, Partial<ICase> | string]> => {
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body

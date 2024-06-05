@@ -31,6 +31,14 @@ const caseModel: Schema = new Schema({
     type: String,
     required: true,
   },
+  negotiator: {
+    type: String,
+    required: true,
+  },
+  manager: {
+    type: String,
+    required: true,
+  },
   caseCode: {
     type: String,
     required: true,

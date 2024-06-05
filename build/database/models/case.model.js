@@ -55,6 +55,14 @@ const caseModel = new mongoose_1.Schema({
         type: String,
         required: true,
     },
+    negotiator: {
+        type: String,
+        required: true,
+    },
+    manager: {
+        type: String,
+        required: true,
+    },
     caseCode: {
         type: String,
         required: true,

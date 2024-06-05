@@ -54,7 +54,40 @@ class DebtorService {
         return [true, { clientDetails: clientDetails, debtorsCount: debtorsCount }];
     }
     async updateDebtor(req) {
-        const debtor = await this.debtorRepository.updateById(req.params.id, { ...req.body });
+        const email = req.body.debtor.basicInformation.email.toLowerCase();
+        const getDebtor = await this.debtorRepository.getOne({
+            $or: [
+                {
+                    'basicInformation.email': email,
+                },
+                {
+                    'basicInformation.SSID': req.body.debtor.basicInformation.SSID,
+                },
+                {
+                    'basicInformation.phone': req.body.debtor.basicInformation.phone,
+                },
+            ],
+        });
+        if (getDebtor) {
+            if (getDebtor.basicInformation.email === email) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.email'),
+                ];
+            }
+            if (getDebtor.basicInformation.SSID ===
+                req.body.debtor.basicInformation.SSID) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.SSN'),
+                ];
+            }
+            return [
+                false,
+                constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.phone'),
+            ];
+        }
+        const debtor = await this.debtorRepository.updateById(req.params.id, req.body);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }

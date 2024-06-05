@@ -32,7 +32,7 @@ class CaseService {
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
-            const result = await case_util_1.default.createCase(req.body, reqTemp.role, reqTemp.email);
+            const result = await case_util_1.default.createCase(req.body, reqTemp.name, reqTemp.email);
             if (!result[0])
                 return [false, result[1]];
             return [true, result[1]];
@@ -78,6 +78,13 @@ class CaseService {
             await case_util_1.default.updateCreditor(req.body.creditor);
             delete req.body.debtor;
             delete req.body.creditor;
+            const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            return [true, caseUpdated];
+        };
+        this.updateCaseAbout = async (req) => {
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];

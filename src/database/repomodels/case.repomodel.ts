@@ -2,6 +2,8 @@ import commonUtil from '../../utils/common.util';
 
 export class Case {
   caseOwner = '';
+  negotiator = '';
+  manager = '';
   caseCode = '';
   createdBy = '';
   status = '';

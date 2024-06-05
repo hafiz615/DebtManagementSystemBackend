@@ -67,9 +67,44 @@ class DebtorService {
   }
 
   async updateDebtor(req: Request): Promise<[boolean, IDebtor | string]> {
+    const email = req.body.debtor.basicInformation.email.toLowerCase();
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      $or: [
+        {
+          'basicInformation.email': email,
+        },
+        {
+          'basicInformation.SSID': req.body.debtor.basicInformation.SSID,
+        },
+        {
+          'basicInformation.phone': req.body.debtor.basicInformation.phone,
+        },
+      ],
+    });
+    if (getDebtor) {
+      if (getDebtor.basicInformation.email === email) {
+        return [
+          false,
+          constants.alreadyExistsMessage('Debtor with basicInformation.email'),
+        ];
+      }
+      if (
+        getDebtor.basicInformation.SSID ===
+        req.body.debtor.basicInformation.SSID
+      ) {
+        return [
+          false,
+          constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
+        ];
+      }
+      return [
+        false,
+        constants.alreadyExistsMessage('Debtor with basicInformation.phone'),
+      ];
+    }
     const debtor = await this.debtorRepository.updateById<IDebtor>(
       req.params.id,
-      {...req.body}
+      req.body
     );
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
