@@ -20,8 +20,10 @@ class CaseService {
                     const checkCasePayment = await case_util_1.default.checkCasePayment(tempCase);
                     if (!checkCasePayment[0])
                         return checkCasePayment;
-                    const caseCreated = await case_util_1.default.createCase(tempCase, reqTemp.role, reqTemp.email);
-                    casesArray.push(caseCreated);
+                    const result = await case_util_1.default.createCase(tempCase, reqTemp.role, reqTemp.email);
+                    if (result[0]) {
+                        casesArray.push(result[1]);
+                    }
                 }
                 if (!casesArray.length)
                     return [false, constants_util_1.default.failureAddMessage('cases')];
@@ -30,10 +32,10 @@ class CaseService {
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
-            const caseCreated = await case_util_1.default.createCase(req.body, reqTemp.role, reqTemp.email);
-            if (!caseCreated)
-                return [false, constants_util_1.default.failureAddMessage('case')];
-            return [true, caseCreated];
+            const result = await case_util_1.default.createCase(req.body, reqTemp.role, reqTemp.email);
+            if (!result[0])
+                return [false, result[1]];
+            return [true, result[1]];
         };
         this.getAllCases = async (req) => {
             let cases = await this.caseRepository.getAll(undefined, undefined, undefined, undefined, undefined, undefined, Number(req.query.page), Number(req.query.limit));

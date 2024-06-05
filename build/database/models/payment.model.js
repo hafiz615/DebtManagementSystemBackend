@@ -40,7 +40,7 @@ const PaymentModel = new mongoose_1.Schema({
     },
     status: {
         type: String,
-        default: 'Pending',
+        default: 'Upcoming',
     },
     amount: {
         type: Number,
@@ -56,6 +56,9 @@ const PaymentModel = new mongoose_1.Schema({
     intervalId: {
         type: String,
     },
+    debtorId: {
+        type: String,
+    },
     failedReasonAuthorization: {
         type: String,
     },
@@ -68,19 +71,10 @@ const PaymentModel = new mongoose_1.Schema({
     debtorTransId: {
         type: String,
     },
-    commissionTransId: {
-        type: String,
-    },
     retriesAuth: {
         type: Number,
     },
     retriesCapture: {
-        type: Number,
-    },
-    commission: {
-        type: Number,
-    },
-    calculatedCommision: {
         type: Number,
     },
     timePeriod: {

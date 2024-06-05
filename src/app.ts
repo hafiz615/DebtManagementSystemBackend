@@ -27,7 +27,7 @@ class App {
     this.app.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
-    paymentCronjob.getFilteredPayment();
+    // paymentCronjob.getFilteredPayment();
   }
 }
 

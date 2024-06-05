@@ -27,7 +27,7 @@ class CaseValidate {
           city: Joi.string().required(),
           zipCode: Joi.string().required(),
           phone: Joi.string()
-            .pattern(/^\d{10,11}$/)
+            .pattern(/^\+\d{10}$/)
             .required(),
           address: Joi.string().required(),
         }),
@@ -43,7 +43,7 @@ class CaseValidate {
           city: Joi.string().required(),
           zipCode: Joi.string().required(),
           phone: Joi.string()
-            .pattern(/^\d{10,11}$/)
+            .pattern(/^\+\d{10}$/)
             .required(),
           address: Joi.string().required(),
         }),
@@ -52,7 +52,7 @@ class CaseValidate {
             name: Joi.string().required(),
             title: Joi.string().required(),
             phone: Joi.string()
-              .pattern(/^\d{10,11}$/)
+              .pattern(/^\+\d{10}$/)
               .required(),
             email: Joi.string().email().required(),
             relationWithDebtor: Joi.string().allow(''),
@@ -68,7 +68,7 @@ class CaseValidate {
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
           phone: Joi.string()
-            .pattern(/^\d{10,11}$/)
+            .pattern(/^\+\d{10}$/)
             .required(),
         }),
         businessInformation: Joi.object({
@@ -80,7 +80,7 @@ class CaseValidate {
             name: Joi.string().required(),
             title: Joi.string().required(),
             phone: Joi.string()
-              .pattern(/^\d{10,11}$/)
+              .pattern(/^\+\d{10}$/)
               .required(),
             email: Joi.string().email().required(),
             relationWithDebtor: Joi.string().allow(''),

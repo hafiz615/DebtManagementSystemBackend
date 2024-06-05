@@ -65,10 +65,7 @@ class CaseUtil {
         for (const interval of data.intervals) {
             if (interval.frequency === 0) {
                 payment.dueDate = interval.startDate;
-                if (!data.commissionPaidAlready) {
-                    commission = await this.calculateCommision(interval, data.weeklyBudget);
-                }
-                tempPayment = await this.populatePayment(data._id, payment, interval, 0, commission);
+                tempPayment = await this.populatePayment(data._id, payment, interval, 0);
                 paymentsArray.push(tempPayment);
             }
             if (interval.frequency != 0) {
@@ -79,10 +76,7 @@ class CaseUtil {
                     else {
                         payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i);
                     }
-                    if (!data.commissionPaidAlready) {
-                        commission = await this.calculateCommision(interval, data.weeklyBudget);
-                    }
-                    tempPayment = await this.populatePayment(data._id, payment, interval, i, commission);
+                    tempPayment = await this.populatePayment(data._id, payment, interval, i);
                     paymentsArray.push(tempPayment);
                 }
             }
@@ -141,13 +135,12 @@ class CaseUtil {
         }
         return currentDate.toString();
     }
-    async populatePayment(caseId, payment, interval, frequency, commission) {
+    async populatePayment(caseId, payment, interval, frequency) {
         payment.amount = interval.amount;
         payment.frequency = frequency;
         payment.caseId = caseId;
         payment.intervalId = String(interval._id);
         payment.timePeriod = interval.timePeriod;
-        payment.commission = commission;
         return { ...payment };
     }
     async getCaseCode() {
@@ -195,8 +188,20 @@ class CaseUtil {
                 },
             ],
         });
+        let weeklyBudgetObj;
         if (!getDebtor) {
+            if (!body.commissionPaidAlready) {
+                weeklyBudgetObj = await this.checkWeeklyBudget(body, false, null);
+                if (!weeklyBudgetObj.status) {
+                    return [
+                        false,
+                        'Weekly budget is not fulfiling the payment plan of debtor',
+                    ];
+                }
+            }
             contactIds = await this.createContacts(body.debtor.contacts);
+            body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+            body.debtor.weeklyCommission = weeklyBudgetObj.commission;
             const debtorData = {
                 ...body.debtor,
                 contacts: contactIds,
@@ -211,8 +216,21 @@ class CaseUtil {
             };
             creditor = await this.createCreditor(creditorData);
         }
-        if (getDebtor)
+        if (getDebtor) {
             debtor = getDebtor;
+            if (!body.commissionPaidAlready) {
+                weeklyBudgetObj = await this.checkWeeklyBudget(body, true, getDebtor);
+                if (!weeklyBudgetObj.status) {
+                    return [
+                        false,
+                        'Weekly budget is not fulfiling the payment plan of debtor',
+                    ];
+                }
+                body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+                body.debtor.weeklyCommission = weeklyBudgetObj.commission;
+                await this.debtRepository.updateById(getDebtor._id, body.debtor);
+            }
+        }
         if (getCreditor)
             creditor = getCreditor;
         body.debtor = debtor?._id;
@@ -221,13 +239,67 @@ class CaseUtil {
         newCase.caseOwner = role;
         newCase.createdBy = email;
         newCase.caseCode = await this.getCaseCode();
-        if (!body.commissionPaidAlready) {
-            newCase.commissionCalculated = parseInt((body.totalDebt * 0.19).toFixed(2));
-        }
         const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
         const caseCreated = await this.caseRepository.create(validatedCase);
         await this.createPayment(caseCreated);
-        return caseCreated;
+        if (!caseCreated) {
+            return [false, constants_util_1.default.failureAddMessage('case')];
+        }
+        return [true, caseCreated];
+    }
+    async checkWeeklyBudget(body, debtorFound, debtor) {
+        const interval = body.intervals[0];
+        const weeklyBudget = body.debtor.weeklyBudget;
+        let debt = body.totalDebt;
+        let amount = 0;
+        amount = await this.getWeeklyAmount(interval);
+        if (!debtorFound) {
+            return amount >= weeklyBudget
+                ? {
+                    status: false,
+                    commission: 0,
+                    totalCommission: 0,
+                }
+                : {
+                    status: true,
+                    commission: weeklyBudget - amount,
+                    totalCommission: parseInt((debt * 0.19).toFixed(2)),
+                };
+        }
+        const cases = await this.caseRepository.getAll({
+            debtor: debtor._id,
+        });
+        cases.forEach(async (caseTemp) => {
+            amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+            debt += caseTemp.totalDebt;
+        });
+        return amount >= weeklyBudget
+            ? {
+                status: false,
+                commission: 0,
+                totalCommission: 0,
+            }
+            : {
+                status: true,
+                commission: weeklyBudget - amount,
+                totalCommission: parseInt((debt * 0.19).toFixed(2)),
+            };
+    }
+    async getWeeklyAmount(interval) {
+        switch (interval.timePeriod.toLowerCase()) {
+            case 'custom':
+                return interval.amount;
+            case 'daily':
+                return interval.amount * interval.frequency;
+            case 'weekly':
+                return interval.amount;
+            case 'monthly':
+                return parseInt((interval.amount / 4).toFixed(2));
+            case 'fortnightly':
+                return parseInt((interval.amount / 2).toFixed(2));
+            default:
+                throw new Error('Invalid time period');
+        }
     }
     async checkCasePayment(body) {
         if (body.remaining !== body.totalDebt - body.paidAmount) {
@@ -300,107 +372,6 @@ class CaseUtil {
         }
         return result;
     }
-    // async getClientDetails(cases: any) {
-    //   const caseIds = cases.map((tempCase: ICase) => {
-    //     return String(tempCase._id);
-    //   });
-    //   const payments = await this.paymentRepository.getAll<IPayment>({
-    //     caseId: caseIds,
-    //   });
-    //   const filteredPayments = await paymentUtil.getFilteredPaymentsObj(payments);
-    //   const resultObj = {};
-    //   const result = [];
-    //   let caseIndex = 0,
-    //     bin = 0;
-    //   let objectCreated = false;
-    //   while (true) {
-    //     if (
-    //       bin === filteredPayments.upcomingPayments.length &&
-    //       caseIndex === caseIds.length
-    //     ) {
-    //       break;
-    //     }
-    //     if (
-    //       caseIds[caseIndex] ===
-    //       String(filteredPayments.upcomingPayments[bin]?.caseId)
-    //     ) {
-    //       if (!objectCreated) {
-    //         resultObj['creditor'] =
-    //           cases[caseIndex].creditor.basicInformation.fullName;
-    //         resultObj['totalDebt'] = cases[caseIndex].totalDebt;
-    //         resultObj['upcomingDebt'] =
-    //           filteredPayments.upcomingPayments[bin].amount;
-    //         resultObj['upcomingAuthDate'] = new Date(
-    //           filteredPayments.upcomingPayments[bin].dueDate
-    //         )
-    //           .toISOString()
-    //           .split('T')[0];
-    //         resultObj['caseOwner'] = cases[caseIndex].caseOwner;
-    //         result.push(resultObj);
-    //         objectCreated = true;
-    //       }
-    //       bin += 1;
-    //     } else {
-    //       if (!objectCreated) {
-    //         resultObj['creditor'] =
-    //           cases[caseIndex].creditor.basicInformation.fullName;
-    //         resultObj['totalDebt'] = cases[caseIndex].totalDebt;
-    //         resultObj['upcomingDebt'] = 0;
-    //         resultObj['upcomingAuthDate'] = '-';
-    //         resultObj['caseOwner'] = cases[caseIndex].caseOwner;
-    //         result.push(resultObj);
-    //       }
-    //       caseIndex += 1;
-    //       objectCreated = false;
-    //     }
-    //   }
-    //   bin = 0;
-    //   caseIndex = 0;
-    //   let findSuccess = false;
-    //   let finalResult = [];
-    //   while (true) {
-    //     if (
-    //       bin === filteredPayments.successPayments.length &&
-    //       caseIndex === caseIds.length
-    //     ) {
-    //       break;
-    //     }
-    //     if (
-    //       caseIds[caseIndex] ===
-    //       String(filteredPayments.successPayments[bin]?.caseId)
-    //     ) {
-    //       bin += 1;
-    //       findSuccess = true;
-    //     } else {
-    //       if (findSuccess) {
-    //         let temp = {...result[caseIndex]};
-    //         temp['lastPaymentDate'] = new Date(
-    //           filteredPayments.successPayments[bin - 1].dueDate
-    //         )
-    //           .toISOString()
-    //           .split('T')[0];
-    //         temp['lastPayment'] =
-    //           filteredPayments.successPayments[bin - 1].amount;
-    //         finalResult.push(temp);
-    //       }
-    //       if (!findSuccess) {
-    //         let temp = {...result[caseIndex]};
-    //         temp['lastPaymentDate'] = '-';
-    //         temp['lastPayment'] = 0;
-    //         finalResult.push(temp);
-    //       }
-    //       caseIndex += 1;
-    //       findSuccess = false;
-    //     }
-    //   }
-    //   const countPayments = {
-    //     failedAuthorizations: filteredPayments.failedAuthorizations.length,
-    //     failedPayments: filteredPayments.failedPayments.length,
-    //     successAuthorizations: filteredPayments.successAuthorizations.length,
-    //     successPayments: filteredPayments.successPayments.length,
-    //   };
-    //   return {columns: finalResult, paymentsCount: countPayments};
-    // }
     async getClientDetails(req) {
         const convertedDebtorId = new mongoose_1.default.Types.ObjectId(req.params.id);
         const pipeline = [
@@ -799,6 +770,95 @@ class CaseUtil {
                 { 'debtor.basicInformation.fullName': req.body.text },
                 { 'debtor.basicInformation.status': req.body.text },
             ];
+        }
+        return [queryFilter, querySearch];
+    }
+    async getCreditorListingPipeline(req) {
+        let page = 1;
+        let limit = 10;
+        // Check if pageNumber and pageSize are provided and valid
+        if (req.query.page && !isNaN(Number(req.query.page))) {
+            page = Number(req.query.page) ? Number(req.query.page) : page;
+        }
+        if (req.query.limit && !isNaN(Number(req.query.limit))) {
+            limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+        }
+        const filters = await this.getCreditorListingFilters(req);
+        const pipeline = [
+            {
+                $lookup: {
+                    from: 'creditors',
+                    localField: 'creditor',
+                    foreignField: '_id',
+                    as: 'creditor',
+                },
+            },
+            {
+                $unwind: '$creditor',
+            },
+            {
+                $match: filters[1],
+            },
+            {
+                $group: {
+                    _id: { $toString: '$creditor._id' },
+                    creditorName: { $first: '$creditor.basicInformation.fullName' },
+                    totalCases: { $sum: 1 },
+                    totalDebtors: { $addToSet: '$debtor' }, // Collect unique debtors
+                    totalDebt: { $sum: '$totalDebt' },
+                },
+            },
+            {
+                $project: {
+                    id: '$_id',
+                    _id: 0,
+                    creditorName: 1,
+                    totalCases: 1,
+                    totalDebtors: { $size: '$totalDebtors' }, // Count unique debtors
+                    totalDebt: 1,
+                },
+            },
+            {
+                $match: filters[0],
+            },
+            {
+                $skip: (page - 1) * limit,
+            },
+            {
+                $limit: limit,
+            },
+        ];
+        return pipeline;
+    }
+    async getCreditorListingFilters(req) {
+        const queryFilter = {};
+        const querySearch = {};
+        if (req.query.filter === 'true') {
+            let filter = req.body.filter;
+            if (filter.totalDebt) {
+                queryFilter['totalDebt'] = {
+                    $gte: filter.totalDebt.min,
+                    $lte: filter.totalDebt.max,
+                };
+            }
+            if (filter.totalCases) {
+                queryFilter['totalCases'] = {
+                    $gte: filter.totalCases.min,
+                    $lte: filter.totalCases.max,
+                };
+            }
+            if (filter.totalCreditors) {
+                queryFilter['totalDebtors'] = {
+                    $gte: filter.totalDebtors.min,
+                    $lte: filter.totalDebtors.max,
+                };
+            }
+        }
+        if (req.query.search === 'true') {
+            querySearch['creditor.basicInformation.fullName'] = {
+                $regex: req.body.text,
+                $options: 'i',
+            };
         }
         return [queryFilter, querySearch];
     }

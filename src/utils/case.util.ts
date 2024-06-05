@@ -878,6 +878,99 @@ class CaseUtil {
     return [queryFilter, querySearch];
   }
 
+  async getCreditorListingPipeline(req: Request) {
+    let page = 1;
+    let limit = 10;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    const filters = await this.getCreditorListingFilters(req);
+    const pipeline = [
+      {
+        $lookup: {
+          from: 'creditors',
+          localField: 'creditor',
+          foreignField: '_id',
+          as: 'creditor',
+        },
+      },
+      {
+        $unwind: '$creditor',
+      },
+      {
+        $match: filters[1],
+      },
+      {
+        $group: {
+          _id: {$toString: '$creditor._id'},
+          creditorName: {$first: '$creditor.basicInformation.fullName'},
+          totalCases: {$sum: 1},
+          totalDebtors: {$addToSet: '$debtor'}, // Collect unique debtors
+          totalDebt: {$sum: '$totalDebt'},
+        },
+      },
+      {
+        $project: {
+          id: '$_id',
+          _id: 0,
+          creditorName: 1,
+          totalCases: 1,
+          totalDebtors: {$size: '$totalDebtors'}, // Count unique debtors
+          totalDebt: 1,
+        },
+      },
+      {
+        $match: filters[0],
+      },
+      {
+        $skip: (page - 1) * limit,
+      },
+      {
+        $limit: limit,
+      },
+    ];
+
+    return pipeline;
+  }
+
+  async getCreditorListingFilters(req: Request) {
+    const queryFilter = {};
+    const querySearch = {};
+    if (req.query.filter === 'true') {
+      let filter = req.body.filter;
+      if (filter.totalDebt) {
+        queryFilter['totalDebt'] = {
+          $gte: filter.totalDebt.min,
+          $lte: filter.totalDebt.max,
+        };
+      }
+      if (filter.totalCases) {
+        queryFilter['totalCases'] = {
+          $gte: filter.totalCases.min,
+          $lte: filter.totalCases.max,
+        };
+      }
+      if (filter.totalCreditors) {
+        queryFilter['totalDebtors'] = {
+          $gte: filter.totalDebtors.min,
+          $lte: filter.totalDebtors.max,
+        };
+      }
+    }
+    if (req.query.search === 'true') {
+      querySearch['creditor.basicInformation.fullName'] = {
+        $regex: req.body.text,
+        $options: 'i',
+      };
+    }
+    return [queryFilter, querySearch];
+  }
+
   async updateContacts(data: IContact[]) {
     for (const contact of data) {
       await this.contactRepository.updateById<IContact>(contact._id, {
