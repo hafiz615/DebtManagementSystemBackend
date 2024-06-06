@@ -41,6 +41,9 @@ const debtorModel: Schema = new Schema({
     address: {
       type: String,
     },
+    weeklyBudget: {
+      type: Number,
+    },
   },
   businessInformation: {
     companyName: {
@@ -87,9 +90,6 @@ const debtorModel: Schema = new Schema({
   },
   customerVaultId: {
     type: String,
-  },
-  weeklyBudget: {
-    type: Number,
   },
   totalCommission: {
     type: Number,

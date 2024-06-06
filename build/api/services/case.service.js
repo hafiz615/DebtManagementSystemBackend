@@ -65,6 +65,7 @@ class CaseService {
             const creditors = await case_util_1.default.getAllCreditorsOfDebtor(findCase.debtor);
             const temp = await this.targetCFRepository.getOne({
                 target: 'case',
+                caseId: req.params.id,
             });
             const tempCase = findCase;
             tempCase['creditors'] = creditors;

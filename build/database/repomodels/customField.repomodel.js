@@ -21,6 +21,7 @@ class TargetCustomFields {
     constructor() {
         this.target = '';
         this.customFields = Array();
+        this.caseId = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

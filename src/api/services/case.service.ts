@@ -106,6 +106,7 @@ class CaseService {
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
       target: 'case',
+      caseId: req.params.id,
     });
     const tempCase: any = findCase;
     tempCase['creditors'] = creditors;

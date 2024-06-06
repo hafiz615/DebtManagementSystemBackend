@@ -18,6 +18,7 @@ class Debtor {
             status: '',
             phone: '',
             address: '',
+            weeklyBudget: 0,
         };
         this.businessInformation = {
             companyName: '',
@@ -34,7 +35,6 @@ class Debtor {
         this.transactionTypes = Array();
         this.customerVaultId = '';
         this.contacts = Array();
-        this.weeklyBudget = 0;
         this.totalCommission = 0;
         this.commissionPaid = 0;
         this.weeklyCommission = 0;

@@ -30,6 +30,10 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     select && result.select(select);
     sort && result.sort(sort);
     populate && result.populate(populate);
+    if (!page || !limit) {
+      page = 1;
+      limit = 10;
+    }
     if (page && limit) {
       const skip = (page - 1) * limit;
       result.skip(skip).limit(limit);

@@ -11,6 +11,9 @@ const targetCustomFields: Schema = new Schema({
       value: {type: Schema.Types.Mixed};
     }>,
   },
+  caseId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

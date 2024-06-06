@@ -80,11 +80,11 @@ class CreditorService {
     const casesCount = await this.caseRepository.getCount<ICase>({
       creditor: req.params.id,
     });
-    const clientDetails = await caseUtil.getClientDetails(req);
+    const clientDetails = await caseUtil.getCreditorDetails(req);
     if (!clientDetails) {
-      return [false, constants.notFoundMessage('Debtor')];
+      return [false, constants.notFoundMessage('Creditor')];
     }
-    return [true, {...clientDetails, debtorTotalCases: casesCount}];
+    return [true, {...clientDetails, creditorTotalCases: casesCount}];
   }
 
   async listing(req: Request) {

@@ -64,6 +64,31 @@ class PaymentService {
         paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
         upcomingAmount = paymentsObj.upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
         failedAmount = paymentsObj.failedPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
+            ...obj,
+            type: 'authorization',
+        }));
+        // Adding type to each object in successCapture array
+        const failedCapture = paymentsObj.failedPayments.map((obj) => ({
+            ...obj,
+            type: 'payment',
+        }));
+        const successAuth = paymentsObj.successAuthorizations.map((obj) => ({
+            ...obj,
+            type: 'authorization',
+        }));
+        // Adding type to each object in successCapture array
+        const successCapture = paymentsObj.successPayments.map((obj) => ({
+            ...obj,
+            type: 'payment',
+        }));
+        // Merging the arrays
+        const mergedArray = [
+            ...successAuth,
+            ...failedAuth,
+            ...successCapture,
+            ...failedCapture,
+        ];
         const paymentCounts = {
             failedPayments: paymentsObj.failedPayments.length,
             successPayments: paymentsObj.successPayments.length,
@@ -72,7 +97,18 @@ class PaymentService {
             paidAmount: paidAmount,
             remainingAmount: upcomingAmount + failedAmount,
         };
-        return [true, { transactions: paymentsObj, paymentCounts: paymentCounts }];
+        mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        paymentsObj.upcomingPayments.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        return [
+            true,
+            {
+                transactions: {
+                    previous: mergedArray,
+                    upcomingPayments: paymentsObj.upcomingPayments,
+                },
+                paymentCounts: paymentCounts,
+            },
+        ];
     }
     async getAllPaymentsByCaseId(id) {
         return await this.paymentRepository.getAll({
@@ -126,32 +162,6 @@ class PaymentService {
             const response = await axios_1.default.get(url, { params });
             console.log('Response:', response.data);
             return response.data;
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                console.error('Error making request:', error.message);
-                if (error.response) {
-                    console.error('Response data:', error.response.data);
-                    console.error('Response status:', error.response.status);
-                    console.error('Response headers:', error.response.headers);
-                }
-            }
-            else {
-                console.error('Unexpected error:', error);
-            }
-        }
-    }
-    async creditAmount() {
-        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
-        const params = {
-            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-            customer_vault_id: '1922739712',
-            type: 'credit',
-            amount: '10.00',
-        };
-        try {
-            const response = await axios_1.default.get(url, { params });
-            console.log('Response:', response.data);
         }
         catch (error) {
             if (axios_1.default.isAxiosError(error)) {

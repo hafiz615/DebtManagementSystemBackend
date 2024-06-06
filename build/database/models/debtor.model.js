@@ -65,6 +65,9 @@ const debtorModel = new mongoose_1.Schema({
         address: {
             type: String,
         },
+        weeklyBudget: {
+            type: Number,
+        },
     },
     businessInformation: {
         companyName: {
@@ -111,9 +114,6 @@ const debtorModel = new mongoose_1.Schema({
     },
     customerVaultId: {
         type: String,
-    },
-    weeklyBudget: {
-        type: Number,
     },
     totalCommission: {
         type: Number,

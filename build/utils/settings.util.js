@@ -9,7 +9,7 @@ class SettingsUtil {
     constructor() {
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
     }
-    async addCustomFieldByTarget(customField, body, target) {
+    async addCustomFieldByTarget(customField, body, target, caseId) {
         const { name, value } = body;
         let targetCF = null;
         customField.type =
@@ -26,18 +26,20 @@ class SettingsUtil {
             case 'case':
                 const temp = await this.targetCFRepository.getOne({
                     target: target,
+                    caseId: caseId,
                 });
                 if (!temp) {
                     targetCF = await this.targetCFRepository.create({
                         target: target,
                         customFields: [body],
+                        caseId: caseId,
                         createdAt: common_util_1.default.getCurrentDate(),
                         updatedAt: common_util_1.default.getCurrentDate(),
                     });
                 }
                 else {
                     targetCF =
-                        await this.targetCFRepository.updateByOne({ target: target }, {
+                        await this.targetCFRepository.updateByOne({ target: target, caseId: caseId }, {
                             $addToSet: { customFields: body },
                         });
                 }

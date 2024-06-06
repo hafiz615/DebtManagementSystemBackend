@@ -13,6 +13,7 @@ export class CustomFiled {
 export class TargetCustomFields {
   target = '';
   customFields = Array<{name: ''; value: any}>();
+  caseId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

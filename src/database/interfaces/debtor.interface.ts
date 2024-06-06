@@ -11,6 +11,7 @@ interface businessInformation {
   zipCode: string;
   phone: string;
   address: string;
+  weeklyBudget: number;
 }
 
 interface basicInformation {
@@ -31,7 +32,6 @@ export interface IDebtor extends Document {
   contacts: Array<mongoose.Schema.Types.ObjectId>;
   transactionTypes: Array<{name: string; priority: string}>;
   customerVaultId: string;
-  weeklyBudget: number;
   totalCommission: number;
   commissionPaid: number;
   weeklyCommission: number;

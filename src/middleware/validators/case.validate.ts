@@ -30,6 +30,7 @@ class CaseValidate {
             .pattern(/^\+\d{10}$/)
             .required(),
           address: Joi.string().required(),
+          weeklyBudget: Joi.number(),
         }),
         businessInformation: Joi.object({
           companyName: Joi.string().required(),
@@ -102,7 +103,6 @@ class CaseValidate {
       paidAmount: Joi.number().strict().required(),
       remaining: Joi.number().strict().required(),
       status: Joi.string().required(),
-      weeklyBudget: Joi.number(),
       feePayment: Joi.string().valid(
         'paidViaCash',
         'toPay',

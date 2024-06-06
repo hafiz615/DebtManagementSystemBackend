@@ -31,6 +31,7 @@ class CaseValidate {
                         .pattern(/^\+\d{10}$/)
                         .required(),
                     address: joi_1.default.string().required(),
+                    weeklyBudget: joi_1.default.number(),
                 }),
                 businessInformation: joi_1.default.object({
                     companyName: joi_1.default.string().required(),
@@ -99,7 +100,6 @@ class CaseValidate {
             paidAmount: joi_1.default.number().strict().required(),
             remaining: joi_1.default.number().strict().required(),
             status: joi_1.default.string().required(),
-            weeklyBudget: joi_1.default.number(),
             feePayment: joi_1.default.string().valid('paidViaCash', 'toPay', 'paidViaThirdParty'),
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),

@@ -19,7 +19,8 @@ class SettingsUtil {
   async addCustomFieldByTarget(
     customField: ICustomField,
     body: any,
-    target: string
+    target: string,
+    caseId: string
   ): Promise<[boolean, ICustomField | string]> {
     const {name, value} = body;
     let targetCF = null;
@@ -38,18 +39,20 @@ class SettingsUtil {
       case 'case':
         const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
           target: target,
+          caseId: caseId,
         });
         if (!temp) {
           targetCF = await this.targetCFRepository.create<ITargetCustomFields>({
             target: target,
             customFields: [body],
+            caseId: caseId,
             createdAt: commonUtil.getCurrentDate(),
             updatedAt: commonUtil.getCurrentDate(),
           } as any);
         } else {
           targetCF =
             await this.targetCFRepository.updateByOne<ITargetCustomFields>(
-              {target: target},
+              {target: target, caseId: caseId},
               {
                 $addToSet: {customFields: body},
               }
