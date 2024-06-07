@@ -27,6 +27,7 @@ class DebtorController {
         })
       );
     } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));

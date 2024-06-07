@@ -15,10 +15,15 @@ class DebtorService {
     this.caseRepository = new CaseRepository();
   }
 
-  async getDebtor(text: string): Promise<[boolean, IDebtor | string]> {
-    const debtor = await this.debtorRepository.getOne<IDebtor>(
+  async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
+    const debtor = await this.debtorRepository.getAll<IDebtor>(
       {
         $or: [
+          {
+            'basicInformation.fullName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for name
+            },
+          },
           {
             'basicInformation.email': {
               $regex: new RegExp(text, 'i'), // Case-insensitive match for email
@@ -37,8 +42,7 @@ class DebtorService {
         ],
       },
       undefined,
-      undefined,
-      ['contacts']
+      undefined
     );
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];

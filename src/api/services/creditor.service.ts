@@ -20,20 +20,24 @@ class CreditorService {
       {
         $or: [
           {
+            'basicInformation.fullName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for name
+            },
+          },
+          {
             'basicInformation.email': {
               $regex: new RegExp(text, 'i'), // Case-insensitive match for email
             },
           },
           {
             'basicInformation.phone': {
-              $regex: new RegExp(text), // Case-insensitive match for phone
+              $regex: new RegExp(text),
             },
           },
         ],
       },
       undefined,
-      undefined,
-      ['contacts']
+      undefined
     );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
