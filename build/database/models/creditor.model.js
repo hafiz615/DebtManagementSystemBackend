@@ -54,7 +54,6 @@ const creditorModel = new mongoose_1.Schema({
     },
     contacts: {
         type: (Array),
-        ref: 'Contacts',
     },
     notes: {
         type: String,

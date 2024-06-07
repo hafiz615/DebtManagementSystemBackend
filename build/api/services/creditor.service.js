@@ -26,7 +26,7 @@ class CreditorService {
                     },
                 },
             ],
-        }, undefined, undefined, undefined, ['contacts']);
+        });
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }

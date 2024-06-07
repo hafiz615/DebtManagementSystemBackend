@@ -94,12 +94,6 @@ const caseModel = new mongoose_1.Schema({
             },
         ],
     },
-    customFields: {
-        type: (Array),
-    },
-    commissionPaidAlready: {
-        type: Boolean,
-    },
     createdAt: {
         type: Date,
         required: true,

@@ -49,7 +49,6 @@ class DebtorRequests {
                 }),
             });
             const { error } = schema.validate(req.body);
-            console.log(error.details[0].message);
             if (!error) {
                 return next();
             }

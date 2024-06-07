@@ -89,10 +89,7 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      [
-        {path: 'creditor', populate: 'contacts'},
-        {path: 'debtor', populate: 'contacts'},
-      ]
+      [{path: 'creditor'}, {path: 'debtor'}]
     );
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];

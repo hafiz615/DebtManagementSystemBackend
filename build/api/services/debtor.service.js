@@ -31,7 +31,7 @@ class DebtorService {
                     },
                 },
             ],
-        }, undefined, undefined, undefined, ['contacts']);
+        });
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }

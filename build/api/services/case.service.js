@@ -51,10 +51,7 @@ class CaseService {
             return [true, cases];
         };
         this.getCaseById = async (req) => {
-            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [
-                { path: 'creditor', populate: 'contacts' },
-                { path: 'debtor', populate: 'contacts' },
-            ]);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
             if (!findCase) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }

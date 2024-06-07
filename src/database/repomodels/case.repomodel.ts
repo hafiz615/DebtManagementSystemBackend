@@ -20,7 +20,6 @@ export class Case {
     frequency: 0;
     timePeriod: '';
   }>();
-  commissionPaidAlready = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

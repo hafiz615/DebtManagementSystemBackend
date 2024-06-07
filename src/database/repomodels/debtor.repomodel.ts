@@ -29,7 +29,17 @@ export class Debtor {
   };
   transactionTypes = Array<{name: ''; priority: ''}>();
   customerVaultId = '';
-  contacts = Array<mongoose.Schema.Types.ObjectId>();
+  contacts = Array<{
+    name: '';
+    title: '';
+    phone: '';
+    email: '';
+    relationWithDebtor: '';
+    country: '';
+    state: '';
+    city: '';
+    zipCode: '';
+  }>();
   totalCommission = 0;
   commissionPaid = 0;
   weeklyCommission = 0;

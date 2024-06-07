@@ -29,7 +29,17 @@ interface basicInformation {
 export interface IDebtor extends Document {
   basicInformation: basicInformation;
   businessInformation: businessInformation;
-  contacts: Array<mongoose.Schema.Types.ObjectId>;
+  contacts: Array<{
+    name: string;
+    title: string;
+    phone: string;
+    email: string;
+    relationWithDebtor: string;
+    country: string;
+    state: string;
+    city: string;
+    zipCode: string;
+  }>;
   transactionTypes: Array<{name: string; priority: string}>;
   customerVaultId: string;
   totalCommission: number;

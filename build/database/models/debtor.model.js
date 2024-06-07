@@ -107,7 +107,6 @@ const debtorModel = new mongoose_1.Schema({
     },
     contacts: {
         type: (Array),
-        ref: 'Contacts',
     },
     transactionTypes: {
         type: (Array),

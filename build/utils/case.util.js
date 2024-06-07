@@ -203,19 +203,20 @@ class CaseUtil {
                 body.debtor.weeklyCommission = weeklyBudgetObj.commission;
             }
             contactIds = await this.createContacts(body.debtor.contacts);
-            const debtorData = {
-                ...body.debtor,
-                contacts: contactIds,
-            };
-            debtor = await this.createDebtor(debtorData);
+            // const debtorData = {
+            //   ...body.debtor,
+            // };
+            debtor = await this.createDebtor(body.debtor);
         }
         if (!getCreditor) {
-            contactIds = await this.createContacts(body.creditor.contacts);
-            const creditorData = {
-                ...body.creditor,
-                contacts: contactIds,
-            };
-            creditor = await this.createCreditor(creditorData);
+            // contactIds = await this.createContacts(
+            //   body.creditor.contacts as IContact[]
+            // );
+            // const creditorData = {
+            //   ...body.creditor,
+            //   contacts: contactIds,
+            // };
+            creditor = await this.createCreditor(body.creditor);
         }
         if (getDebtor) {
             debtor = getDebtor;
@@ -257,7 +258,7 @@ class CaseUtil {
         if (!debtorFound) {
             const interval = body.intervals[0];
             weeklyBudget = body.debtor.basicInformation.weeklyBudget;
-            debt = body.totalDebt;
+            debt = body.remaining;
             amount = await this.getWeeklyAmount(interval);
             return amount >= weeklyBudget
                 ? {
@@ -277,8 +278,7 @@ class CaseUtil {
         });
         for (const caseTemp of cases) {
             amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
-            console.log(amount);
-            debt += caseTemp.totalDebt;
+            debt += caseTemp.remaining;
         }
         return amount >= weeklyBudget
             ? {
@@ -314,7 +314,6 @@ class CaseUtil {
         }
         if (body && body.intervals && body.intervals.length) {
             let amount = 0;
-            console.log(body.intervals);
             for (const interval of body.intervals) {
                 if (!interval.frequency) {
                     amount += interval.amount;
@@ -921,16 +920,12 @@ class CaseUtil {
         }
         if (req.query.search === 'true') {
             const text = req.body.text;
-            console.log('i am hereeeeeee');
-            console.log(text);
             if (text) {
-                console.log('i am hereeeeeee');
                 filterConditions.push({
                     $or: [{ creditorName: { $regex: text } }, { caseOwner: { $regex: text } }],
                 });
             }
         }
-        console.log(filterConditions, 'pplplplplp');
         return filterConditions;
     }
     async getClientListingPipeline(req) {

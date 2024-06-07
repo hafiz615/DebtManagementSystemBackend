@@ -16,31 +16,25 @@ class DebtorService {
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
-    const debtor = await this.debtorRepository.getAll<IDebtor>(
-      {
-        $or: [
-          {
-            'basicInformation.email': {
-              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
-            },
+    const debtor = await this.debtorRepository.getAll<IDebtor>({
+      $or: [
+        {
+          'basicInformation.email': {
+            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
           },
-          {
-            'basicInformation.SSID': {
-              $regex: new RegExp(text), // Case-insensitive match for SSID
-            },
+        },
+        {
+          'basicInformation.SSID': {
+            $regex: new RegExp(text), // Case-insensitive match for SSID
           },
-          {
-            'basicInformation.phone': {
-              $regex: new RegExp(text), // Case-insensitive match for phone
-            },
+        },
+        {
+          'basicInformation.phone': {
+            $regex: new RegExp(text), // Case-insensitive match for phone
           },
-        ],
-      },
-      undefined,
-      undefined,
-      undefined,
-      ['contacts']
-    );
+        },
+      ],
+    });
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }

@@ -29,8 +29,17 @@ const creditorModel: Schema = new Schema({
     },
   },
   contacts: {
-    type: Array<mongoose.Schema.Types.ObjectId>,
-    ref: 'Contacts',
+    type: Array<{
+      name: '';
+      title: '';
+      phone: '';
+      email: '';
+      relationWithDebtor: '';
+      country: '';
+      state: '';
+      city: '';
+      zipCode: '';
+    }>,
   },
   notes: {
     type: String,
