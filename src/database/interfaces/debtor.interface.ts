@@ -11,7 +11,6 @@ interface businessInformation {
   zipCode: string;
   phone: string;
   address: string;
-  weeklyBudget: number;
 }
 
 interface basicInformation {
@@ -25,6 +24,7 @@ interface basicInformation {
   status: string;
   phone: string;
   address: string;
+  weeklyBudget: number;
 }
 export interface IDebtor extends Document {
   basicInformation: basicInformation;

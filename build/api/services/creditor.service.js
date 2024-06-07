@@ -13,13 +13,8 @@ class CreditorService {
         this.caseRepository = new case_repository_1.CaseRepository();
     }
     async getCreditor(text) {
-        const creditor = await this.creditorRepository.getOne({
+        const creditor = await this.creditorRepository.getAll({
             $or: [
-                {
-                    'basicInformation.fullName': {
-                        $regex: new RegExp(text, 'i'), // Case-insensitive match for name
-                    },
-                },
                 {
                     'basicInformation.email': {
                         $regex: new RegExp(text, 'i'), // Case-insensitive match for email

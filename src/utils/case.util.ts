@@ -320,12 +320,14 @@ class CaseUtil {
   }
 
   async checkWeeklyBudget(body: any, debtorFound: boolean, debtor: IDebtor) {
-    const interval = body.intervals[0];
-    const weeklyBudget = body.debtor.basicInformation.weeklyBudget;
-    let debt = body.totalDebt;
+    let weeklyBudget = 0;
+    let debt = 0;
     let amount = 0;
-    amount = await this.getWeeklyAmount(interval);
     if (!debtorFound) {
+      const interval = body.intervals[0];
+      weeklyBudget = body.debtor.basicInformation.weeklyBudget;
+      debt = body.totalDebt;
+      amount = await this.getWeeklyAmount(interval);
       return amount >= weeklyBudget
         ? {
             status: false,
@@ -338,13 +340,15 @@ class CaseUtil {
             totalCommission: parseInt((debt * 0.19).toFixed(2)),
           };
     }
+    weeklyBudget = body.debtor.basicInformation.weeklyBudget;
     const cases = await this.caseRepository.getAll<ICase>({
       debtor: debtor._id,
     });
-    cases.forEach(async (caseTemp: ICase) => {
+    for (const caseTemp of cases) {
       amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+      console.log(amount);
       debt += caseTemp.totalDebt;
-    });
+    }
     return amount >= weeklyBudget
       ? {
           status: false,

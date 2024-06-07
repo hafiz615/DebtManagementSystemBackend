@@ -16,11 +16,6 @@ class DebtorService {
         const debtor = await this.debtorRepository.getAll({
             $or: [
                 {
-                    'basicInformation.fullName': {
-                        $regex: new RegExp(text, 'i'), // Case-insensitive match for name
-                    },
-                },
-                {
                     'basicInformation.email': {
                         $regex: new RegExp(text, 'i'), // Case-insensitive match for email
                     },
@@ -73,7 +68,6 @@ class DebtorService {
                 },
             ],
         });
-        console.log(String(getDebtor._id));
         if (getDebtor) {
             if (getDebtor.basicInformation.email === email &&
                 String(getDebtor._id) !== req.params.id) {
@@ -97,6 +91,18 @@ class DebtorService {
                 ];
             }
         }
+        if (req.body.basicInformation.weeklyBudget !==
+            getDebtor.basicInformation.weeklyBudget) {
+            const response = await case_util_1.default.checkWeeklyBudget({ debtor: req.body }, true, getDebtor);
+            if (!response.status) {
+                return [
+                    false,
+                    'Weekly budget is not fulfiling the payment plan of debtor',
+                ];
+            }
+            req.body.weeklyCommission = response.commission;
+        }
+        req.body;
         const debtor = await this.debtorRepository.updateById(req.params.id, req.body);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];

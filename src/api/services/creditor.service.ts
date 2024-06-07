@@ -15,15 +15,10 @@ class CreditorService {
     this.caseRepository = new CaseRepository();
   }
 
-  async getCreditor(text: string): Promise<[boolean, ICreditor | string]> {
-    const creditor = await this.creditorRepository.getOne<ICreditor>(
+  async getCreditor(text: string): Promise<[boolean, ICreditor[] | string]> {
+    const creditor = await this.creditorRepository.getAll<ICreditor>(
       {
         $or: [
-          {
-            'basicInformation.fullName': {
-              $regex: new RegExp(text, 'i'), // Case-insensitive match for name
-            },
-          },
           {
             'basicInformation.email': {
               $regex: new RegExp(text, 'i'), // Case-insensitive match for email
