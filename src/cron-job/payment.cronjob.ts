@@ -347,9 +347,13 @@ class CronJob {
     );
     const pendingAuthorized = payments[0].pendingAuthorized.filter(
       (payment: IPayment) => {
-        const interval =
-          authorizationInterval[payment.timePeriod.toLowerCase()];
-        return this.shouldAuthorize(interval.unit, interval.value, payment);
+        if (payment.timePeriod) {
+          const interval =
+            authorizationInterval[payment.timePeriod.toLowerCase()];
+          console.log(interval, 'lll');
+          return this.shouldAuthorize(interval.unit, interval.value, payment);
+        }
+        return false;
       }
     );
     console.log(pendingAuthorized, 'pendingAuthorizedd');

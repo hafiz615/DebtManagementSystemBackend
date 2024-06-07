@@ -258,8 +258,12 @@ class CronJob {
         console.log(authorizationInterval, 'authorizationInterval');
         console.log(payments[0].pendingAuthorized.length, 'payments[0].pendingAuthorized');
         const pendingAuthorized = payments[0].pendingAuthorized.filter((payment) => {
-            const interval = authorizationInterval[payment.timePeriod.toLowerCase()];
-            return this.shouldAuthorize(interval.unit, interval.value, payment);
+            if (payment.timePeriod) {
+                const interval = authorizationInterval[payment.timePeriod.toLowerCase()];
+                console.log(interval, 'lll');
+                return this.shouldAuthorize(interval.unit, interval.value, payment);
+            }
+            return false;
         });
         console.log(pendingAuthorized, 'pendingAuthorizedd');
         // const groupedPayments = await this.groupPaymentsByDebtor(pendingAuthorized);

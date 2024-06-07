@@ -33,28 +33,33 @@ class CreditorService {
         return [true, creditor];
     }
     async updateCreditor(req) {
-        const email = req.body.creditor.basicInformation.email.toLowerCase();
+        const email = req.body.basicInformation.email.toLowerCase();
         const getCreditor = await this.creditorRepository.getOne({
             $or: [
                 {
                     'basicInformation.email': email,
                 },
                 {
-                    'basicInformation.phone': req.body.creditor.basicInformation.phone,
+                    'basicInformation.phone': req.body.basicInformation.phone,
                 },
             ],
         });
         if (getCreditor) {
-            if (getCreditor.basicInformation.email === email) {
+            if (getCreditor.basicInformation.email === email &&
+                String(getCreditor._id) !== req.params.id) {
                 return [
                     false,
                     constants_util_1.default.alreadyExistsMessage('Creditor with basicInformation.email'),
                 ];
             }
-            return [
-                false,
-                constants_util_1.default.alreadyExistsMessage('Creditor with basicInformation.phone'),
-            ];
+            if (getCreditor.basicInformation.phone ===
+                req.body.basicInformation.phone &&
+                String(getCreditor._id) !== req.params.id) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage('Creditor with basicInformation.phone'),
+                ];
+            }
         }
         const creditor = await this.creditorRepository.updateById(req.params.id, { ...req.body });
         if (!creditor) {
