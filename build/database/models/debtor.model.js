@@ -111,28 +111,36 @@ const debtorModel = new mongoose_1.Schema({
     },
     transactionTypes: {
         type: (Array),
+        select: false,
     },
     customerVaultId: {
         type: String,
+        select: false,
     },
     totalCommission: {
         type: Number,
+        select: false,
     },
     commissionPaid: {
         type: Boolean,
+        select: false,
     },
     weeklyCommission: {
         type: Number,
+        select: false,
     },
     weeklyCommissionPaid: {
         type: Boolean,
+        select: false,
     },
     weeklyCommissionDate: {
-        type: Boolean,
+        type: Date,
+        select: false,
     },
     commissionPaymentId: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'Payments',
+        type: String,
+        // ref: 'Payments',
+        select: false,
     },
     createdAt: {
         type: Date,
