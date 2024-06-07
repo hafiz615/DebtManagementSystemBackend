@@ -26,11 +26,11 @@ class SettingsUtil {
     let targetCF = null;
 
     customField.type =
-      customField.type === 'Text' ? 'string' : customField.type;
+      customField.type === 'text' ? 'string' : customField.type;
     let valueType: any = typeof value;
     if (valueType === 'string') {
       const date = new Date(value);
-      valueType = !isNaN(date.getTime()) ? 'Date' : valueType;
+      valueType = !isNaN(date.getTime()) ? 'date' : valueType;
     }
     if (valueType !== customField.type) {
       return [false, 'Custom field and value type mismatched'];
