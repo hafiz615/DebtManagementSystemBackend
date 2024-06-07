@@ -37,7 +37,9 @@ class DebtorService {
         ],
       },
       undefined,
-      undefined
+      undefined,
+      undefined,
+      ['contacts']
     );
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];

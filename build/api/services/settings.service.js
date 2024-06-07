@@ -98,11 +98,11 @@ class SettingsService {
             return [false, 'Case id is missing'];
         }
         const target = String(req.query.target);
-        const customFields = await this.customFieldsRepository.getAll({
+        const customFields = await this.targetCFRepository.getOne({
             $or: [{ target: target }, { shared: true }],
             caseId: String(req.query.caseId),
         });
-        if (!customFields.length) {
+        if (!customFields) {
             return [false, constants_util_1.default.notFoundMessage('Custom fields')];
         }
         return [true, customFields];

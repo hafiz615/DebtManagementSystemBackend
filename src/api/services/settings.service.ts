@@ -123,26 +123,25 @@ class SettingsService {
   }
   async getCustomFieldsByTarget(
     req: Request
-  ): Promise<[boolean, ICustomField[] | string]> {
+  ): Promise<[boolean, ITargetCustomFields | string]> {
     if (!req.query.target) return [false, 'Target is missing'];
     if (!req.query.caseId) {
       return [false, 'Case id is missing'];
     }
     const target = String(req.query.target);
-    const customFields = await this.customFieldsRepository.getAll<ICustomField>(
-      {
+    const customFields =
+      await this.targetCFRepository.getOne<ITargetCustomFields>({
         $or: [{target: target}, {shared: true}],
         caseId: String(req.query.caseId),
-      }
-    );
-    if (!customFields.length) {
+      });
+    if (!customFields) {
       return [false, constants.notFoundMessage('Custom fields')];
     }
     return [true, customFields];
   }
   async addCustomFieldByTarget(
     req: Request
-  ): Promise<[boolean, ICustomField | string]> {
+  ): Promise<[boolean, ITargetCustomFields | string]> {
     const {name, value} = req.body;
     if (!req.query.target) {
       return [false, 'Target is missing'];

@@ -32,7 +32,9 @@ class CreditorService {
         ],
       },
       undefined,
-      undefined
+      undefined,
+      undefined,
+      ['contacts']
     );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];

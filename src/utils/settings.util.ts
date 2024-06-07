@@ -21,7 +21,7 @@ class SettingsUtil {
     body: any,
     target: string,
     caseId: string
-  ): Promise<[boolean, ICustomField | string]> {
+  ): Promise<[boolean, ITargetCustomFields | string]> {
     const {name, value} = body;
     let targetCF = null;
 
