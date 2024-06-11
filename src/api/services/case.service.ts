@@ -37,12 +37,14 @@ class CaseService {
       for (const tempCase of req.body.cases) {
         const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
         if (!checkCasePayment[0]) return checkCasePayment;
-        const caseCreated = await caseUtil.createCase(
+        const result = await caseUtil.createCase(
           tempCase,
           reqTemp.role,
           reqTemp.email
         );
-        casesArray.push(caseCreated);
+        if (result[0]) {
+          casesArray.push(result[1] as ICase);
+        }
       }
       if (!casesArray.length)
         return [false, constantsUtil.failureAddMessage('cases')];
@@ -50,13 +52,13 @@ class CaseService {
     }
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
-    const caseCreated = await caseUtil.createCase(
+    const result = await caseUtil.createCase(
       req.body,
-      reqTemp.role,
+      reqTemp.name,
       reqTemp.email
     );
-    if (!caseCreated) return [false, constantsUtil.failureAddMessage('case')];
-    return [true, caseCreated];
+    if (!result[0]) return [false, result[1] as string];
+    return [true, result[1] as ICase];
   };
 
   getAllCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
@@ -87,10 +89,7 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      [
-        {path: 'creditor', populate: 'contacts'},
-        {path: 'debtor', populate: 'contacts'},
-      ]
+      [{path: 'creditor'}, {path: 'debtor'}]
     );
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
@@ -104,6 +103,7 @@ class CaseService {
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
       target: 'case',
+      caseId: req.params.id,
     });
     const tempCase: any = findCase;
     tempCase['creditors'] = creditors;
@@ -120,6 +120,19 @@ class CaseService {
     await caseUtil.updateCreditor(req.body.creditor as ICreditor);
     delete req.body.debtor;
     delete req.body.creditor;
+    const caseUpdated = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      req.body
+    );
+    if (!caseUpdated) {
+      return [false, constantsUtil.notFoundMessage('Case')];
+    }
+    return [true, caseUpdated];
+  };
+
+  updateCaseAbout = async (
+    req: Request
+  ): Promise<[boolean, Partial<ICase> | string]> => {
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body

@@ -13,6 +13,7 @@ export class Debtor {
     status: '',
     phone: '',
     address: '',
+    weeklyBudget: 0,
   };
   businessInformation = {
     companyName: '',
@@ -28,7 +29,23 @@ export class Debtor {
   };
   transactionTypes = Array<{name: ''; priority: ''}>();
   customerVaultId = '';
-  contacts = Array<mongoose.Schema.Types.ObjectId>();
+  contacts = Array<{
+    name: '';
+    title: '';
+    phone: '';
+    email: '';
+    relationWithDebtor: '';
+    country: '';
+    state: '';
+    city: '';
+    zipCode: '';
+  }>();
+  totalCommission = 0;
+  commissionPaid = 0;
+  weeklyCommission = 0;
+  weeklyCommissionPaid = false;
+  weeklyCommissionDate = '';
+  commissionPaymentId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

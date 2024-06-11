@@ -122,22 +122,29 @@ class SettingsService {
     return [true, customField];
   }
   async getCustomFieldsByTarget(
-    target: string
+    req: Request
   ): Promise<[boolean, ICustomField[] | string]> {
+    if (!req.query.target) return [false, 'Target is missing'];
+    const target = String(req.query.target);
     const customFields = await this.customFieldsRepository.getAll<ICustomField>(
-      {$or: [{target: target}, {shared: true}]}
+      {
+        $or: [{target: target}, {shared: true}],
+      }
     );
-    if (!customFields.length) {
+    if (!customFields) {
       return [false, constants.notFoundMessage('Custom fields')];
     }
     return [true, customFields];
   }
   async addCustomFieldByTarget(
     req: Request
-  ): Promise<[boolean, ICustomField | string]> {
+  ): Promise<[boolean, ITargetCustomFields | string]> {
     const {name, value} = req.body;
     if (!req.query.target) {
       return [false, 'Target is missing'];
+    }
+    if (!req.query.caseId) {
+      return [false, 'Case id is missing'];
     }
     const target = String(req.query.target);
     const customField = await this.customFieldsRepository.getOne<ICustomField>({
@@ -149,7 +156,8 @@ class SettingsService {
     return await settingsUtil.addCustomFieldByTarget(
       customField,
       req.body,
-      target
+      target,
+      String(req.query.caseId)
     );
   }
 
@@ -157,6 +165,9 @@ class SettingsService {
     req: Request
   ): Promise<[boolean, ITargetCustomFields | string]> {
     if (!req.query.target) return [false, 'Target is missing'];
+    if (!req.query.caseId) {
+      return [false, 'Case id is missing'];
+    }
     const target = String(req.query.target);
     const updatedCustomFields = req.body.customFields;
 
@@ -165,7 +176,7 @@ class SettingsService {
     // Update the target custom field with the new custom fields array
     const targetCF =
       await this.targetCFRepository.updateByOne<ITargetCustomFields>(
-        {target: target},
+        {target: target, caseId: String(req.query.caseId)},
         {$set: {customFields: updatedCustomFields}}
       );
 
@@ -182,9 +193,12 @@ class SettingsService {
     if (!req.query.target) {
       return [false, 'Target is missing'];
     }
+    if (!req.query.caseId) {
+      return [false, 'Case id is missing'];
+    }
     let targetCF =
       await this.targetCFRepository.updateByOne<ITargetCustomFields>(
-        {target: String(req.query.target)},
+        {target: String(req.query.target), caseId: String(req.query.caseId)},
         {
           $pull: {customFields: req.body},
         }

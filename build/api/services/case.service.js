@@ -20,8 +20,10 @@ class CaseService {
                     const checkCasePayment = await case_util_1.default.checkCasePayment(tempCase);
                     if (!checkCasePayment[0])
                         return checkCasePayment;
-                    const caseCreated = await case_util_1.default.createCase(tempCase, reqTemp.role, reqTemp.email);
-                    casesArray.push(caseCreated);
+                    const result = await case_util_1.default.createCase(tempCase, reqTemp.role, reqTemp.email);
+                    if (result[0]) {
+                        casesArray.push(result[1]);
+                    }
                 }
                 if (!casesArray.length)
                     return [false, constants_util_1.default.failureAddMessage('cases')];
@@ -30,10 +32,10 @@ class CaseService {
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
-            const caseCreated = await case_util_1.default.createCase(req.body, reqTemp.role, reqTemp.email);
-            if (!caseCreated)
-                return [false, constants_util_1.default.failureAddMessage('case')];
-            return [true, caseCreated];
+            const result = await case_util_1.default.createCase(req.body, reqTemp.name, reqTemp.email);
+            if (!result[0])
+                return [false, result[1]];
+            return [true, result[1]];
         };
         this.getAllCases = async (req) => {
             let cases = await this.caseRepository.getAll(undefined, undefined, undefined, undefined, undefined, undefined, Number(req.query.page), Number(req.query.limit));
@@ -49,10 +51,7 @@ class CaseService {
             return [true, cases];
         };
         this.getCaseById = async (req) => {
-            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [
-                { path: 'creditor', populate: 'contacts' },
-                { path: 'debtor', populate: 'contacts' },
-            ]);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
             if (!findCase) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
@@ -63,6 +62,7 @@ class CaseService {
             const creditors = await case_util_1.default.getAllCreditorsOfDebtor(findCase.debtor);
             const temp = await this.targetCFRepository.getOne({
                 target: 'case',
+                caseId: req.params.id,
             });
             const tempCase = findCase;
             tempCase['creditors'] = creditors;
@@ -76,6 +76,13 @@ class CaseService {
             await case_util_1.default.updateCreditor(req.body.creditor);
             delete req.body.debtor;
             delete req.body.creditor;
+            const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            return [true, caseUpdated];
+        };
+        this.updateCaseAbout = async (req) => {
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];

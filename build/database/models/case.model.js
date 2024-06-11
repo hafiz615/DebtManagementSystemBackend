@@ -55,6 +55,14 @@ const caseModel = new mongoose_1.Schema({
         type: String,
         required: true,
     },
+    negotiator: {
+        type: String,
+        required: true,
+    },
+    manager: {
+        type: String,
+        required: true,
+    },
     caseCode: {
         type: String,
         required: true,
@@ -85,21 +93,6 @@ const caseModel = new mongoose_1.Schema({
                 timePeriod: { type: String, required: true },
             },
         ],
-    },
-    customFields: {
-        type: (Array),
-    },
-    weeklyBudget: {
-        type: Number,
-    },
-    commissionPaidAlready: {
-        type: Boolean,
-    },
-    commissionCalculated: {
-        type: Number,
-    },
-    commissionPaying: {
-        type: Number,
     },
     createdAt: {
         type: Date,

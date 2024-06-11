@@ -31,6 +31,14 @@ const caseModel: Schema = new Schema({
     type: String,
     required: true,
   },
+  negotiator: {
+    type: String,
+    required: true,
+  },
+  manager: {
+    type: String,
+    required: true,
+  },
   caseCode: {
     type: String,
     required: true,
@@ -61,24 +69,6 @@ const caseModel: Schema = new Schema({
         timePeriod: {type: String, required: true},
       },
     ],
-  },
-  customFields: {
-    type: Array<{
-      name: {type: String};
-      value: {type: Schema.Types.Mixed};
-    }>,
-  },
-  weeklyBudget: {
-    type: Number,
-  },
-  commissionPaidAlready: {
-    type: Boolean,
-  },
-  commissionCalculated: {
-    type: Number,
-  },
-  commissionPaying: {
-    type: Number,
   },
   createdAt: {
     type: Date,

@@ -13,6 +13,7 @@ export interface ICustomField extends Document {
 export interface ITargetCustomFields extends Document {
   target: string;
   customFields: Array<{name: string; value: any}>;
+  caseId: string;
   createdAt: string;
   updatedAt: string;
 }

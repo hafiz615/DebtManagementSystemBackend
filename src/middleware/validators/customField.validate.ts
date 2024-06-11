@@ -6,7 +6,7 @@ class CustomFieldRequest {
   async addCustomField(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       name: Joi.string().required(),
-      type: Joi.string().valid('Date', 'Number', 'Text').required(),
+      type: Joi.string().valid('date', 'number', 'text').required(),
       description: Joi.string(),
       target: Joi.string().valid('case').required(),
       shared: Joi.boolean(),

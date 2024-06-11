@@ -9,6 +9,7 @@ export interface IPaymentLogging extends Document {
   successReason: string;
   transactionId: string;
   creditor: string;
+  firstChoiceCreditor: string;
   paymentType: string;
   createdAt: string;
 }

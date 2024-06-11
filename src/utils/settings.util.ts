@@ -19,17 +19,18 @@ class SettingsUtil {
   async addCustomFieldByTarget(
     customField: ICustomField,
     body: any,
-    target: string
-  ): Promise<[boolean, ICustomField | string]> {
+    target: string,
+    caseId: string
+  ): Promise<[boolean, ITargetCustomFields | string]> {
     const {name, value} = body;
     let targetCF = null;
 
     customField.type =
-      customField.type === 'Text' ? 'string' : customField.type;
+      customField.type === 'text' ? 'string' : customField.type;
     let valueType: any = typeof value;
     if (valueType === 'string') {
       const date = new Date(value);
-      valueType = !isNaN(date.getTime()) ? 'Date' : valueType;
+      valueType = !isNaN(date.getTime()) ? 'date' : valueType;
     }
     if (valueType !== customField.type) {
       return [false, 'Custom field and value type mismatched'];
@@ -38,18 +39,20 @@ class SettingsUtil {
       case 'case':
         const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
           target: target,
+          caseId: caseId,
         });
         if (!temp) {
           targetCF = await this.targetCFRepository.create<ITargetCustomFields>({
             target: target,
             customFields: [body],
+            caseId: caseId,
             createdAt: commonUtil.getCurrentDate(),
             updatedAt: commonUtil.getCurrentDate(),
           } as any);
         } else {
           targetCF =
             await this.targetCFRepository.updateByOne<ITargetCustomFields>(
-              {target: target},
+              {target: target, caseId: caseId},
               {
                 $addToSet: {customFields: body},
               }

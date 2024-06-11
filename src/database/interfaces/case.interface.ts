@@ -14,6 +14,8 @@ export interface IInterval {
 }
 export interface ICase extends Document {
   caseOwner: string;
+  negotiator: string;
+  manager: string;
   caseCode: string;
   createdBy: string;
   status: string;
@@ -25,10 +27,6 @@ export interface ICase extends Document {
   remaining: number;
   documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
-  weeklyBudget: number;
-  commissionPaidAlready: boolean;
-  commissionCalculated: number;
-  commissionPaying: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -2,6 +2,7 @@ import commonUtil from '../../utils/common.util';
 
 export class Payment {
   caseId = '';
+  debtorId = '';
   authorized = 'Pending';
   captured = 'Pending';
   status = 'Upcoming';
@@ -15,9 +16,6 @@ export class Payment {
   debtorTransId = '';
   retriesAuth = 0;
   retriesCapture = 0;
-  commission = 0;
-  calculatedCommision = 0;
-  commissionTransId = '';
   timePeriod = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

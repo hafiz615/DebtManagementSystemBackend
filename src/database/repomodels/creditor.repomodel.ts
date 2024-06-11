@@ -19,7 +19,17 @@ export class Creditor {
   };
   transactionTypes: Array<{name: ''; priority: ''}>;
   customerVaultId: '';
-  contacts = Array<mongoose.Schema.Types.ObjectId>();
+  contacts = Array<{
+    name: '';
+    title: '';
+    phone: '';
+    email: '';
+    relationWithDebtor: '';
+    country: '';
+    state: '';
+    city: '';
+    zipCode: '';
+  }>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

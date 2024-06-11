@@ -2,6 +2,7 @@ import mongoose, {Document} from 'mongoose';
 
 export interface IPayment extends Document {
   caseId: mongoose.Schema.Types.ObjectId;
+  debtorId: string;
   authorized: string;
   captured: string;
   status: string;
@@ -15,9 +16,6 @@ export interface IPayment extends Document {
   debtorTransId: string;
   retriesAuth: number;
   retriesCapture: number;
-  commission: number;
-  calculatedCommision: number;
-  commissionTransId: string;
   timePeriod: string;
   createdAt: string;
   updatedAt: string;

@@ -16,7 +16,7 @@ class CreditorRequests {
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\d{10,11}$/)
+                        .pattern(/^\+\d{10}$/)
                         .required(),
                 }),
                 businessInformation: joi_1.default.object({
@@ -31,7 +31,7 @@ class CreditorRequests {
             else {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
             }
         };
     }

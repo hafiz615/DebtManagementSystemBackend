@@ -10,6 +10,7 @@ class PaymentLogging {
         this.failReason = '';
         this.successReason = '';
         this.creditor = '';
+        this.firstChoiceCreditor = '';
         this.paymentType = '';
         this.createdAt = '';
     }

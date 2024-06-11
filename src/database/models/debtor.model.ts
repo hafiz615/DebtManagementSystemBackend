@@ -41,6 +41,9 @@ const debtorModel: Schema = new Schema({
     address: {
       type: String,
     },
+    weeklyBudget: {
+      type: Number,
+    },
   },
   businessInformation: {
     companyName: {
@@ -79,14 +82,50 @@ const debtorModel: Schema = new Schema({
     },
   },
   contacts: {
-    type: Array<mongoose.Schema.Types.ObjectId>,
-    ref: 'Contacts',
+    type: Array<{
+      name: '';
+      title: '';
+      phone: '';
+      email: '';
+      relationWithDebtor: '';
+      country: '';
+      state: '';
+      city: '';
+      zipCode: '';
+    }>,
   },
   transactionTypes: {
     type: Array<{name: ''; priority: ''}>,
+    select: false,
   },
   customerVaultId: {
     type: String,
+    select: false,
+  },
+  totalCommission: {
+    type: Number,
+    select: false,
+  },
+  commissionPaid: {
+    type: Boolean,
+    select: false,
+  },
+  weeklyCommission: {
+    type: Number,
+    select: false,
+  },
+  weeklyCommissionPaid: {
+    type: Boolean,
+    select: false,
+  },
+  weeklyCommissionDate: {
+    type: Date,
+    select: false,
+  },
+  commissionPaymentId: {
+    type: String,
+    // ref: 'Payments',
+    select: false,
   },
   createdAt: {
     type: Date,

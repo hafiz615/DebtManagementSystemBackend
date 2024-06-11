@@ -96,12 +96,10 @@ class SettingsController {
   };
   getCustomFieldsByTarget = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.getCustomFieldsByTarget(
-        String(req.query.target)
-      );
+      const response = await this.settingsService.getCustomFieldsByTarget(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.OK)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(

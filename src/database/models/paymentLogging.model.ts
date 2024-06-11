@@ -25,6 +25,9 @@ const paymentLogging: Schema = new Schema({
   creditor: {
     type: String,
   },
+  firstChoiceCreditor: {
+    type: String,
+  },
   paymentType: {
     type: String,
   },

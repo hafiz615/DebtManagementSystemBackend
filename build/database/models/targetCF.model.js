@@ -32,6 +32,9 @@ const targetCustomFields = new mongoose_1.Schema({
     customFields: {
         type: (Array),
     },
+    caseId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

@@ -16,5 +16,11 @@ router.put(
   creditor.validateCreditor,
   creditorController.updateCreditor
 );
+router.get(
+  '/listing/details/:id',
+  authorize.validateAuth,
+  creditorController.listingDetails
+);
+router.get('/listing', authorize.validateAuth, creditorController.listing);
 
 export default router;

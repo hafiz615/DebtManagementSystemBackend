@@ -12,5 +12,6 @@ router.post('/createCase', authorize_middleware_1.default.validateAuth, case_val
 router.get('/getAllCases', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAllCases);
 router.get('/getCaseById/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCaseById);
 router.put('/updateCase/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCase, case_controller_1.default.updateCase);
+router.put('/updateCaseAbout/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCaseAbout, case_controller_1.default.updateCaseAbout);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

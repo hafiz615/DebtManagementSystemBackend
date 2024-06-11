@@ -19,7 +19,7 @@ class UserRequests {
                 .required(),
             dateOfBirth: joi_1.default.date().required(),
             phone: joi_1.default.string()
-                .pattern(/^\d{10,11}$/)
+                .pattern(/^\+\d{10}$/)
                 .required(),
             gender: joi_1.default.string().valid('Male', 'Female', 'Other').required(),
             address: joi_1.default.string().required(),

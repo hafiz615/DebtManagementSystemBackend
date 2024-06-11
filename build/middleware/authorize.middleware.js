@@ -59,6 +59,7 @@ class Authorize {
                     req.email = exists.email.toLowerCase();
                     req.role = exists.role;
                     req.sessionId = decoded?.sessionId;
+                    req.name = exists.name;
                     return next();
                 });
             }

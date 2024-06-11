@@ -16,7 +16,7 @@ class DebtorController {
       );
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.OK)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -27,6 +27,7 @@ class DebtorController {
         })
       );
     } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -38,7 +39,7 @@ class DebtorController {
       const response = await this.debtorService.listingDetails(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.OK)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(

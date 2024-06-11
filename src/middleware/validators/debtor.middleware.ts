@@ -22,9 +22,10 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\d{10,11}$/)
+          .pattern(/^\+\d{10}$/)
           .required(),
         address: Joi.string().required(),
+        weeklyBudget: Joi.number(),
       }),
       businessInformation: Joi.object({
         companyName: Joi.string().required(),
@@ -38,7 +39,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\d{10,11}$/)
+          .pattern(/^\+\d{10}$/)
           .required(),
         address: Joi.string().required(),
       }),
@@ -49,7 +50,11 @@ class DebtorRequests {
     } else {
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.details[0].message));
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
     }
   };
 }

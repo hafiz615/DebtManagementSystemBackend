@@ -50,6 +50,9 @@ const paymentLogging = new mongoose_1.Schema({
     creditor: {
         type: String,
     },
+    firstChoiceCreditor: {
+        type: String,
+    },
     paymentType: {
         type: String,
     },

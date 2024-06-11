@@ -15,7 +15,7 @@ const PaymentModel: Schema = new Schema({
   },
   status: {
     type: String,
-    default: 'Pending',
+    default: 'Upcoming',
   },
   amount: {
     type: Number,
@@ -31,6 +31,9 @@ const PaymentModel: Schema = new Schema({
   intervalId: {
     type: String,
   },
+  debtorId: {
+    type: String,
+  },
   failedReasonAuthorization: {
     type: String,
   },
@@ -43,19 +46,10 @@ const PaymentModel: Schema = new Schema({
   debtorTransId: {
     type: String,
   },
-  commissionTransId: {
-    type: String,
-  },
   retriesAuth: {
     type: Number,
   },
   retriesCapture: {
-    type: Number,
-  },
-  commission: {
-    type: Number,
-  },
-  calculatedCommision: {
     type: Number,
   },
   timePeriod: {

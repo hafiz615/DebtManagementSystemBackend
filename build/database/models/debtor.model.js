@@ -65,6 +65,9 @@ const debtorModel = new mongoose_1.Schema({
         address: {
             type: String,
         },
+        weeklyBudget: {
+            type: Number,
+        },
     },
     businessInformation: {
         companyName: {
@@ -104,13 +107,39 @@ const debtorModel = new mongoose_1.Schema({
     },
     contacts: {
         type: (Array),
-        ref: 'Contacts',
     },
     transactionTypes: {
         type: (Array),
+        select: false,
     },
     customerVaultId: {
         type: String,
+        select: false,
+    },
+    totalCommission: {
+        type: Number,
+        select: false,
+    },
+    commissionPaid: {
+        type: Boolean,
+        select: false,
+    },
+    weeklyCommission: {
+        type: Number,
+        select: false,
+    },
+    weeklyCommissionPaid: {
+        type: Boolean,
+        select: false,
+    },
+    weeklyCommissionDate: {
+        type: Date,
+        select: false,
+    },
+    commissionPaymentId: {
+        type: String,
+        // ref: 'Payments',
+        select: false,
     },
     createdAt: {
         type: Date,
