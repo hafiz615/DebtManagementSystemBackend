@@ -26,24 +26,21 @@ const caseModel: Schema = new Schema({
   status: {
     type: String,
     required: true,
+    default: 'Customer',
   },
   caseOwner: {
-    type: String,
-    required: true,
+    name: String,
+    id: String,
   },
   negotiator: {
-    type: String,
-    required: true,
+    name: String,
+    id: String,
   },
   manager: {
-    type: String,
-    required: true,
+    name: String,
+    id: String,
   },
   caseCode: {
-    type: String,
-    required: true,
-  },
-  createdBy: {
     type: String,
     required: true,
   },

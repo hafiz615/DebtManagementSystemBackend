@@ -6,12 +6,12 @@ import debtor from '../../middleware/validators/debtor.middleware';
 const router = Router();
 
 router.post('/getDebtor', authorize.validateAuth, debtorController.getDebtor);
-router.get(
+router.post(
   '/listing/details/:id',
   authorize.validateAuth,
   debtorController.listingDetails
 );
-router.get(
+router.post(
   '/listing/search',
   authorize.validateAuth,
   debtorController.searchListing
@@ -21,5 +21,10 @@ router.put(
   authorize.validateAuth,
   debtor.validateDebtor,
   debtorController.updateDebtor
+);
+router.post(
+  '/createVault/:id',
+  authorize.validateAuth,
+  debtorController.createVault
 );
 export default router;

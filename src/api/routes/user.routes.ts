@@ -42,5 +42,6 @@ router.post('/verifyInvitationLink', userController.verifyInvitationLink);
 router.post('/resendInvitationLink', userController.resendInvitationLink);
 router.get('/getAllUsers', authorize.validateAuth, userController.getAllUsers);
 router.post('/logout', authorize.validateAuth, userController.signOut);
+router.get('/dashboard', authorize.validateAuth, userController.dashboard);
 
 export default router;

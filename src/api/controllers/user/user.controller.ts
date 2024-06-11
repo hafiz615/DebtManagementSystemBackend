@@ -232,6 +232,22 @@ class UserController {
       })
     );
   };
+
+  dashboard = async (req: Request, res: Response) => {
+    const response = await this.userService.dashboard(req);
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.OK)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: 'Dashboard analytics!',
+      })
+    );
+  };
 }
 
 export default new UserController();

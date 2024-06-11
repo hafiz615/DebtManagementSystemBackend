@@ -5,6 +5,8 @@ import {CaseRepository} from '../repository/case/case.repository';
 import {Request} from 'express';
 import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
+import axios from 'axios';
+import {URLSearchParams} from 'url';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -131,6 +133,31 @@ class DebtorService {
       return [false, constants.notFoundMessage('Debtor')];
     }
     return [true, debtor];
+  }
+
+  async createVault(req: Request) {
+    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    if (!req.body || !req.body.paymentToken) {
+      return [false, 'Payment token is missing'];
+    }
+    const params = {
+      customer_vault: 'add_customer',
+      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      payment_token: req.body.paymentToken,
+    };
+    const response = await axios.get(url, {params});
+    const responseNum = new URLSearchParams(response.data).get('response');
+    const customerVault = new URLSearchParams(response.data).get(
+      'customer_vault'
+    );
+    if (responseNum === '1') {
+      const debtor = await this.debtorRepository.updateById<IDebtor>(
+        req.params.id,
+        {customerVaultId: customerVault}
+      );
+      return [true, debtor];
+    }
+    return [false, 'Unable to create customer vault'];
   }
 }
 

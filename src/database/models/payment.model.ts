@@ -41,7 +41,7 @@ const PaymentModel: Schema = new Schema({
     type: String,
   },
   rescheduled: {
-    type: String,
+    type: Date,
   },
   debtorTransId: {
     type: String,

@@ -32,7 +32,7 @@ class CaseService {
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
-            const result = await case_util_1.default.createCase(req.body, reqTemp.name, reqTemp.email);
+            const result = await case_util_1.default.createCase(req.body, reqTemp.name, reqTemp.id);
             if (!result[0])
                 return [false, result[1]];
             return [true, result[1]];

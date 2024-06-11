@@ -148,6 +148,8 @@ class CaseUtil {
         if (!cases.length)
             return 'CASE-001';
         let caseCode = cases[cases.length - 1].caseCode;
+        console.log(caseCode);
+        console.log(parseInt(caseCode.split('-')[1]) + 1);
         return ('CASE-' +
             (parseInt(caseCode.split('-')[1]) + 1).toString().padStart(3, '0'));
     }
@@ -162,7 +164,7 @@ class CaseUtil {
             caseId: String(obj._id),
         }));
     }
-    async createCase(body, name, email) {
+    async createCase(body, name, id) {
         let contactIds = null;
         let debtor = null;
         let creditor = null;
@@ -238,10 +240,13 @@ class CaseUtil {
         body.debtor = debtor?._id;
         body.creditor = creditor?._id;
         const newCase = new case_repomodel_1.Case();
-        newCase.caseOwner = name;
-        newCase.negotiator = name;
-        newCase.manager = name;
-        newCase.createdBy = email;
+        newCase.caseOwner.name = name;
+        newCase.caseOwner.id = id;
+        newCase.negotiator.name = name;
+        newCase.negotiator.id = id;
+        newCase.manager.name = name;
+        newCase.manager.id = id;
+        console.log(await this.getCaseCode());
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
         const caseCreated = await this.caseRepository.create(validatedCase);

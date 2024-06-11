@@ -128,7 +128,7 @@ class PaymentService {
             security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
             customer_vault_id: '1922739712',
             type: 'auth',
-            amount: '0.00',
+            amount: '20.00',
         };
         try {
             const response = await axios_1.default.get(url, { params });
@@ -154,9 +154,38 @@ class PaymentService {
         const params = {
             security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
             customer_vault_id: '1922739712',
-            transaction_id: '9561304895',
+            transaction_id: '9604723257',
             stored_credential_indicator: 'used',
             type: 'capture',
+        };
+        try {
+            const response = await axios_1.default.get(url, { params });
+            console.log('Response:', response.data);
+            return response.data;
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
+    }
+    async achCredit(customer_vault_id, amount) {
+        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const params = {
+            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            customer_vault_id: '2023102910',
+            stored_credential_indicator: 'used',
+            type: 'credit',
+            amount: '20.00',
+            payment: 'check',
         };
         try {
             const response = await axios_1.default.get(url, { params });

@@ -16,11 +16,11 @@ router.put(
   creditor.validateCreditor,
   creditorController.updateCreditor
 );
-router.get(
+router.post(
   '/listing/details/:id',
   authorize.validateAuth,
   creditorController.listingDetails
 );
-router.get('/listing', authorize.validateAuth, creditorController.listing);
+router.post('/listing', authorize.validateAuth, creditorController.listing);
 
 export default router;
