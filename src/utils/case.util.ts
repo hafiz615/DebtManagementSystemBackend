@@ -193,19 +193,14 @@ class CaseUtil {
   }
 
   async getCaseCode() {
-    const cases = await this.caseRepository.getAll<ICase>({}, {}, undefined);
-    if (!cases.length) return 'CASE-001';
-    let caseCode = cases[cases.length - 1].caseCode;
-    console.log(caseCode);
-    console.log(parseInt(caseCode.split('-')[1]) + 1);
-    return (
-      'CASE-' +
-      (parseInt(caseCode.split('-')[1]) + 1).toString().padStart(3, '0')
-    );
+    const count = await this.caseRepository.getCount<ICase>();
+    if (!count) return 'CASE-001';
+    // let caseCode = cases[cases.length - 1].caseCode;
+    return 'CASE-' + (count + 1).toString().padStart(3, '0');
   }
 
   async getAllCreditorsOfDebtor(debtor: IDebtor) {
-    const cases = await this.caseRepository.getAll<ICase>(
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtor._id},
       'totalDebt caseCode status',
       undefined,
@@ -316,9 +311,16 @@ class CaseUtil {
     newCase.caseCode = await this.getCaseCode();
     const validatedCase = DataCopier.copy(newCase, body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
-    await this.createPayment(caseCreated);
     if (!caseCreated) {
       return [false, constantsUtil.failureAddMessage('case')];
+    }
+    await this.createPayment(caseCreated);
+    if (body.paymentToken && body.paymentType) {
+      await this.debtorService.createVault(
+        body.paymentToken,
+        String(caseCreated.debtor),
+        body.payment
+      );
     }
     return [true, caseCreated];
   }
@@ -345,7 +347,7 @@ class CaseUtil {
           };
     }
     weeklyBudget = body.debtor.basicInformation.weeklyBudget;
-    const cases = await this.caseRepository.getAll<ICase>({
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
       debtor: debtor._id,
     });
     for (const caseTemp of cases) {
@@ -544,7 +546,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner',
+              caseOwner: '$caseOwner.name',
               outstandingDebt: {
                 $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
               },
@@ -891,7 +893,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner',
+              caseOwner: '$caseOwner.name',
               outstandingDebt: {
                 $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
               },

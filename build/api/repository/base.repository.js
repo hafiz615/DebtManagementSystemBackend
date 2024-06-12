@@ -21,6 +21,14 @@ class BaseRepository {
         lean && result.lean(lean);
         return (await result.exec()) || [];
     }
+    async getAllWithoutPagination(filter, projectField, select, sort, populate, lean) {
+        let result = this.model.find(filter || {}, projectField || '');
+        select && result.select(select);
+        sort && result.sort(sort);
+        populate && result.populate(populate);
+        lean && result.lean(lean);
+        return (await result.exec()) || [];
+    }
     async getOne(filter, projectField, select, populate, lean = true) {
         const query = this.model.findOne(filter, projectField);
         select && query.select(select);

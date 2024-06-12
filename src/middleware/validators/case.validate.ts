@@ -102,6 +102,8 @@ class CaseValidate {
       lastPaymentDate: Joi.date(),
       paidAmount: Joi.number().strict().required(),
       remaining: Joi.number().strict().required(),
+      paymentToken: Joi.string().allow(''),
+      paymentType: Joi.string().valid('cc', 'ck').allow(''),
       status: Joi.string().required(),
       feePayment: Joi.string().valid(
         'paidViaCash',

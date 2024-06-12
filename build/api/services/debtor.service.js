@@ -155,8 +155,8 @@ class DebtorService {
         };
         const response = await axios_1.default.get(url, { params });
         const responseNum = new url_1.URLSearchParams(response.data).get('response');
-        const customerVault = new url_1.URLSearchParams(response.data).get('customer_vault');
         if (responseNum === '1') {
+            const customerVault = new url_1.URLSearchParams(response.data).get('customer_vault_id');
             const debtor = await this.debtorRepository.updateById(id, {
                 customerVaultId: customerVault,
                 paymentType: paymentType,

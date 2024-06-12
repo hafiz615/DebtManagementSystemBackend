@@ -144,17 +144,14 @@ class CaseUtil {
         return { ...payment };
     }
     async getCaseCode() {
-        const cases = await this.caseRepository.getAll({}, {}, undefined);
-        if (!cases.length)
+        const count = await this.caseRepository.getCount();
+        if (!count)
             return 'CASE-001';
-        let caseCode = cases[cases.length - 1].caseCode;
-        console.log(caseCode);
-        console.log(parseInt(caseCode.split('-')[1]) + 1);
-        return ('CASE-' +
-            (parseInt(caseCode.split('-')[1]) + 1).toString().padStart(3, '0'));
+        // let caseCode = cases[cases.length - 1].caseCode;
+        return 'CASE-' + (count + 1).toString().padStart(3, '0');
     }
     async getAllCreditorsOfDebtor(debtor) {
-        const cases = await this.caseRepository.getAll({ debtor: debtor._id }, 'totalDebt caseCode status', undefined, undefined, { path: 'creditor', select: ['basicInformation.fullName'] });
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtor._id }, 'totalDebt caseCode status', undefined, undefined, { path: 'creditor', select: ['basicInformation.fullName'] });
         const tempCases = cases;
         return tempCases.map(obj => ({
             totalDebt: obj.totalDebt,
@@ -250,9 +247,12 @@ class CaseUtil {
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
         const caseCreated = await this.caseRepository.create(validatedCase);
-        await this.createPayment(caseCreated);
         if (!caseCreated) {
             return [false, constants_util_1.default.failureAddMessage('case')];
+        }
+        await this.createPayment(caseCreated);
+        if (body.paymentToken && body.paymentType) {
+            await this.debtorService.createVault(body.paymentToken, String(caseCreated.debtor), body.payment);
         }
         return [true, caseCreated];
     }
@@ -278,7 +278,7 @@ class CaseUtil {
                 };
         }
         weeklyBudget = body.debtor.basicInformation.weeklyBudget;
-        const cases = await this.caseRepository.getAll({
+        const cases = await this.caseRepository.getAllWithoutPagination({
             debtor: debtor._id,
         });
         for (const caseTemp of cases) {
@@ -476,7 +476,7 @@ class CaseUtil {
                                     date: { $ifNull: ['$upcomingPayment.dueDate', null] },
                                 },
                             },
-                            caseOwner: '$caseOwner',
+                            caseOwner: '$caseOwner.name',
                             outstandingDebt: {
                                 $subtract: ['$totalDebt', { $sum: '$payments.amount' }],
                             },
@@ -779,7 +779,7 @@ class CaseUtil {
                                     date: { $ifNull: ['$upcomingPayment.dueDate', null] },
                                 },
                             },
-                            caseOwner: '$caseOwner',
+                            caseOwner: '$caseOwner.name',
                             outstandingDebt: {
                                 $subtract: ['$totalDebt', { $sum: '$payments.amount' }],
                             },

@@ -11,9 +11,7 @@ class PaymentController {
   }
   getHomePayments = async (req: Request, res: Response) => {
     try {
-      const response = await this.paymentService.getHomePayments(
-        Number(req.query.days)
-      );
+      const response = await this.paymentService.getHomePayments(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.OK)

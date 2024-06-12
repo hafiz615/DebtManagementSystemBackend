@@ -18,6 +18,14 @@ export interface IBaseRepository<D> {
     page?: number,
     limit?: number
   ): Promise<T[] | []>;
+  getAllWithoutPagination<T>(
+    filter?: FilterQuery<T>,
+    projectField?: string | ProjectionType<T>,
+    select?: string,
+    sort?: QueryOptions<T>,
+    populate?: PopulateOptions | (PopulateOptions | string)[],
+    lean?: boolean
+  ): Promise<T[] | []>;
   getOne<T>(
     filter?: FilterQuery<T>,
     projectField?: string | ProjectionType<T>,

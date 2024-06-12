@@ -21,7 +21,7 @@ class EnumService {
         return [true, result];
     }
     async getAllEnums(req) {
-        const result = await this.enumRepository.getAll();
+        const result = await this.enumRepository.getAllWithoutPagination();
         if (!result) {
             return [false, constants_util_1.default.notFoundMessage('enums')];
         }

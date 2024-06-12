@@ -27,7 +27,8 @@ class SettingsService {
 
   async addSettings(req: Request): Promise<[boolean, ISettings | string]> {
     let settigns = null;
-    const findSettings = await this.settingsRepository.getAll<ISettings>({});
+    const findSettings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
     if (!findSettings.length) {
       const newSettings = new Settings();
       if (req.body?.notificationTemplates?.email?.length) {
@@ -72,9 +73,10 @@ class SettingsService {
   }
 
   async getSettings(): Promise<[boolean, {} | string]> {
-    const findSettings = await this.settingsRepository.getAll<ISettings>();
+    const findSettings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
     const customFields =
-      await this.customFieldsRepository.getAll<ICustomField>();
+      await this.customFieldsRepository.getAllWithoutPagination<ICustomField>();
     if (!findSettings.length) {
       return [
         true,
@@ -126,11 +128,10 @@ class SettingsService {
   ): Promise<[boolean, ICustomField[] | string]> {
     if (!req.query.target) return [false, 'Target is missing'];
     const target = String(req.query.target);
-    const customFields = await this.customFieldsRepository.getAll<ICustomField>(
-      {
+    const customFields =
+      await this.customFieldsRepository.getAllWithoutPagination<ICustomField>({
         $or: [{target: target}, {shared: true}],
-      }
-    );
+      });
     if (!customFields) {
       return [false, constants.notFoundMessage('Custom fields')];
     }

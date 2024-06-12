@@ -19,7 +19,7 @@ class SettingsService {
     }
     async addSettings(req) {
         let settigns = null;
-        const findSettings = await this.settingsRepository.getAll({});
+        const findSettings = await this.settingsRepository.getAllWithoutPagination();
         if (!findSettings.length) {
             const newSettings = new settings_repomodel_1.Settings();
             if (req.body?.notificationTemplates?.email?.length) {
@@ -54,8 +54,8 @@ class SettingsService {
         return [true, settigns];
     }
     async getSettings() {
-        const findSettings = await this.settingsRepository.getAll();
-        const customFields = await this.customFieldsRepository.getAll();
+        const findSettings = await this.settingsRepository.getAllWithoutPagination();
+        const customFields = await this.customFieldsRepository.getAllWithoutPagination();
         if (!findSettings.length) {
             return [
                 true,
@@ -95,7 +95,7 @@ class SettingsService {
         if (!req.query.target)
             return [false, 'Target is missing'];
         const target = String(req.query.target);
-        const customFields = await this.customFieldsRepository.getAll({
+        const customFields = await this.customFieldsRepository.getAllWithoutPagination({
             $or: [{ target: target }, { shared: true }],
         });
         if (!customFields) {

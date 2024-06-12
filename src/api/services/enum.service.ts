@@ -21,7 +21,7 @@ class EnumService {
   }
 
   async getAllEnums(req: Request): Promise<[boolean, IEnum[] | string]> {
-    const result = await this.enumRepository.getAll<IEnum>();
+    const result = await this.enumRepository.getAllWithoutPagination<IEnum>();
     if (!result) {
       return [false, constantsUtil.notFoundMessage('enums')];
     }

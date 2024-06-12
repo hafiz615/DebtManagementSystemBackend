@@ -40,7 +40,8 @@ class CronJob {
   async getFilteredPayment() {
     const payments: any = await paymentUtil.getAllCronJobPayments();
     // await this.getFilteredPayment(payments);
-    const settings = await this.settingsRepository.getAll<ISettings>();
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
     // await this.paymentRepository.updateMany<IPayment>(
     //   {},
     //   {timePeriod: 'Weekly'}
@@ -52,7 +53,8 @@ class CronJob {
     await this.failedCaptured(payments, cronId, settings);
     console.log('oh i was running');
     return;
-    const debtors = await this.debtorRepository.getAll<IDebtor>();
+    const debtors =
+      await this.debtorRepository.getAllWithoutPagination<IDebtor>();
     for (const debtor of debtors) {
       if (debtor.totalCommission === debtor.commissionPaid) {
         continue;
