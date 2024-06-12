@@ -8,12 +8,12 @@ class PaymentUtil {
     async getFilteredPayments(payments) {
         const transformedArray = payments.map(obj => ({
             status: obj.status,
-            caseOwner: obj.caseId.caseOwner,
-            totalDebt: obj.caseId.totalDebt,
-            fullName: obj.caseId.debtor
+            caseOwner: obj.caseId?.caseOwner ? obj.caseId.caseOwner.name : '',
+            totalDebt: obj.caseId?.totalDebt ? obj.caseId.totalDebt : 0,
+            fullName: obj.caseId?.debtor
                 ? obj.caseId.debtor.basicInformation.fullName
                 : '',
-            SSID: obj.caseId.debtor ? obj.caseId.debtor.basicInformation.SSID : '',
+            SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
             authorized: obj.authorized,
             captured: obj.captured,
             amount: obj.amount,

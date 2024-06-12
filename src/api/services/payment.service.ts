@@ -100,7 +100,7 @@ class PaymentService {
       {createdAt: -1},
       {
         path: 'caseId',
-        select: ['_id', 'caseOwner', 'totalDebt'],
+        select: ['_id', 'caseOwner.name', 'totalDebt'],
         populate: {
           path: 'debtor',
           select: ['basicInformation.fullName', 'basicInformation.SSID'],
