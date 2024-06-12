@@ -39,14 +39,16 @@ class PaymentService {
             successAuthorizations: paymentsObj.successAuthorizations.length,
             upcomingPayments: paymentsObj.upcomingPayments.length,
         };
-        if (arrayName) {
-            paymentsObj[arrayName] = paymentsObj[arrayName].slice((page - 1) * limit, page * limit);
-        }
-        else {
+        if (arrayName === 'default') {
             for (const key in paymentsObj) {
                 if (Array.isArray(paymentsObj[key])) {
                     paymentsObj[key] = paymentsObj[key].slice((page - 1) * limit, page * limit);
                 }
+            }
+        }
+        else {
+            if (paymentsObj[arrayName]) {
+                paymentsObj[arrayName] = paymentsObj[arrayName].slice((page - 1) * limit, page * limit);
             }
         }
         return [
