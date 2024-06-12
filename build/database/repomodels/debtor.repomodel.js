@@ -32,7 +32,7 @@ class Debtor {
             phone: '',
             address: '',
         };
-        this.transactionTypes = Array();
+        this.paymentType = '';
         this.customerVaultId = '';
         this.contacts = Array();
         this.totalCommission = 0;

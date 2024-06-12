@@ -180,7 +180,7 @@ class UserService {
     return [true, {user: updatedUser, token: token}];
   }
 
-  getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {
+  getAllUsers = async (req: Request): Promise<[boolean, {} | string]> => {
     let users = await this.userRepository.getAll<IUser>(
       {role: {$ne: 'Admin'}, isDeleted: false},
       undefined,
@@ -191,10 +191,11 @@ class UserService {
       Number(req.query.page),
       Number(req.query.limit)
     );
+    const count = await this.userRepository.getCount<IUser>();
     if (!users.length) {
       return [false, constantsUtil.notFoundMessage('Users')];
     }
-    return [true, users];
+    return [true, {users: users, totalUsers: count}];
   };
 
   signOut = async (req: Request): Promise<[boolean, IUser[] | string]> => {

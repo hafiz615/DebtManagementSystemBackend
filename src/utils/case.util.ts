@@ -626,7 +626,7 @@ class CaseUtil {
 
     const results: any = await this.caseRepository.applyAggregate(pipeline);
     if (results[0]?.caseHistory) {
-      results[0].caseHistory = await this.filterAndPaginateCaseHistoryDebtor(
+      results[0].caseHistory = await this.filterCaseHistoryDebtor(
         results[0]?.caseHistory,
         req
       );
@@ -634,17 +634,7 @@ class CaseUtil {
 
     return results.length ? results[0] : null;
   }
-  async filterAndPaginateCaseHistoryDebtor(caseHistory: [], req: Request) {
-    let page = 1;
-    let limit = 5;
-
-    // Check if pageNumber and pageSize are provided and valid
-    if (req.query.page && !isNaN(Number(req.query.page))) {
-      page = Number(req.query.page) ? Number(req.query.page) : page;
-    }
-    if (req.query.limit && !isNaN(Number(req.query.limit))) {
-      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-    }
+  async filterCaseHistoryDebtor(caseHistory: [], req: Request) {
     // Helper function to apply text search
     const applyTextSearch = (caseObj: any, text: string | RegExp) => {
       const regex = new RegExp(text, 'i');
@@ -712,16 +702,11 @@ class CaseUtil {
       const textMatches = !text || applyTextSearch(caseObj, text);
       const filtersMatch =
         Object.keys(filters).length === 0 || applyFilters(caseObj, filters);
+      console.log(textMatches, '   ', filtersMatch);
       return textMatches && filtersMatch;
     });
 
-    // Apply pagination
-    const paginatedCaseHistory = filteredCaseHistory.slice(
-      (page - 1) * limit,
-      page * limit
-    );
-
-    return paginatedCaseHistory;
+    return filteredCaseHistory;
   }
 
   async filterAndPaginateCaseHistoryCreditor(caseHistory: [], req: Request) {

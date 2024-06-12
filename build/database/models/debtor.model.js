@@ -108,13 +108,11 @@ const debtorModel = new mongoose_1.Schema({
     contacts: {
         type: (Array),
     },
-    transactionTypes: {
-        type: (Array),
-        select: false,
+    paymentType: {
+        type: String,
     },
     customerVaultId: {
         type: String,
-        select: false,
     },
     totalCommission: {
         type: Number,

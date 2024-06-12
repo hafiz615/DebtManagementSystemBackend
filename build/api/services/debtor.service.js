@@ -40,10 +40,26 @@ class DebtorService {
         return [true, debtor];
     }
     async listingDetails(req) {
-        const casesCount = await this.caseRepository.getCount({
-            debtor: req.params.id,
-        });
-        const clientDetails = await case_util_1.default.getClientDetails(req);
+        let casesCount = 0;
+        let page = 1;
+        let limit = 5;
+        // Check if pageNumber and pageSize are provided and valid
+        if (req.query.page && !isNaN(Number(req.query.page))) {
+            page = Number(req.query.page) ? Number(req.query.page) : page;
+        }
+        if (req.query.limit && !isNaN(Number(req.query.limit))) {
+            limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+        }
+        let clientDetails = await case_util_1.default.getClientDetails(req);
+        if (req.query.filter === 'true' || req.query.search === 'true') {
+            casesCount = clientDetails.caseHistory.length;
+        }
+        else {
+            casesCount = await this.caseRepository.getCount({
+                debtor: req.params.id,
+            });
+        }
+        clientDetails.caseHistory = clientDetails.caseHistory.slice((page - 1) * limit, page * limit);
         if (!clientDetails) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -130,21 +146,21 @@ class DebtorService {
         }
         return [true, debtor];
     }
-    async createVault(req) {
+    async createVault(paymentToken, id, paymentType) {
         const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
-        if (!req.body || !req.body.paymentToken) {
-            return [false, 'Payment token is missing'];
-        }
         const params = {
             customer_vault: 'add_customer',
             security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-            payment_token: req.body.paymentToken,
+            payment_token: paymentToken,
         };
         const response = await axios_1.default.get(url, { params });
         const responseNum = new url_1.URLSearchParams(response.data).get('response');
         const customerVault = new url_1.URLSearchParams(response.data).get('customer_vault');
         if (responseNum === '1') {
-            const debtor = await this.debtorRepository.updateById(req.params.id, { customerVaultId: customerVault });
+            const debtor = await this.debtorRepository.updateById(id, {
+                customerVaultId: customerVault,
+                paymentType: paymentType,
+            });
             return [true, debtor];
         }
         return [false, 'Unable to create customer vault'];

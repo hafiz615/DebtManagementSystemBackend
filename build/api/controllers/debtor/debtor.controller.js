@@ -80,7 +80,13 @@ class DebtorController {
             }));
         };
         this.createVault = async (req, res) => {
-            const response = await this.debtorService.createVault(req);
+            if (!req.body || !req.body.paymentToken) {
+                return [false, 'Payment token is missing'];
+            }
+            if (!req.body || !req.body.paymentType) {
+                return [false, 'Payment token is missing'];
+            }
+            const response = await this.debtorService.createVault(req.body.paymentToken, req.params.id, req.body.paymentType);
             if (!response[0]) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)

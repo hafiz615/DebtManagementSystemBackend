@@ -44,10 +44,29 @@ class DebtorService {
   }
 
   async listingDetails(req: Request) {
-    const casesCount = await this.caseRepository.getCount<ICase>({
-      debtor: req.params.id,
-    });
-    const clientDetails = await caseUtil.getClientDetails(req);
+    let casesCount = 0;
+    let page = 1;
+    let limit = 5;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    let clientDetails = await caseUtil.getClientDetails(req);
+    if (req.query.filter === 'true' || req.query.search === 'true') {
+      casesCount = clientDetails.caseHistory.length;
+    } else {
+      casesCount = await this.caseRepository.getCount<ICase>({
+        debtor: req.params.id,
+      });
+    }
+    clientDetails.caseHistory = clientDetails.caseHistory.slice(
+      (page - 1) * limit,
+      page * limit
+    );
     if (!clientDetails) {
       return [false, constants.notFoundMessage('Debtor')];
     }
@@ -156,15 +175,12 @@ class DebtorService {
     return [true, debtor];
   }
 
-  async createVault(req: Request) {
+  async createVault(paymentToken: string, id: string, paymentType: string) {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
-    if (!req.body || !req.body.paymentToken) {
-      return [false, 'Payment token is missing'];
-    }
     const params = {
       customer_vault: 'add_customer',
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      payment_token: req.body.paymentToken,
+      payment_token: paymentToken,
     };
     const response = await axios.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
@@ -172,10 +188,10 @@ class DebtorService {
       'customer_vault'
     );
     if (responseNum === '1') {
-      const debtor = await this.debtorRepository.updateById<IDebtor>(
-        req.params.id,
-        {customerVaultId: customerVault}
-      );
+      const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
+        customerVaultId: customerVault,
+        paymentType: paymentType,
+      });
       return [true, debtor];
     }
     return [false, 'Unable to create customer vault'];

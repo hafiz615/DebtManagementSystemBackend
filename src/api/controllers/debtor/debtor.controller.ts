@@ -92,7 +92,17 @@ class DebtorController {
   };
 
   createVault = async (req: Request, res: Response) => {
-    const response = await this.debtorService.createVault(req);
+    if (!req.body || !req.body.paymentToken) {
+      return [false, 'Payment token is missing'];
+    }
+    if (!req.body || !req.body.paymentType) {
+      return [false, 'Payment token is missing'];
+    }
+    const response = await this.debtorService.createVault(
+      req.body.paymentToken,
+      req.params.id,
+      req.body.paymentType
+    );
     if (!response[0]) {
       return res
         .status(constants.CODE.BAD_REQUEST)

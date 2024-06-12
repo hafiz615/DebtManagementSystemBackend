@@ -94,13 +94,11 @@ const debtorModel: Schema = new Schema({
       zipCode: '';
     }>,
   },
-  transactionTypes: {
-    type: Array<{name: ''; priority: ''}>,
-    select: false,
+  paymentType: {
+    type: String,
   },
   customerVaultId: {
     type: String,
-    select: false,
   },
   totalCommission: {
     type: Number,
