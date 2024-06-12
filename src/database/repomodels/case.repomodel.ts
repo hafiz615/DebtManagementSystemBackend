@@ -1,9 +1,12 @@
 import commonUtil from '../../utils/common.util';
 
 export class Case {
-  caseOwner = {name: '', id: ''};
-  negotiator = {name: '', id: ''};
-  manager = {name: '', id: ''};
+  caseOwner = '';
+  caseOwnerId = '';
+  negotiator = '';
+  negotiatorId = '';
+  manager = '';
+  managerId = '';
   caseCode = '';
   status = '';
   debtor = '';

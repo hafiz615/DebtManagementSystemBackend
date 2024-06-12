@@ -13,9 +13,12 @@ export interface IInterval {
   timePeriod: string;
 }
 export interface ICase extends Document {
-  caseOwner: {name: string; id: string};
-  negotiator: {name: string; id: string};
-  manager: {name: string; id: string};
+  caseOwner: string;
+  negotiator: string;
+  manager: string;
+  caseOwnerId: string;
+  negotiatorId: string;
+  managerId: string;
   caseCode: string;
   status: string;
   debtor: mongoose.Schema.Types.ObjectId;

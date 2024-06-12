@@ -45,9 +45,9 @@ class UserService {
                 {
                     $match: {
                         $or: [
-                            { 'caseOwner.id': userId },
-                            { 'negotiator.id': userId },
-                            { 'manager.id': userId },
+                            { caseOwnerId: userId },
+                            { negotiatorId: userId },
+                            { managerId: userId },
                         ],
                     },
                 },

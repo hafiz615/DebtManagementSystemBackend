@@ -7,9 +7,12 @@ exports.Case = void 0;
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Case {
     constructor() {
-        this.caseOwner = { name: '', id: '' };
-        this.negotiator = { name: '', id: '' };
-        this.manager = { name: '', id: '' };
+        this.caseOwner = '';
+        this.caseOwnerId = '';
+        this.negotiator = '';
+        this.negotiatorId = '';
+        this.manager = '';
+        this.managerId = '';
         this.caseCode = '';
         this.status = '';
         this.debtor = '';

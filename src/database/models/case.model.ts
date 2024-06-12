@@ -29,16 +29,22 @@ const caseModel: Schema = new Schema({
     default: 'Customer',
   },
   caseOwner: {
-    name: String,
-    id: String,
+    type: String,
+  },
+  caseOwnerId: {
+    type: String,
   },
   negotiator: {
-    name: String,
-    id: String,
+    type: String,
+  },
+  negotiatorId: {
+    type: String,
   },
   manager: {
-    name: String,
-    id: String,
+    type: String,
+  },
+  managerId: {
+    type: String,
   },
   caseCode: {
     type: String,

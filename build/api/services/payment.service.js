@@ -19,6 +19,7 @@ class PaymentService {
         let currentDate = common_util_1.default.getCurrentDate();
         let arrayName = String(req.query.arrayName);
         const payments = await this.getAllPayments(currentDate, days);
+        console.log(payments);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -81,7 +82,7 @@ class PaymentService {
             ],
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
-            select: ['_id', 'caseOwner.name', 'totalDebt'],
+            select: ['_id', 'caseOwner', 'totalDebt'],
             populate: {
                 path: 'debtor',
                 select: ['basicInformation.fullName', 'basicInformation.SSID'],

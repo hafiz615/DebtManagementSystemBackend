@@ -301,12 +301,12 @@ class CaseUtil {
     body.debtor = debtor?._id;
     body.creditor = creditor?._id;
     const newCase = new Case();
-    newCase.caseOwner.name = name;
-    newCase.caseOwner.id = id;
-    newCase.negotiator.name = name;
-    newCase.negotiator.id = id;
-    newCase.manager.name = name;
-    newCase.manager.id = id;
+    newCase.caseOwner = name;
+    newCase.caseOwnerId = id;
+    newCase.negotiator = name;
+    newCase.negotiatorId = id;
+    newCase.manager = name;
+    newCase.managerId = id;
     console.log(await this.getCaseCode());
     newCase.caseCode = await this.getCaseCode();
     const validatedCase = DataCopier.copy(newCase, body);
@@ -546,7 +546,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner.name',
+              caseOwner: '$caseOwner',
               outstandingDebt: {
                 $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
               },
@@ -893,7 +893,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner.name',
+              caseOwner: '$caseOwner',
               outstandingDebt: {
                 $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
               },

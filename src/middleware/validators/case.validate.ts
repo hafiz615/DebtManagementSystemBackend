@@ -166,6 +166,9 @@ class CaseValidate {
       caseOwner: Joi.string().required(),
       negotiator: Joi.string().required(),
       manager: Joi.string().required(),
+      caseOwnerId: Joi.string().required(),
+      negotiatorId: Joi.string().required(),
+      managerId: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
