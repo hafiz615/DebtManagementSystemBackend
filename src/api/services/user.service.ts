@@ -191,7 +191,10 @@ class UserService {
       Number(req.query.page),
       Number(req.query.limit)
     );
-    const count = await this.userRepository.getCount<IUser>();
+    const count = await this.userRepository.getCount<IUser>({
+      role: {$ne: 'Admin'},
+      isDeleted: false,
+    });
     if (!users.length) {
       return [false, constantsUtil.notFoundMessage('Users')];
     }

@@ -319,7 +319,7 @@ class CaseUtil {
       await this.debtorService.createVault(
         body.paymentToken,
         String(caseCreated.debtor),
-        body.payment
+        body.paymentType
       );
     }
     return [true, caseCreated];
