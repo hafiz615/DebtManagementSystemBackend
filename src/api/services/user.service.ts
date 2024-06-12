@@ -301,7 +301,14 @@ class UserService {
       },
       {
         $addFields: {
-          paidAmount: {$subtract: ['$remaining', '$totalCapturedAmount']},
+          paidAmount: {
+            $multiply: [
+              {
+                $divide: ['$totalCapturedAmount', '$remaining'],
+              },
+              100,
+            ],
+          },
         },
       },
       {
@@ -351,7 +358,7 @@ class UserService {
               $project: {
                 _id: 0,
                 caseCode: 1,
-                paid: '$paidAmount',
+                paidPercentage: '$paidAmount',
               },
             },
           ],

@@ -564,7 +564,6 @@ class CaseUtil {
     async filterAndPaginateCaseHistoryDebtor(caseHistory, req) {
         let page = 1;
         let limit = 5;
-        [];
         // Check if pageNumber and pageSize are provided and valid
         if (req.query.page && !isNaN(Number(req.query.page))) {
             page = Number(req.query.page) ? Number(req.query.page) : page;
@@ -934,15 +933,6 @@ class CaseUtil {
         return filterConditions;
     }
     async getClientListingPipeline(req) {
-        let page = 1;
-        let limit = 10;
-        // Check if pageNumber and pageSize are provided and valid
-        if (req.query.page && !isNaN(Number(req.query.page))) {
-            page = Number(req.query.page) ? Number(req.query.page) : page;
-        }
-        if (req.query.limit && !isNaN(Number(req.query.limit))) {
-            limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-        }
         const filters = await this.getClientListingFilters(req);
         const pipeline = [
             {
@@ -984,10 +974,7 @@ class CaseUtil {
                 $match: filters[0],
             },
             {
-                $skip: (page - 1) * limit,
-            },
-            {
-                $limit: limit,
+                $sort: { id: -1 },
             },
         ];
         return pipeline;
@@ -1035,15 +1022,6 @@ class CaseUtil {
         return [queryFilter, querySearch];
     }
     async getCreditorListingPipeline(req) {
-        let page = 1;
-        let limit = 10;
-        // Check if pageNumber and pageSize are provided and valid
-        if (req.query.page && !isNaN(Number(req.query.page))) {
-            page = Number(req.query.page) ? Number(req.query.page) : page;
-        }
-        if (req.query.limit && !isNaN(Number(req.query.limit))) {
-            limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-        }
         const filters = await this.getCreditorListingFilters(req);
         const pipeline = [
             {
@@ -1083,10 +1061,7 @@ class CaseUtil {
                 $match: filters[0],
             },
             {
-                $skip: (page - 1) * limit,
-            },
-            {
-                $limit: limit,
+                $sort: { id: -1 },
             },
         ];
         return pipeline;
