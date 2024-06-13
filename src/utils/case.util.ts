@@ -99,7 +99,7 @@ class CaseUtil {
             payment.dueDate = await this.getDatePayment(
               interval.startDate,
               interval.timePeriod,
-              i
+              i - 1
             );
           }
           tempPayment = await this.populatePayment(

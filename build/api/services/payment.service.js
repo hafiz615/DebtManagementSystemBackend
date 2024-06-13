@@ -19,7 +19,6 @@ class PaymentService {
         let currentDate = common_util_1.default.getCurrentDate();
         let arrayName = String(req.query.arrayName);
         const payments = await this.getAllPayments(currentDate, days);
-        console.log(payments);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }

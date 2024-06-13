@@ -74,7 +74,7 @@ class CaseUtil {
                         payment.dueDate = interval.startDate;
                     }
                     else {
-                        payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i);
+                        payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i - 1);
                     }
                     tempPayment = await this.populatePayment(data._id, payment, interval, i);
                     paymentsArray.push(tempPayment);
