@@ -28,7 +28,7 @@ class CaseValidate {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                     weeklyBudget: joi_1.default.number(),
@@ -45,7 +45,7 @@ class CaseValidate {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                 }),
@@ -53,7 +53,7 @@ class CaseValidate {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
@@ -68,7 +68,7 @@ class CaseValidate {
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                 }),
                 businessInformation: joi_1.default.object({
@@ -79,7 +79,7 @@ class CaseValidate {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),

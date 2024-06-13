@@ -16,7 +16,7 @@ class CreditorRequests {
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                 }),
                 businessInformation: joi_1.default.object({

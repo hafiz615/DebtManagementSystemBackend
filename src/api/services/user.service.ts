@@ -365,6 +365,7 @@ class UserService {
                 paidPercentage: '$paidAmount',
               },
             },
+            {$sort: {caseCode: 1}},
           ],
           statusCounts: [
             {
