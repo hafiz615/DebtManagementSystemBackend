@@ -132,24 +132,24 @@ class PaymentService {
     );
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
       ...obj,
-      type: 'Authorization',
+      type: 'authorization',
     }));
 
     // Adding type to each object in successCapture array
     const failedCapture = paymentsObj.failedPayments.map((obj: any) => ({
       ...obj,
-      type: 'Payment',
+      type: 'payment',
     }));
 
     const successAuth = paymentsObj.successAuthorizations.map((obj: any) => ({
       ...obj,
-      type: 'Authorization',
+      type: 'authorization',
     }));
 
     // Adding type to each object in successCapture array
     const successCapture = paymentsObj.successPayments.map((obj: any) => ({
       ...obj,
-      type: 'Payment',
+      type: 'payment',
     }));
 
     // Merging the arrays
