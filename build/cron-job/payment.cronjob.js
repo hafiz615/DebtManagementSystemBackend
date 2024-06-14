@@ -43,9 +43,9 @@ class CronJob {
         // await this.pendingAuthorized(settings, payments, cronId);
         // await this.pendingCaptured(payments, cronId, settings);
         // await this.failedAuthorized(payments, cronId, settings);
-        await this.failedCaptured(payments, cronId, settings);
+        // await this.failedCaptured(payments, cronId, settings);
         console.log('oh i was running');
-        return;
+        // return;
         const debtors = await this.debtorRepository.getAllWithoutPagination();
         for (const debtor of debtors) {
             if (debtor.totalCommission === debtor.commissionPaid) {
@@ -73,25 +73,39 @@ class CronJob {
             }
             if (!debtor.weeklyCommissionPaid) {
                 if (payment.authorized === 'Pending') {
-                    const response = await this.paymentService.authorizeCreditCard(debtor.weeklyCommission, '');
-                    await this.processCommissionAuthResponse(payment, response, false, cronId);
+                    if (debtor.paymentType === 'cc') {
+                        const response = await this.paymentService.authorizeCreditCard(debtor.weeklyCommission, '');
+                        await this.processCommissionAuthResponse(payment, response, false, cronId);
+                    }
+                    if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
+                        const response = await this.paymentService.achCredit('', debtor.weeklyCommission);
+                        await this.processCommissionCaptureResponse(payment, response, false, cronId, 'ck');
+                    }
                 }
                 if (payment.authorized === 'Failed') {
                     if (this.checkCommissionTimePeriod(payment.rescheduled, 'hours')) {
-                        const response = await this.paymentService.authorizeCreditCard(debtor.weeklyCommission, '');
-                        const result = await this.processCommissionAuthResponse(payment, response, true, cronId);
-                        if (result) {
-                            payment = await this.paymentRepository.getById(debtor.commissionPaymentId);
-                            const response = await this.paymentService.captureCreditCard('', payment.debtorTransId);
-                            await this.processCommissionCaptureResponse(payment, response, false, cronId);
+                        if (debtor.paymentType === 'cc') {
+                            const response = await this.paymentService.authorizeCreditCard(debtor.weeklyCommission, '');
+                            const result = await this.processCommissionAuthResponse(payment, response, true, cronId);
+                            if (result) {
+                                payment = await this.paymentRepository.getById(debtor.commissionPaymentId);
+                                const response = await this.paymentService.captureCreditCard('', payment.debtorTransId);
+                                await this.processCommissionCaptureResponse(payment, response, false, cronId, 'cc');
+                            }
+                        }
+                        if (debtor.paymentType === 'ck') {
+                            const response = await this.paymentService.achCredit('', debtor.weeklyCommission);
+                            await this.processCommissionCaptureResponse(payment, response, false, cronId, 'ck');
                         }
                     }
                 }
                 if (payment.authorized === 'Success') {
                     if (payment.captured === 'Failed') {
                         if (this.checkCommissionTimePeriod(payment.rescheduled, 'hours')) {
+                            if (debtor.paymentType === 'cc') {
+                            }
                             const response = await this.paymentService.captureCreditCard('', payment.debtorTransId);
-                            await this.processCommissionCaptureResponse(payment, response, true, cronId);
+                            await this.processCommissionCaptureResponse(payment, response, true, cronId, 'cc');
                         }
                     }
                 }
@@ -150,7 +164,7 @@ class CronJob {
         await this.paymentLoggingRepository.create(paymentLogging);
         return successAuth;
     }
-    async processCommissionCaptureResponse(payment, response, retryPlus, cronId) {
+    async processCommissionCaptureResponse(payment, response, retryPlus, cronId, type) {
         const retryCommissionInterval = {
             unit: 'hours',
             value: 8,
@@ -331,38 +345,16 @@ class CronJob {
         await this.processAuthorized(failedAuthorized, cronId, true, settings);
     }
     async processAuthorized(payments, cronId, retryPlus, settings) {
-        const paymentType = 'ACH';
-        // const payment = payments[payments.length - 1];
-        // const response = await this.paymentService.authorizeCreditCard(
-        //   payment.amount,
-        //   ''
-        // );
-        // await this.processAuthorizedResponse(
-        //   payment,
-        //   response,
-        //   retryPlus,
-        //   cronId,
-        //   settings
-        // );
         for (const payment of payments) {
             console.log('calculation');
-            // if (paymentType === 'Credit Card') {
-            //   const response = await this.paymentService.authorizeCreditCard(
-            //     payment.amount,
-            //     ''
-            //   );
-            //   await this.processAuthorizedResponse(
-            //     payment,
-            //     response,
-            //     retryPlus,
-            //     cronId,
-            //     settings
-            //   );
-            //   break;
-            // }
-            if (paymentType === 'ACH') {
+            if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
+                const response = await this.paymentService.authorizeCreditCard(payment.amount, '');
+                await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings);
+                break;
+            }
+            if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
                 const response = await this.paymentService.achCredit('', payment.amount);
-                await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ach');
+                await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck');
                 break;
             }
         }
@@ -435,40 +427,15 @@ class CronJob {
         await this.processCapture(failedCaptured, cronId, true, settings);
     }
     async processCapture(payments, cronId, retryPlus, settings) {
-        // const payment = payments[payments.length - 1];
-        // const response = await this.paymentService.captureCreditCard(
-        //   '',
-        //   payment.debtorTransId
-        // );
-        // await this.processCaptureResponse(
-        //   payment,
-        //   response,
-        //   retryPlus,
-        //   cronId,
-        //   settings
-        // );
-        const paymentType = 'ACH';
         for (const payment of payments) {
-            console.log(payment);
-            break;
-            // if (paymentType === 'Credit Card') {
-            //   const response = await this.paymentService.captureCreditCard(
-            //     '',
-            //     payment.debtorTransId
-            //   );
-            //   await this.processCaptureResponse(
-            //     payment,
-            //     response,
-            //     retryPlus,
-            //     cronId,
-            //     settings,
-            //     'credit card'
-            //   );
-            //   break;
-            // }
-            if (paymentType === 'ACH') {
+            if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
+                const response = await this.paymentService.captureCreditCard('', payment.debtorTransId);
+                await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc');
+                break;
+            }
+            if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
                 const response = await this.paymentService.achCredit('', payment.amount);
-                await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ach');
+                await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck');
                 break;
             }
         }
@@ -487,12 +454,14 @@ class CronJob {
             console.log(transactionId, 'transactionId');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Success';
-            if (type === 'ach')
+            if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
+                updateObjPayment['debtorTransId'] = transactionId;
+            }
             paymentLogging.successReason = responseText;
         }
         else {
-            if (type === 'ach') {
+            if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['status'] = 'Pending';
             }

@@ -17,8 +17,7 @@ export class Creditor {
     minimum: 0,
     maximum: 0,
   };
-  transactionTypes: Array<{name: ''; priority: ''}>;
-  customerVaultId: '';
+  creditorSecurityKey: '';
   contacts = Array<{
     name: '';
     title: '';

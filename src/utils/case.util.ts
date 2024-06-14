@@ -297,7 +297,13 @@ class CaseUtil {
       }
       await this.debtRepository.updateById<IDebtor>(getDebtor._id, body.debtor);
     }
-    if (getCreditor) creditor = getCreditor as ICreditor;
+    if (getCreditor) {
+      creditor = getCreditor as ICreditor;
+      await this.creditorRepository.updateById<ICreditor>(
+        getCreditor._id,
+        body.creditor
+      );
+    }
     body.debtor = debtor?._id;
     body.creditor = creditor?._id;
     const newCase = new Case();
