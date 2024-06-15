@@ -119,7 +119,7 @@ const debtorModel = new mongoose_1.Schema({
         select: false,
     },
     commissionPaid: {
-        type: Boolean,
+        type: Number,
         select: false,
     },
     weeklyCommission: {

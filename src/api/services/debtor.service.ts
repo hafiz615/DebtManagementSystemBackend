@@ -219,7 +219,7 @@ class DebtorService {
     if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
       const response = await this.paymentService.authorizeCreditCard(
         payment.amount,
-        ''
+        payment.caseDetails.debtorDetails.customerVaultId
       );
       const responseNum = new URLSearchParams(response).get('response');
       const responseText = new URLSearchParams(response).get('responsetext');
@@ -266,12 +266,17 @@ class DebtorService {
     let response: any;
     if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
       response = await this.paymentService.captureCreditCard(
-        '',
-        payment.debtorTransId
+        payment.caseDetails.debtorDetails.customerVaultId,
+        payment.debtorTransId,
+        payment.caseDetails.creditorDetails.creditorSecurityKey
       );
     }
     if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
-      response = await this.paymentService.achCredit('', payment.amount);
+      response = await this.paymentService.achCredit(
+        payment.caseDetails.debtorDetails.customerVaultId,
+        payment.amount,
+        payment.caseDetails.creditorDetails.creditorSecurityKey
+      );
     }
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');

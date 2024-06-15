@@ -93,6 +93,7 @@ class PaymentService {
               $lte: currentDate,
             },
           },
+          {caseId: {$ne: null}},
         ],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
@@ -209,9 +210,9 @@ class PaymentService {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
     const params = {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      customer_vault_id: '1922739712',
+      customer_vault_id: customer_vault_id,
       type: 'auth',
-      amount: '20.00',
+      amount: amount,
     };
 
     try {
@@ -231,12 +232,16 @@ class PaymentService {
       }
     }
   }
-  async captureCreditCard(customer_vault_id: string, transactionId: string) {
+  async captureCreditCard(
+    customer_vault_id: string,
+    transactionId: string,
+    creditorSecurityKey: string
+  ) {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
     const params = {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      customer_vault_id: '1922739712',
-      transaction_id: '9604723257',
+      customer_vault_id: customer_vault_id,
+      transaction_id: transactionId,
       stored_credential_indicator: 'used',
       type: 'capture',
     };
@@ -259,14 +264,18 @@ class PaymentService {
     }
   }
 
-  async achCredit(customer_vault_id: string, amount: number) {
+  async achCredit(
+    customer_vault_id: string,
+    amount: number,
+    creditorSecurityKey: string
+  ) {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
     const params = {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      customer_vault_id: '2023102910',
+      customer_vault_id: customer_vault_id,
       stored_credential_indicator: 'used',
       type: 'credit',
-      amount: '20.00',
+      amount: amount,
       payment: 'check',
     };
 

@@ -176,7 +176,7 @@ class DebtorService {
     async retryAuth(paymentId) {
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
         if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
-            const response = await this.paymentService.authorizeCreditCard(payment.amount, '');
+            const response = await this.paymentService.authorizeCreditCard(payment.amount, payment.caseDetails.debtorDetails.customerVaultId);
             const responseNum = new url_1.URLSearchParams(response).get('response');
             const responseText = new url_1.URLSearchParams(response).get('responsetext');
             const paymentLogging = new paymentLogging_repomodel_1.PaymentLogging();
@@ -210,10 +210,10 @@ class DebtorService {
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
         let response;
         if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
-            response = await this.paymentService.captureCreditCard('', payment.debtorTransId);
+            response = await this.paymentService.captureCreditCard(payment.caseDetails.debtorDetails.customerVaultId, payment.debtorTransId, payment.caseDetails.creditorDetails.creditorSecurityKey);
         }
         if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
-            response = await this.paymentService.achCredit('', payment.amount);
+            response = await this.paymentService.achCredit(payment.caseDetails.debtorDetails.customerVaultId, payment.amount, payment.caseDetails.creditorDetails.creditorSecurityKey);
         }
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
