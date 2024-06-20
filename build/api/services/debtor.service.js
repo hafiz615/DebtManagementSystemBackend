@@ -67,10 +67,10 @@ class DebtorService {
                 debtor: req.params.id,
             });
         }
-        clientDetails.caseHistory = clientDetails.caseHistory.slice((page - 1) * limit, page * limit);
         if (!clientDetails) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
+        clientDetails.caseHistory = clientDetails?.caseHistory?.slice((page - 1) * limit, page * limit);
         return [true, { ...clientDetails, debtorTotalCases: casesCount }];
     }
     async searchListing(req) {
