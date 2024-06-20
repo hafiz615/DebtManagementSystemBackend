@@ -27,4 +27,14 @@ router.post(
   authorize.validateAuth,
   debtorController.createVault
 );
+router.get(
+  '/retryAuth/:id',
+  authorize.validateAuth,
+  debtorController.retryAuth
+);
+router.get(
+  '/retryCapture/:id',
+  authorize.validateAuth,
+  debtorController.retryCapture
+);
 export default router;

@@ -22,6 +22,7 @@ class PaymentService {
     // let currentDate = commonUtil.getCurrentDate();
     let arrayName = String(req.query.arrayName);
     const payments: IPayment[] = await this.getAllPayments(req);
+    console.log(payments);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
