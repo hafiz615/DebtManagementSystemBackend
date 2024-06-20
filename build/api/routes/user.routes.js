@@ -20,5 +20,6 @@ router.post('/verifyInvitationLink', user_controller_1.default.verifyInvitationL
 router.post('/resendInvitationLink', user_controller_1.default.resendInvitationLink);
 router.get('/getAllUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getAllUsers);
 router.post('/logout', authorize_middleware_1.default.validateAuth, user_controller_1.default.signOut);
+router.get('/dashboard', authorize_middleware_1.default.validateAuth, user_controller_1.default.dashboard);
 exports.default = router;
 //# sourceMappingURL=user.routes.js.map

@@ -1,3 +1,4 @@
+import {Request} from 'express';
 import {ICase, IInterval} from '../../database/interfaces/case.interface';
 import {IPayment} from '../../database/interfaces/payment.interface';
 import commonUtil from '../../utils/common.util';
@@ -16,22 +17,65 @@ class PaymentService {
     this.caseRepository = new CaseRepository();
   }
 
-  async getHomePayments(days: number): Promise<[boolean, {} | string]> {
-    if (!days) days = 3;
+  async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
+    let days = !Number(req.query.days) ? 3 : Number(req.query.days);
     let currentDate = commonUtil.getCurrentDate();
+    let arrayName = String(req.query.arrayName);
     const payments: IPayment[] = await this.getAllPayments(currentDate, days);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
     const paymentsObj = await paymentUtil.getFilteredPayments(payments);
-    return [true, paymentsObj];
+    let page = 1;
+    let limit = 10;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+
+    let counts = {
+      failedPayments: paymentsObj.failedPayments.length,
+      successPayments: paymentsObj.successPayments.length,
+      failedAuthorizations: paymentsObj.failedAuthorizations.length,
+      successAuthorizations: paymentsObj.successAuthorizations.length,
+      upcomingPayments: paymentsObj.upcomingPayments.length,
+    };
+
+    if (arrayName === 'default') {
+      for (const key in paymentsObj) {
+        if (Array.isArray(paymentsObj[key])) {
+          paymentsObj[key] = paymentsObj[key].slice(
+            (page - 1) * limit,
+            page * limit
+          );
+        }
+      }
+    } else {
+      if (paymentsObj[arrayName]) {
+        paymentsObj[arrayName] = paymentsObj[arrayName].slice(
+          (page - 1) * limit,
+          page * limit
+        );
+      }
+    }
+    return [
+      true,
+      {
+        payments: paymentsObj,
+        counts: counts,
+      },
+    ];
   }
 
   private async getAllPayments(currentDate: string, days: number) {
     const startDate = new Date(
       new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
     ).toUTCString();
-    return await this.paymentRepository.getAll<IPayment>(
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         $and: [
           {
@@ -49,6 +93,7 @@ class PaymentService {
               $lte: currentDate,
             },
           },
+          {caseId: {$ne: null}},
         ],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
@@ -143,7 +188,7 @@ class PaymentService {
   }
 
   private async getAllPaymentsByCaseId(id: string) {
-    return await this.paymentRepository.getAll<IPayment>(
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         caseId: id,
       },
@@ -165,9 +210,9 @@ class PaymentService {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
     const params = {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      customer_vault_id: '1922739712',
+      customer_vault_id: customer_vault_id,
       type: 'auth',
-      amount: '0.00',
+      amount: amount,
     };
 
     try {
@@ -187,14 +232,51 @@ class PaymentService {
       }
     }
   }
-  async captureCreditCard(customer_vault_id: string, transactionId: string) {
+  async captureCreditCard(
+    customer_vault_id: string,
+    transactionId: string,
+    creditorSecurityKey: string
+  ) {
     const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
     const params = {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      customer_vault_id: '1922739712',
-      transaction_id: '9561304895',
+      customer_vault_id: customer_vault_id,
+      transaction_id: transactionId,
       stored_credential_indicator: 'used',
       type: 'capture',
+    };
+
+    try {
+      const response = await axios.get(url, {params});
+      console.log('Response:', response.data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error making request:', error.message);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        }
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    }
+  }
+
+  async achCredit(
+    customer_vault_id: string,
+    amount: number,
+    creditorSecurityKey: string
+  ) {
+    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const params = {
+      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      customer_vault_id: customer_vault_id,
+      stored_credential_indicator: 'used',
+      type: 'credit',
+      amount: amount,
+      payment: 'check',
     };
 
     try {

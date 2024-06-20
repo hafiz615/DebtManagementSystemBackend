@@ -55,7 +55,7 @@ class CaseService {
     const result = await caseUtil.createCase(
       req.body,
       reqTemp.name,
-      reqTemp.email
+      reqTemp.id
     );
     if (!result[0]) return [false, result[1] as string];
     return [true, result[1] as ICase];

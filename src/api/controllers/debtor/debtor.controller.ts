@@ -90,6 +90,52 @@ class DebtorController {
       })
     );
   };
+
+  createVault = async (req: Request, res: Response) => {
+    if (!req.body || !req.body.paymentToken) {
+      return [false, 'Payment token is missing'];
+    }
+    if (!req.body || !req.body.paymentType) {
+      return [false, 'Payment token is missing'];
+    }
+    const response = await this.debtorService.createVault(
+      req.body.paymentToken,
+      req.params.id,
+      req.body.paymentType
+    );
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.successAddMessage('Customer vault id'),
+      })
+    );
+  };
+
+  retryAuth = async (req: Request, res: Response) => {
+    const response = await this.debtorService.createVault(
+      req.body.paymentToken,
+      req.params.id,
+      req.body.paymentType
+    );
+    if (!response[0]) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(response[1]));
+    }
+    return res.status(constants.CODE.OK).send(
+      responseHelper.get2xxResponse({
+        statusCode: constants.CODE.OK,
+        data: response[1],
+        message: constants.successAddMessage('Customer vault id'),
+      })
+    );
+  };
 }
 
 export default new DebtorController();

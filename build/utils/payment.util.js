@@ -8,12 +8,12 @@ class PaymentUtil {
     async getFilteredPayments(payments) {
         const transformedArray = payments.map(obj => ({
             status: obj.status,
-            caseOwner: obj.caseId.caseOwner,
-            totalDebt: obj.caseId.totalDebt,
-            fullName: obj.caseId.debtor
+            caseOwner: obj.caseId?.caseOwner ? obj.caseId.caseOwner.name : '',
+            totalDebt: obj.caseId?.totalDebt ? obj.caseId.totalDebt : 0,
+            fullName: obj.caseId?.debtor
                 ? obj.caseId.debtor.basicInformation.fullName
                 : '',
-            SSID: obj.caseId.debtor ? obj.caseId.debtor.basicInformation.SSID : '',
+            SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
             authorized: obj.authorized,
             captured: obj.captured,
             amount: obj.amount,
@@ -86,8 +86,9 @@ class PaymentUtil {
                                 failedReasonAuthorization: 1,
                                 failedReasonCaptured: 1,
                                 rescheduled: 1,
-                                transactionId: 1,
-                                retries: 1,
+                                debtorTransId: 1,
+                                retriesAuth: 1,
+                                retriesCapture: 1,
                                 commission: 1,
                                 creditorAmount: 1,
                                 timePeriod: 1,
@@ -127,7 +128,7 @@ class PaymentUtil {
                         { $unwind: '$caseDetails.creditorDetails' },
                         {
                             $project: {
-                                _id: 0,
+                                _id: 1,
                                 caseId: 1,
                                 caseDetails: 1,
                                 authorized: 1,
@@ -141,7 +142,8 @@ class PaymentUtil {
                                 failedReasonCaptured: 1,
                                 rescheduled: 1,
                                 transactionId: 1,
-                                retries: 1,
+                                retriesAuth: 1,
+                                retriesCapture: 1,
                                 commission: 1,
                                 creditorAmount: 1,
                                 timePeriod: 1,
@@ -181,7 +183,7 @@ class PaymentUtil {
                         { $unwind: '$caseDetails.creditorDetails' },
                         {
                             $project: {
-                                _id: 0,
+                                _id: 1,
                                 caseId: 1,
                                 caseDetails: 1,
                                 authorized: 1,
@@ -195,7 +197,8 @@ class PaymentUtil {
                                 failedReasonCaptured: 1,
                                 rescheduled: 1,
                                 transactionId: 1,
-                                retries: 1,
+                                retriesAuth: 1,
+                                retriesCapture: 1,
                                 commission: 1,
                                 creditorAmount: 1,
                                 timePeriod: 1,
@@ -235,7 +238,7 @@ class PaymentUtil {
                         { $unwind: '$caseDetails.creditorDetails' },
                         {
                             $project: {
-                                _id: 0,
+                                _id: 1,
                                 caseId: 1,
                                 caseDetails: 1,
                                 authorized: 1,
@@ -249,7 +252,8 @@ class PaymentUtil {
                                 failedReasonCaptured: 1,
                                 rescheduled: 1,
                                 transactionId: 1,
-                                retries: 1,
+                                retriesAuth: 1,
+                                retriesCapture: 1,
                                 commission: 1,
                                 creditorAmount: 1,
                                 timePeriod: 1,

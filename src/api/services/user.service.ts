@@ -12,15 +12,20 @@ import EmailUtil from '../../utils/email.util';
 import authorize from '../../middleware/authorize.middleware';
 import constantsUtil from '../../utils/constants.util';
 import {v4 as uuidv4} from 'uuid';
+import {CaseRepository} from '../repository/case/case.repository';
+import {ICase} from '../../database/interfaces/case.interface';
+import mongoose from 'mongoose';
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
   private emailUtil: EmailUtil;
+  private caseRepository: CaseRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.emailUtil = new EmailUtil();
+    this.caseRepository = new CaseRepository();
   }
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
@@ -175,7 +180,7 @@ class UserService {
     return [true, {user: updatedUser, token: token}];
   }
 
-  getAllUsers = async (req: Request): Promise<[boolean, IUser[] | string]> => {
+  getAllUsers = async (req: Request): Promise<[boolean, {} | string]> => {
     let users = await this.userRepository.getAll<IUser>(
       {role: {$ne: 'Admin'}, isDeleted: false},
       undefined,
@@ -186,10 +191,14 @@ class UserService {
       Number(req.query.page),
       Number(req.query.limit)
     );
+    const count = await this.userRepository.getCount<IUser>({
+      role: {$ne: 'Admin'},
+      isDeleted: false,
+    });
     if (!users.length) {
       return [false, constantsUtil.notFoundMessage('Users')];
     }
-    return [true, users];
+    return [true, {users: users, totalUsers: count}];
   };
 
   signOut = async (req: Request): Promise<[boolean, IUser[] | string]> => {
@@ -228,6 +237,220 @@ class UserService {
     }
     return [true, updateUser];
   }
+
+  dashboard = async (req: Request): Promise<[boolean, ICase | string]> => {
+    const reqTemp: any = req;
+    const userId = reqTemp?.id;
+    const pipeline: mongoose.PipelineStage[] = [
+      {
+        $match: {
+          $or: [
+            {caseOwnerId: userId},
+            {negotiatorId: userId},
+            {managerId: userId},
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'payments',
+          localField: '_id',
+          foreignField: 'caseId',
+          as: 'payments',
+        },
+      },
+      {
+        $unwind: {
+          path: '$payments',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          caseCode: {$first: '$caseCode'},
+          createdAt: {$first: '$createdAt'},
+          remaining: {$first: '$remaining'},
+          status: {$first: '$status'},
+          successfulPayments: {
+            $sum: {
+              $cond: [{$eq: ['$payments.captured', 'Success']}, 1, 0],
+            },
+          },
+          failedPayments: {
+            $sum: {
+              $cond: [{$eq: ['$payments.captured', 'Failed']}, 1, 0],
+            },
+          },
+          successfulAuthorizations: {
+            $sum: {
+              $cond: [{$eq: ['$payments.authorized', 'Success']}, 1, 0],
+            },
+          },
+          failedAuthorizations: {
+            $sum: {
+              $cond: [{$eq: ['$payments.authorized', 'Failed']}, 1, 0],
+            },
+          },
+          totalCapturedAmount: {
+            $sum: {
+              $cond: [
+                {$eq: ['$payments.captured', 'Success']},
+                '$payments.amount',
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          paidAmount: {
+            $multiply: [
+              {
+                $divide: ['$totalCapturedAmount', '$remaining'],
+              },
+              100,
+            ],
+          },
+        },
+      },
+      {
+        $facet: {
+          paymentStats: [
+            {
+              $group: {
+                _id: null,
+                totalSuccessfulPayments: {$sum: '$successfulPayments'},
+                totalFailedPayments: {$sum: '$failedPayments'},
+                totalSuccessfulAuthorizations: {
+                  $sum: '$successfulAuthorizations',
+                },
+                totalFailedAuthorizations: {$sum: '$failedAuthorizations'},
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                totalSuccessfulPayments: 1,
+                totalFailedPayments: 1,
+                totalSuccessfulAuthorizations: 1,
+                totalFailedAuthorizations: 1,
+              },
+            },
+          ],
+          casesByDate: [
+            {
+              $group: {
+                _id: {$dateToString: {format: '%Y-%m-%d', date: '$createdAt'}},
+                count: {$sum: 1},
+              },
+            },
+            {
+              $sort: {_id: 1},
+            },
+            {
+              $project: {
+                _id: 0,
+                date: '$_id',
+                count: 1,
+              },
+            },
+          ],
+          paidAmounts: [
+            {
+              $project: {
+                _id: 0,
+                caseCode: 1,
+                paidPercentage: '$paidAmount',
+              },
+            },
+            {$sort: {caseCode: 1}},
+          ],
+          statusCounts: [
+            {
+              $group: {
+                _id: '$status',
+                count: {$sum: 1},
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                label: '$_id',
+                count: 1,
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                statuses: {
+                  $push: {
+                    k: '$label',
+                    v: '$count',
+                  },
+                },
+              },
+            },
+            {
+              $addFields: {
+                statuses: {
+                  $arrayToObject: '$statuses',
+                },
+              },
+            },
+            {
+              $addFields: {
+                statuses: {
+                  $mergeObjects: [
+                    {
+                      Canceled: 0,
+                      Duplicate: 0,
+                      'AF Customer': 0,
+                      'Check Back': 0,
+                      'Declared Bankrupcy': 0,
+                      'On Hold': 0,
+                      Graduated: 0,
+                      Settled: 0,
+                      'On Hold/Settled': 0,
+                      '1st payment bounces': 0,
+                      'Settled Owes Fees': 0,
+                      'One Payment': 0,
+                    },
+                    '$statuses',
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                statuses: {
+                  $objectToArray: '$statuses',
+                },
+              },
+            },
+            {
+              $unwind: '$statuses',
+            },
+            {
+              $project: {
+                label: '$statuses.k',
+                count: '$statuses.v',
+              },
+            },
+          ],
+        },
+      },
+    ];
+
+    const result: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
+    if (!result.length) {
+      return [false, 'Unable to return analytics!'];
+    }
+    return [true, result[0]];
+  };
 }
 
 export default UserService;

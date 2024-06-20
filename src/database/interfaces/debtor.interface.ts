@@ -40,7 +40,7 @@ export interface IDebtor extends Document {
     city: string;
     zipCode: string;
   }>;
-  transactionTypes: Array<{name: string; priority: string}>;
+  paymentType: string;
   customerVaultId: string;
   totalCommission: number;
   commissionPaid: number;

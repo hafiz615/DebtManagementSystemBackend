@@ -58,10 +58,7 @@ const creditorModel: Schema = new Schema({
       required: true,
     },
   },
-  transactionTypes: {
-    type: Array<{name: ''; priority: ''}>,
-  },
-  customerVaultId: {
+  creditorSecurityKey: {
     type: String,
   },
   createdAt: {

@@ -43,6 +43,21 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     return ((await result.exec()) as T[]) || [];
   }
 
+  async getAllWithoutPagination<T>(
+    filter?: FilterQuery<T>,
+    projectField?: string | ProjectionType<T>,
+    select?: string,
+    sort?: QueryOptions<T>,
+    populate?: PopulateOptions | (PopulateOptions | string)[],
+    lean?: boolean
+  ): Promise<T[] | []> {
+    let result = this.model.find(filter || {}, projectField || '');
+    select && result.select(select);
+    sort && result.sort(sort);
+    populate && result.populate(populate);
+    lean && result.lean(lean);
+    return ((await result.exec()) as T[]) || [];
+  }
   async getOne<T>(
     filter?: FilterQuery<T>,
     projectField?: string | ProjectionType<T>,

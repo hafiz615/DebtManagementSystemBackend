@@ -66,7 +66,7 @@ const PaymentModel = new mongoose_1.Schema({
         type: String,
     },
     rescheduled: {
-        type: String,
+        type: Date,
     },
     debtorTransId: {
         type: String,

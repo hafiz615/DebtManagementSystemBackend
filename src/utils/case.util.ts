@@ -99,7 +99,7 @@ class CaseUtil {
             payment.dueDate = await this.getDatePayment(
               interval.startDate,
               interval.timePeriod,
-              i
+              i - 1
             );
           }
           tempPayment = await this.populatePayment(
@@ -193,17 +193,14 @@ class CaseUtil {
   }
 
   async getCaseCode() {
-    const cases = await this.caseRepository.getAll<ICase>({}, {}, undefined);
-    if (!cases.length) return 'CASE-001';
-    let caseCode = cases[cases.length - 1].caseCode;
-    return (
-      'CASE-' +
-      (parseInt(caseCode.split('-')[1]) + 1).toString().padStart(3, '0')
-    );
+    const count = await this.caseRepository.getCount<ICase>();
+    if (!count) return 'CASE-001';
+    // let caseCode = cases[cases.length - 1].caseCode;
+    return 'CASE-' + (count + 1).toString().padStart(3, '0');
   }
 
   async getAllCreditorsOfDebtor(debtor: IDebtor) {
-    const cases = await this.caseRepository.getAll<ICase>(
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtor._id},
       'totalDebt caseCode status',
       undefined,
@@ -221,7 +218,7 @@ class CaseUtil {
     }));
   }
 
-  async createCase(body: any, name: string, email: string) {
+  async createCase(body: any, name: string, id: string) {
     let contactIds = null;
     let debtor: IDebtor = null;
     let creditor: ICreditor = null;
@@ -300,20 +297,36 @@ class CaseUtil {
       }
       await this.debtRepository.updateById<IDebtor>(getDebtor._id, body.debtor);
     }
-    if (getCreditor) creditor = getCreditor as ICreditor;
+    if (getCreditor) {
+      creditor = getCreditor as ICreditor;
+      await this.creditorRepository.updateById<ICreditor>(
+        getCreditor._id,
+        body.creditor
+      );
+    }
     body.debtor = debtor?._id;
     body.creditor = creditor?._id;
     const newCase = new Case();
     newCase.caseOwner = name;
+    newCase.caseOwnerId = id;
     newCase.negotiator = name;
+    newCase.negotiatorId = id;
     newCase.manager = name;
-    newCase.createdBy = email;
+    newCase.managerId = id;
+    console.log(await this.getCaseCode());
     newCase.caseCode = await this.getCaseCode();
     const validatedCase = DataCopier.copy(newCase, body);
     const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
-    await this.createPayment(caseCreated);
     if (!caseCreated) {
       return [false, constantsUtil.failureAddMessage('case')];
+    }
+    await this.createPayment(caseCreated);
+    if (body.paymentToken && body.paymentType) {
+      await this.debtorService.createVault(
+        body.paymentToken,
+        String(caseCreated.debtor),
+        body.paymentType
+      );
     }
     return [true, caseCreated];
   }
@@ -340,7 +353,7 @@ class CaseUtil {
           };
     }
     weeklyBudget = body.debtor.basicInformation.weeklyBudget;
-    const cases = await this.caseRepository.getAll<ICase>({
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
       debtor: debtor._id,
     });
     for (const caseTemp of cases) {
@@ -621,7 +634,7 @@ class CaseUtil {
 
     const results: any = await this.caseRepository.applyAggregate(pipeline);
     if (results[0]?.caseHistory) {
-      results[0].caseHistory = await this.filterAndPaginateCaseHistoryDebtor(
+      results[0].caseHistory = await this.filterCaseHistoryDebtor(
         results[0]?.caseHistory,
         req
       );
@@ -629,18 +642,7 @@ class CaseUtil {
 
     return results.length ? results[0] : null;
   }
-  async filterAndPaginateCaseHistoryDebtor(caseHistory: [], req: Request) {
-    let page = 1;
-    let limit = 5;
-    [];
-
-    // Check if pageNumber and pageSize are provided and valid
-    if (req.query.page && !isNaN(Number(req.query.page))) {
-      page = Number(req.query.page) ? Number(req.query.page) : page;
-    }
-    if (req.query.limit && !isNaN(Number(req.query.limit))) {
-      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-    }
+  async filterCaseHistoryDebtor(caseHistory: [], req: Request) {
     // Helper function to apply text search
     const applyTextSearch = (caseObj: any, text: string | RegExp) => {
       const regex = new RegExp(text, 'i');
@@ -708,16 +710,11 @@ class CaseUtil {
       const textMatches = !text || applyTextSearch(caseObj, text);
       const filtersMatch =
         Object.keys(filters).length === 0 || applyFilters(caseObj, filters);
+      console.log(textMatches, '   ', filtersMatch);
       return textMatches && filtersMatch;
     });
 
-    // Apply pagination
-    const paginatedCaseHistory = filteredCaseHistory.slice(
-      (page - 1) * limit,
-      page * limit
-    );
-
-    return paginatedCaseHistory;
+    return filteredCaseHistory;
   }
 
   async filterAndPaginateCaseHistoryCreditor(caseHistory: [], req: Request) {
@@ -1055,16 +1052,6 @@ class CaseUtil {
   }
 
   async getClientListingPipeline(req: Request) {
-    let page = 1;
-    let limit = 10;
-
-    // Check if pageNumber and pageSize are provided and valid
-    if (req.query.page && !isNaN(Number(req.query.page))) {
-      page = Number(req.query.page) ? Number(req.query.page) : page;
-    }
-    if (req.query.limit && !isNaN(Number(req.query.limit))) {
-      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-    }
     const filters = await this.getClientListingFilters(req);
     const pipeline = [
       {
@@ -1106,10 +1093,7 @@ class CaseUtil {
         $match: filters[0],
       },
       {
-        $skip: (page - 1) * limit,
-      },
-      {
-        $limit: limit,
+        $sort: {id: -1},
       },
     ];
     return pipeline;
@@ -1159,16 +1143,6 @@ class CaseUtil {
   }
 
   async getCreditorListingPipeline(req: Request) {
-    let page = 1;
-    let limit = 10;
-
-    // Check if pageNumber and pageSize are provided and valid
-    if (req.query.page && !isNaN(Number(req.query.page))) {
-      page = Number(req.query.page) ? Number(req.query.page) : page;
-    }
-    if (req.query.limit && !isNaN(Number(req.query.limit))) {
-      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-    }
     const filters = await this.getCreditorListingFilters(req);
     const pipeline = [
       {
@@ -1208,10 +1182,7 @@ class CaseUtil {
         $match: filters[0],
       },
       {
-        $skip: (page - 1) * limit,
-      },
-      {
-        $limit: limit,
+        $sort: {id: -1},
       },
     ];
 

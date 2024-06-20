@@ -27,7 +27,7 @@ export class Debtor {
     phone: '',
     address: '',
   };
-  transactionTypes = Array<{name: ''; priority: ''}>();
+  paymentType = '';
   customerVaultId = '';
   contacts = Array<{
     name: '';

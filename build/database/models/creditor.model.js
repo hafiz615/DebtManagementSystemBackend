@@ -72,10 +72,7 @@ const creditorModel = new mongoose_1.Schema({
             required: true,
         },
     },
-    transactionTypes: {
-        type: (Array),
-    },
-    customerVaultId: {
+    creditorSecurityKey: {
         type: String,
     },
     createdAt: {

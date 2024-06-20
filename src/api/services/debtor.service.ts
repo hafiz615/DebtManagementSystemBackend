@@ -5,14 +5,28 @@ import {CaseRepository} from '../repository/case/case.repository';
 import {Request} from 'express';
 import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
+import axios from 'axios';
+import {URLSearchParams} from 'url';
+import {IPayment} from '../../database/interfaces/payment.interface';
+import {PaymentRepository} from '../repository/payment/payment.repository';
+import PaymentService from './payment.service';
+import {PaymentLogging} from '../../database/repomodels/paymentLogging.repomodel';
+import commonUtil from '../../utils/common.util';
+import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogging.repository';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
+  private paymentRepository: PaymentRepository;
+  private paymentService: PaymentService;
+  private paymentLoggingRepository: PaymentLoggingRepository;
 
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.paymentService = new PaymentService();
+    this.paymentLoggingRepository = new PaymentLoggingRepository();
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
@@ -42,10 +56,29 @@ class DebtorService {
   }
 
   async listingDetails(req: Request) {
-    const casesCount = await this.caseRepository.getCount<ICase>({
-      debtor: req.params.id,
-    });
-    const clientDetails = await caseUtil.getClientDetails(req);
+    let casesCount = 0;
+    let page = 1;
+    let limit = 5;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    let clientDetails = await caseUtil.getClientDetails(req);
+    if (req.query.filter === 'true' || req.query.search === 'true') {
+      casesCount = clientDetails.caseHistory.length;
+    } else {
+      casesCount = await this.caseRepository.getCount<ICase>({
+        debtor: req.params.id,
+      });
+    }
+    clientDetails.caseHistory = clientDetails.caseHistory.slice(
+      (page - 1) * limit,
+      page * limit
+    );
     if (!clientDetails) {
       return [false, constants.notFoundMessage('Debtor')];
     }
@@ -53,12 +86,33 @@ class DebtorService {
   }
 
   async searchListing(req: Request) {
-    const debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+    let debtorsCount: number = 0;
+    let page = 1;
+    let limit = 10;
 
-    const pipeline = await caseUtil.getClientListingPipeline(req);
-    const clientDetails =
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    const pipeline: any = await caseUtil.getClientListingPipeline(req);
+    const clientDetails: any =
       await this.caseRepository.applyAggregate<ICase>(pipeline);
-    return [true, {clientDetails: clientDetails, debtorsCount: debtorsCount}];
+    if (req.query.filter === 'true' || req.query.search === 'true') {
+      debtorsCount = clientDetails.length;
+    } else {
+      debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+    }
+    const paginatedDetails = clientDetails.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+    return [
+      true,
+      {clientDetails: paginatedDetails, debtorsCount: debtorsCount},
+    ];
   }
 
   async updateDebtor(req: Request): Promise<[boolean, IDebtor | string]> {
@@ -131,6 +185,128 @@ class DebtorService {
       return [false, constants.notFoundMessage('Debtor')];
     }
     return [true, debtor];
+  }
+
+  async createVault(paymentToken: string, id: string, paymentType: string) {
+    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const params = {
+      customer_vault: 'add_customer',
+      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      payment_token: paymentToken,
+    };
+    const response = await axios.get(url, {params});
+    const responseNum = new URLSearchParams(response.data).get('response');
+    if (responseNum === '1') {
+      const customerVault = new URLSearchParams(response.data).get(
+        'customer_vault_id'
+      );
+      const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
+        customerVaultId: customerVault,
+        paymentType: paymentType,
+      });
+      return [true, debtor];
+    }
+    return [false, 'Unable to create customer vault'];
+  }
+
+  async retryAuth(paymentId: string): Promise<[boolean, string]> {
+    const payment: any = await this.paymentRepository.getById<IPayment>(
+      paymentId,
+      undefined,
+      undefined,
+      {path: 'caseId', populate: [{path: 'debtor'}, {path: 'creditor'}]}
+    );
+    if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
+      const response = await this.paymentService.authorizeCreditCard(
+        payment.amount,
+        payment.caseDetails.debtorDetails.customerVaultId
+      );
+      const responseNum = new URLSearchParams(response).get('response');
+      const responseText = new URLSearchParams(response).get('responsetext');
+      const paymentLogging = new PaymentLogging();
+      const updateObjPayment = {};
+      if (responseNum === '1') {
+        const transactionId = new URLSearchParams(response).get(
+          'transactionid'
+        );
+        console.log(transactionId, 'transactionId');
+
+        updateObjPayment['debtorTransId'] = transactionId;
+        updateObjPayment['authorized'] = 'Success';
+        updateObjPayment['status'] = 'Pending';
+        paymentLogging.successReason = responseText;
+        return [false, 'Unable to create customer vault'];
+      } else {
+        updateObjPayment['failedReasonAuthorization'] = responseText;
+        paymentLogging.failReason = responseText;
+        console.log('send email through template');
+      }
+      await this.paymentRepository.updateById<IPayment>(
+        payment._id,
+        updateObjPayment
+      );
+      paymentLogging.caseId = String(payment.caseId);
+      paymentLogging.createdAt = commonUtil.getCurrentDate();
+      paymentLogging.paymentId = String(payment._id);
+      paymentLogging.paymentType = 'Credit Auth';
+      paymentLogging.debtor = String(payment.caseId.debtor._id);
+      paymentLogging.creditor = String(payment.caseId.creditor._id);
+      await this.paymentLoggingRepository.create(paymentLogging as any);
+    }
+    return [false, 'Unable to create customer vault'];
+  }
+
+  async retryCapture(paymentId: string) {
+    const payment: any = await this.paymentRepository.getById<IPayment>(
+      paymentId,
+      undefined,
+      undefined,
+      {path: 'caseId', populate: [{path: 'debtor'}, {path: 'creditor'}]}
+    );
+    let response: any;
+    if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
+      response = await this.paymentService.captureCreditCard(
+        payment.caseDetails.debtorDetails.customerVaultId,
+        payment.debtorTransId,
+        payment.caseDetails.creditorDetails.creditorSecurityKey
+      );
+    }
+    if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
+      response = await this.paymentService.achCredit(
+        payment.caseDetails.debtorDetails.customerVaultId,
+        payment.amount,
+        payment.caseDetails.creditorDetails.creditorSecurityKey
+      );
+    }
+    const responseNum = new URLSearchParams(response).get('response');
+    const responseText = new URLSearchParams(response).get('responsetext');
+    const paymentLogging = new PaymentLogging();
+    const updateObjPayment = {};
+    if (responseNum === '1') {
+      const transactionId = new URLSearchParams(response).get('transactionid');
+      updateObjPayment['captured'] = 'Success';
+      updateObjPayment['status'] = 'Success';
+      if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
+        updateObjPayment['debtorTransId'] = transactionId;
+      }
+      paymentLogging.successReason = responseText;
+    } else {
+      updateObjPayment['failedReasonCaptured'] = responseText;
+      paymentLogging.failReason = responseText;
+
+      console.log('send email'); // add code
+    }
+    await this.paymentRepository.updateById<IPayment>(
+      payment._id,
+      updateObjPayment
+    );
+    paymentLogging.caseId = String(payment.caseId);
+    paymentLogging.createdAt = commonUtil.getCurrentDate();
+    paymentLogging.paymentId = String(payment._id);
+    paymentLogging.paymentType = 'Credit Capture';
+    paymentLogging.debtor = String(payment.caseDetails.debtor);
+    paymentLogging.creditor = String(payment.caseDetails.creditor);
+    await this.paymentLoggingRepository.create(paymentLogging as any);
   }
 }
 

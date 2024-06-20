@@ -83,10 +83,29 @@ class CreditorService {
   }
 
   async listingDetails(req: Request) {
-    const casesCount = await this.caseRepository.getCount<ICase>({
-      creditor: req.params.id,
-    });
-    const clientDetails = await caseUtil.getCreditorDetails(req);
+    let casesCount = 0;
+    let page = 1;
+    let limit = 5;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    let clientDetails = await caseUtil.getCreditorDetails(req);
+    if (req.query.filter === 'true' || req.query.search === 'true') {
+      casesCount = clientDetails.caseHistory.length;
+    } else {
+      casesCount = await this.caseRepository.getCount<ICase>({
+        creditor: req.params.id,
+      });
+    }
+    clientDetails.caseHistory = clientDetails.caseHistory.slice(
+      (page - 1) * limit,
+      page * limit
+    );
     if (!clientDetails) {
       return [false, constants.notFoundMessage('Creditor')];
     }
@@ -94,14 +113,32 @@ class CreditorService {
   }
 
   async listing(req: Request) {
-    const creditorsCount = await this.creditorRepository.getCount<ICreditor>();
+    let creditorsCount: number = 0;
+    let page = 1;
+    let limit = 10;
 
-    const pipeline = await caseUtil.getCreditorListingPipeline(req);
-    const clientDetails =
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    const pipeline: any = await caseUtil.getCreditorListingPipeline(req);
+    const clientDetails: any =
       await this.caseRepository.applyAggregate<ICase>(pipeline);
+    if (req.query.filter === 'true' || req.query.search === 'true') {
+      creditorsCount = clientDetails.length;
+    } else {
+      creditorsCount = await this.creditorRepository.getCount<ICreditor>();
+    }
+    const paginatedDetails = clientDetails.slice(
+      (page - 1) * limit,
+      page * limit
+    );
     return [
       true,
-      {clientDetails: clientDetails, creditorsCount: creditorsCount},
+      {clientDetails: paginatedDetails, creditorsCount: creditorsCount},
     ];
   }
 }

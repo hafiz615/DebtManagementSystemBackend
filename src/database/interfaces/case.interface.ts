@@ -16,8 +16,10 @@ export interface ICase extends Document {
   caseOwner: string;
   negotiator: string;
   manager: string;
+  caseOwnerId: string;
+  negotiatorId: string;
+  managerId: string;
   caseCode: string;
-  createdBy: string;
   status: string;
   debtor: mongoose.Schema.Types.ObjectId;
   creditor: mongoose.Schema.Types.ObjectId;

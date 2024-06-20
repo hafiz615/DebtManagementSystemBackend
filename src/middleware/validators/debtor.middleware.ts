@@ -22,7 +22,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{10}$/)
+          .pattern(/^\+\d{11}$/)
           .required(),
         address: Joi.string().required(),
         weeklyBudget: Joi.number(),
@@ -39,7 +39,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{10}$/)
+          .pattern(/^\+\d{11}$/)
           .required(),
         address: Joi.string().required(),
       }),

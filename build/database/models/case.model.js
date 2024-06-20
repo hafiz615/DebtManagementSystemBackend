@@ -50,24 +50,27 @@ const caseModel = new mongoose_1.Schema({
     status: {
         type: String,
         required: true,
+        default: 'Customer',
     },
     caseOwner: {
         type: String,
-        required: true,
+    },
+    caseOwnerId: {
+        type: String,
     },
     negotiator: {
         type: String,
-        required: true,
+    },
+    negotiatorId: {
+        type: String,
     },
     manager: {
         type: String,
-        required: true,
+    },
+    managerId: {
+        type: String,
     },
     caseCode: {
-        type: String,
-        required: true,
-    },
-    createdBy: {
         type: String,
         required: true,
     },

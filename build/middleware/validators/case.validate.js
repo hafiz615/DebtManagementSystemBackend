@@ -28,7 +28,7 @@ class CaseValidate {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                     weeklyBudget: joi_1.default.number(),
@@ -45,7 +45,7 @@ class CaseValidate {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                 }),
@@ -53,7 +53,7 @@ class CaseValidate {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
@@ -68,7 +68,7 @@ class CaseValidate {
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                 }),
                 businessInformation: joi_1.default.object({
@@ -79,7 +79,7 @@ class CaseValidate {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{10}$/)
+                        .pattern(/^\+\d{11}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
@@ -89,6 +89,7 @@ class CaseValidate {
                     zipCode: joi_1.default.string().allow(''),
                 })),
                 notes: joi_1.default.string().allow(''),
+                creditorSecurityKey: joi_1.default.string(),
                 lastFundedDate: joi_1.default.date().required(),
                 historicalRange: joi_1.default.object({
                     minimum: joi_1.default.number().strict().required(),
@@ -99,6 +100,8 @@ class CaseValidate {
             lastPaymentDate: joi_1.default.date(),
             paidAmount: joi_1.default.number().strict().required(),
             remaining: joi_1.default.number().strict().required(),
+            paymentToken: joi_1.default.string().allow(''),
+            paymentType: joi_1.default.string().valid('cc', 'ck').allow(''),
             status: joi_1.default.string().required(),
             feePayment: joi_1.default.string().valid('paidViaCash', 'toPay', 'paidViaThirdParty'),
             intervals: joi_1.default.array().items(joi_1.default.object({
@@ -148,6 +151,9 @@ class CaseValidate {
             caseOwner: joi_1.default.string().required(),
             negotiator: joi_1.default.string().required(),
             manager: joi_1.default.string().required(),
+            caseOwnerId: joi_1.default.string().required(),
+            negotiatorId: joi_1.default.string().required(),
+            managerId: joi_1.default.string().required(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

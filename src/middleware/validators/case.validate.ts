@@ -27,7 +27,7 @@ class CaseValidate {
           city: Joi.string().required(),
           zipCode: Joi.string().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{10}$/)
+            .pattern(/^\+\d{11}$/)
             .required(),
           address: Joi.string().required(),
           weeklyBudget: Joi.number(),
@@ -44,7 +44,7 @@ class CaseValidate {
           city: Joi.string().required(),
           zipCode: Joi.string().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{10}$/)
+            .pattern(/^\+\d{11}$/)
             .required(),
           address: Joi.string().required(),
         }),
@@ -53,7 +53,7 @@ class CaseValidate {
             name: Joi.string().required(),
             title: Joi.string().required(),
             phone: Joi.string()
-              .pattern(/^\+\d{10}$/)
+              .pattern(/^\+\d{11}$/)
               .required(),
             email: Joi.string().email().required(),
             relationWithDebtor: Joi.string().allow(''),
@@ -69,7 +69,7 @@ class CaseValidate {
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{10}$/)
+            .pattern(/^\+\d{11}$/)
             .required(),
         }),
         businessInformation: Joi.object({
@@ -81,7 +81,7 @@ class CaseValidate {
             name: Joi.string().required(),
             title: Joi.string().required(),
             phone: Joi.string()
-              .pattern(/^\+\d{10}$/)
+              .pattern(/^\+\d{11}$/)
               .required(),
             email: Joi.string().email().required(),
             relationWithDebtor: Joi.string().allow(''),
@@ -92,6 +92,7 @@ class CaseValidate {
           })
         ),
         notes: Joi.string().allow(''),
+        creditorSecurityKey: Joi.string(),
         lastFundedDate: Joi.date().required(),
         historicalRange: Joi.object({
           minimum: Joi.number().strict().required(),
@@ -102,6 +103,8 @@ class CaseValidate {
       lastPaymentDate: Joi.date(),
       paidAmount: Joi.number().strict().required(),
       remaining: Joi.number().strict().required(),
+      paymentToken: Joi.string().allow(''),
+      paymentType: Joi.string().valid('cc', 'ck').allow(''),
       status: Joi.string().required(),
       feePayment: Joi.string().valid(
         'paidViaCash',
@@ -164,6 +167,9 @@ class CaseValidate {
       caseOwner: Joi.string().required(),
       negotiator: Joi.string().required(),
       manager: Joi.string().required(),
+      caseOwnerId: Joi.string().required(),
+      negotiatorId: Joi.string().required(),
+      managerId: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
