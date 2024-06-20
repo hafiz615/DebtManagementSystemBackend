@@ -18,11 +18,8 @@ class PaymentService {
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
-    // let days = !Number(req.query.days) ? 3 : Number(req.query.days);
-    // let currentDate = commonUtil.getCurrentDate();
     let arrayName = String(req.query.arrayName);
     const payments: IPayment[] = await this.getAllPayments(req);
-    console.log(payments);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -61,6 +58,7 @@ class PaymentService {
           paymentsObj[arrayName],
           req
         );
+        counts[arrayName] = paymentsObj[arrayName].length;
         paymentsObj[arrayName] = paymentsObj[arrayName].slice(
           (page - 1) * limit,
           page * limit
@@ -82,8 +80,6 @@ class PaymentService {
     const startDate = new Date(
       new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
     ).toUTCString();
-    // const homeFilters = await paymentUtil.getHomeFilters(req);
-    // console.log(homeFilters);
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         $or: [
@@ -98,24 +94,6 @@ class PaymentService {
           $lte: currentDate,
         },
         caseId: {$ne: null},
-        // $and: [
-        //   {
-        //     $or: [
-        //       {captured: 'Failed'},
-        //       {authorized: 'Failed'},
-        //       {authorized: 'Success'},
-        //       {captured: 'Success'},
-        //       {status: 'Upcoming'},
-        //     ],
-        //   },
-        //   {
-        //     dueDate: {
-        //       $gte: startDate,
-        //       $lte: currentDate,
-        //     },
-        //   },
-        //   {caseId: {$ne: null}},
-        // ],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
       undefined,

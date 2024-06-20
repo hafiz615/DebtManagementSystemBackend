@@ -15,11 +15,8 @@ class PaymentService {
         this.caseRepository = new case_repository_1.CaseRepository();
     }
     async getHomePayments(req) {
-        // let days = !Number(req.query.days) ? 3 : Number(req.query.days);
-        // let currentDate = commonUtil.getCurrentDate();
         let arrayName = String(req.query.arrayName);
         const payments = await this.getAllPayments(req);
-        console.log(payments);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -50,6 +47,7 @@ class PaymentService {
         else {
             if (paymentsObj[arrayName]) {
                 paymentsObj[arrayName] = await payment_util_1.default.searchAndFilterHomePayments(paymentsObj[arrayName], req);
+                counts[arrayName] = paymentsObj[arrayName].length;
                 paymentsObj[arrayName] = paymentsObj[arrayName].slice((page - 1) * limit, page * limit);
             }
         }
@@ -65,8 +63,6 @@ class PaymentService {
         let days = !Number(req.query.days) ? 3 : Number(req.query.days);
         let currentDate = common_util_1.default.getCurrentDate();
         const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
-        // const homeFilters = await paymentUtil.getHomeFilters(req);
-        // console.log(homeFilters);
         return await this.paymentRepository.getAllWithoutPagination({
             $or: [
                 { captured: 'Failed' },
@@ -80,24 +76,6 @@ class PaymentService {
                 $lte: currentDate,
             },
             caseId: { $ne: null },
-            // $and: [
-            //   {
-            //     $or: [
-            //       {captured: 'Failed'},
-            //       {authorized: 'Failed'},
-            //       {authorized: 'Success'},
-            //       {captured: 'Success'},
-            //       {status: 'Upcoming'},
-            //     ],
-            //   },
-            //   {
-            //     dueDate: {
-            //       $gte: startDate,
-            //       $lte: currentDate,
-            //     },
-            //   },
-            //   {caseId: {$ne: null}},
-            // ],
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
