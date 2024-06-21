@@ -239,6 +239,217 @@ class UserService {
   dashboard = async (req: Request): Promise<[boolean, ICase | string]> => {
     const reqTemp: any = req;
     const userId = reqTemp?.id;
+    // const pipeline: mongoose.PipelineStage[] = [
+    //   {
+    //     $match: {
+    //       $or: [
+    //         {caseOwnerId: userId},
+    //         {negotiatorId: userId},
+    //         {managerId: userId},
+    //       ],
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: 'payments',
+    //       localField: '_id',
+    //       foreignField: 'caseId',
+    //       as: 'payments',
+    //     },
+    //   },
+    //   {
+    //     $unwind: {
+    //       path: '$payments',
+    //       preserveNullAndEmptyArrays: true,
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: '$_id',
+    //       caseCode: {$first: '$caseCode'},
+    //       createdAt: {$first: '$createdAt'},
+    //       remaining: {$first: '$remaining'},
+    //       status: {$first: '$status'},
+    //       successfulPayments: {
+    //         $sum: {
+    //           $cond: [{$eq: ['$payments.captured', 'Success']}, 1, 0],
+    //         },
+    //       },
+    //       failedPayments: {
+    //         $sum: {
+    //           $cond: [{$eq: ['$payments.captured', 'Failed']}, 1, 0],
+    //         },
+    //       },
+    //       successfulAuthorizations: {
+    //         $sum: {
+    //           $cond: [{$eq: ['$payments.authorized', 'Success']}, 1, 0],
+    //         },
+    //       },
+    //       failedAuthorizations: {
+    //         $sum: {
+    //           $cond: [{$eq: ['$payments.authorized', 'Failed']}, 1, 0],
+    //         },
+    //       },
+    //       totalCapturedAmount: {
+    //         $sum: {
+    //           $cond: [
+    //             {$eq: ['$payments.captured', 'Success']},
+    //             '$payments.amount',
+    //             0,
+    //           ],
+    //         },
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       paidAmount: {
+    //         $multiply: [
+    //           {
+    //             $divide: ['$totalCapturedAmount', '$remaining'],
+    //           },
+    //           100,
+    //         ],
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $facet: {
+    //       paymentStats: [
+    //         {
+    //           $group: {
+    //             _id: null,
+    //             totalSuccessfulPayments: {$sum: '$successfulPayments'},
+    //             totalFailedPayments: {$sum: '$failedPayments'},
+    //             totalSuccessfulAuthorizations: {
+    //               $sum: '$successfulAuthorizations',
+    //             },
+    //             totalFailedAuthorizations: {$sum: '$failedAuthorizations'},
+    //           },
+    //         },
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             totalSuccessfulPayments: 1,
+    //             totalFailedPayments: 1,
+    //             totalSuccessfulAuthorizations: 1,
+    //             totalFailedAuthorizations: 1,
+    //           },
+    //         },
+    //       ],
+    //       casesByDate: [
+    //         {
+    //           $group: {
+    //             _id: {$dateToString: {format: '%Y-%m-%d', date: '$createdAt'}},
+    //             count: {$sum: 1},
+    //           },
+    //         },
+    //         {
+    //           $sort: {_id: 1},
+    //         },
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             date: '$_id',
+    //             count: 1,
+    //           },
+    //         },
+    //       ],
+    //       paidAmounts: [
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             caseCode: 1,
+    //             paidPercentage: '$paidAmount',
+    //           },
+    //         },
+    //         {$sort: {caseCode: 1}},
+    //       ],
+    //       statusCounts: [
+    //         {
+    //           $group: {
+    //             _id: '$status',
+    //             count: {$sum: 1},
+    //           },
+    //         },
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             label: '$_id',
+    //             count: 1,
+    //           },
+    //         },
+    //         {
+    //           $group: {
+    //             _id: null,
+    //             statuses: {
+    //               $push: {
+    //                 k: '$label',
+    //                 v: '$count',
+    //               },
+    //             },
+    //           },
+    //         },
+    //         {
+    //           $addFields: {
+    //             statuses: {
+    //               $arrayToObject: '$statuses',
+    //             },
+    //           },
+    //         },
+    //         {
+    //           $addFields: {
+    //             statuses: {
+    //               $mergeObjects: [
+    //                 {
+    //                   Canceled: 0,
+    //                   Duplicate: 0,
+    //                   'AF Customer': 0,
+    //                   'Check Back': 0,
+    //                   'Declared Bankrupcy': 0,
+    //                   'On Hold': 0,
+    //                   Graduated: 0,
+    //                   Settled: 0,
+    //                   'On Hold/Settled': 0,
+    //                   '1st payment bounces': 0,
+    //                   'Settled Owes Fees': 0,
+    //                   'One Payment': 0,
+    //                 },
+    //                 '$statuses',
+    //               ],
+    //             },
+    //           },
+    //         },
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             statuses: {
+    //               $objectToArray: '$statuses',
+    //             },
+    //           },
+    //         },
+    //         {
+    //           $unwind: '$statuses',
+    //         },
+    //         {
+    //           $project: {
+    //             label: '$statuses.k',
+    //             count: '$statuses.v',
+    //           },
+    //         },
+    //       ],
+    //     },
+    //   },
+    // ];
+    let startDate = null,
+      endDate = null;
+    if (req.query.filter === 'true') {
+      const filter = req.body.filter;
+      if (filter.date) {
+        startDate = filter.date.start;
+        endDate = filter.date.end;
+      }
+    }
     const pipeline: mongoose.PipelineStage[] = [
       {
         $match: {
@@ -249,6 +460,15 @@ class UserService {
           ],
         },
       },
+      ...(startDate && endDate
+        ? [
+            {
+              $match: {
+                createdAt: {$gte: new Date(startDate), $lte: new Date(endDate)},
+              },
+            },
+          ]
+        : []),
       {
         $lookup: {
           from: 'payments',
@@ -263,6 +483,23 @@ class UserService {
           preserveNullAndEmptyArrays: true,
         },
       },
+      ...(startDate && endDate
+        ? [
+            {
+              $match: {
+                $or: [
+                  {
+                    'payments.dueDate': {
+                      $gte: new Date(startDate),
+                      $lte: new Date(endDate),
+                    },
+                  },
+                  {payments: {$eq: []}}, // Include cases without payments
+                ],
+              },
+            },
+          ]
+        : []),
       {
         $group: {
           _id: '$_id',
@@ -363,7 +600,7 @@ class UserService {
                 paidPercentage: '$paidAmount',
               },
             },
-            {$sort: {caseCode: 1}},
+            {$sort: {caseCode: 1}}, // Ensure consistent ordering by caseCode
           ],
           statusCounts: [
             {

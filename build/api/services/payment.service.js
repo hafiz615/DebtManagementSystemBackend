@@ -79,7 +79,6 @@ class PaymentService {
                 $lte: currentDate,
             };
         }
-        console.log(filters);
         return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],

@@ -96,7 +96,6 @@ class PaymentService {
         $lte: currentDate,
       };
     }
-    console.log(filters);
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
