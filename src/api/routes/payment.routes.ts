@@ -4,7 +4,7 @@ import paymentController from '../controllers/payment/payment.controller';
 
 const router = Router();
 
-router.get(
+router.post(
   '/getHomePayments',
   authorize.validateAuth,
   paymentController.getHomePayments

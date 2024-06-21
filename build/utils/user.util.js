@@ -32,6 +32,33 @@ class UserUtil {
         const invitationLink = `${constants_util_1.default.ACCOUNT_INVITATION_BASE_LINK}?token=${token}`;
         return invitationLink;
     }
+    async getAllUserFilters(req) {
+        const filters = { role: { $ne: 'Admin' }, isDeleted: false };
+        if (req.query.search === 'true') {
+            const text = req.body.text;
+            if (text) {
+                filters['$or'] = [
+                    { name: { $regex: text, $options: 'i' } },
+                    { email: { $regex: text, $options: 'i' } },
+                    { role: { $regex: text, $options: 'i' } },
+                    { SSID: { $regex: text, $options: 'i' } },
+                    { phone: { $regex: text, $options: 'i' } },
+                    { gender: { $regex: text, $options: 'i' } },
+                    { address: { $regex: text, $options: 'i' } },
+                ];
+            }
+        }
+        if (req.query.filter === 'true') {
+            const filter = req.body.filter;
+            if (filter && filter.dateOfBirth) {
+                filters['dateOfBirth'] = {
+                    $gte: filter.dateOfBirth.start,
+                    $lte: filter.dateOfBirth.end,
+                };
+            }
+        }
+        return filters;
+    }
 }
 exports.default = new UserUtil();
 //# sourceMappingURL=user.util.js.map

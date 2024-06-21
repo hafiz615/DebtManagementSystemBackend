@@ -667,8 +667,10 @@ class CaseUtil {
       }
       if (
         filters.lastPaymentDate &&
-        (new Date(caseObj.lastPaymentDate) < filters.lastPaymentDate.start ||
-          new Date(caseObj.lastPaymentDate) > filters.lastPaymentDate.end)
+        (new Date(caseObj.lastPaymentDate) <
+          new Date(filters.lastPaymentDate.start) ||
+          new Date(caseObj.lastPaymentDate) >
+            new Date(filters.lastPaymentDate.end))
       ) {
         return false;
       }
@@ -682,9 +684,9 @@ class CaseUtil {
       if (
         filters.upcomingPaymentDate &&
         (new Date(caseObj.upcomingPaymentDate) <
-          filters.upcomingPaymentDate.start ||
+          new Date(filters.upcomingPaymentDate.start) ||
           new Date(caseObj.upcomingPaymentDate) >
-            filters.upcomingPaymentDate.end)
+            new Date(filters.upcomingPaymentDate.end))
       ) {
         return false;
       }
@@ -710,7 +712,6 @@ class CaseUtil {
       const textMatches = !text || applyTextSearch(caseObj, text);
       const filtersMatch =
         Object.keys(filters).length === 0 || applyFilters(caseObj, filters);
-      console.log(textMatches, '   ', filtersMatch);
       return textMatches && filtersMatch;
     });
 
@@ -752,8 +753,10 @@ class CaseUtil {
       }
       if (
         filters.lastPaymentDate &&
-        (new Date(caseObj.lastPaymentDate) < filters.lastPaymentDate.start ||
-          new Date(caseObj.lastPaymentDate) > filters.lastPaymentDate.end)
+        (new Date(caseObj.lastPaymentDate) <
+          new Date(filters.lastPaymentDate.start) ||
+          new Date(caseObj.lastPaymentDate) >
+            new Date(filters.lastPaymentDate.end))
       ) {
         return false;
       }
@@ -767,9 +770,9 @@ class CaseUtil {
       if (
         filters.upcomingPaymentDate &&
         (new Date(caseObj.upcomingPaymentDate) <
-          filters.upcomingPaymentDate.start ||
+          new Date(filters.upcomingPaymentDate.start) ||
           new Date(caseObj.upcomingPaymentDate) >
-            filters.upcomingPaymentDate.end)
+            new Date(filters.upcomingPaymentDate.end))
       ) {
         return false;
       }

@@ -67,10 +67,10 @@ class DebtorService {
                 debtor: req.params.id,
             });
         }
-        clientDetails.caseHistory = clientDetails.caseHistory.slice((page - 1) * limit, page * limit);
         if (!clientDetails) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
+        clientDetails.caseHistory = clientDetails?.caseHistory?.slice((page - 1) * limit, page * limit);
         return [true, { ...clientDetails, debtorTotalCases: casesCount }];
     }
     async searchListing(req) {
@@ -174,46 +174,51 @@ class DebtorService {
         return [false, 'Unable to create customer vault'];
     }
     async retryAuth(paymentId) {
-        const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
-        if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
-            const response = await this.paymentService.authorizeCreditCard(payment.amount, payment.caseDetails.debtorDetails.customerVaultId);
-            const responseNum = new url_1.URLSearchParams(response).get('response');
-            const responseText = new url_1.URLSearchParams(response).get('responsetext');
-            const paymentLogging = new paymentLogging_repomodel_1.PaymentLogging();
-            const updateObjPayment = {};
-            if (responseNum === '1') {
-                const transactionId = new url_1.URLSearchParams(response).get('transactionid');
-                console.log(transactionId, 'transactionId');
-                updateObjPayment['debtorTransId'] = transactionId;
-                updateObjPayment['authorized'] = 'Success';
-                updateObjPayment['status'] = 'Pending';
-                paymentLogging.successReason = responseText;
-                return [false, 'Unable to create customer vault'];
-            }
-            else {
-                updateObjPayment['failedReasonAuthorization'] = responseText;
-                paymentLogging.failReason = responseText;
-                console.log('send email through template');
-            }
-            await this.paymentRepository.updateById(payment._id, updateObjPayment);
-            paymentLogging.caseId = String(payment.caseId);
-            paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-            paymentLogging.paymentId = String(payment._id);
-            paymentLogging.paymentType = 'Credit Auth';
-            paymentLogging.debtor = String(payment.caseId.debtor._id);
-            paymentLogging.creditor = String(payment.caseId.creditor._id);
-            await this.paymentLoggingRepository.create(paymentLogging);
-        }
-        return [false, 'Unable to create customer vault'];
-    }
-    async retryCapture(paymentId) {
+        let result = false;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
         let response;
-        if (payment.caseDetails.debtorDetails.paymentType === 'cc') {
-            response = await this.paymentService.captureCreditCard(payment.caseDetails.debtorDetails.customerVaultId, payment.debtorTransId, payment.caseDetails.creditorDetails.creditorSecurityKey);
+        if (payment.caseId.debtor.paymentType === 'cc') {
+            response = await this.paymentService.authorizeCreditCard(payment.amount, payment.caseId.debtor.customerVaultId);
         }
-        if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
-            response = await this.paymentService.achCredit(payment.caseDetails.debtorDetails.customerVaultId, payment.amount, payment.caseDetails.creditorDetails.creditorSecurityKey);
+        const responseNum = new url_1.URLSearchParams(response).get('response');
+        const responseText = new url_1.URLSearchParams(response).get('responsetext');
+        const paymentLogging = new paymentLogging_repomodel_1.PaymentLogging();
+        const updateObjPayment = {};
+        if (responseNum === '1') {
+            const transactionId = new url_1.URLSearchParams(response).get('transactionid');
+            console.log(transactionId, 'transactionId');
+            updateObjPayment['debtorTransId'] = transactionId;
+            updateObjPayment['authorized'] = 'Success';
+            updateObjPayment['status'] = 'Pending';
+            paymentLogging.successReason = responseText;
+            result = true;
+        }
+        else {
+            updateObjPayment['failedReasonAuthorization'] = responseText;
+            paymentLogging.failReason = responseText;
+            console.log('send email through template');
+        }
+        await this.paymentRepository.updateById(payment._id, updateObjPayment);
+        paymentLogging.caseId = String(payment.caseId);
+        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
+        paymentLogging.paymentId = String(payment._id);
+        paymentLogging.paymentType = 'Credit Auth';
+        paymentLogging.debtor = String(payment.caseId.debtor._id);
+        paymentLogging.creditor = String(payment.caseId.creditor._id);
+        await this.paymentLoggingRepository.create(paymentLogging);
+        if (result)
+            return [true, 'Payment authorized successfully!'];
+        return [false, 'Unable to authorize payment!'];
+    }
+    async retryCapture(paymentId) {
+        let result = false;
+        const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
+        let response;
+        if (payment.caseId.debtor.paymentType === 'cc') {
+            response = await this.paymentService.captureCreditCard(payment.caseId.debtor.customerVaultId, payment.debtorTransId, payment.caseId.creditor.creditorSecurityKey);
+        }
+        if (payment.caseId.debtor.paymentType === 'ck') {
+            response = await this.paymentService.achCredit(payment.caseId.debtor.customerVaultId, payment.amount, payment.caseId.creditor.creditorSecurityKey);
         }
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
@@ -223,10 +228,11 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Success';
-            if (payment.caseDetails.debtorDetails.paymentType === 'ck') {
+            if (payment.caseId.debtor.paymentType === 'ck') {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
             paymentLogging.successReason = responseText;
+            result = true;
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
@@ -238,9 +244,12 @@ class DebtorService {
         paymentLogging.createdAt = common_util_1.default.getCurrentDate();
         paymentLogging.paymentId = String(payment._id);
         paymentLogging.paymentType = 'Credit Capture';
-        paymentLogging.debtor = String(payment.caseDetails.debtor);
-        paymentLogging.creditor = String(payment.caseDetails.creditor);
+        paymentLogging.debtor = String(payment.caseId.debtor._id);
+        paymentLogging.creditor = String(payment.caseId.creditor._id);
         await this.paymentLoggingRepository.create(paymentLogging);
+        if (result)
+            return [true, 'Payment captured successfully!'];
+        return [false, 'Unable to capture payment!'];
     }
 }
 exports.default = DebtorService;

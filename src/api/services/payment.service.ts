@@ -18,10 +18,8 @@ class PaymentService {
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
-    let days = !Number(req.query.days) ? 3 : Number(req.query.days);
-    let currentDate = commonUtil.getCurrentDate();
     let arrayName = String(req.query.arrayName);
-    const payments: IPayment[] = await this.getAllPayments(currentDate, days);
+    const payments: IPayment[] = await this.getAllPayments(req);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -56,6 +54,11 @@ class PaymentService {
       }
     } else {
       if (paymentsObj[arrayName]) {
+        paymentsObj[arrayName] = await paymentUtil.searchAndFilterHomePayments(
+          paymentsObj[arrayName],
+          req
+        );
+        counts[arrayName] = paymentsObj[arrayName].length;
         paymentsObj[arrayName] = paymentsObj[arrayName].slice(
           (page - 1) * limit,
           page * limit
@@ -71,31 +74,30 @@ class PaymentService {
     ];
   }
 
-  private async getAllPayments(currentDate: string, days: number) {
-    const startDate = new Date(
-      new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
-    ).toUTCString();
+  private async getAllPayments(req: Request) {
+    let days = Number(req.query.days);
+    const filters = {
+      $or: [
+        {captured: 'Failed'},
+        {authorized: 'Failed'},
+        {authorized: 'Success'},
+        {captured: 'Success'},
+        {status: 'Upcoming'},
+      ],
+      caseId: {$ne: null},
+    };
+    if (days && (days === 3 || days === 5 || days === 7)) {
+      let currentDate = commonUtil.getCurrentDate();
+      const startDate = new Date(
+        new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
+      ).toUTCString();
+      filters['dueDate'] = {
+        $gte: startDate,
+        $lte: currentDate,
+      };
+    }
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
-      {
-        $and: [
-          {
-            $or: [
-              {captured: 'Failed'},
-              {authorized: 'Failed'},
-              {authorized: 'Success'},
-              {captured: 'Success'},
-              {status: 'Upcoming'},
-            ],
-          },
-          {
-            dueDate: {
-              $gte: startDate,
-              $lte: currentDate,
-            },
-          },
-          {caseId: {$ne: null}},
-        ],
-      },
+      filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
       undefined,
       {createdAt: -1},

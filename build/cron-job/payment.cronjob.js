@@ -29,7 +29,7 @@ class CronJob {
             const payments = await payment_util_1.default.getAllCronJobPayments();
             await this.processPayments(payments);
         });
-        node_cron_1.default.schedule('*/30 * * * *', async () => {
+        node_cron_1.default.schedule('30 * * * *', async () => {
             console.log('Running a task every 30 min of an hour');
             const cronId = (0, uuid_1.v4)();
             const debtors = await this.debtorRepository.getAllWithoutPagination({}, undefined, '+totalCommission +commissionPaid +weeklyCommission +weeklyCommissionPaid +weeklyCommissionDate +commissionPaymentId', { createdAt: 1 });
