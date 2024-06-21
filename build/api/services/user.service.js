@@ -19,11 +19,9 @@ const case_repository_1 = require("../repository/case/case.repository");
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
-            let users = await this.userRepository.getAll({ role: { $ne: 'Admin' }, isDeleted: false }, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
-            const count = await this.userRepository.getCount({
-                role: { $ne: 'Admin' },
-                isDeleted: false,
-            });
+            const filters = await user_util_1.default.getAllUserFilters(req);
+            let users = await this.userRepository.getAll(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
+            const count = await this.userRepository.getCount(filters);
             if (!users.length) {
                 return [false, constants_util_2.default.notFoundMessage('Users')];
             }

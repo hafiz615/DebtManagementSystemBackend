@@ -60,10 +60,8 @@ class PaymentService {
         ];
     }
     async getAllPayments(req) {
-        let days = !Number(req.query.days) ? 3 : Number(req.query.days);
-        let currentDate = common_util_1.default.getCurrentDate();
-        const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
-        return await this.paymentRepository.getAllWithoutPagination({
+        let days = Number(req.query.days);
+        const filters = {
             $or: [
                 { captured: 'Failed' },
                 { authorized: 'Failed' },
@@ -71,12 +69,18 @@ class PaymentService {
                 { captured: 'Success' },
                 { status: 'Upcoming' },
             ],
-            dueDate: {
+            caseId: { $ne: null },
+        };
+        if (days && (days === 3 || days === 5 || days === 7)) {
+            let currentDate = common_util_1.default.getCurrentDate();
+            const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
+            filters['dueDate'] = {
                 $gte: startDate,
                 $lte: currentDate,
-            },
-            caseId: { $ne: null },
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
+            };
+        }
+        console.log(filters);
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: {

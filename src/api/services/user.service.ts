@@ -181,8 +181,9 @@ class UserService {
   }
 
   getAllUsers = async (req: Request): Promise<[boolean, {} | string]> => {
+    const filters = await userUtil.getAllUserFilters(req);
     let users = await this.userRepository.getAll<IUser>(
-      {role: {$ne: 'Admin'}, isDeleted: false},
+      filters,
       undefined,
       undefined,
       {createdAt: -1},
@@ -191,10 +192,7 @@ class UserService {
       Number(req.query.page),
       Number(req.query.limit)
     );
-    const count = await this.userRepository.getCount<IUser>({
-      role: {$ne: 'Admin'},
-      isDeleted: false,
-    });
+    const count = await this.userRepository.getCount<IUser>(filters);
     if (!users.length) {
       return [false, constantsUtil.notFoundMessage('Users')];
     }
