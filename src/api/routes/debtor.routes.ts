@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import debtorController from '../controllers/debtor/debtor.controller';
-import debtor from '../../middleware/validators/debtor.middleware';
+import debtor from '../../middleware/validators/debtor.validate';
 
 const router = Router();
 

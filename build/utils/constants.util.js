@@ -34,6 +34,8 @@ exports.default = {
         ROLE_ACCESS: 'You are not authorized to perform this action!',
         PAYMENT_CALCULATION_ERROR: 'Payment calculation is not correct!',
         INVALID_FIELD: ' is invalid',
+        STATUS_PIPELINE_EXIST: 'The status already exist in pipeline',
+        PIPELINE_DELETE_STATUS_ERROR: 'All statuses must be deleted to delete pipeline',
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
     ACCOUNT_INVITATION_BASE_LINK: 'https://debt-management-system-front-end.vercel.app/set-password',

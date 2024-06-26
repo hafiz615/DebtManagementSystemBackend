@@ -8,7 +8,6 @@ const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const database_config_1 = require("./config/database.config");
 const base_route_1 = __importDefault(require("./api/routes/base.route"));
-const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -27,7 +26,7 @@ class App {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
         // paymentCronjob.processPayments();
-        payment_cronjob_1.default.startCronJob();
+        // paymentCronjob.startCronJob();
     }
 }
 const app = new App();
