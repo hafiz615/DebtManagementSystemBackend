@@ -24,7 +24,7 @@ class PipelineStatusService {
     }
     async getAllPipelines(req) {
         const result = await this.pipelineStatusRepository.getAllWithoutPagination();
-        if (!result) {
+        if (!result.length) {
             return [false, constants_util_1.default.notFoundMessage('pipelines')];
         }
         return [true, result];
@@ -47,9 +47,7 @@ class PipelineStatusService {
         return [true, result];
     }
     async getPipelineById(req) {
-        const result = await this.pipelineStatusRepository.getOne({
-            _id: req.params.id,
-        });
+        const result = await this.pipelineStatusRepository.getById(req.params.id);
         if (!result) {
             return [false, constants_util_1.default.notFoundMessage('pipeline')];
         }

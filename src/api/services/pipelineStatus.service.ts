@@ -32,7 +32,7 @@ class PipelineStatusService {
   ): Promise<[boolean, IPipelineStatus[] | string]> {
     const result =
       await this.pipelineStatusRepository.getAllWithoutPagination<IPipelineStatus>();
-    if (!result) {
+    if (!result.length) {
       return [false, constantsUtil.notFoundMessage('pipelines')];
     }
     return [true, result];
@@ -68,9 +68,9 @@ class PipelineStatusService {
   async getPipelineById(
     req: Request
   ): Promise<[boolean, IPipelineStatus | string]> {
-    const result = await this.pipelineStatusRepository.getOne<IPipelineStatus>({
-      _id: req.params.id,
-    });
+    const result = await this.pipelineStatusRepository.getById<IPipelineStatus>(
+      req.params.id
+    );
     if (!result) {
       return [false, constantsUtil.notFoundMessage('pipeline')];
     }

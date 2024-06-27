@@ -34,6 +34,7 @@ export default {
     PAYMENT_CALCULATION_ERROR: 'Payment calculation is not correct!',
     INVALID_FIELD: ' is invalid',
     STATUS_PIPELINE_EXIST: 'The status already exist in pipeline',
+    STATUS_CASE_EXIST: 'This status already exist',
     PIPELINE_DELETE_STATUS_ERROR:
       'All statuses must be deleted to delete pipeline',
   },

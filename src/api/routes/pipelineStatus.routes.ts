@@ -6,8 +6,8 @@ const router = Router();
 
 router.post(
   '/createPipeline',
-  pipelineStatusValidate.addPipeline,
   authorize.validateAuth,
+  pipelineStatusValidate.addPipeline,
   pipelineStatusController.createPipeline
 );
 router.get(
@@ -27,8 +27,8 @@ router.get(
 );
 router.post(
   '/updatePipeline/:id',
-  pipelineStatusValidate.addPipeline,
   authorize.validateAuth,
+  pipelineStatusValidate.addPipeline,
   pipelineStatusController.updatePipeline
 );
 router.delete(
@@ -39,11 +39,11 @@ router.delete(
 
 router.post(
   '/updateStatusPipeline/:id',
-  pipelineStatusValidate.updateStatusPipeline,
   authorize.validateAuth,
+  pipelineStatusValidate.updateStatusPipeline,
   pipelineStatusController.updateStatusPipeline
 );
-router.delete(
+router.post(
   '/deleteStatusPipeline/:id',
   pipelineStatusValidate.deleteStatusPipeline,
   authorize.validateAuth,
