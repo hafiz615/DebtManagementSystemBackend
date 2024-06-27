@@ -38,7 +38,7 @@ class StatusController {
       const response = await this.statusService.addStatus(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -83,7 +83,7 @@ class StatusController {
       const response = await this.statusService.updateStatus(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -105,7 +105,7 @@ class StatusController {
       const response = await this.statusService.updateStatusArray(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -127,7 +127,7 @@ class StatusController {
       const response = await this.statusService.deleteStatus(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(

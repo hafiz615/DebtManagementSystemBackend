@@ -61,7 +61,7 @@ class PipelineStatusController {
       const response = await this.pipelineStatusService.addStatusPipeline(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -105,7 +105,7 @@ class PipelineStatusController {
       const response = await this.pipelineStatusService.updatePipeline(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -127,7 +127,7 @@ class PipelineStatusController {
       const response = await this.pipelineStatusService.deletePipeline(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -150,7 +150,7 @@ class PipelineStatusController {
         await this.pipelineStatusService.updateStatusPipeline(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -173,7 +173,7 @@ class PipelineStatusController {
         await this.pipelineStatusService.deleteStatusPipeline(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(

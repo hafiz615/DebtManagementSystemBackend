@@ -55,7 +55,7 @@ class PipelineStatusController {
                 const response = await this.pipelineStatusService.addStatusPipeline(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.OK)
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
@@ -95,7 +95,7 @@ class PipelineStatusController {
                 const response = await this.pipelineStatusService.updatePipeline(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.OK)
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
@@ -115,7 +115,7 @@ class PipelineStatusController {
                 const response = await this.pipelineStatusService.deletePipeline(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.OK)
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
@@ -135,7 +135,7 @@ class PipelineStatusController {
                 const response = await this.pipelineStatusService.updateStatusPipeline(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.OK)
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
@@ -155,7 +155,7 @@ class PipelineStatusController {
                 const response = await this.pipelineStatusService.deleteStatusPipeline(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.OK)
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
