@@ -239,6 +239,15 @@ class UserService {
   dashboard = async (req: Request): Promise<[boolean, ICase | string]> => {
     const reqTemp: any = req;
     const userId = reqTemp?.id;
+    let startDate = null,
+      endDate = null;
+    if (req.query.filter === 'true') {
+      const filter = req.body.filter;
+      if (filter.date) {
+        startDate = filter.date.start;
+        endDate = filter.date.end;
+      }
+    }
     // const pipeline: mongoose.PipelineStage[] = [
     //   {
     //     $match: {
@@ -249,6 +258,15 @@ class UserService {
     //       ],
     //     },
     //   },
+    //   ...(startDate && endDate
+    //     ? [
+    //         {
+    //           $match: {
+    //             createdAt: {$gte: new Date(startDate), $lte: new Date(endDate)},
+    //           },
+    //         },
+    //       ]
+    //     : []),
     //   {
     //     $lookup: {
     //       from: 'payments',
@@ -263,6 +281,23 @@ class UserService {
     //       preserveNullAndEmptyArrays: true,
     //     },
     //   },
+    //   ...(startDate && endDate
+    //     ? [
+    //         {
+    //           $match: {
+    //             $or: [
+    //               {
+    //                 'payments.dueDate': {
+    //                   $gte: new Date(startDate),
+    //                   $lte: new Date(endDate),
+    //                 },
+    //               },
+    //               {payments: {$eq: []}}, // Include cases without payments
+    //             ],
+    //           },
+    //         },
+    //       ]
+    //     : []),
     //   {
     //     $group: {
     //       _id: '$_id',
@@ -304,12 +339,18 @@ class UserService {
     //   {
     //     $addFields: {
     //       paidAmount: {
-    //         $multiply: [
-    //           {
-    //             $divide: ['$totalCapturedAmount', '$remaining'],
+    //         $cond: {
+    //           if: {$eq: ['$remaining', 0]},
+    //           then: 0,
+    //           else: {
+    //             $multiply: [
+    //               {
+    //                 $divide: ['$totalCapturedAmount', '$remaining'],
+    //               },
+    //               100,
+    //             ],
     //           },
-    //           100,
-    //         ],
+    //         },
     //       },
     //     },
     //   },
@@ -363,7 +404,7 @@ class UserService {
     //             paidPercentage: '$paidAmount',
     //           },
     //         },
-    //         {$sort: {caseCode: 1}},
+    //         {$sort: {caseCode: 1}}, // Ensure consistent ordering by caseCode
     //       ],
     //       statusCounts: [
     //         {
@@ -441,15 +482,6 @@ class UserService {
     //     },
     //   },
     // ];
-    let startDate = null,
-      endDate = null;
-    if (req.query.filter === 'true') {
-      const filter = req.body.filter;
-      if (filter.date) {
-        startDate = filter.date.start;
-        endDate = filter.date.end;
-      }
-    }
     const pipeline: mongoose.PipelineStage[] = [
       {
         $match: {
@@ -541,12 +573,18 @@ class UserService {
       {
         $addFields: {
           paidAmount: {
-            $multiply: [
-              {
-                $divide: ['$totalCapturedAmount', '$remaining'],
+            $cond: {
+              if: {$eq: ['$remaining', 0]},
+              then: 0, // or null, or any other appropriate value
+              else: {
+                $multiply: [
+                  {
+                    $divide: ['$totalCapturedAmount', '$remaining'],
+                  },
+                  100,
+                ],
               },
-              100,
-            ],
+            },
           },
         },
       },
@@ -614,64 +652,6 @@ class UserService {
                 _id: 0,
                 label: '$_id',
                 count: 1,
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                statuses: {
-                  $push: {
-                    k: '$label',
-                    v: '$count',
-                  },
-                },
-              },
-            },
-            {
-              $addFields: {
-                statuses: {
-                  $arrayToObject: '$statuses',
-                },
-              },
-            },
-            {
-              $addFields: {
-                statuses: {
-                  $mergeObjects: [
-                    {
-                      Canceled: 0,
-                      Duplicate: 0,
-                      'AF Customer': 0,
-                      'Check Back': 0,
-                      'Declared Bankrupcy': 0,
-                      'On Hold': 0,
-                      Graduated: 0,
-                      Settled: 0,
-                      'On Hold/Settled': 0,
-                      '1st payment bounces': 0,
-                      'Settled Owes Fees': 0,
-                      'One Payment': 0,
-                    },
-                    '$statuses',
-                  ],
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                statuses: {
-                  $objectToArray: '$statuses',
-                },
-              },
-            },
-            {
-              $unwind: '$statuses',
-            },
-            {
-              $project: {
-                label: '$statuses.k',
-                count: '$statuses.v',
               },
             },
           ],
