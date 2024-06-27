@@ -15,6 +15,7 @@ const common_util_1 = __importDefault(require("../utils/common.util"));
 const uuid_1 = require("uuid");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
+const mongoose_1 = __importDefault(require("mongoose"));
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -22,6 +23,27 @@ class CronJob {
         this.paymentService = new payment_service_1.default();
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+    }
+    async testCron() {
+        let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
+        const options = {
+            retryWrites: true,
+            autoIndex: true, // build indexes true or false
+        };
+        const conn = mongoose_1.default.createConnection(dbconfig, options);
+        console.log(conn.readyState, 'kjkjk');
+        conn.on('connected', () => {
+            console.log('Mongoose connection is open');
+            // Check if the connection is established
+            const isConnected = conn.readyState === 1;
+            console.log('Is connected:', isConnected);
+        });
+        setTimeout(async () => {
+            await conn.close(true);
+            console.log('done');
+            console.log(conn.readyState);
+        }, 10000);
+        console.log(conn.readyState);
     }
     startCronJob() {
         node_cron_1.default.schedule('0 * * * *', async () => {

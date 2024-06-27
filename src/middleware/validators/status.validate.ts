@@ -64,7 +64,7 @@ class StatusValidate {
   async deleteStatus(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       original: Joi.string().required(),
-      update: Joi.string().allow(''),
+      update: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

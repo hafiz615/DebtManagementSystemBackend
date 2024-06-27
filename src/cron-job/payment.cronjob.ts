@@ -13,6 +13,7 @@ import {v4 as uuidv4} from 'uuid';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {Payment} from '../database/repomodels/payment.repomodel';
+import mongoose from 'mongoose';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -27,6 +28,29 @@ class CronJob {
     this.paymentService = new PaymentService();
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.debtorRepository = new DebtorRepository();
+  }
+  async testCron() {
+    let dbconfig =
+      'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
+    const options = {
+      retryWrites: true,
+      autoIndex: true, // build indexes true or false
+    };
+    const conn = mongoose.createConnection(dbconfig, options);
+    console.log(conn.readyState, 'kjkjk');
+    conn.on('connected', () => {
+      console.log('Mongoose connection is open');
+      // Check if the connection is established
+      const isConnected = conn.readyState === 1;
+      console.log('Is connected:', isConnected);
+    });
+    setTimeout(async () => {
+      await conn.close(true);
+      console.log('done');
+      console.log(conn.readyState);
+    }, 10000);
+
+    console.log(conn.readyState);
   }
   startCronJob() {
     cron.schedule('0 * * * *', async () => {

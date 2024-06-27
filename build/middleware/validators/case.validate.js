@@ -145,9 +145,7 @@ class CaseValidate {
     }
     async validateCaseAbout(req, res, next) {
         const schema = joi_1.default.object({
-            status: joi_1.default.string()
-                .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
-                .required(),
+            status: joi_1.default.string().required(),
             caseOwner: joi_1.default.string().required(),
             negotiator: joi_1.default.string().required(),
             manager: joi_1.default.string().required(),

@@ -7,9 +7,11 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const status_repository_1 = require("../repository/status/status.repository");
 const status_repomodel_1 = require("../../database/repomodels/status.repomodel");
 const lodash_1 = require("lodash");
+const case_repository_1 = require("../repository/case/case.repository");
 class StatusService {
     constructor() {
         this.statusRepository = new status_repository_1.StatusRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
     }
     async getCaseStatuses(req) {
         const result = await this.statusRepository.getAllWithoutPagination();
@@ -77,35 +79,25 @@ class StatusService {
         return [true, result];
     }
     async deleteStatus(req) {
-        let result = null;
         const originalStatusCap = (0, lodash_1.capitalize)(req.body.original);
-        if (!req.body.update) {
-            result = await this.deleteStatusQuery(req.params.id, originalStatusCap);
+        const updateStatusCap = (0, lodash_1.capitalize)(req.body.update);
+        const findStatus = await this.statusRepository.getById(req.params.id);
+        if (!findStatus) {
+            return [false, constants_util_1.default.notFoundMessage('statuses')];
         }
-        else {
-            const updateStatusCap = (0, lodash_1.capitalize)(req.body.update);
-            const findStatus = await this.statusRepository.getById(req.params.id);
-            if (!findStatus) {
-                return [false, constants_util_1.default.notFoundMessage('statuses')];
-            }
-            const statusArr = findStatus.status;
-            const originalIndex = statusArr.findIndex(item => item === originalStatusCap);
-            const updateIndex = statusArr.findIndex(item => item === updateStatusCap);
-            statusArr[originalIndex] = updateStatusCap;
-            statusArr.splice(updateIndex, 1);
-            result = await this.statusRepository.updateById(req.params.id, {
-                status: statusArr,
-            });
-        }
+        const statusArr = findStatus.status;
+        const originalIndex = statusArr.findIndex(item => item === originalStatusCap);
+        const updateIndex = statusArr.findIndex(item => item === updateStatusCap);
+        statusArr[originalIndex] = updateStatusCap;
+        statusArr.splice(updateIndex, 1);
+        const result = await this.statusRepository.updateById(req.params.id, {
+            status: statusArr,
+        });
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('status')];
         }
+        await this.caseRepository.updateMany({ status: req.body.original }, { status: req.body.update });
         return [true, result];
-    }
-    async deleteStatusQuery(id, original) {
-        return await this.statusRepository.updateById(id, {
-            $pull: { status: original },
-        });
     }
 }
 exports.default = StatusService;
