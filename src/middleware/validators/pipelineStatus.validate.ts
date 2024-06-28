@@ -30,6 +30,25 @@ class PipelineStatusValidate {
     }
   }
 
+  async addStatusPipeline(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      name: Joi.string().required(),
+      type: Joi.string().valid('Active', 'Won', 'Lost').required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
   async updateStatusPipeline(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       original: Joi.object({

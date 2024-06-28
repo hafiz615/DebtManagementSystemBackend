@@ -4,6 +4,7 @@ import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineSta
 import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
 import {PipelineStatus} from '../../database/repomodels/pipelineStatus.repomodel';
 import {DataCopier} from '../../utils/dataCopier.util';
+import {capitalize} from 'lodash';
 
 class PipelineStatusService {
   private pipelineStatusRepository: PipelineStatusRepository;
@@ -15,7 +16,8 @@ class PipelineStatusService {
   ): Promise<[boolean, IPipelineStatus | string]> {
     const reqTemp: any = req;
     const newPipeline = new PipelineStatus();
-    newPipeline.userId = reqTemp.id;
+    req.body.userId = reqTemp.id;
+    req.body.pipeline = capitalize(req.body.pipeline);
     const validatedPipeline = DataCopier.copy(newPipeline, req.body);
     const result =
       await this.pipelineStatusRepository.create<IPipelineStatus>(
@@ -41,24 +43,21 @@ class PipelineStatusService {
   async addStatusPipeline(
     req: Request
   ): Promise<[boolean, IPipelineStatus | string]> {
-    const {name, type} = req.body.status;
-    if (!name || !type) {
-      return [false, 'Body is invalid'];
-    }
+    req.body.name = capitalize(req.body.name);
     const findStatus =
       await this.pipelineStatusRepository.getById<IPipelineStatus>(
         req.params.id,
         {
-          status: {$elemMatch: {name: name}},
+          status: {$elemMatch: {name: req.body.name}},
         }
       );
-    if (findStatus.status) {
+    if (findStatus && findStatus.status) {
       return [false, constantsUtil.Messages.STATUS_PIPELINE_EXIST];
     }
     const result =
       await this.pipelineStatusRepository.updateById<IPipelineStatus>(
         req.params.id,
-        {$addToSet: {status: req.body.status}}
+        {$addToSet: {status: req.body}}
       );
     if (!result) {
       return [false, constantsUtil.notFoundMessage('pipeline')];
@@ -79,7 +78,7 @@ class PipelineStatusService {
   async updatePipeline(
     req: Request
   ): Promise<[boolean, IPipelineStatus | string]> {
-    delete req.body.status;
+    req.body.pipeline = capitalize(req.body.pipeline);
     const result =
       await this.pipelineStatusRepository.updateById<IPipelineStatus>(
         req.params.id,
@@ -114,15 +113,16 @@ class PipelineStatusService {
   async updateStatusPipeline(
     req: Request
   ): Promise<[boolean, IPipelineStatus | string]> {
-    const {name, type} = req.body.update;
+    req.body.update.name = capitalize(req.body.update.name);
+    req.body.original.name = capitalize(req.body.original.name);
     const findStatus =
       await this.pipelineStatusRepository.getById<IPipelineStatus>(
         req.params.id,
         {
-          status: {$elemMatch: {name: name}},
+          status: {$elemMatch: {name: req.body.update.name}},
         }
       );
-    if (findStatus.status) {
+    if (findStatus && findStatus.status) {
       return [false, constantsUtil.Messages.STATUS_PIPELINE_EXIST];
     }
     const result =
@@ -142,10 +142,12 @@ class PipelineStatusService {
   async deleteStatusPipeline(
     req: Request
   ): Promise<[boolean, IPipelineStatus | string]> {
+    req.body.original.name = capitalize(req.body.original.name);
     let result = null;
     if (!Object.keys(req.body.update).length) {
       result = await this.deleteStatus(req.params.id, req.body.original);
     } else {
+      req.body.update.name = capitalize(req.body.update.name);
       const pipeline =
         await this.pipelineStatusRepository.getById<IPipelineStatus>(
           req.params.id

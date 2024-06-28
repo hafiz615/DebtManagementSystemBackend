@@ -18,6 +18,7 @@ router.get(
 router.post(
   '/addStatusPipeline/:id',
   authorize.validateAuth,
+  pipelineStatusValidate.addStatusPipeline,
   pipelineStatusController.addStatusPipeline
 );
 router.get(
@@ -45,8 +46,8 @@ router.post(
 );
 router.post(
   '/deleteStatusPipeline/:id',
-  pipelineStatusValidate.deleteStatusPipeline,
   authorize.validateAuth,
+  pipelineStatusValidate.deleteStatusPipeline,
   pipelineStatusController.deleteStatusPipeline
 );
 

@@ -7,6 +7,7 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
 const pipelineStatus_repomodel_1 = require("../../database/repomodels/pipelineStatus.repomodel");
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
+const lodash_1 = require("lodash");
 class PipelineStatusService {
     constructor() {
         this.pipelineStatusRepository = new pipelineStatus_repository_1.PipelineStatusRepository();
@@ -14,7 +15,8 @@ class PipelineStatusService {
     async createPipeline(req) {
         const reqTemp = req;
         const newPipeline = new pipelineStatus_repomodel_1.PipelineStatus();
-        newPipeline.userId = reqTemp.id;
+        req.body.userId = reqTemp.id;
+        req.body.pipeline = (0, lodash_1.capitalize)(req.body.pipeline);
         const validatedPipeline = dataCopier_util_1.DataCopier.copy(newPipeline, req.body);
         const result = await this.pipelineStatusRepository.create(validatedPipeline);
         if (!result) {
@@ -30,17 +32,14 @@ class PipelineStatusService {
         return [true, result];
     }
     async addStatusPipeline(req) {
-        const { name, type } = req.body.status;
-        if (!name || !type) {
-            return [false, 'Body is invalid'];
-        }
+        req.body.name = (0, lodash_1.capitalize)(req.body.name);
         const findStatus = await this.pipelineStatusRepository.getById(req.params.id, {
-            status: { $elemMatch: { name: name } },
+            status: { $elemMatch: { name: req.body.name } },
         });
-        if (findStatus.status) {
+        if (findStatus && findStatus.status) {
             return [false, constants_util_1.default.Messages.STATUS_PIPELINE_EXIST];
         }
-        const result = await this.pipelineStatusRepository.updateById(req.params.id, { $addToSet: { status: req.body.status } });
+        const result = await this.pipelineStatusRepository.updateById(req.params.id, { $addToSet: { status: req.body } });
         if (!result) {
             return [false, constants_util_1.default.notFoundMessage('pipeline')];
         }
@@ -54,7 +53,7 @@ class PipelineStatusService {
         return [true, result];
     }
     async updatePipeline(req) {
-        delete req.body.status;
+        req.body.pipeline = (0, lodash_1.capitalize)(req.body.pipeline);
         const result = await this.pipelineStatusRepository.updateById(req.params.id, req.body);
         if (!result) {
             return [false, constants_util_1.default.failureUpdateMessage('pipeline')];
@@ -78,11 +77,12 @@ class PipelineStatusService {
         return [true, result];
     }
     async updateStatusPipeline(req) {
-        const { name, type } = req.body.update;
+        req.body.update.name = (0, lodash_1.capitalize)(req.body.update.name);
+        req.body.original.name = (0, lodash_1.capitalize)(req.body.original.name);
         const findStatus = await this.pipelineStatusRepository.getById(req.params.id, {
-            status: { $elemMatch: { name: name } },
+            status: { $elemMatch: { name: req.body.update.name } },
         });
-        if (findStatus.status) {
+        if (findStatus && findStatus.status) {
             return [false, constants_util_1.default.Messages.STATUS_PIPELINE_EXIST];
         }
         const result = await this.pipelineStatusRepository.updateByOne({
@@ -95,11 +95,13 @@ class PipelineStatusService {
         return [true, result];
     }
     async deleteStatusPipeline(req) {
+        req.body.original.name = (0, lodash_1.capitalize)(req.body.original.name);
         let result = null;
         if (!Object.keys(req.body.update).length) {
             result = await this.deleteStatus(req.params.id, req.body.original);
         }
         else {
+            req.body.update.name = (0, lodash_1.capitalize)(req.body.update.name);
             const pipeline = await this.pipelineStatusRepository.getById(req.params.id);
             if (!pipeline) {
                 return [false, constants_util_1.default.notFoundMessage('pipeline')];
