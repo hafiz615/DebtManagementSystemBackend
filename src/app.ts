@@ -29,6 +29,7 @@ class App {
     });
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();
+    // paymentCronjob.testCron();
   }
 }
 

@@ -6,7 +6,8 @@ import debtorRouter from './debtor.routes';
 import creditorRouter from './creditor.routes';
 import paymentRouter from './payment.routes';
 import settingsRouter from './settings.routes';
-import enumRouter from './enum.routes';
+import pipelineStatusRouter from './pipelineStatus.routes';
+import statusRouter from './status.routes';
 
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
@@ -16,5 +17,6 @@ export default function setup(app: Application) {
   app.use('/api/v1/creditor', creditorRouter);
   app.use('/api/v1/payment', paymentRouter);
   app.use('/api/v1/settings', settingsRouter);
-  app.use('/api/v1/enum', enumRouter);
+  app.use('/api/v1/pipeline', pipelineStatusRouter);
+  app.use('/api/v1/status', statusRouter);
 }
