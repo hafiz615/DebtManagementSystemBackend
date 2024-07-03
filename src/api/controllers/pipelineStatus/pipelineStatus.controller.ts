@@ -68,7 +68,7 @@ class PipelineStatusController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Pipeline'),
+          message: constants.successAddMessage('Pipeline status'),
         })
       );
     } catch (error: any) {

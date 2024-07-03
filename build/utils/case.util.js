@@ -19,6 +19,8 @@ const creditor_service_1 = __importDefault(require("../api/services/creditor.ser
 const case_repomodel_1 = require("../database/repomodels/case.repomodel");
 const constants_util_1 = __importDefault(require("./constants.util"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const paymentLogging_repository_1 = require("../api/repository/paymentLogging/paymentLogging.repository");
+const uuid_1 = require("uuid");
 class CaseUtil {
     constructor() {
         this.contactRepository = new contact_repository_1.ContactRepository();
@@ -28,6 +30,7 @@ class CaseUtil {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.debtorService = new debtor_service_1.default();
         this.creditorService = new creditor_service_1.default();
+        this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
     }
     async createContacts(data) {
         const validatedContacts = [];
@@ -82,6 +85,7 @@ class CaseUtil {
             }
         }
         await this.paymentRepository.createMany(paymentsArray);
+        await this.paymentLoggingRepository.createMany(paymentsArray);
     }
     async calculateCommision(interval, weeklyBudget) {
         switch (interval.timePeriod.toLowerCase()) {
@@ -136,11 +140,13 @@ class CaseUtil {
         return currentDate.toString();
     }
     async populatePayment(caseId, payment, interval, frequency) {
+        const uuid = (0, uuid_1.v4)();
         payment.amount = interval.amount;
         payment.frequency = frequency;
         payment.caseId = caseId;
         payment.intervalId = String(interval._id);
         payment.timePeriod = interval.timePeriod;
+        payment.paymentReference = uuid;
         return { ...payment };
     }
     async getCaseCode() {
@@ -201,7 +207,9 @@ class CaseUtil {
                 body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
                 body.debtor.weeklyCommission = weeklyBudgetObj.commission;
             }
-            contactIds = await this.createContacts(body.debtor.contacts);
+            // contactIds = await this.createContacts(
+            //   body.debtor.contacts as IContact[]
+            // );
             // const debtorData = {
             //   ...body.debtor,
             // };
@@ -480,7 +488,7 @@ class CaseUtil {
                             },
                             caseOwner: '$caseOwner',
                             outstandingDebt: {
-                                $subtract: ['$totalDebt', { $sum: '$payments.amount' }],
+                                $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
                         },
                     },
@@ -786,7 +794,7 @@ class CaseUtil {
                             },
                             caseOwner: '$caseOwner',
                             outstandingDebt: {
-                                $subtract: ['$totalDebt', { $sum: '$payments.amount' }],
+                                $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
                         },
                     },

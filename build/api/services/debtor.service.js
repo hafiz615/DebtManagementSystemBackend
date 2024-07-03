@@ -12,8 +12,8 @@ const url_1 = require("url");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const payment_service_1 = __importDefault(require("./payment.service"));
 const paymentLogging_repomodel_1 = require("../../database/repomodels/paymentLogging.repomodel");
-const common_util_1 = __importDefault(require("../../utils/common.util"));
 const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
+const dataCopier_util_1 = require("../../utils/dataCopier.util");
 class DebtorService {
     constructor() {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
@@ -190,22 +190,27 @@ class DebtorService {
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            paymentLogging.successReason = responseText;
+            // paymentLogging.successReason = responseText;
             result = true;
         }
         else {
             updateObjPayment['failedReasonAuthorization'] = responseText;
-            paymentLogging.failReason = responseText;
+            // paymentLogging.failReason = responseText;
             console.log('send email through template');
         }
-        await this.paymentRepository.updateById(payment._id, updateObjPayment);
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.paymentType = 'Credit Auth';
-        paymentLogging.debtor = String(payment.caseId.debtor._id);
-        paymentLogging.creditor = String(payment.caseId.creditor._id);
-        await this.paymentLoggingRepository.create(paymentLogging);
+        if (Object.keys(updateObjPayment).length) {
+            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
+            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
+            await this.paymentLoggingRepository.create(verifiedPayment);
+        }
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.paymentType = 'Credit Auth';
+        // paymentLogging.debtor = String(payment.caseId.debtor._id);
+        // paymentLogging.creditor = String(payment.caseId.creditor._id);
         if (result)
             return [true, 'Payment authorized successfully!'];
         return [false, 'Unable to authorize payment!'];
@@ -231,21 +236,27 @@ class DebtorService {
             if (payment.caseId.debtor.paymentType === 'ck') {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
-            paymentLogging.successReason = responseText;
+            // paymentLogging.successReason = responseText;
             result = true;
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
-            paymentLogging.failReason = responseText;
+            // paymentLogging.failReason = responseText;
             console.log('send email'); // add code
         }
-        await this.paymentRepository.updateById(payment._id, updateObjPayment);
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.paymentType = 'Credit Capture';
-        paymentLogging.debtor = String(payment.caseId.debtor._id);
-        paymentLogging.creditor = String(payment.caseId.creditor._id);
+        if (Object.keys(updateObjPayment).length) {
+            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
+            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
+            await this.paymentLoggingRepository.create(verifiedPayment);
+        }
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.paymentType = 'Credit Capture';
+        // paymentLogging.debtor = String(payment.caseId.debtor._id);
+        // paymentLogging.creditor = String(payment.caseId.creditor._id);
         await this.paymentLoggingRepository.create(paymentLogging);
         if (result)
             return [true, 'Payment captured successfully!'];

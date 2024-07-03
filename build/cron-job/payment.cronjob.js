@@ -16,6 +16,7 @@ const uuid_1 = require("uuid");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
 const mongoose_1 = __importDefault(require("mongoose"));
+const dataCopier_util_1 = require("../utils/dataCopier.util");
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -208,7 +209,7 @@ class CronJob {
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            paymentLogging.successReason = responseText;
+            // paymentLogging.successReason = responseText;
             successAuth = true;
         }
         else {
@@ -219,19 +220,25 @@ class CronJob {
             const value = retryCommissionInterval.value * retry;
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
-            paymentLogging.failReason = responseText;
+            // paymentLogging.failReason = responseText;
             console.log('send email through template');
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
-        await this.paymentRepository.updateById(payment._id, updateObjPayment);
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.cronId = cronId;
-        paymentLogging.paymentType = 'Credit commission auth';
-        paymentLogging.debtor = String(payment.debtorId);
-        await this.paymentLoggingRepository.create(paymentLogging);
+        if (Object.keys(updateObjPayment).length) {
+            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
+            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
+            await this.paymentLoggingRepository.create(verifiedPayment);
+        }
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.cronId = cronId;
+        // paymentLogging.paymentType = 'Credit commission auth';
+        // paymentLogging.debtor = String(payment.debtorId);
+        // await this.paymentLoggingRepository.create(paymentLogging as any);
         return successAuth;
     }
     async processCommissionCaptureResponse(payment, response, retryPlus, cronId, type) {
@@ -253,7 +260,7 @@ class CronJob {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
             }
-            paymentLogging.successReason = responseText;
+            // paymentLogging.successReason = responseText;
             await this.debtorRepository.updateById(payment._id, {
                 weeklyCommissionPaid: true,
             });
@@ -270,19 +277,25 @@ class CronJob {
             const value = retryCommissionInterval.value * retry;
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
-            paymentLogging.failReason = responseText;
+            // paymentLogging.failReason = responseText;
             console.log('send email'); // add code
         }
         if (retryPlus)
             updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
-        await this.paymentRepository.updateById(payment._id, updateObjPayment);
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.cronId = cronId;
-        paymentLogging.paymentType = 'Credit commission capture';
-        paymentLogging.debtor = String(payment.debtorId);
-        await this.paymentLoggingRepository.create(paymentLogging);
+        if (Object.keys(updateObjPayment).length) {
+            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
+            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
+            await this.paymentLoggingRepository.create(verifiedPayment);
+        }
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.cronId = cronId;
+        // paymentLogging.paymentType = 'Credit commission capture';
+        // paymentLogging.debtor = String(payment.debtorId);
+        // await this.paymentLoggingRepository.create(paymentLogging as any);
         return successCapture;
     }
     checkCommissionTimePeriod(date, timePeriod) {
@@ -436,7 +449,7 @@ class CronJob {
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            paymentLogging.successReason = responseText;
+            // paymentLogging.successReason = responseText;
         }
         else {
             updateObjPayment['authorized'] = 'Failed';
@@ -446,19 +459,25 @@ class CronJob {
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
-            paymentLogging.failReason = responseText;
+            // paymentLogging.failReason = responseText;
             console.log('send email through template');
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
-        await this.paymentRepository.updateById(payment._id, updateObjPayment);
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.cronId = cronId;
-        paymentLogging.paymentType = 'Credit Auth';
-        paymentLogging.debtor = String(payment.caseDetails.debtor);
-        paymentLogging.creditor = String(payment.caseDetails.creditor);
+        if (Object.keys(updateObjPayment).length) {
+            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
+            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
+            await this.paymentLoggingRepository.create(verifiedPayment);
+        }
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.cronId = cronId;
+        // paymentLogging.paymentType = 'Credit Auth';
+        // paymentLogging.debtor = String(payment.caseDetails.debtor);
+        // paymentLogging.creditor = String(payment.caseDetails.creditor);
         await this.paymentLoggingRepository.create(paymentLogging);
     }
     // async checkCommission(payment: any) {
@@ -514,7 +533,7 @@ class CronJob {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
             }
-            paymentLogging.successReason = responseText;
+            // paymentLogging.successReason = responseText;
         }
         else {
             if (type === 'ck') {
@@ -528,20 +547,26 @@ class CronJob {
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
-            paymentLogging.failReason = responseText;
+            // paymentLogging.failReason = responseText;
             console.log('send email'); // add code
         }
         if (retryPlus)
             updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
-        await this.paymentRepository.updateById(payment._id, updateObjPayment);
-        paymentLogging.caseId = String(payment.caseId);
-        paymentLogging.createdAt = common_util_1.default.getCurrentDate();
-        paymentLogging.paymentId = String(payment._id);
-        paymentLogging.cronId = cronId;
-        paymentLogging.paymentType = 'Credit Capture';
-        paymentLogging.debtor = String(payment.caseDetails.debtor);
-        paymentLogging.creditor = String(payment.caseDetails.creditor);
-        await this.paymentLoggingRepository.create(paymentLogging);
+        if (Object.keys(updateObjPayment).length) {
+            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
+            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
+            await this.paymentLoggingRepository.create(verifiedPayment);
+        }
+        // paymentLogging.caseId = String(payment.caseId);
+        // paymentLogging.createdAt = commonUtil.getCurrentDate();
+        // paymentLogging.paymentId = String(payment._id);
+        // paymentLogging.cronId = cronId;
+        // paymentLogging.paymentType = 'Credit Capture';
+        // paymentLogging.debtor = String(payment.caseDetails.debtor);
+        // paymentLogging.creditor = String(payment.caseDetails.creditor);
+        // await this.paymentLoggingRepository.create(paymentLogging as any);
     }
 }
 exports.default = new CronJob();

@@ -13,6 +13,8 @@ import PaymentService from './payment.service';
 import {PaymentLogging} from '../../database/repomodels/paymentLogging.repomodel';
 import commonUtil from '../../utils/common.util';
 import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogging.repository';
+import {DataCopier} from '../../utils/dataCopier.util';
+import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -235,24 +237,34 @@ class DebtorService {
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
       updateObjPayment['status'] = 'Pending';
-      paymentLogging.successReason = responseText;
+      // paymentLogging.successReason = responseText;
       result = true;
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
-      paymentLogging.failReason = responseText;
+      // paymentLogging.failReason = responseText;
       console.log('send email through template');
     }
-    await this.paymentRepository.updateById<IPayment>(
-      payment._id,
-      updateObjPayment
-    );
-    paymentLogging.caseId = String(payment.caseId);
-    paymentLogging.createdAt = commonUtil.getCurrentDate();
-    paymentLogging.paymentId = String(payment._id);
-    paymentLogging.paymentType = 'Credit Auth';
-    paymentLogging.debtor = String(payment.caseId.debtor._id);
-    paymentLogging.creditor = String(payment.caseId.creditor._id);
-    await this.paymentLoggingRepository.create(paymentLogging as any);
+    if (Object.keys(updateObjPayment).length) {
+      const newPayment = new PaymentLogging();
+      const populatedPayment = DataCopier.copy(newPayment, payment);
+      const verifiedPayment = DataCopier.copy(
+        populatedPayment,
+        updateObjPayment
+      );
+      await this.paymentRepository.updateById<IPayment>(
+        payment._id,
+        updateObjPayment
+      );
+      await this.paymentLoggingRepository.create<IPaymentLogging>(
+        verifiedPayment
+      );
+    }
+    // paymentLogging.caseId = String(payment.caseId);
+    // paymentLogging.createdAt = commonUtil.getCurrentDate();
+    // paymentLogging.paymentId = String(payment._id);
+    // paymentLogging.paymentType = 'Credit Auth';
+    // paymentLogging.debtor = String(payment.caseId.debtor._id);
+    // paymentLogging.creditor = String(payment.caseId.creditor._id);
     if (result) return [true, 'Payment authorized successfully!'];
     return [false, 'Unable to authorize payment!'];
   }
@@ -291,24 +303,35 @@ class DebtorService {
       if (payment.caseId.debtor.paymentType === 'ck') {
         updateObjPayment['debtorTransId'] = transactionId;
       }
-      paymentLogging.successReason = responseText;
+      // paymentLogging.successReason = responseText;
       result = true;
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
-      paymentLogging.failReason = responseText;
+      // paymentLogging.failReason = responseText;
 
       console.log('send email'); // add code
     }
-    await this.paymentRepository.updateById<IPayment>(
-      payment._id,
-      updateObjPayment
-    );
-    paymentLogging.caseId = String(payment.caseId);
-    paymentLogging.createdAt = commonUtil.getCurrentDate();
-    paymentLogging.paymentId = String(payment._id);
-    paymentLogging.paymentType = 'Credit Capture';
-    paymentLogging.debtor = String(payment.caseId.debtor._id);
-    paymentLogging.creditor = String(payment.caseId.creditor._id);
+    if (Object.keys(updateObjPayment).length) {
+      const newPayment = new PaymentLogging();
+      const populatedPayment = DataCopier.copy(newPayment, payment);
+      const verifiedPayment = DataCopier.copy(
+        populatedPayment,
+        updateObjPayment
+      );
+      await this.paymentRepository.updateById<IPayment>(
+        payment._id,
+        updateObjPayment
+      );
+      await this.paymentLoggingRepository.create<IPaymentLogging>(
+        verifiedPayment
+      );
+    }
+    // paymentLogging.caseId = String(payment.caseId);
+    // paymentLogging.createdAt = commonUtil.getCurrentDate();
+    // paymentLogging.paymentId = String(payment._id);
+    // paymentLogging.paymentType = 'Credit Capture';
+    // paymentLogging.debtor = String(payment.caseId.debtor._id);
+    // paymentLogging.creditor = String(payment.caseId.creditor._id);
     await this.paymentLoggingRepository.create(paymentLogging as any);
     if (result) return [true, 'Payment captured successfully!'];
     return [false, 'Unable to capture payment!'];

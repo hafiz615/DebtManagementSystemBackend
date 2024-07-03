@@ -1,37 +1,68 @@
 import mongoose, {Schema} from 'mongoose';
 import {IPaymentLogging} from '../interfaces/paymentLogging.interface';
 const paymentLogging: Schema = new Schema({
-  cronId: {
-    type: String,
-  },
-  paymentId: {
-    type: String,
-  },
   caseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Cases',
+  },
+  authorized: {
+    type: String,
+    default: 'Pending',
+  },
+  captured: {
+    type: String,
+    default: 'Pending',
+  },
+  status: {
+    type: String,
+    default: 'Upcoming',
+  },
+  amount: {
+    type: Number,
+    default: 0,
+  },
+  dueDate: {
+    type: Date,
+  },
+  frequency: {
+    type: Number,
+    default: 0,
+  },
+  intervalId: {
     type: String,
   },
-  debtor: {
+  debtorId: {
     type: String,
   },
-  failReason: {
+  failedReasonAuthorization: {
     type: String,
   },
-  successReason: {
+  failedReasonCaptured: {
     type: String,
   },
-  transactionId: {
+  rescheduled: {
+    type: Date,
+  },
+  debtorTransId: {
     type: String,
   },
-  creditor: {
+  retriesAuth: {
+    type: Number,
+  },
+  retriesCapture: {
+    type: Number,
+  },
+  timePeriod: {
     type: String,
   },
-  firstChoiceCreditor: {
-    type: String,
-  },
-  paymentType: {
+  paymentReference: {
     type: String,
   },
   createdAt: {
+    type: Date,
+    required: true,
+  },
+  updatedAt: {
     type: Date,
     required: true,
   },
