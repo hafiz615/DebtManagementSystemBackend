@@ -80,6 +80,9 @@ const PaymentModel = new mongoose_1.Schema({
     timePeriod: {
         type: String,
     },
+    paymentReference: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

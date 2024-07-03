@@ -55,6 +55,9 @@ const PaymentModel: Schema = new Schema({
   timePeriod: {
     type: String,
   },
+  paymentReference: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

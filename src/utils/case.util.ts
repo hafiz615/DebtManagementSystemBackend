@@ -22,6 +22,9 @@ import paymentUtil from './payment.util';
 import {Request} from 'express';
 import mongoose from 'mongoose';
 import {AnyARecord} from 'dns';
+import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
+import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
+import {v4} from 'uuid';
 
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -31,6 +34,7 @@ class CaseUtil {
   private caseRepository: CaseRepository;
   private debtorService: DebtorService;
   private creditorService: CreditorService;
+  private paymentLoggingRepository: PaymentLoggingRepository;
 
   constructor() {
     this.contactRepository = new ContactRepository();
@@ -40,6 +44,7 @@ class CaseUtil {
     this.caseRepository = new CaseRepository();
     this.debtorService = new DebtorService();
     this.creditorService = new CreditorService();
+    this.paymentLoggingRepository = new PaymentLoggingRepository();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -113,6 +118,9 @@ class CaseUtil {
       }
     }
     await this.paymentRepository.createMany<IPayment>(paymentsArray);
+    await this.paymentLoggingRepository.createMany<IPaymentLogging>(
+      paymentsArray
+    );
   }
 
   async calculateCommision(
@@ -184,11 +192,13 @@ class CaseUtil {
     interval: any,
     frequency: number
   ) {
+    const uuid = v4();
     payment.amount = interval.amount;
     payment.frequency = frequency;
     payment.caseId = caseId;
     payment.intervalId = String(interval._id);
     payment.timePeriod = interval.timePeriod;
+    payment.paymentReference = uuid;
     return {...payment};
   }
 
@@ -264,9 +274,9 @@ class CaseUtil {
         body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
         body.debtor.weeklyCommission = weeklyBudgetObj.commission;
       }
-      contactIds = await this.createContacts(
-        body.debtor.contacts as IContact[]
-      );
+      // contactIds = await this.createContacts(
+      //   body.debtor.contacts as IContact[]
+      // );
       // const debtorData = {
       //   ...body.debtor,
       // };
@@ -554,7 +564,7 @@ class CaseUtil {
               },
               caseOwner: '$caseOwner',
               outstandingDebt: {
-                $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
+                $subtract: ['$remaining', {$sum: '$payments.amount'}],
               },
             },
           },
@@ -904,7 +914,7 @@ class CaseUtil {
               },
               caseOwner: '$caseOwner',
               outstandingDebt: {
-                $subtract: ['$totalDebt', {$sum: '$payments.amount'}],
+                $subtract: ['$remaining', {$sum: '$payments.amount'}],
               },
             },
           },

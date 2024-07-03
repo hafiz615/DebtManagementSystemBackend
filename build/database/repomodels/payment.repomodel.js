@@ -23,6 +23,7 @@ class Payment {
         this.retriesAuth = 0;
         this.retriesCapture = 0;
         this.timePeriod = '';
+        this.paymentReference = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
