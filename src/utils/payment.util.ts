@@ -1,6 +1,7 @@
 import {Request} from 'express';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import commonUtil from './common.util';
+import {IPayment} from '../database/interfaces/payment.interface';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -284,7 +285,7 @@ class PaymentUtil {
       },
     ];
 
-    return await this.paymentRepository.applyAggregate(pipeline);
+    return await this.paymentRepository.applyAggregate<IPayment>(pipeline);
   }
 
   async searchAndFilterHomePayments(payments: any, req: Request) {

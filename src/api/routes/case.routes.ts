@@ -29,5 +29,10 @@ router.put(
   caseValidate.validateCaseAbout,
   caseController.updateCaseAbout
 );
+router.delete(
+  '/deleteCase/:id',
+  authorize.validateAuth,
+  caseController.deleteCase
+);
 
 export default router;

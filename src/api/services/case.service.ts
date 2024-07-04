@@ -13,20 +13,27 @@ import DebtorService from './debtor.service';
 import CreditorService from './creditor.service';
 import {ITargetCustomFields} from '../../database/interfaces/customField.interface';
 import {TargetCFRepository} from '../repository/targetCustomFields/targetCF.repository';
+import {PaymentRepository} from '../repository/payment/payment.repository';
+import {IPayment} from '../../database/interfaces/payment.interface';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
+import {CreditorRepository} from '../repository/creditor/creditor.repository';
+import mongoose from 'mongoose';
 
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
-  private debtorService: DebtorService;
-  private creditorService: CreditorService;
   private targetCFRepository: TargetCFRepository;
+  private paymentRepository: PaymentRepository;
+  private debtorRepository: DebtorRepository;
+  private creditorRepository: CreditorRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
-    this.debtorService = new DebtorService();
-    this.creditorService = new CreditorService();
     this.targetCFRepository = new TargetCFRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.debtorRepository = new DebtorRepository();
+    this.creditorRepository = new CreditorRepository();
   }
   createCase = async (
     req: Request
@@ -111,12 +118,8 @@ class CaseService {
     return [true, tempCase];
   };
 
-  updateCase = async (
-    req: Request
-  ): Promise<[boolean, Partial<ICase> | string]> => {
-    await caseUtil.updateContacts(req.body.debtor.contacts as IContact[]);
+  updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     await caseUtil.updateDebtor(req.body.debtor as IDebtor);
-    await caseUtil.updateContacts(req.body.creditor.contacts as IContact[]);
     await caseUtil.updateCreditor(req.body.creditor as ICreditor);
     delete req.body.debtor;
     delete req.body.creditor;
@@ -132,7 +135,7 @@ class CaseService {
 
   updateCaseAbout = async (
     req: Request
-  ): Promise<[boolean, Partial<ICase> | string]> => {
+  ): Promise<[boolean, ICase | string]> => {
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -142,6 +145,23 @@ class CaseService {
     }
     return [true, caseUpdated];
   };
+
+  async deleteCase(req: Request): Promise<[boolean, boolean | string]> {
+    // const session = await mongoose.startSession();
+    // session.startTransaction();
+    await this.paymentRepository.deleteMany<IPayment>({caseId: req.params.id});
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    await this.debtorRepository.delete<IDebtor>({_id: caseTemp.debtor});
+    await this.creditorRepository.delete<ICreditor>({_id: caseTemp.creditor});
+
+    const isDeleted = await this.caseRepository.delete<ICase>({
+      _id: req.params.id,
+    });
+    if (!isDeleted) {
+      return [false, constantsUtil.failureDeleteMessage('case')];
+    }
+    return [true, isDeleted];
+  }
 }
 
 export default CaseService;

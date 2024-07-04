@@ -642,7 +642,8 @@ class CaseUtil {
       },
     ];
 
-    const results: any = await this.caseRepository.applyAggregate(pipeline);
+    const results: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
     if (results[0]?.caseHistory) {
       results[0].caseHistory = await this.filterCaseHistoryDebtor(
         results[0]?.caseHistory,
@@ -989,7 +990,8 @@ class CaseUtil {
       },
     ];
 
-    const results: any = await this.caseRepository.applyAggregate(pipeline);
+    const results: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
     if (results[0]?.caseHistory) {
       results[0].caseHistory = await this.filterAndPaginateCaseHistoryCreditor(
         results[0]?.caseHistory,

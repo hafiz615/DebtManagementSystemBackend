@@ -7,9 +7,10 @@ const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const upload_util_1 = __importDefault(require("../../utils/upload.util"));
-const debtor_service_1 = __importDefault(require("./debtor.service"));
-const creditor_service_1 = __importDefault(require("./creditor.service"));
 const targetCF_repository_1 = require("../repository/targetCustomFields/targetCF.repository");
+const payment_repository_1 = require("../repository/payment/payment.repository");
+const debtor_repository_1 = require("../repository/debtor/debtor.repository");
+const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -70,9 +71,7 @@ class CaseService {
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
-            await case_util_1.default.updateContacts(req.body.debtor.contacts);
             await case_util_1.default.updateDebtor(req.body.debtor);
-            await case_util_1.default.updateContacts(req.body.creditor.contacts);
             await case_util_1.default.updateCreditor(req.body.creditor);
             delete req.body.debtor;
             delete req.body.creditor;
@@ -91,9 +90,25 @@ class CaseService {
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
-        this.debtorService = new debtor_service_1.default();
-        this.creditorService = new creditor_service_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
+        this.paymentRepository = new payment_repository_1.PaymentRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.creditorRepository = new creditor_repository_1.CreditorRepository();
+    }
+    async deleteCase(req) {
+        // const session = await mongoose.startSession();
+        // session.startTransaction();
+        await this.paymentRepository.deleteMany({ caseId: req.params.id });
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        await this.debtorRepository.delete({ _id: caseTemp.debtor });
+        await this.creditorRepository.delete({ _id: caseTemp.creditor });
+        const isDeleted = await this.caseRepository.delete({
+            _id: req.params.id,
+        });
+        if (!isDeleted) {
+            return [false, constants_util_1.default.failureDeleteMessage('case')];
+        }
+        return [true, isDeleted];
     }
 }
 exports.default = CaseService;

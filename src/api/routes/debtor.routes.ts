@@ -37,4 +37,9 @@ router.get(
   authorize.validateAuth,
   debtorController.retryCapture
 );
+router.get(
+  '/getAllDebtors',
+  authorize.validateAuth,
+  debtorController.getAllDebtors
+);
 export default router;

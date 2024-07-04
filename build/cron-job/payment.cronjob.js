@@ -454,6 +454,7 @@ class CronJob {
         else {
             updateObjPayment['authorized'] = 'Failed';
             updateObjPayment['failedReasonAuthorization'] = responseText;
+            updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;

@@ -5,11 +5,15 @@ import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interfac
 import {PipelineStatus} from '../../database/repomodels/pipelineStatus.repomodel';
 import {DataCopier} from '../../utils/dataCopier.util';
 import {capitalize} from 'lodash';
+import {CaseRepository} from '../repository/case/case.repository';
+import {ICase} from '../../database/interfaces/case.interface';
 
 class PipelineStatusService {
   private pipelineStatusRepository: PipelineStatusRepository;
+  private caseRepository: CaseRepository;
   constructor() {
     this.pipelineStatusRepository = new PipelineStatusRepository();
+    this.caseRepository = new CaseRepository();
   }
   async createPipeline(
     req: Request
@@ -180,6 +184,39 @@ class PipelineStatusService {
     return await this.pipelineStatusRepository.updateById<IPipelineStatus>(id, {
       $pull: {status: original},
     });
+  }
+
+  async getPipelineDetails(req: Request) {
+    const pipeline =
+      await this.pipelineStatusRepository.getById<IPipelineStatus>(
+        req.params.id
+      );
+    const cases: ICase[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        {},
+        undefined,
+        undefined,
+        undefined,
+        ['debtor', 'creditor']
+      );
+    if (!pipeline || !cases.length) {
+      return [false, constantsUtil.notFoundMessage('pipeline or cases')];
+    }
+    if (!pipeline.status.length)
+      return [false, constantsUtil.notFoundMessage('pipeline statuses')];
+    const statusNames = pipeline.status.map(status => status.name);
+    const result = {};
+    statusNames.forEach(statusName => {
+      const matchingCases = cases.filter(
+        caseItem => caseItem.status === statusName
+      );
+      const annualizedValue = matchingCases.reduce(
+        (sum, obj) => sum + (obj.totalDebt || 0),
+        0
+      );
+      result[statusName] = {cases: matchingCases, annualizedValue};
+    });
+    return [true, result];
   }
 }
 
