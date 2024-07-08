@@ -480,8 +480,7 @@ class CaseUtil {
     const convertedDebtorId = new mongoose.Types.ObjectId(req.params.id);
     const pipeline = [
       {
-        $match: {debtor: convertedDebtorId},
-        isDeleted: {$ne: true},
+        $match: {debtor: convertedDebtorId, isDeleted: {$ne: true}},
       },
       {
         $lookup: {
@@ -832,8 +831,7 @@ class CaseUtil {
     const convertedCreditorId = new mongoose.Types.ObjectId(req.params.id);
     const pipeline = [
       {
-        $match: {creditor: convertedCreditorId},
-        isDeleted: {$ne: true},
+        $match: {creditor: convertedCreditorId, isDeleted: {$ne: true}},
       },
       {
         $lookup: {
