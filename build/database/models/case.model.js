@@ -97,6 +97,15 @@ const caseModel = new mongoose_1.Schema({
             },
         ],
     },
+    isDeleted: {
+        type: Boolean,
+    },
+    confidence: {
+        type: Number,
+    },
+    closeDate: {
+        type: Date,
+    },
     createdAt: {
         type: Date,
         required: true,

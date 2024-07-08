@@ -70,7 +70,7 @@ class CaseService {
 
   getAllCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
     let cases = await this.caseRepository.getAll<ICase>(
-      undefined,
+      {isDeleted: false},
       undefined,
       undefined,
       undefined,
@@ -119,10 +119,14 @@ class CaseService {
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
-    await caseUtil.updateDebtor(req.body.debtor as IDebtor);
-    await caseUtil.updateCreditor(req.body.creditor as ICreditor);
-    delete req.body.debtor;
-    delete req.body.creditor;
+    if (req.body.debtor) {
+      await caseUtil.updateDebtor(req.body.debtor as IDebtor);
+      delete req.body.debtor;
+    }
+    if (req.body.creditor) {
+      await caseUtil.updateCreditor(req.body.creditor as ICreditor);
+      delete req.body.creditor;
+    }
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -147,20 +151,37 @@ class CaseService {
   };
 
   async deleteCase(req: Request): Promise<[boolean, boolean | string]> {
-    // const session = await mongoose.startSession();
-    // session.startTransaction();
-    await this.paymentRepository.deleteMany<IPayment>({caseId: req.params.id});
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
-    await this.debtorRepository.delete<IDebtor>({_id: caseTemp.debtor});
-    await this.creditorRepository.delete<ICreditor>({_id: caseTemp.creditor});
-
-    const isDeleted = await this.caseRepository.delete<ICase>({
-      _id: req.params.id,
+    // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    const result = await this.caseRepository.updateById<ICase>(req.params.id, {
+      isDeleted: true,
     });
-    if (!isDeleted) {
+    await this.paymentRepository.updateMany<IPayment>(
+      {caseId: req.params.id},
+      {isDeleted: true}
+    );
+    let weeklyBudgetObj: {
+      status: boolean;
+      commission: number;
+      totalCommission: number;
+    };
+    weeklyBudgetObj = await caseUtil.getUpdatedCommAndTotalComm(
+      String(result.debtor)
+    );
+    if (!weeklyBudgetObj.status) {
+      return [
+        false,
+        'Weekly budget is not fulfiling the payment plan of debtor',
+      ];
+    }
+    await this.debtorRepository.updateById<IDebtor>(String(result.debtor), {
+      totalCommission: weeklyBudgetObj.totalCommission,
+      weeklyCommission: weeklyBudgetObj.commission,
+    });
+
+    if (!result) {
       return [false, constantsUtil.failureDeleteMessage('case')];
     }
-    return [true, isDeleted];
+    return [true, true];
   }
 }
 

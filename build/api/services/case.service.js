@@ -39,7 +39,7 @@ class CaseService {
             return [true, result[1]];
         };
         this.getAllCases = async (req) => {
-            let cases = await this.caseRepository.getAll(undefined, undefined, undefined, undefined, undefined, undefined, Number(req.query.page), Number(req.query.limit));
+            let cases = await this.caseRepository.getAll({ isDeleted: false }, undefined, undefined, undefined, undefined, undefined, Number(req.query.page), Number(req.query.limit));
             if (!cases.length) {
                 return [false, constants_util_1.default.notFoundMessage('Cases')];
             }
@@ -71,10 +71,14 @@ class CaseService {
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
-            await case_util_1.default.updateDebtor(req.body.debtor);
-            await case_util_1.default.updateCreditor(req.body.creditor);
-            delete req.body.debtor;
-            delete req.body.creditor;
+            if (req.body.debtor) {
+                await case_util_1.default.updateDebtor(req.body.debtor);
+                delete req.body.debtor;
+            }
+            if (req.body.creditor) {
+                await case_util_1.default.updateCreditor(req.body.creditor);
+                delete req.body.creditor;
+            }
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
@@ -96,19 +100,27 @@ class CaseService {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
     async deleteCase(req) {
-        // const session = await mongoose.startSession();
-        // session.startTransaction();
-        await this.paymentRepository.deleteMany({ caseId: req.params.id });
-        const caseTemp = await this.caseRepository.getById(req.params.id);
-        await this.debtorRepository.delete({ _id: caseTemp.debtor });
-        await this.creditorRepository.delete({ _id: caseTemp.creditor });
-        const isDeleted = await this.caseRepository.delete({
-            _id: req.params.id,
+        // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+        const result = await this.caseRepository.updateById(req.params.id, {
+            isDeleted: true,
         });
-        if (!isDeleted) {
+        await this.paymentRepository.updateMany({ caseId: req.params.id }, { isDeleted: true });
+        let weeklyBudgetObj;
+        weeklyBudgetObj = await case_util_1.default.getUpdatedCommAndTotalComm(String(result.debtor));
+        if (!weeklyBudgetObj.status) {
+            return [
+                false,
+                'Weekly budget is not fulfiling the payment plan of debtor',
+            ];
+        }
+        await this.debtorRepository.updateById(String(result.debtor), {
+            totalCommission: weeklyBudgetObj.totalCommission,
+            weeklyCommission: weeklyBudgetObj.commission,
+        });
+        if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('case')];
         }
-        return [true, isDeleted];
+        return [true, true];
     }
 }
 exports.default = CaseService;

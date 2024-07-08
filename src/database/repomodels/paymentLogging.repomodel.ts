@@ -18,6 +18,7 @@ export class PaymentLogging {
   retriesCapture = 0;
   timePeriod = '';
   paymentReference = '';
+  isDeleted = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

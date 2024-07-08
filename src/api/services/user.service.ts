@@ -485,6 +485,7 @@ class UserService {
     const pipeline: mongoose.PipelineStage[] = [
       {
         $match: {
+          isDeleted: {$ne: true},
           $or: [
             {caseOwnerId: userId},
             {negotiatorId: userId},

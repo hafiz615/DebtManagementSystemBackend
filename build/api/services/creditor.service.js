@@ -85,6 +85,7 @@ class CreditorService {
         else {
             casesCount = await this.caseRepository.getCount({
                 creditor: req.params.id,
+                isDeleted: false,
             });
         }
         clientDetails.caseHistory = clientDetails.caseHistory.slice((page - 1) * limit, page * limit);

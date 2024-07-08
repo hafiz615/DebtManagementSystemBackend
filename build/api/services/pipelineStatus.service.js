@@ -128,7 +128,7 @@ class PipelineStatusService {
     }
     async getPipelineDetails(req) {
         const pipeline = await this.pipelineStatusRepository.getById(req.params.id);
-        const cases = await this.caseRepository.getAllWithoutPagination({}, undefined, undefined, undefined, ['debtor', 'creditor']);
+        const cases = await this.caseRepository.getAllWithoutPagination({ isDeleted: false }, undefined, undefined, undefined, ['debtor', 'creditor']);
         if (!pipeline || !cases.length) {
             return [false, constants_util_1.default.notFoundMessage('pipeline or cases')];
         }

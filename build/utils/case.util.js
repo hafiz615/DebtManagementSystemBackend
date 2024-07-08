@@ -157,7 +157,7 @@ class CaseUtil {
         return 'CASE-' + (count + 1).toString().padStart(3, '0');
     }
     async getAllCreditorsOfDebtor(debtor) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtor._id }, 'totalDebt caseCode status', undefined, undefined, { path: 'creditor', select: ['basicInformation.fullName'] });
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtor._id, isDeleted: false }, 'totalDebt caseCode status', undefined, undefined, { path: 'creditor', select: ['basicInformation.fullName'] });
         const tempCases = cases;
         return tempCases.map(obj => ({
             totalDebt: obj.totalDebt,
@@ -287,9 +287,15 @@ class CaseUtil {
                     totalCommission: parseInt((debt * 0.19).toFixed(2)),
                 };
         }
+        if (debtorFound) {
+            const interval = body.intervals[0];
+            debt = body.remaining;
+            amount = await this.getWeeklyAmount(interval);
+        }
         weeklyBudget = body.debtor.basicInformation.weeklyBudget;
         const cases = await this.caseRepository.getAllWithoutPagination({
             debtor: debtor._id,
+            isDeleted: false,
         });
         for (const caseTemp of cases) {
             amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
@@ -399,6 +405,7 @@ class CaseUtil {
         const pipeline = [
             {
                 $match: { debtor: convertedDebtorId },
+                isDeleted: { $ne: true },
             },
             {
                 $lookup: {
@@ -705,6 +712,7 @@ class CaseUtil {
         const pipeline = [
             {
                 $match: { creditor: convertedCreditorId },
+                isDeleted: { $ne: true },
             },
             {
                 $lookup: {
@@ -939,6 +947,9 @@ class CaseUtil {
         const filters = await this.getClientListingFilters(req);
         const pipeline = [
             {
+                $match: { isDeleted: { $ne: true } }, // Filter out isDeleted cases
+            },
+            {
                 $lookup: {
                     from: 'debtors',
                     localField: 'debtor',
@@ -1028,6 +1039,9 @@ class CaseUtil {
         const filters = await this.getCreditorListingFilters(req);
         const pipeline = [
             {
+                $match: { isDeleted: { $ne: true } }, // Filter out isDeleted cases
+            },
+            {
                 $lookup: {
                     from: 'creditors',
                     localField: 'creditor',
@@ -1115,6 +1129,30 @@ class CaseUtil {
         return await this.creditorRepository.updateById(data._id, {
             ...data,
         });
+    }
+    async getUpdatedCommAndTotalComm(debtorId) {
+        const debtor = await this.debtRepository.getById(debtorId);
+        const weeklyBudget = debtor.basicInformation.weeklyBudget;
+        const cases = await this.caseRepository.getAllWithoutPagination({
+            debtor: debtor._id,
+            isDeleted: false,
+        });
+        let amount = 0, debt = 0;
+        for (const caseTemp of cases) {
+            amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+            debt += caseTemp.remaining;
+        }
+        return amount >= weeklyBudget
+            ? {
+                status: false,
+                commission: 0,
+                totalCommission: 0,
+            }
+            : {
+                status: true,
+                commission: weeklyBudget - amount,
+                totalCommission: parseInt((debt * 0.19).toFixed(2)),
+            };
     }
 }
 exports.default = new CaseUtil();

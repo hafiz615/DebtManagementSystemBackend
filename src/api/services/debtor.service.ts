@@ -76,6 +76,7 @@ class DebtorService {
     } else {
       casesCount = await this.caseRepository.getCount<ICase>({
         debtor: req.params.id,
+        isDeleted: false,
       });
     }
     if (!clientDetails) {

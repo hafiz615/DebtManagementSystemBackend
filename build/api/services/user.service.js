@@ -284,6 +284,7 @@ class UserService {
             const pipeline = [
                 {
                     $match: {
+                        isDeleted: { $ne: true },
                         $or: [
                             { caseOwnerId: userId },
                             { negotiatorId: userId },

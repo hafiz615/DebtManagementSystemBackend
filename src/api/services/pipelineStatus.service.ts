@@ -193,7 +193,7 @@ class PipelineStatusService {
       );
     const cases: ICase[] =
       await this.caseRepository.getAllWithoutPagination<ICase>(
-        {},
+        {isDeleted: false},
         undefined,
         undefined,
         undefined,

@@ -29,6 +29,9 @@ export interface ICase extends Document {
   remaining: number;
   documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
+  isDeleted: boolean;
+  confidence: number;
+  closeDate: string;
   createdAt: string;
   updatedAt: string;
 }

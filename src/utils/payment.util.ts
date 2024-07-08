@@ -62,7 +62,7 @@ class PaymentUtil {
       {
         $facet: {
           pendingAuthorized: [
-            {$match: {authorized: 'Pending'}},
+            {$match: {authorized: 'Pending'}, isDeleted: {$ne: true}},
             {
               $lookup: {
                 from: 'cases',
@@ -117,7 +117,10 @@ class PaymentUtil {
             },
           ],
           pendingCaptured: [
-            {$match: {authorized: 'Success', captured: 'Pending'}},
+            {
+              $match: {authorized: 'Success', captured: 'Pending'},
+              isDeleted: {$ne: true},
+            },
             {
               $lookup: {
                 from: 'cases',
@@ -172,7 +175,7 @@ class PaymentUtil {
             },
           ],
           failedAuthorized: [
-            {$match: {authorized: 'Failed'}},
+            {$match: {authorized: 'Failed'}, isDeleted: {$ne: true}},
             {
               $lookup: {
                 from: 'cases',
@@ -227,7 +230,10 @@ class PaymentUtil {
             },
           ],
           failedCaptured: [
-            {$match: {authorized: 'Success', captured: 'Failed'}},
+            {
+              $match: {authorized: 'Success', captured: 'Failed'},
+              isDeleted: {$ne: true},
+            },
             {
               $lookup: {
                 from: 'cases',
