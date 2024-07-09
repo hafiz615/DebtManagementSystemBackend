@@ -20,7 +20,7 @@ router.get(
 router.put(
   '/updateCase/:id',
   authorize.validateAuth,
-  caseValidate.validateCase,
+  caseValidate.updateCase,
   caseController.updateCase
 );
 router.put(
