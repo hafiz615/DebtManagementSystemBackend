@@ -52,6 +52,7 @@ interface IEmailNotify {
   event: string;
   html: string;
   templateId: string;
+  subject: string;
 }
 
 interface ISmsNotify {

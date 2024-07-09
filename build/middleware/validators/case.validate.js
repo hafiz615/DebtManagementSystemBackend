@@ -100,6 +100,8 @@ class CaseValidate {
             lastPaymentDate: joi_1.default.date(),
             paidAmount: joi_1.default.number().strict().required(),
             remaining: joi_1.default.number().strict().required(),
+            confidence: joi_1.default.number().strict(),
+            closeDate: joi_1.default.date(),
             paymentToken: joi_1.default.string().allow(''),
             paymentType: joi_1.default.string().valid('cc', 'ck').allow(''),
             status: joi_1.default.string().required(),

@@ -5,7 +5,7 @@ import customFieldValidate from '../../middleware/validators/customField.validat
 
 const router = Router();
 
-router.patch(
+router.post(
   '/addSettings',
   authorize.validateAuth,
   settingsController.addSettings
