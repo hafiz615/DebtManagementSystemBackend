@@ -50,5 +50,10 @@ router.post(
   pipelineStatusValidate.deleteStatusPipeline,
   pipelineStatusController.deleteStatusPipeline
 );
+router.get(
+  '/getPipelineDetails/:id',
+  authorize.validateAuth,
+  pipelineStatusController.getPipelineDetails
+);
 
 export default router;

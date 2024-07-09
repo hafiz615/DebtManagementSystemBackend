@@ -15,6 +15,7 @@ import commonUtil from '../../utils/common.util';
 import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogging.repository';
 import {DataCopier} from '../../utils/dataCopier.util';
 import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
+import constantsUtil from '../../utils/constants.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -75,6 +76,7 @@ class DebtorService {
     } else {
       casesCount = await this.caseRepository.getCount<ICase>({
         debtor: req.params.id,
+        isDeleted: false,
       });
     }
     if (!clientDetails) {
@@ -336,6 +338,17 @@ class DebtorService {
     if (result) return [true, 'Payment captured successfully!'];
     return [false, 'Unable to capture payment!'];
   }
+
+  getAllDebtors = async (
+    req: Request
+  ): Promise<[boolean, Partial<IDebtor[]> | string]> => {
+    let debtors =
+      await this.debtorRepository.getAllWithoutPagination<IDebtor>();
+    if (!debtors.length) {
+      return [false, constantsUtil.notFoundMessage('debtors')];
+    }
+    return [true, debtors];
+  };
 }
 
 export default DebtorService;

@@ -58,6 +58,9 @@ const PaymentModel: Schema = new Schema({
   paymentReference: {
     type: String,
   },
+  isDeleted: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

@@ -96,7 +96,7 @@ class StatusService {
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('status')];
         }
-        await this.caseRepository.updateMany({ status: req.body.original }, { status: req.body.update });
+        await this.caseRepository.updateMany({ status: req.body.original, isDeleted: false }, { status: req.body.update });
         return [true, result];
     }
 }

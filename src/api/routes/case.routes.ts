@@ -20,7 +20,7 @@ router.get(
 router.put(
   '/updateCase/:id',
   authorize.validateAuth,
-  caseValidate.validateCase,
+  caseValidate.updateCase,
   caseController.updateCase
 );
 router.put(
@@ -28,6 +28,11 @@ router.put(
   authorize.validateAuth,
   caseValidate.validateCaseAbout,
   caseController.updateCaseAbout
+);
+router.delete(
+  '/deleteCase/:id',
+  authorize.validateAuth,
+  caseController.deleteCase
 );
 
 export default router;

@@ -124,7 +124,7 @@ class StatusService {
       return [false, constantsUtil.failureDeleteMessage('status')];
     }
     await this.caseRepository.updateMany<ICase>(
-      {status: req.body.original},
+      {status: req.body.original, isDeleted: false},
       {status: req.body.update}
     );
     return [true, result];

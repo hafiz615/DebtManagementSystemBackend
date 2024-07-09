@@ -23,6 +23,9 @@ class Case {
         this.remaining = 0;
         this.documents = Array();
         this.intervals = Array();
+        this.isDeleted = false;
+        this.confidence = 0;
+        this.closeDate = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

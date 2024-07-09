@@ -83,6 +83,9 @@ const paymentLogging = new mongoose_1.Schema({
     paymentReference: {
         type: String,
     },
+    isDeleted: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

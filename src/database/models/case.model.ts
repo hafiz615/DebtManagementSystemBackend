@@ -73,6 +73,15 @@ const caseModel: Schema = new Schema({
       },
     ],
   },
+  isDeleted: {
+    type: Boolean,
+  },
+  confidence: {
+    type: Number,
+  },
+  closeDate: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     required: true,

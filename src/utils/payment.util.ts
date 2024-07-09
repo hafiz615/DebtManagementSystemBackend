@@ -1,6 +1,7 @@
 import {Request} from 'express';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import commonUtil from './common.util';
+import {IPayment} from '../database/interfaces/payment.interface';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -61,7 +62,7 @@ class PaymentUtil {
       {
         $facet: {
           pendingAuthorized: [
-            {$match: {authorized: 'Pending'}},
+            {$match: {authorized: 'Pending'}, isDeleted: {$ne: true}},
             {
               $lookup: {
                 from: 'cases',
@@ -116,7 +117,10 @@ class PaymentUtil {
             },
           ],
           pendingCaptured: [
-            {$match: {authorized: 'Success', captured: 'Pending'}},
+            {
+              $match: {authorized: 'Success', captured: 'Pending'},
+              isDeleted: {$ne: true},
+            },
             {
               $lookup: {
                 from: 'cases',
@@ -171,7 +175,7 @@ class PaymentUtil {
             },
           ],
           failedAuthorized: [
-            {$match: {authorized: 'Failed'}},
+            {$match: {authorized: 'Failed'}, isDeleted: {$ne: true}},
             {
               $lookup: {
                 from: 'cases',
@@ -226,7 +230,10 @@ class PaymentUtil {
             },
           ],
           failedCaptured: [
-            {$match: {authorized: 'Success', captured: 'Failed'}},
+            {
+              $match: {authorized: 'Success', captured: 'Failed'},
+              isDeleted: {$ne: true},
+            },
             {
               $lookup: {
                 from: 'cases',
@@ -284,7 +291,7 @@ class PaymentUtil {
       },
     ];
 
-    return await this.paymentRepository.applyAggregate(pipeline);
+    return await this.paymentRepository.applyAggregate<IPayment>(pipeline);
   }
 
   async searchAndFilterHomePayments(payments: any, req: Request) {

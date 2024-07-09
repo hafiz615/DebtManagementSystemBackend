@@ -8,9 +8,11 @@ const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipeli
 const pipelineStatus_repomodel_1 = require("../../database/repomodels/pipelineStatus.repomodel");
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const lodash_1 = require("lodash");
+const case_repository_1 = require("../repository/case/case.repository");
 class PipelineStatusService {
     constructor() {
         this.pipelineStatusRepository = new pipelineStatus_repository_1.PipelineStatusRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
     }
     async createPipeline(req) {
         const reqTemp = req;
@@ -123,6 +125,23 @@ class PipelineStatusService {
         return await this.pipelineStatusRepository.updateById(id, {
             $pull: { status: original },
         });
+    }
+    async getPipelineDetails(req) {
+        const pipeline = await this.pipelineStatusRepository.getById(req.params.id);
+        const cases = await this.caseRepository.getAllWithoutPagination({ isDeleted: false }, undefined, undefined, undefined, ['debtor', 'creditor']);
+        if (!pipeline || !cases.length) {
+            return [false, constants_util_1.default.notFoundMessage('pipeline or cases')];
+        }
+        if (!pipeline.status.length)
+            return [false, constants_util_1.default.notFoundMessage('pipeline statuses')];
+        const statusNames = pipeline.status.map(status => status.name);
+        const result = {};
+        statusNames.forEach(statusName => {
+            const matchingCases = cases.filter(caseItem => caseItem.status === statusName);
+            const annualizedValue = matchingCases.reduce((sum, obj) => sum + (obj.totalDebt || 0), 0);
+            result[statusName] = { cases: matchingCases, annualizedValue };
+        });
+        return [true, result];
     }
 }
 exports.default = PipelineStatusService;

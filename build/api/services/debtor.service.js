@@ -14,8 +14,16 @@ const payment_service_1 = __importDefault(require("./payment.service"));
 const paymentLogging_repomodel_1 = require("../../database/repomodels/paymentLogging.repomodel");
 const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
+const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 class DebtorService {
     constructor() {
+        this.getAllDebtors = async (req) => {
+            let debtors = await this.debtorRepository.getAllWithoutPagination();
+            if (!debtors.length) {
+                return [false, constants_util_2.default.notFoundMessage('debtors')];
+            }
+            return [true, debtors];
+        };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -65,6 +73,7 @@ class DebtorService {
         else {
             casesCount = await this.caseRepository.getCount({
                 debtor: req.params.id,
+                isDeleted: false,
             });
         }
         if (!clientDetails) {

@@ -13,20 +13,27 @@ import DebtorService from './debtor.service';
 import CreditorService from './creditor.service';
 import {ITargetCustomFields} from '../../database/interfaces/customField.interface';
 import {TargetCFRepository} from '../repository/targetCustomFields/targetCF.repository';
+import {PaymentRepository} from '../repository/payment/payment.repository';
+import {IPayment} from '../../database/interfaces/payment.interface';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
+import {CreditorRepository} from '../repository/creditor/creditor.repository';
+import mongoose from 'mongoose';
 
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
-  private debtorService: DebtorService;
-  private creditorService: CreditorService;
   private targetCFRepository: TargetCFRepository;
+  private paymentRepository: PaymentRepository;
+  private debtorRepository: DebtorRepository;
+  private creditorRepository: CreditorRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
-    this.debtorService = new DebtorService();
-    this.creditorService = new CreditorService();
     this.targetCFRepository = new TargetCFRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.debtorRepository = new DebtorRepository();
+    this.creditorRepository = new CreditorRepository();
   }
   createCase = async (
     req: Request
@@ -63,7 +70,7 @@ class CaseService {
 
   getAllCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
     let cases = await this.caseRepository.getAll<ICase>(
-      undefined,
+      {isDeleted: false},
       undefined,
       undefined,
       undefined,
@@ -111,15 +118,15 @@ class CaseService {
     return [true, tempCase];
   };
 
-  updateCase = async (
-    req: Request
-  ): Promise<[boolean, Partial<ICase> | string]> => {
-    await caseUtil.updateContacts(req.body.debtor.contacts as IContact[]);
-    await caseUtil.updateDebtor(req.body.debtor as IDebtor);
-    await caseUtil.updateContacts(req.body.creditor.contacts as IContact[]);
-    await caseUtil.updateCreditor(req.body.creditor as ICreditor);
-    delete req.body.debtor;
-    delete req.body.creditor;
+  updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
+    if (req.body.debtor) {
+      await caseUtil.updateDebtor(req.body.debtor as IDebtor);
+      delete req.body.debtor;
+    }
+    if (req.body.creditor) {
+      await caseUtil.updateCreditor(req.body.creditor as ICreditor);
+      delete req.body.creditor;
+    }
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -132,7 +139,7 @@ class CaseService {
 
   updateCaseAbout = async (
     req: Request
-  ): Promise<[boolean, Partial<ICase> | string]> => {
+  ): Promise<[boolean, ICase | string]> => {
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -142,6 +149,40 @@ class CaseService {
     }
     return [true, caseUpdated];
   };
+
+  async deleteCase(req: Request): Promise<[boolean, boolean | string]> {
+    // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    const result = await this.caseRepository.updateById<ICase>(req.params.id, {
+      isDeleted: true,
+    });
+    await this.paymentRepository.updateMany<IPayment>(
+      {caseId: req.params.id},
+      {isDeleted: true}
+    );
+    let weeklyBudgetObj: {
+      status: boolean;
+      commission: number;
+      totalCommission: number;
+    };
+    weeklyBudgetObj = await caseUtil.getUpdatedCommAndTotalComm(
+      String(result.debtor)
+    );
+    if (!weeklyBudgetObj.status) {
+      return [
+        false,
+        'Weekly budget is not fulfiling the payment plan of debtor',
+      ];
+    }
+    await this.debtorRepository.updateById<IDebtor>(String(result.debtor), {
+      totalCommission: weeklyBudgetObj.totalCommission,
+      weeklyCommission: weeklyBudgetObj.commission,
+    });
+
+    if (!result) {
+      return [false, constantsUtil.failureDeleteMessage('case')];
+    }
+    return [true, true];
+  }
 }
 
 export default CaseService;
