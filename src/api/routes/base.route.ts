@@ -8,6 +8,7 @@ import paymentRouter from './payment.routes';
 import settingsRouter from './settings.routes';
 import pipelineStatusRouter from './pipelineStatus.routes';
 import statusRouter from './status.routes';
+import rolesPermissionsRouter from './rolesPermissions.routes';
 
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
@@ -19,4 +20,5 @@ export default function setup(app: Application) {
   app.use('/api/v1/settings', settingsRouter);
   app.use('/api/v1/pipeline', pipelineStatusRouter);
   app.use('/api/v1/status', statusRouter);
+  app.use('/api/v1/roles', rolesPermissionsRouter);
 }

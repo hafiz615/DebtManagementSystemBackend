@@ -4,12 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesPermissions = void 0;
-const mongoose_1 = require("mongoose");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
-class RolesPermissions extends mongoose_1.Document {
+class RolesPermissions {
     constructor() {
-        super(...arguments);
         this.name = '';
+        this.createdBy = '';
         this.generalPermissions = {
             createNewCase: false,
             importBulkCases: false,

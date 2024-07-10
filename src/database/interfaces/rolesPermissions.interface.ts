@@ -2,6 +2,7 @@ import {Document} from 'mongoose';
 
 export interface IRolesPermissions extends Document {
   name: string;
+  createdBy: string;
   generalPermissions: {
     createNewCase: boolean;
     importBulkCases: boolean;

@@ -6,6 +6,9 @@ const rolesPermissionsModel = new Schema({
     type: String,
     required: true,
   },
+  createdBy: {
+    type: String,
+  },
   generalPermissions: {
     createNewCase: {
       type: Boolean,

@@ -30,6 +30,9 @@ const rolesPermissionsModel = new mongoose_1.Schema({
         type: String,
         required: true,
     },
+    createdBy: {
+        type: String,
+    },
     generalPermissions: {
         createNewCase: {
             type: Boolean,

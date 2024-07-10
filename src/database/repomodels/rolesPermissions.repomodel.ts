@@ -1,8 +1,9 @@
 import {Document} from 'mongoose';
 import commonUtil from '../../utils/common.util';
 
-export class RolesPermissions extends Document {
+export class RolesPermissions {
   name = '';
+  createdBy = '';
   generalPermissions = {
     createNewCase: false,
     importBulkCases: false,
