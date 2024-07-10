@@ -54,4 +54,16 @@ router.delete(
   settingsController.deleteCustomField
 );
 
+router.put(
+  '/editNotificationTemplate',
+  authorize.validateAuth,
+  settingsController.editNotificationTemplate
+);
+
+router.post(
+  '/deleteNotificationTemplate',
+  authorize.validateAuth,
+  settingsController.deleteNotificationTemplate
+);
+
 export default router;
