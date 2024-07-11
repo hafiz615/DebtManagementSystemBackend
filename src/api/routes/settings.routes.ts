@@ -5,7 +5,7 @@ import customFieldValidate from '../../middleware/validators/customField.validat
 
 const router = Router();
 
-router.patch(
+router.post(
   '/addSettings',
   authorize.validateAuth,
   settingsController.addSettings
@@ -52,6 +52,18 @@ router.delete(
   '/deleteCustomField/:id',
   authorize.validateAuth,
   settingsController.deleteCustomField
+);
+
+router.put(
+  '/editNotificationTemplate',
+  authorize.validateAuth,
+  settingsController.editNotificationTemplate
+);
+
+router.post(
+  '/deleteNotificationTemplate',
+  authorize.validateAuth,
+  settingsController.deleteNotificationTemplate
 );
 
 export default router;

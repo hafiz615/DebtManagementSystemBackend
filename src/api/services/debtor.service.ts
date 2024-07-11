@@ -334,7 +334,7 @@ class DebtorService {
     // paymentLogging.paymentType = 'Credit Capture';
     // paymentLogging.debtor = String(payment.caseId.debtor._id);
     // paymentLogging.creditor = String(payment.caseId.creditor._id);
-    await this.paymentLoggingRepository.create(paymentLogging as any);
+    // await this.paymentLoggingRepository.create(paymentLogging as any);
     if (result) return [true, 'Payment captured successfully!'];
     return [false, 'Unable to capture payment!'];
   }

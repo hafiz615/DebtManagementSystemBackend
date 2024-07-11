@@ -1280,6 +1280,11 @@ class CaseUtil {
       amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
       debt += caseTemp.remaining;
     }
+    for (const caseTemp of cases) {
+      console.log(caseTemp.intervals);
+    }
+    console.log(amount, 'amounttt');
+    console.log(weeklyBudget, 'weeklyy budget');
     return amount >= weeklyBudget
       ? {
           status: false,

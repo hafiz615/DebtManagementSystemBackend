@@ -227,7 +227,7 @@ const settignsModel: Schema = new Schema({
   },
   notificationTemplates: {
     email: {
-      type: Array<{name: ''; event: ''; html: ''; templateId: ''}>,
+      type: Array<{name: ''; event: ''; html: ''; templateId: ''; subject: ''}>,
     },
     sms: {
       type: Array<{name: ''; event: ''; text: ''; templateId: ''}>,

@@ -34,19 +34,25 @@ class CreditorController {
   };
 
   updateCreditor = async (req: Request, res: Response) => {
-    const response = await this.creditorService.updateCreditor(req);
-    if (!response[0]) {
+    try {
+      const response = await this.creditorService.updateCreditor(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Creditor'),
+        })
+      );
+    } catch (error) {
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
-    return res.status(constants.CODE.OK).send(
-      responseHelper.get2xxResponse({
-        statusCode: constants.CODE.OK,
-        data: response[1],
-        message: constants.successUpdateMessage('Creditor'),
-      })
-    );
   };
 
   listingDetails = async (req: Request, res: Response) => {
