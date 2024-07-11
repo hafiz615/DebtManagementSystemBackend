@@ -132,7 +132,7 @@ class SettingsService {
       await this.customFieldsRepository.getAllWithoutPagination<ICustomField>({
         $or: [{target: target}, {shared: true}],
       });
-    if (!customFields) {
+    if (!customFields.length) {
       return [false, constants.notFoundMessage('Custom fields')];
     }
     return [true, customFields];
