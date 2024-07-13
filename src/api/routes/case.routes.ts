@@ -46,4 +46,6 @@ router.post(
   caseController.getSummary
 );
 
+router.get('/getAIToken', authorize.validateAuth, caseController.getAIToken);
+
 export default router;

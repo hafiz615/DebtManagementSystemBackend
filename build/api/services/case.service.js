@@ -102,6 +102,10 @@ class CaseService {
             const response = await case_util_1.default.getSummary(req, caseTemp);
             return [true, response];
         };
+        this.getAIToken = async (req) => {
+            const response = await case_util_1.default.getAIToken('test', 'test');
+            return [true, response];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();

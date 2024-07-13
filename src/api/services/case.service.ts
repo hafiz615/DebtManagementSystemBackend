@@ -207,6 +207,11 @@ class CaseService {
     const response = await caseUtil.getSummary(req, caseTemp);
     return [true, response];
   };
+
+  getAIToken = async (req: Request): Promise<[boolean, {} | string]> => {
+    const response = await caseUtil.getAIToken('test', 'test');
+    return [true, response];
+  };
 }
 
 export default CaseService;

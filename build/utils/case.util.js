@@ -1304,6 +1304,16 @@ class CaseUtil {
             return [];
         }
     }
+    async getAIToken(username, partnerToken) {
+        const url = `https://dms-ai.hpdemos.co/get-auth-token?username=${username}&partner_token=${partnerToken}`;
+        try {
+            const response = await axios_1.default.get(url);
+            return response.data.error ? [] : response.data;
+        }
+        catch (error) {
+            return [];
+        }
+    }
 }
 exports.default = new CaseUtil();
 //# sourceMappingURL=case.util.js.map
