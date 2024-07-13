@@ -26,6 +26,8 @@ class Case {
         this.isDeleted = false;
         this.confidence = 0;
         this.closeDate = '';
+        this.notes = '';
+        this.chatId = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

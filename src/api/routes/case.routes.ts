@@ -34,5 +34,16 @@ router.delete(
   authorize.validateAuth,
   caseController.deleteCase
 );
+router.post(
+  '/getSettlementRange/:id',
+  authorize.validateAuth,
+  caseController.getAIIntegrationData
+);
+
+router.post(
+  '/getSummary/:id',
+  authorize.validateAuth,
+  caseController.getSummary
+);
 
 export default router;

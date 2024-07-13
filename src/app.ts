@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import {Database} from './config/database.config';
 import setup from './api/routes/base.route';
 import paymentCronjob from './cron-job/payment.cronjob';
+import session from 'express-session';
 
 class App {
   protected app: Application;
@@ -19,6 +20,14 @@ class App {
     this.app.use(cors());
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({extended: false}));
+    this.app.use(
+      session({
+        secret: 'ED2CEF5365D68FC9996BF86E2335D', // Replace with a strong secret key
+        resave: false,
+        saveUninitialized: false,
+        cookie: {secure: true}, // Set to true if using HTTPS
+      })
+    );
     setup(this.app);
   }
 

@@ -183,6 +183,30 @@ class CaseService {
     }
     return [true, true];
   }
+
+  getAIIntegrationData = async (
+    req: Request
+  ): Promise<[boolean, {} | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getAIWrapperData(req, caseTemp);
+    return [true, response];
+  };
+
+  getSummary = async (req: Request): Promise<[boolean, {} | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getSummary(req, caseTemp);
+    return [true, response];
+  };
 }
 
 export default CaseService;

@@ -105,6 +105,8 @@ class CaseValidate {
             paymentToken: joi_1.default.string().allow(''),
             paymentType: joi_1.default.string().valid('cc', 'ck').allow(''),
             status: joi_1.default.string().required(),
+            notes: joi_1.default.string(),
+            chatId: joi_1.default.string(),
             feePayment: joi_1.default.string().valid('paidViaCash', 'toPay', 'paidViaThirdParty'),
             intervals: joi_1.default.array().items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),

@@ -21,6 +21,9 @@ const constants_util_1 = __importDefault(require("./constants.util"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const paymentLogging_repository_1 = require("../api/repository/paymentLogging/paymentLogging.repository");
 const uuid_1 = require("uuid");
+const axios_1 = __importDefault(require("axios"));
+const common_util_1 = __importDefault(require("./common.util"));
+const upload_util_1 = __importDefault(require("./upload.util"));
 class CaseUtil {
     constructor() {
         this.contactRepository = new contact_repository_1.ContactRepository();
@@ -31,6 +34,7 @@ class CaseUtil {
         this.debtorService = new debtor_service_1.default();
         this.creditorService = new creditor_service_1.default();
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
+        this.uploadUtil = new upload_util_1.default();
     }
     async createContacts(data) {
         const validatedContacts = [];
@@ -253,7 +257,7 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
-        console.log(await this.getCaseCode());
+        newCase.chatId = (0, uuid_1.v4)();
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
         const caseCreated = await this.caseRepository.create(validatedCase);
@@ -1156,6 +1160,149 @@ class CaseUtil {
                 commission: weeklyBudget - amount,
                 totalCommission: parseInt((debt * 0.19).toFixed(2)),
             };
+    }
+    async getAIWrapperData(req, caseTemp) {
+        if (!req.session.auth_token ||
+            new Date(req.session.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test', req);
+        }
+        console.log(req.session.auth_token);
+        const creditorNames = await this.getCreditorNames(caseTemp, req.session.auth_token);
+        console.log(creditorNames);
+        const getScores = await this.getScores(19, req.session.auth_token, caseTemp, req.body.additionalProps);
+        console.log(getScores);
+        const getSettlementRange = await this.getSettlementRange(caseTemp, req.session.auth_token);
+        let getCreditorHistory = [];
+        if (Object.keys(getSettlementRange).length) {
+            getCreditorHistory = await this.getCreditorHistory(getSettlementRange.creditors_id, req.session.auth_token);
+        }
+        return { creditorNames, getScores, getSettlementRange, getCreditorHistory };
+    }
+    async storeAuthToken(username, partnerToken, req) {
+        const url = `https://dms-ai.hpdemos.co/get-auth-token?username=${username}&partner_token=${partnerToken}`;
+        try {
+            const response = await axios_1.default.get(url);
+            if (response && response.data) {
+                req.session.auth_token = response.data.auth_token;
+                req.session.expires_in = response.data.expires_in;
+            }
+        }
+        catch (error) {
+            req.session.auth_token = '';
+            req.session.expires_in = common_util_1.default.getCurrentDate();
+        }
+    }
+    async getCreditorNames(caseTemp, token) {
+        const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${caseTemp.debtor.basicInformation.fullName}&debtor_id=${String(caseTemp.debtor._id)}`;
+        const urls = [];
+        try {
+            for (let doc of caseTemp.documents) {
+                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+                urls.push(url);
+            }
+            // Data to be sent in the body of the request
+            console.log(urls);
+            const data = urls;
+            const response = await axios_1.default.post(url, data, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log(response.data, 'creditorrr');
+            return response.data.error ? [] : response.data;
+        }
+        catch (error) {
+            console.log(error);
+            return [];
+        }
+    }
+    async getScores(comm, token, caseTemp, additionalProps) {
+        const url = `https://dms-ai.hpdemos.co/get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
+        // Data to be sent in the body of the request
+        // let data = {
+        //   'Everest Businss Funding': {total_debt: 100000, remaining_debt: 50000},
+        // };
+        let data = {};
+        if (!additionalProps.length) {
+            data[`${additionalProps[0]}`] = {
+                total_debt: caseTemp.totalDebt,
+                remaining_debt: caseTemp.remaining,
+            };
+        }
+        //  else {
+        //   data = {...additionalProps};
+        // }
+        try {
+            const response = await axios_1.default.post(url, data, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log(response.data, 'scoreeeee');
+            return response.data.error ? [] : response.data;
+        }
+        catch (error) {
+            return [];
+        }
+    }
+    async getSettlementRange(caseTemp, token) {
+        const url = `https://dms-ai.hpdemos.co/get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
+        try {
+            const response = await axios_1.default.post(url, {}, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                },
+            });
+            return response.data.error ? [] : response.data;
+        }
+        catch (error) {
+            return [];
+        }
+    }
+    async getCreditorHistory(creditorId, token) {
+        const url = `https://dms-ai.hpdemos.co/get-creditor-history?creditor_id=${creditorId}`;
+        try {
+            const response = await axios_1.default.post(url, {}, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                },
+            });
+            console.log(response.data, 'historyyyy');
+            return response.data.error ? [] : response.data;
+        }
+        catch (error) {
+            return [];
+        }
+    }
+    async getSummary(req, caseTemp) {
+        if (!req.session.auth_token ||
+            new Date(req.session.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test', req);
+        }
+        const url = `https://dms-ai.hpdemos.co/negotiator?human_input=${req.body.humanInput}&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
+        const data = {
+            debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+            financial_health_summary: req.body.financialHealthSummary,
+        };
+        try {
+            const response = await axios_1.default.post(url, data, {
+                headers: {
+                    accept: 'application/json',
+                    token: req.session.auth_token,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            });
+            return response.data.error ? [] : response.data;
+        }
+        catch (error) {
+            return [];
+        }
     }
 }
 exports.default = new CaseUtil();

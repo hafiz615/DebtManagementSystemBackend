@@ -92,6 +92,16 @@ class CaseService {
             }
             return [true, caseUpdated];
         };
+        this.getAIIntegrationData = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            const response = await case_util_1.default.getAIWrapperData(req, caseTemp);
+            return [true, response];
+        };
+        this.getSummary = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            const response = await case_util_1.default.getSummary(req, caseTemp);
+            return [true, response];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();

@@ -108,6 +108,8 @@ class CaseValidate {
       paymentToken: Joi.string().allow(''),
       paymentType: Joi.string().valid('cc', 'ck').allow(''),
       status: Joi.string().required(),
+      notes: Joi.string(),
+      chatId: Joi.string(),
       feePayment: Joi.string().valid(
         'paidViaCash',
         'toPay',

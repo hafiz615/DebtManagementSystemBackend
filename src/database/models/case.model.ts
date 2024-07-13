@@ -82,6 +82,12 @@ const caseModel: Schema = new Schema({
   closeDate: {
     type: Date,
   },
+  notes: {
+    type: String,
+  },
+  chatId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,
