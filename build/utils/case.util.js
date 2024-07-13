@@ -1162,14 +1162,15 @@ class CaseUtil {
             };
     }
     async getAIWrapperData(req, caseTemp) {
-        if (!req.session.auth_token ||
-            new Date(req.session.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+        if (new Date(req.session.expires_in) <=
+            new Date(common_util_1.default.getCurrentDate()) ||
+            !req.session.auth_token) {
             await this.storeAuthToken('test', 'test', req);
         }
         console.log(req.session.auth_token);
         const creditorNames = await this.getCreditorNames(caseTemp, req.session.auth_token);
         console.log(creditorNames);
-        const getScores = await this.getScores(19, req.session.auth_token, caseTemp, req.body.additionalProps);
+        const getScores = await this.getScores(19, req.session.auth_token, caseTemp, creditorNames);
         console.log(getScores);
         const getSettlementRange = await this.getSettlementRange(caseTemp, req.session.auth_token);
         let getCreditorHistory = [];
@@ -1193,7 +1194,7 @@ class CaseUtil {
         }
     }
     async getCreditorNames(caseTemp, token) {
-        const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${caseTemp.debtor.basicInformation.fullName}&debtor_id=${String(caseTemp.debtor._id)}`;
+        const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${caseTemp.debtor.businessInformation.companyName}&debtor_id=${String(caseTemp.debtor._id)}`;
         const urls = [];
         try {
             for (let doc of caseTemp.documents) {
@@ -1211,7 +1212,7 @@ class CaseUtil {
                 },
             });
             console.log(response.data, 'creditorrr');
-            return response.data.error ? [] : response.data;
+            return response.data.error ? [] : response.data.creditor_names;
         }
         catch (error) {
             console.log(error);
@@ -1225,6 +1226,8 @@ class CaseUtil {
         //   'Everest Businss Funding': {total_debt: 100000, remaining_debt: 50000},
         // };
         let data = {};
+        console.log(additionalProps, 'kjkjk');
+        console.log(additionalProps[0], 'kjkjk');
         if (!additionalProps.length) {
             data[`${additionalProps[0]}`] = {
                 total_debt: caseTemp.totalDebt,
@@ -1234,6 +1237,7 @@ class CaseUtil {
         //  else {
         //   data = {...additionalProps};
         // }
+        console.log(data);
         try {
             const response = await axios_1.default.post(url, data, {
                 headers: {

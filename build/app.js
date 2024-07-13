@@ -23,7 +23,7 @@ class App {
         this.app.use((0, express_session_1.default)({
             secret: 'ED2CEF5365D68FC9996BF86E2335D', // Replace with a strong secret key
             resave: false,
-            saveUninitialized: false,
+            saveUninitialized: true,
             cookie: { secure: true }, // Set to true if using HTTPS
         }));
         (0, base_route_1.default)(this.app);
