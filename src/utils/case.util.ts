@@ -1470,9 +1470,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test', req);
     }
-    const url = `https://dms-ai.hpdemos.co/negotiator?human_input=${
-      req.body.humanInput
-    }&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
+    const url = `https://dms-ai.hpdemos.co/negotiator?human_input=${req.body.humanInput}&debtor_id=123&chat_id=${caseTemp.chatId}`;
 
     const data = {
       debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
@@ -1486,7 +1484,7 @@ class CaseUtil {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      return response.data.error ? [] : response.data;
+      return response.data.error ? [] : response.data.response;
     } catch (error) {
       return [];
     }

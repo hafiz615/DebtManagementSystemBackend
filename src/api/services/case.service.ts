@@ -18,6 +18,9 @@ import {IPayment} from '../../database/interfaces/payment.interface';
 import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {CreditorRepository} from '../repository/creditor/creditor.repository';
 import mongoose from 'mongoose';
+import {ChatSummary} from '../../database/repomodels/chatSummary.repomodel';
+import {ChatSummaryRepository} from '../repository/chatSummary/chatSummary.repository';
+import {IChatSummary} from '../../database/interfaces/chatSummary.interface';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -26,6 +29,7 @@ class CaseService {
   private paymentRepository: PaymentRepository;
   private debtorRepository: DebtorRepository;
   private creditorRepository: CreditorRepository;
+  private chatSummaryRepository: ChatSummaryRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -34,6 +38,7 @@ class CaseService {
     this.paymentRepository = new PaymentRepository();
     this.debtorRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
+    this.chatSummaryRepository = new ChatSummaryRepository();
   }
   createCase = async (
     req: Request
@@ -205,11 +210,34 @@ class CaseService {
       ['debtor']
     );
     const response = await caseUtil.getSummary(req, caseTemp);
+    const newSummary = new ChatSummary();
+    newSummary.chatId = caseTemp.chatId;
+    const validatedSummary = DataCopier.copy(newSummary, response);
+    await this.chatSummaryRepository.create(validatedSummary);
     return [true, response];
   };
 
   getAIToken = async (req: Request): Promise<[boolean, {} | string]> => {
     const response = await caseUtil.getAIToken('test', 'test');
+    return [true, response];
+  };
+
+  getCaseSummaries = async (
+    req: Request
+  ): Promise<[boolean, IChatSummary[] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      'chatId',
+      undefined,
+      ['debtor']
+    );
+    const response =
+      await this.chatSummaryRepository.getAllWithoutPagination<IChatSummary>({
+        chatId: caseTemp.chatId,
+      });
+    if (!response.length) {
+      return [false, constantsUtil.notFoundMessage('Summaries')];
+    }
     return [true, response];
   };
 }

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
@@ -11,6 +12,8 @@ const targetCF_repository_1 = require("../repository/targetCustomFields/targetCF
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
+const chatSummary_repomodel_1 = require("../../database/repomodels/chatSummary.repomodel");
+const chatSummary_repository_1 = require("../repository/chatSummary/chatSummary.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -100,10 +103,24 @@ class CaseService {
         this.getSummary = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const response = await case_util_1.default.getSummary(req, caseTemp);
+            const newSummary = new chatSummary_repomodel_1.ChatSummary();
+            newSummary.chatId = caseTemp.chatId;
+            const validatedSummary = dataCopier_util_1.DataCopier.copy(newSummary, response);
+            await this.chatSummaryRepository.create(validatedSummary);
             return [true, response];
         };
         this.getAIToken = async (req) => {
             const response = await case_util_1.default.getAIToken('test', 'test');
+            return [true, response];
+        };
+        this.getCaseSummaries = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id, 'chatId', undefined, ['debtor']);
+            const response = await this.chatSummaryRepository.getAllWithoutPagination({
+                chatId: caseTemp.chatId,
+            });
+            if (!response.length) {
+                return [false, constants_util_1.default.notFoundMessage('Summaries')];
+            }
             return [true, response];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
@@ -112,6 +129,7 @@ class CaseService {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.chatSummaryRepository = new chatSummary_repository_1.ChatSummaryRepository();
     }
     async deleteCase(req) {
         // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);

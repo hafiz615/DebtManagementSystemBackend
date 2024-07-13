@@ -17,5 +17,6 @@ router.delete('/deleteCase/:id', authorize_middleware_1.default.validateAuth, ca
 router.post('/getSettlementRange/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAIIntegrationData);
 router.post('/getSummary/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getSummary);
 router.get('/getAIToken', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAIToken);
+router.get('/getCaseSummaries/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCaseSummaries);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map
