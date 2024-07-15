@@ -24,6 +24,12 @@ router.get(
   rolesPermissionsController.getRoleById
 );
 
+router.get(
+  '/getRoleByName',
+  authorize.validateAuth,
+  rolesPermissionsController.getRoleByName
+);
+
 router.post(
   '/updateRole/:id',
   authorize.validateAuth,

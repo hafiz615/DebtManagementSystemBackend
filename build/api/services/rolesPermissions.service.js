@@ -45,6 +45,19 @@ class RolesPermissionsService {
         }
         return [true, result];
     }
+    async getRoleByName(req) {
+        if (!String(req.query.role)) {
+            return [false, 'Role name is missing'];
+        }
+        const role = String(req.query.role);
+        const result = await this.rolesPermissionsRepository.getOne({
+            name: role,
+        });
+        if (!result) {
+            return [false, constants_util_1.default.notFoundMessage('role')];
+        }
+        return [true, result];
+    }
     async updateRole(req) {
         const findRole = await this.rolesPermissionsRepository.getOne({
             _id: { $ne: req.params.id },
