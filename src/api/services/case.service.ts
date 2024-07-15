@@ -189,18 +189,18 @@ class CaseService {
     return [true, true];
   }
 
-  getAIIntegrationData = async (
-    req: Request
-  ): Promise<[boolean, {} | string]> => {
-    const caseTemp = await this.caseRepository.getById<ICase>(
-      req.params.id,
-      undefined,
-      undefined,
-      ['debtor']
-    );
-    const response = await caseUtil.getAIWrapperData(req, caseTemp);
-    return [true, response];
-  };
+  // getAIIntegrationData = async (
+  //   req: Request
+  // ): Promise<[boolean, {} | string]> => {
+  //   const caseTemp = await this.caseRepository.getById<ICase>(
+  //     req.params.id,
+  //     undefined,
+  //     undefined,
+  //     ['debtor']
+  //   );
+  //   const response = await caseUtil.getAIWrapperData(req, caseTemp);
+  //   return [true, response];
+  // };
 
   getSummary = async (req: Request): Promise<[boolean, {} | string]> => {
     const caseTemp = await this.caseRepository.getById<ICase>(
@@ -238,6 +238,53 @@ class CaseService {
     if (!response.length) {
       return [false, constantsUtil.notFoundMessage('Summaries')];
     }
+    return [true, response];
+  };
+
+  getCreditorNames = async (
+    req: Request
+  ): Promise<[boolean, {} | [] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getCreditorNames(req, caseTemp);
+    return [true, response];
+  };
+
+  getScores = async (req: Request): Promise<[boolean, {} | [] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getScores(req, caseTemp);
+    return [true, response];
+  };
+
+  getSettlementRange = async (
+    req: Request
+  ): Promise<[boolean, {} | [] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getSettlementRange(caseTemp);
+    return [true, response];
+  };
+
+  getCreditorHistory = async (
+    req: Request
+  ): Promise<[boolean, {} | [] | string]> => {
+    if (!String(req.query.creditorId)) {
+      return [false, 'Creditor id is missing'];
+    }
+    const response = await caseUtil.getCreditorHistory(req);
     return [true, response];
   };
 }

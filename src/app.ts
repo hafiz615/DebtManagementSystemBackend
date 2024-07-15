@@ -24,7 +24,7 @@ class App {
       session({
         secret: 'ED2CEF5365D68FC9996BF86E2335D', // Replace with a strong secret key
         resave: false,
-        saveUninitialized: true,
+        saveUninitialized: false,
         cookie: {secure: true}, // Set to true if using HTTPS
       })
     );

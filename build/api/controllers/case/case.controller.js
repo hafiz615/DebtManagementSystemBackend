@@ -131,27 +131,28 @@ class CaseController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.getAIIntegrationData = async (req, res) => {
-            try {
-                const response = await this.caseService.getAIIntegrationData(req);
-                if (!response[0]) {
-                    return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
-                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
-                }
-                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                    statusCode: constants_util_1.default.CODE.OK,
-                    data: response[1],
-                    message: constants_util_1.default.successFoundMessage('Settlement range'),
-                }));
-            }
-            catch (error) {
-                console.log(error);
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
-            }
-        };
+        // getAIIntegrationData = async (req: Request, res: Response) => {
+        //   try {
+        //     const response = await this.caseService.getAIIntegrationData(req);
+        //     if (!response[0]) {
+        //       return res
+        //         .status(constants.CODE.BAD_REQUEST)
+        //         .send(responseHelper.get4xxResponse(response[1]));
+        //     }
+        //     return res.status(constants.CODE.OK).send(
+        //       responseHelper.get2xxResponse({
+        //         statusCode: constants.CODE.OK,
+        //         data: response[1],
+        //         message: constants.successFoundMessage('Settlement range'),
+        //       })
+        //     );
+        //   } catch (error) {
+        //     console.log(error);
+        //     return res
+        //       .status(constants.CODE.BAD_REQUEST)
+        //       .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+        //   }
+        // };
         this.getSummary = async (req, res) => {
             try {
                 const response = await this.caseService.getSummary(req);
@@ -207,6 +208,90 @@ class CaseController {
                 }));
             }
             catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.getScores = async (req, res) => {
+            try {
+                const response = await this.caseService.getScores(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.OK)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Scores'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.getCreditorNames = async (req, res) => {
+            try {
+                const response = await this.caseService.getCreditorNames(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.OK)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Creditor names'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.getSettlementRange = async (req, res) => {
+            try {
+                const response = await this.caseService.getSettlementRange(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.OK)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Settlement range'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.getCreditorHistory = async (req, res) => {
+            try {
+                const response = await this.caseService.getCreditorHistory(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Creditor history'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));

@@ -24,6 +24,7 @@ const uuid_1 = require("uuid");
 const axios_1 = __importDefault(require("axios"));
 const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
+const global_1 = require("../database/repomodels/global");
 class CaseUtil {
     constructor() {
         this.contactRepository = new contact_repository_1.ContactRepository();
@@ -1161,39 +1162,43 @@ class CaseUtil {
                 totalCommission: parseInt((debt * 0.19).toFixed(2)),
             };
     }
-    async getAIWrapperData(req, caseTemp) {
-        if (new Date(req.session.expires_in) <=
-            new Date(common_util_1.default.getCurrentDate()) ||
-            !req.session.auth_token) {
-            await this.storeAuthToken('test', 'test', req);
-        }
-        console.log(req.session.auth_token);
-        const creditorNames = await this.getCreditorNames(caseTemp, req.session.auth_token);
-        console.log(creditorNames);
-        const getScores = await this.getScores(19, req.session.auth_token, caseTemp, creditorNames);
-        console.log(getScores);
-        const getSettlementRange = await this.getSettlementRange(caseTemp, req.session.auth_token);
-        let getCreditorHistory = [];
-        if (Object.keys(getSettlementRange).length) {
-            getCreditorHistory = await this.getCreditorHistory(getSettlementRange.creditors_id, req.session.auth_token);
-        }
-        return { creditorNames, getScores, getSettlementRange, getCreditorHistory };
-    }
-    async storeAuthToken(username, partnerToken, req) {
-        const url = `https://dms-ai.hpdemos.co/get-auth-token?username=${username}&partner_token=${partnerToken}`;
-        try {
-            const response = await axios_1.default.get(url);
-            if (response && response.data) {
-                req.session.auth_token = response.data.auth_token;
-                req.session.expires_in = response.data.expires_in;
-            }
-        }
-        catch (error) {
-            req.session.auth_token = '';
-            req.session.expires_in = common_util_1.default.getCurrentDate();
-        }
-    }
-    async getCreditorNames(caseTemp, token) {
+    // async getAIWrapperData(req: any, caseTemp: ICase) {
+    //   if (
+    //     new Date(req.session.expires_in) <=
+    //       new Date(commonUtil.getCurrentDate()) ||
+    //     !req.session.auth_token
+    //   ) {
+    //     await this.storeAuthToken('test', 'test', req);
+    //   }
+    //   console.log(req.session.auth_token);
+    //   const creditorNames = await this.getCreditorNames(
+    //     caseTemp,
+    //     req.session.auth_token
+    //   );
+    //   console.log(creditorNames);
+    //   const getScores = await this.getScores(
+    //     19,
+    //     req.session.auth_token,
+    //     caseTemp,
+    //     creditorNames
+    //   );
+    //   console.log(getScores);
+    //   const getSettlementRange = await this.getSettlementRange(
+    //     caseTemp,
+    //     req.session.auth_token
+    //   );
+    //   console.log(getSettlementRange, 'okokokok');
+    //   // return 'ok';
+    //   let getCreditorHistory = [];
+    //   if (Object.keys(getSettlementRange).length) {
+    //     getCreditorHistory = await this.getCreditorHistory(
+    //       getSettlementRange.creditors_id,
+    //       req.session.auth_token
+    //     );
+    //   }
+    //   return {creditorNames, getScores, getSettlementRange, getCreditorHistory};
+    // }
+    async getCreditorNamesAI(caseTemp, token) {
         const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${caseTemp.debtor.businessInformation.companyName}&debtor_id=${String(caseTemp.debtor._id)}`;
         const urls = [];
         try {
@@ -1219,7 +1224,7 @@ class CaseUtil {
             return [];
         }
     }
-    async getScores(comm, token, caseTemp, additionalProps) {
+    async getScoresAI(comm, token, caseTemp, additionalProps) {
         const url = `https://dms-ai.hpdemos.co/get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
         // Data to be sent in the body of the request
         // let data = {
@@ -1228,7 +1233,7 @@ class CaseUtil {
         let data = {};
         console.log(additionalProps, 'kjkjk');
         console.log(additionalProps[0], 'kjkjk');
-        if (!additionalProps.length) {
+        if (additionalProps.length) {
             data[`${additionalProps[0]}`] = {
                 total_debt: caseTemp.totalDebt,
                 remaining_debt: caseTemp.remaining,
@@ -1253,7 +1258,7 @@ class CaseUtil {
             return [];
         }
     }
-    async getSettlementRange(caseTemp, token) {
+    async getSettlementRangeAI(caseTemp, token) {
         const url = `https://dms-ai.hpdemos.co/get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
         try {
             const response = await axios_1.default.post(url, {}, {
@@ -1268,7 +1273,7 @@ class CaseUtil {
             return [];
         }
     }
-    async getCreditorHistory(creditorId, token) {
+    async getCreditorHistoryAI(creditorId, token) {
         const url = `https://dms-ai.hpdemos.co/get-creditor-history?creditor_id=${creditorId}`;
         try {
             const response = await axios_1.default.post(url, {}, {
@@ -1287,7 +1292,7 @@ class CaseUtil {
     async getSummary(req, caseTemp) {
         if (!req.session.auth_token ||
             new Date(req.session.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
-            await this.storeAuthToken('test', 'test', req);
+            await this.storeAuthToken('test', 'test');
         }
         const url = `https://dms-ai.hpdemos.co/negotiator?human_input=${req.body.humanInput}&debtor_id=123&chat_id=${caseTemp.chatId}`;
         const data = {
@@ -1316,6 +1321,56 @@ class CaseUtil {
         }
         catch (error) {
             return [];
+        }
+    }
+    async getCreditorNames(req, caseTemp) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const creditorNames = await this.getCreditorNamesAI(caseTemp, global_1.AIAuth.auth_token);
+        console.log(creditorNames);
+        return creditorNames;
+    }
+    async getScores(req, caseTemp) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const getScores = await this.getScoresAI(19, global_1.AIAuth.auth_token, caseTemp, req.body.creditorNames);
+        console.log(getScores);
+        return getScores;
+    }
+    async getSettlementRange(caseTemp) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
+        console.log(getSettlementRange);
+        return getSettlementRange;
+    }
+    async getCreditorHistory(req) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const getCreditorHistory = await this.getCreditorHistoryAI(req.params.id, global_1.AIAuth.auth_token);
+        console.log(getCreditorHistory);
+        return getCreditorHistory;
+    }
+    async storeAuthToken(username, partnerToken) {
+        const url = `https://dms-ai.hpdemos.co/get-auth-token?username=${username}&partner_token=${partnerToken}`;
+        try {
+            const response = await axios_1.default.get(url);
+            if (response && response.data) {
+                global_1.AIAuth.auth_token = response.data.auth_token;
+                global_1.AIAuth.expires_in = response.data.expires_in;
+            }
+        }
+        catch (error) {
+            global_1.AIAuth.auth_token = '';
+            global_1.AIAuth.expires_in = common_util_1.default.getCurrentDate();
         }
     }
 }
