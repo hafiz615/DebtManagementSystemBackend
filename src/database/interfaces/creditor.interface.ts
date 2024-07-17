@@ -3,7 +3,6 @@ import mongoose, {Document} from 'mongoose';
 interface businessInformation {
   companyName: string;
   businessCategory: string;
-  accountTitle: string;
 }
 
 interface basicInformation {
@@ -32,6 +31,9 @@ export interface ICreditor extends Document {
     maximum: number;
   };
   creditorSecurityKey: string;
+  accountTitle: string;
+  paymentType: string;
+  customerVaultId: string;
   createdAt: string;
   updatedAt: string;
 }

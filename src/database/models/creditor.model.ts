@@ -27,9 +27,6 @@ const creditorModel: Schema = new Schema({
       type: String,
       required: true,
     },
-    accountTitle: {
-      type: String,
-    },
   },
   contacts: {
     type: Array<{
@@ -62,6 +59,15 @@ const creditorModel: Schema = new Schema({
     },
   },
   creditorSecurityKey: {
+    type: String,
+  },
+  accountTitle: {
+    type: String,
+  },
+  paymentType: {
+    type: String,
+  },
+  customerVaultId: {
     type: String,
   },
   createdAt: {

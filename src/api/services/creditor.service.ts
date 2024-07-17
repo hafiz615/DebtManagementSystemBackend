@@ -5,6 +5,7 @@ import {Request} from 'express';
 import {CaseRepository} from '../repository/case/case.repository';
 import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
+import axios from 'axios';
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
@@ -158,12 +159,34 @@ class CreditorService {
     if (!title) return [false, 'Title is missing'];
     const creditor = await this.creditorRepository.updateById<ICreditor>(
       req.params.id,
-      {'businessInformation.accountTitle': title}
+      {accountTitle: title}
     );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
     }
     return [true, creditor];
+  }
+
+  async createVault(paymentToken: string, id: string, paymentType: string) {
+    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const params = {
+      customer_vault: 'add_customer',
+      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      payment_token: paymentToken,
+    };
+    const response = await axios.get(url, {params});
+    const responseNum = new URLSearchParams(response.data).get('response');
+    if (responseNum === '1') {
+      const customerVault = new URLSearchParams(response.data).get(
+        'customer_vault_id'
+      );
+      const debtor = await this.creditorRepository.updateById<ICreditor>(id, {
+        customerVaultId: customerVault,
+        paymentType: paymentType,
+      });
+      return [true, debtor];
+    }
+    return [false, 'Unable to create customer vault'];
   }
 }
 

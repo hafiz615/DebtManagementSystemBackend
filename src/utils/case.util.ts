@@ -225,8 +225,8 @@ class CaseUtil {
       name: obj.creditor.basicInformation.fullName,
       caseId: String(obj._id),
       creditorId: String(obj.creditor._id),
-      creditorAccountTitle: obj.creditor.businessInformation.accountTitle
-        ? obj.creditor.businessInformation.accountTitle
+      creditorAccountTitle: obj.creditor.accountTitle
+        ? obj.creditor.accountTitle
         : '',
     }));
   }
@@ -356,6 +356,13 @@ class CaseUtil {
         body.paymentToken,
         String(caseCreated.debtor),
         body.paymentType
+      );
+    }
+    if (body.paymentTokenCreditor && body.paymentTypeCreditor) {
+      await this.creditorService.createVault(
+        body.paymentTokenCreditor,
+        String(caseCreated.creditor),
+        body.paymentTypeCreditor
       );
     }
     console.log('i am going to call AI');
@@ -1426,20 +1433,20 @@ class CaseUtil {
           undefined,
           ['creditor']
         );
-      for (let creditor of additionalProps) {
-        // const matchedCreditorCases = cases.filter((caseTemp: any) => {
-        //   return (
-        //     caseTemp.creditor.businessInformation.accountTitle === creditor
-        //   );
-        // });
-        // if (matchedCreditorCases.length) {
-        //   matchedCreditors.push(...matchedCreditorCases);
-        // } else {
-        //   unMatchedNames += creditor + ' ';
-        // }
-      }
+      // for (let creditor of additionalProps) {
+      // const matchedCreditorCases = cases.filter((caseTemp: any) => {
+      //   return (
+      //     caseTemp.creditor.businessInformation.accountTitle === creditor
+      //   );
+      // });
+      // if (matchedCreditorCases.length) {
+      //   matchedCreditors.push(...matchedCreditorCases);
+      // } else {
+      //   unMatchedNames += creditor + ' ';
+      // }
+      // }
       for (const matchedCreditor of cases) {
-        data[`${matchedCreditor.creditor.businessInformation.accountTitle}`] = {
+        data[`${matchedCreditor.creditor.accountTitle}`] = {
           total_debt: matchedCreditor.totalDebt,
           remaining_debt: matchedCreditor.remaining,
         };

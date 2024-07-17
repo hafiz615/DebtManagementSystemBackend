@@ -7,6 +7,7 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
+const axios_1 = __importDefault(require("axios"));
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -132,11 +133,30 @@ class CreditorService {
         const title = String(req.query.title);
         if (!title)
             return [false, 'Title is missing'];
-        const creditor = await this.creditorRepository.updateById(req.params.id, { 'businessInformation.accountTitle': title });
+        const creditor = await this.creditorRepository.updateById(req.params.id, { accountTitle: title });
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }
         return [true, creditor];
+    }
+    async createVault(paymentToken, id, paymentType) {
+        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const params = {
+            customer_vault: 'add_customer',
+            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            payment_token: paymentToken,
+        };
+        const response = await axios_1.default.get(url, { params });
+        const responseNum = new URLSearchParams(response.data).get('response');
+        if (responseNum === '1') {
+            const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
+            const debtor = await this.creditorRepository.updateById(id, {
+                customerVaultId: customerVault,
+                paymentType: paymentType,
+            });
+            return [true, debtor];
+        }
+        return [false, 'Unable to create customer vault'];
     }
 }
 exports.default = CreditorService;

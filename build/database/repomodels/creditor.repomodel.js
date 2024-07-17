@@ -15,7 +15,6 @@ class Creditor {
         this.businessInformation = {
             companyName: '',
             businessCategory: '',
-            accountTitle: '',
         };
         this.notes = '';
         this.lastFundedDate = '';
@@ -23,6 +22,8 @@ class Creditor {
             minimum: 0,
             maximum: 0,
         };
+        this.paymentType = '';
+        this.customerVaultId = '';
         this.contacts = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

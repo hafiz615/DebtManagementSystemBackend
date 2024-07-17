@@ -10,7 +10,6 @@ export class Creditor {
   businessInformation = {
     companyName: '',
     businessCategory: '',
-    accountTitle: '',
   };
   notes = '';
   lastFundedDate = '';
@@ -19,6 +18,9 @@ export class Creditor {
     maximum: 0,
   };
   creditorSecurityKey: '';
+  accountTitle: '';
+  paymentType = '';
+  customerVaultId = '';
   contacts = Array<{
     name: '';
     title: '';

@@ -51,9 +51,6 @@ const creditorModel = new mongoose_1.Schema({
             type: String,
             required: true,
         },
-        accountTitle: {
-            type: String,
-        },
     },
     contacts: {
         type: (Array),
@@ -76,6 +73,15 @@ const creditorModel = new mongoose_1.Schema({
         },
     },
     creditorSecurityKey: {
+        type: String,
+    },
+    accountTitle: {
+        type: String,
+    },
+    paymentType: {
+        type: String,
+    },
+    customerVaultId: {
         type: String,
     },
     createdAt: {
