@@ -216,14 +216,7 @@ class CaseUtil {
   }
 
   async getAllCreditorsOfDebtor(debtor: IDebtor) {
-    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
-      {debtor: debtor._id, isDeleted: false},
-      'totalDebt caseCode status',
-      undefined,
-      undefined,
-      {path: 'creditor', select: ['basicInformation.fullName']}
-    );
-
+    const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
     const tempCases: any = cases;
     return tempCases.map(obj => ({
       totalDebt: obj.totalDebt,
@@ -231,7 +224,28 @@ class CaseUtil {
       status: obj.status,
       name: obj.creditor.basicInformation.fullName,
       caseId: String(obj._id),
+      creditorId: String(obj.creditor._id),
+      creditorAccountTitle: obj.creditor.businessInformation.accountTitle
+        ? obj.creditor.businessInformation.accountTitle
+        : '',
     }));
+  }
+
+  async getAllCreditorsOfDebtorQuery(debtorId: string) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {debtor: debtorId, isDeleted: false},
+      'totalDebt caseCode status remaining',
+      undefined,
+      undefined,
+      {
+        path: 'creditor',
+        select: [
+          'basicInformation.fullName',
+          'businessInformation.accountTitle',
+        ],
+      }
+    );
+    return cases;
   }
 
   async createCase(body: any, name: string, id: string) {
@@ -344,7 +358,23 @@ class CaseUtil {
         body.paymentType
       );
     }
-    return [true, caseCreated];
+    console.log('i am going to call AI');
+    const creditorNames: Array<string> = await this.getCreditorNames(
+      caseCreated,
+      debtor
+    );
+    console.log(creditorNames, 'creditonamess');
+    const findCreditor = creditorNames.includes(
+      creditor.businessInformation.companyName
+    );
+    console.log(findCreditor, 'findCrediotrrr');
+    if (findCreditor) {
+      await this.creditorRepository.updateById(creditor._id, {
+        'businessInformation.accountTitle':
+          creditor.businessInformation.companyName,
+      });
+    }
+    return [true, {caseCreated, findCreditor, creditorNames}];
   }
 
   async checkWeeklyBudget(body: any, debtorFound: boolean, debtor: IDebtor) {
@@ -1078,11 +1108,11 @@ class CaseUtil {
     return filterConditions;
   }
 
-  async getClientListingPipeline(req: Request) {
+  async getClientListingPipeline(req: Request, match: {}) {
     const filters = await this.getClientListingFilters(req);
     const pipeline = [
       {
-        $match: {isDeleted: {$ne: true}}, // Filter out isDeleted cases
+        $match: match, // Filter out isDeleted cases
       },
       {
         $lookup: {
@@ -1172,11 +1202,11 @@ class CaseUtil {
     return [queryFilter, querySearch];
   }
 
-  async getCreditorListingPipeline(req: Request) {
+  async getCreditorListingPipeline(req: Request, match: {}) {
     const filters = await this.getCreditorListingFilters(req);
     const pipeline = [
       {
-        $match: {isDeleted: {$ne: true}}, // Filter out isDeleted cases
+        $match: match, // Filter out isDeleted cases
       },
       {
         $lookup: {
@@ -1342,10 +1372,13 @@ class CaseUtil {
   //   return {creditorNames, getScores, getSettlementRange, getCreditorHistory};
   // }
 
-  async getCreditorNamesAI(caseTemp: any, token: string) {
-    const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${
-      caseTemp.debtor.businessInformation.companyName
-    }&debtor_id=${String(caseTemp.debtor._id)}`;
+  async getCreditorNamesAI(
+    caseTemp: any,
+    token: string,
+    debtorName: string,
+    debtorId: string
+  ) {
+    const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
     const urls = [];
     try {
       for (let doc of caseTemp.documents) {
@@ -1380,22 +1413,38 @@ class CaseUtil {
       caseTemp.debtor._id
     )}&commision_percentage=${comm}`;
 
-    // Data to be sent in the body of the request
     // let data = {
     //   'Everest Businss Funding': {total_debt: 100000, remaining_debt: 50000},
     // };
     let data = {};
-    console.log(additionalProps, 'kjkjk');
-    console.log(additionalProps[0], 'kjkjk');
     if (additionalProps.length) {
-      data[`${additionalProps[0]}`] = {
-        total_debt: caseTemp.totalDebt,
-        remaining_debt: caseTemp.remaining,
-      };
+      const cases: any =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {creditor: {$in: additionalProps}},
+          undefined,
+          undefined,
+          undefined,
+          ['creditor']
+        );
+      for (let creditor of additionalProps) {
+        // const matchedCreditorCases = cases.filter((caseTemp: any) => {
+        //   return (
+        //     caseTemp.creditor.businessInformation.accountTitle === creditor
+        //   );
+        // });
+        // if (matchedCreditorCases.length) {
+        //   matchedCreditors.push(...matchedCreditorCases);
+        // } else {
+        //   unMatchedNames += creditor + ' ';
+        // }
+      }
+      for (const matchedCreditor of cases) {
+        data[`${matchedCreditor.creditor.businessInformation.accountTitle}`] = {
+          total_debt: matchedCreditor.totalDebt,
+          remaining_debt: matchedCreditor.remaining,
+        };
+      }
     }
-    //  else {
-    //   data = {...additionalProps};
-    // }
     console.log(data);
     try {
       const response = await axios.post(url, data, {
@@ -1406,9 +1455,21 @@ class CaseUtil {
         },
       });
       console.log(response.data, 'scoreeeee');
+      if (response.data.error) {
+        return [[], 'No data returned for the creditors'];
+      }
+      if (response.data) {
+        return [response.data, 'Data returned for all creditors'];
+        // if (unMatchedNames) {
+        //   return [
+        //     response.data,
+        //     `Data returned for the creditors except ${unMatchedNames}`,
+        //   ];
+        // }
+      }
       return response.data.error ? [] : response.data;
     } catch (error) {
-      return [];
+      return [[], 'No data returned for the creditors'];
     }
   }
 
@@ -1490,7 +1551,7 @@ class CaseUtil {
     }
   }
 
-  async getCreditorNames(req: Request, caseTemp: any) {
+  async getCreditorNames(caseTemp: any, debtor: IDebtor) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1499,7 +1560,9 @@ class CaseUtil {
     }
     const creditorNames = await this.getCreditorNamesAI(
       caseTemp,
-      AIAuth.auth_token
+      AIAuth.auth_token,
+      debtor.businessInformation.companyName,
+      debtor.id
     );
     console.log(creditorNames);
     return creditorNames;

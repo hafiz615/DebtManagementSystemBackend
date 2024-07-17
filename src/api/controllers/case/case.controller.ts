@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import CaseService from '../../services/case.service';
+import commonUtil from '../../../utils/common.util';
 
 class CaseController {
   protected caseService: CaseService;
@@ -11,6 +12,17 @@ class CaseController {
   }
   createCase = async (req: Request, res: Response) => {
     try {
+      const keyword =
+        req.query.bulk === 'true' ? 'importBulkCases' : 'createNewCase';
+      const checkPermission = await commonUtil.checkPermission(keyword, req);
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.caseService.createCase(req);
       if (!response[0]) {
         return res
@@ -53,6 +65,18 @@ class CaseController {
   };
   getCaseById = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission(
+        'viewCaseDetails',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.caseService.getCaseById(req);
       if (!response[0]) {
         return res
@@ -233,16 +257,11 @@ class CaseController {
   getScores = async (req: Request, res: Response) => {
     try {
       const response = await this.caseService.getScores(req);
-      if (!response[0]) {
-        return res
-          .status(constants.CODE.OK)
-          .send(responseHelper.get4xxResponse(response[1]));
-      }
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
-          data: response[1],
-          message: constants.successFoundMessage('Scores'),
+          data: response[0],
+          message: response[1],
         })
       );
     } catch (error) {

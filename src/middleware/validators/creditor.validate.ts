@@ -22,6 +22,7 @@ class CreditorRequests {
       businessInformation: Joi.object({
         companyName: Joi.string().required(),
         businessCategory: Joi.string().required(),
+        accountTitle: Joi.string().optional().allow('', null),
       }),
     });
     const {error} = schema.validate(req.body);

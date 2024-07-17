@@ -11,7 +11,7 @@ class UserRequests {
         const schema = joi_1.default.object({
             name: joi_1.default.string().required(),
             email: joi_1.default.string().email().required(),
-            role: joi_1.default.string().valid('Negotiator', 'Manager').required(),
+            role: joi_1.default.string().valid().required(),
             isActive: joi_1.default.string(),
             createdBy: joi_1.default.string(),
             SSID: joi_1.default.string()

@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import RolesPermissionsService from '../../services/rolesPermissions.service';
+import commonUtil from '../../../utils/common.util';
 
 class RolesPermissionsController {
   protected rolesPermissionsService: RolesPermissionsService;
@@ -12,6 +13,15 @@ class RolesPermissionsController {
 
   createRole = async (req: Request, res: Response) => {
     try {
+      //   const checkPermission = await commonUtil.checkPermission('addRole', req);
+      //   if (!checkPermission)
+      //     return res
+      //       .status(constants.CODE.BAD_REQUEST)
+      //       .send(
+      //         responseHelper.get4xxResponse(
+      //           'You do not have permission to perform this operation'
+      //         )
+      //       );
       const response = await this.rolesPermissionsService.createRole(req);
       if (!response[0]) {
         return res
@@ -34,6 +44,15 @@ class RolesPermissionsController {
   };
 
   getAllRoles = async (req: Request, res: Response) => {
+    const checkPermission = await commonUtil.checkPermission('viewRoles', req);
+    if (!checkPermission)
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            'You do not have permission to perform this operation'
+          )
+        );
     try {
       const response = await this.rolesPermissionsService.getAllRoles(req);
       if (!response[0]) {
@@ -102,6 +121,15 @@ class RolesPermissionsController {
 
   updateRole = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission('editRole', req);
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.rolesPermissionsService.updateRole(req);
       if (!response[0]) {
         return res
@@ -124,6 +152,18 @@ class RolesPermissionsController {
 
   deleteRole = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission(
+        'deleteRole',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.rolesPermissionsService.deleteRole(req);
       if (!response[0]) {
         return res

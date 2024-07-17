@@ -89,11 +89,11 @@ class DebtorService {
     return [true, {...clientDetails, debtorTotalCases: casesCount}];
   }
 
-  async searchListing(req: Request) {
+  async searchListing(req: Request, keyword: string) {
     let debtorsCount: number = 0;
     let page = 1;
     let limit = 10;
-
+    let reqTemp: any = req;
     // Check if pageNumber and pageSize are provided and valid
     if (req.query.page && !isNaN(Number(req.query.page))) {
       page = Number(req.query.page) ? Number(req.query.page) : page;
@@ -101,13 +101,28 @@ class DebtorService {
     if (req.query.limit && !isNaN(Number(req.query.limit))) {
       limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
-    const pipeline: any = await caseUtil.getClientListingPipeline(req);
+    let match = {isDeleted: {$ne: true}};
+    let countFilter = {};
+    if (keyword === 'viewClientsForSelf') {
+      match['$or'] = [
+        {caseOwnerId: reqTemp.id},
+        {negotiatorId: reqTemp.id},
+        {managerId: reqTemp.id},
+      ];
+      countFilter['$or'] = [
+        {caseOwnerId: reqTemp.id},
+        {negotiatorId: reqTemp.id},
+        {managerId: reqTemp.id},
+      ];
+    }
+    const pipeline: any = await caseUtil.getClientListingPipeline(req, match);
     const clientDetails: any =
       await this.caseRepository.applyAggregate<ICase>(pipeline);
     if (req.query.filter === 'true' || req.query.search === 'true') {
       debtorsCount = clientDetails.length;
     } else {
-      debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+      console.log(countFilter);
+      debtorsCount = await this.debtorRepository.getCount<IDebtor>(countFilter);
     }
     const paginatedDetails = clientDetails.slice(
       (page - 1) * limit,

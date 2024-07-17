@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import PaymentService from '../../services/payment.service';
+import commonUtil from '../../../utils/common.util';
 
 class PaymentController {
   protected paymentService: PaymentService;
@@ -11,6 +12,18 @@ class PaymentController {
   }
   getHomePayments = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission(
+        'viewHomeScreen',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.paymentService.getHomePayments(req);
       if (!response[0]) {
         return res
@@ -34,6 +47,18 @@ class PaymentController {
 
   getCasePayments = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission(
+        'viewCaseDetails',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.paymentService.getCasePayments(req.params.id);
       if (!response[0]) {
         return res

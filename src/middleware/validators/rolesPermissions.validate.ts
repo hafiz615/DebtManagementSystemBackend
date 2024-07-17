@@ -17,6 +17,7 @@ class CustomFieldRequest {
         viewHomeScreen: Joi.boolean(),
         viewPaymentsAndAuthorizations: Joi.boolean(),
         retryPayment: Joi.boolean(),
+        retryCapture: Joi.boolean(),
         viewCaseDetails: Joi.boolean(),
         viewClientsForSelf: Joi.boolean(),
         viewClientsForAllUsers: Joi.boolean(),
@@ -43,6 +44,10 @@ class CustomFieldRequest {
         createPipeline: Joi.boolean(),
         editPipeline: Joi.boolean(),
         deletePipeline: Joi.boolean(),
+        addRole: Joi.boolean(),
+        viewRoles: Joi.boolean(),
+        editRole: Joi.boolean(),
+        deleteRole: Joi.boolean(),
       }),
       analytics: Joi.object({
         viewAnalyticsForSelf: Joi.boolean(),

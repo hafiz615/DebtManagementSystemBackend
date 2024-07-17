@@ -27,6 +27,9 @@ const creditorModel: Schema = new Schema({
       type: String,
       required: true,
     },
+    accountTitle: {
+      type: String,
+    },
   },
   contacts: {
     type: Array<{

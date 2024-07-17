@@ -51,6 +51,9 @@ const creditorModel = new mongoose_1.Schema({
             type: String,
             required: true,
         },
+        accountTitle: {
+            type: String,
+        },
     },
     contacts: {
         type: (Array),

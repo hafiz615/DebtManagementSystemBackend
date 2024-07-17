@@ -6,10 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const user_service_1 = __importDefault(require("../../services/user.service"));
 const constants_util_1 = __importDefault(require("../../../utils/constants.util"));
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
+const common_util_1 = __importDefault(require("../../../utils/common.util"));
 class UserController {
     constructor() {
         this.createUser = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('addNewUser', req);
+                if (!checkPermission) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                }
                 const response = await this.userService.createUser(req);
                 if (!response[0]) {
                     return res
@@ -132,6 +139,12 @@ class UserController {
         };
         this.deleteUserById = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('deleteUser', req);
+                if (!checkPermission) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                }
                 const response = await this.userService.deleteUserById(req.params.id);
                 if (!response[0]) {
                     return res
@@ -212,6 +225,12 @@ class UserController {
         };
         this.getAllUsers = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('viewUserListing', req);
+                if (!checkPermission) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                }
                 const response = await this.userService.getAllUsers(req);
                 if (!response[0]) {
                     return res
@@ -252,7 +271,18 @@ class UserController {
         };
         this.dashboard = async (req, res) => {
             try {
-                const response = await this.userService.dashboard(req);
+                const checkPermissionAll = await common_util_1.default.checkPermission('viewAnalyticsForAllusers', req);
+                if (!checkPermissionAll) {
+                    const checkPermission = await common_util_1.default.checkPermission('viewAnalyticsForSelf', req);
+                    if (!checkPermission)
+                        return res
+                            .status(constants_util_1.default.CODE.BAD_REQUEST)
+                            .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                }
+                const keyword = checkPermissionAll
+                    ? 'viewAnalyticsForAllusers'
+                    : 'viewAnalyticsForSelf';
+                const response = await this.userService.dashboard(req, keyword);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.OK)

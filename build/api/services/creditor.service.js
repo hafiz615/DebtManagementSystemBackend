@@ -94,10 +94,11 @@ class CreditorService {
         }
         return [true, { ...clientDetails, creditorTotalCases: casesCount }];
     }
-    async listing(req) {
+    async listing(req, keyword) {
         let creditorsCount = 0;
         let page = 1;
         let limit = 10;
+        let reqTemp = req;
         // Check if pageNumber and pageSize are provided and valid
         if (req.query.page && !isNaN(Number(req.query.page))) {
             page = Number(req.query.page) ? Number(req.query.page) : page;
@@ -105,7 +106,15 @@ class CreditorService {
         if (req.query.limit && !isNaN(Number(req.query.limit))) {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
-        const pipeline = await case_util_1.default.getCreditorListingPipeline(req);
+        let match = { isDeleted: { $ne: true } };
+        if (keyword === 'viewCreditorsForSelf') {
+            match['$or'] = [
+                { caseOwnerId: reqTemp.id },
+                { negotiatorId: reqTemp.id },
+                { managerId: reqTemp.id },
+            ];
+        }
+        const pipeline = await case_util_1.default.getCreditorListingPipeline(req, match);
         const clientDetails = await this.caseRepository.applyAggregate(pipeline);
         if (req.query.filter === 'true' || req.query.search === 'true') {
             creditorsCount = clientDetails.length;
@@ -118,6 +127,16 @@ class CreditorService {
             true,
             { clientDetails: paginatedDetails, creditorsCount: creditorsCount },
         ];
+    }
+    async updateCreditorAccountTitle(req) {
+        const title = String(req.query.title);
+        if (!title)
+            return [false, 'Title is missing'];
+        const creditor = await this.creditorRepository.updateById(req.params.id, { 'businessInformation.accountTitle': title });
+        if (!creditor) {
+            return [false, constants_util_1.default.notFoundMessage('Creditor')];
+        }
+        return [true, creditor];
     }
 }
 exports.default = CreditorService;

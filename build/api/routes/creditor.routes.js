@@ -12,5 +12,6 @@ router.post('/getCreditor', authorize_middleware_1.default.validateAuth, credito
 router.put('/updateCreditor/:id', authorize_middleware_1.default.validateAuth, creditor_validate_1.default.validateCreditor, creditor_controller_1.default.updateCreditor);
 router.post('/listing/details/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.listingDetails);
 router.post('/listing', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.listing);
+router.post('/updateCreditorAccountTitle/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.updateCreditorAccountTitle);
 exports.default = router;
 //# sourceMappingURL=creditor.routes.js.map

@@ -15,6 +15,7 @@ class Creditor {
         this.businessInformation = {
             companyName: '',
             businessCategory: '',
+            accountTitle: '',
         };
         this.notes = '';
         this.lastFundedDate = '';

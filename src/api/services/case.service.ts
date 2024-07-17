@@ -40,12 +40,10 @@ class CaseService {
     this.creditorRepository = new CreditorRepository();
     this.chatSummaryRepository = new ChatSummaryRepository();
   }
-  createCase = async (
-    req: Request
-  ): Promise<[boolean, ICase | ICase[] | string]> => {
+  createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
     if (req.query.bulk === 'true') {
-      const casesArray: ICase[] = [];
+      const casesArray = [];
       for (const tempCase of req.body.cases) {
         const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
         if (!checkCasePayment[0]) return checkCasePayment;
@@ -55,7 +53,7 @@ class CaseService {
           reqTemp.email
         );
         if (result[0]) {
-          casesArray.push(result[1] as ICase);
+          casesArray.push(result[1]);
         }
       }
       if (!casesArray.length)
@@ -70,7 +68,7 @@ class CaseService {
       reqTemp.id
     );
     if (!result[0]) return [false, result[1] as string];
-    return [true, result[1] as ICase];
+    return [true, result[1]];
   };
 
   getAllCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
@@ -248,9 +246,11 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      ['debtor']
+      [{path: 'debtor'}]
     );
-    const response = await caseUtil.getCreditorNames(req, caseTemp);
+    const response = await caseUtil.getAllCreditorsOfDebtor(
+      caseTemp.debtor as any
+    );
     return [true, response];
   };
 
@@ -262,7 +262,7 @@ class CaseService {
       ['debtor']
     );
     const response = await caseUtil.getScores(req, caseTemp);
-    return [true, response];
+    return [response[0], response[1]];
   };
 
   getSettlementRange = async (

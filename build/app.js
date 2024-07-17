@@ -9,7 +9,6 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const database_config_1 = require("./config/database.config");
 const base_route_1 = __importDefault(require("./api/routes/base.route"));
 const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
-const express_session_1 = __importDefault(require("express-session"));
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -20,12 +19,6 @@ class App {
         this.app.use((0, cors_1.default)());
         this.app.use(body_parser_1.default.json());
         this.app.use(body_parser_1.default.urlencoded({ extended: false }));
-        this.app.use((0, express_session_1.default)({
-            secret: 'ED2CEF5365D68FC9996BF86E2335D', // Replace with a strong secret key
-            resave: false,
-            saveUninitialized: false,
-            cookie: { secure: true }, // Set to true if using HTTPS
-        }));
         (0, base_route_1.default)(this.app);
     }
     start() {

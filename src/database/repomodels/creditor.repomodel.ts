@@ -10,6 +10,7 @@ export class Creditor {
   businessInformation = {
     companyName: '',
     businessCategory: '',
+    accountTitle: '',
   };
   notes = '';
   lastFundedDate = '';

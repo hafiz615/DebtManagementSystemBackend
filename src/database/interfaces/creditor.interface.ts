@@ -3,6 +3,7 @@ import mongoose, {Document} from 'mongoose';
 interface businessInformation {
   companyName: string;
   businessCategory: string;
+  accountTitle: string;
 }
 
 interface basicInformation {

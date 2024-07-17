@@ -21,6 +21,7 @@ class CustomFieldRequest {
                 viewHomeScreen: joi_1.default.boolean(),
                 viewPaymentsAndAuthorizations: joi_1.default.boolean(),
                 retryPayment: joi_1.default.boolean(),
+                retryCapture: joi_1.default.boolean(),
                 viewCaseDetails: joi_1.default.boolean(),
                 viewClientsForSelf: joi_1.default.boolean(),
                 viewClientsForAllUsers: joi_1.default.boolean(),
@@ -47,6 +48,10 @@ class CustomFieldRequest {
                 createPipeline: joi_1.default.boolean(),
                 editPipeline: joi_1.default.boolean(),
                 deletePipeline: joi_1.default.boolean(),
+                addRole: joi_1.default.boolean(),
+                viewRoles: joi_1.default.boolean(),
+                editRole: joi_1.default.boolean(),
+                deleteRole: joi_1.default.boolean(),
             }),
             analytics: joi_1.default.object({
                 viewAnalyticsForSelf: joi_1.default.boolean(),

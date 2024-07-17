@@ -131,14 +131,14 @@ class CaseService {
             return [true, response];
         };
         this.getCreditorNames = async (req) => {
-            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
-            const response = await case_util_1.default.getCreditorNames(req, caseTemp);
+            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             return [true, response];
         };
         this.getScores = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const response = await case_util_1.default.getScores(req, caseTemp);
-            return [true, response];
+            return [response[0], response[1]];
         };
         this.getSettlementRange = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
