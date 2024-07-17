@@ -90,6 +90,7 @@ class CaseValidate {
                 })),
                 notes: joi_1.default.string().allow(''),
                 creditorSecurityKey: joi_1.default.string(),
+                accountTitle: joi_1.default.string().optional().allow('', null),
                 lastFundedDate: joi_1.default.date().required(),
                 historicalRange: joi_1.default.object({
                     minimum: joi_1.default.number().strict().required(),
