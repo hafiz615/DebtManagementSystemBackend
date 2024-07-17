@@ -29,7 +29,7 @@ import axios from 'axios';
 import commonUtil from './common.util';
 import UploadUtil from './upload.util';
 import {AIAuth} from '../database/repomodels/global';
-
+const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
 class CaseUtil {
   private contactRepository: ContactRepository;
   private debtRepository: DebtorRepository;
@@ -1385,7 +1385,7 @@ class CaseUtil {
     debtorName: string,
     debtorId: string
   ) {
-    const url = `https://dms-ai.hpdemos.co/get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
+    const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
     const urls = [];
     try {
       for (let doc of caseTemp.documents) {
@@ -1416,10 +1416,10 @@ class CaseUtil {
     caseTemp: any,
     additionalProps: Array<string>
   ) {
-    const url = `https://dms-ai.hpdemos.co/get-scores?debtor_id=${String(
+    const url = `${baseUrlAI}get-scores?debtor_id=${String(
       caseTemp.debtor._id
     )}&commision_percentage=${comm}`;
-
+    console.log(url);
     // let data = {
     //   'Everest Businss Funding': {total_debt: 100000, remaining_debt: 50000},
     // };
@@ -1481,7 +1481,7 @@ class CaseUtil {
   }
 
   async getSettlementRangeAI(caseTemp: any, token: string) {
-    const url = `https://dms-ai.hpdemos.co/get-settlement-range?debtor_id=${String(
+    const url = `${baseUrlAI}get-settlement-range?debtor_id=${String(
       caseTemp.debtor._id
     )}`;
     try {
@@ -1502,7 +1502,7 @@ class CaseUtil {
   }
 
   async getCreditorHistoryAI(creditorId: string, token: string) {
-    const url = `https://dms-ai.hpdemos.co/get-creditor-history?creditor_id=${creditorId}`;
+    const url = `${baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
     try {
       const response = await axios.post(
         url,
@@ -1528,7 +1528,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const url = `https://dms-ai.hpdemos.co/negotiator?human_input=${req.body.humanInput}&debtor_id=123&chat_id=${caseTemp.chatId}`;
+    const url = `${baseUrlAI}negotiator?human_input=${req.body.humanInput}&debtor_id=123&chat_id=${caseTemp.chatId}`;
 
     const data = {
       debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
@@ -1549,7 +1549,7 @@ class CaseUtil {
   }
 
   async getAIToken(username: string, partnerToken: string) {
-    const url = `https://dms-ai.hpdemos.co/get-auth-token?username=${username}&partner_token=${partnerToken}`;
+    const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
       const response = await axios.get(url);
       return response.data.error ? [] : response.data;
@@ -1625,7 +1625,7 @@ class CaseUtil {
   }
 
   async storeAuthToken(username: string, partnerToken: string): Promise<void> {
-    const url = `https://dms-ai.hpdemos.co/get-auth-token?username=${username}&partner_token=${partnerToken}`;
+    const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
       const response = await axios.get(url);
       if (response && response.data) {

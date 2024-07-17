@@ -111,12 +111,17 @@ class CaseService {
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
       findCase.debtor as any
     );
+    const uniqueResult = Array.from(
+      new Map(
+        creditors.map(creditor => [creditor.creditorId, creditor])
+      ).values()
+    );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
       target: 'case',
       caseId: req.params.id,
     });
     const tempCase: any = findCase;
-    tempCase['creditors'] = creditors;
+    tempCase['creditors'] = uniqueResult;
     tempCase['customFields'] = temp ? temp.customFields : [];
     return [true, tempCase];
   };
@@ -251,7 +256,12 @@ class CaseService {
     const response = await caseUtil.getAllCreditorsOfDebtor(
       caseTemp.debtor as any
     );
-    return [true, response];
+    const uniqueResult = Array.from(
+      new Map(
+        response.map(creditor => [creditor.creditorId, creditor])
+      ).values()
+    );
+    return [true, uniqueResult];
   };
 
   getScores = async (req: Request): Promise<[boolean, {} | [] | string]> => {

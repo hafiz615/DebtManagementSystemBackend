@@ -64,12 +64,13 @@ class CaseService {
                 doc.url = url;
             }
             const creditors = await case_util_1.default.getAllCreditorsOfDebtor(findCase.debtor);
+            const uniqueResult = Array.from(new Map(creditors.map(creditor => [creditor.creditorId, creditor])).values());
             const temp = await this.targetCFRepository.getOne({
                 target: 'case',
                 caseId: req.params.id,
             });
             const tempCase = findCase;
-            tempCase['creditors'] = creditors;
+            tempCase['creditors'] = uniqueResult;
             tempCase['customFields'] = temp ? temp.customFields : [];
             return [true, tempCase];
         };
@@ -133,7 +134,8 @@ class CaseService {
         this.getCreditorNames = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
-            return [true, response];
+            const uniqueResult = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
+            return [true, uniqueResult];
         };
         this.getScores = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
