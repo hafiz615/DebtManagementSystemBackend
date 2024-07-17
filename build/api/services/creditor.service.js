@@ -108,8 +108,14 @@ class CreditorService {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
         let match = { isDeleted: { $ne: true } };
+        let countFilter = {};
         if (keyword === 'viewCreditorsForSelf') {
             match['$or'] = [
+                { caseOwnerId: reqTemp.id },
+                { negotiatorId: reqTemp.id },
+                { managerId: reqTemp.id },
+            ];
+            countFilter['$or'] = [
                 { caseOwnerId: reqTemp.id },
                 { negotiatorId: reqTemp.id },
                 { managerId: reqTemp.id },
@@ -121,7 +127,17 @@ class CreditorService {
             creditorsCount = clientDetails.length;
         }
         else {
-            creditorsCount = await this.creditorRepository.getCount();
+            if (keyword === 'viewCreditorsForSelf') {
+                const cases = await this.caseRepository.getAllWithoutPagination(countFilter);
+                const setCount = new Set();
+                for (const caseTemp of cases) {
+                    setCount.add(String(caseTemp.creditor));
+                }
+                creditorsCount = setCount.size;
+            }
+            else {
+                creditorsCount = await this.creditorRepository.getCount();
+            }
         }
         const paginatedDetails = clientDetails.slice((page - 1) * limit, page * limit);
         return [

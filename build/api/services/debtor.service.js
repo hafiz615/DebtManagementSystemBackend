@@ -114,8 +114,18 @@ class DebtorService {
             debtorsCount = clientDetails.length;
         }
         else {
-            console.log(countFilter);
-            debtorsCount = await this.debtorRepository.getCount(countFilter);
+            if (keyword === 'viewClientsForSelf') {
+                const cases = await this.caseRepository.getAllWithoutPagination(countFilter);
+                const setCount = new Set();
+                for (const caseTemp of cases) {
+                    setCount.add(String(caseTemp.debtor));
+                }
+                debtorsCount = setCount.size;
+            }
+            else {
+                debtorsCount =
+                    await this.debtorRepository.getCount(countFilter);
+            }
         }
         const paginatedDetails = clientDetails.slice((page - 1) * limit, page * limit);
         return [
