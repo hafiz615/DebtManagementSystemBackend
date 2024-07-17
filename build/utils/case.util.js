@@ -180,10 +180,7 @@ class CaseUtil {
     async getAllCreditorsOfDebtorQuery(debtorId) {
         const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining', undefined, undefined, {
             path: 'creditor',
-            select: [
-                'basicInformation.fullName',
-                'businessInformation.accountTitle',
-            ],
+            select: ['basicInformation.fullName', 'accountTitle'],
         });
         return cases;
     }

@@ -239,10 +239,7 @@ class CaseUtil {
       undefined,
       {
         path: 'creditor',
-        select: [
-          'basicInformation.fullName',
-          'businessInformation.accountTitle',
-        ],
+        select: ['basicInformation.fullName', 'accountTitle'],
       }
     );
     return cases;
