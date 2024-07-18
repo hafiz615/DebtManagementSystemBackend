@@ -278,14 +278,22 @@ class CaseUtil {
             return [false, constants_util_1.default.failureAddMessage('case')];
         }
         await this.createPayment(caseCreated);
-        if (body.paymentToken && body.paymentType) {
-            await this.debtorService.createVault(body.paymentToken, String(caseCreated.debtor), body.paymentType);
-        }
-        if (body.paymentTokenCreditor && body.paymentTypeCreditor) {
-            await this.creditorService.createVault(body.paymentTokenCreditor, String(caseCreated.creditor), body.paymentTypeCreditor);
-        }
+        // if (body.paymentToken && body.paymentType) {
+        //   await this.debtorService.createVault(
+        //     body.paymentToken,
+        //     String(caseCreated.debtor),
+        //     body.paymentType
+        //   );
+        // }
+        // if (body.paymentTokenCreditor && body.paymentTypeCreditor) {
+        //   await this.creditorService.createVault(
+        //     body.paymentTokenCreditor,
+        //     String(caseCreated.creditor),
+        //     body.paymentTypeCreditor
+        //   );
+        // }
         console.log('i am going to call AI');
-        const creditorNames = await this.getCreditorNames(caseCreated, debtor);
+        const creditorNames = await this.getCreditorNames(debtor);
         console.log(creditorNames, 'creditonamess');
         const findCreditor = creditorNames.includes(creditor.businessInformation.companyName);
         console.log(findCreditor, 'findCrediotrrr');
@@ -360,7 +368,7 @@ class CaseUtil {
         }
     }
     async checkCasePayment(body) {
-        if (body.remaining !== body.totalDebt - body.paidAmount) {
+        if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
         if (body && body.intervals && body.intervals.length) {
@@ -1223,11 +1231,11 @@ class CaseUtil {
     //   }
     //   return {creditorNames, getScores, getSettlementRange, getCreditorHistory};
     // }
-    async getCreditorNamesAI(caseTemp, token, debtorName, debtorId) {
+    async getCreditorNamesAI(documents, token, debtorName, debtorId) {
         const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
         const urls = [];
         try {
-            for (let doc of caseTemp.documents) {
+            for (let doc of documents) {
                 const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
                 urls.push(url);
             }
@@ -1370,12 +1378,12 @@ class CaseUtil {
             return [];
         }
     }
-    async getCreditorNames(caseTemp, debtor) {
+    async getCreditorNames(debtor) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const creditorNames = await this.getCreditorNamesAI(caseTemp, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor.id);
+        const creditorNames = await this.getCreditorNamesAI(debtor.documents, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor.id);
         console.log(creditorNames);
         return creditorNames;
     }
@@ -1419,6 +1427,91 @@ class CaseUtil {
             global_1.AIAuth.auth_token = '';
             global_1.AIAuth.expires_in = common_util_1.default.getCurrentDate();
         }
+    }
+    async createCreditorsCases(req, name, id) {
+        let creditor = null;
+        let body = req.body;
+        const getCreditor = await this.creditorRepository.getOne({
+            $or: [
+                {
+                    'basicInformation.email': body.creditor.basicInformation.email.toLowerCase(),
+                },
+                {
+                    'basicInformation.phone': body.creditor.basicInformation.phone,
+                },
+            ],
+        });
+        let weeklyBudgetObj;
+        const debtor = await this.debtRepository.getById(req.params.id);
+        if (body.feePayment && body.feePayment === 'toPay') {
+            weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+            if (!weeklyBudgetObj.status) {
+                return [
+                    false,
+                    'Weekly budget is not fulfiling the payment plan of debtor',
+                ];
+            }
+            // body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+            // body.debtor.weeklyCommission = weeklyBudgetObj.commission;
+            await this.debtRepository.updateById(debtor._id, {
+                totalCommission: weeklyBudgetObj.totalCommission,
+                weeklyCommission: weeklyBudgetObj.commission,
+            });
+        }
+        if (body.creditor.paymentToken && body.creditor.paymentType) {
+            const customerVaultResponse = await this.createVault(body.paymentToken);
+            if (!customerVaultResponse[0])
+                return customerVaultResponse;
+            body.creditor.customerVaultId = customerVaultResponse[1];
+        }
+        if (!getCreditor) {
+            creditor = await this.createCreditor(body.creditor);
+        }
+        if (getCreditor) {
+            creditor = await this.creditorRepository.updateById(getCreditor._id, body.creditor);
+        }
+        body.debtor = debtor?._id;
+        body.creditor = creditor?._id;
+        const newCase = new case_repomodel_1.Case();
+        newCase.caseOwner = name;
+        newCase.caseOwnerId = id;
+        newCase.negotiator = name;
+        newCase.negotiatorId = id;
+        newCase.manager = name;
+        newCase.managerId = id;
+        newCase.chatId = (0, uuid_1.v4)();
+        newCase.caseCode = await this.getCaseCode();
+        const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
+        const caseCreated = await this.caseRepository.create(validatedCase);
+        if (!caseCreated) {
+            return [false, constants_util_1.default.failureAddMessage('case')];
+        }
+        if (caseCreated.intervals.length) {
+            await this.createPayment(caseCreated);
+        }
+        if (body.paymentTokenCreditor && body.paymentTypeCreditor) {
+            await this.creditorService.createVault(body.paymentTokenCreditor, String(caseCreated.creditor), body.paymentTypeCreditor);
+        }
+        return [true, caseCreated];
+    }
+    async createVault(paymentToken) {
+        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const params = {
+            customer_vault: 'add_customer',
+            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            payment_token: paymentToken,
+        };
+        const response = await axios_1.default.get(url, { params });
+        const responseNum = new URLSearchParams(response.data).get('response');
+        if (responseNum === '1') {
+            const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
+            // const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
+            //   customerVaultId: customerVault,
+            //   paymentType: paymentType,
+            // });
+            return [true, customerVault];
+        }
+        return [false, 'Unable to create customer vault'];
     }
 }
 exports.default = new CaseUtil();

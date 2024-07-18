@@ -21,7 +21,7 @@ class Case {
         this.lastPaymentDate = '';
         this.paidAmount = 0;
         this.remaining = 0;
-        this.documents = Array();
+        // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
         this.intervals = Array();
         this.isDeleted = false;
         this.confidence = 0;

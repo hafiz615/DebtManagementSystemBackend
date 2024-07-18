@@ -71,36 +71,36 @@ class Settings {
             },
             retryInterval: {
                 failedAuthorization: {
-                    unit: '',
-                    value: 0,
-                    maxRetry: 0,
+                    unit: 'days',
+                    value: 2,
+                    maxRetry: 2,
                 },
                 failedPayment: {
-                    unit: '',
-                    value: 0,
-                    maxRetry: 0,
+                    unit: 'days',
+                    value: 2,
+                    maxRetry: 2,
                 },
             },
             authorizationInterval: {
                 custom: {
                     unit: 'hours',
-                    value: 0,
+                    value: 8,
                 },
                 daily: {
                     unit: 'hours',
-                    value: 0,
+                    value: 8,
                 },
                 weekly: {
                     unit: 'days',
-                    value: 0,
+                    value: 2,
                 },
                 fortnightly: {
                     unit: 'days',
-                    value: 0,
+                    value: 2,
                 },
                 monthly: {
                     unit: 'days',
-                    value: 0,
+                    value: 2,
                 },
             },
         };

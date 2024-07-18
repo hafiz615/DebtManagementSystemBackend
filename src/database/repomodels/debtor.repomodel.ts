@@ -40,6 +40,7 @@ export class Debtor {
     city: '';
     zipCode: '';
   }>();
+  documents = Array<{key: ''; originalFileName: ''; url: ''}>();
   totalCommission = 0;
   commissionPaid = 0;
   weeklyCommission = 0;

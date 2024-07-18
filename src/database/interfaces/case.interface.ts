@@ -1,10 +1,10 @@
 import mongoose, {Document} from 'mongoose';
 
-export interface IKeyFile {
-  key: string;
-  originalFileName: string;
-  url?: string;
-}
+// export interface IKeyFile {
+//   key: string;
+//   originalFileName: string;
+//   url?: string;
+// }
 
 export interface IInterval {
   amount: number;
@@ -27,7 +27,7 @@ export interface ICase extends Document {
   lastPayment: string;
   paidAmount: number;
   remaining: number;
-  documents: Array<IKeyFile>;
+  // documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
   isDeleted: boolean;
   confidence: number;

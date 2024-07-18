@@ -12,17 +12,17 @@ class CaseController {
   }
   createCase = async (req: Request, res: Response) => {
     try {
-      const keyword =
-        req.query.bulk === 'true' ? 'importBulkCases' : 'createNewCase';
-      const checkPermission = await commonUtil.checkPermission(keyword, req);
-      if (!checkPermission)
-        return res
-          .status(constants.CODE.BAD_REQUEST)
-          .send(
-            responseHelper.get4xxResponse(
-              'You do not have permission to perform this operation'
-            )
-          );
+      // const keyword =
+      //   req.query.bulk === 'true' ? 'importBulkCases' : 'createNewCase';
+      // const checkPermission = await commonUtil.checkPermission(keyword, req);
+      // if (!checkPermission)
+      //   return res
+      //     .status(constants.CODE.BAD_REQUEST)
+      //     .send(
+      //       responseHelper.get4xxResponse(
+      //         'You do not have permission to perform this operation'
+      //       )
+      //     );
       const response = await this.caseService.createCase(req);
       if (!response[0]) {
         return res

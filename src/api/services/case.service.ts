@@ -6,7 +6,7 @@ import {IContact} from '../../database/interfaces/contact.interface';
 import {IDebtor} from '../../database/interfaces/debtor.interface';
 import {ICreditor} from '../../database/interfaces/creditor.interface';
 import {Case} from '../../database/repomodels/case.repomodel';
-import {ICase, IKeyFile} from '../../database/interfaces/case.interface';
+import {ICase} from '../../database/interfaces/case.interface';
 import constantsUtil from '../../utils/constants.util';
 import UploadUtil from '../../utils/upload.util';
 import DebtorService from './debtor.service';
@@ -85,12 +85,12 @@ class CaseService {
     if (!cases.length) {
       return [false, constantsUtil.notFoundMessage('Cases')];
     }
-    for (let temp of cases) {
-      for (let doc of temp.documents) {
-        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-        doc.url = url;
-      }
-    }
+    // for (let temp of cases) {
+    //   for (let doc of temp.documents) {
+    //     const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+    //     doc.url = url;
+    //   }
+    // }
     return [true, cases];
   };
 
@@ -104,10 +104,10 @@ class CaseService {
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    for (let doc of findCase.documents) {
-      const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-      doc.url = url;
-    }
+    // for (let doc of findCase.documents) {
+    //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+    //   doc.url = url;
+    // }
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
       findCase.debtor as any
     );
@@ -296,6 +296,39 @@ class CaseService {
     }
     const response = await caseUtil.getCreditorHistory(req);
     return [true, response];
+  };
+
+  createCreditorsCases = async (
+    req: Request
+  ): Promise<[boolean, {} | string]> => {
+    const reqTemp: any = req;
+    // if (req.query.bulk === 'true') {
+    //   const casesArray = [];
+    //   for (const tempCase of req.body.cases) {
+    //     const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
+    //     if (!checkCasePayment[0]) return checkCasePayment;
+    //     const result = await caseUtil.createCase(
+    //       tempCase,
+    //       reqTemp.role,
+    //       reqTemp.email
+    //     );
+    //     if (result[0]) {
+    //       casesArray.push(result[1]);
+    //     }
+    //   }
+    //   if (!casesArray.length)
+    //     return [false, constantsUtil.failureAddMessage('cases')];
+    //   return [true, casesArray];
+    // }
+    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
+    if (!checkCasePayment[0]) return checkCasePayment;
+    const result = await caseUtil.createCreditorsCases(
+      req.body,
+      reqTemp.name,
+      reqTemp.id
+    );
+    if (!result[0]) return [false, result[1] as string];
+    return [true, result[1]];
   };
 }
 

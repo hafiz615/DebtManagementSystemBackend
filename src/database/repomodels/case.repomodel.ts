@@ -15,7 +15,7 @@ export class Case {
   lastPaymentDate = '';
   paidAmount = 0;
   remaining = 0;
-  documents = Array<{key: ''; originalFileName: ''; url: ''}>();
+  // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
   intervals = Array<{
     amount: 0;
     startDate: '';
