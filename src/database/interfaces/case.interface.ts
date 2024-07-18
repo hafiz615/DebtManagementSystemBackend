@@ -32,6 +32,8 @@ export interface ICase extends Document {
   isDeleted: boolean;
   confidence: number;
   closeDate: string;
+  notes: string;
+  chatId: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -43,7 +43,11 @@ class RolesPermissionsService {
     req: Request
   ): Promise<[boolean, IRolesPermissions[] | string]> {
     const result =
-      await this.rolesPermissionsRepository.getAllWithoutPagination<IRolesPermissions>();
+      await this.rolesPermissionsRepository.getAllWithoutPagination<IRolesPermissions>(
+        {
+          isDeleted: false,
+        }
+      );
     if (!result.length) {
       return [false, constantsUtil.notFoundMessage('roles')];
     }
@@ -62,6 +66,27 @@ class RolesPermissionsService {
     }
     return [true, result];
   }
+
+  async getRoleByName(
+    req: Request
+  ): Promise<[boolean, IRolesPermissions | string]> {
+    if (!String(req.query.role)) {
+      return [false, 'Role name is missing'];
+    }
+    const role = String(req.query.role);
+    const result = await this.getRole(role);
+    if (!result) {
+      return [false, constantsUtil.notFoundMessage('role')];
+    }
+    return [true, result];
+  }
+  async getRole(name: string) {
+    const result =
+      await this.rolesPermissionsRepository.getOne<IRolesPermissions>({
+        name: name,
+      });
+    return result;
+  }
   async updateRole(
     req: Request
   ): Promise<[boolean, IRolesPermissions | string]> {
@@ -69,9 +94,21 @@ class RolesPermissionsService {
       await this.rolesPermissionsRepository.getOne<IRolesPermissions>({
         _id: {$ne: req.params.id},
         name: req.body.name,
+        isDeleted: false,
       });
     if (findRole) {
       return [false, constantsUtil.alreadyExistsMessage('Role')];
+    }
+    const role =
+      await this.rolesPermissionsRepository.getById<IRolesPermissions>(
+        req.params.id
+      );
+    if (role.name === 'Super Admin') {
+      return [false, 'Super Admin cannot be updated'];
+    }
+    let reqTemp: any = req;
+    if (role.name === 'Admin' && reqTemp.role !== 'Super Admin') {
+      return [false, 'Only a super admin can update an admin.'];
     }
     const result =
       await this.rolesPermissionsRepository.updateById<IRolesPermissions>(
@@ -83,13 +120,22 @@ class RolesPermissionsService {
     }
     return [true, result];
   }
-  async deleteRole(req: Request): Promise<[boolean, boolean | string]> {
+  async deleteRole(
+    req: Request
+  ): Promise<[boolean, IRolesPermissions | string]> {
     const role =
       await this.rolesPermissionsRepository.getById<IRolesPermissions>(
         req.params.id
       );
     if (!role) {
       return [false, constantsUtil.notFoundMessage('role')];
+    }
+    if (role.name === 'Super Admin') {
+      return [false, 'Super Admin cannot be deleted'];
+    }
+    let reqTemp: any = req;
+    if (role.name === 'Admin' && reqTemp.role !== 'Super Admin') {
+      return [false, 'Only a super admin can delete an admin.'];
     }
     const findUserRole = await this.userRepository.getOne<IUser>({
       role: role.name,
@@ -101,9 +147,10 @@ class RolesPermissionsService {
       ];
     }
     const result =
-      await this.rolesPermissionsRepository.delete<IRolesPermissions>({
-        _id: req.params.id,
-      });
+      await this.rolesPermissionsRepository.updateById<IRolesPermissions>(
+        req.params.id,
+        {isDeleted: true}
+      );
     if (!result) {
       return [false, constantsUtil.failureDeleteMessage('role')];
     }

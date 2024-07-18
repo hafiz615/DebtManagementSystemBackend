@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import DebtorService from '../../services/debtor.service';
+import commonUtil from '../../../utils/common.util';
 
 class DebtorController {
   protected debtorService: DebtorService;
@@ -59,7 +60,28 @@ class DebtorController {
 
   searchListing = async (req: Request, res: Response) => {
     try {
-      const response = await this.debtorService.searchListing(req);
+      const checkPermissionAll = await commonUtil.checkPermission(
+        'viewClientsForAllUsers',
+        req
+      );
+      if (!checkPermissionAll) {
+        const checkPermission = await commonUtil.checkPermission(
+          'viewClientsForSelf',
+          req
+        );
+        if (!checkPermission)
+          return res
+            .status(constants.CODE.BAD_REQUEST)
+            .send(
+              responseHelper.get4xxResponse(
+                'You do not have permission to perform this operation'
+              )
+            );
+      }
+      const keyword = checkPermissionAll
+        ? 'viewClientsForAllUsers'
+        : 'viewClientsForSelf';
+      const response = await this.debtorService.searchListing(req, keyword);
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
@@ -133,6 +155,18 @@ class DebtorController {
 
   retryAuth = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission(
+        'retryPayment',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.debtorService.retryAuth(req.params.id);
       if (!response[0]) {
         return res
@@ -156,6 +190,18 @@ class DebtorController {
 
   retryCapture = async (req: Request, res: Response) => {
     try {
+      const checkPermission = await commonUtil.checkPermission(
+        'retryCapture',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.debtorService.retryCapture(req.params.id);
       if (!response[0]) {
         return res

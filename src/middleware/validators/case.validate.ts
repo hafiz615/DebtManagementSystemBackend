@@ -93,6 +93,7 @@ class CaseValidate {
         ),
         notes: Joi.string().allow(''),
         creditorSecurityKey: Joi.string(),
+        accountTitle: Joi.string().optional().allow('', null),
         lastFundedDate: Joi.date().required(),
         historicalRange: Joi.object({
           minimum: Joi.number().strict().required(),
@@ -108,6 +109,8 @@ class CaseValidate {
       paymentToken: Joi.string().allow(''),
       paymentType: Joi.string().valid('cc', 'ck').allow(''),
       status: Joi.string().required(),
+      notes: Joi.string(),
+      chatId: Joi.string(),
       feePayment: Joi.string().valid(
         'paidViaCash',
         'toPay',

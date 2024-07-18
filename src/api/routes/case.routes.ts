@@ -34,5 +34,40 @@ router.delete(
   authorize.validateAuth,
   caseController.deleteCase
 );
+// router.post(
+//   '/getSettlementRange/:id',
+//   authorize.validateAuth,
+//   caseController.getAIIntegrationData
+// );
+
+router.post(
+  '/getSummary/:id',
+  authorize.validateAuth,
+  caseController.getSummary
+);
+
+router.get('/getAIToken', authorize.validateAuth, caseController.getAIToken);
+
+router.get(
+  '/getCaseSummaries/:id',
+  authorize.validateAuth,
+  caseController.getCaseSummaries
+);
+router.post('/getScores/:id', authorize.validateAuth, caseController.getScores);
+router.post(
+  '/getCreditorNames/:id',
+  authorize.validateAuth,
+  caseController.getCreditorNames
+);
+router.post(
+  '/getSettlementRange/:id',
+  authorize.validateAuth,
+  caseController.getSettlementRange
+);
+router.post(
+  '/getCreditorHistory',
+  authorize.validateAuth,
+  caseController.getCreditorHistory
+);
 
 export default router;

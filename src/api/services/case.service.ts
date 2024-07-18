@@ -18,6 +18,9 @@ import {IPayment} from '../../database/interfaces/payment.interface';
 import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {CreditorRepository} from '../repository/creditor/creditor.repository';
 import mongoose from 'mongoose';
+import {ChatSummary} from '../../database/repomodels/chatSummary.repomodel';
+import {ChatSummaryRepository} from '../repository/chatSummary/chatSummary.repository';
+import {IChatSummary} from '../../database/interfaces/chatSummary.interface';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -26,6 +29,7 @@ class CaseService {
   private paymentRepository: PaymentRepository;
   private debtorRepository: DebtorRepository;
   private creditorRepository: CreditorRepository;
+  private chatSummaryRepository: ChatSummaryRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -34,13 +38,12 @@ class CaseService {
     this.paymentRepository = new PaymentRepository();
     this.debtorRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
+    this.chatSummaryRepository = new ChatSummaryRepository();
   }
-  createCase = async (
-    req: Request
-  ): Promise<[boolean, ICase | ICase[] | string]> => {
+  createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
     if (req.query.bulk === 'true') {
-      const casesArray: ICase[] = [];
+      const casesArray = [];
       for (const tempCase of req.body.cases) {
         const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
         if (!checkCasePayment[0]) return checkCasePayment;
@@ -50,7 +53,7 @@ class CaseService {
           reqTemp.email
         );
         if (result[0]) {
-          casesArray.push(result[1] as ICase);
+          casesArray.push(result[1]);
         }
       }
       if (!casesArray.length)
@@ -65,7 +68,7 @@ class CaseService {
       reqTemp.id
     );
     if (!result[0]) return [false, result[1] as string];
-    return [true, result[1] as ICase];
+    return [true, result[1]];
   };
 
   getAllCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
@@ -108,12 +111,17 @@ class CaseService {
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
       findCase.debtor as any
     );
+    const uniqueResult = Array.from(
+      new Map(
+        creditors.map(creditor => [creditor.creditorId, creditor])
+      ).values()
+    );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
       target: 'case',
       caseId: req.params.id,
     });
     const tempCase: any = findCase;
-    tempCase['creditors'] = creditors;
+    tempCase['creditors'] = uniqueResult;
     tempCase['customFields'] = temp ? temp.customFields : [];
     return [true, tempCase];
   };
@@ -183,6 +191,112 @@ class CaseService {
     }
     return [true, true];
   }
+
+  // getAIIntegrationData = async (
+  //   req: Request
+  // ): Promise<[boolean, {} | string]> => {
+  //   const caseTemp = await this.caseRepository.getById<ICase>(
+  //     req.params.id,
+  //     undefined,
+  //     undefined,
+  //     ['debtor']
+  //   );
+  //   const response = await caseUtil.getAIWrapperData(req, caseTemp);
+  //   return [true, response];
+  // };
+
+  getSummary = async (req: Request): Promise<[boolean, {} | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getSummary(req, caseTemp);
+    const newSummary = new ChatSummary();
+    newSummary.chatId = caseTemp.chatId;
+    const validatedSummary = DataCopier.copy(newSummary, response);
+    await this.chatSummaryRepository.create(validatedSummary);
+    return [true, response];
+  };
+
+  getAIToken = async (req: Request): Promise<[boolean, {} | string]> => {
+    const response = await caseUtil.getAIToken('test', 'test');
+    return [true, response];
+  };
+
+  getCaseSummaries = async (
+    req: Request
+  ): Promise<[boolean, IChatSummary[] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      'chatId',
+      undefined,
+      ['debtor']
+    );
+    const response =
+      await this.chatSummaryRepository.getAllWithoutPagination<IChatSummary>({
+        chatId: caseTemp.chatId,
+      });
+    if (!response.length) {
+      return [false, constantsUtil.notFoundMessage('Summaries')];
+    }
+    return [true, response];
+  };
+
+  getCreditorNames = async (
+    req: Request
+  ): Promise<[boolean, {} | [] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    const response = await caseUtil.getAllCreditorsOfDebtor(
+      caseTemp.debtor as any
+    );
+    const uniqueResult = Array.from(
+      new Map(
+        response.map(creditor => [creditor.creditorId, creditor])
+      ).values()
+    );
+    return [true, uniqueResult];
+  };
+
+  getScores = async (req: Request): Promise<[boolean, {} | [] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getScores(req, caseTemp);
+    return [response[0], response[1]];
+  };
+
+  getSettlementRange = async (
+    req: Request
+  ): Promise<[boolean, {} | [] | string]> => {
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    const response = await caseUtil.getSettlementRange(caseTemp);
+    return [true, response];
+  };
+
+  getCreditorHistory = async (
+    req: Request
+  ): Promise<[boolean, {} | [] | string]> => {
+    if (!String(req.query.creditorId)) {
+      return [false, 'Creditor id is missing'];
+    }
+    const response = await caseUtil.getCreditorHistory(req);
+    return [true, response];
+  };
 }
 
 export default CaseService;

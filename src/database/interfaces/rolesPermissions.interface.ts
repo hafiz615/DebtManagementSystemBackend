@@ -3,6 +3,7 @@ import {Document} from 'mongoose';
 export interface IRolesPermissions extends Document {
   name: string;
   createdBy: string;
+  isDeleted: boolean;
   generalPermissions: {
     createNewCase: boolean;
     importBulkCases: boolean;
@@ -13,6 +14,7 @@ export interface IRolesPermissions extends Document {
     viewHomeScreen: boolean;
     viewPaymentsAndAuthorizations: boolean;
     retryPayment: boolean;
+    retryCapture: boolean;
     viewCaseDetails: boolean;
     viewClientsForSelf: boolean;
     viewClientsForAllUsers: boolean;
@@ -39,6 +41,10 @@ export interface IRolesPermissions extends Document {
     createPipeline: boolean;
     editPipeline: boolean;
     deletePipeline: boolean;
+    addRole: boolean;
+    editRole: boolean;
+    viewRoles: boolean;
+    deleteRole: boolean;
   };
   analytics: {
     viewAnalyticsForSelf: boolean;

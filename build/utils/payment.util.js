@@ -22,6 +22,7 @@ class PaymentUtil {
             failedReasonAuthorization: obj.failedReasonAuthorization,
             failedReasonCaptured: obj.failedReasonCaptured,
             tryDate: obj.rescheduled,
+            caseId: obj.caseId._id ? String(obj.caseId._id) : '',
         }));
         return this.getFilteredPaymentsObj(transformedArray);
     }

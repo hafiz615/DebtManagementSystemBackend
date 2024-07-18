@@ -6,10 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../../utils/constants.util"));
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const pipelineStatus_service_1 = __importDefault(require("../../services/pipelineStatus.service"));
+const common_util_1 = __importDefault(require("../../../utils/common.util"));
 class PipelineStatusController {
     constructor() {
         this.createPipeline = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('createPipeline', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.pipelineStatusService.createPipeline(req);
                 if (!response[0]) {
                     return res
@@ -31,6 +37,11 @@ class PipelineStatusController {
         };
         this.getAllPipelines = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('viewPipeline', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.pipelineStatusService.getAllPipelines(req);
                 if (!response[0]) {
                     return res
@@ -92,6 +103,11 @@ class PipelineStatusController {
         };
         this.updatePipeline = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('editPipeline', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.pipelineStatusService.updatePipeline(req);
                 if (!response[0]) {
                     return res
@@ -112,6 +128,11 @@ class PipelineStatusController {
         };
         this.deletePipeline = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('deletePipeline', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.pipelineStatusService.deletePipeline(req);
                 if (!response[0]) {
                     return res
@@ -172,6 +193,11 @@ class PipelineStatusController {
         };
         this.getPipelineDetails = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('viewPipeline', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.pipelineStatusService.getPipelineDetails(req);
                 if (!response[0]) {
                     return res

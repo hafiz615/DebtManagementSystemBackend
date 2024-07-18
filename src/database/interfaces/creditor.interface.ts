@@ -31,6 +31,9 @@ export interface ICreditor extends Document {
     maximum: number;
   };
   creditorSecurityKey: string;
+  accountTitle: string;
+  paymentType: string;
+  customerVaultId: string;
   createdAt: string;
   updatedAt: string;
 }

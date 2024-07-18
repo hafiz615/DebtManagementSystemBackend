@@ -6,10 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../../utils/constants.util"));
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const status_service_1 = __importDefault(require("../../services/status.service"));
+const common_util_1 = __importDefault(require("../../../utils/common.util"));
 class StatusController {
     constructor() {
         this.getCaseStatuses = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('viewCaseStatuses', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.statusService.getCaseStatuses(req);
                 if (!response[0]) {
                     return res
@@ -31,6 +37,11 @@ class StatusController {
         };
         this.addStatus = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('addCaseStatus', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.statusService.addStatus(req);
                 if (!response[0]) {
                     return res
@@ -72,6 +83,11 @@ class StatusController {
         };
         this.updateStatus = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('editCaseStatus', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.statusService.updateStatus(req);
                 if (!response[0]) {
                     return res
@@ -112,6 +128,11 @@ class StatusController {
         };
         this.deleteStatus = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('deleteCaseStatus', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.statusService.deleteStatus(req);
                 if (!response[0]) {
                     return res

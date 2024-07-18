@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
 import constantsUtil from './constants.util';
+import RolesPermissionsService from '../api/services/rolesPermissions.service';
+import {Request} from 'express';
 
 class CommonUtil {
   getCurrentDate() {
@@ -15,6 +17,21 @@ class CommonUtil {
   checkPasswordRegex(password: string) {
     const passRegex = constantsUtil.passwordRegex;
     return passRegex.test(password);
+  }
+
+  async checkPermission(keyword: string, req: any) {
+    const rolesPermissionsService = new RolesPermissionsService();
+    const role = req.role;
+    const getRole = await rolesPermissionsService.getRole(role);
+    const permissions = {
+      ...getRole.generalPermissions,
+      ...getRole.settings,
+      ...getRole.analytics,
+    };
+    if (keyword === 'addNewUser' && req.body.role === 'Admin') {
+      return permissions['createAdminUser'];
+    }
+    return permissions[keyword];
   }
 }
 export default new CommonUtil();

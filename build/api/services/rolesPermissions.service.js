@@ -32,7 +32,9 @@ class RolesPermissionsService {
         return [true, result];
     }
     async getAllRoles(req) {
-        const result = await this.rolesPermissionsRepository.getAllWithoutPagination();
+        const result = await this.rolesPermissionsRepository.getAllWithoutPagination({
+            isDeleted: false,
+        });
         if (!result.length) {
             return [false, constants_util_1.default.notFoundMessage('roles')];
         }
@@ -45,13 +47,39 @@ class RolesPermissionsService {
         }
         return [true, result];
     }
+    async getRoleByName(req) {
+        if (!String(req.query.role)) {
+            return [false, 'Role name is missing'];
+        }
+        const role = String(req.query.role);
+        const result = await this.getRole(role);
+        if (!result) {
+            return [false, constants_util_1.default.notFoundMessage('role')];
+        }
+        return [true, result];
+    }
+    async getRole(name) {
+        const result = await this.rolesPermissionsRepository.getOne({
+            name: name,
+        });
+        return result;
+    }
     async updateRole(req) {
         const findRole = await this.rolesPermissionsRepository.getOne({
             _id: { $ne: req.params.id },
             name: req.body.name,
+            isDeleted: false,
         });
         if (findRole) {
             return [false, constants_util_1.default.alreadyExistsMessage('Role')];
+        }
+        const role = await this.rolesPermissionsRepository.getById(req.params.id);
+        if (role.name === 'Super Admin') {
+            return [false, 'Super Admin cannot be updated'];
+        }
+        let reqTemp = req;
+        if (role.name === 'Admin' && reqTemp.role !== 'Super Admin') {
+            return [false, 'Only a super admin can update an admin.'];
         }
         const result = await this.rolesPermissionsRepository.updateById(req.params.id, req.body);
         if (!result) {
@@ -64,6 +92,13 @@ class RolesPermissionsService {
         if (!role) {
             return [false, constants_util_1.default.notFoundMessage('role')];
         }
+        if (role.name === 'Super Admin') {
+            return [false, 'Super Admin cannot be deleted'];
+        }
+        let reqTemp = req;
+        if (role.name === 'Admin' && reqTemp.role !== 'Super Admin') {
+            return [false, 'Only a super admin can delete an admin.'];
+        }
         const findUserRole = await this.userRepository.getOne({
             role: role.name,
         });
@@ -73,9 +108,7 @@ class RolesPermissionsService {
                 'The role is currently assigned to users and cannot be deleted. Please unassign the role from all users before deleting',
             ];
         }
-        const result = await this.rolesPermissionsRepository.delete({
-            _id: req.params.id,
-        });
+        const result = await this.rolesPermissionsRepository.updateById(req.params.id, { isDeleted: true });
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('role')];
         }

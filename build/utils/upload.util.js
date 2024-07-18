@@ -49,6 +49,7 @@ class UploadUtil {
         let params = {
             Bucket: 'debt-settlement-documents',
             Key: key,
+            Expires: 86400,
         };
         return await this.s3.getSignedUrlPromise('getObject', params);
     }

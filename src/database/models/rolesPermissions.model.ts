@@ -9,6 +9,9 @@ const rolesPermissionsModel = new Schema({
   createdBy: {
     type: String,
   },
+  isDeleted: {
+    type: Boolean,
+  },
   generalPermissions: {
     createNewCase: {
       type: Boolean,
@@ -35,6 +38,9 @@ const rolesPermissionsModel = new Schema({
       type: Boolean,
     },
     retryPayment: {
+      type: Boolean,
+    },
+    retryCapture: {
       type: Boolean,
     },
     viewCaseDetails: {
@@ -109,6 +115,18 @@ const rolesPermissionsModel = new Schema({
       type: Boolean,
     },
     deletePipeline: {
+      type: Boolean,
+    },
+    addRole: {
+      type: Boolean,
+    },
+    editRole: {
+      type: Boolean,
+    },
+    viewRoles: {
+      type: Boolean,
+    },
+    deleteRole: {
       type: Boolean,
     },
   },

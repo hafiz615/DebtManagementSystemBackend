@@ -11,6 +11,7 @@ const router = (0, express_1.Router)();
 router.post('/createRole', authorize_middleware_1.default.validateAuth, rolesPermissions_validate_1.default.role, rolesPermissions_controller_1.default.createRole);
 router.get('/getAllRoles', authorize_middleware_1.default.validateAuth, rolesPermissions_controller_1.default.getAllRoles);
 router.get('/getRoleById/:id', authorize_middleware_1.default.validateAuth, rolesPermissions_controller_1.default.getRoleById);
+router.get('/getRoleByName', authorize_middleware_1.default.validateAuth, rolesPermissions_controller_1.default.getRoleByName);
 router.post('/updateRole/:id', authorize_middleware_1.default.validateAuth, rolesPermissions_validate_1.default.role, rolesPermissions_controller_1.default.updateRole);
 router.delete('/deleteRole/:id', authorize_middleware_1.default.validateAuth, rolesPermissions_controller_1.default.deleteRole);
 exports.default = router;

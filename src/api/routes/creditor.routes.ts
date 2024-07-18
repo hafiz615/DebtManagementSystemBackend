@@ -23,4 +23,10 @@ router.post(
 );
 router.post('/listing', authorize.validateAuth, creditorController.listing);
 
+router.post(
+  '/updateCreditorAccountTitle/:id',
+  authorize.validateAuth,
+  creditorController.updateCreditorAccountTitle
+);
+
 export default router;
