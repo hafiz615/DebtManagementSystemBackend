@@ -156,28 +156,10 @@ class CaseService {
         };
         this.createCreditorsCases = async (req) => {
             const reqTemp = req;
-            // if (req.query.bulk === 'true') {
-            //   const casesArray = [];
-            //   for (const tempCase of req.body.cases) {
-            //     const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
-            //     if (!checkCasePayment[0]) return checkCasePayment;
-            //     const result = await caseUtil.createCase(
-            //       tempCase,
-            //       reqTemp.role,
-            //       reqTemp.email
-            //     );
-            //     if (result[0]) {
-            //       casesArray.push(result[1]);
-            //     }
-            //   }
-            //   if (!casesArray.length)
-            //     return [false, constantsUtil.failureAddMessage('cases')];
-            //   return [true, casesArray];
-            // }
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
-            const result = await case_util_1.default.createCreditorsCases(req.body, reqTemp.name, reqTemp.id);
+            const result = await case_util_1.default.createCreditorsCases(req, reqTemp.name, reqTemp.id);
             if (!result[0])
                 return [false, result[1]];
             return [true, result[1]];

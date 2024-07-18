@@ -354,7 +354,6 @@ class DebtorService {
   };
 
   async createDebtor(req: Request) {
-    console.log('pronkk');
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
@@ -374,22 +373,18 @@ class DebtorService {
       ],
     });
     let debtor: IDebtor = null;
-    // if (req.body.paymentToken && req.body.paymentType) {
-    //   console.log('okok');
-    //   console.log(req.body.paymentToken);
-    //   const customerVaultResponse = await caseUtil.createVault(
-    //     req.body.paymentToken
-    //   );
-    //   console.log(customerVaultResponse);
-    //   if (!customerVaultResponse[0]) return customerVaultResponse;
-    //   req.body.customerVaultId = customerVaultResponse[1];
-    // }
+    if (req.body.paymentToken && req.body.paymentType) {
+      const customerVaultResponse = await caseUtil.createVault(
+        req.body.paymentToken
+      );
+      console.log(customerVaultResponse);
+      if (!customerVaultResponse[0]) return customerVaultResponse;
+      req.body.customerVaultId = customerVaultResponse[1];
+    }
     if (!getDebtor) {
-      console.log('i am here not fond');
       debtor = await caseUtil.createDebtor(req.body as IDebtor);
     }
     if (getDebtor) {
-      console.log('oh i found it');
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
         req.body
@@ -398,20 +393,8 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    console.log('i am going to call AI');
     const creditorNames: Array<string> =
       await caseUtil.getCreditorNames(debtor);
-    console.log(creditorNames, 'creditonamess');
-    // const findCreditor = creditorNames.includes(
-    //   creditor.businessInformation.companyName
-    // );
-    // console.log(findCreditor, 'findCrediotrrr');
-    // if (findCreditor) {
-    //   await this.creditorRepository.updateById(creditor._id, {
-    //     'businessInformation.accountTitle':
-    //       creditor.businessInformation.companyName,
-    //   });
-    // }
     return [true, {debtor, creditorNames}];
   }
 }

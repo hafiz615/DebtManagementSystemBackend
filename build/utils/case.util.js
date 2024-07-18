@@ -279,7 +279,7 @@ class CaseUtil {
         }
         await this.createPayment(caseCreated);
         // if (body.paymentToken && body.paymentType) {
-        //   await this.debtorService.createVault(
+        //   await this.createVault(
         //     body.paymentToken,
         //     String(caseCreated.debtor),
         //     body.paymentType
@@ -308,29 +308,29 @@ class CaseUtil {
         let weeklyBudget = 0;
         let debt = 0;
         let amount = 0;
-        if (!debtorFound) {
-            const interval = body.intervals[0];
-            weeklyBudget = body.debtor.basicInformation.weeklyBudget;
-            debt = body.remaining;
-            amount = await this.getWeeklyAmount(interval);
-            return amount >= weeklyBudget
-                ? {
-                    status: false,
-                    commission: 0,
-                    totalCommission: 0,
-                }
-                : {
-                    status: true,
-                    commission: weeklyBudget - amount,
-                    totalCommission: parseInt((debt * 0.19).toFixed(2)),
-                };
-        }
+        // if (!debtorFound) {
+        //   const interval = body.intervals[0];
+        //   weeklyBudget = body.debtor.basicInformation.weeklyBudget;
+        //   debt = body.remaining;
+        //   amount = await this.getWeeklyAmount(interval);
+        //   return amount >= weeklyBudget
+        //     ? {
+        //         status: false,
+        //         commission: 0,
+        //         totalCommission: 0,
+        //       }
+        //     : {
+        //         status: true,
+        //         commission: weeklyBudget - amount,
+        //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
+        //       };
+        // }
         if (debtorFound) {
             const interval = body.intervals[0];
             debt = body.remaining;
             amount = await this.getWeeklyAmount(interval);
         }
-        weeklyBudget = body.debtor.basicInformation.weeklyBudget;
+        weeklyBudget = debtor.basicInformation.weeklyBudget;
         const cases = await this.caseRepository.getAllWithoutPagination({
             debtor: debtor._id,
             isDeleted: false,
@@ -1430,69 +1430,74 @@ class CaseUtil {
     }
     async createCreditorsCases(req, name, id) {
         let creditor = null;
-        let body = req.body;
-        const getCreditor = await this.creditorRepository.getOne({
-            $or: [
-                {
-                    'basicInformation.email': body.creditor.basicInformation.email.toLowerCase(),
-                },
-                {
-                    'basicInformation.phone': body.creditor.basicInformation.phone,
-                },
-            ],
-        });
-        let weeklyBudgetObj;
+        let dataArray = req.body.data;
+        const createdCases = [];
         const debtor = await this.debtRepository.getById(req.params.id);
-        if (body.feePayment && body.feePayment === 'toPay') {
-            weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-            if (!weeklyBudgetObj.status) {
-                return [
-                    false,
-                    'Weekly budget is not fulfiling the payment plan of debtor',
-                ];
-            }
-            // body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
-            // body.debtor.weeklyCommission = weeklyBudgetObj.commission;
-            await this.debtRepository.updateById(debtor._id, {
-                totalCommission: weeklyBudgetObj.totalCommission,
-                weeklyCommission: weeklyBudgetObj.commission,
+        for (const body of dataArray) {
+            console.log(body.creditor.basicInformation);
+            const getCreditor = await this.creditorRepository.getOne({
+                $or: [
+                    {
+                        'basicInformation.email': body.creditor.basicInformation.email.toLowerCase(),
+                    },
+                    {
+                        'basicInformation.phone': body.creditor.basicInformation.phone,
+                    },
+                ],
             });
+            let weeklyBudgetObj;
+            if (body.feePayment && body.feePayment === 'toPay') {
+                weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+                if (!weeklyBudgetObj.status) {
+                    return [
+                        false,
+                        'Weekly budget is not fulfiling the payment plan of debtor',
+                    ];
+                }
+                await this.debtRepository.updateById(debtor._id, {
+                    totalCommission: weeklyBudgetObj.totalCommission,
+                    weeklyCommission: weeklyBudgetObj.commission,
+                });
+            }
+            if (body.creditor.paymentToken && body.creditor.paymentType) {
+                const customerVaultResponse = await this.createVault(body.paymentToken);
+                if (!customerVaultResponse[0])
+                    return customerVaultResponse;
+                body.creditor.customerVaultId = customerVaultResponse[1];
+            }
+            if (!getCreditor) {
+                creditor = await this.createCreditor(body.creditor);
+            }
+            if (getCreditor) {
+                creditor = await this.creditorRepository.updateById(getCreditor._id, body.creditor);
+            }
+            if (creditor) {
+                body.debtor = debtor?._id;
+                body.creditor = creditor?._id;
+                const newCase = new case_repomodel_1.Case();
+                newCase.caseOwner = name;
+                newCase.caseOwnerId = id;
+                newCase.negotiator = name;
+                newCase.negotiatorId = id;
+                newCase.manager = name;
+                newCase.managerId = id;
+                newCase.chatId = (0, uuid_1.v4)();
+                newCase.caseCode = await this.getCaseCode();
+                const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
+                const caseCreated = await this.caseRepository.create(validatedCase);
+                // if (!caseCreated) {
+                //   return [false, constantsUtil.failureAddMessage('case')];
+                // }
+                if (caseCreated)
+                    createdCases.push(caseCreated);
+                if (caseCreated.intervals.length) {
+                    await this.createPayment(caseCreated);
+                }
+            }
         }
-        if (body.creditor.paymentToken && body.creditor.paymentType) {
-            const customerVaultResponse = await this.createVault(body.paymentToken);
-            if (!customerVaultResponse[0])
-                return customerVaultResponse;
-            body.creditor.customerVaultId = customerVaultResponse[1];
-        }
-        if (!getCreditor) {
-            creditor = await this.createCreditor(body.creditor);
-        }
-        if (getCreditor) {
-            creditor = await this.creditorRepository.updateById(getCreditor._id, body.creditor);
-        }
-        body.debtor = debtor?._id;
-        body.creditor = creditor?._id;
-        const newCase = new case_repomodel_1.Case();
-        newCase.caseOwner = name;
-        newCase.caseOwnerId = id;
-        newCase.negotiator = name;
-        newCase.negotiatorId = id;
-        newCase.manager = name;
-        newCase.managerId = id;
-        newCase.chatId = (0, uuid_1.v4)();
-        newCase.caseCode = await this.getCaseCode();
-        const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
-        const caseCreated = await this.caseRepository.create(validatedCase);
-        if (!caseCreated) {
-            return [false, constants_util_1.default.failureAddMessage('case')];
-        }
-        if (caseCreated.intervals.length) {
-            await this.createPayment(caseCreated);
-        }
-        if (body.paymentTokenCreditor && body.paymentTypeCreditor) {
-            await this.creditorService.createVault(body.paymentTokenCreditor, String(caseCreated.creditor), body.paymentTypeCreditor);
-        }
-        return [true, caseCreated];
+        if (!createdCases.length)
+            return [false, createdCases];
+        return [true, createdCases];
     }
     async createVault(paymentToken) {
         const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';

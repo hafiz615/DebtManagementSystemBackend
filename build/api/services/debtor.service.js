@@ -278,7 +278,6 @@ class DebtorService {
         return [false, 'Unable to capture payment!'];
     }
     async createDebtor(req) {
-        console.log('pronkk');
         const getDebtor = await this.debtorRepository.getOne({
             $or: [
                 {
@@ -296,40 +295,23 @@ class DebtorService {
             ],
         });
         let debtor = null;
-        // if (req.body.paymentToken && req.body.paymentType) {
-        //   console.log('okok');
-        //   console.log(req.body.paymentToken);
-        //   const customerVaultResponse = await caseUtil.createVault(
-        //     req.body.paymentToken
-        //   );
-        //   console.log(customerVaultResponse);
-        //   if (!customerVaultResponse[0]) return customerVaultResponse;
-        //   req.body.customerVaultId = customerVaultResponse[1];
-        // }
+        if (req.body.paymentToken && req.body.paymentType) {
+            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
+            console.log(customerVaultResponse);
+            if (!customerVaultResponse[0])
+                return customerVaultResponse;
+            req.body.customerVaultId = customerVaultResponse[1];
+        }
         if (!getDebtor) {
-            console.log('i am here not fond');
             debtor = await case_util_1.default.createDebtor(req.body);
         }
         if (getDebtor) {
-            console.log('oh i found it');
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        console.log('i am going to call AI');
         const creditorNames = await case_util_1.default.getCreditorNames(debtor);
-        console.log(creditorNames, 'creditonamess');
-        // const findCreditor = creditorNames.includes(
-        //   creditor.businessInformation.companyName
-        // );
-        // console.log(findCreditor, 'findCrediotrrr');
-        // if (findCreditor) {
-        //   await this.creditorRepository.updateById(creditor._id, {
-        //     'businessInformation.accountTitle':
-        //       creditor.businessInformation.companyName,
-        //   });
-        // }
         return [true, { debtor, creditorNames }];
     }
 }

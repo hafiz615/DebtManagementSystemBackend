@@ -325,94 +325,73 @@ class CaseValidate {
     next: NextFunction
   ) {
     const schema = Joi.object({
-      creditor: Joi.object({
-        paymentType: Joi.string().allow(''),
-        paymentToken: Joi.string().allow(''),
-        basicInformation: Joi.object({
-          fullName: Joi.string().required(),
-          email: Joi.string().email().required(),
-          phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
-            .required(),
-        }),
-        businessInformation: Joi.object({
-          companyName: Joi.string().required(),
-          businessCategory: Joi.string().required(),
-        }),
-        contacts: Joi.array().items(
-          Joi.object({
-            name: Joi.string().required(),
-            title: Joi.string().required(),
-            phone: Joi.string()
-              .pattern(/^\+\d{11}$/)
-              .required(),
-            email: Joi.string().email().required(),
-            relationWithDebtor: Joi.string().allow(''),
-            country: Joi.string().allow(''),
-            state: Joi.string().allow(''),
-            city: Joi.string().allow(''),
-            zipCode: Joi.string().allow(''),
-          })
-        ),
-        notes: Joi.string().allow(''),
-        creditorSecurityKey: Joi.string(),
-        accountTitle: Joi.string().optional().allow('', null),
-        lastFundedDate: Joi.date().required(),
-        historicalRange: Joi.object({
-          minimum: Joi.number().strict().required(),
-          maximum: Joi.number().strict().required(),
-        }),
-      }),
-      totalDebt: Joi.number().strict().required(),
-      lastPaymentDate: Joi.date(),
-      paidAmount: Joi.number().strict().required(),
-      remaining: Joi.number().strict().required(),
-      confidence: Joi.number().strict(),
-      closeDate: Joi.date(),
-      paymentToken: Joi.string().allow(''),
-      paymentType: Joi.string().valid('cc', 'ck').allow(''),
-      status: Joi.string().required(),
-      notes: Joi.string(),
-      chatId: Joi.string(),
-      feePayment: Joi.string().valid(
-        'paidViaCash',
-        'toPay',
-        'paidViaThirdParty'
-      ),
-      intervals: Joi.array().items(
+      data: Joi.array().items(
         Joi.object({
-          amount: Joi.number().strict().required(),
-          startDate: Joi.date().required(),
-          frequency: Joi.number().optional(),
-          timePeriod: Joi.string()
-            .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
-            .required(),
+          creditor: Joi.object({
+            paymentType: Joi.string().allow(''),
+            paymentToken: Joi.string().allow(''),
+            basicInformation: Joi.object({
+              fullName: Joi.string().required(),
+              email: Joi.string().email().required(),
+              phone: Joi.string()
+                .pattern(/^\+\d{11}$/)
+                .required(),
+            }),
+            businessInformation: Joi.object({
+              companyName: Joi.string().required(),
+              businessCategory: Joi.string().required(),
+            }),
+            contacts: Joi.array().items(
+              Joi.object({
+                name: Joi.string().required(),
+                title: Joi.string().required(),
+                phone: Joi.string()
+                  .pattern(/^\+\d{11}$/)
+                  .required(),
+                email: Joi.string().email().required(),
+                relationWithDebtor: Joi.string().allow(''),
+                country: Joi.string().allow(''),
+                state: Joi.string().allow(''),
+                city: Joi.string().allow(''),
+                zipCode: Joi.string().allow(''),
+              })
+            ),
+            notes: Joi.string().allow(''),
+            creditorSecurityKey: Joi.string(),
+            accountTitle: Joi.string().optional().allow('', null),
+            lastFundedDate: Joi.date().required(),
+            historicalRange: Joi.object({
+              minimum: Joi.number().strict().required(),
+              maximum: Joi.number().strict().required(),
+            }),
+          }),
+          totalDebt: Joi.number().strict().optional(),
+          lastPaymentDate: Joi.date().optional(),
+          paidAmount: Joi.number().strict().optional(),
+          remaining: Joi.number().strict().optional(),
+          confidence: Joi.number().strict(),
+          closeDate: Joi.date(),
+          status: Joi.string().optional(),
+          notes: Joi.string(),
+          chatId: Joi.string(),
+          feePayment: Joi.string()
+            .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+            .optional(),
+          intervals: Joi.array()
+            .items(
+              Joi.object({
+                amount: Joi.number().strict().required(),
+                startDate: Joi.date().required(),
+                frequency: Joi.number().optional(),
+                timePeriod: Joi.string()
+                  .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+                  .required(),
+              })
+            )
+            .optional(),
         })
       ),
     });
-    if (req.query.bulk === 'true') {
-      const cases = req.body.cases;
-      if (Array.isArray(cases)) {
-        for (const tempCase of cases) {
-          const {error} = schema.validate(tempCase);
-          if (error) {
-            return res
-              .status(constants.CODE.BAD_REQUEST)
-              .send(
-                responseHelper.get4xxResponse(
-                  error.details[0].context.label +
-                    constants.Messages.INVALID_FIELD
-                )
-              );
-          }
-        }
-      } else {
-        return res
-          .status(constants.CODE.BAD_REQUEST)
-          .send(responseHelper.get4xxResponse('Please provide cases array'));
-      }
-      return next();
-    }
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

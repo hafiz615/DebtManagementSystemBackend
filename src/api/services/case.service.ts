@@ -302,28 +302,10 @@ class CaseService {
     req: Request
   ): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
-    // if (req.query.bulk === 'true') {
-    //   const casesArray = [];
-    //   for (const tempCase of req.body.cases) {
-    //     const checkCasePayment = await caseUtil.checkCasePayment(tempCase);
-    //     if (!checkCasePayment[0]) return checkCasePayment;
-    //     const result = await caseUtil.createCase(
-    //       tempCase,
-    //       reqTemp.role,
-    //       reqTemp.email
-    //     );
-    //     if (result[0]) {
-    //       casesArray.push(result[1]);
-    //     }
-    //   }
-    //   if (!casesArray.length)
-    //     return [false, constantsUtil.failureAddMessage('cases')];
-    //   return [true, casesArray];
-    // }
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
     const result = await caseUtil.createCreditorsCases(
-      req.body,
+      req,
       reqTemp.name,
       reqTemp.id
     );
