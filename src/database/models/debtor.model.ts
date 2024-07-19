@@ -94,6 +94,13 @@ const debtorModel: Schema = new Schema({
       zipCode: '';
     }>,
   },
+  documents: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
+  },
   paymentType: {
     type: String,
   },

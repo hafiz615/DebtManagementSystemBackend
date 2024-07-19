@@ -1,5 +1,10 @@
 import mongoose, {Document} from 'mongoose';
 
+export interface IKeyFile {
+  key: string;
+  originalFileName: string;
+  url?: string;
+}
 interface businessInformation {
   companyName: string;
   EIN: string;
@@ -40,6 +45,7 @@ export interface IDebtor extends Document {
     city: string;
     zipCode: string;
   }>;
+  documents: Array<IKeyFile>;
   paymentType: string;
   customerVaultId: string;
   totalCommission: number;

@@ -11,12 +11,17 @@ class CaseController {
     constructor() {
         this.createCase = async (req, res) => {
             try {
-                const keyword = req.query.bulk === 'true' ? 'importBulkCases' : 'createNewCase';
-                const checkPermission = await common_util_1.default.checkPermission(keyword, req);
-                if (!checkPermission)
-                    return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
-                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                // const keyword =
+                //   req.query.bulk === 'true' ? 'importBulkCases' : 'createNewCase';
+                // const checkPermission = await commonUtil.checkPermission(keyword, req);
+                // if (!checkPermission)
+                //   return res
+                //     .status(constants.CODE.BAD_REQUEST)
+                //     .send(
+                //       responseHelper.get4xxResponse(
+                //         'You do not have permission to perform this operation'
+                //       )
+                //     );
                 const response = await this.caseService.createCase(req);
                 if (!response[0]) {
                     return res
@@ -302,6 +307,26 @@ class CaseController {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.createCreditorsCases = async (req, res) => {
+            try {
+                const response = await this.caseService.createCreditorsCases(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.CREATED).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.CREATED,
+                    data: response[1],
+                    message: constants_util_1.default.successRegisterMessage('Cases'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.caseService = new case_service_1.default();

@@ -99,33 +99,38 @@ class DebtorController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.createVault = async (req, res) => {
-            try {
-                if (!req.body || !req.body.paymentToken) {
-                    return [false, 'Payment token is missing'];
-                }
-                if (!req.body || !req.body.paymentType) {
-                    return [false, 'Payment token is missing'];
-                }
-                const response = await this.debtorService.createVault(req.body.paymentToken, req.params.id, req.body.paymentType);
-                if (!response[0]) {
-                    return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
-                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
-                }
-                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                    statusCode: constants_util_1.default.CODE.OK,
-                    data: response[1],
-                    message: constants_util_1.default.successAddMessage('Customer vault id'),
-                }));
-            }
-            catch (error) {
-                console.log(error);
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
-            }
-        };
+        // createVault = async (req: Request, res: Response) => {
+        //   try {
+        //     if (!req.body || !req.body.paymentToken) {
+        //       return [false, 'Payment token is missing'];
+        //     }
+        //     if (!req.body || !req.body.paymentType) {
+        //       return [false, 'Payment token is missing'];
+        //     }
+        //     const response = await this.debtorService.createVault(
+        //       req.body.paymentToken,
+        //       req.params.id,
+        //       req.body.paymentType
+        //     );
+        //     if (!response[0]) {
+        //       return res
+        //         .status(constants.CODE.BAD_REQUEST)
+        //         .send(responseHelper.get4xxResponse(response[1]));
+        //     }
+        //     return res.status(constants.CODE.OK).send(
+        //       responseHelper.get2xxResponse({
+        //         statusCode: constants.CODE.OK,
+        //         data: response[1],
+        //         message: constants.successAddMessage('Customer vault id'),
+        //       })
+        //     );
+        //   } catch (error) {
+        //     console.log(error);
+        //     return res
+        //       .status(constants.CODE.BAD_REQUEST)
+        //       .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+        //   }
+        // };
         this.retryAuth = async (req, res) => {
             try {
                 const checkPermission = await common_util_1.default.checkPermission('retryPayment', req);
@@ -190,6 +195,26 @@ class DebtorController {
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
                     message: constants_util_1.default.successFoundMessage('Debtors'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.createDebtor = async (req, res) => {
+            try {
+                const response = await this.debtorService.createDebtor(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successRegisterMessage('Debtor'),
                 }));
             }
             catch (error) {

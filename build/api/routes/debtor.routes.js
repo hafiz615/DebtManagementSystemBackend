@@ -12,9 +12,14 @@ router.post('/getDebtor', authorize_middleware_1.default.validateAuth, debtor_co
 router.post('/listing/details/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.listingDetails);
 router.post('/listing/search', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.searchListing);
 router.put('/updateDebtor/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.validateDebtor, debtor_controller_1.default.updateDebtor);
-router.post('/createVault/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.createVault);
+// router.post(
+//   '/createVault/:id',
+//   authorize.validateAuth,
+//   debtorController.createVault
+// );
 router.get('/retryAuth/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.retryAuth);
 router.get('/retryCapture/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.retryCapture);
 router.get('/getAllDebtors', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getAllDebtors);
+router.post('/createDebtor', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createDebtor, debtor_controller_1.default.createDebtor);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

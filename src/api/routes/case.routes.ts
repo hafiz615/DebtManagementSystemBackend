@@ -70,4 +70,11 @@ router.post(
   caseController.getCreditorHistory
 );
 
+router.post(
+  '/createCreditorsCases/:id',
+  authorize.validateAuth,
+  caseValidate.validateCreditorsCases,
+  caseController.createCreditorsCases
+);
+
 export default router;

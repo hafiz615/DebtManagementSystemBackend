@@ -7,7 +7,6 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
-const axios_1 = __importDefault(require("axios"));
 const url_1 = require("url");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const payment_service_1 = __importDefault(require("./payment.service"));
@@ -189,25 +188,6 @@ class DebtorService {
         }
         return [true, debtor];
     }
-    async createVault(paymentToken, id, paymentType) {
-        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
-        const params = {
-            customer_vault: 'add_customer',
-            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-            payment_token: paymentToken,
-        };
-        const response = await axios_1.default.get(url, { params });
-        const responseNum = new url_1.URLSearchParams(response.data).get('response');
-        if (responseNum === '1') {
-            const customerVault = new url_1.URLSearchParams(response.data).get('customer_vault_id');
-            const debtor = await this.debtorRepository.updateById(id, {
-                customerVaultId: customerVault,
-                paymentType: paymentType,
-            });
-            return [true, debtor];
-        }
-        return [false, 'Unable to create customer vault'];
-    }
     async retryAuth(paymentId) {
         let result = false;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
@@ -296,6 +276,43 @@ class DebtorService {
         if (result)
             return [true, 'Payment captured successfully!'];
         return [false, 'Unable to capture payment!'];
+    }
+    async createDebtor(req) {
+        const getDebtor = await this.debtorRepository.getOne({
+            $or: [
+                {
+                    'basicInformation.email': req.body.basicInformation.email.toLowerCase(),
+                },
+                {
+                    'basicInformation.SSID': req.body.basicInformation.SSID,
+                },
+                {
+                    'basicInformation.phone': req.body.basicInformation.phone,
+                },
+                {
+                    'businessInformation.companyName': req.body.businessInformation.companyName,
+                },
+            ],
+        });
+        let debtor = null;
+        if (req.body.paymentToken && req.body.paymentType) {
+            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
+            console.log(customerVaultResponse);
+            if (!customerVaultResponse[0])
+                return customerVaultResponse;
+            req.body.customerVaultId = customerVaultResponse[1];
+        }
+        if (!getDebtor) {
+            debtor = await case_util_1.default.createDebtor(req.body);
+        }
+        if (getDebtor) {
+            debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
+        }
+        if (!debtor) {
+            return [false, constants_util_2.default.failureAddMessage('debtor')];
+        }
+        const creditorNames = await case_util_1.default.getCreditorNames(debtor);
+        return [true, { debtor, creditorNames }];
     }
 }
 exports.default = DebtorService;

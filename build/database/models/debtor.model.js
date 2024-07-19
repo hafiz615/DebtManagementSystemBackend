@@ -108,6 +108,9 @@ const debtorModel = new mongoose_1.Schema({
     contacts: {
         type: (Array),
     },
+    documents: {
+        type: (Array),
+    },
     paymentType: {
         type: String,
     },

@@ -26,6 +26,7 @@ class App {
         this.app.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
+        console.log('oko');
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();
         // paymentCronjob.testCron();

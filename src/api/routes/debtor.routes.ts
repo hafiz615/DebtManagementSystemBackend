@@ -22,11 +22,11 @@ router.put(
   debtor.validateDebtor,
   debtorController.updateDebtor
 );
-router.post(
-  '/createVault/:id',
-  authorize.validateAuth,
-  debtorController.createVault
-);
+// router.post(
+//   '/createVault/:id',
+//   authorize.validateAuth,
+//   debtorController.createVault
+// );
 router.get(
   '/retryAuth/:id',
   authorize.validateAuth,
@@ -41,5 +41,11 @@ router.get(
   '/getAllDebtors',
   authorize.validateAuth,
   debtorController.getAllDebtors
+);
+router.post(
+  '/createDebtor',
+  authorize.validateAuth,
+  debtor.createDebtor,
+  debtorController.createDebtor
 );
 export default router;

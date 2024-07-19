@@ -216,28 +216,6 @@ class DebtorService {
     return [true, debtor];
   }
 
-  async createVault(paymentToken: string, id: string, paymentType: string) {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
-    const params = {
-      customer_vault: 'add_customer',
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      payment_token: paymentToken,
-    };
-    const response = await axios.get(url, {params});
-    const responseNum = new URLSearchParams(response.data).get('response');
-    if (responseNum === '1') {
-      const customerVault = new URLSearchParams(response.data).get(
-        'customer_vault_id'
-      );
-      const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
-        customerVaultId: customerVault,
-        paymentType: paymentType,
-      });
-      return [true, debtor];
-    }
-    return [false, 'Unable to create customer vault'];
-  }
-
   async retryAuth(paymentId: string): Promise<[boolean, string]> {
     let result = false;
     const payment: any = await this.paymentRepository.getById<IPayment>(
@@ -374,6 +352,51 @@ class DebtorService {
     }
     return [true, debtors];
   };
+
+  async createDebtor(req: Request) {
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      $or: [
+        {
+          'basicInformation.email':
+            req.body.basicInformation.email.toLowerCase(),
+        },
+        {
+          'basicInformation.SSID': req.body.basicInformation.SSID,
+        },
+        {
+          'basicInformation.phone': req.body.basicInformation.phone,
+        },
+        {
+          'businessInformation.companyName':
+            req.body.businessInformation.companyName,
+        },
+      ],
+    });
+    let debtor: IDebtor = null;
+    if (req.body.paymentToken && req.body.paymentType) {
+      const customerVaultResponse = await caseUtil.createVault(
+        req.body.paymentToken
+      );
+      console.log(customerVaultResponse);
+      if (!customerVaultResponse[0]) return customerVaultResponse;
+      req.body.customerVaultId = customerVaultResponse[1];
+    }
+    if (!getDebtor) {
+      debtor = await caseUtil.createDebtor(req.body as IDebtor);
+    }
+    if (getDebtor) {
+      debtor = await this.debtorRepository.updateById<IDebtor>(
+        getDebtor._id,
+        req.body
+      );
+    }
+    if (!debtor) {
+      return [false, constantsUtil.failureAddMessage('debtor')];
+    }
+    const creditorNames: Array<string> =
+      await caseUtil.getCreditorNames(debtor);
+    return [true, {debtor, creditorNames}];
+  }
 }
 
 export default DebtorService;

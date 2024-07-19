@@ -35,6 +35,7 @@ class Debtor {
         this.paymentType = '';
         this.customerVaultId = '';
         this.contacts = Array();
+        this.documents = Array();
         this.totalCommission = 0;
         this.commissionPaid = 0;
         this.weeklyCommission = 0;
