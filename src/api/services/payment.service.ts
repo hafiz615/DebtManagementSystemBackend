@@ -85,6 +85,7 @@ class PaymentService {
         {status: 'Upcoming'},
       ],
       caseId: {$ne: null},
+      isDeleted: false,
     };
     if (days && (days === 3 || days === 5 || days === 7)) {
       let currentDate = commonUtil.getCurrentDate();
@@ -193,6 +194,7 @@ class PaymentService {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         caseId: id,
+        isDeleted: false,
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
       undefined,

@@ -17,6 +17,8 @@ export interface IPayment extends Document {
   retriesAuth: number;
   retriesCapture: number;
   timePeriod: string;
+  paymentReference: string;
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

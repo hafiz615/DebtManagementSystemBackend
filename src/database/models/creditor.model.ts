@@ -61,6 +61,15 @@ const creditorModel: Schema = new Schema({
   creditorSecurityKey: {
     type: String,
   },
+  accountTitle: {
+    type: String,
+  },
+  paymentType: {
+    type: String,
+  },
+  customerVaultId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

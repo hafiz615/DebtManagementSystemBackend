@@ -18,6 +18,9 @@ export class Creditor {
     maximum: 0,
   };
   creditorSecurityKey: '';
+  accountTitle: '';
+  paymentType = '';
+  customerVaultId = '';
   contacts = Array<{
     name: '';
     title: '';

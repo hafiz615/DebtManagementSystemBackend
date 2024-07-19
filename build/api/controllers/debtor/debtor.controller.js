@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../../utils/constants.util"));
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const debtor_service_1 = __importDefault(require("../../services/debtor.service"));
+const common_util_1 = __importDefault(require("../../../utils/common.util"));
 class DebtorController {
     constructor() {
         this.getDebtor = async (req, res) => {
@@ -52,7 +53,18 @@ class DebtorController {
         };
         this.searchListing = async (req, res) => {
             try {
-                const response = await this.debtorService.searchListing(req);
+                const checkPermissionAll = await common_util_1.default.checkPermission('viewClientsForAllUsers', req);
+                if (!checkPermissionAll) {
+                    const checkPermission = await common_util_1.default.checkPermission('viewClientsForSelf', req);
+                    if (!checkPermission)
+                        return res
+                            .status(constants_util_1.default.CODE.BAD_REQUEST)
+                            .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                }
+                const keyword = checkPermissionAll
+                    ? 'viewClientsForAllUsers'
+                    : 'viewClientsForSelf';
+                const response = await this.debtorService.searchListing(req, keyword);
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
@@ -67,62 +79,124 @@ class DebtorController {
             }
         };
         this.updateDebtor = async (req, res) => {
-            const response = await this.debtorService.updateDebtor(req);
-            if (!response[0]) {
+            try {
+                const response = await this.debtorService.updateDebtor(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Debtor'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
-            return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                statusCode: constants_util_1.default.CODE.OK,
-                data: response[1],
-                message: constants_util_1.default.successUpdateMessage('Debtor'),
-            }));
         };
         this.createVault = async (req, res) => {
-            if (!req.body || !req.body.paymentToken) {
-                return [false, 'Payment token is missing'];
+            try {
+                if (!req.body || !req.body.paymentToken) {
+                    return [false, 'Payment token is missing'];
+                }
+                if (!req.body || !req.body.paymentType) {
+                    return [false, 'Payment token is missing'];
+                }
+                const response = await this.debtorService.createVault(req.body.paymentToken, req.params.id, req.body.paymentType);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successAddMessage('Customer vault id'),
+                }));
             }
-            if (!req.body || !req.body.paymentType) {
-                return [false, 'Payment token is missing'];
-            }
-            const response = await this.debtorService.createVault(req.body.paymentToken, req.params.id, req.body.paymentType);
-            if (!response[0]) {
+            catch (error) {
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
-            return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                statusCode: constants_util_1.default.CODE.OK,
-                data: response[1],
-                message: constants_util_1.default.successAddMessage('Customer vault id'),
-            }));
         };
         this.retryAuth = async (req, res) => {
-            const response = await this.debtorService.retryAuth(req.params.id);
-            if (!response[0]) {
+            try {
+                const checkPermission = await common_util_1.default.checkPermission('retryPayment', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                const response = await this.debtorService.retryAuth(req.params.id);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: response[1],
+                }));
+            }
+            catch (error) {
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
-            return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                statusCode: constants_util_1.default.CODE.OK,
-                data: response[1],
-                message: response[1],
-            }));
         };
         this.retryCapture = async (req, res) => {
-            const response = await this.debtorService.retryCapture(req.params.id);
-            if (!response[0]) {
+            try {
+                const checkPermission = await common_util_1.default.checkPermission('retryCapture', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                const response = await this.debtorService.retryCapture(req.params.id);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: response[1],
+                }));
+            }
+            catch (error) {
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
-            return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                statusCode: constants_util_1.default.CODE.OK,
-                data: response[1],
-                message: response[1],
-            }));
+        };
+        this.getAllDebtors = async (req, res) => {
+            try {
+                const response = await this.debtorService.getAllDebtors(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.OK)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Debtors'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
         };
         this.debtorService = new debtor_service_1.default();
     }

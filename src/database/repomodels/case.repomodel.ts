@@ -22,6 +22,11 @@ export class Case {
     frequency: 0;
     timePeriod: '';
   }>();
+  isDeleted = false;
+  confidence = 0;
+  closeDate = '';
+  notes = '';
+  chatId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

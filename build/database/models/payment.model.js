@@ -80,6 +80,12 @@ const PaymentModel = new mongoose_1.Schema({
     timePeriod: {
         type: String,
     },
+    paymentReference: {
+        type: String,
+    },
+    isDeleted: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

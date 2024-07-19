@@ -10,6 +10,7 @@ const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const customField_repository_1 = require("../repository/customFields/customField.repository");
 const customField_repomodel_1 = require("../../database/repomodels/customField.repomodel");
 const targetCF_repository_1 = require("../repository/targetCustomFields/targetCF.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 class SettingsService {
     constructor() {
@@ -17,7 +18,7 @@ class SettingsService {
         this.customFieldsRepository = new customField_repository_1.CustomFieldsRepository();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
     }
-    async addSettings(req) {
+    async addSettings(req, keyword) {
         let settigns = null;
         const findSettings = await this.settingsRepository.getAllWithoutPagination();
         if (!findSettings.length) {
@@ -45,6 +46,24 @@ class SettingsService {
                 req.body.notificationTemplates.sms[num - 1].templateId =
                     'Template-' + num.toString().padStart(3, '0');
             }
+            if (keyword === 'editPaymentsNotificationSettings') {
+                const paymentsNoti = await common_util_1.default.checkPermission(keyword, req);
+                const authInterval = await common_util_1.default.checkPermission(keyword, req);
+                const retryInterval = await common_util_1.default.checkPermission(keyword, req);
+                if (!paymentsNoti && req.body.paymentsAuthorizations) {
+                    delete req.body.paymentsAuthorizations.failedAuthorizations;
+                    delete req.body.paymentsAuthorizations.successfulAuthorizations;
+                    delete req.body.paymentsAuthorizations.failedPayments;
+                    delete req.body.paymentsAuthorizations.successPayments;
+                    delete req.body.paymentsAuthorizations.upcomingPayments;
+                }
+                if (!retryInterval && req.body.paymentsAuthorizations) {
+                    delete req.body.paymentsAuthorizations.retryInterval;
+                }
+                if (!authInterval && req.body.paymentsAuthorizations) {
+                    delete req.body.paymentsAuthorizations.authorizationInterval;
+                }
+            }
             const mergedSettings = await settings_util_1.default.mergeSettings(findSettings[0], req.body);
             settigns = await this.settingsRepository.updateById(findSettings[0].id, mergedSettings);
         }
@@ -53,7 +72,7 @@ class SettingsService {
         }
         return [true, settigns];
     }
-    async getSettings() {
+    async getSettings(templatePermission, paymentsPermission, customFieldsPermission) {
         const findSettings = await this.settingsRepository.getAllWithoutPagination();
         const customFields = await this.customFieldsRepository.getAllWithoutPagination();
         if (!findSettings.length) {
@@ -62,16 +81,20 @@ class SettingsService {
                 {
                     paymentsAuthorizations: null,
                     notificationTemplates: null,
-                    customFields: customFields,
+                    customFields: customFields.length ? customFields : null,
                 },
             ];
         }
         return [
             true,
             {
-                paymentsAuthorizations: findSettings[0].paymentsAuthorizations,
-                notificationTemplates: findSettings[0].notificationTemplates,
-                customFields: customFields,
+                paymentsAuthorizations: paymentsPermission
+                    ? findSettings[0].paymentsAuthorizations
+                    : null,
+                notificationTemplates: templatePermission
+                    ? findSettings[0].notificationTemplates
+                    : null,
+                customFields: customFieldsPermission ? customFields : null,
             },
         ];
     }
@@ -98,7 +121,7 @@ class SettingsService {
         const customFields = await this.customFieldsRepository.getAllWithoutPagination({
             $or: [{ target: target }, { shared: true }],
         });
-        if (!customFields) {
+        if (!customFields.length) {
             return [false, constants_util_1.default.notFoundMessage('Custom fields')];
         }
         return [true, customFields];
@@ -161,6 +184,62 @@ class SettingsService {
             return [false, constants_util_1.default.failureDeleteMessage('custom field')];
         }
         return [true, customField];
+    }
+    async editNotificationTemplate(req) {
+        if (String(req.query.type) !== 'sms' &&
+            String(req.query.type) !== 'email') {
+            return [false, 'type is missing'];
+        }
+        const type = String(req.query.type);
+        let result = null;
+        switch (type) {
+            case 'sms':
+                result = await this.settingsRepository.updateByOne({ 'notificationTemplates.sms.templateId': req.body.templateId }, {
+                    $set: {
+                        'notificationTemplates.sms.$': req.body,
+                    },
+                });
+                break;
+            case 'email':
+                result = await this.settingsRepository.updateByOne({ 'notificationTemplates.email.templateId': req.body.templateId }, {
+                    $set: {
+                        'notificationTemplates.email.$': req.body,
+                    },
+                });
+                break;
+        }
+        if (!result) {
+            return [false, constants_util_1.default.failureUpdateMessage('notification template')];
+        }
+        return [true, result];
+    }
+    async deleteNotificationTemplate(req) {
+        const type = String(req.query.type);
+        if (type !== 'sms' && type !== 'email') {
+            return [false, 'type is missing'];
+        }
+        let result = null;
+        const templateId = req.body.templateId;
+        switch (type) {
+            case 'sms':
+                result = await this.settingsRepository.updateByOne({ 'notificationTemplates.sms.templateId': req.body.templateId }, {
+                    $pull: {
+                        'notificationTemplates.sms': { templateId },
+                    },
+                });
+                break;
+            case 'email':
+                result = await this.settingsRepository.updateByOne({ 'notificationTemplates.email.templateId': req.body.templateId }, {
+                    $pull: {
+                        'notificationTemplates.email': { templateId },
+                    },
+                });
+                break;
+        }
+        if (!result) {
+            return [false, constants_util_1.default.failureDeleteMessage('notification template')];
+        }
+        return [true, result];
     }
 }
 exports.default = SettingsService;

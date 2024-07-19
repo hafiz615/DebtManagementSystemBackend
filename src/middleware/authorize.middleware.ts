@@ -50,6 +50,7 @@ class Authorize {
           }
           req.id = String(exists._id);
           req.email = exists.email.toLowerCase();
+          console.log(exists.role);
           req.role = exists.role;
           req.sessionId = decoded?.sessionId;
           req.name = exists.name;

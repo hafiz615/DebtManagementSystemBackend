@@ -97,6 +97,21 @@ const caseModel = new mongoose_1.Schema({
             },
         ],
     },
+    isDeleted: {
+        type: Boolean,
+    },
+    confidence: {
+        type: Number,
+    },
+    closeDate: {
+        type: Date,
+    },
+    notes: {
+        type: String,
+    },
+    chatId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

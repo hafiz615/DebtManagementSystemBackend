@@ -13,6 +13,9 @@ import PaymentService from './payment.service';
 import {PaymentLogging} from '../../database/repomodels/paymentLogging.repomodel';
 import commonUtil from '../../utils/common.util';
 import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogging.repository';
+import {DataCopier} from '../../utils/dataCopier.util';
+import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
+import constantsUtil from '../../utils/constants.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -73,6 +76,7 @@ class DebtorService {
     } else {
       casesCount = await this.caseRepository.getCount<ICase>({
         debtor: req.params.id,
+        isDeleted: false,
       });
     }
     if (!clientDetails) {
@@ -85,11 +89,11 @@ class DebtorService {
     return [true, {...clientDetails, debtorTotalCases: casesCount}];
   }
 
-  async searchListing(req: Request) {
+  async searchListing(req: Request, keyword: string) {
     let debtorsCount: number = 0;
     let page = 1;
     let limit = 10;
-
+    let reqTemp: any = req;
     // Check if pageNumber and pageSize are provided and valid
     if (req.query.page && !isNaN(Number(req.query.page))) {
       page = Number(req.query.page) ? Number(req.query.page) : page;
@@ -97,13 +101,38 @@ class DebtorService {
     if (req.query.limit && !isNaN(Number(req.query.limit))) {
       limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
-    const pipeline: any = await caseUtil.getClientListingPipeline(req);
+    let match = {isDeleted: {$ne: true}};
+    let countFilter = {};
+    if (keyword === 'viewClientsForSelf') {
+      match['$or'] = [
+        {caseOwnerId: reqTemp.id},
+        {negotiatorId: reqTemp.id},
+        {managerId: reqTemp.id},
+      ];
+      countFilter['$or'] = [
+        {caseOwnerId: reqTemp.id},
+        {negotiatorId: reqTemp.id},
+        {managerId: reqTemp.id},
+      ];
+    }
+    const pipeline: any = await caseUtil.getClientListingPipeline(req, match);
     const clientDetails: any =
       await this.caseRepository.applyAggregate<ICase>(pipeline);
     if (req.query.filter === 'true' || req.query.search === 'true') {
       debtorsCount = clientDetails.length;
     } else {
-      debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+      if (keyword === 'viewClientsForSelf') {
+        const cases =
+          await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
+        const setCount = new Set<string>();
+        for (const caseTemp of cases) {
+          setCount.add(String(caseTemp.debtor));
+        }
+        debtorsCount = setCount.size;
+      } else {
+        debtorsCount =
+          await this.debtorRepository.getCount<IDebtor>(countFilter);
+      }
     }
     const paginatedDetails = clientDetails.slice(
       (page - 1) * limit,
@@ -235,24 +264,34 @@ class DebtorService {
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
       updateObjPayment['status'] = 'Pending';
-      paymentLogging.successReason = responseText;
+      // paymentLogging.successReason = responseText;
       result = true;
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
-      paymentLogging.failReason = responseText;
+      // paymentLogging.failReason = responseText;
       console.log('send email through template');
     }
-    await this.paymentRepository.updateById<IPayment>(
-      payment._id,
-      updateObjPayment
-    );
-    paymentLogging.caseId = String(payment.caseId);
-    paymentLogging.createdAt = commonUtil.getCurrentDate();
-    paymentLogging.paymentId = String(payment._id);
-    paymentLogging.paymentType = 'Credit Auth';
-    paymentLogging.debtor = String(payment.caseId.debtor._id);
-    paymentLogging.creditor = String(payment.caseId.creditor._id);
-    await this.paymentLoggingRepository.create(paymentLogging as any);
+    if (Object.keys(updateObjPayment).length) {
+      const newPayment = new PaymentLogging();
+      const populatedPayment = DataCopier.copy(newPayment, payment);
+      const verifiedPayment = DataCopier.copy(
+        populatedPayment,
+        updateObjPayment
+      );
+      await this.paymentRepository.updateById<IPayment>(
+        payment._id,
+        updateObjPayment
+      );
+      await this.paymentLoggingRepository.create<IPaymentLogging>(
+        verifiedPayment
+      );
+    }
+    // paymentLogging.caseId = String(payment.caseId);
+    // paymentLogging.createdAt = commonUtil.getCurrentDate();
+    // paymentLogging.paymentId = String(payment._id);
+    // paymentLogging.paymentType = 'Credit Auth';
+    // paymentLogging.debtor = String(payment.caseId.debtor._id);
+    // paymentLogging.creditor = String(payment.caseId.creditor._id);
     if (result) return [true, 'Payment authorized successfully!'];
     return [false, 'Unable to authorize payment!'];
   }
@@ -291,28 +330,50 @@ class DebtorService {
       if (payment.caseId.debtor.paymentType === 'ck') {
         updateObjPayment['debtorTransId'] = transactionId;
       }
-      paymentLogging.successReason = responseText;
+      // paymentLogging.successReason = responseText;
       result = true;
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
-      paymentLogging.failReason = responseText;
+      // paymentLogging.failReason = responseText;
 
       console.log('send email'); // add code
     }
-    await this.paymentRepository.updateById<IPayment>(
-      payment._id,
-      updateObjPayment
-    );
-    paymentLogging.caseId = String(payment.caseId);
-    paymentLogging.createdAt = commonUtil.getCurrentDate();
-    paymentLogging.paymentId = String(payment._id);
-    paymentLogging.paymentType = 'Credit Capture';
-    paymentLogging.debtor = String(payment.caseId.debtor._id);
-    paymentLogging.creditor = String(payment.caseId.creditor._id);
-    await this.paymentLoggingRepository.create(paymentLogging as any);
+    if (Object.keys(updateObjPayment).length) {
+      const newPayment = new PaymentLogging();
+      const populatedPayment = DataCopier.copy(newPayment, payment);
+      const verifiedPayment = DataCopier.copy(
+        populatedPayment,
+        updateObjPayment
+      );
+      await this.paymentRepository.updateById<IPayment>(
+        payment._id,
+        updateObjPayment
+      );
+      await this.paymentLoggingRepository.create<IPaymentLogging>(
+        verifiedPayment
+      );
+    }
+    // paymentLogging.caseId = String(payment.caseId);
+    // paymentLogging.createdAt = commonUtil.getCurrentDate();
+    // paymentLogging.paymentId = String(payment._id);
+    // paymentLogging.paymentType = 'Credit Capture';
+    // paymentLogging.debtor = String(payment.caseId.debtor._id);
+    // paymentLogging.creditor = String(payment.caseId.creditor._id);
+    // await this.paymentLoggingRepository.create(paymentLogging as any);
     if (result) return [true, 'Payment captured successfully!'];
     return [false, 'Unable to capture payment!'];
   }
+
+  getAllDebtors = async (
+    req: Request
+  ): Promise<[boolean, Partial<IDebtor[]> | string]> => {
+    let debtors =
+      await this.debtorRepository.getAllWithoutPagination<IDebtor>();
+    if (!debtors.length) {
+      return [false, constantsUtil.notFoundMessage('debtors')];
+    }
+    return [true, debtors];
+  };
 }
 
 export default DebtorService;

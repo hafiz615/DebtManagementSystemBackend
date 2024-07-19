@@ -8,7 +8,7 @@ const authorize_middleware_1 = __importDefault(require("../../middleware/authori
 const settings_controller_1 = __importDefault(require("../controllers/setting/settings.controller"));
 const customField_validate_1 = __importDefault(require("../../middleware/validators/customField.validate"));
 const router = (0, express_1.Router)();
-router.patch('/addSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.addSettings);
+router.post('/addSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.addSettings);
 router.get('/getSettings', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getSettings);
 router.post('/addCustomField', authorize_middleware_1.default.validateAuth, customField_validate_1.default.addCustomField, settings_controller_1.default.addCustomField);
 router.put('/editCustomField/:id', authorize_middleware_1.default.validateAuth, settings_controller_1.default.editCustomField);
@@ -17,5 +17,7 @@ router.post('/addCustomFieldByTarget', authorize_middleware_1.default.validateAu
 router.put('/updateCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.updateCustomFieldByTarget);
 router.delete('/removeCustomFieldByTarget', authorize_middleware_1.default.validateAuth, settings_controller_1.default.removeCustomFieldByTarget);
 router.delete('/deleteCustomField/:id', authorize_middleware_1.default.validateAuth, settings_controller_1.default.deleteCustomField);
+router.put('/editNotificationTemplate', authorize_middleware_1.default.validateAuth, settings_controller_1.default.editNotificationTemplate);
+router.post('/deleteNotificationTemplate', authorize_middleware_1.default.validateAuth, settings_controller_1.default.deleteNotificationTemplate);
 exports.default = router;
 //# sourceMappingURL=settings.routes.js.map

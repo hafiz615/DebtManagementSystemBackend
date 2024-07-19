@@ -8,7 +8,7 @@ class UserRequests {
     const schema = Joi.object({
       name: Joi.string().required(),
       email: Joi.string().email().required(),
-      role: Joi.string().valid('Negotiator', 'Manager').required(),
+      role: Joi.string().valid().required(),
       isActive: Joi.string(),
       createdBy: Joi.string(),
       SSID: Joi.string()

@@ -25,7 +25,10 @@ class SettingsService {
     this.targetCFRepository = new TargetCFRepository();
   }
 
-  async addSettings(req: Request): Promise<[boolean, ISettings | string]> {
+  async addSettings(
+    req: Request,
+    keyword: string
+  ): Promise<[boolean, ISettings | string]> {
     let settigns = null;
     const findSettings =
       await this.settingsRepository.getAllWithoutPagination<ISettings>();
@@ -57,6 +60,24 @@ class SettingsService {
         req.body.notificationTemplates.sms[num - 1].templateId =
           'Template-' + num.toString().padStart(3, '0');
       }
+      if (keyword === 'editPaymentsNotificationSettings') {
+        const paymentsNoti = await commonUtil.checkPermission(keyword, req);
+        const authInterval = await commonUtil.checkPermission(keyword, req);
+        const retryInterval = await commonUtil.checkPermission(keyword, req);
+        if (!paymentsNoti && req.body.paymentsAuthorizations) {
+          delete req.body.paymentsAuthorizations.failedAuthorizations;
+          delete req.body.paymentsAuthorizations.successfulAuthorizations;
+          delete req.body.paymentsAuthorizations.failedPayments;
+          delete req.body.paymentsAuthorizations.successPayments;
+          delete req.body.paymentsAuthorizations.upcomingPayments;
+        }
+        if (!retryInterval && req.body.paymentsAuthorizations) {
+          delete req.body.paymentsAuthorizations.retryInterval;
+        }
+        if (!authInterval && req.body.paymentsAuthorizations) {
+          delete req.body.paymentsAuthorizations.authorizationInterval;
+        }
+      }
       const mergedSettings = await settingsUtil.mergeSettings(
         findSettings[0],
         req.body
@@ -72,7 +93,11 @@ class SettingsService {
     return [true, settigns];
   }
 
-  async getSettings(): Promise<[boolean, {} | string]> {
+  async getSettings(
+    templatePermission: boolean,
+    paymentsPermission: boolean,
+    customFieldsPermission: boolean
+  ): Promise<[boolean, {} | string]> {
     const findSettings =
       await this.settingsRepository.getAllWithoutPagination<ISettings>();
     const customFields =
@@ -83,16 +108,20 @@ class SettingsService {
         {
           paymentsAuthorizations: null,
           notificationTemplates: null,
-          customFields: customFields,
+          customFields: customFields.length ? customFields : null,
         },
       ];
     }
     return [
       true,
       {
-        paymentsAuthorizations: findSettings[0].paymentsAuthorizations,
-        notificationTemplates: findSettings[0].notificationTemplates,
-        customFields: customFields,
+        paymentsAuthorizations: paymentsPermission
+          ? findSettings[0].paymentsAuthorizations
+          : null,
+        notificationTemplates: templatePermission
+          ? findSettings[0].notificationTemplates
+          : null,
+        customFields: customFieldsPermission ? customFields : null,
       },
     ];
   }
@@ -132,7 +161,7 @@ class SettingsService {
       await this.customFieldsRepository.getAllWithoutPagination<ICustomField>({
         $or: [{target: target}, {shared: true}],
       });
-    if (!customFields) {
+    if (!customFields.length) {
       return [false, constants.notFoundMessage('Custom fields')];
     }
     return [true, customFields];
@@ -218,6 +247,82 @@ class SettingsService {
       return [false, constants.failureDeleteMessage('custom field')];
     }
     return [true, customField];
+  }
+
+  async editNotificationTemplate(
+    req: Request
+  ): Promise<[boolean, ISettings | string]> {
+    if (
+      String(req.query.type) !== 'sms' &&
+      String(req.query.type) !== 'email'
+    ) {
+      return [false, 'type is missing'];
+    }
+    const type = String(req.query.type);
+    let result = null;
+    switch (type) {
+      case 'sms':
+        result = await this.settingsRepository.updateByOne(
+          {'notificationTemplates.sms.templateId': req.body.templateId},
+          {
+            $set: {
+              'notificationTemplates.sms.$': req.body,
+            },
+          }
+        );
+        break;
+      case 'email':
+        result = await this.settingsRepository.updateByOne(
+          {'notificationTemplates.email.templateId': req.body.templateId},
+          {
+            $set: {
+              'notificationTemplates.email.$': req.body,
+            },
+          }
+        );
+        break;
+    }
+    if (!result) {
+      return [false, constants.failureUpdateMessage('notification template')];
+    }
+    return [true, result];
+  }
+
+  async deleteNotificationTemplate(
+    req: Request
+  ): Promise<[boolean, ISettings | string]> {
+    const type = String(req.query.type);
+    if (type !== 'sms' && type !== 'email') {
+      return [false, 'type is missing'];
+    }
+    let result = null;
+    const templateId = req.body.templateId;
+    switch (type) {
+      case 'sms':
+        result = await this.settingsRepository.updateByOne(
+          {'notificationTemplates.sms.templateId': req.body.templateId},
+          {
+            $pull: {
+              'notificationTemplates.sms': {templateId},
+            },
+          }
+        );
+        break;
+      case 'email':
+        result = await this.settingsRepository.updateByOne(
+          {'notificationTemplates.email.templateId': req.body.templateId},
+          {
+            $pull: {
+              'notificationTemplates.email': {templateId},
+            },
+          }
+        );
+        break;
+    }
+    if (!result) {
+      return [false, constants.failureDeleteMessage('notification template')];
+    }
+    return [true, result];
   }
 }
 

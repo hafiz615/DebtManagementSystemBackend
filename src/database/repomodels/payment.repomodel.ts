@@ -17,6 +17,8 @@ export class Payment {
   retriesAuth = 0;
   retriesCapture = 0;
   timePeriod = '';
+  paymentReference = '';
+  isDeleted = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

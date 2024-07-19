@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import DebtorService from '../../services/debtor.service';
+import commonUtil from '../../../utils/common.util';
 
 class DebtorController {
   protected debtorService: DebtorService;
@@ -59,7 +60,28 @@ class DebtorController {
 
   searchListing = async (req: Request, res: Response) => {
     try {
-      const response = await this.debtorService.searchListing(req);
+      const checkPermissionAll = await commonUtil.checkPermission(
+        'viewClientsForAllUsers',
+        req
+      );
+      if (!checkPermissionAll) {
+        const checkPermission = await commonUtil.checkPermission(
+          'viewClientsForSelf',
+          req
+        );
+        if (!checkPermission)
+          return res
+            .status(constants.CODE.BAD_REQUEST)
+            .send(
+              responseHelper.get4xxResponse(
+                'You do not have permission to perform this operation'
+              )
+            );
+      }
+      const keyword = checkPermissionAll
+        ? 'viewClientsForAllUsers'
+        : 'viewClientsForSelf';
+      const response = await this.debtorService.searchListing(req, keyword);
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
@@ -76,77 +98,151 @@ class DebtorController {
   };
 
   updateDebtor = async (req: Request, res: Response) => {
-    const response = await this.debtorService.updateDebtor(req);
-    if (!response[0]) {
+    try {
+      const response = await this.debtorService.updateDebtor(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Debtor'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
-    return res.status(constants.CODE.OK).send(
-      responseHelper.get2xxResponse({
-        statusCode: constants.CODE.OK,
-        data: response[1],
-        message: constants.successUpdateMessage('Debtor'),
-      })
-    );
   };
 
   createVault = async (req: Request, res: Response) => {
-    if (!req.body || !req.body.paymentToken) {
-      return [false, 'Payment token is missing'];
-    }
-    if (!req.body || !req.body.paymentType) {
-      return [false, 'Payment token is missing'];
-    }
-    const response = await this.debtorService.createVault(
-      req.body.paymentToken,
-      req.params.id,
-      req.body.paymentType
-    );
-    if (!response[0]) {
+    try {
+      if (!req.body || !req.body.paymentToken) {
+        return [false, 'Payment token is missing'];
+      }
+      if (!req.body || !req.body.paymentType) {
+        return [false, 'Payment token is missing'];
+      }
+      const response = await this.debtorService.createVault(
+        req.body.paymentToken,
+        req.params.id,
+        req.body.paymentType
+      );
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successAddMessage('Customer vault id'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
-    return res.status(constants.CODE.OK).send(
-      responseHelper.get2xxResponse({
-        statusCode: constants.CODE.OK,
-        data: response[1],
-        message: constants.successAddMessage('Customer vault id'),
-      })
-    );
   };
 
   retryAuth = async (req: Request, res: Response) => {
-    const response = await this.debtorService.retryAuth(req.params.id);
-    if (!response[0]) {
+    try {
+      const checkPermission = await commonUtil.checkPermission(
+        'retryPayment',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
+      const response = await this.debtorService.retryAuth(req.params.id);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
-    return res.status(constants.CODE.OK).send(
-      responseHelper.get2xxResponse({
-        statusCode: constants.CODE.OK,
-        data: response[1],
-        message: response[1],
-      })
-    );
   };
 
   retryCapture = async (req: Request, res: Response) => {
-    const response = await this.debtorService.retryCapture(req.params.id);
-    if (!response[0]) {
+    try {
+      const checkPermission = await commonUtil.checkPermission(
+        'retryCapture',
+        req
+      );
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
+      const response = await this.debtorService.retryCapture(req.params.id);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
-    return res.status(constants.CODE.OK).send(
-      responseHelper.get2xxResponse({
-        statusCode: constants.CODE.OK,
-        data: response[1],
-        message: response[1],
-      })
-    );
+  };
+
+  getAllDebtors = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.getAllDebtors(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.OK)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Debtors'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
   };
 }
 

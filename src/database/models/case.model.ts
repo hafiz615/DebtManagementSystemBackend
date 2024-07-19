@@ -73,6 +73,21 @@ const caseModel: Schema = new Schema({
       },
     ],
   },
+  isDeleted: {
+    type: Boolean,
+  },
+  confidence: {
+    type: Number,
+  },
+  closeDate: {
+    type: Date,
+  },
+  notes: {
+    type: String,
+  },
+  chatId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

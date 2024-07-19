@@ -75,6 +75,15 @@ const creditorModel = new mongoose_1.Schema({
     creditorSecurityKey: {
         type: String,
     },
+    accountTitle: {
+        type: String,
+    },
+    paymentType: {
+        type: String,
+    },
+    customerVaultId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

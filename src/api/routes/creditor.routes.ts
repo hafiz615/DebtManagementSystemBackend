@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import creditorController from '../controllers/creditor/creditor.controller';
-import creditor from '../../middleware/validators/creditor.middleware';
+import creditor from '../../middleware/validators/creditor.validate';
 
 const router = Router();
 
@@ -22,5 +22,11 @@ router.post(
   creditorController.listingDetails
 );
 router.post('/listing', authorize.validateAuth, creditorController.listing);
+
+router.post(
+  '/updateCreditorAccountTitle/:id',
+  authorize.validateAuth,
+  creditorController.updateCreditorAccountTitle
+);
 
 export default router;

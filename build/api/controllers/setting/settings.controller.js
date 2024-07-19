@@ -6,11 +6,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../../utils/constants.util"));
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const settings_service_1 = __importDefault(require("../../services/settings.service"));
+const common_util_1 = __importDefault(require("../../../utils/common.util"));
 class SettingsController {
     constructor() {
         this.addSettings = async (req, res) => {
             try {
-                const response = await this.settingsService.addSettings(req);
+                let keyword = '';
+                if (String(req.query.type) === 'template') {
+                    keyword = 'addNotificationTemplate';
+                    const checkPermission = await common_util_1.default.checkPermission(keyword, req);
+                    if (!checkPermission)
+                        return res
+                            .status(constants_util_1.default.CODE.BAD_REQUEST)
+                            .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                }
+                if (String(req.query.type) === 'payments') {
+                    keyword = 'editPaymentsNotificationSettings';
+                }
+                const response = await this.settingsService.addSettings(req, keyword);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
@@ -23,7 +36,7 @@ class SettingsController {
                 }));
             }
             catch (error) {
-                console.log(error.message);
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
@@ -31,7 +44,10 @@ class SettingsController {
         };
         this.getSettings = async (req, res) => {
             try {
-                const response = await this.settingsService.getSettings();
+                const templatePermission = await common_util_1.default.checkPermission('viewNotificationTemplates', req);
+                const paymentsPermission = await common_util_1.default.checkPermission('viewPaymentsNotificationSettings', req);
+                const customFieldsPermission = await common_util_1.default.checkPermission('viewCustomFields', req);
+                const response = await this.settingsService.getSettings(templatePermission, paymentsPermission, customFieldsPermission);
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
@@ -47,6 +63,11 @@ class SettingsController {
         };
         this.addCustomField = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('addCustomFields', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.settingsService.addCustomField(req);
                 if (!response[0]) {
                     return res
@@ -68,6 +89,11 @@ class SettingsController {
         };
         this.editCustomField = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('editCustomFields', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.settingsService.editCustomField(req);
                 if (!response[0]) {
                     return res
@@ -171,6 +197,11 @@ class SettingsController {
         };
         this.deleteCustomField = async (req, res) => {
             try {
+                const checkPermission = await common_util_1.default.checkPermission('deleteCustomFields', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
                 const response = await this.settingsService.deleteCustomField(req);
                 if (!response[0]) {
                     return res
@@ -181,6 +212,56 @@ class SettingsController {
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
                     message: constants_util_1.default.successDeleteMessage('Custom field'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.editNotificationTemplate = async (req, res) => {
+            try {
+                const checkPermission = await common_util_1.default.checkPermission('editNotificationTemplate', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                const response = await this.settingsService.editNotificationTemplate(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Notification template'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.deleteNotificationTemplate = async (req, res) => {
+            try {
+                const checkPermission = await common_util_1.default.checkPermission('deleteNotificationTemplate', req);
+                if (!checkPermission)
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+                const response = await this.settingsService.deleteNotificationTemplate(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successDeleteMessage('Notification template'),
                 }));
             }
             catch (error) {

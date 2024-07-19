@@ -28,6 +28,7 @@ class App {
         });
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();
+        // paymentCronjob.testCron();
     }
 }
 const app = new App();

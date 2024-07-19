@@ -1,15 +1,24 @@
-import {Document} from 'mongoose';
+import mongoose, {Document} from 'mongoose';
 
 export interface IPaymentLogging extends Document {
-  cronId: string;
-  paymentId: string;
-  caseId: string;
-  debtor: string;
-  failReason: string;
-  successReason: string;
-  transactionId: string;
-  creditor: string;
-  firstChoiceCreditor: string;
-  paymentType: string;
+  caseId: mongoose.Schema.Types.ObjectId;
+  debtorId: string;
+  authorized: string;
+  captured: string;
+  status: string;
+  amount: number;
+  dueDate: string;
+  frequency: number;
+  intervalId: string;
+  failedReasonAuthorization: string;
+  failedReasonCaptured: string;
+  rescheduled: string;
+  debtorTransId: string;
+  retriesAuth: number;
+  retriesCapture: number;
+  timePeriod: string;
+  paymentReference: string;
+  isDeleted: boolean;
   createdAt: string;
+  updatedAt: string;
 }
