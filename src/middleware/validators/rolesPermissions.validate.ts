@@ -54,7 +54,6 @@ class CustomFieldRequest {
         viewAnalyticsForAllusers: Joi.boolean(),
       }),
     });
-
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

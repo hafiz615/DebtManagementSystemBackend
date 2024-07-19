@@ -33,7 +33,6 @@ class Authorize {
                 )
               );
           }
-
           const exists = await new TokenService().validateToken(
             token,
             decoded?.userId,
@@ -57,6 +56,14 @@ class Authorize {
           return next();
         }
       );
+    } else {
+      return res
+        .status(constants.CODE.UNAUTHORIZED)
+        .send(
+          responseHelper.get4xxResponse(
+            constants.Messages.AUTHENTICATION_REQUIRED
+          )
+        );
     }
   };
 
