@@ -120,7 +120,7 @@ class CaseValidate {
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })),
+            })).optional(),
         });
         if (req.query.bulk === 'true') {
             const cases = req.body.cases;
@@ -283,7 +283,7 @@ class CaseValidate {
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })),
+            })).optional(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

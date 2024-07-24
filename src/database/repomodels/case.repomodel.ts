@@ -21,7 +21,7 @@ export class Case {
     startDate: '';
     frequency: 0;
     timePeriod: '';
-  }>();
+  } | []>();
   isDeleted = false;
   confidence = 0;
   closeDate = '';
