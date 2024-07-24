@@ -60,12 +60,12 @@ const creditorModel = new mongoose_1.Schema({
     },
     lastFundedDate: {
         type: Date,
-        required: true,
+        required: false,
     },
     historicalRange: {
         minimum: {
             type: Number,
-            required: true,
+            required: false,
         },
         maximum: {
             type: Number,
