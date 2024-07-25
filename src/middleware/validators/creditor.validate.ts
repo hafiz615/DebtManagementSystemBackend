@@ -39,6 +39,13 @@ class CreditorRequests {
           zipCode: Joi.string().allow(''),
         })
       ),
+      lastFundedDate: Joi.date().optional().allow(''),
+      historicalRange: Joi.object({
+        minimum: Joi.number().strict().optional(),
+        maximum: Joi.number().strict().optional(),
+      })
+        .optional()
+        .allow(null),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
