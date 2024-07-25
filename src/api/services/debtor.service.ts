@@ -150,70 +150,75 @@ class DebtorService {
   }
 
   async updateDebtor(req: Request): Promise<[boolean, IDebtor | string]> {
-    const email = req.body.basicInformation.email.toLowerCase();
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      $or: [
-        {
-          'basicInformation.email': email,
-        },
-        {
-          'basicInformation.SSID': req.body.basicInformation.SSID,
-        },
-        {
-          'basicInformation.phone': req.body.basicInformation.phone,
-        },
-      ],
-    });
-    if (getDebtor) {
-      if (
-        getDebtor.basicInformation.email === email &&
-        String(getDebtor._id) !== req.params.id
-      ) {
-        return [
-          false,
-          constants.alreadyExistsMessage('Debtor with basicInformation.email'),
-        ];
+    if (req.body.basicInformation) {
+      const email = req.body.basicInformation.email.toLowerCase();
+      const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+        $or: [
+          {
+            'basicInformation.email': email,
+          },
+          {
+            'basicInformation.SSID': req.body.basicInformation.SSID,
+          },
+          {
+            'basicInformation.phone': req.body.basicInformation.phone,
+          },
+        ],
+      });
+      if (getDebtor) {
+        if (
+          getDebtor.basicInformation.email === email &&
+          String(getDebtor._id) !== req.params.id
+        ) {
+          return [
+            false,
+            constants.alreadyExistsMessage(
+              'Debtor with basicInformation.email'
+            ),
+          ];
+        }
+        if (
+          getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
+          String(getDebtor._id) !== req.params.id
+        ) {
+          return [
+            false,
+            constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
+          ];
+        }
+        if (
+          getDebtor.basicInformation.phone ===
+            req.body.basicInformation.phone &&
+          String(getDebtor._id) !== req.params.id
+        ) {
+          return [
+            false,
+            constants.alreadyExistsMessage(
+              'Debtor with basicInformation.phone'
+            ),
+          ];
+        }
       }
       if (
-        getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
-        String(getDebtor._id) !== req.params.id
+        getDebtor &&
+        req.body.basicInformation &&
+        req.body.basicInformation.weeklyBudget !==
+          getDebtor.basicInformation.weeklyBudget
       ) {
-        return [
-          false,
-          constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
-        ];
-      }
-      if (
-        getDebtor.basicInformation.phone === req.body.basicInformation.phone &&
-        String(getDebtor._id) !== req.params.id
-      ) {
-        return [
-          false,
-          constants.alreadyExistsMessage('Debtor with basicInformation.phone'),
-        ];
+        const response = await caseUtil.checkWeeklyBudget(
+          {debtor: req.body},
+          true,
+          getDebtor
+        );
+        if (!response.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+        req.body.weeklyCommission = response.commission;
       }
     }
-    console.log(getDebtor);
-    if (
-      getDebtor &&
-      req.body.basicInformation &&
-      req.body.basicInformation.weeklyBudget !==
-        getDebtor.basicInformation.weeklyBudget
-    ) {
-      const response = await caseUtil.checkWeeklyBudget(
-        {debtor: req.body},
-        true,
-        getDebtor
-      );
-      if (!response.status) {
-        return [
-          false,
-          'Weekly budget is not fulfiling the payment plan of debtor',
-        ];
-      }
-      req.body.weeklyCommission = response.commission;
-    }
-    req.body;
     const debtor = await this.debtorRepository.updateById<IDebtor>(
       req.params.id,
       req.body
