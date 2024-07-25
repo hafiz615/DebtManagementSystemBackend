@@ -362,6 +362,26 @@ class CaseController {
         .send(responseHelper.get4xxResponse(error.message));
     }
   };
+
+  getScoresSettlementRange = async (req: Request, res: Response) => {
+    try {
+      const response = await this.caseService.getScoresSettlementRange(req);
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage(
+            'Scores and Settlement range '
+          ),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 }
 
 export default new CaseController();

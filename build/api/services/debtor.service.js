@@ -38,6 +38,11 @@ class DebtorService {
                     },
                 },
                 {
+                    'basicInformation.fullName': {
+                        $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+                    },
+                },
+                {
                     'basicInformation.SSID': {
                         $regex: new RegExp(text), // Case-insensitive match for SSID
                     },

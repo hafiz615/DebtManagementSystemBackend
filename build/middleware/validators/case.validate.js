@@ -113,14 +113,16 @@ class CaseValidate {
             notes: joi_1.default.string(),
             chatId: joi_1.default.string(),
             feePayment: joi_1.default.string().valid('paidViaCash', 'toPay', 'paidViaThirdParty'),
-            intervals: joi_1.default.array().items(joi_1.default.object({
+            intervals: joi_1.default.array()
+                .items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),
                 startDate: joi_1.default.date().required(),
                 frequency: joi_1.default.number().optional(),
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })).optional(),
+            }))
+                .optional(),
         });
         if (req.query.bulk === 'true') {
             const cases = req.body.cases;
@@ -277,14 +279,16 @@ class CaseValidate {
             //   'toPay',
             //   'paidViaThirdParty'
             // ),
-            intervals: joi_1.default.array().items(joi_1.default.object({
+            intervals: joi_1.default.array()
+                .items(joi_1.default.object({
                 amount: joi_1.default.number().strict().required(),
                 startDate: joi_1.default.date().required(),
                 frequency: joi_1.default.number().optional(),
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })).optional(),
+            }))
+                .optional(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -334,9 +338,9 @@ class CaseValidate {
                         minimum: joi_1.default.number().strict().optional(),
                         maximum: joi_1.default.number().strict().optional(),
                     }),
-                }),
+                }).allow(null),
                 totalDebt: joi_1.default.number().strict().optional(),
-                lastPaymentDate: joi_1.default.date().optional(),
+                lastPaymentDate: joi_1.default.date().optional().allow(''),
                 paidAmount: joi_1.default.number().strict().optional(),
                 remaining: joi_1.default.number().strict().optional(),
                 confidence: joi_1.default.number().strict(),
@@ -346,7 +350,8 @@ class CaseValidate {
                 chatId: joi_1.default.string(),
                 feePayment: joi_1.default.string()
                     .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
-                    .optional(),
+                    .optional()
+                    .allow(''),
                 intervals: joi_1.default.array()
                     .items(joi_1.default.object({
                     amount: joi_1.default.number().strict().required(),

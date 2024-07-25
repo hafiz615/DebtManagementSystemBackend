@@ -168,6 +168,7 @@ class CaseUtil {
         return tempCases.map(obj => ({
             totalDebt: obj.totalDebt,
             caseCode: obj.caseCode,
+            remaining: obj.remaining,
             status: obj.status,
             name: obj.creditor.basicInformation.fullName,
             caseId: String(obj._id),
@@ -1195,42 +1196,6 @@ class CaseUtil {
                 totalCommission: parseInt((debt * 0.19).toFixed(2)),
             };
     }
-    // async getAIWrapperData(req: any, caseTemp: ICase) {
-    //   if (
-    //     new Date(req.session.expires_in) <=
-    //       new Date(commonUtil.getCurrentDate()) ||
-    //     !req.session.auth_token
-    //   ) {
-    //     await this.storeAuthToken('test', 'test', req);
-    //   }
-    //   console.log(req.session.auth_token);
-    //   const creditorNames = await this.getCreditorNames(
-    //     caseTemp,
-    //     req.session.auth_token
-    //   );
-    //   console.log(creditorNames);
-    //   const getScores = await this.getScores(
-    //     19,
-    //     req.session.auth_token,
-    //     caseTemp,
-    //     creditorNames
-    //   );
-    //   console.log(getScores);
-    //   const getSettlementRange = await this.getSettlementRange(
-    //     caseTemp,
-    //     req.session.auth_token
-    //   );
-    //   console.log(getSettlementRange, 'okokokok');
-    //   // return 'ok';
-    //   let getCreditorHistory = [];
-    //   if (Object.keys(getSettlementRange).length) {
-    //     getCreditorHistory = await this.getCreditorHistory(
-    //       getSettlementRange.creditors_id,
-    //       req.session.auth_token
-    //     );
-    //   }
-    //   return {creditorNames, getScores, getSettlementRange, getCreditorHistory};
-    // }
     async getCreditorNamesAI(documents, token, debtorName, debtorId) {
         const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
         const urls = [];
@@ -1257,34 +1222,18 @@ class CaseUtil {
             return [];
         }
     }
-    async getScoresAI(comm, token, caseTemp, additionalProps) {
+    async getScoresAI(comm, token, caseTemp, creditors) {
         const url = `${baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
         console.log(url);
-        // let data = {
-        //   'Everest Businss Funding': {total_debt: 100000, remaining_debt: 50000},
-        // };
         let data = {};
-        if (additionalProps.length) {
-            const cases = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: additionalProps } }, undefined, undefined, undefined, ['creditor']);
-            // for (let creditor of additionalProps) {
-            // const matchedCreditorCases = cases.filter((caseTemp: any) => {
-            //   return (
-            //     caseTemp.creditor.businessInformation.accountTitle === creditor
-            //   );
-            // });
-            // if (matchedCreditorCases.length) {
-            //   matchedCreditors.push(...matchedCreditorCases);
-            // } else {
-            //   unMatchedNames += creditor + ' ';
-            // }
-            // }
-            for (const matchedCreditor of cases) {
-                data[`${matchedCreditor.creditor.accountTitle}`] = {
-                    total_debt: matchedCreditor.totalDebt,
-                    remaining_debt: matchedCreditor.remaining,
-                };
-            }
+        console.log(creditors);
+        for (const creditor of creditors) {
+            data[`${creditor.creditor.accountTitle}`] = {
+                total_debt: creditor.totalDebt,
+                remaining_debt: creditor.remaining,
+            };
         }
+        // }
         console.log(data);
         try {
             const response = await axios_1.default.post(url, data, {
@@ -1295,22 +1244,10 @@ class CaseUtil {
                 },
             });
             console.log(response.data, 'scoreeeee');
-            if (response.data.error) {
-                return [[], 'No data returned for the creditors'];
-            }
-            if (response.data) {
-                return [response.data, 'Data returned for all creditors'];
-                // if (unMatchedNames) {
-                //   return [
-                //     response.data,
-                //     `Data returned for the creditors except ${unMatchedNames}`,
-                //   ];
-                // }
-            }
-            return response.data.error ? [] : response.data;
+            return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
-            return [[], 'No data returned for the creditors'];
+            return error.message;
         }
     }
     async getSettlementRangeAI(caseTemp, token) {
@@ -1387,12 +1324,21 @@ class CaseUtil {
         console.log(creditorNames);
         return creditorNames;
     }
-    async getScores(req, caseTemp) {
+    async getScores(req, caseTemp, creditors) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const getScores = await this.getScoresAI(19, global_1.AIAuth.auth_token, caseTemp, req.body.creditorNames);
+        const getScores = await this.getScoresAI(19, global_1.AIAuth.auth_token, caseTemp, creditors);
+        console.log(getScores);
+        return getScores;
+    }
+    async getScoresForAllCreditors(req, caseTemp, creditors) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const getScores = await this.getScoresAIForAllCreditors(19, global_1.AIAuth.auth_token, caseTemp, creditors);
         console.log(getScores);
         return getScores;
     }
@@ -1402,7 +1348,6 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        console.log(getSettlementRange);
         return getSettlementRange;
     }
     async getCreditorHistory(req) {
@@ -1413,6 +1358,31 @@ class CaseUtil {
         const getCreditorHistory = await this.getCreditorHistoryAI(req.params.id, global_1.AIAuth.auth_token);
         console.log(getCreditorHistory);
         return getCreditorHistory;
+    }
+    async getScoresAIForAllCreditors(comm, token, caseTemp, creditors) {
+        const url = `${baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
+        let data = {};
+        for (const creditor of creditors) {
+            data[`${creditor.creditorAccountTitle}`] = {
+                total_debt: creditor.totalDebt,
+                remaining_debt: creditor.remaining,
+            };
+        }
+        console.log(data);
+        try {
+            const response = await axios_1.default.post(url, data, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log(response.data, 'scoreeeee');
+            return response.data.error ? response.data.error : response.data;
+        }
+        catch (error) {
+            return error.message;
+        }
     }
     async storeAuthToken(username, partnerToken) {
         const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;

@@ -25,6 +25,11 @@ class CreditorService {
           },
         },
         {
+          'basicInformation.fullName': {
+            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+          },
+        },
+        {
           'basicInformation.phone': {
             $regex: new RegExp(text),
           },
@@ -75,7 +80,7 @@ class CreditorService {
     }
     const creditor = await this.creditorRepository.updateById<ICreditor>(
       req.params.id,
-      {...req.body}
+      req.body
     );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];

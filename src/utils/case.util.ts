@@ -1,34 +1,35 @@
-import { parse } from 'path';
-import { ContactRepository } from '../api/repository/contact/contact.repository';
-import { CreditorRepository } from '../api/repository/creditor/creditor.repository';
-import { DebtorRepository } from '../api/repository/debtor/debtor.repository';
-import { IContact } from '../database/interfaces/contact.interface';
-import { ICreditor } from '../database/interfaces/creditor.interface';
-import { IDebtor } from '../database/interfaces/debtor.interface';
-import { Contact } from '../database/repomodels/contact.repomodel';
-import { Creditor } from '../database/repomodels/creditor.repomodel';
-import { Debtor } from '../database/repomodels/debtor.repomodel';
-import { DataCopier } from './dataCopier.util';
-import { PaymentRepository } from '../api/repository/payment/payment.repository';
-import { ICase } from '../database/interfaces/case.interface';
-import { Payment } from '../database/repomodels/payment.repomodel';
-import { IPayment } from '../database/interfaces/payment.interface';
-import { CaseRepository } from '../api/repository/case/case.repository';
+import {parse} from 'path';
+import {ContactRepository} from '../api/repository/contact/contact.repository';
+import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
+import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import {IContact} from '../database/interfaces/contact.interface';
+import {ICreditor} from '../database/interfaces/creditor.interface';
+import {IDebtor} from '../database/interfaces/debtor.interface';
+import {Contact} from '../database/repomodels/contact.repomodel';
+import {Creditor} from '../database/repomodels/creditor.repomodel';
+import {Debtor} from '../database/repomodels/debtor.repomodel';
+import {DataCopier} from './dataCopier.util';
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+import {ICase} from '../database/interfaces/case.interface';
+import {Payment} from '../database/repomodels/payment.repomodel';
+import {IPayment} from '../database/interfaces/payment.interface';
+import {CaseRepository} from '../api/repository/case/case.repository';
 import DebtorService from '../api/services/debtor.service';
 import CreditorService from '../api/services/creditor.service';
-import { Case } from '../database/repomodels/case.repomodel';
+import {Case} from '../database/repomodels/case.repomodel';
 import constantsUtil from './constants.util';
 import paymentUtil from './payment.util';
-import { Request } from 'express';
+import {Request} from 'express';
 import mongoose from 'mongoose';
-import { AnyARecord } from 'dns';
-import { PaymentLoggingRepository } from '../api/repository/paymentLogging/paymentLogging.repository';
-import { IPaymentLogging } from '../database/interfaces/paymentLogging.interface';
-import { v4 } from 'uuid';
+import {AnyARecord} from 'dns';
+import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
+import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
+import {v4} from 'uuid';
 import axios from 'axios';
 import commonUtil from './common.util';
 import UploadUtil from './upload.util';
-import { AIAuth } from '../database/repomodels/global';
+import {AIAuth} from '../database/repomodels/global';
+import {AnyLengthString} from 'aws-sdk/clients/comprehend';
 const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -205,7 +206,7 @@ class CaseUtil {
     payment.intervalId = String(interval._id);
     payment.timePeriod = interval.timePeriod;
     payment.paymentReference = uuid;
-    return { ...payment };
+    return {...payment};
   }
 
   async getCaseCode() {
@@ -221,6 +222,7 @@ class CaseUtil {
     return tempCases.map(obj => ({
       totalDebt: obj.totalDebt,
       caseCode: obj.caseCode,
+      remaining: obj.remaining,
       status: obj.status,
       name: obj.creditor.basicInformation.fullName,
       caseId: String(obj._id),
@@ -233,7 +235,7 @@ class CaseUtil {
 
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
-      { debtor: debtorId, isDeleted: false },
+      {debtor: debtorId, isDeleted: false},
       'totalDebt caseCode status remaining',
       undefined,
       undefined,
@@ -375,7 +377,7 @@ class CaseUtil {
           creditor.businessInformation.companyName,
       });
     }
-    return [true, { caseCreated, findCreditor, creditorNames }];
+    return [true, {caseCreated, findCreditor, creditorNames}];
   }
 
   async checkWeeklyBudget(body: any, debtorFound: boolean, debtor: IDebtor) {
@@ -415,15 +417,15 @@ class CaseUtil {
     }
     return amount >= weeklyBudget
       ? {
-        status: false,
-        commission: 0,
-        totalCommission: 0,
-      }
+          status: false,
+          commission: 0,
+          totalCommission: 0,
+        }
       : {
-        status: true,
-        commission: weeklyBudget - amount,
-        totalCommission: parseInt((debt * 0.19).toFixed(2)),
-      };
+          status: true,
+          commission: weeklyBudget - amount,
+          totalCommission: parseInt((debt * 0.19).toFixed(2)),
+        };
   }
   async getWeeklyAmount(interval: any) {
     switch (interval.timePeriod.toLowerCase()) {
@@ -517,7 +519,7 @@ class CaseUtil {
     const convertedDebtorId = new mongoose.Types.ObjectId(req.params.id);
     const pipeline = [
       {
-        $match: { debtor: convertedDebtorId, isDeleted: { $ne: true } },
+        $match: {debtor: convertedDebtorId, isDeleted: {$ne: true}},
       },
       {
         $lookup: {
@@ -557,7 +559,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.captured', 'Success'] },
+                  cond: {$eq: ['$$payment.captured', 'Success']},
                 },
               },
               -1,
@@ -569,7 +571,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.authorized', 'Pending'] },
+                  cond: {$eq: ['$$payment.authorized', 'Pending']},
                 },
               },
               0,
@@ -579,8 +581,8 @@ class CaseUtil {
       },
       {
         $addFields: {
-          lastPayment: { $ifNull: ['$lastPayment', null] },
-          upcomingPayment: { $ifNull: ['$upcomingPayment', null] },
+          lastPayment: {$ifNull: ['$lastPayment', null]},
+          upcomingPayment: {$ifNull: ['$upcomingPayment', null]},
         },
       },
       {
@@ -591,34 +593,34 @@ class CaseUtil {
               _id: '$_id',
               creditorName: '$creditorDetails.basicInformation.fullName',
               totalDebt: '$totalDebt',
-              lastPayment: { $ifNull: ['$lastPayment.amount', null] },
+              lastPayment: {$ifNull: ['$lastPayment.amount', null]},
               lastPaymentDate: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: { $ifNull: ['$lastPayment.dueDate', null] },
+                  date: {$ifNull: ['$lastPayment.dueDate', null]},
                 },
               },
-              upcomingPayment: { $ifNull: ['$upcomingPayment.amount', null] },
+              upcomingPayment: {$ifNull: ['$upcomingPayment.amount', null]},
               upcomingPaymentDate: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: { $ifNull: ['$upcomingPayment.dueDate', null] },
+                  date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
               caseOwner: '$caseOwner',
               outstandingDebt: {
-                $subtract: ['$remaining', { $sum: '$payments.amount' }],
+                $subtract: ['$remaining', {$sum: '$payments.amount'}],
               },
             },
           },
-          debtorDetails: { $first: '$debtorDetails' },
+          debtorDetails: {$first: '$debtorDetails'},
           failedPayments: {
             $sum: {
               $size: {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.captured', 'Failed'] },
+                  cond: {$eq: ['$$payment.captured', 'Failed']},
                 },
               },
             },
@@ -629,7 +631,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.authorized', 'Failed'] },
+                  cond: {$eq: ['$$payment.authorized', 'Failed']},
                 },
               },
             },
@@ -640,7 +642,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.captured', 'Success'] },
+                  cond: {$eq: ['$$payment.captured', 'Success']},
                 },
               },
             },
@@ -651,7 +653,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.authorized', 'Success'] },
+                  cond: {$eq: ['$$payment.authorized', 'Success']},
                 },
               },
             },
@@ -724,7 +726,7 @@ class CaseUtil {
         (new Date(caseObj.lastPaymentDate) <
           new Date(filters.lastPaymentDate.start) ||
           new Date(caseObj.lastPaymentDate) >
-          new Date(filters.lastPaymentDate.end))
+            new Date(filters.lastPaymentDate.end))
       ) {
         return false;
       }
@@ -740,7 +742,7 @@ class CaseUtil {
         (new Date(caseObj.upcomingPaymentDate) <
           new Date(filters.upcomingPaymentDate.start) ||
           new Date(caseObj.upcomingPaymentDate) >
-          new Date(filters.upcomingPaymentDate.end))
+            new Date(filters.upcomingPaymentDate.end))
       ) {
         return false;
       }
@@ -810,7 +812,7 @@ class CaseUtil {
         (new Date(caseObj.lastPaymentDate) <
           new Date(filters.lastPaymentDate.start) ||
           new Date(caseObj.lastPaymentDate) >
-          new Date(filters.lastPaymentDate.end))
+            new Date(filters.lastPaymentDate.end))
       ) {
         return false;
       }
@@ -826,7 +828,7 @@ class CaseUtil {
         (new Date(caseObj.upcomingPaymentDate) <
           new Date(filters.upcomingPaymentDate.start) ||
           new Date(caseObj.upcomingPaymentDate) >
-          new Date(filters.upcomingPaymentDate.end))
+            new Date(filters.upcomingPaymentDate.end))
       ) {
         return false;
       }
@@ -868,7 +870,7 @@ class CaseUtil {
     const convertedCreditorId = new mongoose.Types.ObjectId(req.params.id);
     const pipeline = [
       {
-        $match: { creditor: convertedCreditorId, isDeleted: { $ne: true } },
+        $match: {creditor: convertedCreditorId, isDeleted: {$ne: true}},
       },
       {
         $lookup: {
@@ -908,7 +910,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.captured', 'Success'] },
+                  cond: {$eq: ['$$payment.captured', 'Success']},
                 },
               },
               -1,
@@ -920,7 +922,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.authorized', 'Pending'] },
+                  cond: {$eq: ['$$payment.authorized', 'Pending']},
                 },
               },
               0,
@@ -930,8 +932,8 @@ class CaseUtil {
       },
       {
         $addFields: {
-          lastPayment: { $ifNull: ['$lastPayment', null] },
-          upcomingPayment: { $ifNull: ['$upcomingPayment', null] },
+          lastPayment: {$ifNull: ['$lastPayment', null]},
+          upcomingPayment: {$ifNull: ['$upcomingPayment', null]},
         },
       },
       {
@@ -942,34 +944,34 @@ class CaseUtil {
               _id: '$_id',
               debtorName: '$debtorDetails.basicInformation.fullName',
               totalDebt: '$totalDebt',
-              lastPayment: { $ifNull: ['$lastPayment.amount', null] },
+              lastPayment: {$ifNull: ['$lastPayment.amount', null]},
               lastPaymentDate: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: { $ifNull: ['$lastPayment.dueDate', null] },
+                  date: {$ifNull: ['$lastPayment.dueDate', null]},
                 },
               },
-              upcomingPayment: { $ifNull: ['$upcomingPayment.amount', null] },
+              upcomingPayment: {$ifNull: ['$upcomingPayment.amount', null]},
               upcomingPaymentDate: {
                 $dateToString: {
                   format: '%Y-%m-%d',
-                  date: { $ifNull: ['$upcomingPayment.dueDate', null] },
+                  date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
               caseOwner: '$caseOwner',
               outstandingDebt: {
-                $subtract: ['$remaining', { $sum: '$payments.amount' }],
+                $subtract: ['$remaining', {$sum: '$payments.amount'}],
               },
             },
           },
-          creditorDetails: { $first: '$creditorDetails' },
+          creditorDetails: {$first: '$creditorDetails'},
           failedPayments: {
             $sum: {
               $size: {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.captured', 'Failed'] },
+                  cond: {$eq: ['$$payment.captured', 'Failed']},
                 },
               },
             },
@@ -980,7 +982,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.authorized', 'Failed'] },
+                  cond: {$eq: ['$$payment.authorized', 'Failed']},
                 },
               },
             },
@@ -991,7 +993,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.captured', 'Success'] },
+                  cond: {$eq: ['$$payment.captured', 'Success']},
                 },
               },
             },
@@ -1002,7 +1004,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: { $eq: ['$$payment.authorized', 'Success'] },
+                  cond: {$eq: ['$$payment.authorized', 'Success']},
                 },
               },
             },
@@ -1053,7 +1055,7 @@ class CaseUtil {
       // Add filters for numeric/date ranges if provided
       if (filters.totalDebt) {
         filterConditions.push({
-          totalDebt: { $gte: filters.totalDebt.min, $lte: filters.totalDebt.max },
+          totalDebt: {$gte: filters.totalDebt.min, $lte: filters.totalDebt.max},
         });
       }
       if (filters.lastPaymentAmount) {
@@ -1102,7 +1104,7 @@ class CaseUtil {
       const text = req.body.text;
       if (text) {
         filterConditions.push({
-          $or: [{ creditorName: { $regex: text } }, { caseOwner: { $regex: text } }],
+          $or: [{creditorName: {$regex: text}}, {caseOwner: {$regex: text}}],
         });
       }
     }
@@ -1131,12 +1133,12 @@ class CaseUtil {
       },
       {
         $group: {
-          _id: { $toString: '$debtor._id' },
-          debtorName: { $first: '$debtor.basicInformation.fullName' },
-          totalCases: { $sum: 1 },
-          totalCreditors: { $addToSet: '$creditor' },
-          totalDebt: { $sum: '$totalDebt' },
-          status: { $first: '$debtor.basicInformation.status' },
+          _id: {$toString: '$debtor._id'},
+          debtorName: {$first: '$debtor.basicInformation.fullName'},
+          totalCases: {$sum: 1},
+          totalCreditors: {$addToSet: '$creditor'},
+          totalDebt: {$sum: '$totalDebt'},
+          status: {$first: '$debtor.basicInformation.status'},
         },
       },
       {
@@ -1145,7 +1147,7 @@ class CaseUtil {
           _id: 0,
           debtorName: 1,
           totalCases: 1,
-          totalCreditors: { $size: '$totalCreditors' }, // Count unique creditors
+          totalCreditors: {$size: '$totalCreditors'}, // Count unique creditors
           totalDebt: 1,
           status: 1,
         },
@@ -1154,7 +1156,7 @@ class CaseUtil {
         $match: filters[0],
       },
       {
-        $sort: { id: -1 },
+        $sort: {id: -1},
       },
     ];
     return pipeline;
@@ -1225,11 +1227,11 @@ class CaseUtil {
       },
       {
         $group: {
-          _id: { $toString: '$creditor._id' },
-          creditorName: { $first: '$creditor.basicInformation.fullName' },
-          totalCases: { $sum: 1 },
-          totalDebtors: { $addToSet: '$debtor' }, // Collect unique debtors
-          totalDebt: { $sum: '$totalDebt' },
+          _id: {$toString: '$creditor._id'},
+          creditorName: {$first: '$creditor.basicInformation.fullName'},
+          totalCases: {$sum: 1},
+          totalDebtors: {$addToSet: '$debtor'}, // Collect unique debtors
+          totalDebt: {$sum: '$totalDebt'},
         },
       },
       {
@@ -1238,7 +1240,7 @@ class CaseUtil {
           _id: 0,
           creditorName: 1,
           totalCases: 1,
-          totalDebtors: { $size: '$totalDebtors' }, // Count unique debtors
+          totalDebtors: {$size: '$totalDebtors'}, // Count unique debtors
           totalDebt: 1,
         },
       },
@@ -1246,7 +1248,7 @@ class CaseUtil {
         $match: filters[0],
       },
       {
-        $sort: { id: -1 },
+        $sort: {id: -1},
       },
     ];
 
@@ -1295,7 +1297,7 @@ class CaseUtil {
   }
 
   async updateDebtor(data: IDebtor) {
-    return await this.debtRepository.updateById<IDebtor>(data._id, { ...data });
+    return await this.debtRepository.updateById<IDebtor>(data._id, {...data});
   }
 
   async updateCreditor(data: ICreditor) {
@@ -1324,54 +1326,16 @@ class CaseUtil {
     console.log(weeklyBudget, 'weeklyy budget');
     return amount >= weeklyBudget
       ? {
-        status: false,
-        commission: 0,
-        totalCommission: 0,
-      }
+          status: false,
+          commission: 0,
+          totalCommission: 0,
+        }
       : {
-        status: true,
-        commission: weeklyBudget - amount,
-        totalCommission: parseInt((debt * 0.19).toFixed(2)),
-      };
+          status: true,
+          commission: weeklyBudget - amount,
+          totalCommission: parseInt((debt * 0.19).toFixed(2)),
+        };
   }
-
-  // async getAIWrapperData(req: any, caseTemp: ICase) {
-  //   if (
-  //     new Date(req.session.expires_in) <=
-  //       new Date(commonUtil.getCurrentDate()) ||
-  //     !req.session.auth_token
-  //   ) {
-  //     await this.storeAuthToken('test', 'test', req);
-  //   }
-  //   console.log(req.session.auth_token);
-  //   const creditorNames = await this.getCreditorNames(
-  //     caseTemp,
-  //     req.session.auth_token
-  //   );
-  //   console.log(creditorNames);
-
-  //   const getScores = await this.getScores(
-  //     19,
-  //     req.session.auth_token,
-  //     caseTemp,
-  //     creditorNames
-  //   );
-  //   console.log(getScores);
-  //   const getSettlementRange = await this.getSettlementRange(
-  //     caseTemp,
-  //     req.session.auth_token
-  //   );
-  //   console.log(getSettlementRange, 'okokokok');
-  //   // return 'ok';
-  //   let getCreditorHistory = [];
-  //   if (Object.keys(getSettlementRange).length) {
-  //     getCreditorHistory = await this.getCreditorHistory(
-  //       getSettlementRange.creditors_id,
-  //       req.session.auth_token
-  //     );
-  //   }
-  //   return {creditorNames, getScores, getSettlementRange, getCreditorHistory};
-  // }
 
   async getCreditorNamesAI(
     documents: any,
@@ -1408,44 +1372,21 @@ class CaseUtil {
     comm: number,
     token: string,
     caseTemp: any,
-    additionalProps: Array<string>
+    creditors: any
   ) {
     const url = `${baseUrlAI}get-scores?debtor_id=${String(
       caseTemp.debtor._id
     )}&commision_percentage=${comm}`;
     console.log(url);
-    // let data = {
-    //   'Everest Businss Funding': {total_debt: 100000, remaining_debt: 50000},
-    // };
     let data = {};
-    if (additionalProps.length) {
-      const cases: any =
-        await this.caseRepository.getAllWithoutPagination<ICase>(
-          { creditor: { $in: additionalProps } },
-          undefined,
-          undefined,
-          undefined,
-          ['creditor']
-        );
-      // for (let creditor of additionalProps) {
-      // const matchedCreditorCases = cases.filter((caseTemp: any) => {
-      //   return (
-      //     caseTemp.creditor.businessInformation.accountTitle === creditor
-      //   );
-      // });
-      // if (matchedCreditorCases.length) {
-      //   matchedCreditors.push(...matchedCreditorCases);
-      // } else {
-      //   unMatchedNames += creditor + ' ';
-      // }
-      // }
-      for (const matchedCreditor of cases) {
-        data[`${matchedCreditor.creditor.accountTitle}`] = {
-          total_debt: matchedCreditor.totalDebt,
-          remaining_debt: matchedCreditor.remaining,
-        };
-      }
+    console.log(creditors);
+    for (const creditor of creditors) {
+      data[`${creditor.creditor.accountTitle}`] = {
+        total_debt: creditor.totalDebt,
+        remaining_debt: creditor.remaining,
+      };
     }
+    // }
     console.log(data);
     try {
       const response = await axios.post(url, data, {
@@ -1456,21 +1397,9 @@ class CaseUtil {
         },
       });
       console.log(response.data, 'scoreeeee');
-      if (response.data.error) {
-        return [[], 'No data returned for the creditors'];
-      }
-      if (response.data) {
-        return [response.data, 'Data returned for all creditors'];
-        // if (unMatchedNames) {
-        //   return [
-        //     response.data,
-        //     `Data returned for the creditors except ${unMatchedNames}`,
-        //   ];
-        // }
-      }
-      return response.data.error ? [] : response.data;
+      return response.data.error ? response.data.error : response.data;
     } catch (error) {
-      return [[], 'No data returned for the creditors'];
+      return error.message;
     }
   }
 
@@ -1569,7 +1498,7 @@ class CaseUtil {
     return creditorNames;
   }
 
-  async getScores(req: Request, caseTemp: any) {
+  async getScores(req: Request, caseTemp: any, creditors: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1580,7 +1509,24 @@ class CaseUtil {
       19,
       AIAuth.auth_token,
       caseTemp,
-      req.body.creditorNames
+      creditors
+    );
+    console.log(getScores);
+    return getScores;
+  }
+
+  async getScoresForAllCreditors(req: Request, caseTemp: any, creditors: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const getScores = await this.getScoresAIForAllCreditors(
+      19,
+      AIAuth.auth_token,
+      caseTemp,
+      creditors
     );
     console.log(getScores);
     return getScores;
@@ -1597,7 +1543,6 @@ class CaseUtil {
       caseTemp,
       AIAuth.auth_token
     );
-    console.log(getSettlementRange);
 
     return getSettlementRange;
   }
@@ -1616,6 +1561,38 @@ class CaseUtil {
     console.log(getCreditorHistory);
 
     return getCreditorHistory;
+  }
+
+  async getScoresAIForAllCreditors(
+    comm: number,
+    token: string,
+    caseTemp: any,
+    creditors: any
+  ) {
+    const url = `${baseUrlAI}get-scores?debtor_id=${String(
+      caseTemp.debtor._id
+    )}&commision_percentage=${comm}`;
+    let data = {};
+    for (const creditor of creditors) {
+      data[`${creditor.creditorAccountTitle}`] = {
+        total_debt: creditor.totalDebt,
+        remaining_debt: creditor.remaining,
+      };
+    }
+    console.log(data);
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log(response.data, 'scoreeeee');
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      return error.message;
+    }
   }
 
   async storeAuthToken(username: string, partnerToken: string): Promise<void> {
@@ -1720,7 +1697,7 @@ class CaseUtil {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
       payment_token: paymentToken,
     };
-    const response = await axios.get(url, { params });
+    const response = await axios.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(

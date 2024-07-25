@@ -16,13 +16,17 @@ export class Case {
   paidAmount = 0;
   remaining = 0;
   // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
-  intervals = Array<{
-    amount: 0;
-    startDate: '';
-    frequency: 0;
-    timePeriod: '';
-  } | []>();
+  intervals = Array<
+    | {
+        amount: 0;
+        startDate: '';
+        frequency: 0;
+        timePeriod: '';
+      }
+    | []
+  >();
   isDeleted = false;
+  contractDetails = {};
   confidence = 0;
   closeDate = '';
   notes = '';

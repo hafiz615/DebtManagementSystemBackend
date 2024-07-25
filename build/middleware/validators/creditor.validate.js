@@ -24,6 +24,19 @@ class CreditorRequests {
                     businessCategory: joi_1.default.string().required(),
                 }),
                 accountTitle: joi_1.default.string().optional().allow('', null),
+                contacts: joi_1.default.array().items(joi_1.default.object({
+                    name: joi_1.default.string().required(),
+                    title: joi_1.default.string().required(),
+                    phone: joi_1.default.string()
+                        .pattern(/^\+\d{11}$/)
+                        .required(),
+                    email: joi_1.default.string().email().required(),
+                    relationWithDebtor: joi_1.default.string().allow(''),
+                    country: joi_1.default.string().allow(''),
+                    state: joi_1.default.string().allow(''),
+                    city: joi_1.default.string().allow(''),
+                    zipCode: joi_1.default.string().allow(''),
+                })),
             });
             const { error } = schema.validate(req.body);
             if (!error) {
