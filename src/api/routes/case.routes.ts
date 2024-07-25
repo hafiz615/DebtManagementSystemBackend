@@ -77,7 +77,7 @@ router.post(
   caseController.createCreditorsCases
 );
 
-router.get(
+router.post(
   '/getScoresSettlementRange/:id',
   authorize.validateAuth,
   caseController.getScoresSettlementRange

@@ -27,6 +27,6 @@ router.post('/getCreditorNames/:id', authorize_middleware_1.default.validateAuth
 router.post('/getSettlementRange/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getSettlementRange);
 router.post('/getCreditorHistory', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCreditorHistory);
 router.post('/createCreditorsCases/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCreditorsCases, case_controller_1.default.createCreditorsCases);
-router.get('/getScoresSettlementRange/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRange);
+router.post('/getScoresSettlementRange/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRange);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map
