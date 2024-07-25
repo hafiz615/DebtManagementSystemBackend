@@ -344,6 +344,7 @@ class CaseValidate {
                 paidAmount: joi_1.default.number().strict().optional(),
                 remaining: joi_1.default.number().strict().optional(),
                 confidence: joi_1.default.number().strict(),
+                contractDetails: joi_1.default.object().optional().allow(null),
                 closeDate: joi_1.default.date(),
                 status: joi_1.default.string().optional(),
                 notes: joi_1.default.string(),
