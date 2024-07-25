@@ -26,7 +26,7 @@ export class Creditor {
     title: '';
     phone: '';
     email: '';
-    relationWithDebtor: '';
+    relationWithCreditor: '';
     country: '';
     state: '';
     city: '';

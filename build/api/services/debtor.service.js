@@ -175,8 +175,11 @@ class DebtorService {
                 ];
             }
         }
-        if (req.body.basicInformation.weeklyBudget !==
-            getDebtor.basicInformation.weeklyBudget) {
+        console.log(getDebtor);
+        if (getDebtor &&
+            req.body.basicInformation &&
+            req.body.basicInformation.weeklyBudget !==
+                getDebtor.basicInformation.weeklyBudget) {
             const response = await case_util_1.default.checkWeeklyBudget({ debtor: req.body }, true, getDebtor);
             if (!response.status) {
                 return [

@@ -32,7 +32,7 @@ class CreditorRequests {
             .pattern(/^\+\d{11}$/)
             .required(),
           email: Joi.string().email().required(),
-          relationWithDebtor: Joi.string().allow(''),
+          relationWithCreditor: Joi.string().allow(''),
           country: Joi.string().allow(''),
           state: Joi.string().allow(''),
           city: Joi.string().allow(''),

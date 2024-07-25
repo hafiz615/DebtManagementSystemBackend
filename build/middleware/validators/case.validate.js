@@ -86,7 +86,7 @@ class CaseValidate {
                         .pattern(/^\+\d{11}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
-                    relationWithDebtor: joi_1.default.string().allow(''),
+                    relationWithCreditor: joi_1.default.string().allow(''),
                     country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
@@ -249,7 +249,7 @@ class CaseValidate {
                         .pattern(/^\+\d{11}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
-                    relationWithDebtor: joi_1.default.string().allow(''),
+                    relationWithCreditor: joi_1.default.string().allow(''),
                     country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
@@ -324,7 +324,7 @@ class CaseValidate {
                             .pattern(/^\+\d{11}$/)
                             .required(),
                         email: joi_1.default.string().email().required(),
-                        relationWithDebtor: joi_1.default.string().allow(''),
+                        relationWithCreditor: joi_1.default.string().allow(''),
                         country: joi_1.default.string().allow(''),
                         state: joi_1.default.string().allow(''),
                         city: joi_1.default.string().allow(''),

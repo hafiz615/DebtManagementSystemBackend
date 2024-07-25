@@ -193,9 +193,12 @@ class DebtorService {
         ];
       }
     }
+    console.log(getDebtor);
     if (
+      getDebtor &&
+      req.body.basicInformation &&
       req.body.basicInformation.weeklyBudget !==
-      getDebtor.basicInformation.weeklyBudget
+        getDebtor.basicInformation.weeklyBudget
     ) {
       const response = await caseUtil.checkWeeklyBudget(
         {debtor: req.body},
