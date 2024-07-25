@@ -39,6 +39,7 @@ class CreditorService {
         return [true, creditor];
     }
     async updateCreditor(req) {
+        let creditor = null;
         if (req.body.basicInformation) {
             const email = req.body.basicInformation.email.toLowerCase();
             const getCreditor = await this.creditorRepository.getOne({
@@ -68,8 +69,13 @@ class CreditorService {
                     ];
                 }
             }
+            creditor = await this.creditorRepository.updateById(req.params.id, req.body);
         }
-        const creditor = await this.creditorRepository.updateById(req.params.id, req.body);
+        if (req.body.contact) {
+            creditor = await this.creditorRepository.updateById(req.params.id, {
+                $push: { contacts: req.body.contact },
+            });
+        }
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }

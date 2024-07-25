@@ -24,7 +24,7 @@ class CreditorRequests {
                     businessCategory: joi_1.default.string().required(),
                 }),
                 accountTitle: joi_1.default.string().optional().allow('', null),
-                contacts: joi_1.default.array().items(joi_1.default.object({
+                contact: joi_1.default.object({
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
@@ -36,7 +36,7 @@ class CreditorRequests {
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
-                })),
+                }),
                 lastFundedDate: joi_1.default.date().optional().allow(''),
                 historicalRange: joi_1.default.object({
                     minimum: joi_1.default.number().strict().optional(),

@@ -24,21 +24,19 @@ class CreditorRequests {
         businessCategory: Joi.string().required(),
       }),
       accountTitle: Joi.string().optional().allow('', null),
-      contacts: Joi.array().items(
-        Joi.object({
-          name: Joi.string().required(),
-          title: Joi.string().required(),
-          phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
-            .required(),
-          email: Joi.string().email().required(),
-          relationWithCreditor: Joi.string().allow(''),
-          country: Joi.string().allow(''),
-          state: Joi.string().allow(''),
-          city: Joi.string().allow(''),
-          zipCode: Joi.string().allow(''),
-        })
-      ),
+      contact: Joi.object({
+        name: Joi.string().required(),
+        title: Joi.string().required(),
+        phone: Joi.string()
+          .pattern(/^\+\d{11}$/)
+          .required(),
+        email: Joi.string().email().required(),
+        relationWithCreditor: Joi.string().allow(''),
+        country: Joi.string().allow(''),
+        state: Joi.string().allow(''),
+        city: Joi.string().allow(''),
+        zipCode: Joi.string().allow(''),
+      }),
       lastFundedDate: Joi.date().optional().allow(''),
       historicalRange: Joi.object({
         minimum: Joi.number().strict().optional(),

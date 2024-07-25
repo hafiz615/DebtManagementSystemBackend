@@ -138,6 +138,7 @@ class DebtorService {
         ];
     }
     async updateDebtor(req) {
+        let debtor = null;
         if (req.body.basicInformation) {
             const email = req.body.basicInformation.email.toLowerCase();
             const getDebtor = await this.debtorRepository.getOne({
@@ -190,8 +191,13 @@ class DebtorService {
                 }
                 req.body.weeklyCommission = response.commission;
             }
+            debtor = await this.debtorRepository.updateById(req.params.id, req.body);
         }
-        const debtor = await this.debtorRepository.updateById(req.params.id, req.body);
+        if (req.body.contact) {
+            debtor = await this.debtorRepository.updateById(req.params.id, {
+                $push: { contacts: req.body.contact },
+            });
+        }
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }

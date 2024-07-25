@@ -42,6 +42,7 @@ class CreditorService {
     return [true, creditor];
   }
   async updateCreditor(req: Request): Promise<[boolean, ICreditor | string]> {
+    let creditor = null;
     if (req.body.basicInformation) {
       const email = req.body.basicInformation.email.toLowerCase();
       const getCreditor = await this.creditorRepository.getOne<ICreditor>({
@@ -79,11 +80,20 @@ class CreditorService {
           ];
         }
       }
+      creditor = await this.creditorRepository.updateById<ICreditor>(
+        req.params.id,
+        req.body
+      );
     }
-    const creditor = await this.creditorRepository.updateById<ICreditor>(
-      req.params.id,
-      req.body
-    );
+    if (req.body.contact) {
+      creditor = await this.creditorRepository.updateById<ICreditor>(
+        req.params.id,
+        {
+          $push: {contacts: req.body.contact},
+        }
+      );
+    }
+
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
     }
