@@ -17,8 +17,8 @@ export class Creditor {
     minimum: 0,
     maximum: 0,
   };
-  creditorSecurityKey: '';
-  accountTitle: '';
+  creditorSecurityKey = '';
+  accountTitle = '';
   paymentType = '';
   customerVaultId = '';
   contacts = Array<{

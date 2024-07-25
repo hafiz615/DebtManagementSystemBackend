@@ -1445,19 +1445,21 @@ class CaseUtil {
                     },
                 ],
             });
-            let weeklyBudgetObj;
-            if (body.feePayment && body.feePayment === 'toPay') {
-                weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-                if (!weeklyBudgetObj.status) {
-                    return [
-                        false,
-                        'Weekly budget is not fulfiling the payment plan of debtor',
-                    ];
+            if (body?.intervals) {
+                let weeklyBudgetObj;
+                if (body.feePayment && body.feePayment === 'toPay') {
+                    weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+                    if (!weeklyBudgetObj.status) {
+                        return [
+                            false,
+                            'Weekly budget is not fulfiling the payment plan of debtor',
+                        ];
+                    }
+                    await this.debtRepository.updateById(debtor._id, {
+                        totalCommission: weeklyBudgetObj.totalCommission,
+                        weeklyCommission: weeklyBudgetObj.commission,
+                    });
                 }
-                await this.debtRepository.updateById(debtor._id, {
-                    totalCommission: weeklyBudgetObj.totalCommission,
-                    weeklyCommission: weeklyBudgetObj.commission,
-                });
             }
             if (body.creditor.paymentToken && body.creditor.paymentType) {
                 const customerVaultResponse = await this.createVault(body.paymentToken);
@@ -1490,7 +1492,7 @@ class CaseUtil {
                 // }
                 if (caseCreated)
                     createdCases.push(caseCreated);
-                if (caseCreated.intervals.length) {
+                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
                     await this.createPayment(caseCreated);
                 }
             }

@@ -94,10 +94,10 @@ class CaseValidate {
         notes: Joi.string().allow(''),
         creditorSecurityKey: Joi.string(),
         accountTitle: Joi.string().optional().allow('', null),
-        lastFundedDate: Joi.date().required(),
+        lastFundedDate: Joi.date().optional(),
         historicalRange: Joi.object({
-          minimum: Joi.number().strict().required(),
-          maximum: Joi.number().strict().required(),
+          minimum: Joi.number().strict().optional(),
+          maximum: Joi.number().strict().optional(),
         }),
       }),
       totalDebt: Joi.number().strict().required(),
@@ -125,7 +125,7 @@ class CaseValidate {
             .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
             .required(),
         })
-      ),
+      ).optional(),
     });
     if (req.query.bulk === 'true') {
       const cases = req.body.cases;
@@ -273,10 +273,11 @@ class CaseValidate {
         ),
         notes: Joi.string().allow(''),
         creditorSecurityKey: Joi.string(),
-        lastFundedDate: Joi.date(),
+        accountTitle: Joi.string().optional().allow('', null),
+        lastFundedDate: Joi.date().optional(),
         historicalRange: Joi.object({
-          minimum: Joi.number().strict().required(),
-          maximum: Joi.number().strict().required(),
+          minimum: Joi.number().strict().optional(),
+          maximum: Joi.number().strict().optional(),
         }),
       }),
       totalDebt: Joi.number().strict(),
@@ -303,7 +304,7 @@ class CaseValidate {
             .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
             .required(),
         })
-      ),
+      ).optional(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -359,10 +360,10 @@ class CaseValidate {
             notes: Joi.string().allow(''),
             creditorSecurityKey: Joi.string(),
             accountTitle: Joi.string().optional().allow('', null),
-            lastFundedDate: Joi.date().required(),
+            lastFundedDate: Joi.date().optional(),
             historicalRange: Joi.object({
-              minimum: Joi.number().strict().required(),
-              maximum: Joi.number().strict().required(),
+              minimum: Joi.number().strict().optional(),
+              maximum: Joi.number().strict().optional(),
             }),
           }),
           totalDebt: Joi.number().strict().optional(),

@@ -22,6 +22,8 @@ class Creditor {
             minimum: 0,
             maximum: 0,
         };
+        this.creditorSecurityKey = '';
+        this.accountTitle = '';
         this.paymentType = '';
         this.customerVaultId = '';
         this.contacts = Array();

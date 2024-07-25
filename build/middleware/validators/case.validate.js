@@ -95,10 +95,10 @@ class CaseValidate {
                 notes: joi_1.default.string().allow(''),
                 creditorSecurityKey: joi_1.default.string(),
                 accountTitle: joi_1.default.string().optional().allow('', null),
-                lastFundedDate: joi_1.default.date().required(),
+                lastFundedDate: joi_1.default.date().optional(),
                 historicalRange: joi_1.default.object({
-                    minimum: joi_1.default.number().strict().required(),
-                    maximum: joi_1.default.number().strict().required(),
+                    minimum: joi_1.default.number().strict().optional(),
+                    maximum: joi_1.default.number().strict().optional(),
                 }),
             }),
             totalDebt: joi_1.default.number().strict().required(),
@@ -120,7 +120,7 @@ class CaseValidate {
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })),
+            })).optional(),
         });
         if (req.query.bulk === 'true') {
             const cases = req.body.cases;
@@ -255,10 +255,11 @@ class CaseValidate {
                 })),
                 notes: joi_1.default.string().allow(''),
                 creditorSecurityKey: joi_1.default.string(),
-                lastFundedDate: joi_1.default.date(),
+                accountTitle: joi_1.default.string().optional().allow('', null),
+                lastFundedDate: joi_1.default.date().optional(),
                 historicalRange: joi_1.default.object({
-                    minimum: joi_1.default.number().strict().required(),
-                    maximum: joi_1.default.number().strict().required(),
+                    minimum: joi_1.default.number().strict().optional(),
+                    maximum: joi_1.default.number().strict().optional(),
                 }),
             }),
             totalDebt: joi_1.default.number().strict(),
@@ -283,7 +284,7 @@ class CaseValidate {
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })),
+            })).optional(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -328,10 +329,10 @@ class CaseValidate {
                     notes: joi_1.default.string().allow(''),
                     creditorSecurityKey: joi_1.default.string(),
                     accountTitle: joi_1.default.string().optional().allow('', null),
-                    lastFundedDate: joi_1.default.date().required(),
+                    lastFundedDate: joi_1.default.date().optional(),
                     historicalRange: joi_1.default.object({
-                        minimum: joi_1.default.number().strict().required(),
-                        maximum: joi_1.default.number().strict().required(),
+                        minimum: joi_1.default.number().strict().optional(),
+                        maximum: joi_1.default.number().strict().optional(),
                     }),
                 }),
                 totalDebt: joi_1.default.number().strict().optional(),
