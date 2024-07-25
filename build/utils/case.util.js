@@ -1259,10 +1259,10 @@ class CaseUtil {
                     token: token,
                 },
             });
-            return response.data.error ? [] : response.data;
+            return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
-            return [];
+            return error.message;
         }
     }
     async getCreditorHistoryAI(creditorId, token) {

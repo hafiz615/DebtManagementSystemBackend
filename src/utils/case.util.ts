@@ -1418,9 +1418,9 @@ class CaseUtil {
           },
         }
       );
-      return response.data.error ? [] : response.data;
+      return response.data.error ? response.data.error : response.data;
     } catch (error) {
-      return [];
+      return error.message;
     }
   }
 
