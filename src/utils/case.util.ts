@@ -233,13 +233,14 @@ class CaseUtil {
       accountTitleMapping: obj.creditor.accountTitleMapping
         ? obj.creditor.accountTitleMapping
         : [],
+      contractDetails: obj.contractDetails ? obj.contractDetails : null,
     }));
   }
 
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtorId, isDeleted: false},
-      'totalDebt caseCode status remaining',
+      'totalDebt caseCode status remaining contractDetails',
       undefined,
       undefined,
       {

@@ -179,10 +179,11 @@ class CaseUtil {
             accountTitleMapping: obj.creditor.accountTitleMapping
                 ? obj.creditor.accountTitleMapping
                 : [],
+            contractDetails: obj.contractDetails ? obj.contractDetails : null,
         }));
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining', undefined, undefined, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails', undefined, undefined, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',

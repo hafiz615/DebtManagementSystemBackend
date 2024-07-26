@@ -202,16 +202,13 @@ class CaseService {
                 }
             }
             const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
-            const debtor = caseTemp.debtor;
-            delete caseTemp.debtor;
             return [
                 true,
                 {
                     getScores: getScores,
-                    settlementRange: '',
+                    settlementRange: settlementRange,
                     creditors,
-                    debtor: debtor,
-                    caseDetail: caseTemp,
+                    debtor: caseTemp.debtor,
                 },
             ];
         };
