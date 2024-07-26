@@ -64,6 +64,12 @@ const creditorModel: Schema = new Schema({
   accountTitle: {
     type: String,
   },
+  accountTitleMapping: {
+    type: Array<{
+      caseId: '';
+      accountTitle: '';
+    }>,
+  },
   paymentType: {
     type: String,
   },

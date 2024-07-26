@@ -16,6 +16,8 @@ import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogg
 import {DataCopier} from '../../utils/dataCopier.util';
 import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
 import constantsUtil from '../../utils/constants.util';
+import uploadUtil from '../../utils/upload.util';
+import UploadUtil from '../../utils/upload.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -57,6 +59,11 @@ class DebtorService {
         },
       ],
     });
+    // const uploadUtil = new UploadUtil();
+    // for (let doc of debtor[0].documents) {
+    //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
+    //   console.log(url);
+    // }
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
@@ -396,7 +403,6 @@ class DebtorService {
       const customerVaultResponse = await caseUtil.createVault(
         req.body.paymentToken
       );
-      console.log(customerVaultResponse);
       if (!customerVaultResponse[0]) return customerVaultResponse;
       req.body.customerVaultId = customerVaultResponse[1];
     }
@@ -412,8 +418,10 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    const creditorNames: Array<string> =
-      await caseUtil.getCreditorNames(debtor);
+    const creditorNames = await caseUtil.getCreditorNames(
+      debtor,
+      req.body.extractedFields
+    );
     return [true, {debtor, creditorNames}];
   }
 }

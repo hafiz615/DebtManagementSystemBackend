@@ -230,6 +230,9 @@ class CaseUtil {
       creditorAccountTitle: obj.creditor.accountTitle
         ? obj.creditor.accountTitle
         : '',
+      accountTitleMapping: obj.creditor.accountTitleMapping
+        ? obj.creditor.accountTitleMapping
+        : [],
     }));
   }
 
@@ -241,7 +244,11 @@ class CaseUtil {
       undefined,
       {
         path: 'creditor',
-        select: ['basicInformation.fullName', 'accountTitle'],
+        select: [
+          'basicInformation.fullName',
+          'accountTitle',
+          'accountTitleMapping',
+        ],
       }
     );
     return cases;
@@ -365,7 +372,10 @@ class CaseUtil {
     //   );
     // }
     console.log('i am going to call AI');
-    const creditorNames: Array<string> = await this.getCreditorNames(debtor);
+    const creditorNames: Array<string> = await this.getCreditorNames(
+      debtor,
+      ''
+    );
     console.log(creditorNames, 'creditonamess');
     const findCreditor = creditorNames.includes(
       creditor.businessInformation.companyName
@@ -401,6 +411,7 @@ class CaseUtil {
     //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
     //       };
     // }
+    console.log(body);
     if (debtorFound) {
       const interval = body.intervals[0];
       debt = body.remaining;
@@ -412,8 +423,11 @@ class CaseUtil {
       isDeleted: false,
     });
     for (const caseTemp of cases) {
-      amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
-      debt += caseTemp.remaining;
+      console.log(caseTemp.intervals);
+      if (caseTemp.intervals.length) {
+        amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+        debt += caseTemp.remaining;
+      }
     }
     return amount >= weeklyBudget
       ? {
@@ -1341,7 +1355,8 @@ class CaseUtil {
     documents: any,
     token: string,
     debtorName: string,
-    debtorId: string
+    debtorId: string,
+    extractedFields: any
   ) {
     const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
     const urls = [];
@@ -1352,7 +1367,7 @@ class CaseUtil {
       }
       // Data to be sent in the body of the request
       console.log(urls);
-      const data = urls;
+      const data = {bank_statements: urls, extracted_fields: extractedFields};
       const response = await axios.post(url, data, {
         headers: {
           accept: 'application/json',
@@ -1361,10 +1376,10 @@ class CaseUtil {
         },
       });
       console.log(response.data, 'creditorrr');
-      return response.data.error ? [] : response.data.creditor_names;
+      return response.data.error ? response.data.error : response.data;
     } catch (error) {
       console.log(error);
-      return [];
+      return error.message;
     }
   }
 
@@ -1381,10 +1396,19 @@ class CaseUtil {
     let data = {};
     console.log(creditors);
     for (const creditor of creditors) {
-      data[`${creditor.creditor.accountTitle}`] = {
-        total_debt: creditor.totalDebt,
-        remaining_debt: creditor.remaining,
-      };
+      const accountTitles = creditor.creditor.accountTitleMapping
+        ? creditor.creditor.accountTitleMapping
+        : [];
+      const accTitleObj = accountTitles.find(temp => {
+        return temp.caseId === String(creditor._id);
+      });
+      console.log(accTitleObj, 'getScoresAI');
+      if (accTitleObj) {
+        data[`${accTitleObj.accountTitle}`] = {
+          total_debt: creditor.totalDebt,
+          remaining_debt: creditor.remaining,
+        };
+      }
     }
     // }
     console.log(data);
@@ -1481,7 +1505,7 @@ class CaseUtil {
     }
   }
 
-  async getCreditorNames(debtor: IDebtor) {
+  async getCreditorNames(debtor: IDebtor, extractedFields: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1492,7 +1516,8 @@ class CaseUtil {
       debtor.documents,
       AIAuth.auth_token,
       debtor.businessInformation.companyName,
-      debtor.id
+      debtor.id,
+      extractedFields
     );
     console.log(creditorNames);
     return creditorNames;
@@ -1574,10 +1599,19 @@ class CaseUtil {
     )}&commision_percentage=${comm}`;
     let data = {};
     for (const creditor of creditors) {
-      data[`${creditor.creditorAccountTitle}`] = {
-        total_debt: creditor.totalDebt,
-        remaining_debt: creditor.remaining,
-      };
+      const accountTitles = creditor.accountTitleMapping
+        ? creditor.accountTitleMapping
+        : [];
+      const accTitleObj = accountTitles.find(temp => {
+        return temp.caseId === creditor.caseId;
+      });
+      console.log(accTitleObj, 'getScoresAIForAllCreditors');
+      if (accTitleObj) {
+        data[`${accTitleObj.accountTitle}`] = {
+          total_debt: creditor.totalDebt,
+          remaining_debt: creditor.remaining,
+        };
+      }
     }
     console.log(data);
     try {
@@ -1679,7 +1713,17 @@ class CaseUtil {
         // if (!caseCreated) {
         //   return [false, constantsUtil.failureAddMessage('case')];
         // }
-        if (caseCreated) createdCases.push(caseCreated);
+        if (caseCreated) {
+          createdCases.push(caseCreated);
+          const accountTitles = creditor.accountTitleMapping;
+          accountTitles.push({
+            caseId: String(caseCreated._id),
+            accountTitle: creditor.accountTitle,
+          });
+          await this.creditorRepository.updateById<ICreditor>(creditor._id, {
+            accountTitleMapping: accountTitles,
+          });
+        }
         if (caseCreated?.intervals && caseCreated?.intervals?.length) {
           await this.createPayment(caseCreated);
         }

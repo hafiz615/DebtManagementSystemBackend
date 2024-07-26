@@ -32,6 +32,10 @@ export interface ICreditor extends Document {
   };
   creditorSecurityKey: string;
   accountTitle: string;
+  accountTitleMapping: Array<{
+    caseId: string;
+    accountTitle: string;
+  }>;
   paymentType: string;
   customerVaultId: string;
   createdAt: string;

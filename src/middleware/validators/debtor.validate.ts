@@ -81,6 +81,7 @@ class DebtorRequests {
       ),
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
+      extractedFields: Joi.object().allow(null),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),

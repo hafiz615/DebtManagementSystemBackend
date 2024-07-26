@@ -78,6 +78,9 @@ const creditorModel = new mongoose_1.Schema({
     accountTitle: {
         type: String,
     },
+    accountTitleMapping: {
+        type: (Array),
+    },
     paymentType: {
         type: String,
     },

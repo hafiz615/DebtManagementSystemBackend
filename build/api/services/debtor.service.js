@@ -54,6 +54,11 @@ class DebtorService {
                 },
             ],
         });
+        // const uploadUtil = new UploadUtil();
+        // for (let doc of debtor[0].documents) {
+        //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
+        //   console.log(url);
+        // }
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -312,7 +317,6 @@ class DebtorService {
         let debtor = null;
         if (req.body.paymentToken && req.body.paymentType) {
             const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
-            console.log(customerVaultResponse);
             if (!customerVaultResponse[0])
                 return customerVaultResponse;
             req.body.customerVaultId = customerVaultResponse[1];
@@ -326,7 +330,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        const creditorNames = await case_util_1.default.getCreditorNames(debtor);
+        const creditorNames = await case_util_1.default.getCreditorNames(debtor, req.body.extractedFields);
         return [true, { debtor, creditorNames }];
     }
 }
