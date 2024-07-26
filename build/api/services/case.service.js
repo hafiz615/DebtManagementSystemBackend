@@ -139,8 +139,24 @@ class CaseService {
         };
         this.getScores = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
-            const response = await case_util_1.default.getScores(req, caseTemp);
-            return [response[0], response[1]];
+            let getScores = null;
+            if (req.body.creditorNames.length) {
+                const cases = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames } }, undefined, undefined, undefined, ['creditor']);
+                const creditors = cases.map(obj => ({
+                    totalDebt: obj.totalDebt,
+                    caseCode: obj.caseCode,
+                    remaining: obj.remaining,
+                    status: obj.status,
+                    name: obj.creditor.basicInformation.fullName,
+                    caseId: String(obj._id),
+                    creditorId: String(obj.creditor._id),
+                    creditorAccountTitle: obj.creditor.accountTitle
+                        ? obj.creditor.accountTitle
+                        : '',
+                }));
+                getScores = await case_util_1.default.getScores(req, caseTemp, creditors);
+            }
+            return getScores;
         };
         this.getSettlementRange = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
@@ -163,6 +179,28 @@ class CaseService {
             if (!result[0])
                 return [false, result[1]];
             return [true, result[1]];
+        };
+        this.getScoresSettlementRange = async (req) => {
+            if (!req.query.all) {
+                return [false, 'Query param missing'];
+            }
+            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            let getScores = null;
+            let creditors = null;
+            const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
+            creditors = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
+            if (req.query.all === 'true') {
+                console.log(creditors, 'uniqeeee');
+                getScores = await case_util_1.default.getScoresForAllCreditors(req, caseTemp, creditors);
+            }
+            else {
+                if (req.body.creditorNames.length) {
+                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames } }, undefined, undefined, undefined, ['creditor']);
+                    getScores = await case_util_1.default.getScores(req, caseTemp, casesCreditors);
+                }
+            }
+            const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+            return [true, { getScores: getScores, settlementRange, creditors }];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();

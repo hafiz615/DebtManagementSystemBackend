@@ -84,7 +84,7 @@ class CaseValidate {
               .pattern(/^\+\d{11}$/)
               .required(),
             email: Joi.string().email().required(),
-            relationWithDebtor: Joi.string().allow(''),
+            relationWithCreditor: Joi.string().allow(''),
             country: Joi.string().allow(''),
             state: Joi.string().allow(''),
             city: Joi.string().allow(''),
@@ -116,16 +116,18 @@ class CaseValidate {
         'toPay',
         'paidViaThirdParty'
       ),
-      intervals: Joi.array().items(
-        Joi.object({
-          amount: Joi.number().strict().required(),
-          startDate: Joi.date().required(),
-          frequency: Joi.number().optional(),
-          timePeriod: Joi.string()
-            .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
-            .required(),
-        })
-      ).optional(),
+      intervals: Joi.array()
+        .items(
+          Joi.object({
+            amount: Joi.number().strict().required(),
+            startDate: Joi.date().required(),
+            frequency: Joi.number().optional(),
+            timePeriod: Joi.string()
+              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+              .required(),
+          })
+        )
+        .optional(),
     });
     if (req.query.bulk === 'true') {
       const cases = req.body.cases;
@@ -264,7 +266,7 @@ class CaseValidate {
               .pattern(/^\+\d{11}$/)
               .required(),
             email: Joi.string().email().required(),
-            relationWithDebtor: Joi.string().allow(''),
+            relationWithCreditor: Joi.string().allow(''),
             country: Joi.string().allow(''),
             state: Joi.string().allow(''),
             city: Joi.string().allow(''),
@@ -295,16 +297,18 @@ class CaseValidate {
       //   'toPay',
       //   'paidViaThirdParty'
       // ),
-      intervals: Joi.array().items(
-        Joi.object({
-          amount: Joi.number().strict().required(),
-          startDate: Joi.date().required(),
-          frequency: Joi.number().optional(),
-          timePeriod: Joi.string()
-            .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
-            .required(),
-        })
-      ).optional(),
+      intervals: Joi.array()
+        .items(
+          Joi.object({
+            amount: Joi.number().strict().required(),
+            startDate: Joi.date().required(),
+            frequency: Joi.number().optional(),
+            timePeriod: Joi.string()
+              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+              .required(),
+          })
+        )
+        .optional(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -350,7 +354,7 @@ class CaseValidate {
                   .pattern(/^\+\d{11}$/)
                   .required(),
                 email: Joi.string().email().required(),
-                relationWithDebtor: Joi.string().allow(''),
+                relationWithCreditor: Joi.string().allow(''),
                 country: Joi.string().allow(''),
                 state: Joi.string().allow(''),
                 city: Joi.string().allow(''),
@@ -365,19 +369,21 @@ class CaseValidate {
               minimum: Joi.number().strict().optional(),
               maximum: Joi.number().strict().optional(),
             }),
-          }),
+          }).allow(null),
           totalDebt: Joi.number().strict().optional(),
-          lastPaymentDate: Joi.date().optional(),
+          lastPaymentDate: Joi.date().optional().allow(''),
           paidAmount: Joi.number().strict().optional(),
           remaining: Joi.number().strict().optional(),
           confidence: Joi.number().strict(),
+          contractDetails: Joi.object().optional().allow(null),
           closeDate: Joi.date(),
           status: Joi.string().optional(),
           notes: Joi.string(),
           chatId: Joi.string(),
           feePayment: Joi.string()
             .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
-            .optional(),
+            .optional()
+            .allow(''),
           intervals: Joi.array()
             .items(
               Joi.object({

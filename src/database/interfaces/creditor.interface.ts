@@ -18,7 +18,7 @@ export interface ICreditor extends Document {
     title: string;
     phone: string;
     email: string;
-    relationWithDebtor: string;
+    relationWithCreditor: string;
     country: string;
     state: string;
     city: string;

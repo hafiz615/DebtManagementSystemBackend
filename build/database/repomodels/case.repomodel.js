@@ -24,6 +24,7 @@ class Case {
         // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
         this.intervals = Array();
         this.isDeleted = false;
+        this.contractDetails = {};
         this.confidence = 0;
         this.closeDate = '';
         this.notes = '';

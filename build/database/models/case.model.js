@@ -95,6 +95,9 @@ const caseModel = new mongoose_1.Schema({
             },
         ],
     },
+    contractDetails: {
+        type: {},
+    },
     isDeleted: {
         type: Boolean,
     },

@@ -77,4 +77,10 @@ router.post(
   caseController.createCreditorsCases
 );
 
+router.post(
+  '/getScoresSettlementRange/:id',
+  authorize.validateAuth,
+  caseController.getScoresSettlementRange
+);
+
 export default router;

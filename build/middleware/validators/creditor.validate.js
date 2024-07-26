@@ -24,6 +24,26 @@ class CreditorRequests {
                     businessCategory: joi_1.default.string().required(),
                 }),
                 accountTitle: joi_1.default.string().optional().allow('', null),
+                contact: joi_1.default.object({
+                    name: joi_1.default.string().required(),
+                    title: joi_1.default.string().required(),
+                    phone: joi_1.default.string()
+                        .pattern(/^\+\d{11}$/)
+                        .required(),
+                    email: joi_1.default.string().email().required(),
+                    relationWithCreditor: joi_1.default.string().allow(''),
+                    country: joi_1.default.string().allow(''),
+                    state: joi_1.default.string().allow(''),
+                    city: joi_1.default.string().allow(''),
+                    zipCode: joi_1.default.string().allow(''),
+                }),
+                lastFundedDate: joi_1.default.date().optional().allow(''),
+                historicalRange: joi_1.default.object({
+                    minimum: joi_1.default.number().strict().optional(),
+                    maximum: joi_1.default.number().strict().optional(),
+                })
+                    .optional()
+                    .allow(null),
             });
             const { error } = schema.validate(req.body);
             if (!error) {
