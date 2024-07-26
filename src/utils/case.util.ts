@@ -1470,12 +1470,14 @@ class CaseUtil {
 
   async getSummary(req: any, caseTemp: any) {
     if (
-      !req.session.auth_token ||
-      new Date(req.session.expires_in) <= new Date(commonUtil.getCurrentDate())
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const url = `${baseUrlAI}negotiator?human_input=${req.body.humanInput}&debtor_id=123&chat_id=${caseTemp.chatId}`;
+    const url = `${baseUrlAI}negotiator?human_input=${
+      req.body.humanInput
+    }&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
 
     const data = {
       debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
@@ -1485,7 +1487,7 @@ class CaseUtil {
       const response = await axios.post(url, data, {
         headers: {
           accept: 'application/json',
-          token: req.session.auth_token,
+          token: AIAuth.auth_token,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
