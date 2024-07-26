@@ -34,7 +34,7 @@ const creditorModel: Schema = new Schema({
       title: '';
       phone: '';
       email: '';
-      relationWithDebtor: '';
+      relationWithCreditor: '';
       country: '';
       state: '';
       city: '';
@@ -46,12 +46,12 @@ const creditorModel: Schema = new Schema({
   },
   lastFundedDate: {
     type: Date,
-    required: true,
+    required: false,
   },
   historicalRange: {
     minimum: {
       type: Number,
-      required: true,
+      required: false,
     },
     maximum: {
       type: Number,
@@ -63,6 +63,12 @@ const creditorModel: Schema = new Schema({
   },
   accountTitle: {
     type: String,
+  },
+  accountTitleMapping: {
+    type: Array<{
+      caseId: '';
+      accountTitle: '';
+    }>,
   },
   paymentType: {
     type: String,

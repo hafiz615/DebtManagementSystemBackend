@@ -6,7 +6,7 @@ import {IContact} from '../../database/interfaces/contact.interface';
 import {IDebtor} from '../../database/interfaces/debtor.interface';
 import {ICreditor} from '../../database/interfaces/creditor.interface';
 import {Case} from '../../database/repomodels/case.repomodel';
-import {ICase, IKeyFile} from '../../database/interfaces/case.interface';
+import {ICase} from '../../database/interfaces/case.interface';
 import constantsUtil from '../../utils/constants.util';
 import UploadUtil from '../../utils/upload.util';
 import DebtorService from './debtor.service';
@@ -85,12 +85,12 @@ class CaseService {
     if (!cases.length) {
       return [false, constantsUtil.notFoundMessage('Cases')];
     }
-    for (let temp of cases) {
-      for (let doc of temp.documents) {
-        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-        doc.url = url;
-      }
-    }
+    // for (let temp of cases) {
+    //   for (let doc of temp.documents) {
+    //     const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+    //     doc.url = url;
+    //   }
+    // }
     return [true, cases];
   };
 
@@ -104,10 +104,10 @@ class CaseService {
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    for (let doc of findCase.documents) {
-      const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-      doc.url = url;
-    }
+    // for (let doc of findCase.documents) {
+    //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+    //   doc.url = url;
+    // }
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
       findCase.debtor as any
     );
@@ -139,6 +139,9 @@ class CaseService {
       req.params.id,
       req.body
     );
+    if (req.body.intervals) {
+      await caseUtil.createPayment(caseUpdated);
+    }
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
@@ -264,15 +267,38 @@ class CaseService {
     return [true, uniqueResult];
   };
 
-  getScores = async (req: Request): Promise<[boolean, {} | [] | string]> => {
+  getScores = async (req: Request) => {
     const caseTemp = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
       ['debtor']
     );
-    const response = await caseUtil.getScores(req, caseTemp);
-    return [response[0], response[1]];
+    let getScores = null;
+    if (req.body.creditorNames.length) {
+      const cases: any =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {creditor: {$in: req.body.creditorNames}},
+          undefined,
+          undefined,
+          undefined,
+          ['creditor']
+        );
+      const creditors = cases.map(obj => ({
+        totalDebt: obj.totalDebt,
+        caseCode: obj.caseCode,
+        remaining: obj.remaining,
+        status: obj.status,
+        name: obj.creditor.basicInformation.fullName,
+        caseId: String(obj._id),
+        creditorId: String(obj.creditor._id),
+        creditorAccountTitle: obj.creditor.accountTitle
+          ? obj.creditor.accountTitle
+          : '',
+      }));
+      getScores = await caseUtil.getScores(req, caseTemp, creditors);
+    }
+    return getScores;
   };
 
   getSettlementRange = async (
@@ -296,6 +322,72 @@ class CaseService {
     }
     const response = await caseUtil.getCreditorHistory(req);
     return [true, response];
+  };
+
+  createCreditorsCases = async (
+    req: Request
+  ): Promise<[boolean, {} | string]> => {
+    const reqTemp: any = req;
+    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
+    if (!checkCasePayment[0]) return checkCasePayment;
+    const result = await caseUtil.createCreditorsCases(
+      req,
+      reqTemp.name,
+      reqTemp.id
+    );
+    if (!result[0]) return [false, result[1] as string];
+    return [true, result[1]];
+  };
+
+  getScoresSettlementRange = async (req: Request) => {
+    if (!req.query.all) {
+      return [false, 'Query param missing'];
+    }
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    let getScores = null;
+    let creditors = null;
+    const response = await caseUtil.getAllCreditorsOfDebtor(
+      caseTemp.debtor as any
+    );
+    creditors = Array.from(
+      new Map(
+        response.map(creditor => [creditor.creditorId, creditor])
+      ).values()
+    );
+    if (req.query.all === 'true') {
+      getScores = await caseUtil.getScoresForAllCreditors(
+        req,
+        caseTemp,
+        creditors
+      );
+    } else {
+      if (req.body.creditorNames.length) {
+        const casesCreditors: any =
+          await this.caseRepository.getAllWithoutPagination<ICase>(
+            {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
+            undefined,
+            undefined,
+            undefined,
+            ['creditor']
+          );
+        getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
+      }
+    }
+    const settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    return [
+      true,
+      {
+        getScores: getScores,
+        settlementRange: settlementRange,
+        creditors,
+        debtor: caseTemp.debtor,
+      },
+    ];
   };
 }
 

@@ -88,10 +88,11 @@ class CaseValidate {
                     zipCode: joi_1.default.string().allow(''),
                 })),
                 notes: joi_1.default.string().allow(''),
-                lastFundedDate: joi_1.default.date().required(),
+                accountTitle: joi_1.default.string().optional().allow('', null),
+                lastFundedDate: joi_1.default.date().optional(),
                 historicalRange: joi_1.default.object({
-                    minimum: joi_1.default.number().strict().required(),
-                    maximum: joi_1.default.number().strict().required(),
+                    minimum: joi_1.default.number().strict().optional(),
+                    maximum: joi_1.default.number().strict().optional(),
                 }),
             }),
             totalDebt: joi_1.default.number().strict().required(),
@@ -106,7 +107,7 @@ class CaseValidate {
                 timePeriod: joi_1.default.string()
                     .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
                     .required(),
-            })),
+            })).optional(),
         });
         if (req.query.bulk === 'true') {
             const cases = req.body.cases;

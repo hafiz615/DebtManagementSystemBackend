@@ -18,7 +18,7 @@ export interface ICreditor extends Document {
     title: string;
     phone: string;
     email: string;
-    relationWithDebtor: string;
+    relationWithCreditor: string;
     country: string;
     state: string;
     city: string;
@@ -32,6 +32,10 @@ export interface ICreditor extends Document {
   };
   creditorSecurityKey: string;
   accountTitle: string;
+  accountTitleMapping: Array<{
+    caseId: string;
+    accountTitle: string;
+  }>;
   paymentType: string;
   customerVaultId: string;
   createdAt: string;

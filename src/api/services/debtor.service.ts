@@ -16,6 +16,8 @@ import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogg
 import {DataCopier} from '../../utils/dataCopier.util';
 import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
 import constantsUtil from '../../utils/constants.util';
+import uploadUtil from '../../utils/upload.util';
+import UploadUtil from '../../utils/upload.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -41,6 +43,11 @@ class DebtorService {
           },
         },
         {
+          'basicInformation.fullName': {
+            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+          },
+        },
+        {
           'basicInformation.SSID': {
             $regex: new RegExp(text), // Case-insensitive match for SSID
           },
@@ -52,6 +59,11 @@ class DebtorService {
         },
       ],
     });
+    // const uploadUtil = new UploadUtil();
+    // for (let doc of debtor[0].documents) {
+    //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
+    //   console.log(url);
+    // }
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
@@ -145,97 +157,89 @@ class DebtorService {
   }
 
   async updateDebtor(req: Request): Promise<[boolean, IDebtor | string]> {
-    const email = req.body.basicInformation.email.toLowerCase();
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      $or: [
-        {
-          'basicInformation.email': email,
-        },
-        {
-          'basicInformation.SSID': req.body.basicInformation.SSID,
-        },
-        {
-          'basicInformation.phone': req.body.basicInformation.phone,
-        },
-      ],
-    });
-    if (getDebtor) {
-      if (
-        getDebtor.basicInformation.email === email &&
-        String(getDebtor._id) !== req.params.id
-      ) {
-        return [
-          false,
-          constants.alreadyExistsMessage('Debtor with basicInformation.email'),
-        ];
+    let debtor = null;
+    if (req.body.basicInformation) {
+      const email = req.body.basicInformation.email.toLowerCase();
+      const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+        $or: [
+          {
+            'basicInformation.email': email,
+          },
+          {
+            'basicInformation.SSID': req.body.basicInformation.SSID,
+          },
+          {
+            'basicInformation.phone': req.body.basicInformation.phone,
+          },
+        ],
+      });
+      if (getDebtor) {
+        if (
+          getDebtor.basicInformation.email === email &&
+          String(getDebtor._id) !== req.params.id
+        ) {
+          return [
+            false,
+            constants.alreadyExistsMessage(
+              'Debtor with basicInformation.email'
+            ),
+          ];
+        }
+        if (
+          getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
+          String(getDebtor._id) !== req.params.id
+        ) {
+          return [
+            false,
+            constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
+          ];
+        }
+        if (
+          getDebtor.basicInformation.phone ===
+            req.body.basicInformation.phone &&
+          String(getDebtor._id) !== req.params.id
+        ) {
+          return [
+            false,
+            constants.alreadyExistsMessage(
+              'Debtor with basicInformation.phone'
+            ),
+          ];
+        }
       }
       if (
-        getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
-        String(getDebtor._id) !== req.params.id
+        getDebtor &&
+        req.body.basicInformation &&
+        req.body.basicInformation.weeklyBudget !==
+          getDebtor.basicInformation.weeklyBudget
       ) {
-        return [
-          false,
-          constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
-        ];
+        const response = await caseUtil.checkWeeklyBudget(
+          {debtor: req.body},
+          true,
+          getDebtor
+        );
+        if (!response.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+        req.body.weeklyCommission = response.commission;
       }
-      if (
-        getDebtor.basicInformation.phone === req.body.basicInformation.phone &&
-        String(getDebtor._id) !== req.params.id
-      ) {
-        return [
-          false,
-          constants.alreadyExistsMessage('Debtor with basicInformation.phone'),
-        ];
-      }
-    }
-    if (
-      req.body.basicInformation.weeklyBudget !==
-      getDebtor.basicInformation.weeklyBudget
-    ) {
-      const response = await caseUtil.checkWeeklyBudget(
-        {debtor: req.body},
-        true,
-        getDebtor
+      debtor = await this.debtorRepository.updateById<IDebtor>(
+        req.params.id,
+        req.body
       );
-      if (!response.status) {
-        return [
-          false,
-          'Weekly budget is not fulfiling the payment plan of debtor',
-        ];
-      }
-      req.body.weeklyCommission = response.commission;
     }
-    req.body;
-    const debtor = await this.debtorRepository.updateById<IDebtor>(
-      req.params.id,
-      req.body
-    );
+    if (req.body.contact) {
+      debtor = await this.debtorRepository.updateById<IDebtor>(req.params.id, {
+        $push: {contacts: req.body.contact},
+      });
+    }
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
     return [true, debtor];
-  }
-
-  async createVault(paymentToken: string, id: string, paymentType: string) {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
-    const params = {
-      customer_vault: 'add_customer',
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
-      payment_token: paymentToken,
-    };
-    const response = await axios.get(url, {params});
-    const responseNum = new URLSearchParams(response.data).get('response');
-    if (responseNum === '1') {
-      const customerVault = new URLSearchParams(response.data).get(
-        'customer_vault_id'
-      );
-      const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
-        customerVaultId: customerVault,
-        paymentType: paymentType,
-      });
-      return [true, debtor];
-    }
-    return [false, 'Unable to create customer vault'];
   }
 
   async retryAuth(paymentId: string): Promise<[boolean, string]> {
@@ -374,6 +378,52 @@ class DebtorService {
     }
     return [true, debtors];
   };
+
+  async createDebtor(req: Request) {
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      $or: [
+        {
+          'basicInformation.email':
+            req.body.basicInformation.email.toLowerCase(),
+        },
+        {
+          'basicInformation.SSID': req.body.basicInformation.SSID,
+        },
+        {
+          'basicInformation.phone': req.body.basicInformation.phone,
+        },
+        {
+          'businessInformation.companyName':
+            req.body.businessInformation.companyName,
+        },
+      ],
+    });
+    let debtor: IDebtor = null;
+    if (req.body.paymentToken && req.body.paymentType) {
+      const customerVaultResponse = await caseUtil.createVault(
+        req.body.paymentToken
+      );
+      if (!customerVaultResponse[0]) return customerVaultResponse;
+      req.body.customerVaultId = customerVaultResponse[1];
+    }
+    if (!getDebtor) {
+      debtor = await caseUtil.createDebtor(req.body as IDebtor);
+    }
+    if (getDebtor) {
+      debtor = await this.debtorRepository.updateById<IDebtor>(
+        getDebtor._id,
+        req.body
+      );
+    }
+    if (!debtor) {
+      return [false, constantsUtil.failureAddMessage('debtor')];
+    }
+    const creditorNames = await caseUtil.getCreditorNames(
+      debtor,
+      req.body.extractedFields
+    );
+    return [true, {debtor, creditorNames}];
+  }
 }
 
 export default DebtorService;

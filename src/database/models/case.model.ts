@@ -54,15 +54,13 @@ const caseModel: Schema = new Schema({
     type: Number,
     required: true,
   },
-  documents: {
-    type: [
-      {
-        key: {type: String, required: true},
-        originalFileName: {type: String, required: true},
-        url: {type: String, default: ''},
-      },
-    ],
-  },
+  // documents: {
+  //   type: Array<{
+  //     key: {type: String; required: true};
+  //     originalFileName: {type: String; required: true};
+  //     url: {type: String; default: ''};
+  //   }>,
+  // },
   intervals: {
     type: [
       {
@@ -72,6 +70,9 @@ const caseModel: Schema = new Schema({
         timePeriod: {type: String, required: true},
       },
     ],
+  },
+  contractDetails: {
+    type: {},
   },
   isDeleted: {
     type: Boolean,

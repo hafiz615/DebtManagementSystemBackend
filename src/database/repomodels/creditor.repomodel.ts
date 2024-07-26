@@ -17,8 +17,9 @@ export class Creditor {
     minimum: 0,
     maximum: 0,
   };
-  creditorSecurityKey: '';
-  accountTitle: '';
+  creditorSecurityKey = '';
+  accountTitle = '';
+  accountTitleMapping = Array<{caseId: ''; accountTitle: ''}>();
   paymentType = '';
   customerVaultId = '';
   contacts = Array<{
@@ -26,7 +27,7 @@ export class Creditor {
     title: '';
     phone: '';
     email: '';
-    relationWithDebtor: '';
+    relationWithCreditor: '';
     country: '';
     state: '';
     city: '';

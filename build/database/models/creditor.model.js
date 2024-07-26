@@ -60,12 +60,12 @@ const creditorModel = new mongoose_1.Schema({
     },
     lastFundedDate: {
         type: Date,
-        required: true,
+        required: false,
     },
     historicalRange: {
         minimum: {
             type: Number,
-            required: true,
+            required: false,
         },
         maximum: {
             type: Number,
@@ -77,6 +77,9 @@ const creditorModel = new mongoose_1.Schema({
     },
     accountTitle: {
         type: String,
+    },
+    accountTitleMapping: {
+        type: (Array),
     },
     paymentType: {
         type: String,
