@@ -132,8 +132,7 @@ class DebtorService {
                 debtorsCount = setCount.size;
             }
             else {
-                debtorsCount =
-                    await this.debtorRepository.getCount(countFilter);
+                debtorsCount = await this.debtorRepository.getCount();
             }
         }
         const paginatedDetails = clientDetails.slice((page - 1) * limit, page * limit);
