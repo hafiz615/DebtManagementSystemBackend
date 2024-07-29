@@ -1651,12 +1651,12 @@ class CaseUtil {
     const createdCases = [];
     const debtor = await this.debtRepository.getById<IDebtor>(req.params.id);
     for (const body of dataArray) {
-      console.log(body.creditor.basicInformation);
+      body.creditor.basicInformation.email =
+        body.creditor.basicInformation.email.toLowerCase();
       const getCreditor = await this.creditorRepository.getOne<ICreditor>({
         $or: [
           {
-            'basicInformation.email':
-              body.creditor.basicInformation.email.toLowerCase(),
+            'basicInformation.email': body.creditor.basicInformation.email,
           },
           {
             'basicInformation.phone': body.creditor.basicInformation.phone,
