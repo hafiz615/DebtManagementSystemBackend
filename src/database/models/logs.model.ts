@@ -1,5 +1,5 @@
 // models/Log.ts
-import { Schema, model } from 'mongoose';
+import {Schema, model} from 'mongoose';
 
 const logSchema = new Schema({
   url: String,
@@ -9,7 +9,7 @@ const logSchema = new Schema({
   responseStatus: Number,
   userId: String,
   timeTaken: Number,
-  calledAt: { type: Date, default: Date.now }
+  calledAt: {type: Date},
 });
 
 const Log = model('Log', logSchema);

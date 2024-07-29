@@ -25,6 +25,7 @@ const axios_1 = __importDefault(require("axios"));
 const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
+const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
 class CaseUtil {
     constructor() {
@@ -1218,7 +1219,7 @@ class CaseUtil {
             }
             // Data to be sent in the body of the request
             const data = { bank_statements: urls, extracted_fields: extractedFields };
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: token,
@@ -1256,7 +1257,7 @@ class CaseUtil {
         console.log('URL: ', url);
         console.log('Payload: ', data);
         try {
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: token,
@@ -1275,7 +1276,7 @@ class CaseUtil {
         console.log('URL: ', url);
         console.log('Payload: ', 'No payload for this call');
         try {
-            const response = await axios_1.default.post(url, {}, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
                 headers: {
                     accept: 'application/json',
                     token: token,
@@ -1399,7 +1400,7 @@ class CaseUtil {
         console.log('URL: ', url);
         console.log('Payload: ', data);
         try {
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: token,
