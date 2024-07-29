@@ -298,10 +298,12 @@ class DebtorService {
         return [false, 'Unable to capture payment!'];
     }
     async createDebtor(req) {
+        req.body.basicInformation.email =
+            req.body.basicInformation.email.toLowerCase();
         const getDebtor = await this.debtorRepository.getOne({
             $or: [
                 {
-                    'basicInformation.email': req.body.basicInformation.email.toLowerCase(),
+                    'basicInformation.email': req.body.basicInformation.email,
                 },
                 {
                     'basicInformation.SSID': req.body.basicInformation.SSID,

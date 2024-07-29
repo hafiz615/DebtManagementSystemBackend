@@ -380,11 +380,12 @@ class DebtorService {
   };
 
   async createDebtor(req: Request) {
+    req.body.basicInformation.email =
+      req.body.basicInformation.email.toLowerCase();
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
-          'basicInformation.email':
-            req.body.basicInformation.email.toLowerCase(),
+          'basicInformation.email': req.body.basicInformation.email,
         },
         {
           'basicInformation.SSID': req.body.basicInformation.SSID,

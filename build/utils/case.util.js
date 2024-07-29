@@ -25,6 +25,7 @@ const axios_1 = __importDefault(require("axios"));
 const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
+const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
 class CaseUtil {
     constructor() {
@@ -1217,28 +1218,27 @@ class CaseUtil {
                 urls.push(url);
             }
             // Data to be sent in the body of the request
-            console.log(urls);
             const data = { bank_statements: urls, extracted_fields: extractedFields };
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: token,
                     'Content-Type': 'application/json',
                 },
             });
-            console.log(response.data, 'creditorrr');
+            console.log('I am in create debtor');
+            console.log('URL: ', url);
+            console.log('Payload: ', data);
             return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
-            console.log(error);
+            console.log(error.message);
             return error.message;
         }
     }
     async getScoresAI(comm, token, caseTemp, creditors) {
         const url = `${baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
-        console.log(url);
         let data = {};
-        console.log(creditors);
         for (const creditor of creditors) {
             const accountTitles = creditor.creditor.accountTitleMapping
                 ? creditor.creditor.accountTitleMapping
@@ -1246,7 +1246,6 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === String(creditor._id);
             });
-            console.log(accTitleObj, 'getScoresAI');
             if (accTitleObj) {
                 data[`${accTitleObj.accountTitle}`] = {
                     total_debt: creditor.totalDebt,
@@ -1254,17 +1253,17 @@ class CaseUtil {
                 };
             }
         }
-        // }
-        console.log(data);
+        console.log('I am in getScoresAIForSelectedCreditors');
+        console.log('URL: ', url);
+        console.log('Payload: ', data);
         try {
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: token,
                     'Content-Type': 'application/json',
                 },
             });
-            console.log(response.data, 'scoreeeee');
             return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
@@ -1273,8 +1272,11 @@ class CaseUtil {
     }
     async getSettlementRangeAI(caseTemp, token) {
         const url = `${baseUrlAI}get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
+        console.log('I am in getSettlementRangeAI');
+        console.log('URL: ', url);
+        console.log('Payload: ', 'No payload for this call');
         try {
-            const response = await axios_1.default.post(url, {}, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
                 headers: {
                     accept: 'application/json',
                     token: token,
@@ -1342,7 +1344,6 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const creditorNames = await this.getCreditorNamesAI(debtor.documents, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor.id, extractedFields);
-        console.log(creditorNames);
         return creditorNames;
     }
     async getScores(req, caseTemp, creditors) {
@@ -1351,7 +1352,6 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAI(19, global_1.AIAuth.auth_token, caseTemp, creditors);
-        console.log(getScores);
         return getScores;
     }
     async getScoresForAllCreditors(req, caseTemp, creditors) {
@@ -1360,7 +1360,6 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAIForAllCreditors(19, global_1.AIAuth.auth_token, caseTemp, creditors);
-        console.log(getScores);
         return getScores;
     }
     async getSettlementRange(caseTemp) {
@@ -1390,7 +1389,6 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === creditor.caseId;
             });
-            console.log(accTitleObj, 'getScoresAIForAllCreditors');
             if (accTitleObj) {
                 data[`${accTitleObj.accountTitle}`] = {
                     total_debt: creditor.totalDebt,
@@ -1398,16 +1396,17 @@ class CaseUtil {
                 };
             }
         }
-        console.log(data);
+        console.log('I am in getScoresAIForAllCreditors');
+        console.log('URL: ', url);
+        console.log('Payload: ', data);
         try {
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: token,
                     'Content-Type': 'application/json',
                 },
             });
-            console.log(response.data, 'scoreeeee');
             return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
@@ -1434,11 +1433,12 @@ class CaseUtil {
         const createdCases = [];
         const debtor = await this.debtRepository.getById(req.params.id);
         for (const body of dataArray) {
-            console.log(body.creditor.basicInformation);
+            body.creditor.basicInformation.email =
+                body.creditor.basicInformation.email.toLowerCase();
             const getCreditor = await this.creditorRepository.getOne({
                 $or: [
                     {
-                        'basicInformation.email': body.creditor.basicInformation.email.toLowerCase(),
+                        'basicInformation.email': body.creditor.basicInformation.email,
                     },
                     {
                         'basicInformation.phone': body.creditor.basicInformation.phone,
