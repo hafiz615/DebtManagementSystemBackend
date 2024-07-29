@@ -13,15 +13,15 @@ class RolesPermissionsController {
 
   createRole = async (req: Request, res: Response) => {
     try {
-      //   const checkPermission = await commonUtil.checkPermission('addRole', req);
-      //   if (!checkPermission)
-      //     return res
-      //       .status(constants.CODE.BAD_REQUEST)
-      //       .send(
-      //         responseHelper.get4xxResponse(
-      //           'You do not have permission to perform this operation'
-      //         )
-      //       );
+      const checkPermission = await commonUtil.checkPermission('addRole', req);
+      if (!checkPermission)
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse(
+              'You do not have permission to perform this operation'
+            )
+          );
       const response = await this.rolesPermissionsService.createRole(req);
       if (!response[0]) {
         return res

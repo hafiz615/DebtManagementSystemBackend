@@ -7,7 +7,7 @@ const router = Router();
 router.post(
   '/createUser',
   authorize.validateAuth,
-  authorize.validateRole,
+  // authorize.validateRole,
   userValidate.createUser,
   userController.createUser
 );
@@ -15,14 +15,14 @@ router.post('/signIn', userValidate.signIn, userController.signIn);
 router.get(
   '/getUserById/:id',
   authorize.validateAuth,
-  authorize.validateRole,
+  // authorize.validateRole,
   userController.getUserById
 );
 router.get('/getUser', userController.getUser);
 router.put(
   '/updateUser',
   authorize.validateAuth,
-  authorize.validateRole,
+  // authorize.validateRole,
   userValidate.createUser,
   userController.updateUser
 );
@@ -35,7 +35,7 @@ router.put(
 router.delete(
   '/deleteUserById/:id',
   authorize.validateAuth,
-  authorize.validateRole,
+  // authorize.validateRole,
   userController.deleteUserById
 );
 router.post('/verifyInvitationLink', userController.verifyInvitationLink);

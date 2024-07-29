@@ -1403,7 +1403,7 @@ class CaseUtil {
       const accTitleObj = accountTitles.find(temp => {
         return temp.caseId === String(creditor._id);
       });
-      if (accTitleObj) {
+      if (accTitleObj.accountTitle) {
         data[`${accTitleObj.accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
@@ -1607,7 +1607,7 @@ class CaseUtil {
       const accTitleObj = accountTitles.find(temp => {
         return temp.caseId === creditor.caseId;
       });
-      if (accTitleObj) {
+      if (accTitleObj.accountTitle) {
         data[`${accTitleObj.accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
@@ -1718,13 +1718,15 @@ class CaseUtil {
         if (caseCreated) {
           createdCases.push(caseCreated);
           const accountTitles = creditor.accountTitleMapping;
-          accountTitles.push({
-            caseId: String(caseCreated._id),
-            accountTitle: creditor.accountTitle,
-          });
-          await this.creditorRepository.updateById<ICreditor>(creditor._id, {
-            accountTitleMapping: accountTitles,
-          });
+          if (creditor.accountTitle) {
+            accountTitles.push({
+              caseId: String(caseCreated._id),
+              accountTitle: creditor.accountTitle,
+            });
+            await this.creditorRepository.updateById<ICreditor>(creditor._id, {
+              accountTitleMapping: accountTitles,
+            });
+          }
         }
         if (caseCreated?.intervals && caseCreated?.intervals?.length) {
           await this.createPayment(caseCreated);
