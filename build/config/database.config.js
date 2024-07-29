@@ -7,7 +7,7 @@ exports.Database = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const settings_repository_1 = require("../api/repository/setting/settings.repository");
 const settings_repomodel_1 = require("../database/repomodels/settings.repomodel");
-let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement-staging?retryWrites=true&w=majority';
+let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
 class Database {
     constructor() {
         this.dbUri = dbconfig;
