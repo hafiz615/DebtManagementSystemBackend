@@ -34,12 +34,10 @@ const creditorModel = new mongoose_1.Schema({
         email: {
             type: String,
             required: true,
-            unique: true,
         },
         phone: {
             type: String,
             required: true,
-            unique: true,
         },
     },
     businessInformation: {

@@ -34,12 +34,10 @@ const debtorModel = new mongoose_1.Schema({
         email: {
             type: String,
             required: true,
-            unique: true,
         },
         SSID: {
             type: String,
             required: true,
-            unique: true,
         },
         country: {
             type: String,
@@ -59,7 +57,6 @@ const debtorModel = new mongoose_1.Schema({
         phone: {
             type: String,
             required: true,
-            unique: true,
         },
         address: {
             type: String,
@@ -98,7 +95,6 @@ const debtorModel = new mongoose_1.Schema({
         },
         phone: {
             type: String,
-            unique: true,
         },
         address: {
             type: String,
