@@ -30,6 +30,7 @@ import commonUtil from './common.util';
 import UploadUtil from './upload.util';
 import {AIAuth} from '../database/repomodels/global';
 import {AnyLengthString} from 'aws-sdk/clients/comprehend';
+import axiosInstance from './axiosInstanceInterceptor';
 const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -1368,7 +1369,7 @@ class CaseUtil {
       }
       // Data to be sent in the body of the request
       const data = {bank_statements: urls, extracted_fields: extractedFields};
-      const response = await axios.post(url, data, {
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: token,
@@ -1413,7 +1414,7 @@ class CaseUtil {
     console.log('URL: ', url);
     console.log('Payload: ', data);
     try {
-      const response = await axios.post(url, data, {
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: token,
@@ -1434,7 +1435,7 @@ class CaseUtil {
     console.log('URL: ', url);
     console.log('Payload: ', 'No payload for this call');
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         url,
         {},
         {
@@ -1617,7 +1618,7 @@ class CaseUtil {
     console.log('URL: ', url);
     console.log('Payload: ', data);
     try {
-      const response = await axios.post(url, data, {
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: token,
