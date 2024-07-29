@@ -1436,14 +1436,7 @@ class CaseUtil {
             body.creditor.basicInformation.email =
                 body.creditor.basicInformation.email.toLowerCase();
             const getCreditor = await this.creditorRepository.getOne({
-                $or: [
-                    {
-                        'basicInformation.email': body.creditor.basicInformation.email,
-                    },
-                    {
-                        'basicInformation.phone': body.creditor.basicInformation.phone,
-                    },
-                ],
+                'businessInformation.companyName': body.creditor.businessInformation.companyName,
             });
             if (body?.intervals) {
                 let weeklyBudgetObj;

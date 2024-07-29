@@ -34,6 +34,11 @@ class CreditorService {
             $regex: new RegExp(text),
           },
         },
+        {
+          'businessInformation.companyName': {
+            $regex: new RegExp(text, 'i'),
+          },
+        },
       ],
     });
     if (!creditor) {

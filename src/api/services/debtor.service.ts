@@ -57,6 +57,16 @@ class DebtorService {
             $regex: new RegExp(text), // Case-insensitive match for phone
           },
         },
+        {
+          'businessInformation.EIN': {
+            $regex: new RegExp(text), // Case-insensitive match for phone
+          },
+        },
+        {
+          'businessInformation.companyName': {
+            $regex: new RegExp(text, 'i'), // Case-insensitive match for phone
+          },
+        },
       ],
     });
     // const uploadUtil = new UploadUtil();
@@ -379,22 +389,14 @@ class DebtorService {
   };
 
   async createDebtor(req: Request) {
-    req.body.basicInformation.email =
-      req.body.basicInformation.email.toLowerCase();
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
-          'basicInformation.email': req.body.basicInformation.email,
-        },
-        {
-          'basicInformation.SSID': req.body.basicInformation.SSID,
-        },
-        {
-          'basicInformation.phone': req.body.basicInformation.phone,
-        },
-        {
           'businessInformation.companyName':
             req.body.businessInformation.companyName,
+        },
+        {
+          'businessInformation.EIN': req.body.businessInformation.EIN,
         },
       ],
     });
