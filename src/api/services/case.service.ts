@@ -360,11 +360,7 @@ class CaseService {
       ).values()
     );
     if (req.query.all === 'true') {
-      getScores = await caseUtil.getScoresForAllCreditors(
-        req,
-        caseTemp,
-        creditors
-      );
+      getScores = await caseUtil.getScoresForAllCreditors(caseTemp, creditors);
     } else {
       if (req.body.creditorNames.length) {
         const casesCreditors: any =

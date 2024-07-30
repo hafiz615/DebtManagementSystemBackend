@@ -1344,6 +1344,7 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const creditorNames = await this.getCreditorNamesAI(debtor.documents, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor.id, extractedFields);
+        console.log(creditorNames);
         return creditorNames;
     }
     async getScores(req, caseTemp, creditors) {
@@ -1354,12 +1355,13 @@ class CaseUtil {
         const getScores = await this.getScoresAI(19, global_1.AIAuth.auth_token, caseTemp, creditors);
         return getScores;
     }
-    async getScoresForAllCreditors(req, caseTemp, creditors) {
+    async getScoresForAllCreditors(caseTemp, creditors) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAIForAllCreditors(19, global_1.AIAuth.auth_token, caseTemp, creditors);
+        console.log('scores', getScores);
         return getScores;
     }
     async getSettlementRange(caseTemp) {

@@ -426,6 +426,52 @@ class DebtorService {
     );
     return [true, {debtor, creditorNames}];
   }
+
+  async addDocumentsToDebtor(req: Request) {
+    if (!req.body.documents) {
+      return [false, 'Documents are missing'];
+    }
+    if (!req.body.extractedFields) {
+      return [false, 'Extracted fields are missing'];
+    }
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    if (!caseTemp) {
+      return [false, constants.notFoundMessage('case')];
+    }
+    const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+      caseTemp.debtor._id,
+      {
+        $push: {
+          documents: {
+            $each: req.body.documents,
+          },
+        },
+      }
+    );
+    if (!updatedDebtor) {
+      return [false, constants.failureUpdateMessage('debtor')];
+    }
+    // for (let doc of findCase.documents) {
+    //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+    //   doc.url = url;
+    // }
+    const response = await caseUtil.getAllCreditorsOfDebtor(
+      caseTemp.debtor as any
+    );
+    const creditors = Array.from(
+      new Map(
+        response.map(creditor => [creditor.creditorId, creditor])
+      ).values()
+    );
+    caseUtil.getCreditorNames(updatedDebtor, req.body.extractedFields);
+    caseUtil.getScoresForAllCreditors(caseTemp, creditors);
+    return [true, updatedDebtor];
+  }
 }
 
 export default DebtorService;

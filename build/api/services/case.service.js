@@ -193,7 +193,7 @@ class CaseService {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
             if (req.query.all === 'true') {
-                getScores = await case_util_1.default.getScoresForAllCreditors(req, caseTemp, creditors);
+                getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
             }
             else {
                 if (req.body.creditorNames.length) {

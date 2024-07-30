@@ -21,5 +21,6 @@ router.get('/retryAuth/:id', authorize_middleware_1.default.validateAuth, debtor
 router.get('/retryCapture/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.retryCapture);
 router.get('/getAllDebtors', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getAllDebtors);
 router.post('/createDebtor', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createDebtor, debtor_controller_1.default.createDebtor);
+router.post('/addDocumentsToDebtor/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.addDocumentsToDebtor);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

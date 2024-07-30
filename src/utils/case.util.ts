@@ -1524,6 +1524,7 @@ class CaseUtil {
       debtor.id,
       extractedFields
     );
+    console.log(creditorNames);
     return creditorNames;
   }
 
@@ -1543,7 +1544,7 @@ class CaseUtil {
     return getScores;
   }
 
-  async getScoresForAllCreditors(req: Request, caseTemp: any, creditors: any) {
+  async getScoresForAllCreditors(caseTemp: any, creditors: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1556,6 +1557,7 @@ class CaseUtil {
       caseTemp,
       creditors
     );
+    console.log('scores', getScores);
     return getScores;
   }
 
