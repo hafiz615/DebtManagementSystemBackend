@@ -109,6 +109,9 @@ const debtorModel = new mongoose_1.Schema({
     paymentType: {
         type: String,
     },
+    createdBy: {
+        type: String,
+    },
     customerVaultId: {
         type: String,
     },

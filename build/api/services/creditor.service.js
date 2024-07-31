@@ -98,15 +98,15 @@ class CreditorService {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
         let clientDetails = await case_util_1.default.getCreditorDetails(req);
-        if (req.query.filter === 'true' || req.query.search === 'true') {
-            casesCount = clientDetails.caseHistory.length;
-        }
-        else {
-            casesCount = await this.caseRepository.getCount({
-                creditor: req.params.id,
-                isDeleted: false,
-            });
-        }
+        // if (req.query.filter === 'true' || req.query.search === 'true') {
+        //   casesCount = clientDetails.caseHistory.length;
+        // } else {
+        //   casesCount = await this.caseRepository.getCount<ICase>({
+        //     creditor: req.params.id,
+        //     isDeleted: false,
+        //   });
+        // }
+        casesCount = clientDetails.caseHistory.length;
         clientDetails.caseHistory = clientDetails.caseHistory.slice((page - 1) * limit, page * limit);
         if (!clientDetails) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
@@ -141,22 +141,22 @@ class CreditorService {
         }
         const pipeline = await case_util_1.default.getCreditorListingPipeline(req, match);
         const clientDetails = await this.caseRepository.applyAggregate(pipeline);
-        if (req.query.filter === 'true' || req.query.search === 'true') {
-            creditorsCount = clientDetails.length;
-        }
-        else {
-            if (keyword === 'viewCreditorsForSelf') {
-                const cases = await this.caseRepository.getAllWithoutPagination(countFilter);
-                const setCount = new Set();
-                for (const caseTemp of cases) {
-                    setCount.add(String(caseTemp.creditor));
-                }
-                creditorsCount = setCount.size;
-            }
-            else {
-                creditorsCount = await this.creditorRepository.getCount();
-            }
-        }
+        creditorsCount = clientDetails.length;
+        // if (req.query.filter === 'true' || req.query.search === 'true') {
+        //   creditorsCount = clientDetails.length;
+        // } else {
+        //   if (keyword === 'viewCreditorsForSelf') {
+        //     const cases =
+        //       await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
+        //     const setCount = new Set<string>();
+        //     for (const caseTemp of cases) {
+        //       setCount.add(String(caseTemp.creditor));
+        //     }
+        //     creditorsCount = setCount.size;
+        //   } else {
+        //     creditorsCount = await this.creditorRepository.getCount<ICreditor>();
+        //   }
+        // }
         const paginatedDetails = clientDetails.slice((page - 1) * limit, page * limit);
         return [
             true,

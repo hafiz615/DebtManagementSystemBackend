@@ -99,6 +99,9 @@ const debtorModel: Schema = new Schema({
   paymentType: {
     type: String,
   },
+  createdBy: {
+    type: String,
+  },
   customerVaultId: {
     type: String,
   },

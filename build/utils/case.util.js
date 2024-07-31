@@ -51,8 +51,11 @@ class CaseUtil {
             return contact._id;
         });
     }
-    async createDebtor(data) {
+    async createDebtor(req) {
+        const data = req.body;
+        const reqTemp = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
+        newDebtor.createdBy = reqTemp.id;
         const validatedDebtor = dataCopier_util_1.DataCopier.copy(newDebtor, data);
         return await this.debtRepository.create(validatedDebtor);
     }
@@ -240,7 +243,7 @@ class CaseUtil {
             // const debtorData = {
             //   ...body.debtor,
             // };
-            debtor = await this.createDebtor(body.debtor);
+            debtor = await this.createDebtor(body);
         }
         if (!getCreditor) {
             // contactIds = await this.createContacts(
@@ -993,8 +996,17 @@ class CaseUtil {
         }
         return filterConditions;
     }
-    async getClientListingPipeline(req, match) {
-        const filters = await this.getClientListingFilters(req);
+    async getClientListingPipeline(req, keyword) {
+        let match = { isDeleted: { $ne: true } };
+        let reqTemp = req;
+        if (keyword === 'viewClientsForSelf') {
+            match['$or'] = [
+                { caseOwnerId: reqTemp.id },
+                { negotiatorId: reqTemp.id },
+                { managerId: reqTemp.id },
+            ];
+        }
+        // const filters = await this.getClientListingFilters(req);
         const pipeline = [
             {
                 $match: match, // Filter out isDeleted cases
@@ -1011,12 +1023,9 @@ class CaseUtil {
                 $unwind: '$debtor',
             },
             {
-                $match: filters[1],
-            },
-            {
                 $group: {
                     _id: { $toString: '$debtor._id' },
-                    debtorName: { $first: '$debtor.basicInformation.fullName' },
+                    companyName: { $first: '$debtor.businessInformation.companyName' },
                     totalCases: { $sum: 1 },
                     totalCreditors: { $addToSet: '$creditor' },
                     totalDebt: { $sum: '$totalDebt' },
@@ -1027,21 +1036,100 @@ class CaseUtil {
                 $project: {
                     id: '$_id',
                     _id: 0,
-                    debtorName: 1,
+                    companyName: 1,
                     totalCases: 1,
                     totalCreditors: { $size: '$totalCreditors' }, // Count unique creditors
                     totalDebt: 1,
                     status: 1,
                 },
             },
-            {
-                $match: filters[0],
-            },
-            {
-                $sort: { id: -1 },
-            },
         ];
-        return pipeline;
+        const clientDetails = await this.caseRepository.applyAggregate(pipeline);
+        let allDebtors = [];
+        const clientIds = clientDetails.map(client => {
+            return client.id;
+        });
+        console.log(keyword);
+        if (keyword === 'viewClientsForSelf') {
+            const remainingDebtors = await this.debtRepository.getAllWithoutPagination({
+                _id: { $nin: clientIds },
+                createdBy: reqTemp.id,
+            });
+            console.log(remainingDebtors);
+            const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+                return {
+                    companyName: debtor.businessInformation.companyName,
+                    totalCases: 0,
+                    totalDebt: 0,
+                    status: debtor.basicInformation.status,
+                    id: String(debtor._id),
+                    totalCreditors: 0,
+                };
+            });
+            allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+        }
+        else {
+            const remainingDebtors = await this.debtRepository.getAllWithoutPagination({
+                _id: { $nin: clientIds },
+            });
+            const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+                return {
+                    companyName: debtor.businessInformation.companyName,
+                    totalCases: 0,
+                    totalDebt: 0,
+                    status: debtor.basicInformation.status,
+                    id: String(debtor._id),
+                    totalCreditors: 0,
+                };
+            });
+            allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+        }
+        if (allDebtors.length) {
+            allDebtors = await this.filterClientsListing(allDebtors, req);
+        }
+        allDebtors.sort((a, b) => (a.id < b.id ? 1 : -1));
+        return allDebtors.length ? allDebtors : [];
+    }
+    async filterClientsListing(clients, req) {
+        // Helper function to apply text search
+        const applyTextSearch = (client, text) => {
+            const regex = new RegExp(text, 'i');
+            return regex.test(client.companyName) || regex.test(client.status);
+        };
+        // Helper function to apply numeric/date filters
+        const applyFilters = (client, filters) => {
+            if (filters.totalDebt &&
+                (client.totalDebt < filters.totalDebt.min ||
+                    client.totalDebt > filters.totalDebt.max)) {
+                return false;
+            }
+            if (filters.totalCases &&
+                (client.totalCases < filters.totalCases.min ||
+                    client.totalCases > filters.totalCases.max)) {
+                return false;
+            }
+            if (filters.totalCreditors &&
+                (client.totalCreditors < filters.totalCreditors.min ||
+                    client.totalCreditors > filters.totalCreditors.max)) {
+                return false;
+            }
+            return true;
+        };
+        let text = '', filters = {};
+        if (req.query.search === 'true') {
+            text = req.body.text;
+        }
+        if (req.query.filter === 'true') {
+            filters = req.body.filter;
+        }
+        console.log(filters);
+        // Apply text search and filters
+        let filteredCaseHistory = clients.filter(client => {
+            const textMatches = !text || applyTextSearch(client, text);
+            const filtersMatch = Object.keys(filters).length === 0 || applyFilters(client, filters);
+            return textMatches && filtersMatch;
+        });
+        return filteredCaseHistory;
     }
     async getClientListingFilters(req) {
         const queryFilter = {};
@@ -1108,7 +1196,7 @@ class CaseUtil {
             {
                 $group: {
                     _id: { $toString: '$creditor._id' },
-                    creditorName: { $first: '$creditor.basicInformation.fullName' },
+                    companyName: { $first: '$creditor.businessInformation.companyName' },
                     totalCases: { $sum: 1 },
                     totalDebtors: { $addToSet: '$debtor' }, // Collect unique debtors
                     totalDebt: { $sum: '$totalDebt' },
@@ -1118,7 +1206,7 @@ class CaseUtil {
                 $project: {
                     id: '$_id',
                     _id: 0,
-                    creditorName: 1,
+                    companyName: 1,
                     totalCases: 1,
                     totalDebtors: { $size: '$totalDebtors' }, // Count unique debtors
                     totalDebt: 1,

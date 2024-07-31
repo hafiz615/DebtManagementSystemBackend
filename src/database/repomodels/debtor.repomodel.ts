@@ -29,6 +29,7 @@ export class Debtor {
   };
   paymentType = '';
   customerVaultId = '';
+  createdBy = '';
   contacts = Array<{
     name: '';
     title: '';

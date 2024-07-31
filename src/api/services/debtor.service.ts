@@ -82,6 +82,51 @@ class DebtorService {
 
   async listingDetails(req: Request) {
     let casesCount = 0;
+    const findCase = await this.caseRepository.getOne<ICase>({
+      debtor: req.params.id,
+    });
+    if (!findCase) {
+      const debtor = await this.debtorRepository.getById<IDebtor>(
+        req.params.id
+      );
+      const paymentCounts = {
+        failedPayments: 0,
+        failedAuthorizations: 0,
+        successfulPayments: 0,
+        successfulAuthorizations: 0,
+      };
+      const caseHistory = [];
+      const debtorObj = {
+        SSN: debtor.basicInformation.SSID ? debtor.basicInformation.SSID : '',
+        fullName: debtor.basicInformation.fullName
+          ? debtor.basicInformation.fullName
+          : '',
+        companyName: debtor.businessInformation.companyName
+          ? debtor.businessInformation.companyName
+          : '',
+        email: debtor.basicInformation.email
+          ? debtor.basicInformation.email
+          : '',
+        status: debtor.basicInformation.status
+          ? debtor.basicInformation.status
+          : '',
+        address: debtor.basicInformation.address
+          ? debtor.basicInformation.address
+          : '',
+        outstandingDebt: 0,
+        totalDebt: 0,
+      };
+      return [
+        true,
+        {
+          paymentCounts,
+          caseHistory,
+          debtorObj,
+          _id: debtor._id ? String(debtor._id) : '',
+          debtorTotalCases: casesCount,
+        },
+      ];
+    }
     let page = 1;
     let limit = 5;
 
@@ -93,14 +138,15 @@ class DebtorService {
       limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
     let clientDetails = await caseUtil.getClientDetails(req);
-    if (req.query.filter === 'true' || req.query.search === 'true') {
-      casesCount = clientDetails.caseHistory.length;
-    } else {
-      casesCount = await this.caseRepository.getCount<ICase>({
-        debtor: req.params.id,
-        isDeleted: false,
-      });
-    }
+    // if (req.query.filter === 'true' || req.query.search === 'true') {
+    //   casesCount = clientDetails.caseHistory.length;
+    // } else {
+    //   casesCount = await this.caseRepository.getCount<ICase>({
+    //     debtor: req.params.id,
+    //     isDeleted: false,
+    //   });
+    // }
+    casesCount = clientDetails.caseHistory.length;
     if (!clientDetails) {
       return [false, constants.notFoundMessage('Debtor')];
     }
@@ -115,7 +161,7 @@ class DebtorService {
     let debtorsCount: number = 0;
     let page = 1;
     let limit = 10;
-    let reqTemp: any = req;
+    // let reqTemp: any = req;
     // Check if pageNumber and pageSize are provided and valid
     if (req.query.page && !isNaN(Number(req.query.page))) {
       page = Number(req.query.page) ? Number(req.query.page) : page;
@@ -123,38 +169,57 @@ class DebtorService {
     if (req.query.limit && !isNaN(Number(req.query.limit))) {
       limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
-    let match = {isDeleted: {$ne: true}};
-    let countFilter = {};
-    if (keyword === 'viewClientsForSelf') {
-      match['$or'] = [
-        {caseOwnerId: reqTemp.id},
-        {negotiatorId: reqTemp.id},
-        {managerId: reqTemp.id},
-      ];
-      countFilter['$or'] = [
-        {caseOwnerId: reqTemp.id},
-        {negotiatorId: reqTemp.id},
-        {managerId: reqTemp.id},
-      ];
-    }
-    const pipeline: any = await caseUtil.getClientListingPipeline(req, match);
-    const clientDetails: any =
-      await this.caseRepository.applyAggregate<ICase>(pipeline);
-    if (req.query.filter === 'true' || req.query.search === 'true') {
-      debtorsCount = clientDetails.length;
-    } else {
-      if (keyword === 'viewClientsForSelf') {
-        const cases =
-          await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
-        const setCount = new Set<string>();
-        for (const caseTemp of cases) {
-          setCount.add(String(caseTemp.debtor));
-        }
-        debtorsCount = setCount.size;
-      } else {
-        debtorsCount = await this.debtorRepository.getCount<IDebtor>();
-      }
-    }
+    // let match = {isDeleted: {$ne: true}};
+    // let countFilter = {};
+    // if (keyword === 'viewClientsForSelf') {
+    //   countFilter['$or'] = [
+    //     {caseOwnerId: reqTemp.id},
+    //     {negotiatorId: reqTemp.id},
+    //     {managerId: reqTemp.id},
+    //   ];
+    // }
+    const clientDetails: any = await caseUtil.getClientListingPipeline(
+      req,
+      keyword
+    );
+    // const clientDetails: any =
+    //   await this.caseRepository.applyAggregate<ICase>(pipeline);
+    // const clientIds = clientDetails.map(client => {
+    //   return client.id;
+    // });
+    // console.log(clientIds, 'clientIds');
+    // const remainingDebtors =
+    //   await this.debtorRepository.getAllWithoutPagination<ICase>({
+    //     _id: {$nin: clientIds},
+    //   });
+    // const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+    //   return {
+    //     companyName: debtor.businessInformation.companyName,
+    //     totalCases: 0,
+    //     totalDebt: 0,
+    //     status: debtor.basicInformation.status,
+    //     id: String(debtor._id),
+    //     totalCreditors: 0,
+    //   };
+    // });
+    // const allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+    // console.log(allDebtors);
+    // if (req.query.filter === 'true' || req.query.search === 'true') {
+    //   debtorsCount = clientDetails.length;
+    // } else {
+    //   if (keyword === 'viewClientsForSelf') {
+    //     const cases =
+    //       await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
+    //     const setCount = new Set<string>();
+    //     for (const caseTemp of cases) {
+    //       setCount.add(String(caseTemp.debtor));
+    //     }
+    //     debtorsCount = setCount.size;
+    //   } else {
+    //     debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+    //   }
+    // }
+    debtorsCount = clientDetails.length;
     const paginatedDetails = clientDetails.slice(
       (page - 1) * limit,
       page * limit
@@ -409,7 +474,7 @@ class DebtorService {
       req.body.customerVaultId = customerVaultResponse[1];
     }
     if (!getDebtor) {
-      debtor = await caseUtil.createDebtor(req.body as IDebtor);
+      debtor = await caseUtil.createDebtor(req);
     }
     if (getDebtor) {
       debtor = await this.debtorRepository.updateById<IDebtor>(

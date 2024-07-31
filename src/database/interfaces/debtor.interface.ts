@@ -46,6 +46,7 @@ export interface IDebtor extends Document {
     zipCode: string;
   }>;
   documents: Array<IKeyFile>;
+  createdBy: string;
   paymentType: string;
   customerVaultId: string;
   totalCommission: number;
