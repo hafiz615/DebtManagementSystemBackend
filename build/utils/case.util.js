@@ -1044,51 +1044,56 @@ class CaseUtil {
                 },
             },
         ];
-        const clientDetails = await this.caseRepository.applyAggregate(pipeline);
-        let allDebtors = [];
-        const clientIds = clientDetails.map(client => {
-            return client.id;
-        });
-        console.log(keyword);
-        if (keyword === 'viewClientsForSelf') {
-            const remainingDebtors = await this.debtRepository.getAllWithoutPagination({
-                _id: { $nin: clientIds },
-                createdBy: reqTemp.id,
-            });
-            console.log(remainingDebtors);
-            const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
-                return {
-                    companyName: debtor.businessInformation.companyName,
-                    totalCases: 0,
-                    totalDebt: 0,
-                    status: debtor.basicInformation.status,
-                    id: String(debtor._id),
-                    totalCreditors: 0,
-                };
-            });
-            allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+        let clientDetails = await this.caseRepository.applyAggregate(pipeline);
+        // let allDebtors = [];
+        // const clientIds = clientDetails.map(client => {
+        //   return client.id;
+        // });
+        // if (keyword === 'viewClientsForSelf') {
+        //   const remainingDebtors =
+        //     await this.debtRepository.getAllWithoutPagination<IDebtor>({
+        //       _id: {$nin: clientIds},
+        //       createdBy: reqTemp.id,
+        //     });
+        //   console.log(remainingDebtors);
+        //   const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+        //     return {
+        //       companyName: debtor.businessInformation.companyName,
+        //       totalCases: 0,
+        //       totalDebt: 0,
+        //       status: debtor.basicInformation.status,
+        //       id: String(debtor._id),
+        //       totalCreditors: 0,
+        //     };
+        //   });
+        //   allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+        // } else {
+        //   const remainingDebtors =
+        //     await this.debtRepository.getAllWithoutPagination<IDebtor>({
+        //       _id: {$nin: clientIds},
+        //     });
+        //   const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+        //     return {
+        //       companyName: debtor.businessInformation.companyName,
+        //       totalCases: 0,
+        //       totalDebt: 0,
+        //       status: debtor.basicInformation.status,
+        //       id: String(debtor._id),
+        //       totalCreditors: 0,
+        //     };
+        //   });
+        //   allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+        // }
+        // if (allDebtors.length) {
+        //   allDebtors = await this.filterClientsListing(allDebtors, req);
+        // }
+        // allDebtors.sort((a, b) => (a.id < b.id ? 1 : -1));
+        // return allDebtors.length ? allDebtors : [];
+        if (clientDetails.length) {
+            clientDetails = await this.filterClientsListing(clientDetails, req);
         }
-        else {
-            const remainingDebtors = await this.debtRepository.getAllWithoutPagination({
-                _id: { $nin: clientIds },
-            });
-            const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
-                return {
-                    companyName: debtor.businessInformation.companyName,
-                    totalCases: 0,
-                    totalDebt: 0,
-                    status: debtor.basicInformation.status,
-                    id: String(debtor._id),
-                    totalCreditors: 0,
-                };
-            });
-            allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
-        }
-        if (allDebtors.length) {
-            allDebtors = await this.filterClientsListing(allDebtors, req);
-        }
-        allDebtors.sort((a, b) => (a.id < b.id ? 1 : -1));
-        return allDebtors.length ? allDebtors : [];
+        clientDetails.sort((a, b) => (a.id < b.id ? 1 : -1));
+        return clientDetails.length ? clientDetails : [];
     }
     async filterClientsListing(clients, req) {
         // Helper function to apply text search
