@@ -81,6 +81,12 @@ class CreditorService {
                 $push: { contacts: req.body.contact },
             });
         }
+        if (req.body.paymentToken && req.body.paymentType) {
+            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
+            if (!customerVaultResponse[0])
+                return customerVaultResponse;
+            creditor = await this.creditorRepository.updateById(req.params.id, { customerVaultId: customerVaultResponse[1] });
+        }
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }

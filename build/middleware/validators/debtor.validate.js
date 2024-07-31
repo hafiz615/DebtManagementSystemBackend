@@ -12,6 +12,8 @@ class DebtorRequests {
     constructor() {
         this.validateDebtor = (req, res, next) => {
             const schema = joi_1.default.object({
+                paymentToken: joi_1.default.string().optional().allow(''),
+                paymentType: joi_1.default.string().optional().allow(''),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),

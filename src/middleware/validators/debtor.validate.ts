@@ -8,6 +8,8 @@ dotenv.config();
 class DebtorRequests {
   validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
+      paymentToken: Joi.string().optional().allow(''),
+      paymentType: Joi.string().optional().allow(''),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),

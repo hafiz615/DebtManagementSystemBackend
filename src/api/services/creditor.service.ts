@@ -98,6 +98,16 @@ class CreditorService {
         }
       );
     }
+    if (req.body.paymentToken && req.body.paymentType) {
+      const customerVaultResponse = await caseUtil.createVault(
+        req.body.paymentToken
+      );
+      if (!customerVaultResponse[0]) return customerVaultResponse;
+      creditor = await this.creditorRepository.updateById<ICreditor>(
+        req.params.id,
+        {customerVaultId: customerVaultResponse[1]}
+      );
+    }
 
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
