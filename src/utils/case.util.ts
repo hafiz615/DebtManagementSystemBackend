@@ -30,6 +30,7 @@ import commonUtil from './common.util';
 import UploadUtil from './upload.util';
 import {AIAuth} from '../database/repomodels/global';
 import {AnyLengthString} from 'aws-sdk/clients/comprehend';
+import axiosInstance from './axiosInstanceInterceptor';
 const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -68,8 +69,11 @@ class CaseUtil {
     });
   }
 
-  async createDebtor(data: IDebtor) {
+  async createDebtor(req: Request) {
+    const data = req.body as IDebtor;
+    const reqTemp: any = req;
     const newDebtor = new Debtor();
+    newDebtor.createdBy = reqTemp.id;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }
@@ -230,18 +234,26 @@ class CaseUtil {
       creditorAccountTitle: obj.creditor.accountTitle
         ? obj.creditor.accountTitle
         : '',
+      accountTitleMapping: obj.creditor.accountTitleMapping
+        ? obj.creditor.accountTitleMapping
+        : [],
+      contractDetails: obj.contractDetails ? obj.contractDetails : null,
     }));
   }
 
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtorId, isDeleted: false},
-      'totalDebt caseCode status remaining',
+      'totalDebt caseCode status remaining contractDetails',
       undefined,
       undefined,
       {
         path: 'creditor',
-        select: ['basicInformation.fullName', 'accountTitle'],
+        select: [
+          'basicInformation.fullName',
+          'accountTitle',
+          'accountTitleMapping',
+        ],
       }
     );
     return cases;
@@ -299,7 +311,7 @@ class CaseUtil {
       // const debtorData = {
       //   ...body.debtor,
       // };
-      debtor = await this.createDebtor(body.debtor as IDebtor);
+      debtor = await this.createDebtor(body);
     }
     if (!getCreditor) {
       // contactIds = await this.createContacts(
@@ -365,7 +377,10 @@ class CaseUtil {
     //   );
     // }
     console.log('i am going to call AI');
-    const creditorNames: Array<string> = await this.getCreditorNames(debtor);
+    const creditorNames: Array<string> = await this.getCreditorNames(
+      debtor,
+      ''
+    );
     console.log(creditorNames, 'creditonamess');
     const findCreditor = creditorNames.includes(
       creditor.businessInformation.companyName
@@ -401,6 +416,7 @@ class CaseUtil {
     //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
     //       };
     // }
+    console.log(body);
     if (debtorFound) {
       const interval = body.intervals[0];
       debt = body.remaining;
@@ -412,8 +428,11 @@ class CaseUtil {
       isDeleted: false,
     });
     for (const caseTemp of cases) {
-      amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
-      debt += caseTemp.remaining;
+      console.log(caseTemp.intervals);
+      if (caseTemp.intervals.length) {
+        amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+        debt += caseTemp.remaining;
+      }
     }
     return amount >= weeklyBudget
       ? {
@@ -1111,9 +1130,18 @@ class CaseUtil {
     return filterConditions;
   }
 
-  async getClientListingPipeline(req: Request, match: {}) {
-    const filters = await this.getClientListingFilters(req);
-    const pipeline = [
+  async getClientListingPipeline(req: Request, keyword: string) {
+    let match = {isDeleted: {$ne: true}};
+    let reqTemp: any = req;
+    if (keyword === 'viewClientsForSelf') {
+      match['$or'] = [
+        {caseOwnerId: reqTemp.id},
+        {negotiatorId: reqTemp.id},
+        {managerId: reqTemp.id},
+      ];
+    }
+    // const filters = await this.getClientListingFilters(req);
+    const pipeline: any = [
       {
         $match: match, // Filter out isDeleted cases
       },
@@ -1129,12 +1157,9 @@ class CaseUtil {
         $unwind: '$debtor',
       },
       {
-        $match: filters[1],
-      },
-      {
         $group: {
           _id: {$toString: '$debtor._id'},
-          debtorName: {$first: '$debtor.basicInformation.fullName'},
+          companyName: {$first: '$debtor.businessInformation.companyName'},
           totalCases: {$sum: 1},
           totalCreditors: {$addToSet: '$creditor'},
           totalDebt: {$sum: '$totalDebt'},
@@ -1145,21 +1170,113 @@ class CaseUtil {
         $project: {
           id: '$_id',
           _id: 0,
-          debtorName: 1,
+          companyName: 1,
           totalCases: 1,
           totalCreditors: {$size: '$totalCreditors'}, // Count unique creditors
           totalDebt: 1,
           status: 1,
         },
       },
-      {
-        $match: filters[0],
-      },
-      {
-        $sort: {id: -1},
-      },
     ];
-    return pipeline;
+    const clientDetails: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
+    let allDebtors = [];
+    const clientIds = clientDetails.map(client => {
+      return client.id;
+    });
+    console.log(keyword);
+    if (keyword === 'viewClientsForSelf') {
+      const remainingDebtors =
+        await this.debtRepository.getAllWithoutPagination<IDebtor>({
+          _id: {$nin: clientIds},
+          createdBy: reqTemp.id,
+        });
+      console.log(remainingDebtors);
+      const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+        return {
+          companyName: debtor.businessInformation.companyName,
+          totalCases: 0,
+          totalDebt: 0,
+          status: debtor.basicInformation.status,
+          id: String(debtor._id),
+          totalCreditors: 0,
+        };
+      });
+      allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+    } else {
+      const remainingDebtors =
+        await this.debtRepository.getAllWithoutPagination<IDebtor>({
+          _id: {$nin: clientIds},
+        });
+      const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+        return {
+          companyName: debtor.businessInformation.companyName,
+          totalCases: 0,
+          totalDebt: 0,
+          status: debtor.basicInformation.status,
+          id: String(debtor._id),
+          totalCreditors: 0,
+        };
+      });
+      allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+    }
+    if (allDebtors.length) {
+      allDebtors = await this.filterClientsListing(allDebtors, req);
+    }
+    allDebtors.sort((a, b) => (a.id < b.id ? 1 : -1));
+    return allDebtors.length ? allDebtors : [];
+  }
+
+  async filterClientsListing(clients: any[], req: Request) {
+    // Helper function to apply text search
+    const applyTextSearch = (client: any, text: string | RegExp) => {
+      const regex = new RegExp(text, 'i');
+      return regex.test(client.companyName) || regex.test(client.status);
+    };
+
+    // Helper function to apply numeric/date filters
+    const applyFilters = (client: any, filters: any) => {
+      if (
+        filters.totalDebt &&
+        (client.totalDebt < filters.totalDebt.min ||
+          client.totalDebt > filters.totalDebt.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.totalCases &&
+        (client.totalCases < filters.totalCases.min ||
+          client.totalCases > filters.totalCases.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.totalCreditors &&
+        (client.totalCreditors < filters.totalCreditors.min ||
+          client.totalCreditors > filters.totalCreditors.max)
+      ) {
+        return false;
+      }
+      return true;
+    };
+    let text = '',
+      filters = {};
+    if (req.query.search === 'true') {
+      text = req.body.text;
+    }
+    if (req.query.filter === 'true') {
+      filters = req.body.filter;
+    }
+    console.log(filters);
+    // Apply text search and filters
+    let filteredCaseHistory = clients.filter(client => {
+      const textMatches = !text || applyTextSearch(client, text);
+      const filtersMatch =
+        Object.keys(filters).length === 0 || applyFilters(client, filters);
+      return textMatches && filtersMatch;
+    });
+
+    return filteredCaseHistory;
   }
 
   async getClientListingFilters(req: Request) {
@@ -1228,7 +1345,7 @@ class CaseUtil {
       {
         $group: {
           _id: {$toString: '$creditor._id'},
-          creditorName: {$first: '$creditor.basicInformation.fullName'},
+          companyName: {$first: '$creditor.businessInformation.companyName'},
           totalCases: {$sum: 1},
           totalDebtors: {$addToSet: '$debtor'}, // Collect unique debtors
           totalDebt: {$sum: '$totalDebt'},
@@ -1238,7 +1355,7 @@ class CaseUtil {
         $project: {
           id: '$_id',
           _id: 0,
-          creditorName: 1,
+          companyName: 1,
           totalCases: 1,
           totalDebtors: {$size: '$totalDebtors'}, // Count unique debtors
           totalDebt: 1,
@@ -1341,7 +1458,8 @@ class CaseUtil {
     documents: any,
     token: string,
     debtorName: string,
-    debtorId: string
+    debtorId: string,
+    extractedFields: any
   ) {
     const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
     const urls = [];
@@ -1351,20 +1469,21 @@ class CaseUtil {
         urls.push(url);
       }
       // Data to be sent in the body of the request
-      console.log(urls);
-      const data = urls;
-      const response = await axios.post(url, data, {
+      const data = {bank_statements: urls, extracted_fields: extractedFields};
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: token,
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data, 'creditorrr');
-      return response.data.error ? [] : response.data.creditor_names;
+      console.log('I am in create debtor');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
+      return response.data.error ? response.data.error : response.data;
     } catch (error) {
-      console.log(error);
-      return [];
+      console.log(error.message);
+      return error.message;
     }
   }
 
@@ -1377,26 +1496,32 @@ class CaseUtil {
     const url = `${baseUrlAI}get-scores?debtor_id=${String(
       caseTemp.debtor._id
     )}&commision_percentage=${comm}`;
-    console.log(url);
     let data = {};
-    console.log(creditors);
     for (const creditor of creditors) {
-      data[`${creditor.creditor.accountTitle}`] = {
-        total_debt: creditor.totalDebt,
-        remaining_debt: creditor.remaining,
-      };
+      const accountTitles = creditor.creditor.accountTitleMapping
+        ? creditor.creditor.accountTitleMapping
+        : [];
+      const accTitleObj = accountTitles.find(temp => {
+        return temp.caseId === String(creditor._id);
+      });
+      if (accTitleObj.accountTitle) {
+        data[`${accTitleObj.accountTitle}`] = {
+          total_debt: creditor.totalDebt,
+          remaining_debt: creditor.remaining,
+        };
+      }
     }
-    // }
-    console.log(data);
+    console.log('I am in getScoresAIForSelectedCreditors');
+    console.log('URL: ', url);
+    console.log('Payload: ', data);
     try {
-      const response = await axios.post(url, data, {
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: token,
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data, 'scoreeeee');
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
       return error.message;
@@ -1407,8 +1532,11 @@ class CaseUtil {
     const url = `${baseUrlAI}get-settlement-range?debtor_id=${String(
       caseTemp.debtor._id
     )}`;
+    console.log('I am in getSettlementRangeAI');
+    console.log('URL: ', url);
+    console.log('Payload: ', 'No payload for this call');
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         url,
         {},
         {
@@ -1446,12 +1574,14 @@ class CaseUtil {
 
   async getSummary(req: any, caseTemp: any) {
     if (
-      !req.session.auth_token ||
-      new Date(req.session.expires_in) <= new Date(commonUtil.getCurrentDate())
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const url = `${baseUrlAI}negotiator?human_input=${req.body.humanInput}&debtor_id=123&chat_id=${caseTemp.chatId}`;
+    const url = `${baseUrlAI}negotiator?human_input=${
+      req.body.humanInput
+    }&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
 
     const data = {
       debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
@@ -1461,7 +1591,7 @@ class CaseUtil {
       const response = await axios.post(url, data, {
         headers: {
           accept: 'application/json',
-          token: req.session.auth_token,
+          token: AIAuth.auth_token,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
@@ -1481,7 +1611,7 @@ class CaseUtil {
     }
   }
 
-  async getCreditorNames(debtor: IDebtor) {
+  async getCreditorNames(debtor: IDebtor, extractedFields: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1492,7 +1622,8 @@ class CaseUtil {
       debtor.documents,
       AIAuth.auth_token,
       debtor.businessInformation.companyName,
-      debtor.id
+      debtor.id,
+      extractedFields
     );
     console.log(creditorNames);
     return creditorNames;
@@ -1511,11 +1642,10 @@ class CaseUtil {
       caseTemp,
       creditors
     );
-    console.log(getScores);
     return getScores;
   }
 
-  async getScoresForAllCreditors(req: Request, caseTemp: any, creditors: any) {
+  async getScoresForAllCreditors(caseTemp: any, creditors: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1528,7 +1658,7 @@ class CaseUtil {
       caseTemp,
       creditors
     );
-    console.log(getScores);
+    console.log('scores', getScores);
     return getScores;
   }
 
@@ -1574,21 +1704,30 @@ class CaseUtil {
     )}&commision_percentage=${comm}`;
     let data = {};
     for (const creditor of creditors) {
-      data[`${creditor.creditorAccountTitle}`] = {
-        total_debt: creditor.totalDebt,
-        remaining_debt: creditor.remaining,
-      };
+      const accountTitles = creditor.accountTitleMapping
+        ? creditor.accountTitleMapping
+        : [];
+      const accTitleObj = accountTitles.find(temp => {
+        return temp.caseId === creditor.caseId;
+      });
+      if (accTitleObj.accountTitle) {
+        data[`${accTitleObj.accountTitle}`] = {
+          total_debt: creditor.totalDebt,
+          remaining_debt: creditor.remaining,
+        };
+      }
     }
-    console.log(data);
+    console.log('I am in getScoresAIForAllCreditors');
+    console.log('URL: ', url);
+    console.log('Payload: ', data);
     try {
-      const response = await axios.post(url, data, {
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: token,
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data, 'scoreeeee');
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
       return error.message;
@@ -1615,17 +1754,11 @@ class CaseUtil {
     const createdCases = [];
     const debtor = await this.debtRepository.getById<IDebtor>(req.params.id);
     for (const body of dataArray) {
-      console.log(body.creditor.basicInformation);
+      body.creditor.basicInformation.email =
+        body.creditor.basicInformation.email.toLowerCase();
       const getCreditor = await this.creditorRepository.getOne<ICreditor>({
-        $or: [
-          {
-            'basicInformation.email':
-              body.creditor.basicInformation.email.toLowerCase(),
-          },
-          {
-            'basicInformation.phone': body.creditor.basicInformation.phone,
-          },
-        ],
+        'businessInformation.companyName':
+          body.creditor.businessInformation.companyName,
       });
       if (body?.intervals) {
         let weeklyBudgetObj: {
@@ -1679,7 +1812,19 @@ class CaseUtil {
         // if (!caseCreated) {
         //   return [false, constantsUtil.failureAddMessage('case')];
         // }
-        if (caseCreated) createdCases.push(caseCreated);
+        if (caseCreated) {
+          createdCases.push(caseCreated);
+          const accountTitles = creditor.accountTitleMapping;
+          if (creditor.accountTitle) {
+            accountTitles.push({
+              caseId: String(caseCreated._id),
+              accountTitle: creditor.accountTitle,
+            });
+            await this.creditorRepository.updateById<ICreditor>(creditor._id, {
+              accountTitleMapping: accountTitles,
+            });
+          }
+        }
         if (caseCreated?.intervals && caseCreated?.intervals?.length) {
           await this.createPayment(caseCreated);
         }

@@ -19,6 +19,7 @@ export class Creditor {
   };
   creditorSecurityKey = '';
   accountTitle = '';
+  accountTitleMapping = Array<{caseId: ''; accountTitle: ''}>();
   paymentType = '';
   customerVaultId = '';
   contacts = Array<{

@@ -139,6 +139,9 @@ class CaseService {
       req.params.id,
       req.body
     );
+    if (req.body.intervals) {
+      await caseUtil.createPayment(caseUpdated);
+    }
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
@@ -357,17 +360,12 @@ class CaseService {
       ).values()
     );
     if (req.query.all === 'true') {
-      console.log(creditors, 'uniqeeee');
-      getScores = await caseUtil.getScoresForAllCreditors(
-        req,
-        caseTemp,
-        creditors
-      );
+      getScores = await caseUtil.getScoresForAllCreditors(caseTemp, creditors);
     } else {
       if (req.body.creditorNames.length) {
         const casesCreditors: any =
           await this.caseRepository.getAllWithoutPagination<ICase>(
-            {creditor: {$in: req.body.creditorNames}},
+            {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
             undefined,
             undefined,
             undefined,
@@ -377,7 +375,15 @@ class CaseService {
       }
     }
     const settlementRange = await caseUtil.getSettlementRange(caseTemp);
-    return [true, {getScores: getScores, settlementRange, creditors}];
+    return [
+      true,
+      {
+        getScores: getScores,
+        settlementRange: settlementRange,
+        creditors,
+        debtor: caseTemp.debtor,
+      },
+    ];
   };
 }
 

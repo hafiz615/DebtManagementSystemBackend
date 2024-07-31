@@ -9,6 +9,7 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const database_config_1 = require("./config/database.config");
 const base_route_1 = __importDefault(require("./api/routes/base.route"));
 const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
+const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware")); // Import the logging middleware
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -19,6 +20,7 @@ class App {
         this.app.use((0, cors_1.default)());
         this.app.use(body_parser_1.default.json());
         this.app.use(body_parser_1.default.urlencoded({ extended: false }));
+        this.app.use(logs_middleware_1.default); // Use the logging middleware
         (0, base_route_1.default)(this.app);
     }
     start() {

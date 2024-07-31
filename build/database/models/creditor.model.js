@@ -34,12 +34,10 @@ const creditorModel = new mongoose_1.Schema({
         email: {
             type: String,
             required: true,
-            unique: true,
         },
         phone: {
             type: String,
             required: true,
-            unique: true,
         },
     },
     businessInformation: {
@@ -77,6 +75,9 @@ const creditorModel = new mongoose_1.Schema({
     },
     accountTitle: {
         type: String,
+    },
+    accountTitleMapping: {
+        type: (Array),
     },
     paymentType: {
         type: String,

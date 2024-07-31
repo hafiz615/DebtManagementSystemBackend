@@ -52,8 +52,23 @@ class DebtorService {
                         $regex: new RegExp(text), // Case-insensitive match for phone
                     },
                 },
+                {
+                    'businessInformation.EIN': {
+                        $regex: new RegExp(text), // Case-insensitive match for phone
+                    },
+                },
+                {
+                    'businessInformation.companyName': {
+                        $regex: new RegExp(text, 'i'), // Case-insensitive match for phone
+                    },
+                },
             ],
         });
+        // const uploadUtil = new UploadUtil();
+        // for (let doc of debtor[0].documents) {
+        //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
+        //   console.log(url);
+        // }
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -61,6 +76,49 @@ class DebtorService {
     }
     async listingDetails(req) {
         let casesCount = 0;
+        const findCase = await this.caseRepository.getOne({
+            debtor: req.params.id,
+        });
+        if (!findCase) {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            const paymentCounts = {
+                failedPayments: 0,
+                failedAuthorizations: 0,
+                successfulPayments: 0,
+                successfulAuthorizations: 0,
+            };
+            const caseHistory = [];
+            const debtorObj = {
+                SSN: debtor.basicInformation.SSID ? debtor.basicInformation.SSID : '',
+                fullName: debtor.basicInformation.fullName
+                    ? debtor.basicInformation.fullName
+                    : '',
+                companyName: debtor.businessInformation.companyName
+                    ? debtor.businessInformation.companyName
+                    : '',
+                email: debtor.basicInformation.email
+                    ? debtor.basicInformation.email
+                    : '',
+                status: debtor.basicInformation.status
+                    ? debtor.basicInformation.status
+                    : '',
+                address: debtor.basicInformation.address
+                    ? debtor.basicInformation.address
+                    : '',
+                outstandingDebt: 0,
+                totalDebt: 0,
+            };
+            return [
+                true,
+                {
+                    paymentCounts,
+                    caseHistory,
+                    debtorObj,
+                    _id: debtor._id ? String(debtor._id) : '',
+                    debtorTotalCases: casesCount,
+                },
+            ];
+        }
         let page = 1;
         let limit = 5;
         // Check if pageNumber and pageSize are provided and valid
@@ -71,15 +129,15 @@ class DebtorService {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
         let clientDetails = await case_util_1.default.getClientDetails(req);
-        if (req.query.filter === 'true' || req.query.search === 'true') {
-            casesCount = clientDetails.caseHistory.length;
-        }
-        else {
-            casesCount = await this.caseRepository.getCount({
-                debtor: req.params.id,
-                isDeleted: false,
-            });
-        }
+        // if (req.query.filter === 'true' || req.query.search === 'true') {
+        //   casesCount = clientDetails.caseHistory.length;
+        // } else {
+        //   casesCount = await this.caseRepository.getCount<ICase>({
+        //     debtor: req.params.id,
+        //     isDeleted: false,
+        //   });
+        // }
+        casesCount = clientDetails.caseHistory.length;
         if (!clientDetails) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -90,7 +148,7 @@ class DebtorService {
         let debtorsCount = 0;
         let page = 1;
         let limit = 10;
-        let reqTemp = req;
+        // let reqTemp: any = req;
         // Check if pageNumber and pageSize are provided and valid
         if (req.query.page && !isNaN(Number(req.query.page))) {
             page = Number(req.query.page) ? Number(req.query.page) : page;
@@ -98,39 +156,54 @@ class DebtorService {
         if (req.query.limit && !isNaN(Number(req.query.limit))) {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
-        let match = { isDeleted: { $ne: true } };
-        let countFilter = {};
-        if (keyword === 'viewClientsForSelf') {
-            match['$or'] = [
-                { caseOwnerId: reqTemp.id },
-                { negotiatorId: reqTemp.id },
-                { managerId: reqTemp.id },
-            ];
-            countFilter['$or'] = [
-                { caseOwnerId: reqTemp.id },
-                { negotiatorId: reqTemp.id },
-                { managerId: reqTemp.id },
-            ];
-        }
-        const pipeline = await case_util_1.default.getClientListingPipeline(req, match);
-        const clientDetails = await this.caseRepository.applyAggregate(pipeline);
-        if (req.query.filter === 'true' || req.query.search === 'true') {
-            debtorsCount = clientDetails.length;
-        }
-        else {
-            if (keyword === 'viewClientsForSelf') {
-                const cases = await this.caseRepository.getAllWithoutPagination(countFilter);
-                const setCount = new Set();
-                for (const caseTemp of cases) {
-                    setCount.add(String(caseTemp.debtor));
-                }
-                debtorsCount = setCount.size;
-            }
-            else {
-                debtorsCount =
-                    await this.debtorRepository.getCount(countFilter);
-            }
-        }
+        // let match = {isDeleted: {$ne: true}};
+        // let countFilter = {};
+        // if (keyword === 'viewClientsForSelf') {
+        //   countFilter['$or'] = [
+        //     {caseOwnerId: reqTemp.id},
+        //     {negotiatorId: reqTemp.id},
+        //     {managerId: reqTemp.id},
+        //   ];
+        // }
+        const clientDetails = await case_util_1.default.getClientListingPipeline(req, keyword);
+        // const clientDetails: any =
+        //   await this.caseRepository.applyAggregate<ICase>(pipeline);
+        // const clientIds = clientDetails.map(client => {
+        //   return client.id;
+        // });
+        // console.log(clientIds, 'clientIds');
+        // const remainingDebtors =
+        //   await this.debtorRepository.getAllWithoutPagination<ICase>({
+        //     _id: {$nin: clientIds},
+        //   });
+        // const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+        //   return {
+        //     companyName: debtor.businessInformation.companyName,
+        //     totalCases: 0,
+        //     totalDebt: 0,
+        //     status: debtor.basicInformation.status,
+        //     id: String(debtor._id),
+        //     totalCreditors: 0,
+        //   };
+        // });
+        // const allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+        // console.log(allDebtors);
+        // if (req.query.filter === 'true' || req.query.search === 'true') {
+        //   debtorsCount = clientDetails.length;
+        // } else {
+        //   if (keyword === 'viewClientsForSelf') {
+        //     const cases =
+        //       await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
+        //     const setCount = new Set<string>();
+        //     for (const caseTemp of cases) {
+        //       setCount.add(String(caseTemp.debtor));
+        //     }
+        //     debtorsCount = setCount.size;
+        //   } else {
+        //     debtorsCount = await this.debtorRepository.getCount<IDebtor>();
+        //   }
+        // }
+        debtorsCount = clientDetails.length;
         const paginatedDetails = clientDetails.slice((page - 1) * limit, page * limit);
         return [
             true,
@@ -196,6 +269,14 @@ class DebtorService {
         if (req.body.contact) {
             debtor = await this.debtorRepository.updateById(req.params.id, {
                 $push: { contacts: req.body.contact },
+            });
+        }
+        if (req.body.paymentToken && req.body.paymentType) {
+            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
+            if (!customerVaultResponse[0])
+                return customerVaultResponse;
+            debtor = await this.debtorRepository.updateById(req.params.id, {
+                customerVaultId: customerVaultResponse[1],
             });
         }
         if (!debtor) {
@@ -296,29 +377,22 @@ class DebtorService {
         const getDebtor = await this.debtorRepository.getOne({
             $or: [
                 {
-                    'basicInformation.email': req.body.basicInformation.email.toLowerCase(),
-                },
-                {
-                    'basicInformation.SSID': req.body.basicInformation.SSID,
-                },
-                {
-                    'basicInformation.phone': req.body.basicInformation.phone,
-                },
-                {
                     'businessInformation.companyName': req.body.businessInformation.companyName,
+                },
+                {
+                    'businessInformation.EIN': req.body.businessInformation.EIN,
                 },
             ],
         });
         let debtor = null;
         if (req.body.paymentToken && req.body.paymentType) {
             const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
-            console.log(customerVaultResponse);
             if (!customerVaultResponse[0])
                 return customerVaultResponse;
             req.body.customerVaultId = customerVaultResponse[1];
         }
         if (!getDebtor) {
-            debtor = await case_util_1.default.createDebtor(req.body);
+            debtor = await case_util_1.default.createDebtor(req);
         }
         if (getDebtor) {
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
@@ -326,8 +400,39 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        const creditorNames = await case_util_1.default.getCreditorNames(debtor);
+        const creditorNames = await case_util_1.default.getCreditorNames(debtor, req.body.extractedFields);
         return [true, { debtor, creditorNames }];
+    }
+    async addDocumentsToDebtor(req) {
+        if (!req.body.documents) {
+            return [false, 'Documents are missing'];
+        }
+        if (!req.body.extractedFields) {
+            return [false, 'Extracted fields are missing'];
+        }
+        const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updatedDebtor = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+            $push: {
+                documents: {
+                    $each: req.body.documents,
+                },
+            },
+        });
+        if (!updatedDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        // for (let doc of findCase.documents) {
+        //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+        //   doc.url = url;
+        // }
+        const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
+        const creditors = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
+        case_util_1.default.getCreditorNames(updatedDebtor, req.body.extractedFields);
+        case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
+        return [true, updatedDebtor];
     }
 }
 exports.default = DebtorService;

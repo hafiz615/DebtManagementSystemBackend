@@ -24,6 +24,7 @@ class Creditor {
         };
         this.creditorSecurityKey = '';
         this.accountTitle = '';
+        this.accountTitleMapping = Array();
         this.paymentType = '';
         this.customerVaultId = '';
         this.contacts = Array();

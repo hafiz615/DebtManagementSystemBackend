@@ -37,6 +37,8 @@ class CreditorRequests {
         city: Joi.string().allow(''),
         zipCode: Joi.string().allow(''),
       }),
+      paymentToken: Joi.string().optional().allow(''),
+      paymentType: Joi.string().optional().allow(''),
       lastFundedDate: Joi.date().optional().allow(''),
       historicalRange: Joi.object({
         minimum: Joi.number().strict().optional(),

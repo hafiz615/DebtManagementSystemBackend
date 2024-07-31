@@ -57,12 +57,16 @@ class Authorize {
                     }
                     req.id = String(exists._id);
                     req.email = exists.email.toLowerCase();
-                    console.log(exists.role);
                     req.role = exists.role;
                     req.sessionId = decoded?.sessionId;
                     req.name = exists.name;
                     return next();
                 });
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.UNAUTHORIZED)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_REQUIRED));
             }
         };
         this.validateRole = (req, res, next) => {

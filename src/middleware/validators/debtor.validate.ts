@@ -8,6 +8,8 @@ dotenv.config();
 class DebtorRequests {
   validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
+      paymentToken: Joi.string().optional().allow(''),
+      paymentType: Joi.string().optional().allow(''),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -81,6 +83,7 @@ class DebtorRequests {
       ),
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
+      extractedFields: Joi.object().allow(null),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -89,9 +92,7 @@ class DebtorRequests {
           .required(),
         country: Joi.string().required(),
         state: Joi.string().required(),
-        status: Joi.string()
-          .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
-          .required(),
+        status: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()

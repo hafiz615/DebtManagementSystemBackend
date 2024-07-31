@@ -46,6 +46,7 @@ class RolesPermissionsService {
       await this.rolesPermissionsRepository.getAllWithoutPagination<IRolesPermissions>(
         {
           isDeleted: false,
+          name: {$ne: 'Super User'},
         }
       );
     if (!result.length) {

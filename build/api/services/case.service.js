@@ -84,6 +84,9 @@ class CaseService {
                 delete req.body.creditor;
             }
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (req.body.intervals) {
+                await case_util_1.default.createPayment(caseUpdated);
+            }
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
@@ -190,17 +193,24 @@ class CaseService {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
             if (req.query.all === 'true') {
-                console.log(creditors, 'uniqeeee');
-                getScores = await case_util_1.default.getScoresForAllCreditors(req, caseTemp, creditors);
+                getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
             }
             else {
                 if (req.body.creditorNames.length) {
-                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames } }, undefined, undefined, undefined, ['creditor']);
+                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: caseTemp.debtor }, undefined, undefined, undefined, ['creditor']);
                     getScores = await case_util_1.default.getScores(req, caseTemp, casesCreditors);
                 }
             }
             const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
-            return [true, { getScores: getScores, settlementRange, creditors }];
+            return [
+                true,
+                {
+                    getScores: getScores,
+                    settlementRange: settlementRange,
+                    creditors,
+                    debtor: caseTemp.debtor,
+                },
+            ];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();

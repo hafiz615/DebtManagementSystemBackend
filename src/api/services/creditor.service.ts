@@ -34,6 +34,11 @@ class CreditorService {
             $regex: new RegExp(text),
           },
         },
+        {
+          'businessInformation.companyName': {
+            $regex: new RegExp(text, 'i'),
+          },
+        },
       ],
     });
     if (!creditor) {
@@ -93,6 +98,16 @@ class CreditorService {
         }
       );
     }
+    if (req.body.paymentToken && req.body.paymentType) {
+      const customerVaultResponse = await caseUtil.createVault(
+        req.body.paymentToken
+      );
+      if (!customerVaultResponse[0]) return customerVaultResponse;
+      creditor = await this.creditorRepository.updateById<ICreditor>(
+        req.params.id,
+        {customerVaultId: customerVaultResponse[1]}
+      );
+    }
 
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
@@ -113,14 +128,15 @@ class CreditorService {
       limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
     }
     let clientDetails = await caseUtil.getCreditorDetails(req);
-    if (req.query.filter === 'true' || req.query.search === 'true') {
-      casesCount = clientDetails.caseHistory.length;
-    } else {
-      casesCount = await this.caseRepository.getCount<ICase>({
-        creditor: req.params.id,
-        isDeleted: false,
-      });
-    }
+    // if (req.query.filter === 'true' || req.query.search === 'true') {
+    //   casesCount = clientDetails.caseHistory.length;
+    // } else {
+    //   casesCount = await this.caseRepository.getCount<ICase>({
+    //     creditor: req.params.id,
+    //     isDeleted: false,
+    //   });
+    // }
+    casesCount = clientDetails.caseHistory.length;
     clientDetails.caseHistory = clientDetails.caseHistory.slice(
       (page - 1) * limit,
       page * limit
@@ -160,21 +176,22 @@ class CreditorService {
     const pipeline: any = await caseUtil.getCreditorListingPipeline(req, match);
     const clientDetails: any =
       await this.caseRepository.applyAggregate<ICase>(pipeline);
-    if (req.query.filter === 'true' || req.query.search === 'true') {
-      creditorsCount = clientDetails.length;
-    } else {
-      if (keyword === 'viewCreditorsForSelf') {
-        const cases =
-          await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
-        const setCount = new Set<string>();
-        for (const caseTemp of cases) {
-          setCount.add(String(caseTemp.creditor));
-        }
-        creditorsCount = setCount.size;
-      } else {
-        creditorsCount = await this.creditorRepository.getCount<ICreditor>();
-      }
-    }
+    creditorsCount = clientDetails.length;
+    // if (req.query.filter === 'true' || req.query.search === 'true') {
+    //   creditorsCount = clientDetails.length;
+    // } else {
+    //   if (keyword === 'viewCreditorsForSelf') {
+    //     const cases =
+    //       await this.caseRepository.getAllWithoutPagination<ICase>(countFilter);
+    //     const setCount = new Set<string>();
+    //     for (const caseTemp of cases) {
+    //       setCount.add(String(caseTemp.creditor));
+    //     }
+    //     creditorsCount = setCount.size;
+    //   } else {
+    //     creditorsCount = await this.creditorRepository.getCount<ICreditor>();
+    //   }
+    // }
     const paginatedDetails = clientDetails.slice(
       (page - 1) * limit,
       page * limit

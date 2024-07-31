@@ -34,6 +34,7 @@ class Debtor {
         };
         this.paymentType = '';
         this.customerVaultId = '';
+        this.createdBy = '';
         this.contacts = Array();
         this.documents = Array();
         this.totalCommission = 0;

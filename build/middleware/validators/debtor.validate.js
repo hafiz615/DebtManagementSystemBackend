@@ -12,6 +12,8 @@ class DebtorRequests {
     constructor() {
         this.validateDebtor = (req, res, next) => {
             const schema = joi_1.default.object({
+                paymentToken: joi_1.default.string().optional().allow(''),
+                paymentType: joi_1.default.string().optional().allow(''),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -79,6 +81,7 @@ class DebtorRequests {
                 }).optional()),
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
+                extractedFields: joi_1.default.object().allow(null),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -87,9 +90,7 @@ class DebtorRequests {
                         .required(),
                     country: joi_1.default.string().required(),
                     state: joi_1.default.string().required(),
-                    status: joi_1.default.string()
-                        .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
-                        .required(),
+                    status: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()

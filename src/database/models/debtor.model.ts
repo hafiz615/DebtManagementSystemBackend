@@ -10,12 +10,10 @@ const debtorModel: Schema = new Schema({
     email: {
       type: String,
       required: true,
-      unique: true,
     },
     SSID: {
       type: String,
       required: true,
-      unique: true,
     },
     country: {
       type: String,
@@ -31,12 +29,10 @@ const debtorModel: Schema = new Schema({
     },
     status: {
       type: String,
-      enum: ['Customer', 'On hold', 'Canceled', 'Declared Bankrupcy'],
     },
     phone: {
       type: String,
       required: true,
-      unique: true,
     },
     address: {
       type: String,
@@ -75,7 +71,6 @@ const debtorModel: Schema = new Schema({
     },
     phone: {
       type: String,
-      unique: true,
     },
     address: {
       type: String,
@@ -102,6 +97,9 @@ const debtorModel: Schema = new Schema({
     }>,
   },
   paymentType: {
+    type: String,
+  },
+  createdBy: {
     type: String,
   },
   customerVaultId: {

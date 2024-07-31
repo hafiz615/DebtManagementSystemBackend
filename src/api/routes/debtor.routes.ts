@@ -48,4 +48,10 @@ router.post(
   debtor.createDebtor,
   debtorController.createDebtor
 );
+router.post(
+  '/addDocumentsToDebtor/:id',
+  authorize.validateAuth,
+  debtorController.addDocumentsToDebtor
+);
+
 export default router;
