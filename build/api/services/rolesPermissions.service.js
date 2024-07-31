@@ -34,6 +34,7 @@ class RolesPermissionsService {
     async getAllRoles(req) {
         const result = await this.rolesPermissionsRepository.getAllWithoutPagination({
             isDeleted: false,
+            name: { $ne: 'Super User' },
         });
         if (!result.length) {
             return [false, constants_util_1.default.notFoundMessage('roles')];
