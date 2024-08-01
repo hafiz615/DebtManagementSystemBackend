@@ -82,6 +82,9 @@ const creditorModel: Schema = new Schema({
     type: Date,
     required: true,
   },
+  aggression: {
+    type: Number,
+  },
 });
 
 export const Creditor = mongoose.model<ICreditor>('Creditors', creditorModel);

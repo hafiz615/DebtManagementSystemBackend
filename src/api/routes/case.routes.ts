@@ -9,7 +9,7 @@ router.post(
   authorize.validateAuth,
   caseValidate.validateCase,
   caseController.createCase
-);
+); // not in current use
 
 router.get('/getAllCases', authorize.validateAuth, caseController.getAllCases);
 router.get(

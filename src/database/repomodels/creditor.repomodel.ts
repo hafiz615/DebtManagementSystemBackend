@@ -33,6 +33,7 @@ export class Creditor {
     city: '';
     zipCode: '';
   }>();
+  aggression: 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
