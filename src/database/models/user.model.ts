@@ -1,6 +1,8 @@
 import mongoose, {Schema} from 'mongoose';
 import {IUser} from '../interfaces/user.interface';
 import commonUtil from '../../utils/common.util';
+import asyncLocalStorage from '../../utils/localStorage.util';
+import UpdateLog from './updateLogs.model';
 
 const userModel: Schema = new Schema({
   name: {
@@ -70,5 +72,40 @@ userModel.pre('save', async function (next) {
     next(err as Error);
   }
 });
+
+const logUpdate = async function (next) {
+  const query = this.getQuery();
+  const update = this.getUpdate();
+  // Retrieve the document before update
+  const previousDoc = await this.model.findOne(query);
+  this.previousDoc = previousDoc;
+  next();
+};
+
+const logUpdatePost = async function (doc) {
+  let traceId = '';
+  const store = asyncLocalStorage.getStore();
+  if (store) {
+    traceId = store.get('traceId');
+  }
+  const previousDoc = this.previousDoc;
+  const logEntry = new UpdateLog({
+    traceId: traceId,
+    previousData: previousDoc,
+    currentData: doc,
+    model: this.model.modelName,
+  });
+  logEntry.save().catch(err => {
+    console.error('Error saving log entry', err);
+  });
+};
+
+userModel.pre('findOneAndUpdate', logUpdate);
+userModel.pre('updateMany', logUpdate);
+userModel.pre('updateOne', logUpdate);
+
+userModel.post('findOneAndUpdate', logUpdatePost);
+userModel.post('updateMany', logUpdatePost);
+userModel.post('updateOne', logUpdatePost);
 
 export const User = mongoose.model<IUser>('Users', userModel);

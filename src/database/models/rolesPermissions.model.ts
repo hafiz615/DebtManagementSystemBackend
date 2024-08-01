@@ -1,5 +1,7 @@
 import mongoose, {Schema} from 'mongoose';
 import {IRolesPermissions} from '../interfaces/rolesPermissions.interface';
+import asyncLocalStorage from '../../utils/localStorage.util';
+import UpdateLog from './updateLogs.model';
 
 const rolesPermissionsModel = new Schema({
   name: {
@@ -147,6 +149,41 @@ const rolesPermissionsModel = new Schema({
     required: true,
   },
 });
+
+const logUpdate = async function (next) {
+  const query = this.getQuery();
+  const update = this.getUpdate();
+  // Retrieve the document before update
+  const previousDoc = await this.model.findOne(query);
+  this.previousDoc = previousDoc;
+  next();
+};
+
+const logUpdatePost = async function (doc) {
+  let traceId = '';
+  const store = asyncLocalStorage.getStore();
+  if (store) {
+    traceId = store.get('traceId');
+  }
+  const previousDoc = this.previousDoc;
+  const logEntry = new UpdateLog({
+    traceId: traceId,
+    previousData: previousDoc,
+    currentData: doc,
+    model: this.model.modelName,
+  });
+  logEntry.save().catch(err => {
+    console.error('Error saving log entry', err);
+  });
+};
+
+rolesPermissionsModel.pre('findOneAndUpdate', logUpdate);
+rolesPermissionsModel.pre('updateMany', logUpdate);
+rolesPermissionsModel.pre('updateOne', logUpdate);
+
+rolesPermissionsModel.post('findOneAndUpdate', logUpdatePost);
+rolesPermissionsModel.post('updateMany', logUpdatePost);
+rolesPermissionsModel.post('updateOne', logUpdatePost);
 
 export const RolesPermissions = mongoose.model<IRolesPermissions>(
   'RolesPermissions',

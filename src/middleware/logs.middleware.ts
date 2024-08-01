@@ -2,6 +2,7 @@
 import {Request, Response, NextFunction} from 'express';
 import Log from '../database/models/logs.model';
 import commonUtil from '../utils/common.util';
+import asyncLocalStorage from '../utils/localStorage.util';
 
 const logMiddleware = (
   req: Request,
@@ -25,7 +26,13 @@ const logMiddleware = (
     } catch (error) {
       responsePayload = body;
     }
+    const store = asyncLocalStorage.getStore();
+    let traceId = '';
+    if (store) {
+      traceId = store.get('traceId');
+    }
     const logEntry = new Log({
+      traceId: traceId,
       ip: req.ip,
       url: req.originalUrl,
       method: req.method,

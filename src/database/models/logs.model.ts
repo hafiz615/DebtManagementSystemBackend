@@ -2,6 +2,8 @@
 import {Schema, model} from 'mongoose';
 
 const logSchema = new Schema({
+  traceId: String,
+  ip: String,
   url: String,
   method: String,
   requestPayload: Schema.Types.Mixed,

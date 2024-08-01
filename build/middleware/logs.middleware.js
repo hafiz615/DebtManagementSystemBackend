@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const logs_model_1 = __importDefault(require("../database/models/logs.model"));
 const common_util_1 = __importDefault(require("../utils/common.util"));
+const localStorage_util_1 = __importDefault(require("../utils/localStorage.util"));
 const logMiddleware = (req, res, next) => {
     const start = new Date(common_util_1.default.getCurrentDate()).getTime();
     // Capture the original send function
@@ -21,7 +22,13 @@ const logMiddleware = (req, res, next) => {
         catch (error) {
             responsePayload = body;
         }
+        const store = localStorage_util_1.default.getStore();
+        let traceId = '';
+        if (store) {
+            traceId = store.get('traceId');
+        }
         const logEntry = new logs_model_1.default({
+            traceId: traceId,
             ip: req.ip,
             url: req.originalUrl,
             method: req.method,

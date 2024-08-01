@@ -10,6 +10,7 @@ const database_config_1 = require("./config/database.config");
 const base_route_1 = __importDefault(require("./api/routes/base.route"));
 const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
 const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware")); // Import the logging middleware
+const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -21,6 +22,17 @@ class App {
         this.app.use(body_parser_1.default.json());
         this.app.use(body_parser_1.default.urlencoded({ extended: false }));
         this.app.use(logs_middleware_1.default); // Use the logging middleware
+        this.app.use((req, res, next) => {
+            const traceId = 'X-DMS' + Date.now().toString().substring(4);
+            localStorage_util_1.default.run(new Map(), () => {
+                const store = localStorage_util_1.default.getStore();
+                if (store) {
+                    store.set('traceId', traceId);
+                }
+                res.header('TraceId', traceId);
+                next();
+            });
+        });
         (0, base_route_1.default)(this.app);
     }
     start() {
@@ -28,7 +40,6 @@ class App {
         this.app.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
-        console.log('oko');
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();
         // paymentCronjob.testCron();

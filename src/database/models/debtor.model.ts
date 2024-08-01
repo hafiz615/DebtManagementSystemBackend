@@ -1,7 +1,9 @@
 import mongoose, {Schema} from 'mongoose';
 import {IDebtor} from '../interfaces/debtor.interface';
+import asyncLocalStorage from '../../utils/localStorage.util';
+import UpdateLog from './updateLogs.model';
 
-const debtorModel: Schema = new Schema({
+const debtorSchema: Schema = new Schema({
   basicInformation: {
     fullName: {
       type: String,
@@ -140,4 +142,41 @@ const debtorModel: Schema = new Schema({
   },
 });
 
-export const Debtor = mongoose.model<IDebtor>('Debtors', debtorModel);
+// Middleware for logging updates
+const logUpdate = async function (next) {
+  const query = this.getQuery();
+  const update = this.getUpdate();
+  console.log(this.model.modelName, 'this.model.modelName');
+  // Retrieve the document before update
+  const previousDoc = await this.model.findOne(query);
+  this.previousDoc = previousDoc;
+  next();
+};
+
+const logUpdatePost = async function (doc) {
+  let traceId = '';
+  const store = asyncLocalStorage.getStore();
+  if (store) {
+    traceId = store.get('traceId');
+  }
+  const previousDoc = this.previousDoc;
+  const logEntry = new UpdateLog({
+    traceId: traceId,
+    previousData: previousDoc,
+    currentData: doc,
+    model: this.model.modelName,
+  });
+  logEntry.save().catch(err => {
+    console.error('Error saving log entry', err);
+  });
+};
+
+debtorSchema.pre('findOneAndUpdate', logUpdate);
+debtorSchema.pre('updateMany', logUpdate);
+debtorSchema.pre('updateOne', logUpdate);
+
+debtorSchema.post('findOneAndUpdate', logUpdatePost);
+debtorSchema.post('updateMany', logUpdatePost);
+debtorSchema.post('updateOne', logUpdatePost);
+
+export const Debtor = mongoose.model<IDebtor>('Debtors', debtorSchema);

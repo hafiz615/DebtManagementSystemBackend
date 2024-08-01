@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // models/Log.ts
 const mongoose_1 = require("mongoose");
 const logSchema = new mongoose_1.Schema({
+    traceId: String,
+    ip: String,
     url: String,
     method: String,
     requestPayload: mongoose_1.Schema.Types.Mixed,
