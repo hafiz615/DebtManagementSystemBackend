@@ -46,6 +46,7 @@ class CreditorRequests {
       })
         .optional()
         .allow(null),
+      aggression: Joi.number().optional().min(0).max(10),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
