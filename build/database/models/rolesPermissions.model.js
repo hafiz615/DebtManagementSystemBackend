@@ -22,9 +22,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesPermissions = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
+const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
+const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const rolesPermissionsModel = new mongoose_1.Schema({
     name: {
         type: String,
@@ -171,5 +176,36 @@ const rolesPermissionsModel = new mongoose_1.Schema({
         required: true,
     },
 });
+const logUpdate = async function (next) {
+    const query = this.getQuery();
+    const update = this.getUpdate();
+    // Retrieve the document before update
+    const previousDoc = await this.model.findOne(query);
+    this.previousDoc = previousDoc;
+    next();
+};
+const logUpdatePost = async function (doc) {
+    let traceId = '';
+    const store = localStorage_util_1.default.getStore();
+    if (store) {
+        traceId = store.get('traceId');
+    }
+    const previousDoc = this.previousDoc;
+    const logEntry = new updateLogs_model_1.default({
+        traceId: traceId,
+        previousData: previousDoc,
+        currentData: doc,
+        model: this.model.modelName,
+    });
+    logEntry.save().catch(err => {
+        console.error('Error saving log entry', err);
+    });
+};
+rolesPermissionsModel.pre('findOneAndUpdate', logUpdate);
+rolesPermissionsModel.pre('updateMany', logUpdate);
+rolesPermissionsModel.pre('updateOne', logUpdate);
+rolesPermissionsModel.post('findOneAndUpdate', logUpdatePost);
+rolesPermissionsModel.post('updateMany', logUpdatePost);
+rolesPermissionsModel.post('updateOne', logUpdatePost);
 exports.RolesPermissions = mongoose_1.default.model('RolesPermissions', rolesPermissionsModel);
 //# sourceMappingURL=rolesPermissions.model.js.map
