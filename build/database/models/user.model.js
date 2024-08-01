@@ -29,6 +29,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
+const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
+const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const userModel = new mongoose_1.Schema({
     name: {
         type: String,
@@ -97,5 +99,36 @@ userModel.pre('save', async function (next) {
         next(err);
     }
 });
+const logUpdate = async function (next) {
+    const query = this.getQuery();
+    const update = this.getUpdate();
+    // Retrieve the document before update
+    const previousDoc = await this.model.findOne(query);
+    this.previousDoc = previousDoc;
+    next();
+};
+const logUpdatePost = async function (doc) {
+    let traceId = '';
+    const store = localStorage_util_1.default.getStore();
+    if (store) {
+        traceId = store.get('traceId');
+    }
+    const previousDoc = this.previousDoc;
+    const logEntry = new updateLogs_model_1.default({
+        traceId: traceId,
+        previousData: previousDoc,
+        currentData: doc,
+        model: this.model.modelName,
+    });
+    logEntry.save().catch(err => {
+        console.error('Error saving log entry', err);
+    });
+};
+userModel.pre('findOneAndUpdate', logUpdate);
+userModel.pre('updateMany', logUpdate);
+userModel.pre('updateOne', logUpdate);
+userModel.post('findOneAndUpdate', logUpdatePost);
+userModel.post('updateMany', logUpdatePost);
+userModel.post('updateOne', logUpdatePost);
 exports.User = mongoose_1.default.model('Users', userModel);
 //# sourceMappingURL=user.model.js.map

@@ -113,7 +113,7 @@ class DebtorService {
                 {
                     paymentCounts,
                     caseHistory,
-                    debtorObj,
+                    debtor: debtorObj,
                     _id: debtor._id ? String(debtor._id) : '',
                     debtorTotalCases: casesCount,
                 },
