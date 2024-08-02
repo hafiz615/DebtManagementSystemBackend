@@ -505,9 +505,9 @@ class DebtorService {
     if (!req.body.documents) {
       return [false, 'Documents are missing'];
     }
-    if (!req.body.extractedFields) {
-      return [false, 'Extracted fields are missing'];
-    }
+    // if (!req.body.extractedFields) {
+    //   return [false, 'Extracted fields are missing'];
+    // }
     const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -542,7 +542,7 @@ class DebtorService {
         response.map(creditor => [creditor.creditorId, creditor])
       ).values()
     );
-    caseUtil.getCreditorNames(updatedDebtor, req.body.extractedFields);
+    // caseUtil.getCreditorNames(updatedDebtor, req.body.extractedFields);
     caseUtil.getScoresForAllCreditors(caseTemp, creditors);
     return [true, updatedDebtor];
   }

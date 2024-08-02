@@ -59,10 +59,10 @@ class CaseService {
             if (!findCase) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            // for (let doc of findCase.documents) {
-            //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-            //   doc.url = url;
-            // }
+            for (let doc of findCase.debtor.documents) {
+                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+                doc.url = url;
+            }
             const creditors = await case_util_1.default.getAllCreditorsOfDebtor(findCase.debtor);
             const uniqueResult = Array.from(new Map(creditors.map(creditor => [creditor.creditorId, creditor])).values());
             const temp = await this.targetCFRepository.getOne({

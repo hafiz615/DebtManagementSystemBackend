@@ -95,7 +95,7 @@ class CaseService {
   };
 
   getCaseById = async (req: Request): Promise<[boolean, ICase | string]> => {
-    let findCase = await this.caseRepository.getById<ICase>(
+    let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
@@ -104,10 +104,10 @@ class CaseService {
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    // for (let doc of findCase.documents) {
-    //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-    //   doc.url = url;
-    // }
+    for (let doc of findCase.debtor.documents) {
+      const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+      doc.url = url;
+    }
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
       findCase.debtor as any
     );
