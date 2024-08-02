@@ -29,7 +29,7 @@ export class Case {
   contractDetails = {};
   confidence = 0;
   closeDate = '';
-  notes = '';
+  notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

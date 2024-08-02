@@ -1580,6 +1580,15 @@ class CaseUtil {
                 newCase.negotiatorId = id;
                 newCase.manager = name;
                 newCase.managerId = id;
+                body.notes = body?.notes
+                    ? [
+                        {
+                            userId: id,
+                            value: body?.notes,
+                            createdAt: common_util_1.default.getCurrentDate(),
+                        },
+                    ]
+                    : [];
                 newCase.chatId = (0, uuid_1.v4)();
                 newCase.caseCode = await this.getCaseCode();
                 const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
@@ -1628,6 +1637,7 @@ class CaseUtil {
         }
         return [false, 'Unable to create customer vault'];
     }
+
     async getSettlementRangeSummery(data) {
         const result = { Summary: {} };
         for (const key of Object.keys(data)) {
@@ -1651,6 +1661,18 @@ class CaseUtil {
         }
         return result;
     }
+  
+     async addNotes(req, id) {
+        return await this.caseRepository.updateById(req.params.id, {
+            $push: {
+                notes: {
+                    userId: id,
+                    value: req.body.notes,
+                    createdAt: common_util_1.default.getCurrentDate(),
+                },
+            },
+        });
+     }
 }
 exports.default = new CaseUtil();
 //# sourceMappingURL=case.util.js.map

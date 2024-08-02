@@ -1835,6 +1835,15 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
+        body.notes = body?.notes
+          ? [
+              {
+                userId: id,
+                value: body?.notes,
+                createdAt: commonUtil.getCurrentDate(),
+              },
+            ]
+          : [];
         newCase.chatId = v4();
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = DataCopier.copy(newCase, body);
@@ -1918,6 +1927,18 @@ class CaseUtil {
     }
 
     return result;
+  }
+  
+   async addNotes(req: Request, id: string) {
+    return await this.caseRepository.updateById<ICase>(req.params.id, {
+      $push: {
+        notes: {
+          userId: id,
+          value: req.body.notes,
+          createdAt: commonUtil.getCurrentDate(),
+        },
+      },
+    });
   }
 }
 export default new CaseUtil();

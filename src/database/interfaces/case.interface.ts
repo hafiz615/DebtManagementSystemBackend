@@ -1,4 +1,4 @@
-import mongoose, {Document} from 'mongoose';
+import mongoose, {Date, Document} from 'mongoose';
 
 // export interface IKeyFile {
 //   key: string;
@@ -11,6 +11,11 @@ export interface IInterval {
   startDate: string;
   frequency: number;
   timePeriod: string;
+}
+export interface INotes {
+  userId: string;
+  value: string;
+  createdAt: string;
 }
 export interface ICase extends Document {
   caseOwner: string;
@@ -33,7 +38,7 @@ export interface ICase extends Document {
   isDeleted: boolean;
   confidence: number;
   closeDate: string;
-  notes: string;
+  notes: Array<{userId: string; value: string; createdAt: string}>;
   chatId: string;
   createdAt: string;
   updatedAt: string;
