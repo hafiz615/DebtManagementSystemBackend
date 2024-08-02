@@ -27,7 +27,7 @@ class Case {
         this.contractDetails = {};
         this.confidence = 0;
         this.closeDate = '';
-        this.notes = '';
+        this.notes = Array();
         this.chatId = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

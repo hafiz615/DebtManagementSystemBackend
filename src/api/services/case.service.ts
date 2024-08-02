@@ -328,6 +328,7 @@ class CaseService {
     req: Request
   ): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
+
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
     const result = await caseUtil.createCreditorsCases(
@@ -384,6 +385,13 @@ class CaseService {
         debtor: caseTemp.debtor,
       },
     ];
+  };
+
+  addNotes = async (req: Request): Promise<[boolean, ICase | string]> => {
+    const reqTemp: any = req;
+    const result = await caseUtil.addNotes(req, reqTemp.id);
+    if (!result) return [false, result];
+    return [true, result];
   };
 }
 

@@ -83,4 +83,11 @@ router.post(
   caseController.getScoresSettlementRange
 );
 
+router.post(
+  '/addNotes/:id', // note will be added across case id
+  authorize.validateAuth,
+  caseValidate.validateAddNotes,
+  caseController.addNotes
+);
+
 export default router;

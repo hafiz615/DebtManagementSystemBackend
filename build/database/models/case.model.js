@@ -113,7 +113,7 @@ const caseModel = new mongoose_1.Schema({
         type: Date,
     },
     notes: {
-        type: String,
+        type: (Array),
     },
     chatId: {
         type: String,

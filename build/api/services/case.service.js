@@ -212,6 +212,13 @@ class CaseService {
                 },
             ];
         };
+        this.addNotes = async (req) => {
+            const reqTemp = req;
+            const result = await case_util_1.default.addNotes(req, reqTemp.id);
+            if (!result)
+                return [false, result];
+            return [true, result];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();

@@ -28,5 +28,7 @@ router.post('/getSettlementRange/:id', authorize_middleware_1.default.validateAu
 router.post('/getCreditorHistory', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCreditorHistory);
 router.post('/createCreditorsCases/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCreditorsCases, case_controller_1.default.createCreditorsCases);
 router.post('/getScoresSettlementRange/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRange);
+router.post('/addNotes/:id', // note will be added across case id
+authorize_middleware_1.default.validateAuth, case_validate_1.default.validateAddNotes, case_controller_1.default.addNotes);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

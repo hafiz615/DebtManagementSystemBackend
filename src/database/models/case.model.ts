@@ -1,5 +1,5 @@
 import mongoose, {Schema} from 'mongoose';
-import {ICase} from '../interfaces/case.interface';
+import {ICase, INotes} from '../interfaces/case.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 
@@ -86,7 +86,11 @@ const caseModel: Schema = new Schema({
     type: Date,
   },
   notes: {
-    type: String,
+    type: Array<{
+      userId: {type: String};
+      value: {type: String};
+      createdAt: {type: Date};
+    }>,
   },
   chatId: {
     type: String,
