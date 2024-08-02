@@ -98,6 +98,9 @@ const creditorModel = new mongoose_1.Schema({
         type: Date,
         required: true,
     },
+    aggression: {
+        type: Number,
+    },
 });
 const logUpdate = async function (next) {
     const query = this.getQuery();
