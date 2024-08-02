@@ -407,9 +407,9 @@ class DebtorService {
         if (!req.body.documents) {
             return [false, 'Documents are missing'];
         }
-        if (!req.body.extractedFields) {
-            return [false, 'Extracted fields are missing'];
-        }
+        // if (!req.body.extractedFields) {
+        //   return [false, 'Extracted fields are missing'];
+        // }
         const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
         if (!caseTemp) {
             return [false, constants_util_1.default.notFoundMessage('case')];
@@ -430,7 +430,7 @@ class DebtorService {
         // }
         const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
         const creditors = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
-        case_util_1.default.getCreditorNames(updatedDebtor, req.body.extractedFields);
+        // caseUtil.getCreditorNames(updatedDebtor, req.body.extractedFields);
         case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
         return [true, updatedDebtor];
     }

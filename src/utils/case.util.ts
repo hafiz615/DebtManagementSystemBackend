@@ -1678,6 +1678,33 @@ class CaseUtil {
       AIAuth.auth_token
     );
 
+    getSettlementRange.settlement_range = await this.getSettlementRangeSummery(
+      getSettlementRange.settlement_range
+    );
+
+    getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+      await this.getSettlementRangeSummery(
+        getSettlementRange.percentage_settlement_over_weekly_true_revenue
+      );
+
+    getSettlementRange.percentage_settlement_over_weekly_budget =
+      await this.getSettlementRangeSummery(
+        getSettlementRange.percentage_settlement_over_weekly_budget
+      );
+
+    getSettlementRange.new_default_risk_score =
+      await this.getSettlementRangeSummery(
+        getSettlementRange.new_default_risk_score
+      );
+
+    getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+      getSettlementRange.weeks_till_paid
+    );
+
+    getSettlementRange.commission_range = await this.getSettlementRangeSummery(
+      getSettlementRange.commission_range
+    );
+
     return getSettlementRange;
   }
 
@@ -1870,7 +1897,39 @@ class CaseUtil {
     return [false, 'Unable to create customer vault'];
   }
 
-  async addNotes(req: Request, id: string) {
+  async getSettlementRangeSummery(
+    data: Record<string, Record<string, number[]>>
+  ) {
+    const result: Record<string, any> = {Summary: {}};
+
+    for (const key of Object.keys(data)) {
+      for (const [recKey, values] of Object.entries(data[key])) {
+        if (Array.isArray(values) && values.length > 0) {
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+
+          if (!result[key]) {
+            result[key] = {};
+          }
+
+          result[key][recKey] = {min, max};
+
+          // Initialize the summary if not already done
+          if (!result.Summary[recKey]) {
+            result.Summary[recKey] = {min: 0, max: 0};
+          }
+
+          // Accumulate the values for summary
+          result.Summary[recKey].min += min;
+          result.Summary[recKey].max += max;
+        }
+      }
+    }
+
+    return result;
+  }
+  
+   async addNotes(req: Request, id: string) {
     return await this.caseRepository.updateById<ICase>(req.params.id, {
       $push: {
         notes: {
