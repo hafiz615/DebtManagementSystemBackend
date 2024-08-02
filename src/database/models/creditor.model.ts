@@ -84,6 +84,9 @@ const creditorModel: Schema = new Schema({
     type: Date,
     required: true,
   },
+  aggression: {
+    type: Number,
+  },
 });
 
 const logUpdate = async function (next) {

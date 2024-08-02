@@ -247,6 +247,7 @@ class CaseValidate {
         ),
       }),
       creditor: Joi.object({
+        aggression: Joi.number().optional().min(0).max(10),
         basicInformation: Joi.object({
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
@@ -333,6 +334,7 @@ class CaseValidate {
       data: Joi.array().items(
         Joi.object({
           creditor: Joi.object({
+            aggression: Joi.number().optional().min(0).max(10),
             paymentType: Joi.string().allow(''),
             paymentToken: Joi.string().allow(''),
             basicInformation: Joi.object({
