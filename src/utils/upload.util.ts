@@ -2,6 +2,7 @@ import {PutObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import AWS from 'aws-sdk';
 import caseUtil from './case.util';
 import dotenv from 'dotenv';
+import { isEmpty } from 'lodash';
 dotenv.config();
 class UploadUtil {
   private s3Client: S3Client;
@@ -47,11 +48,13 @@ class UploadUtil {
     return s3FileKeys;
   }
 
-  async getS3FileSignedUrl(key: string): Promise<string> {
+  async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
     let params = {
       Bucket: 'debt-settlement-documents',
       Key: key,
       Expires: 86400,
+      ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
+      ...(!isEmpty(downLoadable) && {ResponseContentType: 'application/pdf'}),
     };
     return await this.s3.getSignedUrlPromise('getObject', params);
   }
