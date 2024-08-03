@@ -26,7 +26,7 @@ const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
-const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
+const baseUrlAI = 'https://dms-ai.hpdemos.co/';
 class CaseUtil {
     constructor() {
         this.contactRepository = new contact_repository_1.ContactRepository();
@@ -1637,7 +1637,6 @@ class CaseUtil {
         }
         return [false, 'Unable to create customer vault'];
     }
-
     async getSettlementRangeSummery(data) {
         const result = { Summary: {} };
         for (const key of Object.keys(data)) {
@@ -1661,8 +1660,7 @@ class CaseUtil {
         }
         return result;
     }
-  
-     async addNotes(req, id) {
+    async addNotes(req, id) {
         return await this.caseRepository.updateById(req.params.id, {
             $push: {
                 notes: {
@@ -1672,7 +1670,7 @@ class CaseUtil {
                 },
             },
         });
-     }
+    }
 }
 exports.default = new CaseUtil();
 //# sourceMappingURL=case.util.js.map

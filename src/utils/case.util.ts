@@ -31,7 +31,7 @@ import UploadUtil from './upload.util';
 import {AIAuth} from '../database/repomodels/global';
 import {AnyLengthString} from 'aws-sdk/clients/comprehend';
 import axiosInstance from './axiosInstanceInterceptor';
-const baseUrlAI = 'https://dms-negotiation.hpdemos.co/';
+const baseUrlAI = 'https://dms-ai.hpdemos.co/';
 class CaseUtil {
   private contactRepository: ContactRepository;
   private debtRepository: DebtorRepository;

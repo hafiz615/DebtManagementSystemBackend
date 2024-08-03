@@ -105,7 +105,7 @@ class CaseService {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
     for (let doc of findCase.debtor.documents) {
-      const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+      const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, "application/pdf");
       doc.url = url;
     }
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
