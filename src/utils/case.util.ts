@@ -1928,8 +1928,8 @@ class CaseUtil {
 
     return result;
   }
-  
-   async addNotes(req: Request, id: string) {
+
+  async addNotes(req: Request, id: string) {
     return await this.caseRepository.updateById<ICase>(req.params.id, {
       $push: {
         notes: {
