@@ -1768,13 +1768,15 @@ class CaseUtil {
           getSettlementRange.percentage_settlement_over_weekly_budget
         );
     }
-    // if (getSettlementRange.new_default_risk_score) {
-    //   getSettlementRange.new_default_risk_score =
-    //     await this.getSettlementRangeSummery(
-    //       getSettlementRange.new_default_risk_score
-    //     );
-    // }
+    if (getSettlementRange.new_default_risk_score) {
+      getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
+        getSettlementRange.new_default_risk_score
+      );
+    }
     if (getSettlementRange.weeks_till_paid) {
+      getSettlementRange.weeks_till_paid = await this.transformData(
+        getSettlementRange.weeks_till_paid
+      );
       const result = await this.getSummaryWeeksTillPaid(
         getSettlementRange.weeks_till_paid
       );
@@ -1791,6 +1793,18 @@ class CaseUtil {
     }
 
     return getSettlementRange;
+  }
+
+  async riskScoreMapping(data: any) {
+    if (Object.keys(data).length) {
+      for (const key of Object.keys(data)) {
+        data[key] = {
+          min: Math.min(...data[key]),
+          max: Math.max(...data[key]),
+        };
+      }
+    }
+    return data;
   }
 
   async getCreditorHistory(req: any) {
@@ -2029,8 +2043,8 @@ class CaseUtil {
       Object.values(weeksTillPaid).forEach(company => {
         for (const key of Object.keys(company)) {
           if (company[key]) {
-            summary[key].min = Math.max(summary[key].min, company[key][0]);
-            summary[key].max = Math.max(summary[key].max, company[key][1]);
+            summary[key].min = Math.max(summary[key].min, company[key].min);
+            summary[key].max = Math.max(summary[key].max, company[key].max);
           }
         }
         // for (let i = 1; i <= Object.keys(company).length; i++) {
@@ -2044,6 +2058,22 @@ class CaseUtil {
       });
     }
     return summary;
+  }
+
+  async transformData(weeksTillPaid: any) {
+    if (Object.keys(weeksTillPaid).length) {
+      Object.values(weeksTillPaid).forEach(company => {
+        for (const key of Object.keys(company)) {
+          if (company[key]) {
+            company[key] = {
+              min: Math.min(...company[key]),
+              max: Math.max(...company[key]),
+            };
+          }
+        }
+      });
+    }
+    return weeksTillPaid;
   }
 
   async addNotes(req: Request, id: string) {
