@@ -188,44 +188,60 @@ class CaseService {
                 return [false, 'Query param missing'];
             }
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
-            let getScores = null;
-            let creditors = null;
-            const response = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
-            creditors = Array.from(new Map(response.map(creditor => [creditor.creditorId, creditor])).values());
-            if (req.query.all === 'true') {
-                getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
-            }
-            else {
-                if (req.body.creditorNames.length) {
-                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: caseTemp.debtor }, undefined, undefined, undefined, ['creditor']);
-                    console.log(casesCreditors);
-                    getScores = await case_util_1.default.getScores(req, caseTemp, casesCreditors);
-                }
-            }
+            // let getScores = null;
+            // let creditors = null;
+            // const response = await caseUtil.getAllCreditorsOfDebtor(
+            //   caseTemp.debtor as any
+            // );
+            // creditors = Array.from(
+            //   new Map(
+            //     response.map(creditor => [creditor.creditorId, creditor])
+            //   ).values()
+            // );
+            // if (req.query.all === 'true') {
+            //   getScores = await caseUtil.getScoresForAllCreditors(caseTemp, creditors);
+            // } else {
+            //   if (req.body.creditorNames.length) {
+            //     const casesCreditors: any =
+            //       await this.caseRepository.getAllWithoutPagination<ICase>(
+            //         {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
+            //         undefined,
+            //         undefined,
+            //         undefined,
+            //         ['creditor']
+            //       );
+            //     console.log(casesCreditors);
+            //     getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
+            //   }
+            // }
             const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
-            if (req.query.hardReload && req.query.hardReload === 'true') {
-                const debtor = caseTemp.debtor;
-                const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
-                return [
-                    true,
-                    {
-                        getScores: getScores,
-                        settlementRange: settlementRange,
-                        creditors,
-                        debtor: caseTemp.debtor,
-                        creditorNames,
-                    },
-                ];
-            }
-            return [
-                true,
-                {
-                    getScores: getScores,
-                    settlementRange: settlementRange,
-                    creditors,
-                    debtor: caseTemp.debtor,
-                },
-            ];
+            return [true, settlementRange];
+            // if (req.query.hardReload && req.query.hardReload === 'true') {
+            //   const debtor: any = caseTemp.debtor;
+            //   const creditorNames = await caseUtil.getCreditorNames(
+            //     debtor,
+            //     debtor.extractedFields
+            //   );
+            //   return [
+            //     true,
+            //     {
+            //       getScores: getScores,
+            //       settlementRange: settlementRange,
+            //       creditors,
+            //       debtor: caseTemp.debtor,
+            //       creditorNames,
+            //     },
+            //   ];
+            // }
+            // return [
+            //   true,
+            //   {
+            //     getScores: getScores,
+            //     settlementRange: settlementRange,
+            //     creditors,
+            //     debtor: caseTemp.debtor,
+            //   },
+            // ];
         };
         this.addNotes = async (req) => {
             const reqTemp = req;

@@ -353,59 +353,60 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
-    let getScores = null;
-    let creditors = null;
-    const response = await caseUtil.getAllCreditorsOfDebtor(
-      caseTemp.debtor as any
-    );
-    creditors = Array.from(
-      new Map(
-        response.map(creditor => [creditor.creditorId, creditor])
-      ).values()
-    );
-    if (req.query.all === 'true') {
-      getScores = await caseUtil.getScoresForAllCreditors(caseTemp, creditors);
-    } else {
-      if (req.body.creditorNames.length) {
-        const casesCreditors: any =
-          await this.caseRepository.getAllWithoutPagination<ICase>(
-            {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
-            undefined,
-            undefined,
-            undefined,
-            ['creditor']
-          );
-        console.log(casesCreditors);
-        getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
-      }
-    }
+    // let getScores = null;
+    // let creditors = null;
+    // const response = await caseUtil.getAllCreditorsOfDebtor(
+    //   caseTemp.debtor as any
+    // );
+    // creditors = Array.from(
+    //   new Map(
+    //     response.map(creditor => [creditor.creditorId, creditor])
+    //   ).values()
+    // );
+    // if (req.query.all === 'true') {
+    //   getScores = await caseUtil.getScoresForAllCreditors(caseTemp, creditors);
+    // } else {
+    //   if (req.body.creditorNames.length) {
+    //     const casesCreditors: any =
+    //       await this.caseRepository.getAllWithoutPagination<ICase>(
+    //         {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
+    //         undefined,
+    //         undefined,
+    //         undefined,
+    //         ['creditor']
+    //       );
+    //     console.log(casesCreditors);
+    //     getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
+    //   }
+    // }
     const settlementRange = await caseUtil.getSettlementRange(caseTemp);
-    if (req.query.hardReload && req.query.hardReload === 'true') {
-      const debtor: any = caseTemp.debtor;
-      const creditorNames = await caseUtil.getCreditorNames(
-        debtor,
-        debtor.extractedFields
-      );
-      return [
-        true,
-        {
-          getScores: getScores,
-          settlementRange: settlementRange,
-          creditors,
-          debtor: caseTemp.debtor,
-          creditorNames,
-        },
-      ];
-    }
-    return [
-      true,
-      {
-        getScores: getScores,
-        settlementRange: settlementRange,
-        creditors,
-        debtor: caseTemp.debtor,
-      },
-    ];
+    return [true, settlementRange];
+    // if (req.query.hardReload && req.query.hardReload === 'true') {
+    //   const debtor: any = caseTemp.debtor;
+    //   const creditorNames = await caseUtil.getCreditorNames(
+    //     debtor,
+    //     debtor.extractedFields
+    //   );
+    //   return [
+    //     true,
+    //     {
+    //       getScores: getScores,
+    //       settlementRange: settlementRange,
+    //       creditors,
+    //       debtor: caseTemp.debtor,
+    //       creditorNames,
+    //     },
+    //   ];
+    // }
+    // return [
+    //   true,
+    //   {
+    //     getScores: getScores,
+    //     settlementRange: settlementRange,
+    //     creditors,
+    //     debtor: caseTemp.debtor,
+    //   },
+    // ];
   };
 
   addNotes = async (req: Request): Promise<[boolean, ICase | string]> => {

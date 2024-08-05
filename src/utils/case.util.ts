@@ -1768,16 +1768,20 @@ class CaseUtil {
           getSettlementRange.percentage_settlement_over_weekly_budget
         );
     }
-    if (getSettlementRange.new_default_risk_score) {
-      getSettlementRange.new_default_risk_score =
-        await this.getSettlementRangeSummery(
-          getSettlementRange.new_default_risk_score
-        );
-    }
+    // if (getSettlementRange.new_default_risk_score) {
+    //   getSettlementRange.new_default_risk_score =
+    //     await this.getSettlementRangeSummery(
+    //       getSettlementRange.new_default_risk_score
+    //     );
+    // }
     if (getSettlementRange.weeks_till_paid) {
-      getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+      const result = await this.getSummaryWeeksTillPaid(
         getSettlementRange.weeks_till_paid
       );
+      getSettlementRange.weeks_till_paid.Summary = result;
+      // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+      //   getSettlementRange.weeks_till_paid
+      // );
     }
     if (getSettlementRange.commission_range) {
       getSettlementRange.commission_range =
@@ -1986,7 +1990,6 @@ class CaseUtil {
     data: Record<string, Record<string, number[]>>
   ) {
     const result: Record<string, any> = {Summary: {}};
-    console.log(data, 'dataaaaaa');
     if (data) {
       for (const key of Object.keys(data)) {
         for (const [recKey, values] of Object.entries(data[key])) {
@@ -2014,6 +2017,33 @@ class CaseUtil {
     }
 
     return result;
+  }
+
+  async getSummaryWeeksTillPaid(weeksTillPaid: any) {
+    const summary = {
+      'Weeks remaining based on recommendation 1': {min: 0, max: 0},
+      'Weeks remaining based on recommendation 2': {min: 0, max: 0},
+      'Weeks remaining based on recommendation 3': {min: 0, max: 0},
+    };
+    if (Object.keys(weeksTillPaid).length) {
+      Object.values(weeksTillPaid).forEach(company => {
+        for (const key of Object.keys(company)) {
+          if (company[key]) {
+            summary[key].min = Math.max(summary[key].min, company[key][0]);
+            summary[key].max = Math.max(summary[key].max, company[key][1]);
+          }
+        }
+        // for (let i = 1; i <= Object.keys(company).length; i++) {
+        //   const key = `Weeks remaining based on recommendation ${i}`;
+        //   console.log(company[i - 0]);
+        //   if (company[key]) {
+        //     summary[key].min = Math.max(summary[key].min, company[key][0]);
+        //     summary[key].max = Math.max(summary[key].max, company[key][1]);
+        //   }
+        // }
+      });
+    }
+    return summary;
   }
 
   async addNotes(req: Request, id: string) {
