@@ -198,6 +198,7 @@ class CaseService {
             else {
                 if (req.body.creditorNames.length) {
                     const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: caseTemp.debtor }, undefined, undefined, undefined, ['creditor']);
+                    console.log(casesCreditors);
                     getScores = await case_util_1.default.getScores(req, caseTemp, casesCreditors);
                 }
             }

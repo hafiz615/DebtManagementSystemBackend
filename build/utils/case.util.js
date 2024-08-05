@@ -1340,15 +1340,18 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === String(creditor._id);
             });
+            let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
             if (accTitleObj && accTitleObj.accountTitle) {
                 data[`${accTitleObj.accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
                     weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
-                    principle_amount: creditor.contractDetails.loan_amount,
+                    principle_amount: amount,
                 };
             }
         }
+        if (!Object.keys(data).length)
+            data = [];
         console.log('I am in getScoresAIForSelectedCreditors');
         console.log('URL: ', url);
         console.log('Payload: ', data);
@@ -1365,6 +1368,14 @@ class CaseUtil {
         catch (error) {
             return error.message;
         }
+    }
+    getCleanAmount(data) {
+        const cleanedAmount = data.replace(/\$|,/g, '');
+        let amount = parseInt(cleanedAmount, 10);
+        if (isNaN(amount)) {
+            amount = 0;
+        }
+        return amount;
     }
     async getSettlementRangeAI(caseTemp, token) {
         const url = `${process.env.baseUrlAI}get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
@@ -1557,15 +1568,18 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === creditor.caseId;
             });
+            let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
             if (accTitleObj && accTitleObj.accountTitle) {
                 data[`${accTitleObj.accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
                     weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
-                    principle_amount: creditor.contractDetails.loan_amount,
+                    principle_amount: amount,
                 };
             }
         }
+        if (!Object.keys(data).length)
+            data = [];
         console.log('I am in getScoresAIForAllCreditors');
         console.log('URL: ', url);
         console.log('Payload: ', data);

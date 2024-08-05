@@ -375,6 +375,7 @@ class CaseService {
             undefined,
             ['creditor']
           );
+        console.log(casesCreditors);
         getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
       }
     }
