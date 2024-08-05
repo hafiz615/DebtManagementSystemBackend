@@ -21,6 +21,9 @@ import mongoose from 'mongoose';
 import {ChatSummary} from '../../database/repomodels/chatSummary.repomodel';
 import {ChatSummaryRepository} from '../repository/chatSummary/chatSummary.repository';
 import {IChatSummary} from '../../database/interfaces/chatSummary.interface';
+import {UserRepository} from '../repository/user/user.repository';
+import {IUser} from '../../database/interfaces/user.interface';
+import commonUtil from '../../utils/common.util';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -30,6 +33,7 @@ class CaseService {
   private debtorRepository: DebtorRepository;
   private creditorRepository: CreditorRepository;
   private chatSummaryRepository: ChatSummaryRepository;
+  private userRepository: UserRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -39,6 +43,7 @@ class CaseService {
     this.debtorRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
     this.chatSummaryRepository = new ChatSummaryRepository();
+    this.userRepository = new UserRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -106,8 +111,8 @@ class CaseService {
     }
     for (let doc of findCase.debtor.documents) {
       const url = await this.uploadUtil.getS3FileSignedUrl(
-        doc.key,
-        'application/pdf'
+        doc.key
+        //'application/pdf'
       );
       doc.url = url;
     }
@@ -123,9 +128,27 @@ class CaseService {
       target: 'case',
       caseId: req.params.id,
     });
+
+    const updateNotesForm =
+      findCase.notes.length !== 0
+        ? await Promise.all(
+            findCase.notes.map(async note => {
+              const userName = await this.userRepository.getById<IUser>(
+                note.userId
+              );
+              return {
+                ...note,
+                userName: userName?.name ?? 'Unknown User', // Add a default name if user is not found
+              };
+            })
+          )
+        : [];
+
     const tempCase: any = findCase;
     tempCase['creditors'] = uniqueResult;
     tempCase['customFields'] = temp ? temp.customFields : [];
+    tempCase['notes'] = updateNotesForm ?? [];
+
     return [true, tempCase];
   };
 
@@ -409,8 +432,33 @@ class CaseService {
   };
 
   addNotes = async (req: Request): Promise<[boolean, ICase | string]> => {
+    let result;
     const reqTemp: any = req;
-    const result = await caseUtil.addNotes(req, reqTemp.id);
+    let findCase: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('Case')];
+    }
+
+    if (typeof findCase.notes === 'string') {
+      result = await this.caseRepository.updateById<ICase>(req.params.id, {
+        $set: {
+          notes: [
+            {
+              userId: reqTemp.id,
+              value: req.body.notes,
+              createdAt: commonUtil.getCurrentDate(),
+            },
+          ],
+        },
+      });
+    } else result = await caseUtil.addNotes(req, reqTemp.id);
+
     if (!result) return [false, result];
     return [true, result];
   };

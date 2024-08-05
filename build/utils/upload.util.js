@@ -7,7 +7,6 @@ const client_s3_1 = require("@aws-sdk/client-s3");
 const aws_sdk_1 = __importDefault(require("aws-sdk"));
 const case_util_1 = __importDefault(require("./case.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const lodash_1 = require("lodash");
 dotenv_1.default.config();
 class UploadUtil {
     constructor() {
@@ -46,13 +45,23 @@ class UploadUtil {
         await Promise.all(uploadPromises);
         return s3FileKeys;
     }
-    async getS3FileSignedUrl(key, downLoadable = null) {
+    // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
+    //   let params = {
+    //     Bucket: 'debt-settlement-documents',
+    //     Key: key,
+    //     Expires: 86400,
+    //     ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
+    //     ...(!isEmpty(downLoadable) && {ResponseContentType: 'application/pdf'}),
+    //   };
+    //   return await this.s3.getSignedUrlPromise('getObject', params);
+    // }
+    async getS3FileSignedUrl(key) {
         let params = {
             Bucket: 'debt-settlement-documents',
             Key: key,
             Expires: 86400,
-            ...(!(0, lodash_1.isEmpty)(downLoadable) && { ResponseContentDisposition: 'inline' }),
-            ...(!(0, lodash_1.isEmpty)(downLoadable) && { ResponseContentType: 'application/pdf' }),
+            ResponseContentDisposition: 'inline',
+            ResponseContentType: 'application/pdf',
         };
         return await this.s3.getSignedUrlPromise('getObject', params);
     }

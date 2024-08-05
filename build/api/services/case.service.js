@@ -14,6 +14,8 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const chatSummary_repomodel_1 = require("../../database/repomodels/chatSummary.repomodel");
 const chatSummary_repository_1 = require("../repository/chatSummary/chatSummary.repository");
+const user_repository_1 = require("../repository/user/user.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -60,7 +62,9 @@ class CaseService {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
             for (let doc of findCase.debtor.documents) {
-                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, 'application/pdf');
+                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key
+                //'application/pdf'
+                );
                 doc.url = url;
             }
             const creditors = await case_util_1.default.getAllCreditorsOfDebtor(findCase.debtor);
@@ -69,9 +73,19 @@ class CaseService {
                 target: 'case',
                 caseId: req.params.id,
             });
+            const updateNotesForm = findCase.notes.length !== 0
+                ? await Promise.all(findCase.notes.map(async (note) => {
+                    const userName = await this.userRepository.getById(note.userId);
+                    return {
+                        ...note,
+                        userName: userName?.name ?? 'Unknown User', // Add a default name if user is not found
+                    };
+                }))
+                : [];
             const tempCase = findCase;
             tempCase['creditors'] = uniqueResult;
             tempCase['customFields'] = temp ? temp.customFields : [];
+            tempCase['notes'] = updateNotesForm ?? [];
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
@@ -228,8 +242,27 @@ class CaseService {
             ];
         };
         this.addNotes = async (req) => {
+            let result;
             const reqTemp = req;
-            const result = await case_util_1.default.addNotes(req, reqTemp.id);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            if (typeof findCase.notes === 'string') {
+                result = await this.caseRepository.updateById(req.params.id, {
+                    $set: {
+                        notes: [
+                            {
+                                userId: reqTemp.id,
+                                value: req.body.notes,
+                                createdAt: common_util_1.default.getCurrentDate(),
+                            },
+                        ],
+                    },
+                });
+            }
+            else
+                result = await case_util_1.default.addNotes(req, reqTemp.id);
             if (!result)
                 return [false, result];
             return [true, result];
@@ -241,6 +274,7 @@ class CaseService {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.chatSummaryRepository = new chatSummary_repository_1.ChatSummaryRepository();
+        this.userRepository = new user_repository_1.UserRepository();
     }
     async deleteCase(req) {
         // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
