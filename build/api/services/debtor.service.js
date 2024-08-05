@@ -227,44 +227,58 @@ class DebtorService {
     async updateDebtor(req) {
         let debtor = null;
         if (req.body.basicInformation) {
-            const email = req.body.basicInformation.email.toLowerCase();
-            const getDebtor = await this.debtorRepository.getOne({
-                $or: [
-                    {
-                        'basicInformation.email': email,
-                    },
-                    {
-                        'basicInformation.SSID': req.body.basicInformation.SSID,
-                    },
-                    {
-                        'basicInformation.phone': req.body.basicInformation.phone,
-                    },
-                ],
-            });
-            if (getDebtor) {
-                if (getDebtor.basicInformation.email === email &&
-                    String(getDebtor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.email'),
-                    ];
-                }
-                if (getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
-                    String(getDebtor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.SSN'),
-                    ];
-                }
-                if (getDebtor.basicInformation.phone ===
-                    req.body.basicInformation.phone &&
-                    String(getDebtor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.phone'),
-                    ];
-                }
+            const getDebtor = await this.debtorRepository.getById(req.params.id);
+            if (!getDebtor) {
+                return [false, constants_util_1.default.notFoundMessage('Debtor')];
             }
+            // const email = req.body.basicInformation.email.toLowerCase();
+            // const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+            //   $or: [
+            //     {
+            //       'basicInformation.email': email,
+            //     },
+            //     {
+            //       'basicInformation.SSID': req.body.basicInformation.SSID,
+            //     },
+            //     {
+            //       'basicInformation.phone': req.body.basicInformation.phone,
+            //     },
+            //   ],
+            // });
+            // if (getDebtor) {
+            //   if (
+            //     getDebtor.basicInformation.email === email &&
+            //     String(getDebtor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage(
+            //         'Debtor with basicInformation.email'
+            //       ),
+            //     ];
+            //   }
+            //   if (
+            //     getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
+            //     String(getDebtor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
+            //     ];
+            //   }
+            //   if (
+            //     getDebtor.basicInformation.phone ===
+            //       req.body.basicInformation.phone &&
+            //     String(getDebtor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage(
+            //         'Debtor with basicInformation.phone'
+            //       ),
+            //     ];
+            //   }
+            // }
             if (getDebtor &&
                 req.body.basicInformation &&
                 req.body.basicInformation.weeklyBudget !==

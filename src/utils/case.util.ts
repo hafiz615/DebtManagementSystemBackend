@@ -417,8 +417,7 @@ class CaseUtil {
     //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
     //       };
     // }
-    console.log(body);
-    if (debtorFound) {
+    if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
       debt = body.remaining;
       amount = await this.getWeeklyAmount(interval);
