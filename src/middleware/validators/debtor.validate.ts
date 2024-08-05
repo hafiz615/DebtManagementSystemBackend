@@ -18,9 +18,7 @@ class DebtorRequests {
           .required(),
         country: Joi.string().required(),
         state: Joi.string().required(),
-        status: Joi.string()
-          .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
-          .required(),
+        status: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()

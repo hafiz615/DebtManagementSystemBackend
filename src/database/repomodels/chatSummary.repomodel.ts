@@ -1,3 +1,5 @@
+import commonUtil from '../../utils/common.util';
+
 export class ChatSummary {
   chatId = '';
   settlement_range_1 = {
@@ -21,4 +23,6 @@ export class ChatSummary {
     weeks_to_payoff_upper_bound: 0,
     reason: '',
   };
+  createdAt = commonUtil.getCurrentDate();
+  updatedAt = commonUtil.getCurrentDate();
 }

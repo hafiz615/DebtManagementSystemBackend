@@ -385,12 +385,13 @@ class DebtorService {
             ],
         });
         let debtor = null;
-        if (req.body.paymentToken && req.body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
-            if (!customerVaultResponse[0])
-                return customerVaultResponse;
-            req.body.customerVaultId = customerVaultResponse[1];
-        }
+        // if (req.body.paymentToken && req.body.paymentType) {
+        //   const customerVaultResponse = await caseUtil.createVault(
+        //     req.body.paymentToken
+        //   );
+        //   if (!customerVaultResponse[0]) return customerVaultResponse;
+        //   req.body.customerVaultId = customerVaultResponse[1];
+        // }
         if (!getDebtor) {
             debtor = await case_util_1.default.createDebtor(req);
         }

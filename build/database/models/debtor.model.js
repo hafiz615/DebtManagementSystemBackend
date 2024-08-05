@@ -120,6 +120,9 @@ const debtorSchema = new mongoose_1.Schema({
     customerVaultId: {
         type: String,
     },
+    extractedFields: {
+        type: mongoose_1.Schema.Types.Mixed,
+    },
     totalCommission: {
         type: Number,
         select: false,

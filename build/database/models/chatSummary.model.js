@@ -85,6 +85,14 @@ const SettlementRangeSchema = new mongoose_1.Schema({
             type: String,
         },
     },
+    createdAt: {
+        type: Date,
+        required: true,
+    },
+    updatedAt: {
+        type: Date,
+        required: true,
+    },
 });
 const logUpdate = async function (next) {
     const query = this.getQuery();

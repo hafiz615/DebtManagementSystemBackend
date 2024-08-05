@@ -23,4 +23,6 @@ export interface IChatSummary extends Document {
     weeks_to_payoff_upper_bound: number;
     reason: string;
   };
+  createdAt: string;
+  updatedAt: string;
 }

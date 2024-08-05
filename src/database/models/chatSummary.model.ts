@@ -58,6 +58,14 @@ const SettlementRangeSchema = new Schema({
       type: String,
     },
   },
+  createdAt: {
+    type: Date,
+    required: true,
+  },
+  updatedAt: {
+    type: Date,
+    required: true,
+  },
 });
 
 const logUpdate = async function (next) {

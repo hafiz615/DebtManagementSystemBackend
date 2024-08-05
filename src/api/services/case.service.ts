@@ -105,7 +105,10 @@ class CaseService {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
     for (let doc of findCase.debtor.documents) {
-      const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, "application/pdf");
+      const url = await this.uploadUtil.getS3FileSignedUrl(
+        doc.key,
+        'application/pdf'
+      );
       doc.url = url;
     }
     const creditors = await caseUtil.getAllCreditorsOfDebtor(
@@ -344,6 +347,9 @@ class CaseService {
     if (!req.query.all) {
       return [false, 'Query param missing'];
     }
+    if (!req.query.hardReload) {
+      return [false, 'Query param missing'];
+    }
     const caseTemp = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -376,6 +382,23 @@ class CaseService {
       }
     }
     const settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    if (req.query.hardReload === 'true') {
+      const debtor: any = caseTemp.debtor;
+      const creditorNames = await caseUtil.getCreditorNames(
+        debtor,
+        debtor.extractedFields
+      );
+      return [
+        true,
+        {
+          getScores: getScores,
+          settlementRange: settlementRange,
+          creditors,
+          debtor: caseTemp.debtor,
+          creditorNames,
+        },
+      ];
+    }
     return [
       true,
       {

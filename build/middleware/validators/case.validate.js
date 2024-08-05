@@ -189,9 +189,7 @@ class CaseValidate {
                         .required(),
                     country: joi_1.default.string().required(),
                     state: joi_1.default.string().required(),
-                    status: joi_1.default.string()
-                        .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
-                        .required(),
+                    status: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()

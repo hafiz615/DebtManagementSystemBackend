@@ -1512,6 +1512,8 @@ class CaseUtil {
         data[`${accTitleObj.accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
+          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          principle_amount: creditor.contractDetails.loan_amount,
         };
       }
     }
@@ -1745,6 +1747,8 @@ class CaseUtil {
         data[`${accTitleObj.accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
+          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          principle_amount: creditor.contractDetails.loan_amount,
         };
       }
     }
@@ -1928,8 +1932,8 @@ class CaseUtil {
 
     return result;
   }
-  
-   async addNotes(req: Request, id: string) {
+
+  async addNotes(req: Request, id: string) {
     return await this.caseRepository.updateById<ICase>(req.params.id, {
       $push: {
         notes: {

@@ -42,6 +42,7 @@ export class Debtor {
     zipCode: '';
   }>();
   documents = Array<{key: ''; originalFileName: ''; url: ''}>();
+  extractedFields = [];
   totalCommission = 0;
   commissionPaid = 0;
   weeklyCommission = 0;
