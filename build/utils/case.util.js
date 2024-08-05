@@ -1407,17 +1407,19 @@ class CaseUtil {
         }
         const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${id}`;
         try {
-            const response = await axios_1.default.post(url, {}, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
                 headers: {
                     accept: 'application/json',
                     token: global_1.AIAuth.auth_token,
                 },
             });
-            console.log(response.data, 'response.data');
-            return response.data.error ? response.data.error : response.data.response;
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data];
         }
         catch (error) {
-            return error.message;
+            return [false, error.message];
         }
     }
     async getFullProfitSettlement(id) {
@@ -1427,16 +1429,19 @@ class CaseUtil {
         }
         const url = `${process.env.baseUrlAI}get-full-profit-settlement?debtor_id=${id}`;
         try {
-            const response = await axios_1.default.post(url, {}, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
                 headers: {
                     accept: 'application/json',
                     token: global_1.AIAuth.auth_token,
                 },
             });
-            return response.data.error ? response.data.error : response.data.response;
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data];
         }
         catch (error) {
-            return error.message;
+            return [false, error.message];
         }
     }
     async getSummary(req, caseTemp) {
@@ -1457,10 +1462,13 @@ class CaseUtil {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
             });
-            return response.data.error ? [] : response.data.response;
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data.response];
         }
         catch (error) {
-            return [];
+            return [false, error.message];
         }
     }
     async getAIToken(username, partnerToken) {

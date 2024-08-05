@@ -1588,7 +1588,7 @@ class CaseUtil {
     }
     const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${id}`;
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         url,
         {},
         {
@@ -1598,10 +1598,12 @@ class CaseUtil {
           },
         }
       );
-      console.log(response.data, 'response.data');
-      return response.data.error ? response.data.error : response.data.response;
+      if (response.data && response.data.error) {
+        return [false, response.data.error];
+      }
+      return [true, response.data];
     } catch (error) {
-      return error.message;
+      return [false, error.message];
     }
   }
 
@@ -1614,7 +1616,7 @@ class CaseUtil {
     }
     const url = `${process.env.baseUrlAI}get-full-profit-settlement?debtor_id=${id}`;
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         url,
         {},
         {
@@ -1624,9 +1626,12 @@ class CaseUtil {
           },
         }
       );
-      return response.data.error ? response.data.error : response.data.response;
+      if (response.data && response.data.error) {
+        return [false, response.data.error];
+      }
+      return [true, response.data];
     } catch (error) {
-      return error.message;
+      return [false, error.message];
     }
   }
 
@@ -1653,9 +1658,12 @@ class CaseUtil {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      return response.data.error ? [] : response.data.response;
+      if (response.data && response.data.error) {
+        return [false, response.data.error];
+      }
+      return [true, response.data.response];
     } catch (error) {
-      return [];
+      return [false, error.message];
     }
   }
 

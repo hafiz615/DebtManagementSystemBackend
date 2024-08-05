@@ -547,26 +547,20 @@ class DebtorService {
     return [true, updatedDebtor];
   }
 
-  getLumpSumAmount = async (
-    req: Request
-  ): Promise<[boolean, {} | [] | string]> => {
+  getLumpSumAmount = async (req: Request) => {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) {
       return [false, constantsUtil.notFoundMessage('debtor')];
     }
-    const response = await caseUtil.getLumpSumAmount(req.params.id);
-    return [true, response];
+    return await caseUtil.getLumpSumAmount(req.params.id);
   };
 
-  getFullProfitSettlement = async (
-    req: Request
-  ): Promise<[boolean, {} | [] | string]> => {
+  getFullProfitSettlement = async (req: Request) => {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) {
       return [false, constantsUtil.notFoundMessage('debtor')];
     }
-    const response = await caseUtil.getFullProfitSettlement(req.params.id);
-    return [true, response];
+    return await caseUtil.getFullProfitSettlement(req.params.id);
   };
 }
 

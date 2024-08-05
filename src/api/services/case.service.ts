@@ -211,7 +211,7 @@ class CaseService {
   //   return [true, response];
   // };
 
-  getSummary = async (req: Request): Promise<[boolean, {} | string]> => {
+  getSummary = async (req: Request) => {
     const caseTemp = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -223,7 +223,7 @@ class CaseService {
     newSummary.chatId = caseTemp.chatId;
     const validatedSummary = DataCopier.copy(newSummary, response);
     await this.chatSummaryRepository.create(validatedSummary);
-    return [true, response];
+    return response;
   };
 
   getAIToken = async (req: Request): Promise<[boolean, {} | string]> => {
@@ -347,9 +347,6 @@ class CaseService {
     if (!req.query.all) {
       return [false, 'Query param missing'];
     }
-    if (!req.query.hardReload) {
-      return [false, 'Query param missing'];
-    }
     const caseTemp = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -382,7 +379,7 @@ class CaseService {
       }
     }
     const settlementRange = await caseUtil.getSettlementRange(caseTemp);
-    if (req.query.hardReload === 'true') {
+    if (req.query.hardReload && req.query.hardReload === 'true') {
       const debtor: any = caseTemp.debtor;
       const creditorNames = await caseUtil.getCreditorNames(
         debtor,

@@ -28,16 +28,14 @@ class DebtorService {
             if (!debtor) {
                 return [false, constants_util_2.default.notFoundMessage('debtor')];
             }
-            const response = await case_util_1.default.getLumpSumAmount(req.params.id);
-            return [true, response];
+            return await case_util_1.default.getLumpSumAmount(req.params.id);
         };
         this.getFullProfitSettlement = async (req) => {
             const debtor = await this.debtorRepository.getById(req.params.id);
             if (!debtor) {
                 return [false, constants_util_2.default.notFoundMessage('debtor')];
             }
-            const response = await case_util_1.default.getFullProfitSettlement(req.params.id);
-            return [true, response];
+            return await case_util_1.default.getFullProfitSettlement(req.params.id);
         };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();

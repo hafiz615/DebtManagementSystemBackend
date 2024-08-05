@@ -118,7 +118,7 @@ class CaseService {
             newSummary.chatId = caseTemp.chatId;
             const validatedSummary = dataCopier_util_1.DataCopier.copy(newSummary, response);
             await this.chatSummaryRepository.create(validatedSummary);
-            return [true, response];
+            return response;
         };
         this.getAIToken = async (req) => {
             const response = await case_util_1.default.getAIToken('test', 'test');
@@ -187,9 +187,6 @@ class CaseService {
             if (!req.query.all) {
                 return [false, 'Query param missing'];
             }
-            if (!req.query.hardReload) {
-                return [false, 'Query param missing'];
-            }
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             let getScores = null;
             let creditors = null;
@@ -205,7 +202,7 @@ class CaseService {
                 }
             }
             const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
-            if (req.query.hardReload === 'true') {
+            if (req.query.hardReload && req.query.hardReload === 'true') {
                 const debtor = caseTemp.debtor;
                 const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
                 return [
