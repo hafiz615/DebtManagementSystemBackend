@@ -31,7 +31,8 @@ import UploadUtil from './upload.util';
 import {AIAuth} from '../database/repomodels/global';
 import {AnyLengthString} from 'aws-sdk/clients/comprehend';
 import axiosInstance from './axiosInstanceInterceptor';
-const baseUrlAI = 'https://dms-ai.hpdemos.co/';
+import dotenv from 'dotenv';
+dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
   private debtRepository: DebtorRepository;
@@ -1465,7 +1466,7 @@ class CaseUtil {
     debtorId: string,
     extractedFields: any
   ) {
-    const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
+    const url = `${process.env.baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
     const urls = [];
     try {
       for (let doc of documents) {
@@ -1497,7 +1498,7 @@ class CaseUtil {
     caseTemp: any,
     creditors: any
   ) {
-    const url = `${baseUrlAI}get-scores?debtor_id=${String(
+    const url = `${process.env.baseUrlAI}get-scores?debtor_id=${String(
       caseTemp.debtor._id
     )}&commision_percentage=${comm}`;
     let data = {};
@@ -1508,7 +1509,7 @@ class CaseUtil {
       const accTitleObj = accountTitles.find(temp => {
         return temp.caseId === String(creditor._id);
       });
-      if (accTitleObj.accountTitle) {
+      if (accTitleObj && accTitleObj.accountTitle) {
         data[`${accTitleObj.accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
@@ -1535,9 +1536,9 @@ class CaseUtil {
   }
 
   async getSettlementRangeAI(caseTemp: any, token: string) {
-    const url = `${baseUrlAI}get-settlement-range?debtor_id=${String(
-      caseTemp.debtor._id
-    )}`;
+    const url = `${
+      process.env.baseUrlAI
+    }get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
     console.log('I am in getSettlementRangeAI');
     console.log('URL: ', url);
     console.log('Payload: ', 'No payload for this call');
@@ -1559,7 +1560,7 @@ class CaseUtil {
   }
 
   async getCreditorHistoryAI(creditorId: string, token: string) {
-    const url = `${baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
+    const url = `${process.env.baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
     try {
       const response = await axios.post(
         url,
@@ -1578,6 +1579,57 @@ class CaseUtil {
     }
   }
 
+  async getLumpSumAmount(id: string) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${id}`;
+    try {
+      const response = await axios.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: AIAuth.auth_token,
+          },
+        }
+      );
+      console.log(response.data, 'response.data');
+      return response.data.error ? response.data.error : response.data.response;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async getFullProfitSettlement(id: string) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${process.env.baseUrlAI}get-full-profit-settlement?debtor_id=${id}`;
+    try {
+      const response = await axios.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: AIAuth.auth_token,
+          },
+        }
+      );
+      return response.data.error ? response.data.error : response.data.response;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
   async getSummary(req: any, caseTemp: any) {
     if (
       !AIAuth.auth_token ||
@@ -1585,7 +1637,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const url = `${baseUrlAI}negotiator?human_input=${
+    const url = `${process.env.baseUrlAI}negotiator?human_input=${
       req.body.humanInput
     }&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
 
@@ -1608,7 +1660,7 @@ class CaseUtil {
   }
 
   async getAIToken(username: string, partnerToken: string) {
-    const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
+    const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
       const response = await axios.get(url);
       return response.data.error ? [] : response.data;
@@ -1679,33 +1731,41 @@ class CaseUtil {
       caseTemp,
       AIAuth.auth_token
     );
-
-    getSettlementRange.settlement_range = await this.getSettlementRangeSummery(
-      getSettlementRange.settlement_range
-    );
-
-    getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-      await this.getSettlementRangeSummery(
-        getSettlementRange.percentage_settlement_over_weekly_true_revenue
+    if (getSettlementRange.settlement_range) {
+      getSettlementRange.settlement_range =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.settlement_range
+        );
+    }
+    if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
+      getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.percentage_settlement_over_weekly_true_revenue
+        );
+    }
+    if (getSettlementRange.percentage_settlement_over_weekly_budget) {
+      getSettlementRange.percentage_settlement_over_weekly_budget =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.percentage_settlement_over_weekly_budget
+        );
+    }
+    if (getSettlementRange.new_default_risk_score) {
+      getSettlementRange.new_default_risk_score =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.new_default_risk_score
+        );
+    }
+    if (getSettlementRange.weeks_till_paid) {
+      getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+        getSettlementRange.weeks_till_paid
       );
-
-    getSettlementRange.percentage_settlement_over_weekly_budget =
-      await this.getSettlementRangeSummery(
-        getSettlementRange.percentage_settlement_over_weekly_budget
-      );
-
-    getSettlementRange.new_default_risk_score =
-      await this.getSettlementRangeSummery(
-        getSettlementRange.new_default_risk_score
-      );
-
-    getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-      getSettlementRange.weeks_till_paid
-    );
-
-    getSettlementRange.commission_range = await this.getSettlementRangeSummery(
-      getSettlementRange.commission_range
-    );
+    }
+    if (getSettlementRange.commission_range) {
+      getSettlementRange.commission_range =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.commission_range
+        );
+    }
 
     return getSettlementRange;
   }
@@ -1732,7 +1792,7 @@ class CaseUtil {
     caseTemp: any,
     creditors: any
   ) {
-    const url = `${baseUrlAI}get-scores?debtor_id=${String(
+    const url = `${process.env.baseUrlAI}get-scores?debtor_id=${String(
       caseTemp.debtor._id
     )}&commision_percentage=${comm}`;
     let data = {};
@@ -1743,7 +1803,7 @@ class CaseUtil {
       const accTitleObj = accountTitles.find(temp => {
         return temp.caseId === creditor.caseId;
       });
-      if (accTitleObj.accountTitle) {
+      if (accTitleObj && accTitleObj.accountTitle) {
         data[`${accTitleObj.accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
@@ -1770,7 +1830,7 @@ class CaseUtil {
   }
 
   async storeAuthToken(username: string, partnerToken: string): Promise<void> {
-    const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
+    const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
       const response = await axios.get(url);
       if (response && response.data) {
@@ -1905,27 +1965,29 @@ class CaseUtil {
     data: Record<string, Record<string, number[]>>
   ) {
     const result: Record<string, any> = {Summary: {}};
+    console.log(data, 'dataaaaaa');
+    if (data) {
+      for (const key of Object.keys(data)) {
+        for (const [recKey, values] of Object.entries(data[key])) {
+          if (Array.isArray(values) && values.length > 0) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
 
-    for (const key of Object.keys(data)) {
-      for (const [recKey, values] of Object.entries(data[key])) {
-        if (Array.isArray(values) && values.length > 0) {
-          const min = Math.min(...values);
-          const max = Math.max(...values);
+            if (!result[key]) {
+              result[key] = {};
+            }
 
-          if (!result[key]) {
-            result[key] = {};
+            result[key][recKey] = {min, max};
+
+            // Initialize the summary if not already done
+            if (!result.Summary[recKey]) {
+              result.Summary[recKey] = {min: 0, max: 0};
+            }
+
+            // Accumulate the values for summary
+            result.Summary[recKey].min += min;
+            result.Summary[recKey].max += max;
           }
-
-          result[key][recKey] = {min, max};
-
-          // Initialize the summary if not already done
-          if (!result.Summary[recKey]) {
-            result.Summary[recKey] = {min: 0, max: 0};
-          }
-
-          // Accumulate the values for summary
-          result.Summary[recKey].min += min;
-          result.Summary[recKey].max += max;
         }
       }
     }
