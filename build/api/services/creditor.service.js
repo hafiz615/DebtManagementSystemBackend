@@ -46,34 +46,46 @@ class CreditorService {
     async updateCreditor(req) {
         let creditor = null;
         if (req.body.basicInformation) {
-            const email = req.body.basicInformation.email.toLowerCase();
-            const getCreditor = await this.creditorRepository.getOne({
-                $or: [
-                    {
-                        'basicInformation.email': email,
-                    },
-                    {
-                        'basicInformation.phone': req.body.basicInformation.phone,
-                    },
-                ],
-            });
-            if (getCreditor) {
-                if (getCreditor.basicInformation.email === email &&
-                    String(getCreditor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Creditor with basicInformation.email'),
-                    ];
-                }
-                if (getCreditor.basicInformation.phone ===
-                    req.body.basicInformation.phone &&
-                    String(getCreditor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Creditor with basicInformation.phone'),
-                    ];
-                }
+            const getCreditor = await this.creditorRepository.getById(req.params.id);
+            if (!getCreditor) {
+                return [false, constants_util_1.default.notFoundMessage('Creditor')];
             }
+            // const email = req.body.basicInformation.email.toLowerCase();
+            // const getCreditor = await this.creditorRepository.getOne<ICreditor>({
+            //   $or: [
+            //     {
+            //       'basicInformation.email': email,
+            //     },
+            //     {
+            //       'basicInformation.phone': req.body.basicInformation.phone,
+            //     },
+            //   ],
+            // });
+            // if (getCreditor) {
+            //   if (
+            //     getCreditor.basicInformation.email === email &&
+            //     String(getCreditor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage(
+            //         'Creditor with basicInformation.email'
+            //       ),
+            //     ];
+            //   }
+            //   if (
+            //     getCreditor.basicInformation.phone ===
+            //       req.body.basicInformation.phone &&
+            //     String(getCreditor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage(
+            //         'Creditor with basicInformation.phone'
+            //       ),
+            //     ];
+            //   }
+            // }
             creditor = await this.creditorRepository.updateById(req.params.id, req.body);
         }
         if (req.body.contact) {
@@ -81,12 +93,16 @@ class CreditorService {
                 $push: { contacts: req.body.contact },
             });
         }
-        if (req.body.paymentToken && req.body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
-            if (!customerVaultResponse[0])
-                return customerVaultResponse;
-            creditor = await this.creditorRepository.updateById(req.params.id, { customerVaultId: customerVaultResponse[1] });
-        }
+        // if (req.body.paymentToken && req.body.paymentType) {
+        //   const customerVaultResponse = await caseUtil.createVault(
+        //     req.body.paymentToken
+        //   );
+        //   if (!customerVaultResponse[0]) return customerVaultResponse;
+        //   creditor = await this.creditorRepository.updateById<ICreditor>(
+        //     req.params.id,
+        //     {customerVaultId: customerVaultResponse[1]}
+        //   );
+        // }
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }

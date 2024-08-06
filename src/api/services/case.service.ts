@@ -234,7 +234,7 @@ class CaseService {
   //   return [true, response];
   // };
 
-  getSummary = async (req: Request): Promise<[boolean, {} | string]> => {
+  getSummary = async (req: Request) => {
     const caseTemp = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -246,7 +246,7 @@ class CaseService {
     newSummary.chatId = caseTemp.chatId;
     const validatedSummary = DataCopier.copy(newSummary, response);
     await this.chatSummaryRepository.create(validatedSummary);
-    return [true, response];
+    return response;
   };
 
   getAIToken = async (req: Request): Promise<[boolean, {} | string]> => {
@@ -398,10 +398,28 @@ class CaseService {
             undefined,
             ['creditor']
           );
+        console.log(casesCreditors);
         getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
       }
     }
     const settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    if (req.query.hardReload && req.query.hardReload === 'true') {
+      const debtor: any = caseTemp.debtor;
+      const creditorNames = await caseUtil.getCreditorNames(
+        debtor,
+        debtor.extractedFields
+      );
+      return [
+        true,
+        {
+          getScores: getScores,
+          settlementRange: settlementRange,
+          creditors,
+          debtor: caseTemp.debtor,
+          creditorNames,
+        },
+      ];
+    }
     return [
       true,
       {

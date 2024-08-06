@@ -132,7 +132,7 @@ class CaseService {
             newSummary.chatId = caseTemp.chatId;
             const validatedSummary = dataCopier_util_1.DataCopier.copy(newSummary, response);
             await this.chatSummaryRepository.create(validatedSummary);
-            return [true, response];
+            return response;
         };
         this.getAIToken = async (req) => {
             const response = await case_util_1.default.getAIToken('test', 'test');
@@ -212,10 +212,25 @@ class CaseService {
             else {
                 if (req.body.creditorNames.length) {
                     const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: caseTemp.debtor }, undefined, undefined, undefined, ['creditor']);
+                    console.log(casesCreditors);
                     getScores = await case_util_1.default.getScores(req, caseTemp, casesCreditors);
                 }
             }
             const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+            if (req.query.hardReload && req.query.hardReload === 'true') {
+                const debtor = caseTemp.debtor;
+                const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
+                return [
+                    true,
+                    {
+                        getScores: getScores,
+                        settlementRange: settlementRange,
+                        creditors,
+                        debtor: caseTemp.debtor,
+                        creditorNames,
+                    },
+                ];
+            }
             return [
                 true,
                 {

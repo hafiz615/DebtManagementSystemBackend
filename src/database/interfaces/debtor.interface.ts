@@ -48,6 +48,7 @@ export interface IDebtor extends Document {
   documents: Array<IKeyFile>;
   createdBy: string;
   paymentType: string;
+  extractedFields: any;
   customerVaultId: string;
   totalCommission: number;
   commissionPaid: number;

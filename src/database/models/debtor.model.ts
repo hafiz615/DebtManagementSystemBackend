@@ -107,6 +107,9 @@ const debtorSchema: Schema = new Schema({
   customerVaultId: {
     type: String,
   },
+  extractedFields: {
+    type: Schema.Types.Mixed,
+  },
   totalCommission: {
     type: Number,
     select: false,

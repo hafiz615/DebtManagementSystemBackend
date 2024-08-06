@@ -53,5 +53,16 @@ router.post(
   authorize.validateAuth,
   debtorController.addDocumentsToDebtor
 );
+router.get(
+  '/getLumpSumAmount/:id',
+  authorize.validateAuth,
+  debtorController.getLumpSumAmount
+);
+
+router.get(
+  '/getFullProfitSettlement/:id',
+  authorize.validateAuth,
+  debtorController.getFullProfitSettlement
+);
 
 export default router;

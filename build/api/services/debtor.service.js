@@ -23,6 +23,20 @@ class DebtorService {
             }
             return [true, debtors];
         };
+        this.getLumpSumAmount = async (req) => {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            if (!debtor) {
+                return [false, constants_util_2.default.notFoundMessage('debtor')];
+            }
+            return await case_util_1.default.getLumpSumAmount(req.params.id);
+        };
+        this.getFullProfitSettlement = async (req) => {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            if (!debtor) {
+                return [false, constants_util_2.default.notFoundMessage('debtor')];
+            }
+            return await case_util_1.default.getFullProfitSettlement(req.params.id);
+        };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -213,44 +227,58 @@ class DebtorService {
     async updateDebtor(req) {
         let debtor = null;
         if (req.body.basicInformation) {
-            const email = req.body.basicInformation.email.toLowerCase();
-            const getDebtor = await this.debtorRepository.getOne({
-                $or: [
-                    {
-                        'basicInformation.email': email,
-                    },
-                    {
-                        'basicInformation.SSID': req.body.basicInformation.SSID,
-                    },
-                    {
-                        'basicInformation.phone': req.body.basicInformation.phone,
-                    },
-                ],
-            });
-            if (getDebtor) {
-                if (getDebtor.basicInformation.email === email &&
-                    String(getDebtor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.email'),
-                    ];
-                }
-                if (getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
-                    String(getDebtor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.SSN'),
-                    ];
-                }
-                if (getDebtor.basicInformation.phone ===
-                    req.body.basicInformation.phone &&
-                    String(getDebtor._id) !== req.params.id) {
-                    return [
-                        false,
-                        constants_util_1.default.alreadyExistsMessage('Debtor with basicInformation.phone'),
-                    ];
-                }
+            const getDebtor = await this.debtorRepository.getById(req.params.id);
+            if (!getDebtor) {
+                return [false, constants_util_1.default.notFoundMessage('Debtor')];
             }
+            // const email = req.body.basicInformation.email.toLowerCase();
+            // const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+            //   $or: [
+            //     {
+            //       'basicInformation.email': email,
+            //     },
+            //     {
+            //       'basicInformation.SSID': req.body.basicInformation.SSID,
+            //     },
+            //     {
+            //       'basicInformation.phone': req.body.basicInformation.phone,
+            //     },
+            //   ],
+            // });
+            // if (getDebtor) {
+            //   if (
+            //     getDebtor.basicInformation.email === email &&
+            //     String(getDebtor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage(
+            //         'Debtor with basicInformation.email'
+            //       ),
+            //     ];
+            //   }
+            //   if (
+            //     getDebtor.basicInformation.SSID === req.body.basicInformation.SSID &&
+            //     String(getDebtor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage('Debtor with basicInformation.SSN'),
+            //     ];
+            //   }
+            //   if (
+            //     getDebtor.basicInformation.phone ===
+            //       req.body.basicInformation.phone &&
+            //     String(getDebtor._id) !== req.params.id
+            //   ) {
+            //     return [
+            //       false,
+            //       constants.alreadyExistsMessage(
+            //         'Debtor with basicInformation.phone'
+            //       ),
+            //     ];
+            //   }
+            // }
             if (getDebtor &&
                 req.body.basicInformation &&
                 req.body.basicInformation.weeklyBudget !==
@@ -385,12 +413,13 @@ class DebtorService {
             ],
         });
         let debtor = null;
-        if (req.body.paymentToken && req.body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
-            if (!customerVaultResponse[0])
-                return customerVaultResponse;
-            req.body.customerVaultId = customerVaultResponse[1];
-        }
+        // if (req.body.paymentToken && req.body.paymentType) {
+        //   const customerVaultResponse = await caseUtil.createVault(
+        //     req.body.paymentToken
+        //   );
+        //   if (!customerVaultResponse[0]) return customerVaultResponse;
+        //   req.body.customerVaultId = customerVaultResponse[1];
+        // }
         if (!getDebtor) {
             debtor = await case_util_1.default.createDebtor(req);
         }

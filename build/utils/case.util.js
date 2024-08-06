@@ -26,7 +26,8 @@ const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
-const baseUrlAI = 'https://dms-ai.hpdemos.co/';
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class CaseUtil {
     constructor() {
         this.contactRepository = new contact_repository_1.ContactRepository();
@@ -338,8 +339,7 @@ class CaseUtil {
         //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
         //       };
         // }
-        console.log(body);
-        if (debtorFound) {
+        if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
             debt = body.remaining;
             amount = await this.getWeeklyAmount(interval);
@@ -1303,7 +1303,7 @@ class CaseUtil {
             };
     }
     async getCreditorNamesAI(documents, token, debtorName, debtorId, extractedFields) {
-        const url = `${baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
+        const url = `${process.env.baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
         const urls = [];
         try {
             for (let doc of documents) {
@@ -1330,7 +1330,7 @@ class CaseUtil {
         }
     }
     async getScoresAI(comm, token, caseTemp, creditors) {
-        const url = `${baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
+        const url = `${process.env.baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
         let data = {};
         for (const creditor of creditors) {
             const accountTitles = creditor.creditor.accountTitleMapping
@@ -1339,13 +1339,18 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === String(creditor._id);
             });
-            if (accTitleObj.accountTitle) {
+            let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
+            if (accTitleObj && accTitleObj.accountTitle) {
                 data[`${accTitleObj.accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
+                    weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+                    principle_amount: amount,
                 };
             }
         }
+        if (!Object.keys(data).length)
+            data = [];
         console.log('I am in getScoresAIForSelectedCreditors');
         console.log('URL: ', url);
         console.log('Payload: ', data);
@@ -1363,8 +1368,16 @@ class CaseUtil {
             return error.message;
         }
     }
+    getCleanAmount(data) {
+        const cleanedAmount = data.replace(/\$|,/g, '');
+        let amount = parseInt(cleanedAmount, 10);
+        if (isNaN(amount)) {
+            amount = 0;
+        }
+        return amount;
+    }
     async getSettlementRangeAI(caseTemp, token) {
-        const url = `${baseUrlAI}get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
+        const url = `${process.env.baseUrlAI}get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
         console.log('I am in getSettlementRangeAI');
         console.log('URL: ', url);
         console.log('Payload: ', 'No payload for this call');
@@ -1382,7 +1395,7 @@ class CaseUtil {
         }
     }
     async getCreditorHistoryAI(creditorId, token) {
-        const url = `${baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
+        const url = `${process.env.baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
         try {
             const response = await axios_1.default.post(url, {}, {
                 headers: {
@@ -1397,12 +1410,56 @@ class CaseUtil {
             return [];
         }
     }
+    async getLumpSumAmount(id) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${id}`;
+        try {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
+                headers: {
+                    accept: 'application/json',
+                    token: global_1.AIAuth.auth_token,
+                },
+            });
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data];
+        }
+        catch (error) {
+            return [false, error.message];
+        }
+    }
+    async getFullProfitSettlement(id) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const url = `${process.env.baseUrlAI}get-full-profit-settlement?debtor_id=${id}`;
+        try {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
+                headers: {
+                    accept: 'application/json',
+                    token: global_1.AIAuth.auth_token,
+                },
+            });
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data];
+        }
+        catch (error) {
+            return [false, error.message];
+        }
+    }
     async getSummary(req, caseTemp) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const url = `${baseUrlAI}negotiator?human_input=${req.body.humanInput}&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
+        const url = `${process.env.baseUrlAI}negotiator?human_input=${req.body.humanInput}&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
         const data = {
             debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
             financial_health_summary: req.body.financialHealthSummary,
@@ -1415,14 +1472,17 @@ class CaseUtil {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
             });
-            return response.data.error ? [] : response.data.response;
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data.response];
         }
         catch (error) {
-            return [];
+            return [false, error.message];
         }
     }
     async getAIToken(username, partnerToken) {
-        const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
+        const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
         try {
             const response = await axios_1.default.get(url);
             return response.data.error ? [] : response.data;
@@ -1463,16 +1523,45 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        getSettlementRange.settlement_range = await this.getSettlementRangeSummery(getSettlementRange.settlement_range);
-        getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-            await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_true_revenue);
-        getSettlementRange.percentage_settlement_over_weekly_budget =
-            await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_budget);
-        getSettlementRange.new_default_risk_score =
-            await this.getSettlementRangeSummery(getSettlementRange.new_default_risk_score);
-        getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(getSettlementRange.weeks_till_paid);
-        getSettlementRange.commission_range = await this.getSettlementRangeSummery(getSettlementRange.commission_range);
+        if (getSettlementRange.settlement_range) {
+            getSettlementRange.settlement_range =
+                await this.getSettlementRangeSummery(getSettlementRange.settlement_range);
+        }
+        if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
+            getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+                await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_true_revenue);
+        }
+        if (getSettlementRange.percentage_settlement_over_weekly_budget) {
+            getSettlementRange.percentage_settlement_over_weekly_budget =
+                await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_budget);
+        }
+        if (getSettlementRange.new_default_risk_score) {
+            getSettlementRange.new_default_risk_score = await this.riskScoreMapping(getSettlementRange.new_default_risk_score);
+        }
+        if (getSettlementRange.weeks_till_paid) {
+            getSettlementRange.weeks_till_paid = await this.transformData(getSettlementRange.weeks_till_paid);
+            const result = await this.getSummaryWeeksTillPaid(getSettlementRange.weeks_till_paid);
+            getSettlementRange.weeks_till_paid.Summary = result;
+            // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+            //   getSettlementRange.weeks_till_paid
+            // );
+        }
+        if (getSettlementRange.commission_range) {
+            getSettlementRange.commission_range =
+                await this.getSettlementRangeSummery(getSettlementRange.commission_range);
+        }
         return getSettlementRange;
+    }
+    async riskScoreMapping(data) {
+        if (Object.keys(data).length) {
+            for (const key of Object.keys(data)) {
+                data[key] = {
+                    min: Math.min(...data[key]),
+                    max: Math.max(...data[key]),
+                };
+            }
+        }
+        return data;
     }
     async getCreditorHistory(req) {
         if (!global_1.AIAuth.auth_token ||
@@ -1484,7 +1573,7 @@ class CaseUtil {
         return getCreditorHistory;
     }
     async getScoresAIForAllCreditors(comm, token, caseTemp, creditors) {
-        const url = `${baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
+        const url = `${process.env.baseUrlAI}get-scores?debtor_id=${String(caseTemp.debtor._id)}&commision_percentage=${comm}`;
         let data = {};
         for (const creditor of creditors) {
             const accountTitles = creditor.accountTitleMapping
@@ -1493,13 +1582,18 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === creditor.caseId;
             });
-            if (accTitleObj.accountTitle) {
+            let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
+            if (accTitleObj && accTitleObj.accountTitle) {
                 data[`${accTitleObj.accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
+                    weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+                    principle_amount: amount,
                 };
             }
         }
+        if (!Object.keys(data).length)
+            data = [];
         console.log('I am in getScoresAIForAllCreditors');
         console.log('URL: ', url);
         console.log('Payload: ', data);
@@ -1518,7 +1612,7 @@ class CaseUtil {
         }
     }
     async storeAuthToken(username, partnerToken) {
-        const url = `${baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
+        const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
         try {
             const response = await axios_1.default.get(url);
             if (response && response.data) {
@@ -1639,26 +1733,69 @@ class CaseUtil {
     }
     async getSettlementRangeSummery(data) {
         const result = { Summary: {} };
-        for (const key of Object.keys(data)) {
-            for (const [recKey, values] of Object.entries(data[key])) {
-                if (Array.isArray(values) && values.length > 0) {
-                    const min = Math.min(...values);
-                    const max = Math.max(...values);
-                    if (!result[key]) {
-                        result[key] = {};
+        if (data) {
+            for (const key of Object.keys(data)) {
+                for (const [recKey, values] of Object.entries(data[key])) {
+                    if (Array.isArray(values) && values.length > 0) {
+                        const min = Math.min(...values);
+                        const max = Math.max(...values);
+                        if (!result[key]) {
+                            result[key] = {};
+                        }
+                        result[key][recKey] = { min, max };
+                        // Initialize the summary if not already done
+                        if (!result.Summary[recKey]) {
+                            result.Summary[recKey] = { min: 0, max: 0 };
+                        }
+                        // Accumulate the values for summary
+                        result.Summary[recKey].min += min;
+                        result.Summary[recKey].max += max;
                     }
-                    result[key][recKey] = { min, max };
-                    // Initialize the summary if not already done
-                    if (!result.Summary[recKey]) {
-                        result.Summary[recKey] = { min: 0, max: 0 };
-                    }
-                    // Accumulate the values for summary
-                    result.Summary[recKey].min += min;
-                    result.Summary[recKey].max += max;
                 }
             }
         }
         return result;
+    }
+    async getSummaryWeeksTillPaid(weeksTillPaid) {
+        const summary = {
+            'Weeks remaining based on recommendation 1': { min: 0, max: 0 },
+            'Weeks remaining based on recommendation 2': { min: 0, max: 0 },
+            'Weeks remaining based on recommendation 3': { min: 0, max: 0 },
+        };
+        if (Object.keys(weeksTillPaid).length) {
+            Object.values(weeksTillPaid).forEach(company => {
+                for (const key of Object.keys(company)) {
+                    if (company[key]) {
+                        summary[key].min = Math.max(summary[key].min, company[key].min);
+                        summary[key].max = Math.max(summary[key].max, company[key].max);
+                    }
+                }
+                // for (let i = 1; i <= Object.keys(company).length; i++) {
+                //   const key = `Weeks remaining based on recommendation ${i}`;
+                //   console.log(company[i - 0]);
+                //   if (company[key]) {
+                //     summary[key].min = Math.max(summary[key].min, company[key][0]);
+                //     summary[key].max = Math.max(summary[key].max, company[key][1]);
+                //   }
+                // }
+            });
+        }
+        return summary;
+    }
+    async transformData(weeksTillPaid) {
+        if (Object.keys(weeksTillPaid).length) {
+            Object.values(weeksTillPaid).forEach(company => {
+                for (const key of Object.keys(company)) {
+                    if (company[key]) {
+                        company[key] = {
+                            min: Math.min(...company[key]),
+                            max: Math.max(...company[key]),
+                        };
+                    }
+                }
+            });
+        }
+        return weeksTillPaid;
     }
     async addNotes(req, id) {
         return await this.caseRepository.updateById(req.params.id, {
