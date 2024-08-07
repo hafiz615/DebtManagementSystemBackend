@@ -56,7 +56,19 @@ const creditorModel = new mongoose_1.Schema({
         },
     },
     contacts: {
-        type: (Array),
+        type: [
+            {
+                name: String,
+                title: String,
+                phone: String,
+                email: String,
+                relationWithDebtor: String,
+                country: String,
+                state: String,
+                city: String,
+                zipCode: String,
+            },
+        ],
     },
     notes: {
         type: String,
