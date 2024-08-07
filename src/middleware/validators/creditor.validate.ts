@@ -36,6 +36,7 @@ class CreditorRequests {
         state: Joi.string().allow(''),
         city: Joi.string().allow(''),
         zipCode: Joi.string().allow(''),
+        _id: Joi.string().optional(),
       }),
       lastFundedDate: Joi.date().optional().allow(''),
       historicalRange: Joi.object({

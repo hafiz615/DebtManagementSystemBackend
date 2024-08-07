@@ -217,6 +217,7 @@ class CaseValidate {
               state: Joi.string().allow(''),
               city: Joi.string().allow(''),
               zipCode: Joi.string().allow(''),
+              _id: Joi.string().optional(),
             })
           )
           .optional(),

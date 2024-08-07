@@ -204,6 +204,7 @@ class CaseValidate {
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
+                    _id: joi_1.default.string().optional(),
                 }))
                     .optional(),
                 notes: joi_1.default.string().allow(''),
