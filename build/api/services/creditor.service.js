@@ -70,7 +70,7 @@ class CreditorService {
         if (req.body.contact && req.query.contact === 'edit') {
             creditor = await this.creditorRepository.updateByOne({
                 _id: req.params.id,
-                contacts: { $elemMatch: { name: req.body.contact._id } },
+                contacts: { $elemMatch: { _id: req.body.contact._id } },
             }, { $set: { 'contacts.$': req.body.contact } });
         }
         // if (req.body.paymentToken && req.body.paymentType) {

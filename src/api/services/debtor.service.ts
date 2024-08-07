@@ -18,7 +18,7 @@ import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interfac
 import constantsUtil from '../../utils/constants.util';
 import uploadUtil from '../../utils/upload.util';
 import UploadUtil from '../../utils/upload.util';
-
+import mongoose from 'mongoose';
 class DebtorService {
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
@@ -308,7 +308,7 @@ class DebtorService {
       debtor = await this.debtorRepository.updateByOne<IDebtor>(
         {
           _id: req.params.id,
-          contacts: {$elemMatch: {name: req.body.contact._id}},
+          contacts: {$elemMatch: {_id: req.body.contact._id}},
         },
         {$set: {'contacts.$': req.body.contact}}
       );

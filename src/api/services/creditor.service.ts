@@ -85,7 +85,7 @@ class CreditorService {
       creditor = await this.creditorRepository.updateByOne<ICreditor>(
         {
           _id: req.params.id,
-          contacts: {$elemMatch: {name: req.body.contact._id}},
+          contacts: {$elemMatch: {_id: req.body.contact._id}},
         },
         {$set: {'contacts.$': req.body.contact}}
       );
