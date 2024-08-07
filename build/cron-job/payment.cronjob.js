@@ -88,15 +88,15 @@ class CronJob {
                 };
                 if (!debtor.weeklyCommissionPaid) {
                     if (payment.authorized === 'Pending') {
-                        if (debtor.paymentType === 'cc') {
-                            const response = await this.paymentService.authorizeCreditCard(commisionToPay, debtor.customerVaultId);
+                        if (debtor.accounts[0].paymentType === 'cc') {
+                            const response = await this.paymentService.authorizeCreditCard(commisionToPay, debtor.accounts[0].customerVaultId);
                             const result = await this.processCommissionAuthResponse(payment, response, false, cronId);
                             if (result) {
                                 payment = await this.paymentRepository.getById(debtor.commissionPaymentId);
                             }
                         }
-                        if (debtor.paymentType === 'ck') {
-                            const response = await this.paymentService.achCredit(debtor.customerVaultId, commisionToPay, '');
+                        if (debtor.accounts[0].paymentType === 'ck') {
+                            const response = await this.paymentService.achCredit(debtor.accounts[0].customerVaultId, commisionToPay, '');
                             const result = await this.processCommissionCaptureResponse(payment, response, false, cronId, 'ck');
                             if (result) {
                                 await this.updateDebtorPaidValues(debtor._id, commisionToPay);
@@ -107,8 +107,8 @@ class CronJob {
                         if (payment.retriesAuth === retryCommissionInterval.maxRetry)
                             continue;
                         if (this.checkCommissionTimePeriod(payment.rescheduled, 'hours')) {
-                            if (debtor.paymentType === 'cc') {
-                                const response = await this.paymentService.authorizeCreditCard(commisionToPay, debtor.customerVaultId);
+                            if (debtor.accounts[0].paymentType === 'cc') {
+                                const response = await this.paymentService.authorizeCreditCard(commisionToPay, debtor.accounts[0].customerVaultId);
                                 const result = await this.processCommissionAuthResponse(payment, response, true, cronId);
                                 if (result) {
                                     payment = await this.paymentRepository.getById(debtor.commissionPaymentId);
@@ -118,15 +118,15 @@ class CronJob {
                     }
                     if (payment.authorized === 'Success') {
                         if (payment.captured === 'Pending') {
-                            if (debtor.paymentType === 'cc') {
-                                const response = await this.paymentService.captureCreditCard(debtor.customerVaultId, payment.debtorTransId, '');
+                            if (debtor.accounts[0].paymentType === 'cc') {
+                                const response = await this.paymentService.captureCreditCard(debtor.accounts[0].customerVaultId, payment.debtorTransId, '');
                                 const result = await this.processCommissionCaptureResponse(payment, response, false, cronId, 'cc');
                                 if (result) {
                                     await this.updateDebtorPaidValues(debtor._id, commisionToPay);
                                 }
                             }
-                            if (debtor.paymentType === 'ck') {
-                                const response = await this.paymentService.achCredit(debtor.customerVaultId, commisionToPay, '');
+                            if (debtor.accounts[0].paymentType === 'ck') {
+                                const response = await this.paymentService.achCredit(debtor.accounts[0].customerVaultId, commisionToPay, '');
                                 const result = await this.processCommissionCaptureResponse(payment, response, false, cronId, 'ck');
                                 if (result) {
                                     await this.updateDebtorPaidValues(debtor._id, commisionToPay);
@@ -138,15 +138,15 @@ class CronJob {
                                 continue;
                             }
                             if (this.checkCommissionTimePeriod(payment.rescheduled, 'hours')) {
-                                if (debtor.paymentType === 'cc') {
-                                    const response = await this.paymentService.captureCreditCard(debtor.customerVaultId, payment.debtorTransId, '');
+                                if (debtor.accounts[0].paymentType === 'cc') {
+                                    const response = await this.paymentService.captureCreditCard(debtor.accounts[0].customerVaultId, payment.debtorTransId, '');
                                     const result = await this.processCommissionCaptureResponse(payment, response, true, cronId, 'cc');
                                     if (result) {
                                         await this.updateDebtorPaidValues(debtor._id, commisionToPay);
                                     }
                                 }
-                                if (debtor.paymentType === 'ck') {
-                                    const response = await this.paymentService.achCredit(debtor.customerVaultId, commisionToPay, '');
+                                if (debtor.accounts[0].paymentType === 'ck') {
+                                    const response = await this.paymentService.achCredit(debtor.accounts[0].customerVaultId, commisionToPay, '');
                                     const result = await this.processCommissionCaptureResponse(payment, response, true, cronId, 'ck');
                                     if (result) {
                                         await this.updateDebtorPaidValues(debtor._id, commisionToPay);

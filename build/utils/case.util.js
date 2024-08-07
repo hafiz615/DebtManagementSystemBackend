@@ -27,6 +27,7 @@ const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const form_data_1 = __importDefault(require("form-data"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -1499,6 +1500,56 @@ class CaseUtil {
         const creditorNames = await this.getCreditorNamesAI(debtor.documents, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor.id, extractedFields);
         console.log(creditorNames);
         return creditorNames;
+    }
+    async getExtractionMCA(debtor) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const extractedFields = await this.getExtractionMCA_AI(debtor.documents, global_1.AIAuth.auth_token);
+        console.log(extractedFields);
+        return extractedFields;
+    }
+    async findMCASubStr(str) {
+        const regex = /mca/i;
+        const match = str.match(regex);
+        return match ? true : false;
+    }
+    async getExtractionMCA_AI(documents, token) {
+        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
+        try {
+            const form = new form_data_1.default();
+            for (let doc of documents) {
+                if (!(await this.findMCASubStr(doc.originalFileName))) {
+                    continue;
+                }
+                const contents = await this.uploadUtil.getPdfBytesFromS3(doc.key);
+                form.append('MCA_pdf', Buffer.from(contents), {
+                    filename: doc.originalFileName,
+                    contentType: 'application/pdf',
+                });
+            }
+            form.getLength((err, length) => {
+                if (err)
+                    return null;
+            });
+            const response = await axiosInstanceInterceptor_1.default.post(url, form, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    ...form.getHeaders(),
+                },
+            });
+            console.log('I am in getExtractionMCA_AI');
+            console.log('URL: ', url);
+            console.log('Payload: ', form);
+            console.log('Response Data', response.data);
+            return response.data.error ? null : response.data;
+        }
+        catch (error) {
+            console.log(error);
+            return null;
+        }
     }
     async getScores(req, caseTemp, creditors) {
         if (!global_1.AIAuth.auth_token ||

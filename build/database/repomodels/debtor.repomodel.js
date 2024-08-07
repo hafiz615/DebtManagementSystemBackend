@@ -32,8 +32,9 @@ class Debtor {
             phone: '',
             address: '',
         };
-        this.paymentType = '';
-        this.customerVaultId = '';
+        this.accounts = Array();
+        // paymentType = '';
+        // customerVaultId = '';
         this.createdBy = '';
         this.contacts = Array();
         this.documents = Array();

@@ -153,11 +153,32 @@ class CaseService {
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
-    if (req.body.debtor) {
-      await caseUtil.updateDebtor(req.body.debtor as IDebtor);
-      delete req.body.debtor;
-    }
     if (req.body.creditor) {
+      const getCreditor = await this.creditorRepository.getById<ICreditor>(
+        req.params.id
+      );
+      if (!getCreditor) {
+        return [false, constantsUtil.notFoundMessage('Creditor')];
+      }
+      if (req.body.creditor.businessInformation) {
+        const alreadyPresent = await this.creditorRepository.getOne<ICreditor>({
+          _id: {$ne: req.params.id},
+          'businessInformation.companyName':
+            req.body.creditor.businessInformation.companyName,
+        });
+        if (alreadyPresent) {
+          return [
+            false,
+            constantsUtil.alreadyExistsMessage(
+              `Creditor with companyName ${req.body.creditor.businessInformation.companyName}`
+            ),
+          ];
+        }
+        await this.creditorRepository.updateById<ICreditor>(
+          req.params.id,
+          req.body.creditor
+        );
+      }
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
@@ -405,9 +426,12 @@ class CaseService {
     const settlementRange = await caseUtil.getSettlementRange(caseTemp);
     if (req.query.hardReload && req.query.hardReload === 'true') {
       const debtor: any = caseTemp.debtor;
+      const extractedFields = await caseUtil.getExtractionMCA(debtor);
       const creditorNames = await caseUtil.getCreditorNames(
         debtor,
-        debtor.extractedFields
+        extractedFields.extracted_fields
+          ? extractedFields.extracted_fields
+          : null
       );
       return [
         true,

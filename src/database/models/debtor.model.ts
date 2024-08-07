@@ -79,17 +79,19 @@ const debtorSchema: Schema = new Schema({
     },
   },
   contacts: {
-    type: Array<{
-      name: '';
-      title: '';
-      phone: '';
-      email: '';
-      relationWithDebtor: '';
-      country: '';
-      state: '';
-      city: '';
-      zipCode: '';
-    }>,
+    type: [
+      {
+        name: String,
+        title: String,
+        phone: String,
+        email: String,
+        relationWithDebtor: String,
+        country: String,
+        state: String,
+        city: String,
+        zipCode: String,
+      },
+    ],
   },
   documents: {
     type: Array<{
@@ -98,15 +100,18 @@ const debtorSchema: Schema = new Schema({
       url: {type: String; default: ''};
     }>,
   },
-  paymentType: {
-    type: String,
+  accounts: {
+    type: Array<{paymentType: String; customerVaultId: String}>,
   },
+  // paymentType: {
+  //   type: String,
+  // },
   createdBy: {
     type: String,
   },
-  customerVaultId: {
-    type: String,
-  },
+  // customerVaultId: {
+  //   type: String,
+  // },
   extractedFields: {
     type: Schema.Types.Mixed,
   },

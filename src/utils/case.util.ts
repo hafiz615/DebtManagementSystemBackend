@@ -32,6 +32,7 @@ import {AIAuth} from '../database/repomodels/global';
 import {AnyLengthString} from 'aws-sdk/clients/comprehend';
 import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
+import FormData from 'form-data';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -1703,6 +1704,62 @@ class CaseUtil {
     );
     console.log(creditorNames);
     return creditorNames;
+  }
+
+  async getExtractionMCA(debtor: IDebtor) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const extractedFields = await this.getExtractionMCA_AI(
+      debtor.documents,
+      AIAuth.auth_token
+    );
+    console.log(extractedFields);
+    return extractedFields;
+  }
+
+  async findMCASubStr(str: string) {
+    const regex = /mca/i;
+    const match = str.match(regex);
+    return match ? true : false;
+  }
+
+  async getExtractionMCA_AI(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        if (!(await this.findMCASubStr(doc.originalFileName))) {
+          continue;
+        }
+        const contents = await this.uploadUtil.getPdfBytesFromS3(doc.key);
+        form.append('MCA_pdf', Buffer.from(contents), {
+          filename: doc.originalFileName,
+          contentType: 'application/pdf',
+        });
+      }
+      form.getLength((err, length) => {
+        if (err) return null;
+      });
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      console.log('I am in getExtractionMCA_AI');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      console.log('Response Data', response.data);
+      return response.data.error ? null : response.data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   async getScores(req: Request, caseTemp: any, creditors: any) {

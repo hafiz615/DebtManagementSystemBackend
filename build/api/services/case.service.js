@@ -89,11 +89,24 @@ class CaseService {
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
-            if (req.body.debtor) {
-                await case_util_1.default.updateDebtor(req.body.debtor);
-                delete req.body.debtor;
-            }
             if (req.body.creditor) {
+                const getCreditor = await this.creditorRepository.getById(req.params.id);
+                if (!getCreditor) {
+                    return [false, constants_util_1.default.notFoundMessage('Creditor')];
+                }
+                if (req.body.creditor.businessInformation) {
+                    const alreadyPresent = await this.creditorRepository.getOne({
+                        _id: { $ne: req.params.id },
+                        'businessInformation.companyName': req.body.creditor.businessInformation.companyName,
+                    });
+                    if (alreadyPresent) {
+                        return [
+                            false,
+                            constants_util_1.default.alreadyExistsMessage(`Creditor with companyName ${req.body.creditor.businessInformation.companyName}`),
+                        ];
+                    }
+                    await this.creditorRepository.updateById(req.params.id, req.body.creditor);
+                }
                 await case_util_1.default.updateCreditor(req.body.creditor);
                 delete req.body.creditor;
             }
@@ -219,7 +232,10 @@ class CaseService {
             const settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
             if (req.query.hardReload && req.query.hardReload === 'true') {
                 const debtor = caseTemp.debtor;
-                const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
+                const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
+                const creditorNames = await case_util_1.default.getCreditorNames(debtor, extractedFields.extracted_fields
+                    ? extractedFields.extracted_fields
+                    : null);
                 return [
                     true,
                     {
