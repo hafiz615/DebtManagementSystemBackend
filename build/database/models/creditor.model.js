@@ -62,7 +62,7 @@ const creditorModel = new mongoose_1.Schema({
                 title: String,
                 phone: String,
                 email: String,
-                relationWithDebtor: String,
+                relationWithCreditor: String,
                 country: String,
                 state: String,
                 city: String,
