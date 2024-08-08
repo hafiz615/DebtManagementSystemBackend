@@ -16,6 +16,7 @@ import {Payment} from '../database/repomodels/payment.repomodel';
 import mongoose from 'mongoose';
 import {DataCopier} from '../utils/dataCopier.util';
 import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
+import paynoteUtil from '../utils/paynote.util';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -258,6 +259,44 @@ class CronJob {
               }
             }
           }
+        }
+      }
+    });
+
+    cron.schedule('15 * * * *', async () => {
+      const payments =
+        await this.paymentRepository.getAllWithoutPagination<IPayment>(
+          {status: 'Success', sendViaPaynote: 'Pending'},
+          undefined,
+          undefined,
+          undefined,
+          {
+            path: 'caseId',
+            select: ['_id'],
+            populate: ['creditor'],
+          }
+        );
+
+      for (const payment of payments as any) {
+        if (payment.caseId.creditor.paynoteUserId) {
+          const paynoteCustomer = await paynoteUtil.getCustomer(
+            payment.caseId.creditor
+          );
+          if (paynoteCustomer.error) continue;
+          if (paynoteCustomer.user.status === 'unverified') continue;
+          const paymentResult = await paynoteUtil.sendPayment(payment);
+          if (paymentResult.error) {
+            console.log('Send Email');
+            const message = paymentResult.messages[0];
+            console.log(message, 'message');
+            await this.paymentRepository.updateById<IPayment>(payment._id, {
+              sendViaPaynote: 'Failed',
+            });
+            continue;
+          }
+          await this.paymentRepository.updateById<IPayment>(payment._id, {
+            paynoteCheckId: paymentResult.check.check_id,
+          });
         }
       }
     });
@@ -842,21 +881,6 @@ class CronJob {
     // paymentLogging.debtor = String(payment.caseDetails.debtor);
     // paymentLogging.creditor = String(payment.caseDetails.creditor);
     // await this.paymentLoggingRepository.create(paymentLogging as any);
-  }
-
-  async sendPaymentsToCreditors() {
-    const payments =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {status: 'Success', debit: 'Pending'},
-        undefined,
-        undefined,
-        undefined,
-        {
-          path: 'caseId',
-          select: ['_id'],
-          populate: ['creditor'],
-        }
-      );
   }
 }
 

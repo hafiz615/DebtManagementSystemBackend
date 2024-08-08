@@ -6,7 +6,8 @@ export interface IPaymentLogging extends Document {
   authorized: string;
   captured: string;
   status: string;
-  debit: string;
+  sendViaPaynote: string;
+  paynoteCheckId: string;
   amount: number;
   dueDate: string;
   frequency: number;

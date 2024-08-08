@@ -103,6 +103,9 @@ const caseModel = new mongoose_1.Schema({
     contractDetails: {
         type: {},
     },
+    feePayment: {
+        type: String,
+    },
     isDeleted: {
         type: Boolean,
     },

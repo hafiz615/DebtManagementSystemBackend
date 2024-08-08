@@ -19,6 +19,7 @@ class Case {
         this.creditor = '';
         this.totalDebt = 0;
         this.lastPaymentDate = '';
+        this.feePayment = '';
         this.paidAmount = 0;
         this.remaining = 0;
         // documents = Array<{key: ''; originalFileName: ''; url: ''}>();

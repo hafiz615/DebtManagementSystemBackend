@@ -34,7 +34,7 @@ class PaynoteUtil {
   }
 
   async getCustomer(creditor: ICreditor) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/user/${creditor.paynoteUserId}`;
+    const apiUrl = `${process.env.paynoteSandboxUrl}/user/:${creditor.paynoteUserId}`;
     console.log('I am in getCustomer');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
@@ -80,8 +80,9 @@ class PaynoteUtil {
     }
   }
 
-  async sendPayment(creditor: ICreditor, payment: IPayment) {
+  async sendPayment(payment: any) {
     const apiUrl = `${process.env.paynoteSandboxUrl}/check/send`;
+    const creditor = payment.caseId.creditor;
     var data = {
       recipient: creditor.paynoteSourceId,
       name: creditor.basicInformation.fullName,
@@ -93,6 +94,24 @@ class PaynoteUtil {
     console.log('Payload: ', data);
     try {
       const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async getPayment(payment: any) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/check/:${payment.checkId}`;
+    console.log('I am in getCustomer');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', {});
+    try {
+      const response = await axiosInstance.get(apiUrl, {
         headers: {
           Authorization: process.env.paynoteSecretKey,
           'Content-Type': 'application/json',

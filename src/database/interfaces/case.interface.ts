@@ -30,6 +30,7 @@ export interface ICase extends Document {
   creditor: mongoose.Schema.Types.ObjectId;
   totalDebt: number;
   lastPayment: string;
+  feePayment: string;
   paidAmount: number;
   remaining: number;
   // documents: Array<IKeyFile>;

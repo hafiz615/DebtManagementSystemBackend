@@ -209,7 +209,9 @@ class CaseValidate {
                 }))
                     .optional(),
                 notes: joi_1.default.string().allow(''),
-                creditorSecurityKey: joi_1.default.string(),
+                creditorSecurityKey: joi_1.default.string().optional().allow(''),
+                paynoteSourceId: joi_1.default.string().optional().allow(''),
+                paynoteUserId: joi_1.default.string().optional().allow(''),
                 accountTitle: joi_1.default.string().optional().allow('', null),
                 lastFundedDate: joi_1.default.date().optional().allow(''),
                 historicalRange: joi_1.default.object({
@@ -287,6 +289,7 @@ class CaseValidate {
                     })),
                     notes: joi_1.default.string().allow(''),
                     paynoteSourceId: joi_1.default.string().optional().allow(''),
+                    paynoteUserId: joi_1.default.string().optional().allow(''),
                     creditorSecurityKey: joi_1.default.string().optional().allow(''),
                     accountTitle: joi_1.default.string().optional().allow('', null),
                     lastFundedDate: joi_1.default.date().optional().allow(''),

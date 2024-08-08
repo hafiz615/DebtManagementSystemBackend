@@ -76,6 +76,9 @@ const caseModel: Schema = new Schema({
   contractDetails: {
     type: {},
   },
+  feePayment: {
+    type: String,
+  },
   isDeleted: {
     type: Boolean,
   },

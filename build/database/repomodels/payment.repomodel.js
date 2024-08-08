@@ -12,7 +12,8 @@ class Payment {
         this.authorized = 'Pending';
         this.captured = 'Pending';
         this.status = 'Upcoming';
-        this.debit = 'Pending';
+        this.sendViaPaynote = 'Pending';
+        this.paynoteCheckId = '';
         this.amount = 0;
         this.dueDate = '';
         this.frequency = 0;

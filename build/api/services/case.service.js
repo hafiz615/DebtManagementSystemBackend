@@ -89,6 +89,9 @@ class CaseService {
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase)
+                return [false, constants_util_1.default.notFoundMessage('case')];
             if (req.body.creditor) {
                 const getCreditor = await this.creditorRepository.getById(req.body.creditor._id);
                 if (!getCreditor) {
@@ -110,6 +113,25 @@ class CaseService {
                 await case_util_1.default.updateCreditor(req.body.creditor);
                 delete req.body.creditor;
             }
+            if (req.body?.intervals) {
+                let weeklyBudgetObj;
+                if (req.body.feePayment && req.body.feePayment === 'toPay') {
+                    weeklyBudgetObj = await case_util_1.default.checkWeeklyBudget(req.body, true, findCase.debtor);
+                    if (!weeklyBudgetObj.status) {
+                        return [
+                            false,
+                            'Weekly budget is not fulfiling the payment plan of debtor',
+                        ];
+                    }
+                    await this.debtorRepository.updateById(findCase.debtor._id, {
+                        totalCommission: weeklyBudgetObj.totalCommission,
+                        weeklyCommission: weeklyBudgetObj.commission,
+                    });
+                }
+            }
+            const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
+            if (!checkCasePayment[0])
+                return checkCasePayment;
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (req.body.intervals) {
                 await case_util_1.default.createPayment(caseUpdated);

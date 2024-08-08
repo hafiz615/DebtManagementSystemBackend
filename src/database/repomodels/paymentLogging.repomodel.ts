@@ -6,7 +6,8 @@ export class PaymentLogging {
   authorized = 'Pending';
   captured = 'Pending';
   status = 'Upcoming';
-  debit = 'Pending';
+  sendViaPaynote = 'Pending';
+  paynoteCheckId = '';
   amount = 0;
   dueDate = '';
   frequency = 0;

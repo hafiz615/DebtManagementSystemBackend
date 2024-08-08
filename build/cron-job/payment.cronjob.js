@@ -17,6 +17,7 @@ const debtor_repository_1 = require("../api/repository/debtor/debtor.repository"
 const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
 const mongoose_1 = __importDefault(require("mongoose"));
 const dataCopier_util_1 = require("../utils/dataCopier.util");
+const paynote_util_1 = __importDefault(require("../utils/paynote.util"));
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -155,6 +156,35 @@ class CronJob {
                             }
                         }
                     }
+                }
+            }
+        });
+        node_cron_1.default.schedule('15 * * * *', async () => {
+            const payments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Pending' }, undefined, undefined, undefined, {
+                path: 'caseId',
+                select: ['_id'],
+                populate: ['creditor'],
+            });
+            for (const payment of payments) {
+                if (payment.caseId.creditor.paynoteUserId) {
+                    const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
+                    if (paynoteCustomer.error)
+                        continue;
+                    if (paynoteCustomer.user.status === 'unverified')
+                        continue;
+                    const paymentResult = await paynote_util_1.default.sendPayment(payment);
+                    if (paymentResult.error) {
+                        console.log('Send Email');
+                        const message = paymentResult.messages[0];
+                        console.log(message, 'message');
+                        await this.paymentRepository.updateById(payment._id, {
+                            sendViaPaynote: 'Failed',
+                        });
+                        continue;
+                    }
+                    await this.paymentRepository.updateById(payment._id, {
+                        paynoteCheckId: paymentResult.check.check_id,
+                    });
                 }
             }
         });
@@ -568,13 +598,6 @@ class CronJob {
         // paymentLogging.debtor = String(payment.caseDetails.debtor);
         // paymentLogging.creditor = String(payment.caseDetails.creditor);
         // await this.paymentLoggingRepository.create(paymentLogging as any);
-    }
-    async sendPaymentsToCreditors() {
-        const payments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', debit: 'Pending' }, undefined, undefined, undefined, {
-            path: 'caseId',
-            select: ['_id'],
-            populate: ['creditor'],
-        });
     }
 }
 exports.default = new CronJob();

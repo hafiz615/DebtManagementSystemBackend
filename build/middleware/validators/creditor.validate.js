@@ -41,6 +41,7 @@ class CreditorRequests {
                 // paymentToken: Joi.string().optional().allow(''),
                 // paymentType: Joi.string().optional().allow(''),
                 paynoteSourceId: joi_1.default.string().optional().allow(''),
+                paynoteUserId: joi_1.default.string().optional().allow(''),
                 lastFundedDate: joi_1.default.date().optional().allow(''),
                 historicalRange: joi_1.default.object({
                     minimum: joi_1.default.number().strict().optional(),

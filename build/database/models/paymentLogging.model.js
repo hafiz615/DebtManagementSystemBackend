@@ -42,9 +42,12 @@ const paymentLogging = new mongoose_1.Schema({
         type: String,
         default: 'Upcoming',
     },
-    debit: {
+    sendViaPaynote: {
         type: String,
         default: 'Pending',
+    },
+    paynoteCheckId: {
+        type: String,
     },
     amount: {
         type: Number,
