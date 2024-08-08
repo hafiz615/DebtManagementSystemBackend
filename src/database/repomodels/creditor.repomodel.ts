@@ -17,11 +17,13 @@ export class Creditor {
     minimum: 0,
     maximum: 0,
   };
-  creditorSecurityKey = '';
+  // creditorSecurityKey = '';
+  paynoteUserId = '';
+  paynoteSourceId = '';
   accountTitle = '';
   accountTitleMapping = Array<{caseId: ''; accountTitle: ''}>();
-  paymentType = '';
-  customerVaultId = '';
+  // paymentType = '';
+  // customerVaultId = '';
   contacts = Array<{
     name: '';
     title: '';

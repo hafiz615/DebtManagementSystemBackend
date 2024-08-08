@@ -6,6 +6,7 @@ export class PaymentLogging {
   authorized = 'Pending';
   captured = 'Pending';
   status = 'Upcoming';
+  debit = 'Pending';
   amount = 0;
   dueDate = '';
   frequency = 0;

@@ -843,6 +843,21 @@ class CronJob {
     // paymentLogging.creditor = String(payment.caseDetails.creditor);
     // await this.paymentLoggingRepository.create(paymentLogging as any);
   }
+
+  async sendPaymentsToCreditors() {
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {status: 'Success', debit: 'Pending'},
+        undefined,
+        undefined,
+        undefined,
+        {
+          path: 'caseId',
+          select: ['_id'],
+          populate: ['creditor'],
+        }
+      );
+  }
 }
 
 export default new CronJob();

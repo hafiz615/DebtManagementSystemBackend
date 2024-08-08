@@ -155,14 +155,15 @@ class CaseService {
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     if (req.body.creditor) {
       const getCreditor = await this.creditorRepository.getById<ICreditor>(
-        req.params.id
+        req.body.creditor._id
       );
+
       if (!getCreditor) {
         return [false, constantsUtil.notFoundMessage('Creditor')];
       }
       if (req.body.creditor.businessInformation) {
         const alreadyPresent = await this.creditorRepository.getOne<ICreditor>({
-          _id: {$ne: req.params.id},
+          _id: {$ne: req.body.creditor._id},
           'businessInformation.companyName':
             req.body.creditor.businessInformation.companyName,
         });
@@ -175,7 +176,7 @@ class CaseService {
           ];
         }
         await this.creditorRepository.updateById<ICreditor>(
-          req.params.id,
+          req.body.creditor._id,
           req.body.creditor
         );
       }

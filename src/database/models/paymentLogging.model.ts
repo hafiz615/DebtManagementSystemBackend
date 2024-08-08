@@ -17,6 +17,10 @@ const paymentLogging: Schema = new Schema({
     type: String,
     default: 'Upcoming',
   },
+  debit: {
+    type: String,
+    default: 'Pending',
+  },
   amount: {
     type: Number,
     default: 0,

@@ -189,6 +189,7 @@ class CaseValidate {
   async updateCase(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       creditor: Joi.object({
+        _id: Joi.string().optional().allow(''),
         aggression: Joi.number().optional().min(0).max(10),
         paymentType: Joi.string().allow(''),
         paymentToken: Joi.string().allow(''),
@@ -283,6 +284,8 @@ class CaseValidate {
         Joi.object({
           creditor: Joi.object({
             aggression: Joi.number().optional().min(0).max(10),
+            // paymentType: Joi.string().allow(''),
+            // paymentToken: Joi.string().allow(''),
             basicInformation: Joi.object({
               fullName: Joi.string().required(),
               email: Joi.string().email().required(),
@@ -310,7 +313,8 @@ class CaseValidate {
               })
             ),
             notes: Joi.string().allow(''),
-            creditorSecurityKey: Joi.string(),
+            paynoteSourceId: Joi.string().optional().allow(''),
+            creditorSecurityKey: Joi.string().optional().allow(''),
             accountTitle: Joi.string().optional().allow('', null),
             lastFundedDate: Joi.date().optional().allow(''),
             historicalRange: Joi.object({
