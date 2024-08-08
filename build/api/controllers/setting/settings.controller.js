@@ -45,7 +45,7 @@ class SettingsController {
         this.getSettings = async (req, res) => {
             try {
                 const templatePermission = await common_util_1.default.checkPermission('viewNotificationTemplates', req);
-                const paymentsPermission = await common_util_1.default.checkPermission('viewPaymentsNotificationSettings', req);
+                const paymentsPermission = await common_util_1.default.checkPermission('viewPaymentsAndAuthorizations', req);
                 const customFieldsPermission = await common_util_1.default.checkPermission('viewCustomFields', req);
                 const response = await this.settingsService.getSettings(templatePermission, paymentsPermission, customFieldsPermission);
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({

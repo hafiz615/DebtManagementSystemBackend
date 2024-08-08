@@ -32,6 +32,8 @@ export default {
     SEND_INVITATION_LINK_200: 'Invitation link sent successfully',
     ROLE_ACCESS: 'You are not authorized to perform this action!',
     PAYMENT_CALCULATION_ERROR: 'Payment calculation is not correct!',
+    INTERVALS_PAYMENT_CALCULATION_ERROR:
+      'Intervals payment calculation is not correct!',
     INVALID_FIELD: ' is invalid',
     STATUS_PIPELINE_EXIST: 'The status already exist in pipeline',
     STATUS_CASE_EXIST: 'This status already exist',

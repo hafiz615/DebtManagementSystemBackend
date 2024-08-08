@@ -342,7 +342,7 @@ class CaseUtil {
         // }
         if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
-            debt = body.remaining;
+            debt = body.remaining ?? 0;
             amount = await this.getWeeklyAmount(interval);
         }
         weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -386,10 +386,11 @@ class CaseUtil {
         }
     }
     async checkCasePayment(body) {
+        let isExempt = body.isExempt ?? true;
         if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
-        if (body && body.intervals && body.intervals.length) {
+        if (body && body.intervals && body.intervals.length && !isExempt) {
             let amount = 0;
             for (const interval of body.intervals) {
                 if (!interval.frequency) {
@@ -404,7 +405,10 @@ class CaseUtil {
                 }
             }
             if (amount !== body.remaining) {
-                return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
+                return [
+                    false,
+                    constants_util_1.default.Messages.INTERVALS_PAYMENT_CALCULATION_ERROR,
+                ];
             }
         }
         return [true, ''];

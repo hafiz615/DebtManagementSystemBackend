@@ -57,7 +57,7 @@ class SettingsController {
         req
       );
       const paymentsPermission = await commonUtil.checkPermission(
-        'viewPaymentsNotificationSettings',
+        'viewPaymentsAndAuthorizations',
         req
       );
       const customFieldsPermission = await commonUtil.checkPermission(
