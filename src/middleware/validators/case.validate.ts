@@ -189,8 +189,8 @@ class CaseValidate {
   async updateCase(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       creditor: Joi.object({
-        _id: Joi.string().optional().allow(''),
         aggression: Joi.number().optional().min(0).max(10),
+        _id: Joi.string().optional().allow(''),
         paymentType: Joi.string().allow(''),
         paymentToken: Joi.string().allow(''),
         basicInformation: Joi.object({

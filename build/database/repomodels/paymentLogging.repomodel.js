@@ -12,6 +12,7 @@ class PaymentLogging {
         this.authorized = 'Pending';
         this.captured = 'Pending';
         this.status = 'Upcoming';
+        this.debit = 'Pending';
         this.amount = 0;
         this.dueDate = '';
         this.frequency = 0;

@@ -90,13 +90,13 @@ class CaseService {
         };
         this.updateCase = async (req) => {
             if (req.body.creditor) {
-                const getCreditor = await this.creditorRepository.getById(req.params.id);
+                const getCreditor = await this.creditorRepository.getById(req.body.creditor._id);
                 if (!getCreditor) {
                     return [false, constants_util_1.default.notFoundMessage('Creditor')];
                 }
                 if (req.body.creditor.businessInformation) {
                     const alreadyPresent = await this.creditorRepository.getOne({
-                        _id: { $ne: req.params.id },
+                        _id: { $ne: req.body.creditor._id },
                         'businessInformation.companyName': req.body.creditor.businessInformation.companyName,
                     });
                     if (alreadyPresent) {
@@ -105,7 +105,7 @@ class CaseService {
                             constants_util_1.default.alreadyExistsMessage(`Creditor with companyName ${req.body.creditor.businessInformation.companyName}`),
                         ];
                     }
-                    await this.creditorRepository.updateById(req.params.id, req.body.creditor);
+                    await this.creditorRepository.updateById(req.body.creditor._id, req.body.creditor);
                 }
                 await case_util_1.default.updateCreditor(req.body.creditor);
                 delete req.body.creditor;

@@ -42,6 +42,10 @@ const paymentLogging = new mongoose_1.Schema({
         type: String,
         default: 'Upcoming',
     },
+    debit: {
+        type: String,
+        default: 'Pending',
+    },
     amount: {
         type: Number,
         default: 0,

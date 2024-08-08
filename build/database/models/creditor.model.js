@@ -87,7 +87,13 @@ const creditorModel = new mongoose_1.Schema({
             required: true,
         },
     },
-    creditorSecurityKey: {
+    // creditorSecurityKey: {
+    //   type: String,
+    // },
+    paynoteUserId: {
+        type: String,
+    },
+    paynoteSourceId: {
         type: String,
     },
     accountTitle: {
@@ -96,12 +102,12 @@ const creditorModel = new mongoose_1.Schema({
     accountTitleMapping: {
         type: (Array),
     },
-    paymentType: {
-        type: String,
-    },
-    customerVaultId: {
-        type: String,
-    },
+    // paymentType: {
+    //   type: String,
+    // },
+    // customerVaultId: {
+    //   type: String,
+    // },
     createdAt: {
         type: Date,
         required: true,

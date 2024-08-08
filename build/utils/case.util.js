@@ -1703,12 +1703,11 @@ class CaseUtil {
                     });
                 }
             }
-            if (body.creditor.paymentToken && body.creditor.paymentType) {
-                const customerVaultResponse = await this.createVault(body.paymentToken);
-                if (!customerVaultResponse[0])
-                    return customerVaultResponse;
-                body.creditor.customerVaultId = customerVaultResponse[1];
-            }
+            // if (body.creditor.paymentToken && body.creditor.paymentType) {
+            //   const customerVaultResponse = await this.createVault(body.paymentToken);
+            //   if (!customerVaultResponse[0]) return customerVaultResponse;
+            //   body.creditor.customerVaultId = customerVaultResponse[1];
+            // }
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
             }

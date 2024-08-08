@@ -22,11 +22,13 @@ class Creditor {
             minimum: 0,
             maximum: 0,
         };
-        this.creditorSecurityKey = '';
+        // creditorSecurityKey = '';
+        this.paynoteUserId = '';
+        this.paynoteSourceId = '';
         this.accountTitle = '';
         this.accountTitleMapping = Array();
-        this.paymentType = '';
-        this.customerVaultId = '';
+        // paymentType = '';
+        // customerVaultId = '';
         this.contacts = Array();
         this.aggression = 0;
         this.createdAt = common_util_1.default.getCurrentDate();

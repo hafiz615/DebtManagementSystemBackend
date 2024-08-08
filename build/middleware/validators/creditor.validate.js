@@ -38,6 +38,9 @@ class CreditorRequests {
                     zipCode: joi_1.default.string().allow(''),
                     _id: joi_1.default.string().optional(),
                 }),
+                // paymentToken: Joi.string().optional().allow(''),
+                // paymentType: Joi.string().optional().allow(''),
+                paynoteSourceId: joi_1.default.string().optional().allow(''),
                 lastFundedDate: joi_1.default.date().optional().allow(''),
                 historicalRange: joi_1.default.object({
                     minimum: joi_1.default.number().strict().optional(),
