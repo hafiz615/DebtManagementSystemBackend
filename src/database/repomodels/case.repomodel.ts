@@ -28,6 +28,7 @@ export class Case {
   >();
   isDeleted = false;
   contractDetails = {};
+  isExempt = '';
   confidence = 0;
   closeDate = '';
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();

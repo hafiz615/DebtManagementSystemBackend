@@ -190,8 +190,19 @@ class CaseService {
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
+    if (
+      req.body?.intervals &&
+      req.body?.intervals.length &&
+      findCase.intervals.length
+    ) {
+      return [false, 'Payment plan already exist!'];
+    }
 
-    if (req.body?.intervals) {
+    if (
+      !findCase.intervals.length &&
+      req.body?.intervals &&
+      req.body?.intervals.length
+    ) {
       let weeklyBudgetObj: {
         status: boolean;
         commission: number;
@@ -221,7 +232,11 @@ class CaseService {
       req.params.id,
       req.body
     );
-    if (req.body.intervals) {
+    if (
+      !findCase.intervals.length &&
+      req.body.intervals &&
+      req.body.intervals.length
+    ) {
       await caseUtil.createPayment(caseUpdated);
     }
     if (!caseUpdated) {

@@ -113,7 +113,14 @@ class CaseService {
                 await case_util_1.default.updateCreditor(req.body.creditor);
                 delete req.body.creditor;
             }
-            if (req.body?.intervals) {
+            if (req.body?.intervals &&
+                req.body?.intervals.length &&
+                findCase.intervals.length) {
+                return [false, 'Payment plan already exist!'];
+            }
+            if (!findCase.intervals.length &&
+                req.body?.intervals &&
+                req.body?.intervals.length) {
                 let weeklyBudgetObj;
                 if (req.body.feePayment && req.body.feePayment === 'toPay') {
                     weeklyBudgetObj = await case_util_1.default.checkWeeklyBudget(req.body, true, findCase.debtor);
@@ -133,7 +140,9 @@ class CaseService {
             if (!checkCasePayment[0])
                 return checkCasePayment;
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
-            if (req.body.intervals) {
+            if (!findCase.intervals.length &&
+                req.body.intervals &&
+                req.body.intervals.length) {
                 await case_util_1.default.createPayment(caseUpdated);
             }
             if (!caseUpdated) {

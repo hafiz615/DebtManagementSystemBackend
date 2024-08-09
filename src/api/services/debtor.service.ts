@@ -584,7 +584,7 @@ class DebtorService {
 
   getFullProfitSettlement = async (req: Request) => {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
-    await caseUtil.getExtractionMCA(debtor);
+    // await caseUtil.getExtractionMCA(debtor);
     if (!debtor) {
       return [false, constantsUtil.notFoundMessage('debtor')];
     }

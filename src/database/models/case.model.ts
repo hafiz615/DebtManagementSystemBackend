@@ -98,6 +98,9 @@ const caseModel: Schema = new Schema({
   chatId: {
     type: String,
   },
+  isExempt: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

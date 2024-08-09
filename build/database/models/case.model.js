@@ -121,6 +121,9 @@ const caseModel = new mongoose_1.Schema({
     chatId: {
         type: String,
     },
+    isExempt: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

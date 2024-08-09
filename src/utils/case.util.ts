@@ -1603,6 +1603,9 @@ class CaseUtil {
     }
     const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${id}`;
     try {
+      console.log('I am in getLumpSumAmount');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
       const response = await axiosInstance.post(
         url,
         {},
@@ -1631,6 +1634,9 @@ class CaseUtil {
     }
     const url = `${process.env.baseUrlAI}get-full-profit-settlement?debtor_id=${id}`;
     try {
+      console.log('I am in getFullProfitSettlement');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
       const response = await axiosInstance.post(
         url,
         {},

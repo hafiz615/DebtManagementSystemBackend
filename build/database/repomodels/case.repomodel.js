@@ -26,6 +26,7 @@ class Case {
         this.intervals = Array();
         this.isDeleted = false;
         this.contractDetails = {};
+        this.isExempt = '';
         this.confidence = 0;
         this.closeDate = '';
         this.notes = Array();
