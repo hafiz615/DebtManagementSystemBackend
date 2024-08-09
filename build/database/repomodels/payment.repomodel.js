@@ -7,7 +7,7 @@ exports.Payment = void 0;
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Payment {
     constructor() {
-        this.caseId = '';
+        this.caseId = null;
         this.debtorId = '';
         this.authorized = 'Pending';
         this.captured = 'Pending';

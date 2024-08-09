@@ -44,6 +44,8 @@ class App {
     // paymentCronjob.processPayments();
     // paymentCronjob.startCronJob();
     // paymentCronjob.testCron();
+    // paymentCronjob.testDebtor();
+    // paymentCronjob.testPaynote();
   }
 }
 
