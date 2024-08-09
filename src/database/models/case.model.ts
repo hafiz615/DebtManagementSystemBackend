@@ -101,6 +101,21 @@ const caseModel: Schema = new Schema({
   isExempt: {
     type: String,
   },
+  strategyOne_1: {
+    type: Boolean,
+  },
+  strategyOne_2: {
+    type: Boolean,
+  },
+  strategyOne_3: {
+    type: Boolean,
+  },
+  strategyTwo: {
+    type: Boolean,
+  },
+  strategyThree: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

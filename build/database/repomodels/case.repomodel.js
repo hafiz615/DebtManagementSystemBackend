@@ -29,6 +29,11 @@ class Case {
         this.isExempt = '';
         this.confidence = 0;
         this.closeDate = '';
+        this.strategyOne_1 = false;
+        this.strategyOne_2 = false;
+        this.strategyOne_3 = false;
+        this.strategyTwo = false;
+        this.strategyThree = false;
         this.notes = Array();
         this.chatId = '';
         this.createdAt = common_util_1.default.getCurrentDate();

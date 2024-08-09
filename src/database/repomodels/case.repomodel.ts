@@ -31,6 +31,11 @@ export class Case {
   isExempt = '';
   confidence = 0;
   closeDate = '';
+  strategyOne_1 = false;
+  strategyOne_2 = false;
+  strategyOne_3 = false;
+  strategyTwo = false;
+  strategyThree = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
   createdAt = commonUtil.getCurrentDate();

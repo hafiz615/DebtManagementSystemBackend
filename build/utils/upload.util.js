@@ -84,7 +84,6 @@ class UploadUtil {
             params['ResponseContentDisposition'] = 'inline';
             params['ResponseContentType'] = 'application/pdf';
         }
-        console.log(params);
         return await this.s3.getSignedUrlPromise('getObject', params);
     }
 }

@@ -65,6 +65,12 @@ class BaseRepository {
             new: true,
         });
     }
+    async upsert(filter, updateQuery) {
+        return await this.model.findOneAndUpdate(filter, updateQuery, {
+            new: true,
+            upsert: true,
+        });
+    }
     async delete(filter) {
         const result = await this.model.deleteOne(filter).exec();
         return result.deletedCount === 1 ? true : false;

@@ -42,6 +42,11 @@ export interface ICase extends Document {
   closeDate: string;
   notes: Array<{userId: string; value: string; createdAt: string}>;
   chatId: string;
+  strategyOne_1: boolean;
+  strategyOne_2: boolean;
+  strategyOne_3: boolean;
+  strategyTwo: boolean;
+  strategyThree: boolean;
   createdAt: string;
   updatedAt: string;
 }

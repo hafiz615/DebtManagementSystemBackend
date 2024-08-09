@@ -46,6 +46,10 @@ export interface IBaseRepository<D> {
     filter: FilterQuery<T>,
     updateQuery: QueryOptions<T>
   ): Promise<T | null>;
+  upsert<T>(
+    filter: FilterQuery<T>,
+    updateQuery: QueryOptions<T>
+  ): Promise<T | null>;
   delete<T>(filter?: FilterQuery<T>): Promise<boolean>;
   deleteMany<T>(filter?: FilterQuery<T>): Promise<boolean>;
   getCount<T>(filter?: FilterQuery<T>): Promise<number>;
