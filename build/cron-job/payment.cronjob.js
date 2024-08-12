@@ -622,7 +622,7 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, payment.caseDetails.creditorDetails.creditorSecurityKey);
+                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, '');
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck');
                     if (result)
                         break;
@@ -708,13 +708,13 @@ class CronJob {
             const accounts = payment.caseDetails.debtorDetails.accounts;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, payment.caseDetails.creditorDetails.creditorSecurityKey);
+                    const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, '');
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc');
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, payment.caseDetails.creditorDetails.creditorSecurityKey);
+                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, '');
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck');
                     if (result)
                         break;

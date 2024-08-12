@@ -936,7 +936,7 @@ class CronJob {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
             payment.amount,
-            payment.caseDetails.creditorDetails.creditorSecurityKey
+            ''
           );
           const result = await this.processCaptureResponse(
             payment,
@@ -1064,7 +1064,7 @@ class CronJob {
           const response = await this.paymentService.captureCreditCard(
             account.customerVaultId,
             payment.debtorTransId,
-            payment.caseDetails.creditorDetails.creditorSecurityKey
+            ''
           );
           const result = await this.processCaptureResponse(
             payment,
@@ -1080,7 +1080,7 @@ class CronJob {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
             payment.amount,
-            payment.caseDetails.creditorDetails.creditorSecurityKey
+            ''
           );
           const result = await this.processCaptureResponse(
             payment,
