@@ -254,7 +254,7 @@ class DebtorService {
     const getDebtor: any = caseTemp.debtor;
     if (req.body.businessInformation) {
       const alreadyPresent = await this.debtorRepository.getOne<IDebtor>({
-        _id: {$ne: req.params.id},
+        _id: {$ne: getDebtor._id},
         $or: [
           {
             'businessInformation.companyName':
@@ -289,39 +289,39 @@ class DebtorService {
           ];
         }
       }
-      if (
-        getDebtor &&
-        req.body.basicInformation &&
-        req.body.basicInformation.weeklyBudget !==
-          getDebtor.basicInformation.weeklyBudget
-      ) {
-        const response = await caseUtil.checkWeeklyBudget(
-          {debtor: req.body},
-          true,
-          getDebtor
-        );
-        if (!response.status) {
-          return [
-            false,
-            'Weekly budget is not fulfiling the payment plan of debtor',
-          ];
-        }
-        req.body.weeklyCommission = response.commission;
-      }
+      // if (
+      //   getDebtor &&
+      //   req.body.basicInformation &&
+      //   req.body.basicInformation.weeklyBudget !==
+      //     getDebtor.basicInformation.weeklyBudget
+      // ) {
+      //   const response = await caseUtil.checkWeeklyBudget(
+      //     {debtor: req.body},
+      //     true,
+      //     getDebtor
+      //   );
+      //   if (!response.status) {
+      //     return [
+      //       false,
+      //       'Weekly budget is not fulfiling the payment plan of debtor',
+      //     ];
+      //   }
+      //   req.body.weeklyCommission = response.commission;
+      // }
       debtor = await this.debtorRepository.updateById<IDebtor>(
-        req.params.id,
+        getDebtor._id,
         req.body
       );
     }
     if (req.body.contact && req.query.contact === 'add') {
-      debtor = await this.debtorRepository.updateById<IDebtor>(req.params.id, {
+      debtor = await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
         $push: {contacts: req.body.contact},
       });
     }
     if (req.body.contact && req.query.contact === 'edit') {
       debtor = await this.debtorRepository.updateByOne<IDebtor>(
         {
-          _id: req.params.id,
+          _id: getDebtor._id,
           contacts: {$elemMatch: {_id: req.body.contact._id}},
         },
         {$set: {'contacts.$': req.body.contact}}
@@ -333,7 +333,7 @@ class DebtorService {
       );
       if (!customerVaultResponse[0]) return customerVaultResponse;
 
-      debtor = await this.debtorRepository.updateById<IDebtor>(req.params.id, {
+      debtor = await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
         $push: {
           accounts: {
             $each: [
