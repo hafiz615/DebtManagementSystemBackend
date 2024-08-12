@@ -30,16 +30,23 @@ export interface ICase extends Document {
   creditor: mongoose.Schema.Types.ObjectId;
   totalDebt: number;
   lastPayment: string;
+  feePayment: string;
   paidAmount: number;
   remaining: number;
   // documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
+  isExempt: string;
   contractDetails: {};
   isDeleted: boolean;
   confidence: number;
   closeDate: string;
   notes: Array<{userId: string; value: string; createdAt: string}>;
   chatId: string;
+  strategyOne_1: boolean;
+  strategyOne_2: boolean;
+  strategyOne_3: boolean;
+  strategyTwo: boolean;
+  strategyThree: boolean;
   createdAt: string;
   updatedAt: string;
 }

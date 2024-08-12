@@ -30,14 +30,16 @@ export interface ICreditor extends Document {
     minimum: number;
     maximum: number;
   };
-  creditorSecurityKey: string;
+  // creditorSecurityKey: string;
   accountTitle: string;
   accountTitleMapping: Array<{
     caseId: string;
     accountTitle: string;
   }>;
-  paymentType: string;
-  customerVaultId: string;
+  paynoteUserId: string;
+  paynoteSourceId: string;
+  // paymentType: string;
+  // customerVaultId: string;
   aggression: number;
   createdAt: string;
   updatedAt: string;

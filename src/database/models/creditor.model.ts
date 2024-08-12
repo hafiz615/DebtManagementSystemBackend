@@ -29,17 +29,19 @@ const creditorModel: Schema = new Schema({
     },
   },
   contacts: {
-    type: Array<{
-      name: '';
-      title: '';
-      phone: '';
-      email: '';
-      relationWithCreditor: '';
-      country: '';
-      state: '';
-      city: '';
-      zipCode: '';
-    }>,
+    type: [
+      {
+        name: String,
+        title: String,
+        phone: String,
+        email: String,
+        relationWithCreditor: String,
+        country: String,
+        state: String,
+        city: String,
+        zipCode: String,
+      },
+    ],
   },
   notes: {
     type: String,
@@ -58,7 +60,13 @@ const creditorModel: Schema = new Schema({
       required: true,
     },
   },
-  creditorSecurityKey: {
+  // creditorSecurityKey: {
+  //   type: String,
+  // },
+  paynoteUserId: {
+    type: String,
+  },
+  paynoteSourceId: {
     type: String,
   },
   accountTitle: {
@@ -70,12 +78,12 @@ const creditorModel: Schema = new Schema({
       accountTitle: '';
     }>,
   },
-  paymentType: {
-    type: String,
-  },
-  customerVaultId: {
-    type: String,
-  },
+  // paymentType: {
+  //   type: String,
+  // },
+  // customerVaultId: {
+  //   type: String,
+  // },
   createdAt: {
     type: Date,
     required: true,

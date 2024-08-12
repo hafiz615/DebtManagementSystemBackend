@@ -1,4 +1,4 @@
-import {PutObjectCommand, S3Client} from '@aws-sdk/client-s3';
+import {PutObjectCommand, GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import AWS from 'aws-sdk';
 import caseUtil from './case.util';
 import dotenv from 'dotenv';
@@ -48,6 +48,25 @@ class UploadUtil {
     return s3FileKeys;
   }
 
+  getPdfBytesFromS3 = async (key: string) => {
+    try {
+      const params = {
+        Bucket: 'debt-settlement-documents',
+        Key: key,
+      };
+
+      const data = await this.s3Client.send(new GetObjectCommand(params));
+      if (data.Body) {
+        return await data.Body.transformToByteArray();
+      } else {
+        return new Uint8Array();
+      }
+    } catch (error) {
+      console.error('Error fetching PDF from S3:', error);
+      throw error;
+    }
+  };
+
   // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
   //   let params = {
   //     Bucket: 'debt-settlement-documents',
@@ -58,14 +77,16 @@ class UploadUtil {
   //   };
   //   return await this.s3.getSignedUrlPromise('getObject', params);
   // }
-  async getS3FileSignedUrl(key: string): Promise<string> {
+  async getS3FileSignedUrl(key: string, download = false): Promise<string> {
     let params = {
       Bucket: 'debt-settlement-documents',
       Key: key,
       Expires: 86400,
-      ResponseContentDisposition: 'inline',
-      ResponseContentType: 'application/pdf',
     };
+    if (!download) {
+      params['ResponseContentDisposition'] = 'inline';
+      params['ResponseContentType'] = 'application/pdf';
+    }
     return await this.s3.getSignedUrlPromise('getObject', params);
   }
 }

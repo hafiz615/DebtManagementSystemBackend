@@ -13,6 +13,7 @@ export class Case {
   creditor = '';
   totalDebt = 0;
   lastPaymentDate = '';
+  feePayment = '';
   paidAmount = 0;
   remaining = 0;
   // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
@@ -27,8 +28,14 @@ export class Case {
   >();
   isDeleted = false;
   contractDetails = {};
+  isExempt = '';
   confidence = 0;
   closeDate = '';
+  strategyOne_1 = false;
+  strategyOne_2 = false;
+  strategyOne_3 = false;
+  strategyTwo = false;
+  strategyThree = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
   createdAt = commonUtil.getCurrentDate();

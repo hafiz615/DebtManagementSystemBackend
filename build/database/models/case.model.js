@@ -103,6 +103,9 @@ const caseModel = new mongoose_1.Schema({
     contractDetails: {
         type: {},
     },
+    feePayment: {
+        type: String,
+    },
     isDeleted: {
         type: Boolean,
     },
@@ -117,6 +120,24 @@ const caseModel = new mongoose_1.Schema({
     },
     chatId: {
         type: String,
+    },
+    isExempt: {
+        type: String,
+    },
+    strategyOne_1: {
+        type: Boolean,
+    },
+    strategyOne_2: {
+        type: Boolean,
+    },
+    strategyOne_3: {
+        type: Boolean,
+    },
+    strategyTwo: {
+        type: Boolean,
+    },
+    strategyThree: {
+        type: Boolean,
     },
     createdAt: {
         type: Date,

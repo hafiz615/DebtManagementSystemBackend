@@ -10,6 +10,25 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 class UploadUtil {
     constructor() {
+        this.getPdfBytesFromS3 = async (key) => {
+            try {
+                const params = {
+                    Bucket: 'debt-settlement-documents',
+                    Key: key,
+                };
+                const data = await this.s3Client.send(new client_s3_1.GetObjectCommand(params));
+                if (data.Body) {
+                    return await data.Body.transformToByteArray();
+                }
+                else {
+                    return new Uint8Array();
+                }
+            }
+            catch (error) {
+                console.error('Error fetching PDF from S3:', error);
+                throw error;
+            }
+        };
         this.s3Client = new client_s3_1.S3Client({
             credentials: {
                 secretAccessKey: process.env.secretAccessKey,
@@ -55,14 +74,16 @@ class UploadUtil {
     //   };
     //   return await this.s3.getSignedUrlPromise('getObject', params);
     // }
-    async getS3FileSignedUrl(key) {
+    async getS3FileSignedUrl(key, download = false) {
         let params = {
             Bucket: 'debt-settlement-documents',
             Key: key,
             Expires: 86400,
-            ResponseContentDisposition: 'inline',
-            ResponseContentType: 'application/pdf',
         };
+        if (!download) {
+            params['ResponseContentDisposition'] = 'inline';
+            params['ResponseContentType'] = 'application/pdf';
+        }
         return await this.s3.getSignedUrlPromise('getObject', params);
     }
 }

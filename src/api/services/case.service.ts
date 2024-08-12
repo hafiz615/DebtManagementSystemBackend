@@ -24,6 +24,8 @@ import {IChatSummary} from '../../database/interfaces/chatSummary.interface';
 import {UserRepository} from '../repository/user/user.repository';
 import {IUser} from '../../database/interfaces/user.interface';
 import commonUtil from '../../utils/common.util';
+import {StrategyRepository} from '../repository/strategy/strategy.repository';
+import {IStrategy} from '../../database/interfaces/strategy.interface';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -34,7 +36,7 @@ class CaseService {
   private creditorRepository: CreditorRepository;
   private chatSummaryRepository: ChatSummaryRepository;
   private userRepository: UserRepository;
-
+  private strategyRepository: StrategyRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -44,6 +46,7 @@ class CaseService {
     this.creditorRepository = new CreditorRepository();
     this.chatSummaryRepository = new ChatSummaryRepository();
     this.userRepository = new UserRepository();
+    this.strategyRepository = new StrategyRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -153,23 +156,139 @@ class CaseService {
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
-    if (req.body.debtor) {
-      await caseUtil.updateDebtor(req.body.debtor as IDebtor);
-      delete req.body.debtor;
-    }
+    let findCase: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     if (req.body.creditor) {
+      const getCreditor = await this.creditorRepository.getById<ICreditor>(
+        req.body.creditor._id
+      );
+
+      if (!getCreditor) {
+        return [false, constantsUtil.notFoundMessage('creditor')];
+      }
+      if (req.body.creditor.businessInformation) {
+        const alreadyPresent = await this.creditorRepository.getOne<ICreditor>({
+          _id: {$ne: req.body.creditor._id},
+          'businessInformation.companyName':
+            req.body.creditor.businessInformation.companyName,
+        });
+        if (alreadyPresent) {
+          return [
+            false,
+            constantsUtil.alreadyExistsMessage(
+              `Creditor with companyName ${req.body.creditor.businessInformation.companyName}`
+            ),
+          ];
+        }
+        await this.creditorRepository.updateById<ICreditor>(
+          req.body.creditor._id,
+          req.body.creditor
+        );
+      }
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
+    if (
+      req.body?.intervals &&
+      req.body?.intervals.length &&
+      findCase.intervals.length
+    ) {
+      return [false, 'Payment plan already exist!'];
+    }
+
+    if (
+      !findCase.intervals.length &&
+      req.body?.intervals &&
+      req.body?.intervals.length
+    ) {
+      let weeklyBudgetObj: {
+        status: boolean;
+        commission: number;
+        totalCommission: number;
+      };
+      if (req.body.feePayment && req.body.feePayment === 'toPay') {
+        weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
+          req.body,
+          true,
+          findCase.debtor
+        );
+        if (!weeklyBudgetObj.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+        await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+          totalCommission: weeklyBudgetObj.totalCommission,
+          weeklyCommission: weeklyBudgetObj.commission,
+        });
+      }
+    }
+    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
+    if (!checkCasePayment[0]) return checkCasePayment;
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
     );
-    if (req.body.intervals) {
+    if (
+      !findCase.intervals.length &&
+      req.body.intervals &&
+      req.body.intervals.length
+    ) {
       await caseUtil.createPayment(caseUpdated);
     }
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
+    }
+    if (req.body.intervals) {
+      await caseUtil.createPayment(caseUpdated);
+    }
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      String(caseUpdated.debtor)
+    );
+    const allStrategyFalse = await this.caseRepository.updateById<ICase>(
+      caseUpdated._id,
+      {
+        strategyOne_1: false,
+        strategyOne_2: false,
+        strategyOne_3: false,
+        strategyTwo: false,
+        strategyThree: false,
+      }
+    );
+    if (allStrategyFalse) {
+      const response = await caseUtil.getAllCreditorsOfDebtor(getDebtor);
+      const creditors = Array.from(
+        new Map(
+          response.map(creditor => [creditor.creditorId, creditor])
+        ).values()
+      );
+      let extractedFieldsTemp = null;
+      if (!getDebtor?.extractedFields && !getDebtor?.extractedFields?.length) {
+        const extractedFields = await caseUtil.getExtractionMCA(getDebtor);
+        if (extractedFields) {
+          this.debtorRepository.updateById(getDebtor._id, {
+            extractedFields: extractedFields.extracted_fields,
+          });
+          extractedFieldsTemp = extractedFields.extracted_fields;
+        }
+      }
+      caseUtil.getCreditorNames(
+        getDebtor,
+        getDebtor.extractedFields
+          ? getDebtor.extractedFields
+          : extractedFieldsTemp,
+        String(findCase._id)
+      );
+      caseUtil.getScoresForAllCreditors(caseUpdated, creditors);
+      caseUtil.getSettlementRange(caseUpdated);
+      caseUtil.getLumpSumAmount(caseUpdated);
+      caseUtil.getFullProfitSettlement(caseUpdated);
     }
     return [true, caseUpdated];
   };
@@ -376,8 +495,11 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
-    let getScores = null;
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    let getScores = null,
+      creditorNames = null;
     let creditors = null;
+    let settlementRange = null;
     const response = await caseUtil.getAllCreditorsOfDebtor(
       caseTemp.debtor as any
     );
@@ -386,8 +508,19 @@ class CaseService {
         response.map(creditor => [creditor.creditorId, creditor])
       ).values()
     );
+    const result = await this.strategyRepository.getOne<IStrategy>({
+      caseId: String(caseTemp._id),
+      name: 'strategy_one',
+    });
     if (req.query.all === 'true') {
-      getScores = await caseUtil.getScoresForAllCreditors(caseTemp, creditors);
+      if (caseTemp.strategyOne_2 && result.data.getScoresAIForAllCreditors) {
+        getScores = result.data.getScoresAIForAllCreditors;
+      } else {
+        getScores = await caseUtil.getScoresForAllCreditors(
+          caseTemp,
+          creditors
+        );
+      }
     } else {
       if (req.body.creditorNames.length) {
         const casesCreditors: any =
@@ -402,13 +535,46 @@ class CaseService {
         getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
       }
     }
-    const settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    if (caseTemp.strategyOne_3 && result.data.settlementRange) {
+      settlementRange = result.data.settlementRange;
+    } else {
+      settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    }
     if (req.query.hardReload && req.query.hardReload === 'true') {
       const debtor: any = caseTemp.debtor;
-      const creditorNames = await caseUtil.getCreditorNames(
-        debtor,
-        debtor.extractedFields
+      // const extractedFields = await caseUtil.getExtractionMCA(debtor);
+      // if (extractedFields) {
+      //   this.debtorRepository.updateById(debtor._id, {
+      //     extractedFields: extractedFields.extracted_fields,
+      //   });
+      // }
+      let extractedFieldsTemp = null;
+      console.log(!debtor?.extractedFields, '!debtor?.extractedFields');
+      console.log(
+        !debtor?.extractedFields?.length,
+        '!debtor?.extractedFields?.length'
       );
+      console.log(debtor.extractedFields, 'hkjhkjhkjhkj');
+      if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+        console.log('ia m going for extraction');
+        const extractedFields = await caseUtil.getExtractionMCA(debtor);
+        if (extractedFields) {
+          this.debtorRepository.updateById(debtor._id, {
+            extractedFields: extractedFields.extracted_fields,
+          });
+          extractedFieldsTemp = extractedFields.extracted_fields;
+        }
+      }
+      console.log(extractedFieldsTemp);
+      if (caseTemp.strategyOne_1 && result.data.creditorNames) {
+        creditorNames = result.data.creditorNames;
+      } else {
+        creditorNames = await caseUtil.getCreditorNames(
+          debtor,
+          debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
+          String(caseTemp._id)
+        );
+      }
       return [
         true,
         {

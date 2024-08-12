@@ -17,6 +17,13 @@ const paymentLogging: Schema = new Schema({
     type: String,
     default: 'Upcoming',
   },
+  sendViaPaynote: {
+    type: String,
+    default: 'Pending',
+  },
+  paynoteCheckId: {
+    type: String,
+  },
   amount: {
     type: Number,
     default: 0,

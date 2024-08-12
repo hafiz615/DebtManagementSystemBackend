@@ -42,8 +42,10 @@ class App {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
     // paymentCronjob.processPayments();
-    paymentCronjob.startCronJob();
+    // paymentCronjob.startCronJob();
     // paymentCronjob.testCron();
+    // paymentCronjob.testDebtor();
+    // paymentCronjob.testPaynote();
   }
 }
 

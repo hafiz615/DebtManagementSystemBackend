@@ -188,64 +188,11 @@ class CaseValidate {
 
   async updateCase(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
-      documents: Joi.array().items(
-        Joi.object({
-          key: Joi.string().required(),
-          originalFileName: Joi.string().required(),
-        }).optional()
-      ),
-      debtor: Joi.object({
-        basicInformation: Joi.object({
-          fullName: Joi.string().required(),
-          email: Joi.string().email().required(),
-          SSID: Joi.string()
-            .pattern(/^\d{9}$/)
-            .required(),
-          country: Joi.string().required(),
-          state: Joi.string().required(),
-          status: Joi.string().required(),
-          city: Joi.string().required(),
-          zipCode: Joi.string().required(),
-          phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
-            .required(),
-          address: Joi.string().required(),
-          weeklyBudget: Joi.number(),
-        }),
-        businessInformation: Joi.object({
-          companyName: Joi.string().required(),
-          EIN: Joi.string()
-            .pattern(/^\d{9}$/)
-            .required(),
-          businessCategory: Joi.string().required(),
-          description: Joi.string().allow(''),
-          country: Joi.string().required(),
-          state: Joi.string().required(),
-          city: Joi.string().required(),
-          zipCode: Joi.string().required(),
-          phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
-            .required(),
-          address: Joi.string().required(),
-        }),
-        contacts: Joi.array().items(
-          Joi.object({
-            name: Joi.string().required(),
-            title: Joi.string().required(),
-            phone: Joi.string()
-              .pattern(/^\+\d{11}$/)
-              .required(),
-            email: Joi.string().email().required(),
-            relationWithDebtor: Joi.string().allow(''),
-            country: Joi.string().allow(''),
-            state: Joi.string().allow(''),
-            city: Joi.string().allow(''),
-            zipCode: Joi.string().allow(''),
-          })
-        ),
-      }),
       creditor: Joi.object({
         aggression: Joi.number().optional().min(0).max(10),
+        _id: Joi.string().optional().allow(''),
+        paymentType: Joi.string().allow(''),
+        paymentToken: Joi.string().allow(''),
         basicInformation: Joi.object({
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
@@ -257,45 +204,52 @@ class CaseValidate {
           companyName: Joi.string().required(),
           businessCategory: Joi.string().required(),
         }),
-        contacts: Joi.array().items(
-          Joi.object({
-            name: Joi.string().required(),
-            title: Joi.string().required(),
-            phone: Joi.string()
-              .pattern(/^\+\d{11}$/)
-              .required(),
-            email: Joi.string().email().required(),
-            relationWithCreditor: Joi.string().allow(''),
-            country: Joi.string().allow(''),
-            state: Joi.string().allow(''),
-            city: Joi.string().allow(''),
-            zipCode: Joi.string().allow(''),
-          })
-        ),
+        contacts: Joi.array()
+          .items(
+            Joi.object({
+              name: Joi.string().required(),
+              title: Joi.string().required(),
+              phone: Joi.string()
+                .pattern(/^\+\d{11}$/)
+                .required(),
+              email: Joi.string().email().required(),
+              relationWithCreditor: Joi.string().allow(''),
+              country: Joi.string().allow(''),
+              state: Joi.string().allow(''),
+              city: Joi.string().allow(''),
+              zipCode: Joi.string().allow(''),
+              _id: Joi.string().optional(),
+            })
+          )
+          .optional(),
         notes: Joi.string().allow(''),
-        creditorSecurityKey: Joi.string(),
+        creditorSecurityKey: Joi.string().optional().allow(''),
+        paynoteSourceId: Joi.string().optional().allow(''),
+        paynoteUserId: Joi.string().optional().allow(''),
         accountTitle: Joi.string().optional().allow('', null),
-        lastFundedDate: Joi.date().optional(),
+        lastFundedDate: Joi.date().optional().allow(''),
         historicalRange: Joi.object({
           minimum: Joi.number().strict().optional(),
           maximum: Joi.number().strict().optional(),
         }),
-      }),
-      totalDebt: Joi.number().strict(),
-      confidence: Joi.number(),
-      caseOwner: Joi.string(),
-      caseOwnerId: Joi.string(),
-      lastPaymentDate: Joi.date(),
-      paidAmount: Joi.number().strict(),
-      remaining: Joi.number().strict(),
-      // paymentToken: Joi.string().allow(''),
-      // paymentType: Joi.string().valid('cc', 'ck').allow(''),
-      status: Joi.string(),
-      // feePayment: Joi.string().valid(
-      //   'paidViaCash',
-      //   'toPay',
-      //   'paidViaThirdParty'
-      // ),
+      })
+        .optional()
+        .allow(null),
+      totalDebt: Joi.number().strict().optional(),
+      lastPaymentDate: Joi.date().optional().allow(''),
+      paidAmount: Joi.number().strict().optional(),
+      remaining: Joi.number().strict().optional(),
+      confidence: Joi.number().strict(),
+      isExempt: Joi.boolean().optional(),
+      contractDetails: Joi.object().optional().allow(null),
+      closeDate: Joi.date(),
+      status: Joi.string().optional(),
+      notes: Joi.string(),
+      chatId: Joi.string(),
+      feePayment: Joi.string()
+        .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+        .optional()
+        .allow(''),
       intervals: Joi.array()
         .items(
           Joi.object({
@@ -333,8 +287,8 @@ class CaseValidate {
         Joi.object({
           creditor: Joi.object({
             aggression: Joi.number().optional().min(0).max(10),
-            paymentType: Joi.string().allow(''),
-            paymentToken: Joi.string().allow(''),
+            // paymentType: Joi.string().allow(''),
+            // paymentToken: Joi.string().allow(''),
             basicInformation: Joi.object({
               fullName: Joi.string().required(),
               email: Joi.string().email().required(),
@@ -362,7 +316,9 @@ class CaseValidate {
               })
             ),
             notes: Joi.string().allow(''),
-            creditorSecurityKey: Joi.string(),
+            paynoteSourceId: Joi.string().optional().allow(''),
+            paynoteUserId: Joi.string().optional().allow(''),
+            creditorSecurityKey: Joi.string().optional().allow(''),
             accountTitle: Joi.string().optional().allow('', null),
             lastFundedDate: Joi.date().optional().allow(''),
             historicalRange: Joi.object({
@@ -375,6 +331,7 @@ class CaseValidate {
           paidAmount: Joi.number().strict().optional(),
           remaining: Joi.number().strict().optional(),
           confidence: Joi.number().strict(),
+          isExempt: Joi.boolean().optional(),
           contractDetails: Joi.object().optional().allow(null),
           closeDate: Joi.date(),
           status: Joi.string().optional(),

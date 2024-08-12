@@ -59,6 +59,7 @@ class DebtorRequests {
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
+                    _id: joi_1.default.string().optional(),
                 }),
             });
             const { error } = schema.validate(req.body);
@@ -79,7 +80,7 @@ class DebtorRequests {
                 }).optional()),
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
-                extractedFields: joi_1.default.array().allow(null),
+                extractedFields: joi_1.default.array().allow(null).optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),

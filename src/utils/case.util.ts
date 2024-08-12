@@ -32,6 +32,8 @@ import {AIAuth} from '../database/repomodels/global';
 import {AnyLengthString} from 'aws-sdk/clients/comprehend';
 import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
+import FormData from 'form-data';
+import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -43,6 +45,7 @@ class CaseUtil {
   private creditorService: CreditorService;
   private paymentLoggingRepository: PaymentLoggingRepository;
   private uploadUtil: UploadUtil;
+  private strategyRepository: StrategyRepository;
 
   constructor() {
     this.contactRepository = new ContactRepository();
@@ -54,6 +57,7 @@ class CaseUtil {
     this.creditorService = new CreditorService();
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.uploadUtil = new UploadUtil();
+    this.strategyRepository = new StrategyRepository();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -380,6 +384,7 @@ class CaseUtil {
     console.log('i am going to call AI');
     const creditorNames: Array<string> = await this.getCreditorNames(
       debtor,
+      '',
       ''
     );
     console.log(creditorNames, 'creditonamess');
@@ -419,7 +424,7 @@ class CaseUtil {
     // }
     if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
-      debt = body.remaining;
+      debt = body.remaining ?? 0;
       amount = await this.getWeeklyAmount(interval);
     }
     weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -463,10 +468,11 @@ class CaseUtil {
     }
   }
   async checkCasePayment(body: any): Promise<[boolean, string]> {
+    let isExempt = body.isExempt ?? true;
     if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
-    if (body && body.intervals && body.intervals.length) {
+    if (body && body.intervals && body.intervals.length && !isExempt) {
       let amount = 0;
       for (const interval of body.intervals) {
         if (!interval.frequency) {
@@ -481,7 +487,10 @@ class CaseUtil {
         }
       }
       if (amount !== body.remaining) {
-        return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
+        return [
+          false,
+          constantsUtil.Messages.INTERVALS_PAYMENT_CALCULATION_ERROR,
+        ];
       }
     }
     return [true, ''];
@@ -1463,17 +1472,21 @@ class CaseUtil {
     token: string,
     debtorName: string,
     debtorId: string,
-    extractedFields: any
+    extractedFields: any,
+    caseId: string
   ) {
     const url = `${process.env.baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
     const urls = [];
     try {
       for (let doc of documents) {
-        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, true);
         urls.push(url);
       }
       // Data to be sent in the body of the request
       const data = {bank_statements: urls, extracted_fields: extractedFields};
+      console.log('I am in getCreditorNamesAI');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
       const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
@@ -1481,9 +1494,16 @@ class CaseUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log('I am in create debtor');
-      console.log('URL: ', url);
-      console.log('Payload: ', data);
+      if (!response.data.error) {
+        this.strategyRepository.upsert(
+          {caseId: caseId, name: 'strategy_one'},
+          {'data.creditorNames': response.data}
+        );
+        this.caseRepository.updateById(caseId, {strategyOne_1: true});
+      }
+      if (response.data.error) {
+        this.caseRepository.updateById(caseId, {strategyOne_1: false});
+      }
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
       console.log(error.message);
@@ -1589,15 +1609,20 @@ class CaseUtil {
     }
   }
 
-  async getLumpSumAmount(id: string) {
+  async getLumpSumAmount(caseTemp: ICase) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${id}`;
+    const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${String(
+      caseTemp.debtor
+    )}`;
     try {
+      console.log('I am in getLumpSumAmount');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
       const response = await axiosInstance.post(
         url,
         {},
@@ -1609,23 +1634,34 @@ class CaseUtil {
         }
       );
       if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {strategyTwo: false});
         return [false, response.data.error];
       }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'strategy_two'},
+        {'data.lumpSumAmount': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {strategyTwo: true});
       return [true, response.data];
     } catch (error) {
       return [false, error.message];
     }
   }
 
-  async getFullProfitSettlement(id: string) {
+  async getFullProfitSettlement(caseTemp: ICase) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const url = `${process.env.baseUrlAI}get-full-profit-settlement?debtor_id=${id}`;
+    const url = `${
+      process.env.baseUrlAI
+    }get-full-profit-settlement?debtor_id=${String(caseTemp.debtor)}`;
     try {
+      console.log('I am in getFullProfitSettlement');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
       const response = await axiosInstance.post(
         url,
         {},
@@ -1637,8 +1673,14 @@ class CaseUtil {
         }
       );
       if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {strategyThree: false});
         return [false, response.data.error];
       }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'strategy_three'},
+        {'data.fullProfitSettlement': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {strategyThree: true});
       return [true, response.data];
     } catch (error) {
       return [false, error.message];
@@ -1687,7 +1729,7 @@ class CaseUtil {
     }
   }
 
-  async getCreditorNames(debtor: IDebtor, extractedFields: any) {
+  async getCreditorNames(debtor: IDebtor, extractedFields: any, caseId = '') {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1698,11 +1740,72 @@ class CaseUtil {
       debtor.documents,
       AIAuth.auth_token,
       debtor.businessInformation.companyName,
-      debtor.id,
-      extractedFields
+      debtor._id,
+      extractedFields,
+      caseId
     );
     console.log(creditorNames);
     return creditorNames;
+  }
+
+  async getExtractionMCA(debtor: IDebtor) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const extractedFields = await this.getExtractionMCA_AI(
+      debtor.documents,
+      AIAuth.auth_token
+    );
+    return extractedFields;
+  }
+
+  async findMCASubStr(str: string) {
+    const regex = /mca/i;
+    const match = str.match(regex);
+    return match ? true : false;
+  }
+  async findCsvSubStr(str: string) {
+    const regex = /csv/i;
+    const match = str.match(regex);
+    return match ? true : false;
+  }
+
+  async getExtractionMCA_AI(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        if (await this.findCsvSubStr(doc.originalFileName)) {
+          continue;
+        }
+        const contents = await this.uploadUtil.getPdfBytesFromS3(doc.key);
+        form.append('MCA_pdf', Buffer.from(contents), {
+          filename: doc.originalFileName,
+          contentType: 'application/pdf',
+        });
+      }
+      form.getLength((err, length) => {
+        if (err) return null;
+      });
+      console.log('I am in getExtractionMCA_AI');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      console.log('Response Data', response.data);
+      return response.data.error ? null : response.data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   async getScores(req: Request, caseTemp: any, creditors: any) {
@@ -1734,7 +1837,6 @@ class CaseUtil {
       caseTemp,
       creditors
     );
-    console.log('scores', getScores);
     return getScores;
   }
 
@@ -1790,7 +1892,16 @@ class CaseUtil {
           getSettlementRange.commission_range
         );
     }
-
+    if (typeof getSettlementRange !== 'string') {
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'strategy_one'},
+        {'data.settlementRange': getSettlementRange}
+      );
+      this.caseRepository.updateById(caseTemp._id, {strategyOne_3: true});
+    }
+    if (typeof getSettlementRange === 'string') {
+      this.caseRepository.updateById(caseTemp._id, {strategyOne_3: false});
+    }
     return getSettlementRange;
   }
 
@@ -1861,6 +1972,17 @@ class CaseUtil {
           'Content-Type': 'application/json',
         },
       });
+      if (!response.data.error) {
+        console.log('hehehehehehehe');
+        this.strategyRepository.upsert(
+          {caseId: caseTemp._id, name: 'strategy_one'},
+          {'data.getScoresAIForAllCreditors': response.data}
+        );
+        this.caseRepository.updateById(caseTemp._id, {strategyOne_2: true});
+      }
+      if (response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {strategyOne_2: false});
+      }
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
       return error.message;
@@ -1913,11 +2035,11 @@ class CaseUtil {
           });
         }
       }
-      if (body.creditor.paymentToken && body.creditor.paymentType) {
-        const customerVaultResponse = await this.createVault(body.paymentToken);
-        if (!customerVaultResponse[0]) return customerVaultResponse;
-        body.creditor.customerVaultId = customerVaultResponse[1];
-      }
+      // if (body.creditor.paymentToken && body.creditor.paymentType) {
+      //   const customerVaultResponse = await this.createVault(body.paymentToken);
+      //   if (!customerVaultResponse[0]) return customerVaultResponse;
+      //   body.creditor.customerVaultId = customerVaultResponse[1];
+      // }
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
       }

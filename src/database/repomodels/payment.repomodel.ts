@@ -1,11 +1,13 @@
 import commonUtil from '../../utils/common.util';
 
 export class Payment {
-  caseId = '';
+  caseId = null;
   debtorId = '';
   authorized = 'Pending';
   captured = 'Pending';
   status = 'Upcoming';
+  sendViaPaynote = 'Pending';
+  paynoteCheckId = '';
   amount = 0;
   dueDate = '';
   frequency = 0;
