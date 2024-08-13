@@ -13,16 +13,23 @@ import {CustomFiled} from '../../database/repomodels/customField.repomodel';
 import {TargetCFRepository} from '../repository/targetCustomFields/targetCF.repository';
 import commonUtil from '../../utils/common.util';
 import settingsUtil from '../../utils/settings.util';
+import {values} from 'lodash';
+import {NotificationConfigurationRepository} from '../repository/notificationConfiguration/notificationConfiguration.repository';
+import {INotificationConfiguration} from '../../database/interfaces/notificationConfiguration.interface';
+import {NotificationConfiguration} from '../../database/repomodels/notificationConfiguration.repomodel';
 
 class SettingsService {
   private settingsRepository: SettingsRepository;
   private customFieldsRepository: CustomFieldsRepository;
   private targetCFRepository: TargetCFRepository;
+  private notificationConfigurationRepository: NotificationConfigurationRepository;
 
   constructor() {
     this.settingsRepository = new SettingsRepository();
     this.customFieldsRepository = new CustomFieldsRepository();
     this.targetCFRepository = new TargetCFRepository();
+    this.notificationConfigurationRepository =
+      new NotificationConfigurationRepository();
   }
 
   async addSettings(
@@ -244,6 +251,7 @@ class SettingsService {
     }
     return [true, targetCF];
   }
+
   async deleteCustomField(req: Request): Promise<[boolean, boolean | string]> {
     let customField = await this.customFieldsRepository.delete<ICustomField>({
       _id: req.params.id,
@@ -263,7 +271,7 @@ class SettingsService {
     // ) {
     //   return [false, 'type is missing'];
     // }
-    const type = String(req.query.type);
+    //const type = String(req.query.type);
     let result = null;
     // switch (type) {
     //   case 'sms':
@@ -296,10 +304,10 @@ class SettingsService {
   async deleteNotificationTemplate(
     req: Request
   ): Promise<[boolean, ISettings | string]> {
-    const type = String(req.query.type);
-    if (type !== 'sms' && type !== 'email') {
-      return [false, 'type is missing'];
-    }
+    // const type = String(req?.query?.type);
+    // if (type !== 'sms' && type !== 'email') {
+    //   return [false, 'type is missing'];
+    // }
     let result = null;
     const templateId = req.body.templateId;
     // switch (type) {
@@ -326,6 +334,75 @@ class SettingsService {
     // }
     if (!result) {
       return [false, constants.failureDeleteMessage('notification template')];
+    }
+    return [true, result];
+  }
+
+  async addNotificationConfiguration(
+    req: Request
+  ): Promise<[boolean, NotificationConfigurationRepository | string]> {
+    let result = null,
+      createConfiguration;
+    let find =
+      await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
+        {value: req.body.value}
+      );
+    if (!find) {
+      const newConfiguration = new NotificationConfiguration();
+      const validatedConfiguration = DataCopier.copy(
+        newConfiguration,
+        req.body
+      );
+      let createConfiguration: any =
+        await this.notificationConfigurationRepository.create<INotificationConfiguration>(
+          validatedConfiguration
+        );
+      const findSettings =
+        await this.settingsRepository.getAllWithoutPagination<ISettings>();
+
+      result = await this.settingsRepository.updateById(findSettings[0].id, {
+        $push: {
+          notificationConfiguration: {
+            value: createConfiguration.value,
+            label: createConfiguration.label,
+            id: createConfiguration.id,
+          },
+        },
+      });
+    } else {
+      result = await this.notificationConfigurationRepository.updateByOne(
+        {value: req.body.value},
+        {
+          $set: req.body,
+        }
+      );
+    }
+    if (!result) {
+      return [false, constants.failureUpdateMessage('notification template')];
+    }
+    return [true, result];
+  }
+
+  async getNotificationConfiguration(
+    req: Request
+  ): Promise<[boolean, ISettings | INotificationConfiguration | any]> {
+    let result = null;
+    const type = String(req?.query?.type);
+    switch (type) {
+      case 'all':
+        result =
+          await this.settingsRepository.getAllWithoutPagination<ISettings>();
+        result = result[0]?.notificationConfiguration;
+        break;
+      default:
+        result =
+          await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
+            {value: type}
+          );
+    }
+
+    if (!result) {
+      return [false, constants.failureUpdateMessage('notification template')];
     }
     return [true, result];
   }

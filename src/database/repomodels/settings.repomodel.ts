@@ -108,4 +108,9 @@ export class Settings {
     content: '';
     subject: '';
   }>();
+  notificationConfiguration = Array<{
+    id: '';
+    label: '';
+    value: '';
+  }>();
 }

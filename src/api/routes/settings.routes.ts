@@ -2,7 +2,7 @@ import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import settingsController from '../controllers/setting/settings.controller';
 import customFieldValidate from '../../middleware/validators/customField.validate';
-
+import settingValidate from '../../middleware/validators/setting.validation';
 const router = Router();
 
 router.post(
@@ -64,6 +64,18 @@ router.post(
   '/deleteNotificationTemplate',
   authorize.validateAuth,
   settingsController.deleteNotificationTemplate
+);
+router.post(
+  '/addNotificationConfiguration',
+  authorize.validateAuth,
+  settingValidate.validateNotificationConfiguration,
+  settingsController.notificationConfiguration
+);
+
+router.get(
+  '/getNotificationConfiguration',
+  authorize.validateAuth,
+  settingsController.getNotificationConfiguration
 );
 
 export default router;

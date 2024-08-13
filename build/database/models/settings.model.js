@@ -257,6 +257,9 @@ const settignsModel = new mongoose_1.Schema({
     notificationTemplates: {
         type: (Array),
     },
+    notificationConfiguration: {
+        type: (Array),
+    },
 });
 const logUpdate = async function (next) {
     const query = this.getQuery();

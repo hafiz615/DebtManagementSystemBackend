@@ -46,3 +46,28 @@ export enum permissions {
   viewAnalyticsForSelf = 'viewAnalyticsForSelf',
   viewAnalyticsForAllusers = 'viewAnalyticsForAllusers',
 }
+
+export enum Events {
+  failed_authorization = 'failed_authorization',
+  successful_authorization = 'successful_authorization',
+  failed_payment = 'failed_payment',
+  successful_payment = 'successful_payment',
+  upcoming_payment = 'upcoming_payment',
+  case_task_added = 'case_task_added',
+  case_task_due_data_near = 'case_task_due_data_near',
+  case_task_assigned = 'case_task_assigned',
+  case_task_unassigned = 'case_task_unassigned',
+  case_note_added = 'case_note_added',
+  case_owner_changed = 'case_owner_changed',
+  case_negotiator_changed = 'case_negotiator_changed',
+  case_manager_changed = 'case_manager_changed',
+  case_details_update = 'case_details_update',
+}
+
+export enum User {
+  admin = 'Admin',
+  negotiator = 'Negotiator',
+  case_Manager = 'Case Manager',
+  debtor = 'Debtor',
+  creditor = 'Creditor',
+}
