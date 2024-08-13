@@ -73,7 +73,7 @@ class SettingsUtil {
       'retryInterval',
       'authorizationInterval',
     ];
-    const notificationTemplates = ['sms', 'email'];
+    const notificationTemplates = ['email', 'sms'];
     if (body.paymentsAuthorizations) {
       paymentsAuthorizations.forEach(key => {
         if (!body.paymentsAuthorizations.hasOwnProperty(key)) {
