@@ -4,7 +4,12 @@ import responseHelper from '../../../utils/responseHelper.util';
 import CreditorService from '../../services/creditor.service';
 import SettingsService from '../../services/settings.service';
 import commonUtil from '../../../utils/common.util';
-
+import {Case} from '../../../database/repomodels/case.repomodel';
+import {Debtor} from '../../../database/repomodels/debtor.repomodel';
+import {Creditor} from '../../../database/repomodels/creditor.repomodel';
+import {NotificationConfiguration} from '../../../database/repomodels/notificationConfiguration.repomodel';
+import {Payment} from '../../../database/repomodels/payment.repomodel';
+import {User} from '../../../database/repomodels/user.repomodel';
 class SettingsController {
   protected settingsService: SettingsService;
 
@@ -382,6 +387,38 @@ class SettingsController {
           statusCode: constants.CODE.OK,
           data: response[1],
           message: constants.successUpdateMessage('Notification Configuration'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getSystemTemplate = async (req: Request, res: Response) => {
+    try {
+      const response = [
+        true,
+        {
+          case: new Case(),
+          debtor: new Debtor(),
+          creditor: new Creditor(),
+          event: new NotificationConfiguration(),
+          payment: new Payment(),
+          user: new User(),
+        },
+      ];
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Template '),
         })
       );
     } catch (error) {

@@ -27,7 +27,8 @@ class SettingValidate {
           Events.failed_authorization,
           Events.failed_payment,
           Events.successful_authorization,
-          Events.case_details_update
+          Events.case_details_update,
+          Events.upcoming_payment
         )
         .required(),
       userPermission: Joi.array()
