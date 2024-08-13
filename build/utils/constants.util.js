@@ -53,21 +53,5 @@ exports.default = {
     notFoundMessage: (name) => `Unable to found ${name}!`,
     alreadyExistsMessage: (name) => `${name} already exists!`,
     successFoundMessage: (name) => `${name} returned successfully!`,
-    Events: {
-        failed_authorization: 'failed authorization',
-        successful_authorization: 'successful authorization',
-        failed_payment: 'failed payment',
-        successful_payment: 'successful payment',
-        upcoming_payment: 'upcoming payment',
-        case_task_added: 'case task added',
-        case_task_due_data_near: 'case task due data near',
-        case_task_assigned: 'case task assigned, unassigned',
-        case_task_unassigned: 'case task unassigned',
-        case_note_added: 'case note added',
-        case_owner_changed: 'case owner changed',
-        case_negotiator_changed: 'case negotiator changed',
-        case_manager_changed: 'case manager changed',
-        case_details_update: 'case details update',
-    },
 };
 //# sourceMappingURL=constants.util.js.map

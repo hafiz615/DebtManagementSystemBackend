@@ -12,11 +12,15 @@ const customField_repomodel_1 = require("../../database/repomodels/customField.r
 const targetCF_repository_1 = require("../repository/targetCustomFields/targetCF.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
+const notificationConfiguration_repository_1 = require("../repository/notificationConfiguration/notificationConfiguration.repository");
+const notificationConfiguration_repomodel_1 = require("../../database/repomodels/notificationConfiguration.repomodel");
 class SettingsService {
     constructor() {
         this.settingsRepository = new settings_repository_1.SettingsRepository();
         this.customFieldsRepository = new customField_repository_1.CustomFieldsRepository();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
+        this.notificationConfigurationRepository =
+            new notificationConfiguration_repository_1.NotificationConfigurationRepository();
     }
     async addSettings(req, keyword) {
         let settigns = null;
@@ -194,7 +198,7 @@ class SettingsService {
         // ) {
         //   return [false, 'type is missing'];
         // }
-        const type = String(req.query.type);
+        //const type = String(req.query.type);
         let result = null;
         // switch (type) {
         //   case 'sms':
@@ -221,10 +225,10 @@ class SettingsService {
         return [true, result];
     }
     async deleteNotificationTemplate(req) {
-        const type = String(req.query.type);
-        if (type !== 'sms' && type !== 'email') {
-            return [false, 'type is missing'];
-        }
+        // const type = String(req?.query?.type);
+        // if (type !== 'sms' && type !== 'email') {
+        //   return [false, 'type is missing'];
+        // }
         let result = null;
         const templateId = req.body.templateId;
         // switch (type) {
@@ -248,6 +252,52 @@ class SettingsService {
         // }
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('notification template')];
+        }
+        return [true, result];
+    }
+    async addNotificationConfiguration(req) {
+        let result = null, createConfiguration;
+        let find = await this.notificationConfigurationRepository.getOne({ value: req.body.value });
+        if (!find) {
+            const newConfiguration = new notificationConfiguration_repomodel_1.NotificationConfiguration();
+            const validatedConfiguration = dataCopier_util_1.DataCopier.copy(newConfiguration, req.body);
+            let createConfiguration = await this.notificationConfigurationRepository.create(validatedConfiguration);
+            const findSettings = await this.settingsRepository.getAllWithoutPagination();
+            result = await this.settingsRepository.updateById(findSettings[0].id, {
+                $push: {
+                    notificationConfiguration: {
+                        value: createConfiguration.value,
+                        label: createConfiguration.label,
+                        id: createConfiguration.id,
+                    },
+                },
+            });
+        }
+        else {
+            result = await this.notificationConfigurationRepository.updateByOne({ value: req.body.value }, {
+                $set: req.body,
+            });
+        }
+        if (!result) {
+            return [false, constants_util_1.default.failureUpdateMessage('notification template')];
+        }
+        return [true, result];
+    }
+    async getNotificationConfiguration(req) {
+        let result = null;
+        const type = String(req?.query?.type);
+        switch (type) {
+            case 'all':
+                result =
+                    await this.settingsRepository.getAllWithoutPagination();
+                result = result[0]?.notificationConfiguration;
+                break;
+            default:
+                result =
+                    await this.notificationConfigurationRepository.getOne({ value: type });
+        }
+        if (!result) {
+            return [false, constants_util_1.default.failureUpdateMessage('notification template')];
         }
         return [true, result];
     }

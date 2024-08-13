@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.permissions = exports.responseName = void 0;
+exports.User = exports.Events = exports.permissions = exports.responseName = void 0;
 var responseName;
 (function (responseName) {
     responseName["ok"] = "OK";
@@ -50,4 +50,29 @@ var permissions;
     permissions["viewAnalyticsForSelf"] = "viewAnalyticsForSelf";
     permissions["viewAnalyticsForAllusers"] = "viewAnalyticsForAllusers";
 })(permissions || (exports.permissions = permissions = {}));
+var Events;
+(function (Events) {
+    Events["failed_authorization"] = "failed_authorization";
+    Events["successful_authorization"] = "successful_authorization";
+    Events["failed_payment"] = "failed_payment";
+    Events["successful_payment"] = "successful_payment";
+    Events["upcoming_payment"] = "upcoming_payment";
+    Events["case_task_added"] = "case_task_added";
+    Events["case_task_due_data_near"] = "case_task_due_data_near";
+    Events["case_task_assigned"] = "case_task_assigned";
+    Events["case_task_unassigned"] = "case_task_unassigned";
+    Events["case_note_added"] = "case_note_added";
+    Events["case_owner_changed"] = "case_owner_changed";
+    Events["case_negotiator_changed"] = "case_negotiator_changed";
+    Events["case_manager_changed"] = "case_manager_changed";
+    Events["case_details_update"] = "case_details_update";
+})(Events || (exports.Events = Events = {}));
+var User;
+(function (User) {
+    User["admin"] = "Admin";
+    User["negotiator"] = "Negotiator";
+    User["case_Manager"] = "Case Manager";
+    User["debtor"] = "Debtor";
+    User["creditor"] = "Creditor";
+})(User || (exports.User = User = {}));
 //# sourceMappingURL=index.js.map

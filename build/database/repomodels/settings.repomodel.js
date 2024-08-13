@@ -105,6 +105,7 @@ class Settings {
             },
         };
         this.notificationTemplates = Array();
+        this.notificationConfiguration = Array();
     }
 }
 exports.Settings = Settings;

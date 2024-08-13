@@ -77,4 +77,9 @@ interface INotificationTemplates {
 export interface ISettings extends Document {
   paymentsAuthorizations: IPaymentsAuthorizations;
   notificationTemplates: Array<INotificationTemplates>;
+  notificationConfiguration: Array<{
+    id: '';
+    label: '';
+    value: '';
+  }>;
 }

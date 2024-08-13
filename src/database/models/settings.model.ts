@@ -238,6 +238,13 @@ const settignsModel: Schema = new Schema({
       subject: '';
     }>,
   },
+  notificationConfiguration: {
+    type: Array<{
+      id: '';
+      label: '';
+      value: '';
+    }>,
+  },
 });
 
 const logUpdate = async function (next) {
