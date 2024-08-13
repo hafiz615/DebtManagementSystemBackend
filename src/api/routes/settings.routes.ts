@@ -78,4 +78,10 @@ router.get(
   settingsController.getNotificationConfiguration
 );
 
+router.get(
+  '/getSystemTemplate',
+  authorize.validateAuth,
+  settingsController.getCustomTemplate
+);
+
 export default router;
