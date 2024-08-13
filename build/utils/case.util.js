@@ -342,6 +342,9 @@ class CaseUtil {
         //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
         //       };
         // }
+        let commisionPercentage = body.commisionPercentage
+            ? body.commisionPercentage / 100
+            : 0.19;
         if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
             debt = body.remaining ?? 0;
@@ -368,7 +371,7 @@ class CaseUtil {
             : {
                 status: true,
                 commission: weeklyBudget - amount,
-                totalCommission: parseInt((debt * 0.19).toFixed(2)),
+                totalCommission: parseInt((debt * commisionPercentage).toFixed(2)),
             };
     }
     async getWeeklyAmount(interval) {
@@ -1329,11 +1332,11 @@ class CaseUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            if (!response.data.error) {
+            if (!response.data.error && caseId) {
                 this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, { 'data.creditorNames': response.data });
                 this.caseRepository.updateById(caseId, { strategyOne_1: true });
             }
-            if (response.data.error) {
+            if (response.data.error && caseId) {
                 this.caseRepository.updateById(caseId, { strategyOne_1: false });
             }
             return response.data.error ? response.data.error : response.data;
@@ -1353,9 +1356,14 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === String(creditor._id);
             });
-            let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-            if (accTitleObj && accTitleObj.accountTitle) {
-                data[`${accTitleObj.accountTitle}`] = {
+            let accountTitle = '';
+            accountTitle =
+                accTitleObj && accTitleObj?.accountTitle
+                    ? accTitleObj.accountTitle
+                    : creditor.creditor.accountTitle;
+            let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
+            if (accountTitle) {
+                data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
                     weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
@@ -1668,9 +1676,14 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === creditor.caseId;
             });
+            let accountTitle = '';
+            accountTitle =
+                accTitleObj && accTitleObj?.accountTitle
+                    ? accTitleObj.accountTitle
+                    : creditor.creditorAccountTitle;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-            if (accTitleObj && accTitleObj.accountTitle) {
-                data[`${accTitleObj.accountTitle}`] = {
+            if (accountTitle) {
+                data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
                     weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,

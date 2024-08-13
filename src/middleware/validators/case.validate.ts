@@ -337,6 +337,7 @@ class CaseValidate {
           status: Joi.string().optional(),
           notes: Joi.string(),
           chatId: Joi.string(),
+          commisionPercentage: Joi.number().strict(),
           feePayment: Joi.string()
             .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
             .optional()
