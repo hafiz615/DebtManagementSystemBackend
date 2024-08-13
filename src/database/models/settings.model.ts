@@ -2,6 +2,7 @@ import mongoose, {Schema} from 'mongoose';
 import {ISettings} from '../interfaces/settings.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
+import {Type} from '@aws-sdk/client-s3';
 
 const settignsModel: Schema = new Schema({
   paymentsAuthorizations: {
@@ -228,12 +229,14 @@ const settignsModel: Schema = new Schema({
     },
   },
   notificationTemplates: {
-    email: {
-      type: Array<{name: ''; event: ''; html: ''; templateId: ''; subject: ''}>,
-    },
-    sms: {
-      type: Array<{name: ''; event: ''; text: ''; templateId: ''}>,
-    },
+    type: Array<{
+      type: '';
+      name: '';
+      event: '';
+      templateId: '';
+      content: '';
+      subject: '';
+    }>,
   },
 });
 
