@@ -396,7 +396,7 @@ class SettingsController {
     }
   };
 
-  getCustomTemplate = async (req: Request, res: Response) => {
+  getSystemTemplate = async (req: Request, res: Response) => {
     try {
       const response = [
         true,

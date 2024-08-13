@@ -316,7 +316,7 @@ class SettingsController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.getCustomTemplate = async (req, res) => {
+        this.getSystemTemplate = async (req, res) => {
             try {
                 const response = [
                     true,

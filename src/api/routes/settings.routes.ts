@@ -81,7 +81,7 @@ router.get(
 router.get(
   '/getSystemTemplate',
   authorize.validateAuth,
-  settingsController.getCustomTemplate
+  settingsController.getSystemTemplate
 );
 
 export default router;
