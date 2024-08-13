@@ -104,10 +104,7 @@ class Settings {
                 },
             },
         };
-        this.notificationTemplates = {
-            email: Array(),
-            sms: Array(),
-        };
+        this.notificationTemplates = Array();
     }
 }
 exports.Settings = Settings;

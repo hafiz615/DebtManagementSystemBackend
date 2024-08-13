@@ -32,34 +32,35 @@ class SettingsService {
     let settigns = null;
     const findSettings =
       await this.settingsRepository.getAllWithoutPagination<ISettings>();
-    if (!findSettings.length) {
+    if (!findSettings?.length) {
       const newSettings = new Settings();
-      if (req.body?.notificationTemplates?.email?.length) {
-        req.body.notificationTemplates.email[0].templateId = 'Template-001';
+
+      if (req.body?.notificationTemplates?.length) {
+        req.body.notificationTemplates[0].templateId = 'Template-001';
       }
-      if (req.body?.notificationTemplates?.sms?.length) {
-        req.body.notificationTemplates.sms[0].templateId = 'Template-001';
-      }
+      // if (req.body?.notificationTemplates?.sms?.length) {
+      //   req.body.notificationTemplates.sms[0].templateId = 'Template-001';
+      // }
       const validatedSettings = DataCopier.copy(newSettings, req.body);
       settigns =
         await this.settingsRepository.create<ISettings>(validatedSettings);
     } else {
       if (
-        req.body?.notificationTemplates?.email?.length >
-        findSettings[0].notificationTemplates.email.length
+        req.body?.notificationTemplates?.length >
+        findSettings[0]?.notificationTemplates?.length
       ) {
-        let num = req.body.notificationTemplates.email.length;
-        req.body.notificationTemplates.email[num - 1].templateId =
+        let num = req.body.notificationTemplates.length;
+        req.body.notificationTemplates[num - 1].templateId =
           'Template-' + num.toString().padStart(3, '0');
       }
-      if (
-        req.body?.notificationTemplates?.sms?.length >
-        findSettings[0].notificationTemplates.sms.length
-      ) {
-        let num = req.body.notificationTemplates.sms.length;
-        req.body.notificationTemplates.sms[num - 1].templateId =
-          'Template-' + num.toString().padStart(3, '0');
-      }
+      // if (
+      //   req.body?.notificationTemplates?.sms?.length >
+      //   findSettings[0].notificationTemplates.sms.length
+      // ) {
+      //   let num = req.body.notificationTemplates.sms.length;
+      //   req.body.notificationTemplates.sms[num - 1].templateId =
+      //     'Template-' + num.toString().padStart(3, '0');
+      // }
       if (keyword === 'editPaymentsNotificationSettings') {
         const paymentsNoti = await commonUtil.checkPermission(keyword, req);
         const authInterval = await commonUtil.checkPermission(keyword, req);
@@ -125,6 +126,7 @@ class SettingsService {
       },
     ];
   }
+
   async addCustomField(
     req: Request
   ): Promise<[boolean, ICustomField | string]> {
@@ -139,6 +141,7 @@ class SettingsService {
     }
     return [true, customField];
   }
+
   async editCustomField(
     req: Request
   ): Promise<[boolean, ICustomField | string]> {
@@ -152,6 +155,7 @@ class SettingsService {
     }
     return [true, customField];
   }
+
   async getCustomFieldsByTarget(
     req: Request
   ): Promise<[boolean, ICustomField[] | string]> {
@@ -166,6 +170,7 @@ class SettingsService {
     }
     return [true, customFields];
   }
+
   async addCustomFieldByTarget(
     req: Request
   ): Promise<[boolean, ITargetCustomFields | string]> {
@@ -252,36 +257,36 @@ class SettingsService {
   async editNotificationTemplate(
     req: Request
   ): Promise<[boolean, ISettings | string]> {
-    if (
-      String(req.query.type) !== 'sms' &&
-      String(req.query.type) !== 'email'
-    ) {
-      return [false, 'type is missing'];
-    }
+    // if (
+    //   String(req.query.type) !== 'sms' &&
+    //   String(req.query.type) !== 'email'
+    // ) {
+    //   return [false, 'type is missing'];
+    // }
     const type = String(req.query.type);
     let result = null;
-    switch (type) {
-      case 'sms':
-        result = await this.settingsRepository.updateByOne(
-          {'notificationTemplates.sms.templateId': req.body.templateId},
-          {
-            $set: {
-              'notificationTemplates.sms.$': req.body,
-            },
-          }
-        );
-        break;
-      case 'email':
-        result = await this.settingsRepository.updateByOne(
-          {'notificationTemplates.email.templateId': req.body.templateId},
-          {
-            $set: {
-              'notificationTemplates.email.$': req.body,
-            },
-          }
-        );
-        break;
-    }
+    // switch (type) {
+    //   case 'sms':
+    result = await this.settingsRepository.updateByOne(
+      {'notificationTemplates.templateId': req.body.templateId},
+      {
+        $set: {
+          'notificationTemplates.$': req.body,
+        },
+      }
+    );
+    //  break;
+    // case 'email':
+    //   result = await this.settingsRepository.updateByOne(
+    //     {'notificationTemplates.email.templateId': req.body.templateId},
+    //     {
+    //       $set: {
+    //         'notificationTemplates.email.$': req.body,
+    //       },
+    //     }
+    //   );
+    //   break;
+    //  }
     if (!result) {
       return [false, constants.failureUpdateMessage('notification template')];
     }
@@ -297,28 +302,28 @@ class SettingsService {
     }
     let result = null;
     const templateId = req.body.templateId;
-    switch (type) {
-      case 'sms':
-        result = await this.settingsRepository.updateByOne(
-          {'notificationTemplates.sms.templateId': req.body.templateId},
-          {
-            $pull: {
-              'notificationTemplates.sms': {templateId},
-            },
-          }
-        );
-        break;
-      case 'email':
-        result = await this.settingsRepository.updateByOne(
-          {'notificationTemplates.email.templateId': req.body.templateId},
-          {
-            $pull: {
-              'notificationTemplates.email': {templateId},
-            },
-          }
-        );
-        break;
-    }
+    // switch (type) {
+    //   case 'sms':
+    result = await this.settingsRepository.updateByOne(
+      {'notificationTemplates.templateId': req.body.templateId},
+      {
+        $pull: {
+          'notificationTemplates.': {templateId},
+        },
+      }
+    );
+    // break;
+    //   case 'email':
+    //     result = await this.settingsRepository.updateByOne(
+    //       {'notificationTemplates.email.templateId': req.body.templateId},
+    //       {
+    //         $pull: {
+    //           'notificationTemplates.email': {templateId},
+    //         },
+    //       }
+    //     );
+    //     break;
+    // }
     if (!result) {
       return [false, constants.failureDeleteMessage('notification template')];
     }

@@ -255,12 +255,7 @@ const settignsModel = new mongoose_1.Schema({
         },
     },
     notificationTemplates: {
-        email: {
-            type: (Array),
-        },
-        sms: {
-            type: (Array),
-        },
+        type: (Array),
     },
 });
 const logUpdate = async function (next) {

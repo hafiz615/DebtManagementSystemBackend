@@ -100,19 +100,12 @@ export class Settings {
       },
     },
   };
-  notificationTemplates = {
-    email: Array<{
-      name: '';
-      event: '';
-      html: '';
-      subject: '';
-      templateId: '';
-    }>(),
-    sms: Array<{
-      name: '';
-      event: '';
-      text: '';
-      templateId: '';
-    }>(),
-  };
+  notificationTemplates = Array<{
+    type: '';
+    name: '';
+    event: '';
+    templateId: '';
+    content: '';
+    subject: '';
+  }>();
 }

@@ -47,27 +47,34 @@ interface IPaymentsAuthorizations {
   authorizationInterval: IAuthorizationInterval;
 }
 
-interface IEmailNotify {
-  name: string;
-  event: string;
-  html: string;
-  templateId: string;
-  subject: string;
-}
+// interface IEmailNotify {
+//   name: string;
+//   event: string;
+//   html: string;
+//   templateId: string;
+//   subject: string;
+// }
 
-interface ISmsNotify {
-  name: string;
-  event: string;
-  text: string;
-  templateId: string;
-}
+// interface ISmsNotify {
+//   name: string;
+//   event: string;
+//   text: string;
+//   templateId: string;
+// }
 
 interface INotificationTemplates {
-  email: Array<IEmailNotify>;
-  sms: Array<ISmsNotify>;
+  name: string;
+  event: string;
+  content: string;
+  templateId: string;
+  subject: string;
+  type: string;
+
+  // email: Array<IEmailNotify>;
+  // sms: Array<ISmsNotify>;
 }
 
 export interface ISettings extends Document {
   paymentsAuthorizations: IPaymentsAuthorizations;
-  notificationTemplates: INotificationTemplates;
+  notificationTemplates: Array<INotificationTemplates>;
 }
