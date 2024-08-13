@@ -1332,11 +1332,11 @@ class CaseUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            if (!response.data.error) {
+            if (!response.data.error && caseId) {
                 this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, { 'data.creditorNames': response.data });
                 this.caseRepository.updateById(caseId, { strategyOne_1: true });
             }
-            if (response.data.error) {
+            if (response.data.error && caseId) {
                 this.caseRepository.updateById(caseId, { strategyOne_1: false });
             }
             return response.data.error ? response.data.error : response.data;
@@ -1363,7 +1363,7 @@ class CaseUtil {
                     : creditor.creditor.accountTitle;
             let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
             if (accountTitle) {
-                data[`${accTitleObj.accountTitle}`] = {
+                data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
                     weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
@@ -1676,9 +1676,14 @@ class CaseUtil {
             const accTitleObj = accountTitles.find(temp => {
                 return temp.caseId === creditor.caseId;
             });
+            let accountTitle = '';
+            accountTitle =
+                accTitleObj && accTitleObj?.accountTitle
+                    ? accTitleObj.accountTitle
+                    : creditor.creditorAccountTitle;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-            if (accTitleObj && accTitleObj.accountTitle) {
-                data[`${accTitleObj.accountTitle}`] = {
+            if (accountTitle) {
+                data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
                     weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,

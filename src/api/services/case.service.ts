@@ -26,6 +26,7 @@ import {IUser} from '../../database/interfaces/user.interface';
 import commonUtil from '../../utils/common.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
+import creditorUtil from '../../utils/creditor.util';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -500,12 +501,15 @@ class CaseService {
       creditorNames = null;
     let creditors = null;
     let settlementRange = null;
-    const response = await caseUtil.getAllCreditorsOfDebtor(
-      caseTemp.debtor as any
-    );
+    let hardReload = 'false';
+    let data = {};
+    if (req.query.hardReload && req.query.hardReload === 'true')
+      hardReload = 'true';
+    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    creditors = await creditorUtil.checkCreditorsMapping(creditors);
     creditors = Array.from(
       new Map(
-        response.map(creditor => [creditor.creditorId, creditor])
+        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
     const result = await this.strategyRepository.getOne<IStrategy>({
@@ -513,13 +517,19 @@ class CaseService {
       name: 'strategy_one',
     });
     if (req.query.all === 'true') {
-      if (caseTemp.strategyOne_2 && result.data.getScoresAIForAllCreditors) {
+      if (
+        hardReload !== 'true' &&
+        caseTemp.strategyOne_2 &&
+        result.data.getScoresAIForAllCreditors
+      ) {
         getScores = result.data.getScoresAIForAllCreditors;
+        data['getScores'] = getScores;
       } else {
         getScores = await caseUtil.getScoresForAllCreditors(
           caseTemp,
           creditors
         );
+        data['getScores'] = getScores;
       }
     } else {
       if (req.body.creditorNames.length) {
@@ -533,30 +543,32 @@ class CaseService {
           );
         console.log(casesCreditors);
         getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
+        data['getScores'] = getScores;
       }
     }
-    if (caseTemp.strategyOne_3 && result.data.settlementRange) {
+    if (
+      hardReload !== 'true' &&
+      caseTemp.strategyOne_3 &&
+      result.data.settlementRange
+    ) {
       settlementRange = result.data.settlementRange;
+      data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
+      data['settlementRange'] = settlementRange;
     }
-    if (req.query.hardReload && req.query.hardReload === 'true') {
+    if (
+      hardReload !== 'true' &&
+      caseTemp.strategyOne_1 &&
+      result.data.creditorNames
+    ) {
+      creditorNames = result.data.creditorNames;
+      data['creditorNames'] = creditorNames;
+    }
+    if (hardReload === 'true') {
       const debtor: any = caseTemp.debtor;
-      // const extractedFields = await caseUtil.getExtractionMCA(debtor);
-      // if (extractedFields) {
-      //   this.debtorRepository.updateById(debtor._id, {
-      //     extractedFields: extractedFields.extracted_fields,
-      //   });
-      // }
       let extractedFieldsTemp = null;
-      console.log(!debtor?.extractedFields, '!debtor?.extractedFields');
-      console.log(
-        !debtor?.extractedFields?.length,
-        '!debtor?.extractedFields?.length'
-      );
-      console.log(debtor.extractedFields, 'hkjhkjhkjhkj');
       if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-        console.log('ia m going for extraction');
         const extractedFields = await caseUtil.getExtractionMCA(debtor);
         if (extractedFields) {
           this.debtorRepository.updateById(debtor._id, {
@@ -565,36 +577,16 @@ class CaseService {
           extractedFieldsTemp = extractedFields.extracted_fields;
         }
       }
-      console.log(extractedFieldsTemp);
-      if (caseTemp.strategyOne_1 && result.data.creditorNames) {
-        creditorNames = result.data.creditorNames;
-      } else {
-        creditorNames = await caseUtil.getCreditorNames(
-          debtor,
-          debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
-          String(caseTemp._id)
-        );
-      }
-      return [
-        true,
-        {
-          getScores: getScores,
-          settlementRange: settlementRange,
-          creditors,
-          debtor: caseTemp.debtor,
-          creditorNames,
-        },
-      ];
+      creditorNames = await caseUtil.getCreditorNames(
+        debtor,
+        debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
+        String(caseTemp._id)
+      );
+      data['creditorNames'] = creditorNames;
     }
-    return [
-      true,
-      {
-        getScores: getScores,
-        settlementRange: settlementRange,
-        creditors,
-        debtor: caseTemp.debtor,
-      },
-    ];
+    data['creditors'] = creditors;
+    data['debtor'] = caseTemp.debtor;
+    return [true, data];
   };
 
   addNotes = async (req: Request): Promise<[boolean, ICase | string]> => {
