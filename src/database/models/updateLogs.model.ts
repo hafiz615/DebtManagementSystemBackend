@@ -6,6 +6,11 @@ const logSchema = new Schema({
   previousData: Schema.Types.Mixed,
   currentData: Schema.Types.Mixed,
   model: String,
+  logTrackingId: String,
+  ip: String,
+  userId: String,
+  url: String,
+  method: String,
 });
 
 const UpdateLog = model('UpdateLog', logSchema);

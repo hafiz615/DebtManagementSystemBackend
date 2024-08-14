@@ -5,6 +5,9 @@ import dotenv from 'dotenv';
 import responseHelper from '../utils/responseHelper.util';
 import constants from '../utils/constants.util';
 import TokenService from '../api/services/token.service';
+import asyncLocalStorage from '../utils/localStorage.util';
+// import {asyncLocalStorage} from '../utils/check';
+
 dotenv.config();
 class Authorize {
   validateAuth = (req: Request | any, res: Response, next: NextFunction) => {
@@ -52,6 +55,13 @@ class Authorize {
           req.role = exists.role;
           req.sessionId = decoded?.sessionId;
           req.name = exists.name;
+          const store = asyncLocalStorage.getStore();
+          if (store) {
+            store.set('ip', req.ip);
+            store.set('userId', req.id);
+            store.set('url', req.originalUrl);
+            store.set('method', req.method);
+          }
           return next();
         }
       );

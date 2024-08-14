@@ -6,7 +6,6 @@ import setup from './api/routes/base.route';
 import paymentCronjob from './cron-job/payment.cronjob';
 import logMiddleware from './middleware/logs.middleware'; // Import the logging middleware
 import asyncLocalStorage from './utils/localStorage.util';
-
 class App {
   protected app: Application;
   protected database: Database;

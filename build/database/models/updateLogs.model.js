@@ -7,6 +7,11 @@ const logSchema = new mongoose_1.Schema({
     previousData: mongoose_1.Schema.Types.Mixed,
     currentData: mongoose_1.Schema.Types.Mixed,
     model: String,
+    logTrackingId: String,
+    ip: String,
+    userId: String,
+    url: String,
+    method: String,
 });
 const UpdateLog = (0, mongoose_1.model)('UpdateLog', logSchema);
 exports.default = UpdateLog;

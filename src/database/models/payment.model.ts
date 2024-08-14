@@ -1,7 +1,5 @@
 import mongoose, {Schema} from 'mongoose';
 import {IPayment} from '../interfaces/payment.interface';
-import asyncLocalStorage from '../../utils/localStorage.util';
-import UpdateLog from './updateLogs.model';
 
 const PaymentModel: Schema = new Schema({
   caseId: {

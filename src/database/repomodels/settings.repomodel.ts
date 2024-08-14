@@ -1,3 +1,5 @@
+import commonUtil from '../../utils/common.util';
+
 export class Settings {
   paymentsAuthorizations = {
     failedAuthorizations: {
@@ -113,4 +115,6 @@ export class Settings {
     label: '';
     value: '';
   }>();
+  createdAt = commonUtil.getCurrentDate();
+  updatedAt = commonUtil.getCurrentDate();
 }

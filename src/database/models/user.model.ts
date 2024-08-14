@@ -3,6 +3,7 @@ import {IUser} from '../interfaces/user.interface';
 import commonUtil from '../../utils/common.util';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
+import {v4} from 'uuid';
 
 const userModel: Schema = new Schema({
   name: {
@@ -48,6 +49,9 @@ const userModel: Schema = new Schema({
     type: Array<String>,
     select: false,
   },
+  logTrackingId: {
+    type: String,
+  },
   isDeleted: {type: Boolean},
   createdAt: {
     type: Date,
@@ -60,6 +64,7 @@ const userModel: Schema = new Schema({
 });
 userModel.index({_id: 1, email: 1});
 userModel.pre('save', async function (next) {
+  this.logTrackingId = v4();
   if (!this.isModified('password') || !this.password) {
     return next();
   }
@@ -83,17 +88,30 @@ const logUpdate = async function (next) {
 };
 
 const logUpdatePost = async function (doc) {
-  let traceId = '';
+  let traceId = '',
+    ip = '',
+    userId = '',
+    url = '',
+    method = '';
   const store = asyncLocalStorage.getStore();
   if (store) {
-    traceId = store.get('traceId');
+    if (store.get('traceId')) traceId = store.get('traceId');
+    if (store.get('ip')) ip = store.get('ip');
+    if (store.get('userId')) userId = store.get('userId');
+    if (store.get('url')) url = store.get('url');
+    if (store.get('method')) method = store.get('method');
   }
   const previousDoc = this.previousDoc;
   const logEntry = new UpdateLog({
-    traceId: traceId,
+    traceId,
     previousData: previousDoc,
     currentData: doc,
     model: this.model.modelName,
+    logTrackingId: previousDoc.logTrackingId,
+    ip,
+    userId,
+    url,
+    method,
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

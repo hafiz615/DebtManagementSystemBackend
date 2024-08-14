@@ -30,6 +30,7 @@ exports.Case = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
+const uuid_1 = require("uuid");
 const caseModel = new mongoose_1.Schema({
     debtor: {
         type: mongoose_1.default.Schema.Types.ObjectId,
@@ -139,6 +140,9 @@ const caseModel = new mongoose_1.Schema({
     strategyThree: {
         type: Boolean,
     },
+    logTrackingId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,
@@ -147,6 +151,10 @@ const caseModel = new mongoose_1.Schema({
         type: Date,
         required: true,
     },
+});
+caseModel.pre('save', async function (next) {
+    this.logTrackingId = (0, uuid_1.v4)();
+    next();
 });
 const logUpdate = async function (next) {
     const query = this.getQuery();
@@ -157,17 +165,31 @@ const logUpdate = async function (next) {
     next();
 };
 const logUpdatePost = async function (doc) {
-    let traceId = '';
+    let traceId = '', ip = '', userId = '', url = '', method = '';
     const store = localStorage_util_1.default.getStore();
     if (store) {
-        traceId = store.get('traceId');
+        if (store.get('traceId'))
+            traceId = store.get('traceId');
+        if (store.get('ip'))
+            ip = store.get('ip');
+        if (store.get('userId'))
+            userId = store.get('userId');
+        if (store.get('url'))
+            url = store.get('url');
+        if (store.get('method'))
+            method = store.get('method');
     }
     const previousDoc = this.previousDoc;
     const logEntry = new updateLogs_model_1.default({
-        traceId: traceId,
+        traceId,
         previousData: previousDoc,
         currentData: doc,
         model: this.model.modelName,
+        logTrackingId: previousDoc.logTrackingId,
+        ip,
+        userId,
+        url,
+        method,
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry', err);

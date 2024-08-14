@@ -14,6 +14,7 @@ const pipelineStatus_routes_1 = __importDefault(require("./pipelineStatus.routes
 const status_routes_1 = __importDefault(require("./status.routes"));
 const rolesPermissions_routes_1 = __importDefault(require("./rolesPermissions.routes"));
 const tasks_routes_1 = __importDefault(require("./tasks.routes"));
+const logging_routes_1 = __importDefault(require("./logging.routes"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
     app.use('/api/v1/case', case_routes_1.default);
@@ -26,6 +27,7 @@ function setup(app) {
     app.use('/api/v1/status', status_routes_1.default);
     app.use('/api/v1/roles', rolesPermissions_routes_1.default);
     app.use('/api/v1/task', tasks_routes_1.default);
+    app.use('/api/v1/logs', logging_routes_1.default);
 }
 exports.default = setup;
 //# sourceMappingURL=base.route.js.map

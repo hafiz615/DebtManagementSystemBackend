@@ -82,4 +82,6 @@ export interface ISettings extends Document {
     label: '';
     value: '';
   }>;
+  createdAt: string;
+  updatedAt: string;
 }

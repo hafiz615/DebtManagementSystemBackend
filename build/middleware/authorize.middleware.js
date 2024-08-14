@@ -31,6 +31,8 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const responseHelper_util_1 = __importDefault(require("../utils/responseHelper.util"));
 const constants_util_1 = __importDefault(require("../utils/constants.util"));
 const token_service_1 = __importDefault(require("../api/services/token.service"));
+const localStorage_util_1 = __importDefault(require("../utils/localStorage.util"));
+// import {asyncLocalStorage} from '../utils/check';
 dotenv_1.default.config();
 class Authorize {
     constructor() {
@@ -60,6 +62,13 @@ class Authorize {
                     req.role = exists.role;
                     req.sessionId = decoded?.sessionId;
                     req.name = exists.name;
+                    const store = localStorage_util_1.default.getStore();
+                    if (store) {
+                        store.set('ip', req.ip);
+                        store.set('userId', req.id);
+                        store.set('url', req.originalUrl);
+                        store.set('method', req.method);
+                    }
                     return next();
                 });
             }
