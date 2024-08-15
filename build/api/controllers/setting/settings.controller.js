@@ -7,12 +7,6 @@ const constants_util_1 = __importDefault(require("../../../utils/constants.util"
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const settings_service_1 = __importDefault(require("../../services/settings.service"));
 const common_util_1 = __importDefault(require("../../../utils/common.util"));
-const case_repomodel_1 = require("../../../database/repomodels/case.repomodel");
-const debtor_repomodel_1 = require("../../../database/repomodels/debtor.repomodel");
-const creditor_repomodel_1 = require("../../../database/repomodels/creditor.repomodel");
-const notificationConfiguration_repomodel_1 = require("../../../database/repomodels/notificationConfiguration.repomodel");
-const payment_repomodel_1 = require("../../../database/repomodels/payment.repomodel");
-const user_repomodel_1 = require("../../../database/repomodels/user.repomodel");
 class SettingsController {
     constructor() {
         this.addSettings = async (req, res) => {
@@ -321,12 +315,63 @@ class SettingsController {
                 const response = [
                     true,
                     {
-                        case: new case_repomodel_1.Case(),
-                        debtor: new debtor_repomodel_1.Debtor(),
-                        creditor: new creditor_repomodel_1.Creditor(),
-                        event: new notificationConfiguration_repomodel_1.NotificationConfiguration(),
-                        payment: new payment_repomodel_1.Payment(),
-                        user: new user_repomodel_1.User(),
+                        case: {
+                            caseOwner: 'Case Owner',
+                            negotiator: 'Negotiator',
+                            manager: 'Manager',
+                            caseCode: 'Case Code',
+                            status: 'Status',
+                            totalDebt: 'Total Debt',
+                            lastPaymentDate: 'Last Payment Date',
+                            paidAmount: 'Paid Amount',
+                            remaining: 'Remaining',
+                            contractDetails: 'Contract Details',
+                        },
+                        debtor: {
+                            basicInformation: {
+                                FullName: 'Full Name',
+                                email: 'Email',
+                                phone: 'Phone',
+                            },
+                            businessInformation: 'Business Information',
+                            lastFundedDate: 'Last Funded Date',
+                            historicalRange: 'Historical Range',
+                            accountTitle: 'Account Title',
+                            aggression: 'Aggression',
+                        },
+                        creditor: {
+                            basicInformation: {
+                                FullName: 'Full Name',
+                                email: 'Email',
+                                phone: 'Phone',
+                            },
+                            businessInformation: 'Business Information',
+                        },
+                        event: { value: 'Value' },
+                        payment: {
+                            authorized: 'Authorized',
+                            captured: 'Captured',
+                            status: 'Status',
+                            sendViaPaynote: 'Send Via Pay note',
+                            amount: 'Amount',
+                            dueDate: 'Due Date',
+                            failedReasonAuthorization: 'Failed Reason Authorization',
+                            failedReasonCaptured: 'Failed Reason Captured',
+                            rescheduled: 'Rescheduled',
+                            retriesAuth: 'RetriesAuth',
+                            retriesCapture: 'RetriesCapture',
+                            timePeriod: 'TimePeriod',
+                        },
+                        user: {
+                            name: 'Name',
+                            email: 'Email',
+                            role: 'Role',
+                            SSN: 'SSN',
+                            dateOfBirth: 'Date Of Birth',
+                            phone: 'Phone',
+                            gender: 'Gender',
+                            address: 'Address',
+                        },
                     },
                 ];
                 if (!response[0]) {

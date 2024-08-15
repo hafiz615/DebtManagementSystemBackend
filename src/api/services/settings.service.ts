@@ -316,7 +316,7 @@ class SettingsService {
       {'notificationTemplates.templateId': req.body.templateId},
       {
         $pull: {
-          'notificationTemplates.': {templateId},
+          'notificationTemplates.$': {templateId},
         },
       }
     );
