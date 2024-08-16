@@ -90,4 +90,10 @@ router.post(
   caseController.addNotes
 );
 
+router.post(
+  '/getScoresSettlementByCommPercentage/:id',
+  authorize.validateAuth,
+  caseController.getScoresSettlementByCommPercentage
+);
+
 export default router;

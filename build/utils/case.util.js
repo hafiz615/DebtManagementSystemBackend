@@ -1588,20 +1588,20 @@ class CaseUtil {
             return null;
         }
     }
-    async getScores(req, caseTemp, creditors) {
+    async getScores(caseTemp, creditors, comm) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const getScores = await this.getScoresAI(19, global_1.AIAuth.auth_token, caseTemp, creditors);
+        const getScores = await this.getScoresAI(comm, global_1.AIAuth.auth_token, caseTemp, creditors);
         return getScores;
     }
-    async getScoresForAllCreditors(caseTemp, creditors) {
+    async getScoresForAllCreditors(caseTemp, creditors, comm) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const getScores = await this.getScoresAIForAllCreditors(19, global_1.AIAuth.auth_token, caseTemp, creditors);
+        const getScores = await this.getScoresAIForAllCreditors(comm, global_1.AIAuth.auth_token, caseTemp, creditors);
         return getScores;
     }
     async getSettlementRange(caseTemp) {

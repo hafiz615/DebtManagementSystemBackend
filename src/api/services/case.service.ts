@@ -286,7 +286,11 @@ class CaseService {
           : extractedFieldsTemp,
         String(findCase._id)
       );
-      caseUtil.getScoresForAllCreditors(caseUpdated, creditors);
+      caseUtil.getScoresForAllCreditors(
+        caseUpdated,
+        creditors,
+        getDebtor.commissionPercentage
+      );
       caseUtil.getSettlementRange(caseUpdated);
       caseUtil.getLumpSumAmount(caseUpdated);
       caseUtil.getFullProfitSettlement(caseUpdated);
@@ -414,7 +418,7 @@ class CaseService {
   };
 
   getScores = async (req: Request) => {
-    const caseTemp = await this.caseRepository.getById<ICase>(
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
@@ -442,7 +446,11 @@ class CaseService {
           ? obj.creditor.accountTitle
           : '',
       }));
-      getScores = await caseUtil.getScores(req, caseTemp, creditors);
+      getScores = await caseUtil.getScores(
+        caseTemp,
+        creditors,
+        caseTemp.debtor.commissionPercentage
+      );
     }
     return getScores;
   };
@@ -496,6 +504,7 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
+    const debtor: any = caseTemp.debtor;
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     let getScores = null,
       creditorNames = null;
@@ -505,7 +514,7 @@ class CaseService {
     let data = {};
     if (req.query.hardReload && req.query.hardReload === 'true')
       hardReload = 'true';
-    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
     creditors = Array.from(
       new Map(
@@ -527,7 +536,8 @@ class CaseService {
       } else {
         getScores = await caseUtil.getScoresForAllCreditors(
           caseTemp,
-          creditors
+          creditors,
+          debtor.commissionPercentage
         );
         data['getScores'] = getScores;
       }
@@ -535,14 +545,18 @@ class CaseService {
       if (req.body.creditorNames.length) {
         const casesCreditors: any =
           await this.caseRepository.getAllWithoutPagination<ICase>(
-            {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
+            {creditor: {$in: req.body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
             undefined,
             ['creditor']
           );
         console.log(casesCreditors);
-        getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
+        getScores = await caseUtil.getScores(
+          caseTemp,
+          casesCreditors,
+          debtor.commissionPercentage
+        );
         data['getScores'] = getScores;
       }
     }
@@ -566,7 +580,6 @@ class CaseService {
       data['creditorNames'] = creditorNames;
     }
     if (hardReload === 'true') {
-      const debtor: any = caseTemp.debtor;
       let extractedFieldsTemp = null;
       if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
         const extractedFields = await caseUtil.getExtractionMCA(debtor);
@@ -585,7 +598,7 @@ class CaseService {
       data['creditorNames'] = creditorNames;
     }
     data['creditors'] = creditors;
-    data['debtor'] = caseTemp.debtor;
+    data['debtor'] = debtor;
     return [true, data];
   };
 
@@ -619,6 +632,82 @@ class CaseService {
 
     if (!result) return [false, result];
     return [true, result];
+  };
+
+  getScoresSettlementByCommPercentage = async (req: Request) => {
+    if (
+      !req.body.commissionPercentage ||
+      isNaN(req.body.commissionPercentage)
+    ) {
+      return [false, 'Invalid commission percentage'];
+    }
+    const comm = Number(req.body.commissionPercentage);
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    let getScores = null,
+      creditorNames = null;
+    let creditors = null;
+    let settlementRange = null;
+    let data = {};
+    let debtor: any = caseTemp.debtor;
+    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    creditors = await creditorUtil.checkCreditorsMapping(creditors);
+    creditors = Array.from(
+      new Map(
+        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
+      ).values()
+    );
+    if (req.query.all === 'true') {
+      getScores = await caseUtil.getScoresForAllCreditors(
+        caseTemp,
+        creditors,
+        comm
+      );
+      data['getScores'] = getScores;
+    } else {
+      if (req.body.creditorNames.length) {
+        const casesCreditors: any =
+          await this.caseRepository.getAllWithoutPagination<ICase>(
+            {creditor: {$in: req.body.creditorNames}, debtor: debtor},
+            undefined,
+            undefined,
+            undefined,
+            ['creditor']
+          );
+        getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
+        data['getScores'] = getScores;
+      }
+    }
+    settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    data['settlementRange'] = settlementRange;
+
+    let extractedFieldsTemp = null;
+    if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+      const extractedFields = await caseUtil.getExtractionMCA(debtor);
+      if (extractedFields) {
+        this.debtorRepository.updateById(debtor._id, {
+          extractedFields: extractedFields.extracted_fields,
+        });
+        extractedFieldsTemp = extractedFields.extracted_fields;
+      }
+    }
+    creditorNames = await caseUtil.getCreditorNames(
+      debtor,
+      debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
+      String(caseTemp._id)
+    );
+    debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
+      commissionPercentage: comm,
+    });
+    data['creditorNames'] = creditorNames;
+    data['creditors'] = creditors;
+    data['debtor'] = debtor;
+    return [true, data];
   };
 }
 

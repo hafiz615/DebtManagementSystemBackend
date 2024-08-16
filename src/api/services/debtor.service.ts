@@ -380,7 +380,11 @@ class DebtorService {
           : extractedFieldsTemp,
         String(caseTemp._id)
       );
-      caseUtil.getScoresForAllCreditors(caseTemp, creditors);
+      caseUtil.getScoresForAllCreditors(
+        caseTemp,
+        creditors,
+        getDebtor.commissionPercentage
+      );
       caseUtil.getSettlementRange(caseTemp);
       caseUtil.getLumpSumAmount(caseTemp);
       caseUtil.getFullProfitSettlement(caseTemp);
@@ -640,7 +644,11 @@ class DebtorService {
           String(caseTemp._id)
         );
 
-      caseUtil.getScoresForAllCreditors(caseTemp, creditors);
+      caseUtil.getScoresForAllCreditors(
+        caseTemp,
+        creditors,
+        updatedDebtor.commissionPercentage
+      );
       caseUtil.getSettlementRange(caseTemp);
       caseUtil.getLumpSumAmount(caseTemp);
       caseUtil.getFullProfitSettlement(caseTemp);

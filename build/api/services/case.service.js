@@ -177,7 +177,7 @@ class CaseService {
                 case_util_1.default.getCreditorNames(getDebtor, getDebtor.extractedFields
                     ? getDebtor.extractedFields
                     : extractedFieldsTemp, String(findCase._id));
-                case_util_1.default.getScoresForAllCreditors(caseUpdated, creditors);
+                case_util_1.default.getScoresForAllCreditors(caseUpdated, creditors, getDebtor.commissionPercentage);
                 case_util_1.default.getSettlementRange(caseUpdated);
                 case_util_1.default.getLumpSumAmount(caseUpdated);
                 case_util_1.default.getFullProfitSettlement(caseUpdated);
@@ -249,7 +249,7 @@ class CaseService {
                         ? obj.creditor.accountTitle
                         : '',
                 }));
-                getScores = await case_util_1.default.getScores(req, caseTemp, creditors);
+                getScores = await case_util_1.default.getScores(caseTemp, creditors, caseTemp.debtor.commissionPercentage);
             }
             return getScores;
         };
@@ -280,6 +280,7 @@ class CaseService {
                 return [false, 'Query param missing'];
             }
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            const debtor = caseTemp.debtor;
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             let getScores = null, creditorNames = null;
@@ -289,7 +290,7 @@ class CaseService {
             let data = {};
             if (req.query.hardReload && req.query.hardReload === 'true')
                 hardReload = 'true';
-            creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
+            creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
             const result = await this.strategyRepository.getOne({
@@ -304,15 +305,15 @@ class CaseService {
                     data['getScores'] = getScores;
                 }
                 else {
-                    getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
+                    getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
                 }
             }
             else {
                 if (req.body.creditorNames.length) {
-                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: caseTemp.debtor }, undefined, undefined, undefined, ['creditor']);
+                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: debtor }, undefined, undefined, undefined, ['creditor']);
                     console.log(casesCreditors);
-                    getScores = await case_util_1.default.getScores(req, caseTemp, casesCreditors);
+                    getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
                 }
             }
@@ -333,7 +334,6 @@ class CaseService {
                 data['creditorNames'] = creditorNames;
             }
             if (hardReload === 'true') {
-                const debtor = caseTemp.debtor;
                 let extractedFieldsTemp = null;
                 if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
                     const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
@@ -348,7 +348,7 @@ class CaseService {
                 data['creditorNames'] = creditorNames;
             }
             data['creditors'] = creditors;
-            data['debtor'] = caseTemp.debtor;
+            data['debtor'] = debtor;
             return [true, data];
         };
         this.addNotes = async (req) => {
@@ -376,6 +376,55 @@ class CaseService {
             if (!result)
                 return [false, result];
             return [true, result];
+        };
+        this.getScoresSettlementByCommPercentage = async (req) => {
+            if (!req.body.commissionPercentage ||
+                isNaN(req.body.commissionPercentage)) {
+                return [false, 'Invalid commission percentage'];
+            }
+            const comm = Number(req.body.commissionPercentage);
+            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            if (!caseTemp)
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            let getScores = null, creditorNames = null;
+            let creditors = null;
+            let settlementRange = null;
+            let data = {};
+            let debtor = caseTemp.debtor;
+            creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
+            creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
+            creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            if (req.query.all === 'true') {
+                getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, comm);
+                data['getScores'] = getScores;
+            }
+            else {
+                if (req.body.creditorNames.length) {
+                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: debtor }, undefined, undefined, undefined, ['creditor']);
+                    getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, comm);
+                    data['getScores'] = getScores;
+                }
+            }
+            settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+            data['settlementRange'] = settlementRange;
+            let extractedFieldsTemp = null;
+            if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+                const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
+                if (extractedFields) {
+                    this.debtorRepository.updateById(debtor._id, {
+                        extractedFields: extractedFields.extracted_fields,
+                    });
+                    extractedFieldsTemp = extractedFields.extracted_fields;
+                }
+            }
+            creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
+            debtor = await this.debtorRepository.updateById(debtor._id, {
+                commissionPercentage: comm,
+            });
+            data['creditorNames'] = creditorNames;
+            data['creditors'] = creditors;
+            data['debtor'] = debtor;
+            return [true, data];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();

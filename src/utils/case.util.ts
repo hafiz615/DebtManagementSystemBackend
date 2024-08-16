@@ -1816,7 +1816,7 @@ class CaseUtil {
     }
   }
 
-  async getScores(req: Request, caseTemp: any, creditors: any) {
+  async getScores(caseTemp: any, creditors: any, comm: number) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1824,7 +1824,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const getScores = await this.getScoresAI(
-      19,
+      comm,
       AIAuth.auth_token,
       caseTemp,
       creditors
@@ -1832,7 +1832,7 @@ class CaseUtil {
     return getScores;
   }
 
-  async getScoresForAllCreditors(caseTemp: any, creditors: any) {
+  async getScoresForAllCreditors(caseTemp: any, creditors: any, comm: number) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1840,7 +1840,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const getScores = await this.getScoresAIForAllCreditors(
-      19,
+      comm,
       AIAuth.auth_token,
       caseTemp,
       creditors
