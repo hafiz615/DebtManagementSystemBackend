@@ -312,11 +312,11 @@ class SettingsService {
     const templateId = req.body.templateId;
     // switch (type) {
     //   case 'sms':
-    result = await this.settingsRepository.updateByOne(
+    result = await this.settingsRepository.updateByOne<ISettings>(
       {'notificationTemplates.templateId': req.body.templateId},
       {
         $pull: {
-          'notificationTemplates.$': {templateId},
+          notificationTemplates: {templateId},
         },
       }
     );

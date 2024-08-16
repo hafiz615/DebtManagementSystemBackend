@@ -235,7 +235,7 @@ class SettingsService {
         //   case 'sms':
         result = await this.settingsRepository.updateByOne({ 'notificationTemplates.templateId': req.body.templateId }, {
             $pull: {
-                'notificationTemplates.$': { templateId },
+                notificationTemplates: { templateId },
             },
         });
         // break;
