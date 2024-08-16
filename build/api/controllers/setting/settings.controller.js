@@ -330,7 +330,7 @@ class SettingsController {
                             'contractDetails.payable_amount': 'Case contract payable amount',
                             'contractDetails.purchased_percentage': 'Case contract purchased percentage',
                             'contractDetails.repayment_amount': 'Case contract repayment amount',
-                            'contractDetails.purchasePrice': ' Case contract purchase Price',
+                            'contractDetails.purchasePrice': 'Case contract purchase Price',
                         },
                         debtor: {
                             'basicInformation.fullName': 'Debtor Personal Full Name',
