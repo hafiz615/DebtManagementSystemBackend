@@ -450,7 +450,7 @@ class SettingsController {
             'businessInformation.companyName': 'Creditor Company Name',
           },
 
-          event: {value: 'Event Value', date: 'Event date and time'},
+          event: {value: 'Event Value', createdAt: 'Event date and time'},
           payment: {
             authorized: 'Payment Authorized',
             captured: 'Payment Captured',
