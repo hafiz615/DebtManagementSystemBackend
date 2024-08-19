@@ -8,6 +8,7 @@ const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const rolesPermissions_repository_1 = require("../repository/rolesPermissions/rolesPermissions.repository");
 const rolesPermissions_repomodel_1 = require("../../database/repomodels/rolesPermissions.repomodel");
 const user_repository_1 = require("../repository/user/user.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class RolesPermissionsService {
     constructor() {
         this.rolesPermissionsRepository = new rolesPermissions_repository_1.RolesPermissionsRepository();
@@ -16,6 +17,7 @@ class RolesPermissionsService {
     async createRole(req) {
         const findRole = await this.rolesPermissionsRepository.getOne({
             name: req.body.name,
+            isDeleted: false,
         });
         console.log(findRole);
         if (findRole) {
@@ -32,10 +34,15 @@ class RolesPermissionsService {
         return [true, result];
     }
     async getAllRoles(req) {
-        const result = await this.rolesPermissionsRepository.getAllWithoutPagination({
-            isDeleted: false,
-            name: { $ne: 'Super User' },
-        });
+        const filter = { isDeleted: false };
+        const checkPermission = await common_util_1.default.checkPermission('createAdminUser', req);
+        if (req.query.usersPage && req.query.usersPage === 'true') {
+            if (checkPermission) {
+                filter['name'] = { $nin: ['Super User', 'Admin'] };
+            }
+            filter['name'] = { $nin: ['Super User'] };
+        }
+        const result = await this.rolesPermissionsRepository.getAllWithoutPagination(filter);
         if (!result.length) {
             return [false, constants_util_1.default.notFoundMessage('roles')];
         }
@@ -75,12 +82,12 @@ class RolesPermissionsService {
             return [false, constants_util_1.default.alreadyExistsMessage('Role')];
         }
         const role = await this.rolesPermissionsRepository.getById(req.params.id);
-        if (role.name === 'Super Admin') {
-            return [false, 'Super Admin cannot be updated'];
+        if (role.name === 'Super User') {
+            return [false, 'Super User role cannot be updated'];
         }
         let reqTemp = req;
-        if (role.name === 'Admin' && reqTemp.role !== 'Super Admin') {
-            return [false, 'Only a super admin can update an admin.'];
+        if (role.name === 'Admin' && reqTemp.role !== 'Super User') {
+            return [false, 'Only a super user can update an admin role'];
         }
         const result = await this.rolesPermissionsRepository.updateById(req.params.id, req.body);
         if (!result) {
@@ -93,12 +100,12 @@ class RolesPermissionsService {
         if (!role) {
             return [false, constants_util_1.default.notFoundMessage('role')];
         }
-        if (role.name === 'Super Admin') {
-            return [false, 'Super Admin cannot be deleted'];
+        if (role.name === 'Super User') {
+            return [false, 'Super User role cannot be deleted'];
         }
         let reqTemp = req;
-        if (role.name === 'Admin' && reqTemp.role !== 'Super Admin') {
-            return [false, 'Only a super admin can delete an admin.'];
+        if (role.name === 'Admin' && reqTemp.role !== 'Super User') {
+            return [false, 'Only a super user can delete an admin role.'];
         }
         const findUserRole = await this.userRepository.getOne({
             role: role.name,

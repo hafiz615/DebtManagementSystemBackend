@@ -6,6 +6,7 @@ import setup from './api/routes/base.route';
 import paymentCronjob from './cron-job/payment.cronjob';
 import logMiddleware from './middleware/logs.middleware'; // Import the logging middleware
 import asyncLocalStorage from './utils/localStorage.util';
+import {EnvSetup} from './database/repomodels/setEnv';
 class App {
   protected app: Application;
   protected database: Database;
@@ -17,6 +18,7 @@ class App {
   }
 
   private config(): void {
+    EnvSetup.setEnvVariables();
     this.app.use(cors());
     this.app.use(bodyParser.json());
     this.app.use(bodyParser.urlencoded({extended: false}));

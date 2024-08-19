@@ -31,11 +31,18 @@ class UserService {
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
     let user = null;
     user = await this.userRepository.getOne<IUser>({
-      $or: [{email: req.body.email.toLowerCase()}, {phone: req.body.phone}],
+      $or: [
+        {email: req.body.email.toLowerCase()},
+        {phone: req.body.phone},
+        {SSID: req.body.SSID},
+      ],
     });
     if (user && !user.isDeleted) {
       if (user.email === req.body.email.toLowerCase()) {
         return [false, constants.alreadyExistsMessage('Email')];
+      }
+      if (user.SSID === req.body.SSID) {
+        return [false, constants.alreadyExistsMessage('SSN')];
       }
       return [false, constants.alreadyExistsMessage('Phone')];
     }

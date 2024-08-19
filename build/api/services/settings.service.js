@@ -183,6 +183,19 @@ class SettingsService {
         return [true, targetCF];
     }
     async deleteCustomField(req) {
+        const findCustomField = await this.customFieldsRepository.getById(req.params.id);
+        if (!findCustomField) {
+            return [false, constants_util_1.default.notFoundMessage('custom field')];
+        }
+        let findCustomFieldInCase = await this.targetCFRepository.getAllWithoutPagination({
+            customFields: { $elemMatch: { name: findCustomField.name } },
+        });
+        if (findCustomFieldInCase) {
+            return [
+                false,
+                'The custom field is currently assigned to a case and cannot be deleted. Please delete it from all cases before deleting',
+            ];
+        }
         let customField = await this.customFieldsRepository.delete({
             _id: req.params.id,
         });

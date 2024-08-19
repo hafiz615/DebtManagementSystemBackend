@@ -241,11 +241,18 @@ class UserService {
     async createUser(req) {
         let user = null;
         user = await this.userRepository.getOne({
-            $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
+            $or: [
+                { email: req.body.email.toLowerCase() },
+                { phone: req.body.phone },
+                { SSID: req.body.SSID },
+            ],
         });
         if (user && !user.isDeleted) {
             if (user.email === req.body.email.toLowerCase()) {
                 return [false, constants_util_1.default.alreadyExistsMessage('Email')];
+            }
+            if (user.SSID === req.body.SSID) {
+                return [false, constants_util_1.default.alreadyExistsMessage('SSN')];
             }
             return [false, constants_util_1.default.alreadyExistsMessage('Phone')];
         }

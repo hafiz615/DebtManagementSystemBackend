@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcryptjs_1 = require("bcryptjs");
 const user_repository_1 = require("../api/repository/user/user.repository");
 const common_util_1 = __importDefault(require("./common.util"));
-const constants_util_1 = __importDefault(require("./constants.util"));
+const setEnv_1 = require("../database/repomodels/setEnv");
 class UserUtil {
     constructor() {
         this.userRepository = new user_repository_1.UserRepository();
@@ -29,11 +29,11 @@ class UserUtil {
         return userExist;
     }
     async getInvitationLink(token) {
-        const invitationLink = `${constants_util_1.default.ACCOUNT_INVITATION_BASE_LINK}?token=${token}`;
+        const invitationLink = `${setEnv_1.EnvSetup.invitationLink}?token=${token}`;
         return invitationLink;
     }
     async getAllUserFilters(req) {
-        const filters = { role: { $ne: 'Admin' }, isDeleted: false };
+        const filters = { role: { $nin: ['Admin', 'Super User'] }, isDeleted: false };
         if (req.query.search === 'true') {
             const text = req.body.text;
             if (text) {
