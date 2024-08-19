@@ -453,18 +453,9 @@ class SettingsController {
 
           event: {value: 'Event Value', createdAt: 'Event date and time'},
           payment: {
-            authorized: 'Payment Authorized',
-            captured: 'Payment Captured',
-            status: 'Payment Status',
-            sendViaPaynote: 'Payment Send Via Pay note',
             amount: 'Payment Amount',
             dueDate: 'Payment Due Date',
-            failedReasonAuthorization: 'Payment Failed Reason Authorization',
-            failedReasonCaptured: 'Payment Failed Reason Captured',
-            rescheduled: 'Payment Rescheduled',
-            retriesAuth: 'Payment RetriesAuth',
-            retriesCapture: 'Payment RetriesCapture',
-            timePeriod: 'Payment TimePeriod',
+            timePeriod: 'Payment Time Period',
           },
           user: {
             name: 'User Name',

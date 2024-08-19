@@ -12,7 +12,7 @@ class SettingValidate {
         const schema = joi_1.default.object({
             label: joi_1.default.string().optional().allow('', null),
             value: joi_1.default.string()
-                .valid(enums_1.Events.case_details_update, enums_1.Events.case_manager_changed, enums_1.Events.case_negotiator_changed, enums_1.Events.case_note_added, enums_1.Events.case_owner_changed, enums_1.Events.case_task_added, enums_1.Events.case_task_assigned, enums_1.Events.case_task_due_data_near, enums_1.Events.case_task_unassigned, enums_1.Events.failed_authorization, enums_1.Events.failed_payment, enums_1.Events.successful_authorization, enums_1.Events.case_details_update, enums_1.Events.upcoming_payment)
+                .valid(enums_1.Events.case_details_update, enums_1.Events.case_manager_changed, enums_1.Events.case_negotiator_changed, enums_1.Events.case_note_added, enums_1.Events.case_owner_changed, enums_1.Events.case_task_added, enums_1.Events.case_task_assigned, enums_1.Events.case_task_due_data_near, enums_1.Events.case_task_unassigned, enums_1.Events.failed_authorization, enums_1.Events.failed_payment, enums_1.Events.successful_authorization, enums_1.Events.case_details_update, enums_1.Events.upcoming_payment, enums_1.Events.successful_payment)
                 .required(),
             userPermission: joi_1.default.array()
                 .items(joi_1.default.object({

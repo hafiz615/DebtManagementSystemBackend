@@ -41,6 +41,13 @@ class App {
         this.app.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
+        // emailUtil.sendEmailOrSmsByEvent(
+        //   'successful_payment',
+        //   '66b104dacab3400ef1bd74a7',
+        //   '',
+        //   '66a637f0f48199294373421a'
+        // );
+        // console.log(emailUtil.getValuesFromHtml(''));
         // paymentCronjob.processPayments();
         // paymentCronjob.startCronJob();
         // paymentCronjob.testCron();

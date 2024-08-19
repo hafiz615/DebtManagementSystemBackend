@@ -7,6 +7,8 @@ import paymentCronjob from './cron-job/payment.cronjob';
 import logMiddleware from './middleware/logs.middleware'; // Import the logging middleware
 import asyncLocalStorage from './utils/localStorage.util';
 import {EnvSetup} from './database/repomodels/setEnv';
+import emailUtil from './utils/email.util';
+
 class App {
   protected app: Application;
   protected database: Database;
@@ -42,6 +44,13 @@ class App {
     this.app.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
+    // emailUtil.sendEmailOrSmsByEvent(
+    //   'successful_payment',
+    //   '66b104dacab3400ef1bd74a7',
+    //   '',
+    //   '66a637f0f48199294373421a'
+    // );
+    // console.log(emailUtil.getValuesFromHtml(''));
     // paymentCronjob.processPayments();
     // paymentCronjob.startCronJob();
     // paymentCronjob.testCron();

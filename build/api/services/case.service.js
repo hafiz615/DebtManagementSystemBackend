@@ -18,6 +18,7 @@ const user_repository_1 = require("../repository/user/user.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
+const email_util_1 = __importDefault(require("../../utils/email.util"));
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -91,6 +92,7 @@ class CaseService {
             return [true, tempCase];
         };
         this.updateCase = async (req) => {
+            let reqTemp = req;
             let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
@@ -150,6 +152,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             if (req.body.intervals) {
                 await case_util_1.default.createPayment(caseUpdated);
             }
@@ -185,10 +188,15 @@ class CaseService {
             return [true, caseUpdated];
         };
         this.updateCaseAbout = async (req) => {
+            let reqTemp = req;
+            let findCase = await this.caseRepository.getById(req.params.id);
+            if (!findCase)
+                return [false, constants_util_1.default.notFoundMessage('case')];
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             return [true, caseUpdated];
         };
         // getAIIntegrationData = async (
@@ -375,6 +383,7 @@ class CaseService {
                 result = await case_util_1.default.addNotes(req, reqTemp.id);
             if (!result)
                 return [false, result];
+            await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', result._id, '', reqTemp.id);
             return [true, result];
         };
         this.getScoresSettlementByCommPercentage = async (req) => {
@@ -458,6 +467,22 @@ class CaseService {
             return [false, constants_util_1.default.failureDeleteMessage('case')];
         }
         return [true, true];
+    }
+    async sendCaseEmails(userId, previousCase, updatedCase, caseAbout, caseUpdate) {
+        if (caseAbout) {
+            if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
+                await email_util_1.default.sendEmailOrSmsByEvent('case_owner_changed', previousCase._id, '', userId);
+            }
+            if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
+                await email_util_1.default.sendEmailOrSmsByEvent('case_negotiator_changed', previousCase._id, '', userId);
+            }
+            if (previousCase.managerId !== updatedCase.managerId) {
+                await email_util_1.default.sendEmailOrSmsByEvent('case_manager_changed', previousCase._id, '', userId);
+            }
+        }
+        if (caseUpdate) {
+            await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', previousCase._id, '', userId);
+        }
     }
 }
 exports.default = CaseService;

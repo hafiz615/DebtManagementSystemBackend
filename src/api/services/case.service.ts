@@ -27,6 +27,7 @@ import commonUtil from '../../utils/common.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
 import creditorUtil from '../../utils/creditor.util';
+import emailUtil from '../../utils/email.util';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -157,6 +158,7 @@ class CaseService {
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
+    let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -246,6 +248,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     if (req.body.intervals) {
       await caseUtil.createPayment(caseUpdated);
     }
@@ -301,6 +304,9 @@ class CaseService {
   updateCaseAbout = async (
     req: Request
   ): Promise<[boolean, ICase | string]> => {
+    let reqTemp: any = req;
+    let findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -308,6 +314,8 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+
     return [true, caseUpdated];
   };
 
@@ -631,6 +639,12 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
+    await emailUtil.sendEmailOrSmsByEvent(
+      'case_details_update',
+      result._id,
+      '',
+      reqTemp.id
+    );
     return [true, result];
   };
 
@@ -708,6 +722,48 @@ class CaseService {
     data['debtor'] = debtor;
     return [true, data];
   };
+  async sendCaseEmails(
+    userId: string,
+    previousCase: ICase,
+    updatedCase: ICase,
+    caseAbout: boolean,
+    caseUpdate: boolean
+  ) {
+    if (caseAbout) {
+      if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'case_owner_changed',
+          previousCase._id,
+          '',
+          userId
+        );
+      }
+      if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'case_negotiator_changed',
+          previousCase._id,
+          '',
+          userId
+        );
+      }
+      if (previousCase.managerId !== updatedCase.managerId) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'case_manager_changed',
+          previousCase._id,
+          '',
+          userId
+        );
+      }
+    }
+    if (caseUpdate) {
+      await emailUtil.sendEmailOrSmsByEvent(
+        'case_details_update',
+        previousCase._id,
+        '',
+        userId
+      );
+    }
+  }
 }
 
 export default CaseService;

@@ -15,16 +15,16 @@ import {v4 as uuidv4} from 'uuid';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
 import mongoose from 'mongoose';
+import emailUtil from '../../utils/email.util';
+
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
-  private emailUtil: EmailUtil;
   private caseRepository: CaseRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
-    this.emailUtil = new EmailUtil();
     this.caseRepository = new CaseRepository();
   }
 
@@ -57,7 +57,7 @@ class UserService {
     }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
-    await this.emailUtil.sendInvitationLink(user, invitationLink);
+    await emailUtil.sendInvitationLink(user, invitationLink);
     req.body.verifyToken = token;
     req.body.isDeleted = false;
     let updatedUser = await this.userRepository.updateById<IUser>(user._id, {
@@ -154,7 +154,7 @@ class UserService {
     }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
-    await this.emailUtil.sendInvitationLink(user, invitationLink);
+    await emailUtil.sendInvitationLink(user, invitationLink);
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
     });
