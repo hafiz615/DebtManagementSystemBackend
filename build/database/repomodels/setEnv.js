@@ -17,7 +17,7 @@ class EnvSetup {
                 break;
             case 'prod':
                 this.dbURI =
-                    'mongodb://dms_prod:dms123456@165.227.188.235:27017/debt-settlement?authSource=admin';
+                    'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
                 this.invitationLink = constants_util_1.default.ACCOUNT_INVITATION_BASE_LINK;
                 break;
         }

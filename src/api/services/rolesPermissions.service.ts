@@ -50,10 +50,11 @@ class RolesPermissionsService {
       req
     );
     if (req.query.usersPage && req.query.usersPage === 'true') {
-      if (checkPermission) {
+      if (!checkPermission) {
         filter['name'] = {$nin: ['Super User', 'Admin']};
+      } else {
+        filter['name'] = {$nin: ['Super User']};
       }
-      filter['name'] = {$nin: ['Super User']};
     }
     const result =
       await this.rolesPermissionsRepository.getAllWithoutPagination<IRolesPermissions>(

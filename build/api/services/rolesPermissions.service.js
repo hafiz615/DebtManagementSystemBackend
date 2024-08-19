@@ -37,10 +37,12 @@ class RolesPermissionsService {
         const filter = { isDeleted: false };
         const checkPermission = await common_util_1.default.checkPermission('createAdminUser', req);
         if (req.query.usersPage && req.query.usersPage === 'true') {
-            if (checkPermission) {
+            if (!checkPermission) {
                 filter['name'] = { $nin: ['Super User', 'Admin'] };
             }
-            filter['name'] = { $nin: ['Super User'] };
+            else {
+                filter['name'] = { $nin: ['Super User'] };
+            }
         }
         const result = await this.rolesPermissionsRepository.getAllWithoutPagination(filter);
         if (!result.length) {
