@@ -297,6 +297,26 @@ class CaseService {
                 caseId: String(caseTemp._id),
                 name: 'strategy_one',
             });
+            if (hardReload !== 'true' &&
+                caseTemp.strategyOne_1 &&
+                result.data.creditorNames) {
+                creditorNames = result.data.creditorNames;
+                data['creditorNames'] = creditorNames;
+            }
+            if (hardReload === 'true') {
+                let extractedFieldsTemp = null;
+                if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+                    const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
+                    if (extractedFields) {
+                        this.debtorRepository.updateById(debtor._id, {
+                            extractedFields: extractedFields.extracted_fields,
+                        });
+                        extractedFieldsTemp = extractedFields.extracted_fields;
+                    }
+                }
+                creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
+                data['creditorNames'] = creditorNames;
+            }
             if (req.query.all === 'true') {
                 if (hardReload !== 'true' &&
                     caseTemp.strategyOne_2 &&
@@ -326,26 +346,6 @@ class CaseService {
             else {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
                 data['settlementRange'] = settlementRange;
-            }
-            if (hardReload !== 'true' &&
-                caseTemp.strategyOne_1 &&
-                result.data.creditorNames) {
-                creditorNames = result.data.creditorNames;
-                data['creditorNames'] = creditorNames;
-            }
-            if (hardReload === 'true') {
-                let extractedFieldsTemp = null;
-                if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-                    const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
-                    if (extractedFields) {
-                        this.debtorRepository.updateById(debtor._id, {
-                            extractedFields: extractedFields.extracted_fields,
-                        });
-                        extractedFieldsTemp = extractedFields.extracted_fields;
-                    }
-                }
-                creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
-                data['creditorNames'] = creditorNames;
             }
             data['creditors'] = creditors;
             data['debtor'] = debtor;

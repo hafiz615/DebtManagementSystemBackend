@@ -525,6 +525,32 @@ class CaseService {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
+    if (
+      hardReload !== 'true' &&
+      caseTemp.strategyOne_1 &&
+      result.data.creditorNames
+    ) {
+      creditorNames = result.data.creditorNames;
+      data['creditorNames'] = creditorNames;
+    }
+    if (hardReload === 'true') {
+      let extractedFieldsTemp = null;
+      if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+        const extractedFields = await caseUtil.getExtractionMCA(debtor);
+        if (extractedFields) {
+          this.debtorRepository.updateById(debtor._id, {
+            extractedFields: extractedFields.extracted_fields,
+          });
+          extractedFieldsTemp = extractedFields.extracted_fields;
+        }
+      }
+      creditorNames = await caseUtil.getCreditorNames(
+        debtor,
+        debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
+        String(caseTemp._id)
+      );
+      data['creditorNames'] = creditorNames;
+    }
     if (req.query.all === 'true') {
       if (
         hardReload !== 'true' &&
@@ -570,32 +596,6 @@ class CaseService {
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
       data['settlementRange'] = settlementRange;
-    }
-    if (
-      hardReload !== 'true' &&
-      caseTemp.strategyOne_1 &&
-      result.data.creditorNames
-    ) {
-      creditorNames = result.data.creditorNames;
-      data['creditorNames'] = creditorNames;
-    }
-    if (hardReload === 'true') {
-      let extractedFieldsTemp = null;
-      if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-        const extractedFields = await caseUtil.getExtractionMCA(debtor);
-        if (extractedFields) {
-          this.debtorRepository.updateById(debtor._id, {
-            extractedFields: extractedFields.extracted_fields,
-          });
-          extractedFieldsTemp = extractedFields.extracted_fields;
-        }
-      }
-      creditorNames = await caseUtil.getCreditorNames(
-        debtor,
-        debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
-        String(caseTemp._id)
-      );
-      data['creditorNames'] = creditorNames;
     }
     data['creditors'] = creditors;
     data['debtor'] = debtor;
