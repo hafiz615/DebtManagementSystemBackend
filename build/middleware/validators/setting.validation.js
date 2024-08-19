@@ -21,8 +21,8 @@ class SettingValidate {
                     .required(),
                 sms_allowed: joi_1.default.boolean().required(),
                 email_allowed: joi_1.default.boolean().required(),
-                sms_template: joi_1.default.string().required(),
-                email_template: joi_1.default.string().required(),
+                sms_template: joi_1.default.string().allow(''),
+                email_template: joi_1.default.string().allow(''),
             }))
                 .required(),
         });

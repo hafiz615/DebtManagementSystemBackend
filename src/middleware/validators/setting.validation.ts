@@ -45,8 +45,8 @@ class SettingValidate {
               .required(),
             sms_allowed: Joi.boolean().required(),
             email_allowed: Joi.boolean().required(),
-            sms_template: Joi.string().required(),
-            email_template: Joi.string().required(),
+            sms_template: Joi.string().allow(''),
+            email_template: Joi.string().allow(''),
           })
         )
         .required(),

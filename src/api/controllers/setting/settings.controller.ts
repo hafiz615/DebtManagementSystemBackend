@@ -364,7 +364,7 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Notification Configuration'),
+          message: constants.successFoundMessage('Notification Configuration'),
         })
       );
     } catch (error) {

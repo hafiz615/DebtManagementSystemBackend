@@ -237,6 +237,7 @@ const settignsModel: Schema = new Schema({
       templateId: '';
       content: '';
       subject: '';
+      from: '';
     }>,
   },
   notificationConfiguration: {
