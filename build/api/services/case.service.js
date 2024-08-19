@@ -394,6 +394,17 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            let extractedFieldsTemp = null;
+            if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+                const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
+                if (extractedFields) {
+                    this.debtorRepository.updateById(debtor._id, {
+                        extractedFields: extractedFields.extracted_fields,
+                    });
+                    extractedFieldsTemp = extractedFields.extracted_fields;
+                }
+            }
+            creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
             if (req.query.all === 'true') {
                 getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, comm);
                 data['getScores'] = getScores;
@@ -407,17 +418,6 @@ class CaseService {
             }
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
             data['settlementRange'] = settlementRange;
-            let extractedFieldsTemp = null;
-            if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-                const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
-                if (extractedFields) {
-                    this.debtorRepository.updateById(debtor._id, {
-                        extractedFields: extractedFields.extracted_fields,
-                    });
-                    extractedFieldsTemp = extractedFields.extracted_fields;
-                }
-            }
-            creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
             debtor = await this.debtorRepository.updateById(debtor._id, {
                 commissionPercentage: comm,
             });

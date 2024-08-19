@@ -662,6 +662,21 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    let extractedFieldsTemp = null;
+    if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+      const extractedFields = await caseUtil.getExtractionMCA(debtor);
+      if (extractedFields) {
+        this.debtorRepository.updateById(debtor._id, {
+          extractedFields: extractedFields.extracted_fields,
+        });
+        extractedFieldsTemp = extractedFields.extracted_fields;
+      }
+    }
+    creditorNames = await caseUtil.getCreditorNames(
+      debtor,
+      debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
+      String(caseTemp._id)
+    );
     if (req.query.all === 'true') {
       getScores = await caseUtil.getScoresForAllCreditors(
         caseTemp,
@@ -685,22 +700,6 @@ class CaseService {
     }
     settlementRange = await caseUtil.getSettlementRange(caseTemp);
     data['settlementRange'] = settlementRange;
-
-    let extractedFieldsTemp = null;
-    if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-      const extractedFields = await caseUtil.getExtractionMCA(debtor);
-      if (extractedFields) {
-        this.debtorRepository.updateById(debtor._id, {
-          extractedFields: extractedFields.extracted_fields,
-        });
-        extractedFieldsTemp = extractedFields.extracted_fields;
-      }
-    }
-    creditorNames = await caseUtil.getCreditorNames(
-      debtor,
-      debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
-      String(caseTemp._id)
-    );
     debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
       commissionPercentage: comm,
     });
