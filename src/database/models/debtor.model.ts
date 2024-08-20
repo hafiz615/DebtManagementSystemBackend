@@ -120,6 +120,9 @@ const debtorSchema: Schema = new Schema({
     type: Number,
     select: false,
   },
+  commissionPercentage: {
+    type: Number,
+  },
   commissionPaid: {
     type: Number,
     select: false,
@@ -190,7 +193,7 @@ const logUpdatePost = async function (doc) {
     previousData: previousDoc,
     currentData: doc,
     model: this.model.modelName,
-    logTrackingId: previousDoc.logTrackingId,
+    logTrackingId: previousDoc?.logTrackingId ?? '',
     ip,
     userId,
     url,

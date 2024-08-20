@@ -344,6 +344,7 @@ class SettingsController {
         })
       );
     } catch (error) {
+      console.log(error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -363,7 +364,7 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Notification Configuration'),
+          message: constants.successFoundMessage('Notification Configuration'),
         })
       );
     } catch (error) {
@@ -452,18 +453,9 @@ class SettingsController {
 
           event: {value: 'Event Value', createdAt: 'Event date and time'},
           payment: {
-            authorized: 'Payment Authorized',
-            captured: 'Payment Captured',
-            status: 'Payment Status',
-            sendViaPaynote: 'Payment Send Via Pay note',
             amount: 'Payment Amount',
             dueDate: 'Payment Due Date',
-            failedReasonAuthorization: 'Payment Failed Reason Authorization',
-            failedReasonCaptured: 'Payment Failed Reason Captured',
-            rescheduled: 'Payment Rescheduled',
-            retriesAuth: 'Payment RetriesAuth',
-            retriesCapture: 'Payment RetriesCapture',
-            timePeriod: 'Payment TimePeriod',
+            timePeriod: 'Payment Time Period',
           },
           user: {
             name: 'User Name',

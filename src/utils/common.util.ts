@@ -28,9 +28,9 @@ class CommonUtil {
       ...getRole.settings,
       ...getRole.analytics,
     };
-    if (keyword === 'addNewUser' && req.body.role === 'Admin') {
-      return permissions['createAdminUser'];
-    }
+    // if (keyword === 'addNewUser' && req.body.role === 'Admin') {
+    //   return permissions['createAdminUser'];
+    // }
     return permissions[keyword];
   }
 }

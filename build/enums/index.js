@@ -45,7 +45,6 @@ var permissions;
     permissions["deletePipeline"] = "deletePipeline";
     permissions["addRole"] = "addRole";
     permissions["updateRole"] = "updateRole";
-    permissions["viewRoles"] = "viewRoles";
     permissions["deleteRole"] = "deleteRole";
     permissions["viewAnalyticsForSelf"] = "viewAnalyticsForSelf";
     permissions["viewAnalyticsForAllusers"] = "viewAnalyticsForAllusers";

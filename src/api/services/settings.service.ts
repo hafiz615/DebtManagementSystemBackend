@@ -253,6 +253,23 @@ class SettingsService {
   }
 
   async deleteCustomField(req: Request): Promise<[boolean, boolean | string]> {
+    const findCustomField =
+      await this.customFieldsRepository.getById<ICustomField>(req.params.id);
+    if (!findCustomField) {
+      return [false, constants.notFoundMessage('custom field')];
+    }
+    let findCustomFieldInCase =
+      await this.targetCFRepository.getAllWithoutPagination<ITargetCustomFields>(
+        {
+          customFields: {$elemMatch: {name: findCustomField.name}},
+        }
+      );
+    if (findCustomFieldInCase) {
+      return [
+        false,
+        'The custom field is currently assigned to a case and cannot be deleted. Please delete it from all cases before deleting',
+      ];
+    }
     let customField = await this.customFieldsRepository.delete<ICustomField>({
       _id: req.params.id,
     });
@@ -312,11 +329,11 @@ class SettingsService {
     const templateId = req.body.templateId;
     // switch (type) {
     //   case 'sms':
-    result = await this.settingsRepository.updateByOne(
+    result = await this.settingsRepository.updateByOne<ISettings>(
       {'notificationTemplates.templateId': req.body.templateId},
       {
         $pull: {
-          'notificationTemplates.$': {templateId},
+          notificationTemplates: {templateId},
         },
       }
     );

@@ -41,6 +41,7 @@ exports.default = {
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
     ACCOUNT_INVITATION_BASE_LINK: 'https://debt-management-system-front-end.vercel.app/set-password',
+    ACCOUNT_INVITATION_BASE_LINK_DEV: 'https://debt-management-system-dev.vercel.app/set-password',
     passwordRegex: /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
     failureRegisterMessage: (name) => `${name} not registered!`,
     successRegisterMessage: (name) => `${name} registered successfully!`,

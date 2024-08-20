@@ -69,7 +69,7 @@ interface INotificationTemplates {
   templateId: string;
   subject: string;
   type: string;
-
+  from: string;
   // email: Array<IEmailNotify>;
   // sms: Array<ISmsNotify>;
 }

@@ -36,11 +36,15 @@ class RolesPermissionsController {
             }
         };
         this.getAllRoles = async (req, res) => {
-            const checkPermission = await common_util_1.default.checkPermission('viewRoles', req);
-            if (!checkPermission)
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse('You do not have permission to perform this operation'));
+            // const checkPermission = await commonUtil.checkPermission('viewRoles', req);
+            // if (!checkPermission)
+            //   return res
+            //     .status(constants.CODE.BAD_REQUEST)
+            //     .send(
+            //       responseHelper.get4xxResponse(
+            //         'You do not have permission to perform this operation'
+            //       )
+            //     );
             try {
                 const response = await this.rolesPermissionsService.getAllRoles(req);
                 if (!response[0]) {

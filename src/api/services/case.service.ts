@@ -27,6 +27,7 @@ import commonUtil from '../../utils/common.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
 import creditorUtil from '../../utils/creditor.util';
+import emailUtil from '../../utils/email.util';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -157,6 +158,7 @@ class CaseService {
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
+    let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -246,6 +248,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     if (req.body.intervals) {
       await caseUtil.createPayment(caseUpdated);
     }
@@ -286,7 +289,11 @@ class CaseService {
           : extractedFieldsTemp,
         String(findCase._id)
       );
-      caseUtil.getScoresForAllCreditors(caseUpdated, creditors);
+      caseUtil.getScoresForAllCreditors(
+        caseUpdated,
+        creditors,
+        getDebtor.commissionPercentage
+      );
       caseUtil.getSettlementRange(caseUpdated);
       caseUtil.getLumpSumAmount(caseUpdated);
       caseUtil.getFullProfitSettlement(caseUpdated);
@@ -297,6 +304,9 @@ class CaseService {
   updateCaseAbout = async (
     req: Request
   ): Promise<[boolean, ICase | string]> => {
+    let reqTemp: any = req;
+    let findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -304,6 +314,8 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+
     return [true, caseUpdated];
   };
 
@@ -414,7 +426,7 @@ class CaseService {
   };
 
   getScores = async (req: Request) => {
-    const caseTemp = await this.caseRepository.getById<ICase>(
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
@@ -442,7 +454,11 @@ class CaseService {
           ? obj.creditor.accountTitle
           : '',
       }));
-      getScores = await caseUtil.getScores(req, caseTemp, creditors);
+      getScores = await caseUtil.getScores(
+        caseTemp,
+        creditors,
+        caseTemp.debtor.commissionPercentage
+      );
     }
     return getScores;
   };
@@ -496,6 +512,7 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
+    const debtor: any = caseTemp.debtor;
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     let getScores = null,
       creditorNames = null;
@@ -505,7 +522,7 @@ class CaseService {
     let data = {};
     if (req.query.hardReload && req.query.hardReload === 'true')
       hardReload = 'true';
-    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
     creditors = Array.from(
       new Map(
@@ -516,47 +533,6 @@ class CaseService {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
-    if (req.query.all === 'true') {
-      if (
-        hardReload !== 'true' &&
-        caseTemp.strategyOne_2 &&
-        result.data.getScoresAIForAllCreditors
-      ) {
-        getScores = result.data.getScoresAIForAllCreditors;
-        data['getScores'] = getScores;
-      } else {
-        getScores = await caseUtil.getScoresForAllCreditors(
-          caseTemp,
-          creditors
-        );
-        data['getScores'] = getScores;
-      }
-    } else {
-      if (req.body.creditorNames.length) {
-        const casesCreditors: any =
-          await this.caseRepository.getAllWithoutPagination<ICase>(
-            {creditor: {$in: req.body.creditorNames}, debtor: caseTemp.debtor},
-            undefined,
-            undefined,
-            undefined,
-            ['creditor']
-          );
-        console.log(casesCreditors);
-        getScores = await caseUtil.getScores(req, caseTemp, casesCreditors);
-        data['getScores'] = getScores;
-      }
-    }
-    if (
-      hardReload !== 'true' &&
-      caseTemp.strategyOne_3 &&
-      result.data.settlementRange
-    ) {
-      settlementRange = result.data.settlementRange;
-      data['settlementRange'] = settlementRange;
-    } else {
-      settlementRange = await caseUtil.getSettlementRange(caseTemp);
-      data['settlementRange'] = settlementRange;
-    }
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_1 &&
@@ -566,7 +542,6 @@ class CaseService {
       data['creditorNames'] = creditorNames;
     }
     if (hardReload === 'true') {
-      const debtor: any = caseTemp.debtor;
       let extractedFieldsTemp = null;
       if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
         const extractedFields = await caseUtil.getExtractionMCA(debtor);
@@ -584,8 +559,54 @@ class CaseService {
       );
       data['creditorNames'] = creditorNames;
     }
+    if (req.query.all === 'true') {
+      if (
+        hardReload !== 'true' &&
+        caseTemp.strategyOne_2 &&
+        result.data.getScoresAIForAllCreditors
+      ) {
+        getScores = result.data.getScoresAIForAllCreditors;
+        data['getScores'] = getScores;
+      } else {
+        getScores = await caseUtil.getScoresForAllCreditors(
+          caseTemp,
+          creditors,
+          debtor.commissionPercentage
+        );
+        data['getScores'] = getScores;
+      }
+    } else {
+      if (req.body.creditorNames.length) {
+        const casesCreditors: any =
+          await this.caseRepository.getAllWithoutPagination<ICase>(
+            {creditor: {$in: req.body.creditorNames}, debtor: debtor},
+            undefined,
+            undefined,
+            undefined,
+            ['creditor']
+          );
+        console.log(casesCreditors);
+        getScores = await caseUtil.getScores(
+          caseTemp,
+          casesCreditors,
+          debtor.commissionPercentage
+        );
+        data['getScores'] = getScores;
+      }
+    }
+    if (
+      hardReload !== 'true' &&
+      caseTemp.strategyOne_3 &&
+      result.data.settlementRange
+    ) {
+      settlementRange = result.data.settlementRange;
+      data['settlementRange'] = settlementRange;
+    } else {
+      settlementRange = await caseUtil.getSettlementRange(caseTemp);
+      data['settlementRange'] = settlementRange;
+    }
     data['creditors'] = creditors;
-    data['debtor'] = caseTemp.debtor;
+    data['debtor'] = debtor;
     return [true, data];
   };
 
@@ -618,8 +639,131 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
+    await emailUtil.sendEmailOrSmsByEvent(
+      'case_details_update',
+      result._id,
+      '',
+      reqTemp.id
+    );
     return [true, result];
   };
+
+  getScoresSettlementByCommPercentage = async (req: Request) => {
+    if (
+      !req.body.commissionPercentage ||
+      isNaN(req.body.commissionPercentage)
+    ) {
+      return [false, 'Invalid commission percentage'];
+    }
+    const comm = Number(req.body.commissionPercentage);
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    let getScores = null,
+      creditorNames = null;
+    let creditors = null;
+    let settlementRange = null;
+    let data = {};
+    let debtor: any = caseTemp.debtor;
+    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    creditors = await creditorUtil.checkCreditorsMapping(creditors);
+    creditors = Array.from(
+      new Map(
+        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
+      ).values()
+    );
+    let extractedFieldsTemp = null;
+    if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+      const extractedFields = await caseUtil.getExtractionMCA(debtor);
+      if (extractedFields) {
+        this.debtorRepository.updateById(debtor._id, {
+          extractedFields: extractedFields.extracted_fields,
+        });
+        extractedFieldsTemp = extractedFields.extracted_fields;
+      }
+    }
+    creditorNames = await caseUtil.getCreditorNames(
+      debtor,
+      debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp,
+      String(caseTemp._id)
+    );
+    if (req.query.all === 'true') {
+      getScores = await caseUtil.getScoresForAllCreditors(
+        caseTemp,
+        creditors,
+        comm
+      );
+      data['getScores'] = getScores;
+    } else {
+      if (req.body.creditorNames.length) {
+        const casesCreditors: any =
+          await this.caseRepository.getAllWithoutPagination<ICase>(
+            {creditor: {$in: req.body.creditorNames}, debtor: debtor},
+            undefined,
+            undefined,
+            undefined,
+            ['creditor']
+          );
+        getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
+        data['getScores'] = getScores;
+      }
+    }
+    settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    data['settlementRange'] = settlementRange;
+    debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
+      commissionPercentage: comm,
+    });
+    data['creditorNames'] = creditorNames;
+    data['creditors'] = creditors;
+    data['debtor'] = debtor;
+    return [true, data];
+  };
+  async sendCaseEmails(
+    userId: string,
+    previousCase: ICase,
+    updatedCase: ICase,
+    caseAbout: boolean,
+    caseUpdate: boolean
+  ) {
+    if (caseAbout) {
+      if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'case_owner_changed',
+          previousCase._id,
+          '',
+          userId
+        );
+      }
+      if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'case_negotiator_changed',
+          previousCase._id,
+          '',
+          userId
+        );
+      }
+      if (previousCase.managerId !== updatedCase.managerId) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'case_manager_changed',
+          previousCase._id,
+          '',
+          userId
+        );
+      }
+    }
+    if (caseUpdate) {
+      await emailUtil.sendEmailOrSmsByEvent(
+        'case_details_update',
+        previousCase._id,
+        '',
+        userId
+      );
+    }
+  }
 }
 
 export default CaseService;

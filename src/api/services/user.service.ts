@@ -15,27 +15,34 @@ import {v4 as uuidv4} from 'uuid';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
 import mongoose from 'mongoose';
+import emailUtil from '../../utils/email.util';
+
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
-  private emailUtil: EmailUtil;
   private caseRepository: CaseRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
-    this.emailUtil = new EmailUtil();
     this.caseRepository = new CaseRepository();
   }
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
     let user = null;
     user = await this.userRepository.getOne<IUser>({
-      $or: [{email: req.body.email.toLowerCase()}, {phone: req.body.phone}],
+      $or: [
+        {email: req.body.email.toLowerCase()},
+        {phone: req.body.phone},
+        {SSID: req.body.SSID},
+      ],
     });
     if (user && !user.isDeleted) {
       if (user.email === req.body.email.toLowerCase()) {
         return [false, constants.alreadyExistsMessage('Email')];
+      }
+      if (user.SSID === req.body.SSID) {
+        return [false, constants.alreadyExistsMessage('SSN')];
       }
       return [false, constants.alreadyExistsMessage('Phone')];
     }
@@ -50,7 +57,7 @@ class UserService {
     }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
-    await this.emailUtil.sendInvitationLink(user, invitationLink);
+    await emailUtil.sendInvitationLink(user, invitationLink);
     req.body.verifyToken = token;
     req.body.isDeleted = false;
     let updatedUser = await this.userRepository.updateById<IUser>(user._id, {
@@ -147,7 +154,7 @@ class UserService {
     }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
-    await this.emailUtil.sendInvitationLink(user, invitationLink);
+    await emailUtil.sendInvitationLink(user, invitationLink);
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
     });

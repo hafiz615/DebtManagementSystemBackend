@@ -11,11 +11,11 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const user_util_1 = __importDefault(require("../../utils/user.util"));
 const user_repomodel_1 = require("../../database/repomodels/user.repomodel");
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
-const email_util_1 = __importDefault(require("../../utils/email.util"));
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const uuid_1 = require("uuid");
 const case_repository_1 = require("../repository/case/case.repository");
+const email_util_1 = __importDefault(require("../../utils/email.util"));
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
@@ -235,17 +235,23 @@ class UserService {
         };
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
-        this.emailUtil = new email_util_1.default();
         this.caseRepository = new case_repository_1.CaseRepository();
     }
     async createUser(req) {
         let user = null;
         user = await this.userRepository.getOne({
-            $or: [{ email: req.body.email.toLowerCase() }, { phone: req.body.phone }],
+            $or: [
+                { email: req.body.email.toLowerCase() },
+                { phone: req.body.phone },
+                { SSID: req.body.SSID },
+            ],
         });
         if (user && !user.isDeleted) {
             if (user.email === req.body.email.toLowerCase()) {
                 return [false, constants_util_1.default.alreadyExistsMessage('Email')];
+            }
+            if (user.SSID === req.body.SSID) {
+                return [false, constants_util_1.default.alreadyExistsMessage('SSN')];
             }
             return [false, constants_util_1.default.alreadyExistsMessage('Phone')];
         }
@@ -260,7 +266,7 @@ class UserService {
         }
         const token = await this.tokenService.createVerifyToken(user.email);
         const invitationLink = await user_util_1.default.getInvitationLink(token);
-        await this.emailUtil.sendInvitationLink(user, invitationLink);
+        await email_util_1.default.sendInvitationLink(user, invitationLink);
         req.body.verifyToken = token;
         req.body.isDeleted = false;
         let updatedUser = await this.userRepository.updateById(user._id, {
@@ -338,7 +344,7 @@ class UserService {
         }
         const token = await this.tokenService.createVerifyToken(user.email);
         const invitationLink = await user_util_1.default.getInvitationLink(token);
-        await this.emailUtil.sendInvitationLink(user, invitationLink);
+        await email_util_1.default.sendInvitationLink(user, invitationLink);
         await this.userRepository.updateById(user._id, {
             verifyToken: token,
         });

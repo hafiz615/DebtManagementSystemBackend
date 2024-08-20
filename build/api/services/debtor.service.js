@@ -359,7 +359,7 @@ class DebtorService {
             case_util_1.default.getCreditorNames(getDebtor, getDebtor.extractedFields
                 ? getDebtor.extractedFields
                 : extractedFieldsTemp, String(caseTemp._id));
-            case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
+            case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, getDebtor.commissionPercentage);
             case_util_1.default.getSettlementRange(caseTemp);
             case_util_1.default.getLumpSumAmount(caseTemp);
             case_util_1.default.getFullProfitSettlement(caseTemp);
@@ -542,7 +542,7 @@ class DebtorService {
                 case_util_1.default.getCreditorNames(updatedDebtor, extractedFields
                     ? extractedFields.extracted_fields
                     : updatedDebtor.extractedFields, String(caseTemp._id));
-            case_util_1.default.getScoresForAllCreditors(caseTemp, creditors);
+            case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, updatedDebtor.commissionPercentage);
             case_util_1.default.getSettlementRange(caseTemp);
             case_util_1.default.getLumpSumAmount(caseTemp);
             case_util_1.default.getFullProfitSettlement(caseTemp);

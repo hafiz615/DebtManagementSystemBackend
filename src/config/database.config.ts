@@ -2,18 +2,17 @@ import mongoose from 'mongoose';
 import {SettingsRepository} from '../api/repository/setting/settings.repository';
 import {Settings} from '../database/repomodels/settings.repomodel';
 import {ISettings} from '../database/interfaces/settings.interface';
-
-let dbconfig =
-  'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement-staging?retryWrites=true&w=majority';
+import {EnvSetup} from '../database/repomodels/setEnv';
 
 export class Database {
   protected dbUri: string;
 
   constructor() {
-    this.dbUri = dbconfig!;
+    this.dbUri = EnvSetup.dbURI!;
     this.connectDb();
   }
   private connectDb(): void {
+    console.log(this.dbUri);
     const options = {
       retryWrites: true,
       autoIndex: true, // build indexes true or false

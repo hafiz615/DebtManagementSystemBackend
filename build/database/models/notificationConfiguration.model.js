@@ -60,17 +60,31 @@ const logUpdate = async function (next) {
     next();
 };
 const logUpdatePost = async function (doc) {
-    let traceId = '';
+    let traceId = '', ip = '', userId = '', url = '', method = '';
     const store = localStorage_util_1.default.getStore();
     if (store) {
-        traceId = store.get('traceId');
+        if (store.get('traceId'))
+            traceId = store.get('traceId');
+        if (store.get('ip'))
+            ip = store.get('ip');
+        if (store.get('userId'))
+            userId = store.get('userId');
+        if (store.get('url'))
+            url = store.get('url');
+        if (store.get('method'))
+            method = store.get('method');
     }
     const previousDoc = this.previousDoc;
     const logEntry = new updateLogs_model_1.default({
-        traceId: traceId,
+        traceId,
         previousData: previousDoc,
         currentData: doc,
         model: this.model.modelName,
+        logTrackingId: previousDoc?.logTrackingId ?? '',
+        ip,
+        userId,
+        url,
+        method,
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry', err);

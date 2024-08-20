@@ -287,8 +287,8 @@ class CaseValidate {
         Joi.object({
           creditor: Joi.object({
             aggression: Joi.number().optional().min(0).max(10),
-            // paymentType: Joi.string().allow(''),
-            // paymentToken: Joi.string().allow(''),
+            paymentType: Joi.string().allow(''),
+            paymentToken: Joi.string().allow(''),
             basicInformation: Joi.object({
               fullName: Joi.string().required(),
               email: Joi.string().email().required(),

@@ -109,6 +109,7 @@ export class Settings {
     templateId: '';
     content: '';
     subject: '';
+    from: '';
   }>();
   notificationConfiguration = Array<{
     id: '';

@@ -4,6 +4,7 @@ import {IUser} from '../database/interfaces/user.interface';
 import commonUtil from './common.util';
 import constantsUtil from './constants.util';
 import {Request} from 'express';
+import {EnvSetup} from '../database/repomodels/setEnv';
 
 class UserUtil {
   private userRepository: UserRepository;
@@ -34,12 +35,12 @@ class UserUtil {
   }
 
   async getInvitationLink(token: string) {
-    const invitationLink = `${constantsUtil.ACCOUNT_INVITATION_BASE_LINK}?token=${token}`;
+    const invitationLink = `${EnvSetup.invitationLink}?token=${token}`;
     return invitationLink;
   }
 
   async getAllUserFilters(req: Request) {
-    const filters = {role: {$ne: 'Admin'}, isDeleted: false};
+    const filters = {role: {$nin: ['Admin', 'Super User']}, isDeleted: false};
     if (req.query.search === 'true') {
       const text = req.body.text;
       if (text) {

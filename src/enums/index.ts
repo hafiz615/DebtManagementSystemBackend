@@ -41,7 +41,6 @@ export enum permissions {
   deletePipeline = 'deletePipeline',
   addRole = 'addRole',
   updateRole = 'updateRole',
-  viewRoles = 'viewRoles',
   deleteRole = 'deleteRole',
   viewAnalyticsForSelf = 'viewAnalyticsForSelf',
   viewAnalyticsForAllusers = 'viewAnalyticsForAllusers',

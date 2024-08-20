@@ -237,6 +237,7 @@ const settignsModel: Schema = new Schema({
       templateId: '';
       content: '';
       subject: '';
+      from: '';
     }>,
   },
   notificationConfiguration: {
@@ -293,7 +294,7 @@ const logUpdatePost = async function (doc) {
     previousData: previousDoc,
     currentData: doc,
     model: this.model.modelName,
-    logTrackingId: previousDoc.logTrackingId,
+    logTrackingId: previousDoc?.logTrackingId ?? '',
     ip,
     userId,
     url,

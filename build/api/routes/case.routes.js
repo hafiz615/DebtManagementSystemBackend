@@ -30,5 +30,6 @@ router.post('/createCreditorsCases/:id', authorize_middleware_1.default.validate
 router.post('/getScoresSettlementRange/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRange);
 router.post('/addNotes/:id', // note will be added across case id
 authorize_middleware_1.default.validateAuth, case_validate_1.default.validateAddNotes, case_controller_1.default.addNotes);
+router.post('/getScoresSettlementByCommPercentage/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementByCommPercentage);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

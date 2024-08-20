@@ -262,8 +262,8 @@ class CaseValidate {
             data: joi_1.default.array().items(joi_1.default.object({
                 creditor: joi_1.default.object({
                     aggression: joi_1.default.number().optional().min(0).max(10),
-                    // paymentType: Joi.string().allow(''),
-                    // paymentToken: Joi.string().allow(''),
+                    paymentType: joi_1.default.string().allow(''),
+                    paymentToken: joi_1.default.string().allow(''),
                     basicInformation: joi_1.default.object({
                         fullName: joi_1.default.string().required(),
                         email: joi_1.default.string().email().required(),
