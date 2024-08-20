@@ -1,0 +1,2225 @@
+import {parse} from 'path';
+import {ContactRepository} from '../api/repository/contact/contact.repository';
+import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
+import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import {IContact} from '../database/interfaces/contact.interface';
+import {ICreditor} from '../database/interfaces/creditor.interface';
+import {IDebtor} from '../database/interfaces/debtor.interface';
+import {Contact} from '../database/repomodels/contact.repomodel';
+import {Creditor} from '../database/repomodels/creditor.repomodel';
+import {Debtor} from '../database/repomodels/debtor.repomodel';
+import {DataCopier} from './dataCopier.util';
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+import {ICase} from '../database/interfaces/case.interface';
+import {Payment} from '../database/repomodels/payment.repomodel';
+import {IPayment} from '../database/interfaces/payment.interface';
+import {CaseRepository} from '../api/repository/case/case.repository';
+import DebtorService from '../api/services/debtor.service';
+import CreditorService from '../api/services/creditor.service';
+import {Case} from '../database/repomodels/case.repomodel';
+import constantsUtil from './constants.util';
+import paymentUtil from './payment.util';
+import {Request} from 'express';
+import mongoose from 'mongoose';
+import {AnyARecord} from 'dns';
+import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
+import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
+import {v4} from 'uuid';
+import axios from 'axios';
+import commonUtil from './common.util';
+import UploadUtil from './upload.util';
+import {AIAuth} from '../database/repomodels/global';
+import {AnyLengthString} from 'aws-sdk/clients/comprehend';
+import axiosInstance from './axiosInstanceInterceptor';
+import dotenv from 'dotenv';
+import FormData from 'form-data';
+import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
+dotenv.config();
+class CaseUtil {
+  private contactRepository: ContactRepository;
+  private debtRepository: DebtorRepository;
+  private creditorRepository: CreditorRepository;
+  private paymentRepository: PaymentRepository;
+  private caseRepository: CaseRepository;
+  private debtorService: DebtorService;
+  private creditorService: CreditorService;
+  private paymentLoggingRepository: PaymentLoggingRepository;
+  private uploadUtil: UploadUtil;
+  private strategyRepository: StrategyRepository;
+
+  constructor() {
+    this.contactRepository = new ContactRepository();
+    this.debtRepository = new DebtorRepository();
+    this.creditorRepository = new CreditorRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.caseRepository = new CaseRepository();
+    this.debtorService = new DebtorService();
+    this.creditorService = new CreditorService();
+    this.paymentLoggingRepository = new PaymentLoggingRepository();
+    this.uploadUtil = new UploadUtil();
+    this.strategyRepository = new StrategyRepository();
+  }
+  async createContacts(data: IContact[]) {
+    const validatedContacts: IContact[] = [];
+    for (const contact of data) {
+      const newContact = new Contact();
+      const validatedContact = DataCopier.copy(newContact, contact);
+      validatedContacts.push(validatedContact);
+    }
+    const contacts =
+      await this.contactRepository.createMany<IContact>(validatedContacts);
+
+    return contacts.map(contact => {
+      return contact._id;
+    });
+  }
+
+  async createDebtor(req: Request) {
+    const data = req.body as IDebtor;
+    const reqTemp: any = req;
+    const newDebtor = new Debtor();
+    newDebtor.createdBy = reqTemp.id;
+    const validatedDebtor = DataCopier.copy(newDebtor, data);
+    return await this.debtRepository.create<IDebtor>(validatedDebtor);
+  }
+
+  async createCreditor(data: ICreditor) {
+    const newCreditor = new Creditor();
+    const validatedCreditor = DataCopier.copy(newCreditor, data);
+    return await this.creditorRepository.create<ICreditor>(validatedCreditor);
+  }
+
+  async uploadFileFormat(originalFile: string) {
+    const parsesdPath = parse(originalFile);
+    const fileName = parsesdPath.name;
+    const extension = parsesdPath.ext.toLowerCase();
+    return `${fileName}-${Date.now()}${extension}`;
+  }
+
+  async createPayment(data: ICase) {
+    const payment = new Payment();
+    const paymentsArray = [];
+    let tempPayment = null;
+    let commission = 0;
+    for (const interval of data.intervals) {
+      if (interval.frequency === 0) {
+        payment.dueDate = interval.startDate;
+        tempPayment = await this.populatePayment(
+          data._id,
+          payment,
+          interval,
+          0
+        );
+        paymentsArray.push(tempPayment);
+      }
+      if (interval.frequency != 0) {
+        for (let i = 1; i <= interval.frequency; i++) {
+          if (i === 1) {
+            payment.dueDate = interval.startDate;
+          } else {
+            payment.dueDate = await this.getDatePayment(
+              interval.startDate,
+              interval.timePeriod,
+              i - 1
+            );
+          }
+          tempPayment = await this.populatePayment(
+            data._id,
+            payment,
+            interval,
+            i
+          );
+          paymentsArray.push(tempPayment);
+        }
+      }
+    }
+    await this.paymentRepository.createMany<IPayment>(paymentsArray);
+    await this.paymentLoggingRepository.createMany<IPaymentLogging>(
+      paymentsArray
+    );
+  }
+
+  async calculateCommision(
+    interval: any,
+    weeklyBudget: number
+  ): Promise<number> {
+    switch (interval.timePeriod.toLowerCase()) {
+      case 'custom':
+        return weeklyBudget <= interval.amount
+          ? 0
+          : weeklyBudget - interval.amount;
+      case 'daily':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission / interval.frequency).toFixed(2));
+        }
+        return 0;
+      case 'weekly':
+        return weeklyBudget <= interval.amount
+          ? 0
+          : weeklyBudget - interval.amount;
+      case 'monthly':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission * 4).toFixed(2));
+        }
+        return 0;
+      case 'fortnightly':
+        if (weeklyBudget > interval.amount) {
+          const totalCommission = weeklyBudget - interval.amount;
+          return parseInt((totalCommission * 2).toFixed(2));
+        }
+        return 0;
+      default:
+        throw new Error('Invalid time period');
+    }
+  }
+
+  async getDatePayment(
+    date: string,
+    timePeriod: string,
+    number: number
+  ): Promise<string> {
+    const currentDate = new Date(date);
+
+    switch (timePeriod.toLowerCase()) {
+      case 'daily':
+        currentDate.setDate(currentDate.getDate() + number);
+        break;
+      case 'weekly':
+        currentDate.setDate(currentDate.getDate() + number * 7);
+        break;
+      case 'monthly':
+        currentDate.setMonth(currentDate.getMonth() + number);
+        break;
+      case 'fortnightly':
+        currentDate.setDate(currentDate.getDate() + number * 14);
+        break;
+      default:
+        throw new Error('Invalid time period');
+    }
+
+    return currentDate.toString();
+  }
+
+  async populatePayment(
+    caseId: string,
+    payment: Payment,
+    interval: any,
+    frequency: number
+  ) {
+    const uuid = v4();
+    payment.amount = interval.amount;
+    payment.frequency = frequency;
+    payment.caseId = caseId;
+    payment.intervalId = String(interval._id);
+    payment.timePeriod = interval.timePeriod;
+    payment.paymentReference = uuid;
+    return {...payment};
+  }
+
+  async getCaseCode() {
+    const count = await this.caseRepository.getCount<ICase>();
+    if (!count) return 'CASE-001';
+    // let caseCode = cases[cases.length - 1].caseCode;
+    return 'CASE-' + (count + 1).toString().padStart(3, '0');
+  }
+
+  async getAllCreditorsOfDebtor(debtor: IDebtor) {
+    const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
+    const tempCases: any = cases;
+    return tempCases.map(obj => ({
+      totalDebt: obj.totalDebt,
+      caseCode: obj.caseCode,
+      remaining: obj.remaining,
+      status: obj.status,
+      name: obj.creditor.basicInformation.fullName,
+      caseId: String(obj._id),
+      creditorId: String(obj.creditor._id),
+      creditorAccountTitle: obj.creditor.accountTitle
+        ? obj.creditor.accountTitle
+        : '',
+      accountTitleMapping: obj.creditor.accountTitleMapping
+        ? obj.creditor.accountTitleMapping
+        : [],
+      contractDetails: obj.contractDetails ? obj.contractDetails : null,
+    }));
+  }
+
+  async getAllCreditorsOfDebtorQuery(debtorId: string) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {debtor: debtorId, isDeleted: false},
+      'totalDebt caseCode status remaining contractDetails',
+      undefined,
+      undefined,
+      {
+        path: 'creditor',
+        select: [
+          'basicInformation.fullName',
+          'accountTitle',
+          'accountTitleMapping',
+        ],
+      }
+    );
+    return cases;
+  }
+
+  async createCase(body: any, name: string, id: string) {
+    let contactIds = null;
+    let debtor: IDebtor = null;
+    let creditor: ICreditor = null;
+    const getDebtor = await this.debtRepository.getOne<IDebtor>({
+      $or: [
+        {
+          'basicInformation.email':
+            body.debtor.basicInformation.email.toLowerCase(),
+        },
+        {
+          'basicInformation.SSID': body.debtor.basicInformation.SSID,
+        },
+        {
+          'basicInformation.phone': body.debtor.basicInformation.phone,
+        },
+      ],
+    });
+    const getCreditor = await this.creditorRepository.getOne<ICreditor>({
+      $or: [
+        {
+          'basicInformation.email':
+            body.creditor.basicInformation.email.toLowerCase(),
+        },
+        {
+          'basicInformation.phone': body.creditor.basicInformation.phone,
+        },
+      ],
+    });
+    let weeklyBudgetObj: {
+      status: boolean;
+      commission: number;
+      totalCommission: number;
+    };
+    if (!getDebtor) {
+      if (body.feePayment === 'toPay') {
+        weeklyBudgetObj = await this.checkWeeklyBudget(body, false, null);
+        if (!weeklyBudgetObj.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+        body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+        body.debtor.weeklyCommission = weeklyBudgetObj.commission;
+      }
+      // contactIds = await this.createContacts(
+      //   body.debtor.contacts as IContact[]
+      // );
+      // const debtorData = {
+      //   ...body.debtor,
+      // };
+      debtor = await this.createDebtor(body);
+    }
+    if (!getCreditor) {
+      // contactIds = await this.createContacts(
+      //   body.creditor.contacts as IContact[]
+      // );
+      // const creditorData = {
+      //   ...body.creditor,
+      //   contacts: contactIds,
+      // };
+      creditor = await this.createCreditor(body.creditor as ICreditor);
+    }
+    if (getDebtor) {
+      debtor = getDebtor;
+      if (body.feePayment === 'toPay') {
+        weeklyBudgetObj = await this.checkWeeklyBudget(body, true, getDebtor);
+        if (!weeklyBudgetObj.status) {
+          return [
+            false,
+            'Weekly budget is not fulfiling the payment plan of debtor',
+          ];
+        }
+        body.debtor.totalCommission = weeklyBudgetObj.totalCommission;
+        body.debtor.weeklyCommission = weeklyBudgetObj.commission;
+      }
+      await this.debtRepository.updateById<IDebtor>(getDebtor._id, body.debtor);
+    }
+    if (getCreditor) {
+      creditor = getCreditor as ICreditor;
+      await this.creditorRepository.updateById<ICreditor>(
+        getCreditor._id,
+        body.creditor
+      );
+    }
+    body.debtor = debtor?._id;
+    body.creditor = creditor?._id;
+    const newCase = new Case();
+    newCase.caseOwner = name;
+    newCase.caseOwnerId = id;
+    newCase.negotiator = name;
+    newCase.negotiatorId = id;
+    newCase.manager = name;
+    newCase.managerId = id;
+    newCase.chatId = v4();
+    newCase.caseCode = await this.getCaseCode();
+    const validatedCase = DataCopier.copy(newCase, body);
+    const caseCreated = await this.caseRepository.create<ICase>(validatedCase);
+    if (!caseCreated) {
+      return [false, constantsUtil.failureAddMessage('case')];
+    }
+    await this.createPayment(caseCreated);
+    // if (body.paymentToken && body.paymentType) {
+    //   await this.createVault(
+    //     body.paymentToken,
+    //     String(caseCreated.debtor),
+    //     body.paymentType
+    //   );
+    // }
+    // if (body.paymentTokenCreditor && body.paymentTypeCreditor) {
+    //   await this.creditorService.createVault(
+    //     body.paymentTokenCreditor,
+    //     String(caseCreated.creditor),
+    //     body.paymentTypeCreditor
+    //   );
+    // }
+    console.log('i am going to call AI');
+    const creditorNames: Array<string> = await this.getCreditorNames(
+      debtor,
+      '',
+      ''
+    );
+    console.log(creditorNames, 'creditonamess');
+    const findCreditor = creditorNames.includes(
+      creditor.businessInformation.companyName
+    );
+    console.log(findCreditor, 'findCrediotrrr');
+    if (findCreditor) {
+      await this.creditorRepository.updateById(creditor._id, {
+        'businessInformation.accountTitle':
+          creditor.businessInformation.companyName,
+      });
+    }
+    return [true, {caseCreated, findCreditor, creditorNames}];
+  }
+
+  async checkWeeklyBudget(body: any, debtorFound: boolean, debtor: IDebtor) {
+    let weeklyBudget = 0;
+    let debt = 0;
+    let amount = 0;
+    // if (!debtorFound) {
+    //   const interval = body.intervals[0];
+    //   weeklyBudget = body.debtor.basicInformation.weeklyBudget;
+    //   debt = body.remaining;
+    //   amount = await this.getWeeklyAmount(interval);
+    //   return amount >= weeklyBudget
+    //     ? {
+    //         status: false,
+    //         commission: 0,
+    //         totalCommission: 0,
+    //       }
+    //     : {
+    //         status: true,
+    //         commission: weeklyBudget - amount,
+    //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
+    //       };
+    // }
+    let commisionPercentage = body.commisionPercentage
+      ? body.commisionPercentage / 100
+      : 0.19;
+    if (debtorFound && body.intervals) {
+      const interval = body.intervals[0];
+      debt = body.remaining ?? 0;
+      amount = await this.getWeeklyAmount(interval);
+    }
+    weeklyBudget = debtor.basicInformation.weeklyBudget;
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
+      debtor: debtor._id,
+      isDeleted: false,
+    });
+    for (const caseTemp of cases) {
+      console.log(caseTemp.intervals);
+      if (caseTemp.intervals.length) {
+        amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+        debt += caseTemp.remaining;
+      }
+    }
+    return amount >= weeklyBudget
+      ? {
+          status: false,
+          commission: 0,
+          totalCommission: 0,
+        }
+      : {
+          status: true,
+          commission: weeklyBudget - amount,
+          totalCommission: parseInt((debt * commisionPercentage).toFixed(2)),
+        };
+  }
+  async getWeeklyAmount(interval: any) {
+    switch (interval.timePeriod.toLowerCase()) {
+      case 'custom':
+        return interval.amount;
+      case 'daily':
+        return interval.amount * interval.frequency;
+      case 'weekly':
+        return interval.amount;
+      case 'monthly':
+        return parseInt((interval.amount / 4).toFixed(2));
+      case 'fortnightly':
+        return parseInt((interval.amount / 2).toFixed(2));
+      default:
+        throw new Error('Invalid time period');
+    }
+  }
+  async checkCasePayment(body: any): Promise<[boolean, string]> {
+    let isExempt = body.isExempt ?? true;
+    if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
+      return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
+    }
+    if (body && body.intervals && body.intervals.length && !isExempt) {
+      let amount = 0;
+      for (const interval of body.intervals) {
+        if (!interval.frequency) {
+          amount += interval.amount;
+        }
+        if (interval.frequency) {
+          // for (let i = 0; i < interval.frequency; i++) {
+          //   amount += interval.amount;
+          // }
+          let multipliedAmount = interval.frequency * interval.amount;
+          amount += multipliedAmount;
+        }
+      }
+      if (amount !== body.remaining) {
+        return [
+          false,
+          constantsUtil.Messages.INTERVALS_PAYMENT_CALCULATION_ERROR,
+        ];
+      }
+    }
+    return [true, ''];
+  }
+
+  async getClientsList(cases: any) {
+    const seenDebtor = new Set();
+    const result = [];
+    const mappingIndex = {};
+    const mappingCreditors = {};
+    let seenCreditor = new Set();
+    let index = 0;
+    for (const tempCase of cases) {
+      let debtorId = String(tempCase.debtor._id);
+      let creditorId = String(tempCase.creditor);
+      if (seenDebtor.has(debtorId)) {
+        let index = mappingIndex[debtorId];
+        let creditorSet = mappingCreditors[debtorId];
+        let resultObj = result[index];
+        if (!creditorSet.has(creditorId)) {
+          resultObj.creditors += 1;
+          creditorSet.add(creditorId);
+          mappingCreditors[debtorId] = creditorSet;
+        }
+        result[index] = {
+          cases: resultObj.cases + 1,
+          creditors: resultObj.creditors,
+          name: resultObj.name,
+          status: resultObj.status,
+          totalDebt: resultObj.totalDebt + tempCase.totalDebt,
+          id: resultObj.id,
+        };
+      } else {
+        seenDebtor.add(debtorId);
+        seenCreditor.add(creditorId);
+        result.push({
+          cases: 1,
+          creditors: 1,
+          name: tempCase.debtor.basicInformation.fullName,
+          status: tempCase.debtor.basicInformation.status,
+          totalDebt: tempCase.totalDebt,
+          id: debtorId,
+        });
+        mappingIndex[debtorId] = index;
+        index += 1;
+        mappingCreditors[debtorId] = seenCreditor;
+        seenCreditor = new Set();
+      }
+    }
+    return result;
+  }
+
+  async getClientDetails(req: Request) {
+    const convertedDebtorId = new mongoose.Types.ObjectId(req.params.id);
+    const pipeline = [
+      {
+        $match: {debtor: convertedDebtorId, isDeleted: {$ne: true}},
+      },
+      {
+        $lookup: {
+          from: 'debtors',
+          localField: 'debtor',
+          foreignField: '_id',
+          as: 'debtorDetails',
+        },
+      },
+      {
+        $unwind: '$debtorDetails',
+      },
+      {
+        $lookup: {
+          from: 'creditors',
+          localField: 'creditor',
+          foreignField: '_id',
+          as: 'creditorDetails',
+        },
+      },
+      {
+        $unwind: '$creditorDetails',
+      },
+      {
+        $lookup: {
+          from: 'payments',
+          localField: '_id',
+          foreignField: 'caseId',
+          as: 'payments',
+        },
+      },
+      {
+        $addFields: {
+          lastPayment: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Success']},
+                },
+              },
+              -1,
+            ],
+          },
+          upcomingPayment: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Pending']},
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          lastPayment: {$ifNull: ['$lastPayment', null]},
+          upcomingPayment: {$ifNull: ['$upcomingPayment', null]},
+        },
+      },
+      {
+        $group: {
+          _id: '$debtor',
+          caseHistory: {
+            $push: {
+              _id: '$_id',
+              creditorName: '$creditorDetails.basicInformation.fullName',
+              totalDebt: '$totalDebt',
+              lastPayment: {$ifNull: ['$lastPayment.amount', null]},
+              lastPaymentDate: {
+                $dateToString: {
+                  format: '%Y-%m-%d',
+                  date: {$ifNull: ['$lastPayment.dueDate', null]},
+                },
+              },
+              upcomingPayment: {$ifNull: ['$upcomingPayment.amount', null]},
+              upcomingPaymentDate: {
+                $dateToString: {
+                  format: '%Y-%m-%d',
+                  date: {$ifNull: ['$upcomingPayment.dueDate', null]},
+                },
+              },
+              caseOwner: '$caseOwner',
+              outstandingDebt: {
+                $subtract: ['$remaining', {$sum: '$payments.amount'}],
+              },
+            },
+          },
+          debtorDetails: {$first: '$debtorDetails'},
+          failedPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Failed']},
+                },
+              },
+            },
+          },
+          failedAuthorizations: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Failed']},
+                },
+              },
+            },
+          },
+          successfulPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Success']},
+                },
+              },
+            },
+          },
+          successfulAuthorizations: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Success']},
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          caseHistory: 1,
+          debtor: {
+            SSN: '$debtorDetails.basicInformation.SSID',
+            fullName: '$debtorDetails.basicInformation.fullName',
+            companyName: '$debtorDetails.businessInformation.companyName',
+            email: '$debtorDetails.basicInformation.email',
+            status: '$debtorDetails.basicInformation.status',
+            address: '$debtorDetails.basicInformation.address',
+            outstandingDebt: {
+              $sum: '$caseHistory.outstandingDebt',
+            },
+            totalDebt: {
+              $sum: '$caseHistory.totalDebt',
+            },
+          },
+          paymentCounts: {
+            failedPayments: '$failedPayments',
+            failedAuthorizations: '$failedAuthorizations',
+            successfulPayments: '$successfulPayments',
+            successfulAuthorizations: '$successfulAuthorizations',
+          },
+        },
+      },
+    ];
+
+    const results: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
+    if (results[0]?.caseHistory) {
+      results[0].caseHistory = await this.filterCaseHistoryDebtor(
+        results[0]?.caseHistory,
+        req
+      );
+    }
+
+    return results.length ? results[0] : null;
+  }
+  async filterCaseHistoryDebtor(caseHistory: [], req: Request) {
+    // Helper function to apply text search
+    const applyTextSearch = (caseObj: any, text: string | RegExp) => {
+      const regex = new RegExp(text, 'i');
+      return regex.test(caseObj.creditorName) || regex.test(caseObj.caseOwner);
+    };
+
+    // Helper function to apply numeric/date filters
+    const applyFilters = (caseObj: any, filters: any) => {
+      if (
+        filters.totalDebt &&
+        (caseObj.totalDebt < filters.totalDebt.min ||
+          caseObj.totalDebt > filters.totalDebt.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.lastPaymentAmount &&
+        (caseObj.lastPayment < filters.lastPaymentAmount.min ||
+          caseObj.lastPayment > filters.lastPaymentAmount.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.lastPaymentDate &&
+        (new Date(caseObj.lastPaymentDate) <
+          new Date(filters.lastPaymentDate.start) ||
+          new Date(caseObj.lastPaymentDate) >
+            new Date(filters.lastPaymentDate.end))
+      ) {
+        return false;
+      }
+      if (
+        filters.upcomingPaymentAmount &&
+        (caseObj.upcomingPayment < filters.upcomingPaymentAmount.min ||
+          caseObj.upcomingPayment > filters.upcomingPaymentAmount.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.upcomingPaymentDate &&
+        (new Date(caseObj.upcomingPaymentDate) <
+          new Date(filters.upcomingPaymentDate.start) ||
+          new Date(caseObj.upcomingPaymentDate) >
+            new Date(filters.upcomingPaymentDate.end))
+      ) {
+        return false;
+      }
+      if (
+        filters.outstandingDebt &&
+        (caseObj.outstandingDebt < filters.outstandingDebt.min ||
+          caseObj.outstandingDebt > filters.outstandingDebt.max)
+      ) {
+        return false;
+      }
+      return true;
+    };
+    let text = '',
+      filters = {};
+    if (req.query.search === 'true') {
+      text = req.body.text;
+    }
+    if (req.query.filter === 'true') {
+      filters = req.body.filters;
+    }
+    // Apply text search and filters
+    let filteredCaseHistory = caseHistory.filter(caseObj => {
+      const textMatches = !text || applyTextSearch(caseObj, text);
+      const filtersMatch =
+        Object.keys(filters).length === 0 || applyFilters(caseObj, filters);
+      return textMatches && filtersMatch;
+    });
+
+    return filteredCaseHistory;
+  }
+
+  async filterAndPaginateCaseHistoryCreditor(caseHistory: [], req: Request) {
+    let page = 1;
+    let limit = 10;
+
+    // Check if pageNumber and pageSize are provided and valid
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    // Helper function to apply text search
+    const applyTextSearch = (caseObj: any, text: string | RegExp) => {
+      const regex = new RegExp(text, 'i');
+      return regex.test(caseObj.debtorName) || regex.test(caseObj.caseOwner);
+    };
+
+    // Helper function to apply numeric/date filters
+    const applyFilters = (caseObj: any, filters: any) => {
+      if (
+        filters.totalDebt &&
+        (caseObj.totalDebt < filters.totalDebt.min ||
+          caseObj.totalDebt > filters.totalDebt.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.lastPaymentAmount &&
+        (caseObj.lastPayment < filters.lastPaymentAmount.min ||
+          caseObj.lastPayment > filters.lastPaymentAmount.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.lastPaymentDate &&
+        (new Date(caseObj.lastPaymentDate) <
+          new Date(filters.lastPaymentDate.start) ||
+          new Date(caseObj.lastPaymentDate) >
+            new Date(filters.lastPaymentDate.end))
+      ) {
+        return false;
+      }
+      if (
+        filters.upcomingPaymentAmount &&
+        (caseObj.upcomingPayment < filters.upcomingPaymentAmount.min ||
+          caseObj.upcomingPayment > filters.upcomingPaymentAmount.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.upcomingPaymentDate &&
+        (new Date(caseObj.upcomingPaymentDate) <
+          new Date(filters.upcomingPaymentDate.start) ||
+          new Date(caseObj.upcomingPaymentDate) >
+            new Date(filters.upcomingPaymentDate.end))
+      ) {
+        return false;
+      }
+      if (
+        filters.outstandingDebt &&
+        (caseObj.outstandingDebt < filters.outstandingDebt.min ||
+          caseObj.outstandingDebt > filters.outstandingDebt.max)
+      ) {
+        return false;
+      }
+      return true;
+    };
+    let text = '',
+      filters = {};
+    if (req.query.search === 'true') {
+      text = req.body.text;
+    }
+    if (req.query.filter === 'true') {
+      filters = req.body.filters;
+    }
+    // Apply text search and filters
+    let filteredCaseHistory = caseHistory.filter(caseObj => {
+      const textMatches = !text || applyTextSearch(caseObj, text);
+      const filtersMatch =
+        Object.keys(filters).length === 0 || applyFilters(caseObj, filters);
+      return textMatches && filtersMatch;
+    });
+
+    // Apply pagination
+    const paginatedCaseHistory = filteredCaseHistory.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+
+    return paginatedCaseHistory;
+  }
+
+  async getCreditorDetails(req: Request) {
+    const convertedCreditorId = new mongoose.Types.ObjectId(req.params.id);
+    const pipeline = [
+      {
+        $match: {creditor: convertedCreditorId, isDeleted: {$ne: true}},
+      },
+      {
+        $lookup: {
+          from: 'debtors',
+          localField: 'debtor',
+          foreignField: '_id',
+          as: 'debtorDetails',
+        },
+      },
+      {
+        $unwind: '$debtorDetails',
+      },
+      {
+        $lookup: {
+          from: 'creditors',
+          localField: 'creditor',
+          foreignField: '_id',
+          as: 'creditorDetails',
+        },
+      },
+      {
+        $unwind: '$creditorDetails',
+      },
+      {
+        $lookup: {
+          from: 'payments',
+          localField: '_id',
+          foreignField: 'caseId',
+          as: 'payments',
+        },
+      },
+      {
+        $addFields: {
+          lastPayment: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Success']},
+                },
+              },
+              -1,
+            ],
+          },
+          upcomingPayment: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Pending']},
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          lastPayment: {$ifNull: ['$lastPayment', null]},
+          upcomingPayment: {$ifNull: ['$upcomingPayment', null]},
+        },
+      },
+      {
+        $group: {
+          _id: '$creditor',
+          caseHistory: {
+            $push: {
+              _id: '$_id',
+              debtorName: '$debtorDetails.basicInformation.fullName',
+              totalDebt: '$totalDebt',
+              lastPayment: {$ifNull: ['$lastPayment.amount', null]},
+              lastPaymentDate: {
+                $dateToString: {
+                  format: '%Y-%m-%d',
+                  date: {$ifNull: ['$lastPayment.dueDate', null]},
+                },
+              },
+              upcomingPayment: {$ifNull: ['$upcomingPayment.amount', null]},
+              upcomingPaymentDate: {
+                $dateToString: {
+                  format: '%Y-%m-%d',
+                  date: {$ifNull: ['$upcomingPayment.dueDate', null]},
+                },
+              },
+              caseOwner: '$caseOwner',
+              outstandingDebt: {
+                $subtract: ['$remaining', {$sum: '$payments.amount'}],
+              },
+            },
+          },
+          creditorDetails: {$first: '$creditorDetails'},
+          failedPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Failed']},
+                },
+              },
+            },
+          },
+          failedAuthorizations: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Failed']},
+                },
+              },
+            },
+          },
+          successfulPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.captured', 'Success']},
+                },
+              },
+            },
+          },
+          successfulAuthorizations: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.authorized', 'Success']},
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          caseHistory: 1,
+          creditor: {
+            fullName: '$creditorDetails.basicInformation.fullName',
+            email: '$creditorDetails.basicInformation.email',
+            phone: '$creditorDetails.basicInformation.phone',
+            outstandingDebt: {
+              $sum: '$caseHistory.outstandingDebt',
+            },
+            totalDebt: {
+              $sum: '$caseHistory.totalDebt',
+            },
+          },
+          paymentCounts: {
+            failedPayments: '$failedPayments',
+            failedAuthorizations: '$failedAuthorizations',
+            successfulPayments: '$successfulPayments',
+            successfulAuthorizations: '$successfulAuthorizations',
+          },
+        },
+      },
+    ];
+
+    const results: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
+    if (results[0]?.caseHistory) {
+      results[0].caseHistory = await this.filterAndPaginateCaseHistoryCreditor(
+        results[0]?.caseHistory,
+        req
+      );
+    }
+
+    return results.length ? results[0] : null;
+  }
+
+  async getClientDetailsFilters(req: Request) {
+    const filterConditions = [];
+
+    if (req.query.filter === 'true') {
+      const filters = req.body.filters;
+      // Add filters for numeric/date ranges if provided
+      if (filters.totalDebt) {
+        filterConditions.push({
+          totalDebt: {$gte: filters.totalDebt.min, $lte: filters.totalDebt.max},
+        });
+      }
+      if (filters.lastPaymentAmount) {
+        filterConditions.push({
+          lastPayment: {
+            $gte: filters.lastPaymentAmount.min,
+            $lte: filters.lastPaymentAmount.max,
+          },
+        });
+      }
+      if (filters.lastPaymentDate) {
+        filterConditions.push({
+          lastPaymentDate: {
+            $gte: filters.lastPaymentDate.start,
+            $lte: filters.lastPaymentDate.end,
+          },
+        });
+      }
+      if (filters.upcomingPaymentAmount) {
+        filterConditions.push({
+          upcomingPayment: {
+            $gte: filters.upcomingPaymentAmount.min,
+            $lte: filters.upcomingPaymentAmount.max,
+          },
+        });
+      }
+      if (filters.upcomingPaymentDate) {
+        filterConditions.push({
+          upcomingPaymentDate: {
+            $gte: filters.upcomingPaymentDate.start,
+            $lte: filters.upcomingPaymentDate.end,
+          },
+        });
+      }
+      if (filters.outstandingDebt) {
+        filterConditions.push({
+          outstandingDebt: {
+            $gte: filters.outstandingDebt.min,
+            $lte: filters.outstandingDebt.max,
+          },
+        });
+      }
+    }
+
+    if (req.query.search === 'true') {
+      const text = req.body.text;
+      if (text) {
+        filterConditions.push({
+          $or: [{creditorName: {$regex: text}}, {caseOwner: {$regex: text}}],
+        });
+      }
+    }
+    return filterConditions;
+  }
+
+  async getClientListingPipeline(req: Request, keyword: string) {
+    let match = {isDeleted: {$ne: true}};
+    let reqTemp: any = req;
+    if (keyword === 'viewClientsForSelf') {
+      match['$or'] = [
+        {caseOwnerId: reqTemp.id},
+        {negotiatorId: reqTemp.id},
+        {managerId: reqTemp.id},
+      ];
+    }
+    // const filters = await this.getClientListingFilters(req);
+    const pipeline: any = [
+      {
+        $match: match, // Filter out isDeleted cases
+      },
+      {
+        $lookup: {
+          from: 'debtors',
+          localField: 'debtor',
+          foreignField: '_id',
+          as: 'debtor',
+        },
+      },
+      {
+        $unwind: '$debtor',
+      },
+      {
+        $group: {
+          _id: {$toString: '$debtor._id'},
+          companyName: {$first: '$debtor.businessInformation.companyName'},
+          totalCases: {$sum: 1},
+          totalCreditors: {$addToSet: '$creditor'},
+          totalDebt: {$sum: '$totalDebt'},
+          status: {$first: '$debtor.basicInformation.status'},
+        },
+      },
+      {
+        $project: {
+          id: '$_id',
+          _id: 0,
+          companyName: 1,
+          totalCases: 1,
+          totalCreditors: {$size: '$totalCreditors'}, // Count unique creditors
+          totalDebt: 1,
+          status: 1,
+        },
+      },
+    ];
+    let clientDetails: any =
+      await this.caseRepository.applyAggregate<ICase>(pipeline);
+    // let allDebtors = [];
+    // const clientIds = clientDetails.map(client => {
+    //   return client.id;
+    // });
+    // if (keyword === 'viewClientsForSelf') {
+    //   const remainingDebtors =
+    //     await this.debtRepository.getAllWithoutPagination<IDebtor>({
+    //       _id: {$nin: clientIds},
+    //       createdBy: reqTemp.id,
+    //     });
+    //   console.log(remainingDebtors);
+    //   const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+    //     return {
+    //       companyName: debtor.businessInformation.companyName,
+    //       totalCases: 0,
+    //       totalDebt: 0,
+    //       status: debtor.basicInformation.status,
+    //       id: String(debtor._id),
+    //       totalCreditors: 0,
+    //     };
+    //   });
+    //   allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+    // } else {
+    //   const remainingDebtors =
+    //     await this.debtRepository.getAllWithoutPagination<IDebtor>({
+    //       _id: {$nin: clientIds},
+    //     });
+    //   const remainingDebtorsFiltered = remainingDebtors.map(debtor => {
+    //     return {
+    //       companyName: debtor.businessInformation.companyName,
+    //       totalCases: 0,
+    //       totalDebt: 0,
+    //       status: debtor.basicInformation.status,
+    //       id: String(debtor._id),
+    //       totalCreditors: 0,
+    //     };
+    //   });
+    //   allDebtors = [...clientDetails, ...remainingDebtorsFiltered];
+    // }
+    // if (allDebtors.length) {
+    //   allDebtors = await this.filterClientsListing(allDebtors, req);
+    // }
+    // allDebtors.sort((a, b) => (a.id < b.id ? 1 : -1));
+    // return allDebtors.length ? allDebtors : [];
+    if (clientDetails.length) {
+      clientDetails = await this.filterClientsListing(clientDetails, req);
+    }
+    clientDetails.sort((a, b) => (a.id < b.id ? 1 : -1));
+    return clientDetails.length ? clientDetails : [];
+  }
+
+  async filterClientsListing(clients: any[], req: Request) {
+    // Helper function to apply text search
+    const applyTextSearch = (client: any, text: string | RegExp) => {
+      const regex = new RegExp(text, 'i');
+      return regex.test(client.companyName) || regex.test(client.status);
+    };
+
+    // Helper function to apply numeric/date filters
+    const applyFilters = (client: any, filters: any) => {
+      if (
+        filters.totalDebt &&
+        (client.totalDebt < filters.totalDebt.min ||
+          client.totalDebt > filters.totalDebt.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.totalCases &&
+        (client.totalCases < filters.totalCases.min ||
+          client.totalCases > filters.totalCases.max)
+      ) {
+        return false;
+      }
+      if (
+        filters.totalCreditors &&
+        (client.totalCreditors < filters.totalCreditors.min ||
+          client.totalCreditors > filters.totalCreditors.max)
+      ) {
+        return false;
+      }
+      return true;
+    };
+    let text = '',
+      filters = {};
+    if (req.query.search === 'true') {
+      text = req.body.text;
+    }
+    if (req.query.filter === 'true') {
+      filters = req.body.filter;
+    }
+    console.log(filters);
+    // Apply text search and filters
+    let filteredCaseHistory = clients.filter(client => {
+      const textMatches = !text || applyTextSearch(client, text);
+      const filtersMatch =
+        Object.keys(filters).length === 0 || applyFilters(client, filters);
+      return textMatches && filtersMatch;
+    });
+
+    return filteredCaseHistory;
+  }
+
+  async getClientListingFilters(req: Request) {
+    const queryFilter = {};
+    const querySearch = {};
+    if (req.query.filter === 'true') {
+      let filter = req.body.filter;
+      if (filter.totalDebt) {
+        queryFilter['totalDebt'] = {
+          $gte: filter.totalDebt.min,
+          $lte: filter.totalDebt.max,
+        };
+      }
+      if (filter.totalCases) {
+        queryFilter['totalCases'] = {
+          $gte: filter.totalCases.min,
+          $lte: filter.totalCases.max,
+        };
+      }
+      if (filter.totalCreditors) {
+        queryFilter['totalCreditors'] = {
+          $gte: filter.totalCreditors.min,
+          $lte: filter.totalCreditors.max,
+        };
+      }
+    }
+    if (req.query.search === 'true') {
+      querySearch['$or'] = [
+        {
+          'debtor.basicInformation.fullName': {
+            $regex: req.body.text,
+            $options: 'i',
+          },
+        },
+        {
+          'debtor.basicInformation.status': {
+            $regex: req.body.text,
+            $options: 'i',
+          },
+        },
+      ];
+    }
+    return [queryFilter, querySearch];
+  }
+
+  async getCreditorListingPipeline(req: Request, match: {}) {
+    const filters = await this.getCreditorListingFilters(req);
+    const pipeline = [
+      {
+        $match: match, // Filter out isDeleted cases
+      },
+      {
+        $lookup: {
+          from: 'creditors',
+          localField: 'creditor',
+          foreignField: '_id',
+          as: 'creditor',
+        },
+      },
+      {
+        $unwind: '$creditor',
+      },
+      {
+        $match: filters[1],
+      },
+      {
+        $group: {
+          _id: {$toString: '$creditor._id'},
+          companyName: {$first: '$creditor.businessInformation.companyName'},
+          totalCases: {$sum: 1},
+          totalDebtors: {$addToSet: '$debtor'}, // Collect unique debtors
+          totalDebt: {$sum: '$totalDebt'},
+        },
+      },
+      {
+        $project: {
+          id: '$_id',
+          _id: 0,
+          companyName: 1,
+          totalCases: 1,
+          totalDebtors: {$size: '$totalDebtors'}, // Count unique debtors
+          totalDebt: 1,
+        },
+      },
+      {
+        $match: filters[0],
+      },
+      {
+        $sort: {id: -1},
+      },
+    ];
+
+    return pipeline;
+  }
+
+  async getCreditorListingFilters(req: Request) {
+    const queryFilter = {};
+    const querySearch = {};
+    if (req.query.filter === 'true') {
+      let filter = req.body.filter;
+      if (filter.totalDebt) {
+        queryFilter['totalDebt'] = {
+          $gte: filter.totalDebt.min,
+          $lte: filter.totalDebt.max,
+        };
+      }
+      if (filter.totalCases) {
+        queryFilter['totalCases'] = {
+          $gte: filter.totalCases.min,
+          $lte: filter.totalCases.max,
+        };
+      }
+      if (filter.totalCreditors) {
+        queryFilter['totalDebtors'] = {
+          $gte: filter.totalDebtors.min,
+          $lte: filter.totalDebtors.max,
+        };
+      }
+    }
+    if (req.query.search === 'true') {
+      querySearch['creditor.basicInformation.fullName'] = {
+        $regex: req.body.text,
+        $options: 'i',
+      };
+    }
+    return [queryFilter, querySearch];
+  }
+
+  async updateContacts(data: IContact[]) {
+    for (const contact of data) {
+      await this.contactRepository.updateById<IContact>(contact._id, {
+        ...contact,
+      });
+    }
+  }
+
+  async updateDebtor(data: IDebtor) {
+    return await this.debtRepository.updateById<IDebtor>(data._id, {...data});
+  }
+
+  async updateCreditor(data: ICreditor) {
+    return await this.creditorRepository.updateById<ICreditor>(data._id, {
+      ...data,
+    });
+  }
+
+  async getUpdatedCommAndTotalComm(debtorId: string) {
+    const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
+    const weeklyBudget = debtor.basicInformation.weeklyBudget;
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
+      debtor: debtor._id,
+      isDeleted: false,
+    });
+    let amount = 0,
+      debt = 0;
+    for (const caseTemp of cases) {
+      amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
+      debt += caseTemp.remaining;
+    }
+    for (const caseTemp of cases) {
+      console.log(caseTemp.intervals);
+    }
+    console.log(amount, 'amounttt');
+    console.log(weeklyBudget, 'weeklyy budget');
+    return amount >= weeklyBudget
+      ? {
+          status: false,
+          commission: 0,
+          totalCommission: 0,
+        }
+      : {
+          status: true,
+          commission: weeklyBudget - amount,
+          totalCommission: parseInt((debt * 0.19).toFixed(2)),
+        };
+  }
+
+  async getCreditorNamesAI(
+    documents: any,
+    token: string,
+    debtorName: string,
+    debtorId: string,
+    extractedFields: any,
+    caseId: string
+  ) {
+    const url = `${process.env.baseUrlAI}get-creditor-names?debtor_name=${debtorName}&debtor_id=${debtorId}`;
+    const urls = [];
+    try {
+      for (let doc of documents) {
+        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, true);
+        urls.push(url);
+      }
+      // Data to be sent in the body of the request
+      const data = {bank_statements: urls, extracted_fields: extractedFields};
+      console.log('I am in getCreditorNamesAI');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.data.error && caseId) {
+        this.strategyRepository.upsert(
+          {caseId: caseId, name: 'strategy_one'},
+          {'data.creditorNames': response.data}
+        );
+        this.caseRepository.updateById(caseId, {strategyOne_1: true});
+      }
+      if (response.data.error && caseId) {
+        this.caseRepository.updateById(caseId, {strategyOne_1: false});
+      }
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      console.log(error.message);
+      return error.message;
+    }
+  }
+
+  async getScoresAI(
+    comm: number,
+    token: string,
+    caseTemp: any,
+    creditors: any
+  ) {
+    const url = `${process.env.baseUrlAI}get-scores?debtor_id=${String(
+      caseTemp.debtor._id
+    )}&commision_percentage=${comm}`;
+    let data = {};
+    for (const creditor of creditors) {
+      const accountTitles = creditor.creditor.accountTitleMapping
+        ? creditor.creditor.accountTitleMapping
+        : [];
+      const accTitleObj = accountTitles.find(temp => {
+        return temp.caseId === String(creditor._id);
+      });
+      let accountTitle = '';
+      accountTitle =
+        accTitleObj && accTitleObj?.accountTitle
+          ? accTitleObj.accountTitle
+          : creditor.creditor.accountTitle;
+      let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
+      if (accountTitle) {
+        data[`${accountTitle}`] = {
+          total_debt: creditor.totalDebt,
+          remaining_debt: creditor.remaining,
+          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          principle_amount: amount,
+        };
+      }
+    }
+    if (!Object.keys(data).length) data = [];
+    console.log('I am in getScoresAIForSelectedCreditors');
+    console.log('URL: ', url);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  getCleanAmount(data: string) {
+    const cleanedAmount = data.replace(/\$|,/g, '');
+    let amount = parseInt(cleanedAmount, 10);
+    if (isNaN(amount)) {
+      amount = 0;
+    }
+    return amount;
+  }
+
+  async getSettlementRangeAI(caseTemp: any, token: string) {
+    const url = `${
+      process.env.baseUrlAI
+    }get-settlement-range?debtor_id=${String(caseTemp.debtor._id)}`;
+    console.log('I am in getSettlementRangeAI');
+    console.log('URL: ', url);
+    console.log('Payload: ', 'No payload for this call');
+    try {
+      const response = await axiosInstance.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: token,
+          },
+        }
+      );
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async getCreditorHistoryAI(creditorId: string, token: string) {
+    const url = `${process.env.baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
+    try {
+      const response = await axios.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: token,
+          },
+        }
+      );
+      console.log(response.data, 'historyyyy');
+      return response.data.error ? [] : response.data;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async getLumpSumAmount(caseTemp: ICase) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${process.env.baseUrlAI}get-lump-sum-amount?debtor_id=${String(
+      caseTemp.debtor
+    )}`;
+    try {
+      console.log('I am in getLumpSumAmount');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
+      const response = await axiosInstance.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: AIAuth.auth_token,
+          },
+        }
+      );
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {strategyTwo: false});
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'strategy_two'},
+        {'data.lumpSumAmount': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {strategyTwo: true});
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
+  async getFullProfitSettlement(caseTemp: ICase) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${
+      process.env.baseUrlAI
+    }get-full-profit-settlement?debtor_id=${String(caseTemp.debtor)}`;
+    try {
+      console.log('I am in getFullProfitSettlement');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
+      const response = await axiosInstance.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: AIAuth.auth_token,
+          },
+        }
+      );
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {strategyThree: false});
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'strategy_three'},
+        {'data.fullProfitSettlement': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {strategyThree: true});
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
+  async getSummary(req: any, caseTemp: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${process.env.baseUrlAI}negotiator?human_input=${
+      req.body.humanInput
+    }&debtor_id=${String(caseTemp.debtor._id)}&chat_id=${caseTemp.chatId}`;
+
+    const data = {
+      debtor_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+      financial_health_summary: req.body.financialHealthSummary,
+    };
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+      if (response.data && response.data.error) {
+        return [false, response.data.error];
+      }
+      return [true, response.data.response];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
+  async getAIToken(username: string, partnerToken: string) {
+    const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
+    try {
+      const response = await axios.get(url);
+      return response.data.error ? [] : response.data;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async getCreditorNames(debtor: IDebtor, extractedFields: any, caseId = '') {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const creditorNames = await this.getCreditorNamesAI(
+      debtor.documents,
+      AIAuth.auth_token,
+      debtor.businessInformation.companyName,
+      debtor._id,
+      extractedFields,
+      caseId
+    );
+    console.log(creditorNames);
+    return creditorNames;
+  }
+
+  async getExtractionMCA(debtor: IDebtor) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const extractedFields = await this.getExtractionMCA_AI(
+      debtor.documents,
+      AIAuth.auth_token
+    );
+    return extractedFields;
+  }
+
+  async findMCASubStr(str: string) {
+    const regex = /mca/i;
+    const match = str.match(regex);
+    return match ? true : false;
+  }
+  async findCsvSubStr(str: string) {
+    const regex = /csv/i;
+    const match = str.match(regex);
+    return match ? true : false;
+  }
+
+  async getExtractionMCA_AI(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        if (await this.findCsvSubStr(doc.originalFileName)) {
+          continue;
+        }
+        const contents = await this.uploadUtil.getPdfBytesFromS3(doc.key);
+        form.append('MCA_pdf', Buffer.from(contents), {
+          filename: doc.originalFileName,
+          contentType: 'application/pdf',
+        });
+      }
+      form.getLength((err, length) => {
+        if (err) return null;
+      });
+      console.log('I am in getExtractionMCA_AI');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      console.log('Response Data', response.data);
+      return response.data.error ? null : response.data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
+  async getScores(caseTemp: any, creditors: any, comm: number) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const getScores = await this.getScoresAI(
+      comm,
+      AIAuth.auth_token,
+      caseTemp,
+      creditors
+    );
+    return getScores;
+  }
+
+  async getScoresForAllCreditors(caseTemp: any, creditors: any, comm: number) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const getScores = await this.getScoresAIForAllCreditors(
+      comm,
+      AIAuth.auth_token,
+      caseTemp,
+      creditors
+    );
+    return getScores;
+  }
+
+  async getSettlementRange(caseTemp: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const getSettlementRange = await this.getSettlementRangeAI(
+      caseTemp,
+      AIAuth.auth_token
+    );
+    if (getSettlementRange.settlement_range) {
+      getSettlementRange.settlement_range =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.settlement_range
+        );
+    }
+    if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
+      getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.percentage_settlement_over_weekly_true_revenue
+        );
+    }
+    if (getSettlementRange.percentage_settlement_over_weekly_budget) {
+      getSettlementRange.percentage_settlement_over_weekly_budget =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.percentage_settlement_over_weekly_budget
+        );
+    }
+    if (getSettlementRange.new_default_risk_score) {
+      getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
+        getSettlementRange.new_default_risk_score
+      );
+    }
+    if (getSettlementRange.weeks_till_paid) {
+      getSettlementRange.weeks_till_paid = await this.transformData(
+        getSettlementRange.weeks_till_paid
+      );
+      const result = await this.getSummaryWeeksTillPaid(
+        getSettlementRange.weeks_till_paid
+      );
+      getSettlementRange.weeks_till_paid.Summary = result;
+      // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+      //   getSettlementRange.weeks_till_paid
+      // );
+    }
+    if (getSettlementRange.commission_range) {
+      getSettlementRange.commission_range =
+        await this.getSettlementRangeSummery(
+          getSettlementRange.commission_range
+        );
+    }
+    if (typeof getSettlementRange !== 'string') {
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'strategy_one'},
+        {'data.settlementRange': getSettlementRange}
+      );
+      this.caseRepository.updateById(caseTemp._id, {strategyOne_3: true});
+    }
+    if (typeof getSettlementRange === 'string') {
+      this.caseRepository.updateById(caseTemp._id, {strategyOne_3: false});
+    }
+    return getSettlementRange;
+  }
+
+  async riskScoreMapping(data: any) {
+    if (Object.keys(data).length) {
+      for (const key of Object.keys(data)) {
+        data[key] = {
+          min: Math.min(...data[key]),
+          max: Math.max(...data[key]),
+        };
+      }
+    }
+    return data;
+  }
+
+  async getCreditorHistory(req: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const getCreditorHistory = await this.getCreditorHistoryAI(
+      req.params.id,
+      AIAuth.auth_token
+    );
+    console.log(getCreditorHistory);
+
+    return getCreditorHistory;
+  }
+
+  async getScoresAIForAllCreditors(
+    comm: number,
+    token: string,
+    caseTemp: any,
+    creditors: any
+  ) {
+    const url = `${process.env.baseUrlAI}get-scores?debtor_id=${String(
+      caseTemp.debtor._id
+    )}&commision_percentage=${comm}`;
+    let data = {};
+    for (const creditor of creditors) {
+      const accountTitles = creditor.accountTitleMapping
+        ? creditor.accountTitleMapping
+        : [];
+      const accTitleObj = accountTitles.find(temp => {
+        return temp.caseId === creditor.caseId;
+      });
+      let accountTitle = '';
+      accountTitle =
+        accTitleObj && accTitleObj?.accountTitle
+          ? accTitleObj.accountTitle
+          : creditor.creditorAccountTitle;
+      let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
+      if (accountTitle) {
+        data[`${accountTitle}`] = {
+          total_debt: creditor.totalDebt,
+          remaining_debt: creditor.remaining,
+          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          principle_amount: amount,
+        };
+      }
+    }
+    if (!Object.keys(data).length) data = [];
+    console.log('I am in getScoresAIForAllCreditors');
+    console.log('URL: ', url);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.data.error) {
+        console.log('hehehehehehehe');
+        this.strategyRepository.upsert(
+          {caseId: caseTemp._id, name: 'strategy_one'},
+          {'data.getScoresAIForAllCreditors': response.data}
+        );
+        this.caseRepository.updateById(caseTemp._id, {strategyOne_2: true});
+      }
+      if (response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {strategyOne_2: false});
+      }
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async storeAuthToken(username: string, partnerToken: string): Promise<void> {
+    const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
+    try {
+      const response = await axios.get(url);
+      if (response && response.data) {
+        AIAuth.auth_token = response.data.auth_token;
+        AIAuth.expires_in = response.data.expires_in;
+      }
+    } catch (error) {
+      AIAuth.auth_token = '';
+      AIAuth.expires_in = commonUtil.getCurrentDate();
+    }
+  }
+
+  async createCreditorsCases(req: Request, name: string, id: string) {
+    let creditor: ICreditor = null;
+    let dataArray = req.body.data;
+    const createdCases = [];
+    const debtor = await this.debtRepository.getById<IDebtor>(req.params.id);
+    for (const body of dataArray) {
+      body.creditor.basicInformation.email =
+        body.creditor.basicInformation.email.toLowerCase();
+      const getCreditor = await this.creditorRepository.getOne<ICreditor>({
+        'businessInformation.companyName':
+          body.creditor.businessInformation.companyName,
+      });
+      if (body?.intervals) {
+        let weeklyBudgetObj: {
+          status: boolean;
+          commission: number;
+          totalCommission: number;
+        };
+        if (body.feePayment && body.feePayment === 'toPay') {
+          weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+          if (!weeklyBudgetObj.status) {
+            return [
+              false,
+              'Weekly budget is not fulfiling the payment plan of debtor',
+            ];
+          }
+          await this.debtRepository.updateById<IDebtor>(debtor._id, {
+            totalCommission: weeklyBudgetObj.totalCommission,
+            weeklyCommission: weeklyBudgetObj.commission,
+          });
+        }
+      }
+      // if (body.creditor.paymentToken && body.creditor.paymentType) {
+      //   const customerVaultResponse = await this.createVault(body.paymentToken);
+      //   if (!customerVaultResponse[0]) return customerVaultResponse;
+      //   body.creditor.customerVaultId = customerVaultResponse[1];
+      // }
+      if (!getCreditor) {
+        creditor = await this.createCreditor(body.creditor as ICreditor);
+      }
+      if (getCreditor) {
+        creditor = await this.creditorRepository.updateById<ICreditor>(
+          getCreditor._id,
+          body.creditor
+        );
+      }
+      if (creditor) {
+        body.debtor = debtor?._id;
+        body.creditor = creditor?._id;
+        const newCase = new Case();
+        newCase.caseOwner = name;
+        newCase.caseOwnerId = id;
+        newCase.negotiator = name;
+        newCase.negotiatorId = id;
+        newCase.manager = name;
+        newCase.managerId = id;
+        body.notes = body?.notes
+          ? [
+              {
+                userId: id,
+                value: body?.notes,
+                createdAt: commonUtil.getCurrentDate(),
+              },
+            ]
+          : [];
+        newCase.chatId = v4();
+        newCase.caseCode = await this.getCaseCode();
+        const validatedCase = DataCopier.copy(newCase, body);
+        const caseCreated =
+          await this.caseRepository.create<ICase>(validatedCase);
+        // if (!caseCreated) {
+        //   return [false, constantsUtil.failureAddMessage('case')];
+        // }
+        if (caseCreated) {
+          createdCases.push(caseCreated);
+          const accountTitles = creditor.accountTitleMapping;
+          if (creditor.accountTitle) {
+            accountTitles.push({
+              caseId: String(caseCreated._id),
+              accountTitle: creditor.accountTitle,
+            });
+            await this.creditorRepository.updateById<ICreditor>(creditor._id, {
+              accountTitleMapping: accountTitles,
+            });
+          }
+        }
+        if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+          await this.createPayment(caseCreated);
+        }
+      }
+    }
+    if (!createdCases.length) return [false, createdCases];
+
+    return [true, createdCases];
+  }
+
+  async createVault(paymentToken: string): Promise<[boolean, string]> {
+    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const params = {
+      customer_vault: 'add_customer',
+      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      payment_token: paymentToken,
+    };
+    const response = await axios.get(url, {params});
+    const responseNum = new URLSearchParams(response.data).get('response');
+    if (responseNum === '1') {
+      const customerVault = new URLSearchParams(response.data).get(
+        'customer_vault_id'
+      );
+      // const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
+      //   customerVaultId: customerVault,
+      //   paymentType: paymentType,
+      // });
+      return [true, customerVault];
+    }
+    return [false, 'Unable to create customer vault'];
+  }
+
+  async getSettlementRangeSummery(
+    data: Record<string, Record<string, number[]>>
+  ) {
+    const result: Record<string, any> = {Summary: {}};
+    if (data) {
+      for (const key of Object.keys(data)) {
+        for (const [recKey, values] of Object.entries(data[key])) {
+          if (Array.isArray(values) && values.length > 0) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+
+            if (!result[key]) {
+              result[key] = {};
+            }
+
+            result[key][recKey] = {min, max};
+
+            // Initialize the summary if not already done
+            if (!result.Summary[recKey]) {
+              result.Summary[recKey] = {min: 0, max: 0};
+            }
+
+            // Accumulate the values for summary
+            result.Summary[recKey].min += min;
+            result.Summary[recKey].max += max;
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
+  async getSummaryWeeksTillPaid(weeksTillPaid: any) {
+    const summary = {
+      'Weeks remaining based on recommendation 1': {min: 0, max: 0},
+      'Weeks remaining based on recommendation 2': {min: 0, max: 0},
+      'Weeks remaining based on recommendation 3': {min: 0, max: 0},
+    };
+    if (Object.keys(weeksTillPaid).length) {
+      Object.values(weeksTillPaid).forEach(company => {
+        for (const key of Object.keys(company)) {
+          if (company[key]) {
+            summary[key].min = Math.max(summary[key].min, company[key].min);
+            summary[key].max = Math.max(summary[key].max, company[key].max);
+          }
+        }
+        // for (let i = 1; i <= Object.keys(company).length; i++) {
+        //   const key = `Weeks remaining based on recommendation ${i}`;
+        //   console.log(company[i - 0]);
+        //   if (company[key]) {
+        //     summary[key].min = Math.max(summary[key].min, company[key][0]);
+        //     summary[key].max = Math.max(summary[key].max, company[key][1]);
+        //   }
+        // }
+      });
+    }
+    return summary;
+  }
+
+  async transformData(weeksTillPaid: any) {
+    if (Object.keys(weeksTillPaid).length) {
+      Object.values(weeksTillPaid).forEach(company => {
+        for (const key of Object.keys(company)) {
+          if (company[key]) {
+            company[key] = {
+              min: Math.min(...company[key]),
+              max: Math.max(...company[key]),
+            };
+          }
+        }
+      });
+    }
+    return weeksTillPaid;
+  }
+
+  async addNotes(req: Request, id: string) {
+    return await this.caseRepository.updateById<ICase>(req.params.id, {
+      $push: {
+        notes: {
+          userId: id,
+          value: req.body.notes,
+          createdAt: commonUtil.getCurrentDate(),
+        },
+      },
+    });
+  }
+}
+export default new CaseUtil();
