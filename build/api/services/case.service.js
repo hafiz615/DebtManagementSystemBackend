@@ -423,6 +423,9 @@ class CaseService {
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
             data['creditors'] = creditors;
+            debtor = await this.debtorRepository.updateById(debtor._id, {
+                commissionPercentage: comm,
+            });
             data['debtor'] = debtor;
             let extractedFieldsTemp = null;
             if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
@@ -462,9 +465,6 @@ class CaseService {
             }
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
             data['settlementRange'] = settlementRange;
-            debtor = await this.debtorRepository.updateById(debtor._id, {
-                commissionPercentage: comm,
-            });
             return [true, data];
         };
         this.caseRepository = new case_repository_1.CaseRepository();

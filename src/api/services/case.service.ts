@@ -681,6 +681,9 @@ class CaseService {
       ).values()
     );
     data['creditors'] = creditors;
+    debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
+      commissionPercentage: comm,
+    });
     data['debtor'] = debtor;
     let extractedFieldsTemp = null;
     if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
@@ -734,9 +737,6 @@ class CaseService {
     }
     settlementRange = await caseUtil.getSettlementRange(caseTemp);
     data['settlementRange'] = settlementRange;
-    debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
-      commissionPercentage: comm,
-    });
     return [true, data];
   };
   async sendCaseEmails(
