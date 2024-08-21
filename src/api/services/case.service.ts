@@ -216,12 +216,12 @@ class CaseService {
       //     true,
       //     findCase.debtor
       //   );
-      //   if (!weeklyBudgetObj.status) {
-      //     return [
-      //       false,
-      //       'Weekly budget is not fulfiling the payment plan of debtor',
-      //     ];
-      //   }
+      // if (!weeklyBudgetObj.status) {
+      //   return [
+      //     false,
+      //     'Weekly budget is not fulfiling the payment plan of debtor',
+      //   ];
+      // }
       //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
       //     totalCommission: weeklyBudgetObj.totalCommission,
       //     weeklyCommission: weeklyBudgetObj.commission,
@@ -785,7 +785,12 @@ class CaseService {
     };
     const debtor: any = findCase.debtor;
     weeklyBudgetObj = await caseUtil.checkWeeklyBudget(findCase, true, debtor);
-
+    if (!weeklyBudgetObj.status) {
+      return [
+        false,
+        'Weekly budget is not fulfiling the payment plan of debtor.Please updated weekly budget',
+      ];
+    }
     return [
       true,
       {

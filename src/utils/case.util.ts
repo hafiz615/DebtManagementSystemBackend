@@ -425,7 +425,7 @@ class CaseUtil {
     // let commisionPercentage = body.commisionPercentage
     //   ? body.commisionPercentage / 100
     //   : 0.19;
-    let commisionPercentage = debtor.commissionPercentage;
+    let commisionPercentage = debtor.commissionPercentage / 100;
     if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
       debt = body.remaining ?? 0;
@@ -443,6 +443,11 @@ class CaseUtil {
         debt += caseTemp.remaining;
       }
     }
+    console.log(cases, 'casessss');
+    console.log(weeklyBudget, 'weeklyBudget');
+    console.log(amount, 'amounttttt');
+    console.log(debt, 'debteeee');
+    console.log(commisionPercentage);
     return amount >= weeklyBudget
       ? {
           status: false,
@@ -2178,8 +2183,8 @@ class CaseUtil {
       Object.values(weeksTillPaid).forEach(company => {
         for (const key of Object.keys(company)) {
           if (company[key]) {
-            summary[key].min = Math.max(summary[key].min, company[key].min);
-            summary[key].max = Math.max(summary[key].max, company[key].max);
+            summary[key].min = Math.max(summary[key].max, company[key].max);
+            summary[key].max = Math.max(summary[key].min, company[key].min);
           }
         }
         // for (let i = 1; i <= Object.keys(company).length; i++) {
