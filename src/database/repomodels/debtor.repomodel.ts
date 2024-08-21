@@ -50,7 +50,7 @@ export class Debtor {
   weeklyCommissionPaid = false;
   weeklyCommissionDate = '';
   commissionPaymentId = '';
-  commissionPercentage = 19;
+  commissionPercentage = 20;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
