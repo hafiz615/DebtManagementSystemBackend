@@ -315,39 +315,56 @@ class CronJob {
                 }
             }
         });
-        node_cron_1.default.schedule('15 * * * *', async () => {
-            const payments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
-                path: 'caseId',
-                select: ['_id'],
-                populate: ['creditor'],
-            });
-            for (const payment of payments) {
-                if (payment.caseId.creditor.paynoteUserId) {
-                    const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
-                    if (paynoteCustomer.error)
-                        continue;
-                    if (paynoteCustomer.user.status === 'unverified')
-                        continue;
-                    const paymentResult = await paynote_util_1.default.sendPayment(payment);
-                    console.log(paymentResult);
-                    if (paymentResult.error) {
-                        console.log('Send Email');
-                        const message = paymentResult.messages[0];
-                        console.log(message, 'message');
-                        await this.paymentRepository.updateById(payment._id, {
-                            sendViaPaynote: 'Failed',
-                        });
-                        await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
-                        continue;
-                    }
-                    await email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
-                    await this.paymentRepository.updateById(payment._id, {
-                        paynoteCheckId: paymentResult.check.check_id,
-                        sendViaPaynote: 'Success',
-                    });
-                }
-            }
-        });
+        // cron.schedule('15 * * * *', async () => {
+        //   const payments =
+        //     await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        //       {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+        //       undefined,
+        //       undefined,
+        //       undefined,
+        //       {
+        //         path: 'caseId',
+        //         select: ['_id'],
+        //         populate: ['creditor'],
+        //       }
+        //     );
+        //   for (const payment of payments as any) {
+        //     if (payment.caseId.creditor.paynoteUserId) {
+        //       const paynoteCustomer = await paynoteUtil.getCustomer(
+        //         payment.caseId.creditor
+        //       );
+        //       if (paynoteCustomer.error) continue;
+        //       if (paynoteCustomer.user.status === 'unverified') continue;
+        //       const paymentResult = await paynoteUtil.sendPayment(payment);
+        //       console.log(paymentResult);
+        //       if (paymentResult.error) {
+        //         console.log('Send Email');
+        //         const message = paymentResult.messages[0];
+        //         console.log(message, 'message');
+        //         await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //           sendViaPaynote: 'Failed',
+        //         });
+        //         await emailUtil.sendEmailOrSmsByEvent(
+        //           'failed_payment',
+        //           '',
+        //           payment._id,
+        //           ''
+        //         );
+        //         continue;
+        //       }
+        //       await emailUtil.sendEmailOrSmsByEvent(
+        //         'successful_payment',
+        //         '',
+        //         payment._id,
+        //         ''
+        //       );
+        //       await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //         paynoteCheckId: paymentResult.check.check_id,
+        //         sendViaPaynote: 'Success',
+        //       });
+        //     }
+        //   }
+        // });
         node_cron_1.default.schedule('0 21 * * *', async () => {
             const today = new Date(common_util_1.default.getCurrentDate());
             const targetDate = new Date(common_util_1.default.getCurrentDate());

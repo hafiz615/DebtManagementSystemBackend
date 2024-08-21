@@ -545,58 +545,58 @@ class CronJob {
       }
     });
 
-    cron.schedule('15 * * * *', async () => {
-      const payments =
-        await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
-          undefined,
-          undefined,
-          undefined,
-          {
-            path: 'caseId',
-            select: ['_id'],
-            populate: ['creditor'],
-          }
-        );
+    // cron.schedule('15 * * * *', async () => {
+    //   const payments =
+    //     await this.paymentRepository.getAllWithoutPagination<IPayment>(
+    //       {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+    //       undefined,
+    //       undefined,
+    //       undefined,
+    //       {
+    //         path: 'caseId',
+    //         select: ['_id'],
+    //         populate: ['creditor'],
+    //       }
+    //     );
 
-      for (const payment of payments as any) {
-        if (payment.caseId.creditor.paynoteUserId) {
-          const paynoteCustomer = await paynoteUtil.getCustomer(
-            payment.caseId.creditor
-          );
-          if (paynoteCustomer.error) continue;
-          if (paynoteCustomer.user.status === 'unverified') continue;
-          const paymentResult = await paynoteUtil.sendPayment(payment);
-          console.log(paymentResult);
-          if (paymentResult.error) {
-            console.log('Send Email');
-            const message = paymentResult.messages[0];
-            console.log(message, 'message');
-            await this.paymentRepository.updateById<IPayment>(payment._id, {
-              sendViaPaynote: 'Failed',
-            });
-            await emailUtil.sendEmailOrSmsByEvent(
-              'failed_payment',
-              '',
-              payment._id,
-              ''
-            );
-            continue;
-          }
+    //   for (const payment of payments as any) {
+    //     if (payment.caseId.creditor.paynoteUserId) {
+    //       const paynoteCustomer = await paynoteUtil.getCustomer(
+    //         payment.caseId.creditor
+    //       );
+    //       if (paynoteCustomer.error) continue;
+    //       if (paynoteCustomer.user.status === 'unverified') continue;
+    //       const paymentResult = await paynoteUtil.sendPayment(payment);
+    //       console.log(paymentResult);
+    //       if (paymentResult.error) {
+    //         console.log('Send Email');
+    //         const message = paymentResult.messages[0];
+    //         console.log(message, 'message');
+    //         await this.paymentRepository.updateById<IPayment>(payment._id, {
+    //           sendViaPaynote: 'Failed',
+    //         });
+    //         await emailUtil.sendEmailOrSmsByEvent(
+    //           'failed_payment',
+    //           '',
+    //           payment._id,
+    //           ''
+    //         );
+    //         continue;
+    //       }
 
-          await emailUtil.sendEmailOrSmsByEvent(
-            'successful_payment',
-            '',
-            payment._id,
-            ''
-          );
-          await this.paymentRepository.updateById<IPayment>(payment._id, {
-            paynoteCheckId: paymentResult.check.check_id,
-            sendViaPaynote: 'Success',
-          });
-        }
-      }
-    });
+    //       await emailUtil.sendEmailOrSmsByEvent(
+    //         'successful_payment',
+    //         '',
+    //         payment._id,
+    //         ''
+    //       );
+    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
+    //         paynoteCheckId: paymentResult.check.check_id,
+    //         sendViaPaynote: 'Success',
+    //       });
+    //     }
+    //   }
+    // });
 
     cron.schedule('0 21 * * *', async () => {
       const today = new Date(commonUtil.getCurrentDate());
