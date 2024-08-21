@@ -154,9 +154,7 @@ class CaseService {
             if (!checkCasePayment[0])
                 return checkCasePayment;
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
-            if (!findCase.intervals.length &&
-                req.body.intervals &&
-                req.body.intervals.length) {
+            if (req.body.intervals && req.body.intervals.length) {
                 await case_util_1.default.createPayment(caseUpdated);
             }
             if (!caseUpdated) {
@@ -515,7 +513,7 @@ class CaseService {
             true,
             {
                 commission: weeklyBudgetObj.commission,
-                totalCommision: weeklyBudgetObj.totalCommission,
+                totalCommission: weeklyBudgetObj.totalCommission,
                 commissionPercentage: debtor.commissionPercentage,
             },
         ];

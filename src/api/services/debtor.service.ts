@@ -686,7 +686,8 @@ class DebtorService {
         caseId: String(caseTemp._id),
         name: 'strategy_three',
       });
-      return [true, result.data.fullProfitSettlement];
+      if (result?.data?.fullProfitSettlement)
+        return [true, result.data.fullProfitSettlement];
     }
     const fullProfitResult = await caseUtil.getFullProfitSettlement(caseTemp);
     return fullProfitResult;

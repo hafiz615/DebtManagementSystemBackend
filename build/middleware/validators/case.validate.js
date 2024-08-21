@@ -224,6 +224,8 @@ class CaseValidate {
             totalDebt: joi_1.default.number().strict().optional(),
             lastPaymentDate: joi_1.default.date().optional().allow(''),
             paidAmount: joi_1.default.number().strict().optional(),
+            commission: joi_1.default.number().strict().allow(0),
+            totalCommission: joi_1.default.number().strict().allow(0),
             remaining: joi_1.default.number().strict().optional(),
             confidence: joi_1.default.number().strict(),
             isExempt: joi_1.default.boolean().optional(),

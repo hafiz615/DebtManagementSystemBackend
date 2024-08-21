@@ -238,11 +238,7 @@ class CaseService {
       req.params.id,
       req.body
     );
-    if (
-      !findCase.intervals.length &&
-      req.body.intervals &&
-      req.body.intervals.length
-    ) {
+    if (req.body.intervals && req.body.intervals.length) {
       await caseUtil.createPayment(caseUpdated);
     }
     if (!caseUpdated) {
@@ -795,7 +791,7 @@ class CaseService {
       true,
       {
         commission: weeklyBudgetObj.commission,
-        totalCommision: weeklyBudgetObj.totalCommission,
+        totalCommission: weeklyBudgetObj.totalCommission,
         commissionPercentage: debtor.commissionPercentage,
       },
     ];

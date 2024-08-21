@@ -1486,13 +1486,43 @@ class CaseUtil {
                 this.caseRepository.updateById(caseTemp._id, { strategyThree: false });
                 return [false, response.data.error];
             }
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_three' }, { 'data.fullProfitSettlement': response.data });
+            const thirdStrategy = await this.getSettlementMapping(response.data);
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_three' }, { 'data.fullProfitSettlement': thirdStrategy });
             this.caseRepository.updateById(caseTemp._id, { strategyThree: true });
             return [true, response.data];
         }
         catch (error) {
+            console.log(error);
             return [false, error.message];
         }
+    }
+    async getSettlementMapping(data) {
+        if (data.settlement_range) {
+            data.settlement_range = await this.getSettlementRangeSummery(data.settlement_range);
+        }
+        if (data.percentage_settlement_over_weekly_true_revenue) {
+            data.percentage_settlement_over_weekly_true_revenue =
+                await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_true_revenue);
+        }
+        if (data.percentage_settlement_over_weekly_budget) {
+            data.percentage_settlement_over_weekly_budget =
+                await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_budget);
+        }
+        if (data.new_default_risk_score) {
+            data.new_default_risk_score = await this.riskScoreMapping(data.new_default_risk_score);
+        }
+        if (data.weeks_till_paid) {
+            data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
+            const result = await this.getSummaryWeeksTillPaid(data.weeks_till_paid);
+            data.weeks_till_paid.Summary = result;
+            // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+            //   getSettlementRange.weeks_till_paid
+            // );
+        }
+        if (data.commission_range) {
+            data.commission_range = await this.getSettlementRangeSummery(data.commission_range);
+        }
+        return data;
     }
     async getSummary(req, caseTemp) {
         if (!global_1.AIAuth.auth_token ||
@@ -1615,34 +1645,49 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        if (getSettlementRange.settlement_range) {
-            getSettlementRange.settlement_range =
-                await this.getSettlementRangeSummery(getSettlementRange.settlement_range);
-        }
-        if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
-            getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-                await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_true_revenue);
-        }
-        if (getSettlementRange.percentage_settlement_over_weekly_budget) {
-            getSettlementRange.percentage_settlement_over_weekly_budget =
-                await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_budget);
-        }
-        if (getSettlementRange.new_default_risk_score) {
-            getSettlementRange.new_default_risk_score = await this.riskScoreMapping(getSettlementRange.new_default_risk_score);
-        }
-        if (getSettlementRange.weeks_till_paid) {
-            getSettlementRange.weeks_till_paid = await this.transformData(getSettlementRange.weeks_till_paid);
-            const result = await this.getSummaryWeeksTillPaid(getSettlementRange.weeks_till_paid);
-            getSettlementRange.weeks_till_paid.Summary = result;
-            // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-            //   getSettlementRange.weeks_till_paid
-            // );
-        }
-        if (getSettlementRange.commission_range) {
-            getSettlementRange.commission_range =
-                await this.getSettlementRangeSummery(getSettlementRange.commission_range);
-        }
+        let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
+        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+        // if (getSettlementRange.settlement_range) {
+        //   getSettlementRange.settlement_range =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.settlement_range
+        //     );
+        // }
+        // if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
+        //   getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.percentage_settlement_over_weekly_true_revenue
+        //     );
+        // }
+        // if (getSettlementRange.percentage_settlement_over_weekly_budget) {
+        //   getSettlementRange.percentage_settlement_over_weekly_budget =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.percentage_settlement_over_weekly_budget
+        //     );
+        // }
+        // if (getSettlementRange.new_default_risk_score) {
+        //   getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
+        //     getSettlementRange.new_default_risk_score
+        //   );
+        // }
+        // if (getSettlementRange.weeks_till_paid) {
+        //   getSettlementRange.weeks_till_paid = await this.transformData(
+        //     getSettlementRange.weeks_till_paid
+        //   );
+        //   const result = await this.getSummaryWeeksTillPaid(
+        //     getSettlementRange.weeks_till_paid
+        //   );
+        //   getSettlementRange.weeks_till_paid.Summary = result;
+        //   // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+        //   //   getSettlementRange.weeks_till_paid
+        //   // );
+        // }
+        // if (getSettlementRange.commission_range) {
+        //   getSettlementRange.commission_range =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.commission_range
+        //     );
+        // }
         if (typeof getSettlementRange !== 'string') {
             this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, { 'data.settlementRange': getSettlementRange });
             this.caseRepository.updateById(caseTemp._id, { strategyOne_3: true });
@@ -1873,17 +1918,19 @@ class CaseUtil {
         return result;
     }
     async getSummaryWeeksTillPaid(weeksTillPaid) {
-        const summary = {
-            'Weeks remaining based on recommendation 1': { min: 0, max: 0 },
-            'Weeks remaining based on recommendation 2': { min: 0, max: 0 },
-            'Weeks remaining based on recommendation 3': { min: 0, max: 0 },
-        };
+        // const summary = {
+        //   'Weeks remaining based on recommendation 1': {min: 0, max: 0},
+        //   'Weeks remaining based on recommendation 2': {min: 0, max: 0},
+        //   'Weeks remaining based on recommendation 3': {min: 0, max: 0},
+        // };
+        const summary = {};
         if (Object.keys(weeksTillPaid).length) {
             Object.values(weeksTillPaid).forEach(company => {
                 for (const key of Object.keys(company)) {
                     if (company[key]) {
-                        summary[key].min = Math.max(summary[key].max, company[key].max);
-                        summary[key].max = Math.max(summary[key].min, company[key].min);
+                        summary[key] = { min: 0, max: 0 };
+                        summary[key].min = Math.max(summary[key].min, company[key].min);
+                        summary[key].max = Math.max(summary[key].max, company[key].max);
                     }
                 }
                 // for (let i = 1; i <= Object.keys(company).length; i++) {
@@ -1904,8 +1951,8 @@ class CaseUtil {
                 for (const key of Object.keys(company)) {
                     if (company[key]) {
                         company[key] = {
-                            min: Math.min(...company[key]),
-                            max: Math.max(...company[key]),
+                            max: Math.min(...company[key]),
+                            min: Math.max(...company[key]),
                         };
                     }
                 }
