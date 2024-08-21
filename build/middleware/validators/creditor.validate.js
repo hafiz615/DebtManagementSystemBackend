@@ -21,7 +21,7 @@ class CreditorRequests {
                 }),
                 businessInformation: joi_1.default.object({
                     companyName: joi_1.default.string().required(),
-                    businessCategory: joi_1.default.string().required(),
+                    businessCategory: joi_1.default.string().allow(''),
                 }),
                 accountTitle: joi_1.default.string().optional().allow('', null),
                 contact: joi_1.default.object({

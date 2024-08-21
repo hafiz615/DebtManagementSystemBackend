@@ -14,6 +14,7 @@ const user_repository_1 = require("../api/repository/user/user.repository");
 const lodash_1 = __importDefault(require("lodash"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const twilio_1 = __importDefault(require("twilio"));
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -25,6 +26,7 @@ class EmailUtil {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.userRepository = new user_repository_1.UserRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
     }
     async sendInvitationLink(user, link) {
         const msg = {
@@ -60,7 +62,7 @@ class EmailUtil {
                     const template = await this.getTemplate(userPermission.email_template);
                     if (!template)
                         continue;
-                    const allValues = await this.getValuesFromHtml(template.content);
+                    const allValues = await this.getValues(template.content);
                     if (!allValues.length)
                         continue;
                     let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
@@ -70,11 +72,34 @@ class EmailUtil {
                     const compiledHtml = handlebars_1.default.compile(template.content);
                     const html = compiledHtml(nestedObject);
                     const emails = await this.getEmail(caseTemp, userPermission.role);
-                    await this.sendEmail(emails, template.from
-                        ? template.from
-                        : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
+                    if (emails) {
+                        await this.sendEmail(emails, template.from
+                            ? template.from
+                            : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
+                    }
                 }
                 if (userPermission.sms_allowed && userPermission.sms_template) {
+                    const template = await this.getTemplate(userPermission.sms_template);
+                    if (!template)
+                        continue;
+                    const allValues = await this.getValues(template.content);
+                    if (!allValues.length)
+                        continue;
+                    let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
+                    if (!Object.keys(replacements).length)
+                        continue;
+                    const nestedObject = await this.unflat(replacements);
+                    const compiledContent = handlebars_1.default.compile(template.content);
+                    const text = compiledContent(nestedObject);
+                    let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
+                    if (userPermission.role === 'Admin') {
+                        for (const phone of phoneNumbers) {
+                            await this.sendSms(text, phone);
+                        }
+                    }
+                    else {
+                        await this.sendSms(text, phoneNumbers);
+                    }
                 }
             }
         }
@@ -89,7 +114,7 @@ class EmailUtil {
                     const template = await this.getTemplate(userPermission.email_template);
                     if (!template)
                         continue;
-                    const allValues = await this.getValuesFromHtml(template.content);
+                    const allValues = await this.getValues(template.content);
                     if (!allValues.length)
                         continue;
                     let replacements = await this.getPopulatedObject(event, debtor, null, null, null, payment, allValues);
@@ -103,6 +128,24 @@ class EmailUtil {
                         : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
                 }
                 if (userPermission.sms_allowed && userPermission.sms_template) {
+                    // const template = await this.getTemplate(userPermission.sms_template);
+                    // if (!template) continue;
+                    // const allValues = await this.getValues(template.content);
+                    // if (!allValues.length) continue;
+                    // let replacements = await this.getPopulatedObject(
+                    //   event,
+                    //   debtor,
+                    //   null,
+                    //   null,
+                    //   null,
+                    //   payment,
+                    //   allValues
+                    // );
+                    // if (!Object.keys(replacements).length) continue;
+                    // const nestedObject = await this.unflat(replacements);
+                    // const compiledContent = handlebars.compile(template.content);
+                    // const text = compiledContent(nestedObject);
+                    // await this.sendSms(text, '');
                 }
             }
         }
@@ -116,17 +159,47 @@ class EmailUtil {
                 const emails = users.map(user => {
                     return user.email;
                 });
-                return emails;
+                return emails?.length ? emails : null;
             case 'Debtor':
-                return caseTemp.debtor.basicInformation.email;
+                return caseTemp?.debtor?.basicInformation?.email
+                    ? caseTemp.debtor.basicInformation.email
+                    : null;
             case 'Creditor':
-                return caseTemp.creditor.basicInformation.email;
+                return caseTemp?.creditor?.basicInformation?.email
+                    ? caseTemp.creditor.basicInformation.email
+                    : null;
             case 'Case Manager':
                 const manager = await this.userRepository.getById(caseTemp.managerId);
-                return manager.email;
+                return manager?.email ? manager.email : null;
             case 'Negotiator':
                 const negotiator = await this.userRepository.getById(caseTemp.negotiatorId);
-                return negotiator.email;
+                return negotiator?.email ? negotiator.email : null;
+        }
+    }
+    async getPhone(caseTemp, role) {
+        switch (role) {
+            case 'Admin':
+                const users = await this.userRepository.getAllWithoutPagination({
+                    role: role,
+                });
+                const phoneNumbers = users.map(user => {
+                    return user.phone;
+                });
+                return phoneNumbers?.length ? phoneNumbers : null;
+            case 'Debtor':
+                return caseTemp?.debtor?.basicInformation?.phone
+                    ? caseTemp.debtor.basicInformation.phone
+                    : null;
+            case 'Creditor':
+                return caseTemp?.creditor?.basicInformation?.phone
+                    ? caseTemp.creditor.basicInformation.phone
+                    : null;
+            case 'Case Manager':
+                const manager = await this.userRepository.getById(caseTemp.managerId);
+                return manager?.phone ? manager.phone : null;
+            case 'Negotiator':
+                const negotiator = await this.userRepository.getById(caseTemp.negotiatorId);
+                return negotiator?.phone ? negotiator.phone : null;
             default:
                 break;
         }
@@ -174,7 +247,7 @@ class EmailUtil {
         }
         return [user, debtor, creditor, caseTemp, payment];
     }
-    async getValuesFromHtml(html) {
+    async getValues(html) {
         const regex = /\{\{([^}]+)\}\}/g;
         const matches = [];
         let match = [];
@@ -227,6 +300,19 @@ class EmailUtil {
         }
         catch (error) {
             console.log(error.response.body);
+            return error.message;
+        }
+    }
+    async sendSms(body, phone) {
+        try {
+            const result = await this.client.messages.create({
+                body: body,
+                from: process.env.twilioFromNumber, //the phone number provided by Twillio
+                to: phone, // your own phone number
+            });
+        }
+        catch (error) {
+            console.log(error);
             return error.message;
         }
     }

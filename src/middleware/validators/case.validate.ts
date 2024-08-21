@@ -202,7 +202,7 @@ class CaseValidate {
         }),
         businessInformation: Joi.object({
           companyName: Joi.string().required(),
-          businessCategory: Joi.string().required(),
+          businessCategory: Joi.string().allow(''),
         }),
         contacts: Joi.array()
           .items(
@@ -298,7 +298,7 @@ class CaseValidate {
             }),
             businessInformation: Joi.object({
               companyName: Joi.string().required(),
-              businessCategory: Joi.string().required(),
+              businessCategory: Joi.string().allow(''),
             }),
             contacts: Joi.array().items(
               Joi.object({

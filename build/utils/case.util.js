@@ -1419,7 +1419,7 @@ class CaseUtil {
     async getCreditorHistoryAI(creditorId, token) {
         const url = `${process.env.baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
         try {
-            const response = await axios_1.default.post(url, {}, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
                 headers: {
                     accept: 'application/json',
                     token: token,
@@ -1499,7 +1499,7 @@ class CaseUtil {
             financial_health_summary: req.body.financialHealthSummary,
         };
         try {
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: global_1.AIAuth.auth_token,
@@ -1721,7 +1721,7 @@ class CaseUtil {
     async storeAuthToken(username, partnerToken) {
         const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
         try {
-            const response = await axios_1.default.get(url);
+            const response = await axiosInstanceInterceptor_1.default.get(url);
             if (response && response.data) {
                 global_1.AIAuth.auth_token = response.data.auth_token;
                 global_1.AIAuth.expires_in = response.data.expires_in;

@@ -190,7 +190,7 @@ class CaseValidate {
                 }),
                 businessInformation: joi_1.default.object({
                     companyName: joi_1.default.string().required(),
-                    businessCategory: joi_1.default.string().required(),
+                    businessCategory: joi_1.default.string().allow(''),
                 }),
                 contacts: joi_1.default.array()
                     .items(joi_1.default.object({
@@ -273,7 +273,7 @@ class CaseValidate {
                     }),
                     businessInformation: joi_1.default.object({
                         companyName: joi_1.default.string().required(),
-                        businessCategory: joi_1.default.string().required(),
+                        businessCategory: joi_1.default.string().allow(''),
                     }),
                     contacts: joi_1.default.array().items(joi_1.default.object({
                         name: joi_1.default.string().required(),
