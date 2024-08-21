@@ -912,6 +912,7 @@ class CronJob {
         return false;
       }
     );
+    console.log(pendingAuthorized);
     await this.processAuthorized(pendingAuthorized, cronId, false, settings);
   }
 
