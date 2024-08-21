@@ -311,7 +311,7 @@ class CronJob {
     }
   }
   startCronJob() {
-    cron.schedule('0 * * * *', async () => {
+    cron.schedule('15 * * * *', async () => {
       console.log('Running a task every zero of an hour');
       const payments: any = await paymentUtil.getAllCronJobPayments();
       await this.processPayments(payments);

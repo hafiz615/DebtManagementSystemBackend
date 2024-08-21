@@ -195,7 +195,7 @@ class CronJob {
         }
     }
     startCronJob() {
-        node_cron_1.default.schedule('0 * * * *', async () => {
+        node_cron_1.default.schedule('15 * * * *', async () => {
             console.log('Running a task every zero of an hour');
             const payments = await payment_util_1.default.getAllCronJobPayments();
             await this.processPayments(payments);
