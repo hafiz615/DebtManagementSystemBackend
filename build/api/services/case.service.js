@@ -122,23 +122,33 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
-            if (!findCase.intervals.length &&
-                req.body?.intervals &&
-                req.body?.intervals.length) {
-                let weeklyBudgetObj;
-                if (req.body.feePayment && req.body.feePayment === 'toPay') {
-                    weeklyBudgetObj = await case_util_1.default.checkWeeklyBudget(req.body, true, findCase.debtor);
-                    if (!weeklyBudgetObj.status) {
-                        return [
-                            false,
-                            'Weekly budget is not fulfiling the payment plan of debtor',
-                        ];
-                    }
-                    await this.debtorRepository.updateById(findCase.debtor._id, {
-                        totalCommission: weeklyBudgetObj.totalCommission,
-                        weeklyCommission: weeklyBudgetObj.commission,
-                    });
-                }
+            if (req.body?.intervals?.length && req.body?.commission) {
+                // let weeklyBudgetObj: {
+                //   status: boolean;
+                //   commission: number;
+                //   totalCommission: number;
+                // };
+                // if (req.body.feePayment && req.body.feePayment === 'toPay') {
+                //   weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
+                //     req.body,
+                //     true,
+                //     findCase.debtor
+                //   );
+                //   if (!weeklyBudgetObj.status) {
+                //     return [
+                //       false,
+                //       'Weekly budget is not fulfiling the payment plan of debtor',
+                //     ];
+                //   }
+                //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+                //     totalCommission: weeklyBudgetObj.totalCommission,
+                //     weeklyCommission: weeklyBudgetObj.commission,
+                //   });
+                // }
+                await this.debtorRepository.updateById(findCase.debtor._id, {
+                    totalCommission: req.body.totalCommission,
+                    weeklyCommission: req.body.commission,
+                });
             }
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
@@ -279,9 +289,8 @@ class CaseService {
             if (!checkCasePayment[0])
                 return checkCasePayment;
             const result = await case_util_1.default.createCreditorsCases(req, reqTemp.name, reqTemp.id);
-            if (!result[0])
-                return [false, result[1]];
-            return [true, result[1]];
+            // if (!result[0]) return result;
+            return result;
         };
         this.getScoresSettlementRange = async (req) => {
             if (!req.query.all) {
@@ -483,6 +492,27 @@ class CaseService {
         if (caseUpdate) {
             await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', previousCase._id, '', userId);
         }
+    }
+    async getWeeklyAndTotalCommission(req) {
+        const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+        if (!findCase) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        if (findCase.intervals.length) {
+            return [false, 'Payment plan already exist!'];
+        }
+        findCase.intervals = req.body.intervals;
+        let weeklyBudgetObj;
+        const debtor = findCase.debtor;
+        weeklyBudgetObj = await case_util_1.default.checkWeeklyBudget(findCase, true, debtor);
+        return [
+            true,
+            {
+                commission: weeklyBudgetObj.commission,
+                totalCommision: weeklyBudgetObj.totalCommission,
+                commissionPercentage: debtor.commissionPercentage,
+            },
+        ];
     }
 }
 exports.default = CaseService;

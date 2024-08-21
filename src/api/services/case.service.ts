@@ -204,33 +204,33 @@ class CaseService {
       return [false, 'Payment plan already exist!'];
     }
 
-    if (
-      !findCase.intervals.length &&
-      req.body?.intervals &&
-      req.body?.intervals.length
-    ) {
-      let weeklyBudgetObj: {
-        status: boolean;
-        commission: number;
-        totalCommission: number;
-      };
-      if (req.body.feePayment && req.body.feePayment === 'toPay') {
-        weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
-          req.body,
-          true,
-          findCase.debtor
-        );
-        if (!weeklyBudgetObj.status) {
-          return [
-            false,
-            'Weekly budget is not fulfiling the payment plan of debtor',
-          ];
-        }
-        await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-          totalCommission: weeklyBudgetObj.totalCommission,
-          weeklyCommission: weeklyBudgetObj.commission,
-        });
-      }
+    if (req.body?.intervals?.length && req.body?.commission) {
+      // let weeklyBudgetObj: {
+      //   status: boolean;
+      //   commission: number;
+      //   totalCommission: number;
+      // };
+      // if (req.body.feePayment && req.body.feePayment === 'toPay') {
+      //   weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
+      //     req.body,
+      //     true,
+      //     findCase.debtor
+      //   );
+      //   if (!weeklyBudgetObj.status) {
+      //     return [
+      //       false,
+      //       'Weekly budget is not fulfiling the payment plan of debtor',
+      //     ];
+      //   }
+      //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+      //     totalCommission: weeklyBudgetObj.totalCommission,
+      //     weeklyCommission: weeklyBudgetObj.commission,
+      //   });
+      // }
+      await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+        totalCommission: req.body.totalCommission,
+        weeklyCommission: req.body.commission,
+      });
     }
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
@@ -486,9 +486,7 @@ class CaseService {
     return [true, response];
   };
 
-  createCreditorsCases = async (
-    req: Request
-  ): Promise<[boolean, {} | string]> => {
+  createCreditorsCases = async (req: Request) => {
     const reqTemp: any = req;
 
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
@@ -498,8 +496,8 @@ class CaseService {
       reqTemp.name,
       reqTemp.id
     );
-    if (!result[0]) return [false, result[1] as string];
-    return [true, result[1]];
+    // if (!result[0]) return result;
+    return result;
   };
 
   getScoresSettlementRange = async (req: Request) => {
@@ -763,6 +761,39 @@ class CaseService {
         userId
       );
     }
+  }
+
+  async getWeeklyAndTotalCommission(req: Request) {
+    const findCase = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    if (findCase.intervals.length) {
+      return [false, 'Payment plan already exist!'];
+    }
+    findCase.intervals = req.body.intervals;
+
+    let weeklyBudgetObj: {
+      status: boolean;
+      commission: number;
+      totalCommission: number;
+    };
+    const debtor: any = findCase.debtor;
+    weeklyBudgetObj = await caseUtil.checkWeeklyBudget(findCase, true, debtor);
+
+    return [
+      true,
+      {
+        commission: weeklyBudgetObj.commission,
+        totalCommision: weeklyBudgetObj.totalCommission,
+        commissionPercentage: debtor.commissionPercentage,
+      },
+    ];
   }
 }
 

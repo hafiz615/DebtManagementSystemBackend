@@ -45,7 +45,7 @@ class Debtor {
         this.weeklyCommissionPaid = false;
         this.weeklyCommissionDate = '';
         this.commissionPaymentId = '';
-        this.commissionPercentage = 20;
+        this.commissionPercentage = 19;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

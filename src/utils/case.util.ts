@@ -422,9 +422,10 @@ class CaseUtil {
     //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
     //       };
     // }
-    let commisionPercentage = body.commisionPercentage
-      ? body.commisionPercentage / 100
-      : 0.19;
+    // let commisionPercentage = body.commisionPercentage
+    //   ? body.commisionPercentage / 100
+    //   : 0.19;
+    let commisionPercentage = debtor.commissionPercentage;
     if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
       debt = body.remaining ?? 0;
@@ -432,11 +433,11 @@ class CaseUtil {
     }
     weeklyBudget = debtor.basicInformation.weeklyBudget;
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
+      _id: {$ne: body._id},
       debtor: debtor._id,
       isDeleted: false,
     });
     for (const caseTemp of cases) {
-      console.log(caseTemp.intervals);
       if (caseTemp.intervals.length) {
         amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
         debt += caseTemp.remaining;
@@ -2028,26 +2029,26 @@ class CaseUtil {
         'businessInformation.companyName':
           body.creditor.businessInformation.companyName,
       });
-      if (body?.intervals) {
-        let weeklyBudgetObj: {
-          status: boolean;
-          commission: number;
-          totalCommission: number;
-        };
-        if (body.feePayment && body.feePayment === 'toPay') {
-          weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-          if (!weeklyBudgetObj.status) {
-            return [
-              false,
-              'Weekly budget is not fulfiling the payment plan of debtor',
-            ];
-          }
-          await this.debtRepository.updateById<IDebtor>(debtor._id, {
-            totalCommission: weeklyBudgetObj.totalCommission,
-            weeklyCommission: weeklyBudgetObj.commission,
-          });
-        }
-      }
+      // if (body?.intervals) {
+      //   let weeklyBudgetObj: {
+      //     status: boolean;
+      //     commission: number;
+      //     totalCommission: number;
+      //   };
+      //   if (body.feePayment && body.feePayment === 'toPay') {
+      //     weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+      //     if (!weeklyBudgetObj.status) {
+      //       return [
+      //         false,
+      //         'Weekly budget is not fulfiling the payment plan of debtor',
+      //       ];
+      //     }
+      //     await this.debtRepository.updateById<IDebtor>(debtor._id, {
+      //       totalCommission: weeklyBudgetObj.totalCommission,
+      //       weeklyCommission: weeklyBudgetObj.commission,
+      //     });
+      //   }
+      // }
       // if (body.creditor.paymentToken && body.creditor.paymentType) {
       //   const customerVaultResponse = await this.createVault(body.paymentToken);
       //   if (!customerVaultResponse[0]) return customerVaultResponse;

@@ -96,4 +96,10 @@ router.post(
   caseController.getScoresSettlementByCommPercentage
 );
 
+router.post(
+  '/getWeeklyAndTotalCommission/:id',
+  authorize.validateAuth,
+  caseController.getWeeklyAndTotalCommission
+);
+
 export default router;
