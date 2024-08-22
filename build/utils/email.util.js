@@ -60,6 +60,7 @@ class EmailUtil {
             for (const userPermission of userPermissions) {
                 if (userPermission.email_allowed && userPermission.email_template) {
                     const template = await this.getTemplate(userPermission.email_template);
+                    console.log(template);
                     if (!template)
                         continue;
                     const allValues = await this.getValues(template.content);
@@ -288,19 +289,21 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, html) {
+    async sendEmail(to, from, subject, content, cc) {
         const msg = {
             to: to,
             from: from, // Use the email address or domain you verified above
             subject: subject,
-            html: html,
+            html: content,
+            cc: cc,
         };
         try {
             await mail_1.default.send(msg);
+            return [true, 'Email sent successfully'];
         }
         catch (error) {
-            console.log(error.response.body);
-            return error.message;
+            console.log(error.response.body.errors[0].message);
+            return [false, error.response.body.errors[0].message];
         }
     }
     async sendSms(body, phone) {

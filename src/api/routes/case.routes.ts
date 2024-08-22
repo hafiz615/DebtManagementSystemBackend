@@ -102,4 +102,10 @@ router.post(
   caseController.getWeeklyAndTotalCommission
 );
 
+router.post(
+  '/sendSettlementEmail',
+  authorize.validateAuth,
+  caseValidate.sendSettlementEmail,
+  caseController.sendSettlementEmail
+);
 export default router;

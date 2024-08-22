@@ -311,10 +311,10 @@ class CronJob {
     }
   }
   startCronJob() {
-    cron.schedule('15 * * * *', async () => {
+    cron.schedule('0 * * * *', async () => {
       console.log('Running a task every zero of an hour');
-      const payments: any = await paymentUtil.getAllCronJobPayments();
-      await this.processPayments(payments);
+      // const payments: any = await paymentUtil.getAllCronJobPayments();
+      await this.processPayments();
     });
 
     cron.schedule('30 * * * *', async () => {
@@ -628,15 +628,19 @@ class CronJob {
     });
   }
 
-  async processPayments(payments: any) {
+  async processPayments() {
     // const payments: any = await paymentUtil.getAllCronJobPayments();
     const settings =
       await this.settingsRepository.getAllWithoutPagination<ISettings>();
     const cronId = uuidv4();
-    await this.pendingAuthorized(settings, payments, cronId);
-    await this.pendingCaptured(payments, cronId, settings);
-    await this.failedAuthorized(payments, cronId, settings);
-    await this.failedCaptured(payments, cronId, settings);
+    const paymentsPendingAuthorized = await paymentUtil.getPendingAuthorized();
+    await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
+    const paymentsPendingCaptured = await paymentUtil.getPendingCaptured();
+    await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
+    const paymentsFailedAuthorized = await paymentUtil.getFailedAuthorized();
+    await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
+    const paymentsFailedCaptured = await paymentUtil.getFailedCaptured();
+    await this.failedCaptured(paymentsFailedCaptured, cronId, settings);
   }
 
   async updateDebtorPaidValues(id: string, commission: number) {
@@ -902,17 +906,24 @@ class CronJob {
     const {authorizationInterval} = settings.length
       ? settings[0].paymentsAuthorizations
       : this.defaultAuthInterval();
-    const pendingAuthorized = payments[0].pendingAuthorized.filter(
-      (payment: IPayment) => {
-        if (payment.timePeriod) {
-          const interval =
-            authorizationInterval[payment.timePeriod.toLowerCase()];
-          return this.shouldAuthorize(interval.unit, interval.value, payment);
-        }
-        return false;
+    // const pendingAuthorized = payments[0].pendingAuthorized.filter(
+    //   (payment: IPayment) => {
+    //     if (payment.timePeriod) {
+    //       const interval =
+    //         authorizationInterval[payment.timePeriod.toLowerCase()];
+    //       return this.shouldAuthorize(interval.unit, interval.value, payment);
+    //     }
+    //     return false;
+    //   }
+    // );
+    const pendingAuthorized = payments.filter((payment: IPayment) => {
+      if (payment.timePeriod) {
+        const interval =
+          authorizationInterval[payment.timePeriod.toLowerCase()];
+        return this.shouldAuthorize(interval.unit, interval.value, payment);
       }
-    );
-    console.log(pendingAuthorized);
+      return false;
+    });
     await this.processAuthorized(pendingAuthorized, cronId, false, settings);
   }
 
@@ -932,11 +943,14 @@ class CronJob {
 
   async pendingCaptured(payments: any, cronId: string, settings: ISettings[]) {
     const currentDate = new Date(commonUtil.getCurrentDate());
-    const pendingCaptured = payments[0].pendingCaptured.filter(
-      (payment: IPayment) => {
-        return currentDate.getTime() >= new Date(payment.dueDate).getTime();
-      }
-    );
+    // const pendingCaptured = payments[0].pendingCaptured.filter(
+    //   (payment: IPayment) => {
+    //     return currentDate.getTime() >= new Date(payment.dueDate).getTime();
+    //   }
+    // );
+    const pendingCaptured = payments.filter((payment: IPayment) => {
+      return currentDate.getTime() >= new Date(payment.dueDate).getTime();
+    });
     await this.processCapture(pendingCaptured, cronId, false, settings);
   }
 
@@ -968,13 +982,16 @@ class CronJob {
     const {retryInterval} = settings.length
       ? settings[0].paymentsAuthorizations
       : this.defaultRetryInterval();
-    const filterPaymentWithRetries = payments[0].failedAuthorized.filter(
-      (payment: IPayment) => {
-        return (
-          payment.retriesAuth != retryInterval.failedAuthorization.maxRetry
-        );
-      }
-    );
+    // const filterPaymentWithRetries = payments[0].failedAuthorized.filter(
+    //   (payment: IPayment) => {
+    //     return (
+    //       payment.retriesAuth != retryInterval.failedAuthorization.maxRetry
+    //     );
+    //   }
+    // );
+    const filterPaymentWithRetries = payments.filter((payment: IPayment) => {
+      return payment.retriesAuth != retryInterval.failedAuthorization.maxRetry;
+    });
     const failedAuthorized = filterPaymentWithRetries.filter(
       (payment: IPayment) => {
         return this.retry(payment.rescheduled);
@@ -989,7 +1006,11 @@ class CronJob {
     settings: ISettings[]
   ) {
     for (const payment of payments) {
-      const accounts = payment.caseDetails.debtorDetails.accounts;
+      const accounts = payment.caseId.debtor.accounts;
+      if (accounts.length) {
+        console.log(accounts);
+        console.log(payment.caseId.debtor);
+      }
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
@@ -1123,16 +1144,16 @@ class CronJob {
       ? settings[0].paymentsAuthorizations
       : this.defaultRetryInterval();
 
-    const filterPaymentWithRetries = payments[0].failedCaptured.filter(
-      (payment: IPayment) => {
-        return payment.retriesCapture != retryInterval.failedPayment.maxRetry;
-      }
-    );
+    const filterPaymentWithRetries = payments.filter((payment: IPayment) => {
+      return payment.retriesCapture != retryInterval.failedPayment.maxRetry;
+    });
+    console.log(filterPaymentWithRetries, 'filterPaymentWithRetries');
     const failedCaptured = filterPaymentWithRetries.filter(
       (payment: IPayment) => {
         return this.retry(payment.rescheduled);
       }
     );
+    console.log(failedCaptured, 'failedCaptured');
     await this.processCapture(failedCaptured, cronId, true, settings);
   }
 
@@ -1143,7 +1164,8 @@ class CronJob {
     settings: ISettings[]
   ) {
     for (const payment of payments) {
-      const accounts = payment.caseDetails.debtorDetails.accounts;
+      const accounts = payment.caseId.debtor.accounts;
+      console.log(accounts);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.captureCreditCard(

@@ -543,6 +543,10 @@ class CaseService {
             },
         ];
     }
+    async sendSettlementEmail(req) {
+        const { from, sendTo, subject, content } = req.body;
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content);
+    }
 }
 exports.default = CaseService;
 //# sourceMappingURL=case.service.js.map

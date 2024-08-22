@@ -819,6 +819,11 @@ class CaseService {
       },
     ];
   }
+
+  async sendSettlementEmail(req: Request) {
+    const {from, sendTo, subject, content} = req.body;
+    return await emailUtil.sendEmail(sendTo, from, subject, content);
+  }
 }
 
 export default CaseService;

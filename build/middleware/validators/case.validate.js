@@ -353,6 +353,24 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
+    async sendSettlementEmail(req, res, next) {
+        const schema = joi_1.default.object({
+            sendTo: joi_1.default.string().required(),
+            from: joi_1.default.string().required(),
+            content: joi_1.default.string().required(),
+            subject: joi_1.default.string().required(),
+            cc: joi_1.default.array().items(joi_1.default.string()),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
 }
 exports.default = new CaseValidate();
 //# sourceMappingURL=case.validate.js.map

@@ -86,6 +86,7 @@ class EmailUtil {
           const template = await this.getTemplate(
             userPermission.email_template
           );
+          console.log(template);
           if (!template) continue;
           const allValues = await this.getValues(template.content);
           if (!allValues.length) continue;
@@ -397,19 +398,22 @@ class EmailUtil {
     to: string | string[],
     from: string,
     subject: string,
-    html: any
+    content: any,
+    cc?: Array<string>
   ) {
     const msg = {
       to: to,
       from: from, // Use the email address or domain you verified above
       subject: subject,
-      html: html,
+      html: content,
+      cc: cc,
     };
     try {
       await sgMail.send(msg);
+      return [true, 'Email sent successfully'];
     } catch (error: any) {
-      console.log(error.response.body);
-      return error.message;
+      console.log(error.response.body.errors[0].message);
+      return [false, error.response.body.errors[0].message];
     }
   }
 
