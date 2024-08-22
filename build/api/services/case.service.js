@@ -544,8 +544,8 @@ class CaseService {
         ];
     }
     async sendSettlementEmail(req) {
-        const { from, sendTo, subject, content } = req.body;
-        return await email_util_1.default.sendEmail(sendTo, from, subject, content);
+        const { from, sendTo, subject, content, cc } = req.body;
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc);
     }
 }
 exports.default = CaseService;
