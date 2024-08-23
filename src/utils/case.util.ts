@@ -1907,6 +1907,10 @@ class CaseUtil {
       AIAuth.auth_token
     );
     getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+    if (getSettlementRange.commission_range) {
+      console.log(getSettlementRange.commission_range);
+      console.log(getSettlementRange.weeks_till_paid);
+    }
     // if (getSettlementRange.settlement_range) {
     //   getSettlementRange.settlement_range =
     //     await this.getSettlementRangeSummery(

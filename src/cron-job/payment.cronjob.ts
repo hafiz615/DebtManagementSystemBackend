@@ -1147,13 +1147,11 @@ class CronJob {
     const filterPaymentWithRetries = payments.filter((payment: IPayment) => {
       return payment.retriesCapture != retryInterval.failedPayment.maxRetry;
     });
-    console.log(filterPaymentWithRetries, 'filterPaymentWithRetries');
     const failedCaptured = filterPaymentWithRetries.filter(
       (payment: IPayment) => {
         return this.retry(payment.rescheduled);
       }
     );
-    console.log(failedCaptured, 'failedCaptured');
     await this.processCapture(failedCaptured, cronId, true, settings);
   }
 

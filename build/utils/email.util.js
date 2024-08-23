@@ -15,6 +15,7 @@ const lodash_1 = __importDefault(require("lodash"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const twilio_1 = __importDefault(require("twilio"));
+const puppeteer_1 = __importDefault(require("puppeteer"));
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -289,14 +290,26 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, content, cc) {
+    async sendEmail(to, from, subject, content, cc, buffer) {
         const msg = {
             to: to,
             from: from, // Use the email address or domain you verified above
             subject: subject,
             html: content,
-            cc: cc,
         };
+        if (cc?.length) {
+            msg['cc'] = cc;
+        }
+        if (Buffer.isBuffer(buffer)) {
+            msg['attachments'] = [
+                {
+                    content: buffer.toString('base64'),
+                    filename: 'Settlement Agreement.pdf',
+                    type: 'application/pdf',
+                    disposition: 'attachment',
+                },
+            ];
+        }
         try {
             await mail_1.default.send(msg);
             return [true, 'Email sent successfully'];
@@ -318,6 +331,17 @@ class EmailUtil {
             console.log(error);
             return error.message;
         }
+    }
+    async generatePdfFromHtml(htmlString) {
+        const browser = await puppeteer_1.default.launch();
+        const page = await browser.newPage();
+        await page.setContent(htmlString, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+        });
+        await browser.close();
+        return Buffer.from(pdfBuffer);
     }
 }
 exports.default = new EmailUtil();

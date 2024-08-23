@@ -295,9 +295,9 @@ class CaseService {
                 return [false, 'Query param missing'];
             }
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
-            const debtor = caseTemp.debtor;
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
+            const debtor = caseTemp.debtor;
             let getScores = null, creditorNames = null;
             let creditors = null;
             let settlementRange = null;
@@ -321,8 +321,8 @@ class CaseService {
                 data['creditorNames'] = creditorNames;
             }
             if (hardReload === 'true') {
-                let extractedFieldsTemp = null;
-                if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+                let extractedFieldsTemp = [];
+                if (!debtor?.extractedFields?.length) {
                     const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
                     if (extractedFields) {
                         this.debtorRepository.updateById(debtor._id, {
@@ -545,7 +545,8 @@ class CaseService {
     }
     async sendSettlementEmail(req) {
         const { from, sendTo, subject, content, cc } = req.body;
-        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc);
+        const buffer = await email_util_1.default.generatePdfFromHtml(content);
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer);
     }
 }
 exports.default = CaseService;

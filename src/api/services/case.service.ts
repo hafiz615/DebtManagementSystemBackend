@@ -504,8 +504,8 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
-    const debtor: any = caseTemp.debtor;
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    const debtor: any = caseTemp.debtor;
     let getScores = null,
       creditorNames = null;
     let creditors = null;
@@ -536,8 +536,8 @@ class CaseService {
       data['creditorNames'] = creditorNames;
     }
     if (hardReload === 'true') {
-      let extractedFieldsTemp = null;
-      if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+      let extractedFieldsTemp = [];
+      if (!debtor?.extractedFields?.length) {
         const extractedFields = await caseUtil.getExtractionMCA(debtor);
         if (extractedFields) {
           this.debtorRepository.updateById(debtor._id, {
@@ -822,7 +822,15 @@ class CaseService {
 
   async sendSettlementEmail(req: Request) {
     const {from, sendTo, subject, content, cc} = req.body;
-    return await emailUtil.sendEmail(sendTo, from, subject, content, cc);
+    const buffer = await emailUtil.generatePdfFromHtml(content);
+    return await emailUtil.sendEmail(
+      sendTo,
+      from,
+      subject,
+      content,
+      cc,
+      buffer
+    );
   }
 }
 
