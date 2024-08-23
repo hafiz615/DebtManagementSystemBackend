@@ -1728,18 +1728,33 @@ class CaseUtil {
     }
     if (data.weeks_till_paid) {
       data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
-      const result = await this.getSummaryWeeksTillPaid(data.weeks_till_paid);
+      const result = await this.getSummaryInverse(data.weeks_till_paid);
       data.weeks_till_paid.Summary = result;
       // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
       //   getSettlementRange.weeks_till_paid
       // );
     }
     if (data.commission_range) {
-      data.commission_range = await this.getSettlementRangeSummery(
-        data.commission_range
-      );
+      // data.commission_range = await this.getSettlementRangeSummery(
+      //   data.commission_range
+      // );
+      data.commission_range = await this.transformData(data.commission_range);
+      const result = await this.getSummaryInverse(data.commission_range);
+      data.commission_range.Summary = result;
+    }
+    if (data.weekly_budget) {
+      const sum = await this.sumOfWeeklyBudgetValues(data.weekly_budget);
+      data.weekly_budget.Summary = sum;
     }
     return data;
+  }
+
+  async sumOfWeeklyBudgetValues(weekly_budget: any) {
+    const total = Object.values(weekly_budget).reduce(
+      (sum: number, value: string) => sum + value,
+      0
+    );
+    return total;
   }
 
   async getSummary(req: any, caseTemp: any) {
@@ -1876,6 +1891,12 @@ class CaseUtil {
       caseTemp,
       creditors
     );
+    if (getScores.Scores['Weekly Budget']) {
+      const sum = await this.sumOfWeeklyBudgetValues(
+        getScores.Scores['Weekly Budget']
+      );
+      getScores.Scores['Weekly Budget'].Summary = sum;
+    }
     return getScores;
   }
 
@@ -1892,6 +1913,12 @@ class CaseUtil {
       caseTemp,
       creditors
     );
+    if (getScores.Scores['Weekly Budget']) {
+      const sum = await this.sumOfWeeklyBudgetValues(
+        getScores.Scores['Weekly Budget']
+      );
+      getScores.Scores['Weekly Budget'].Summary = sum;
+    }
     return getScores;
   }
 
@@ -1907,10 +1934,6 @@ class CaseUtil {
       AIAuth.auth_token
     );
     getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-    if (getSettlementRange.commission_range) {
-      console.log(getSettlementRange.commission_range);
-      console.log(getSettlementRange.weeks_till_paid);
-    }
     // if (getSettlementRange.settlement_range) {
     //   getSettlementRange.settlement_range =
     //     await this.getSettlementRangeSummery(
@@ -2219,12 +2242,7 @@ class CaseUtil {
     return result;
   }
 
-  async getSummaryWeeksTillPaid(weeksTillPaid: any) {
-    // const summary = {
-    //   'Weeks remaining based on recommendation 1': {min: 0, max: 0},
-    //   'Weeks remaining based on recommendation 2': {min: 0, max: 0},
-    //   'Weeks remaining based on recommendation 3': {min: 0, max: 0},
-    // };
+  async getSummaryInverse(weeksTillPaid: any) {
     const summary = {};
     if (Object.keys(weeksTillPaid).length) {
       Object.values(weeksTillPaid).forEach(company => {

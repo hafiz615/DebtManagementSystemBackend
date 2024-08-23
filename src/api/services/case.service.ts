@@ -521,6 +521,8 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    data['creditorsContractDetailsSum'] =
+      await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
       caseId: String(caseTemp._id),
       name: 'strategy_one',
@@ -680,6 +682,8 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    data['creditorsContractDetailsSum'] =
+      await this.calculateContractDetailsSum(creditors);
     data['creditors'] = creditors;
     debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
       commissionPercentage: comm,
@@ -739,6 +743,21 @@ class CaseService {
     data['settlementRange'] = settlementRange;
     return [true, data];
   };
+
+  async calculateContractDetailsSum(creditors: any) {
+    let payableAmount = 0;
+    let loanAmount = 0;
+    for (const creditor of creditors) {
+      console.log(creditor, 'jkjkjkjkjkj');
+      payableAmount += caseUtil.getCleanAmount(
+        creditor?.contractDetails?.payable_amount
+      );
+      loanAmount += caseUtil.getCleanAmount(
+        creditor?.contractDetails?.loan_amount
+      );
+    }
+    return {payableAmount, loanAmount};
+  }
   async sendCaseEmails(
     userId: string,
     previousCase: ICase,

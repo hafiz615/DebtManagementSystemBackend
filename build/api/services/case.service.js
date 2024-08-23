@@ -308,6 +308,8 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            data['creditorsContractDetailsSum'] =
+                await this.calculateContractDetailsSum(creditors);
             const result = await this.strategyRepository.getOne({
                 caseId: String(caseTemp._id),
                 name: 'strategy_one',
@@ -422,6 +424,8 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            data['creditorsContractDetailsSum'] =
+                await this.calculateContractDetailsSum(creditors);
             data['creditors'] = creditors;
             debtor = await this.debtorRepository.updateById(debtor._id, {
                 commissionPercentage: comm,
@@ -499,6 +503,16 @@ class CaseService {
             return [false, constants_util_1.default.failureDeleteMessage('case')];
         }
         return [true, true];
+    }
+    async calculateContractDetailsSum(creditors) {
+        let payableAmount = 0;
+        let loanAmount = 0;
+        for (const creditor of creditors) {
+            console.log(creditor, 'jkjkjkjkjkj');
+            payableAmount += case_util_1.default.getCleanAmount(creditor?.contractDetails?.payable_amount);
+            loanAmount += case_util_1.default.getCleanAmount(creditor?.contractDetails?.loan_amount);
+        }
+        return { payableAmount, loanAmount };
     }
     async sendCaseEmails(userId, previousCase, updatedCase, caseAbout, caseUpdate) {
         if (caseAbout) {
