@@ -546,6 +546,7 @@ class CaseService {
     async sendSettlementEmail(req) {
         const { from, sendTo, subject, content, cc } = req.body;
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
+        // const buffer = Buffer.from(content);
         return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer);
     }
 }

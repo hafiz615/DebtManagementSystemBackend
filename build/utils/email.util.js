@@ -333,7 +333,10 @@ class EmailUtil {
         }
     }
     async generatePdfFromHtml(htmlString) {
-        const browser = await puppeteer_1.default.launch();
+        const browser = await puppeteer_1.default.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
         const page = await browser.newPage();
         await page.setContent(htmlString, { waitUntil: 'networkidle0' });
         const pdfBuffer = await page.pdf({
