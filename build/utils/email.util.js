@@ -15,7 +15,7 @@ const lodash_1 = __importDefault(require("lodash"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const twilio_1 = __importDefault(require("twilio"));
-const puppeteer_1 = __importDefault(require("puppeteer"));
+const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -333,7 +333,8 @@ class EmailUtil {
         }
     }
     async generatePdfFromHtml(htmlString) {
-        const browser = await puppeteer_1.default.launch({
+        const browser = await puppeteer_core_1.default.launch({
+            executablePath: '/usr/bin/google-chrome',
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });

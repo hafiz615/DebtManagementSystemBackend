@@ -19,7 +19,8 @@ import _ from 'lodash';
 import handlebars from 'handlebars';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import twilio, {Twilio} from 'twilio';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+
 dotenv.config();
 class EmailUtil {
   private notificationConfigurationRepository: NotificationConfigurationRepository;
@@ -446,6 +447,7 @@ class EmailUtil {
 
   async generatePdfFromHtml(htmlString: string): Promise<Buffer> {
     const browser = await puppeteer.launch({
+      executablePath: '/usr/bin/google-chrome',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
