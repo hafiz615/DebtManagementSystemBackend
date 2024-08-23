@@ -40,241 +40,287 @@ class PaymentUtil {
             upcomingPayments: upcomingPayments,
         };
     }
-    async getAllCronJobPayments() {
-        const pipeline = [
-            {
-                $facet: {
-                    pendingAuthorized: [
-                        { $match: { authorized: 'Pending' }, isDeleted: { $ne: true } },
-                        {
-                            $lookup: {
-                                from: 'cases',
-                                localField: 'caseId',
-                                foreignField: '_id',
-                                as: 'caseDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails' },
-                        {
-                            $lookup: {
-                                from: 'debtors',
-                                localField: 'caseDetails.debtor',
-                                foreignField: '_id',
-                                as: 'caseDetails.debtorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.debtorDetails' },
-                        {
-                            $lookup: {
-                                from: 'creditors',
-                                localField: 'caseDetails.creditor',
-                                foreignField: '_id',
-                                as: 'caseDetails.creditorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.creditorDetails' },
-                        {
-                            $project: {
-                                _id: 1,
-                                caseId: 1,
-                                caseDetails: 1,
-                                authorized: 1,
-                                captured: 1,
-                                status: 1,
-                                amount: 1,
-                                dueDate: 1,
-                                frequency: 1,
-                                intervalId: 1,
-                                failedReasonAuthorization: 1,
-                                failedReasonCaptured: 1,
-                                rescheduled: 1,
-                                debtorTransId: 1,
-                                retriesAuth: 1,
-                                retriesCapture: 1,
-                                commission: 1,
-                                creditorAmount: 1,
-                                timePeriod: 1,
-                                createdAt: 1,
-                                updatedAt: 1,
-                            },
-                        },
-                    ],
-                    pendingCaptured: [
-                        {
-                            $match: { authorized: 'Success', captured: 'Pending' },
-                            isDeleted: { $ne: true },
-                        },
-                        {
-                            $lookup: {
-                                from: 'cases',
-                                localField: 'caseId',
-                                foreignField: '_id',
-                                as: 'caseDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails' },
-                        {
-                            $lookup: {
-                                from: 'debtors',
-                                localField: 'caseDetails.debtor',
-                                foreignField: '_id',
-                                as: 'caseDetails.debtorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.debtorDetails' },
-                        {
-                            $lookup: {
-                                from: 'creditors',
-                                localField: 'caseDetails.creditor',
-                                foreignField: '_id',
-                                as: 'caseDetails.creditorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.creditorDetails' },
-                        {
-                            $project: {
-                                _id: 1,
-                                caseId: 1,
-                                caseDetails: 1,
-                                authorized: 1,
-                                captured: 1,
-                                status: 1,
-                                amount: 1,
-                                dueDate: 1,
-                                frequency: 1,
-                                intervalId: 1,
-                                failedReasonAuthorization: 1,
-                                failedReasonCaptured: 1,
-                                rescheduled: 1,
-                                transactionId: 1,
-                                retriesAuth: 1,
-                                retriesCapture: 1,
-                                commission: 1,
-                                creditorAmount: 1,
-                                timePeriod: 1,
-                                createdAt: 1,
-                                updatedAt: 1,
-                            },
-                        },
-                    ],
-                    failedAuthorized: [
-                        { $match: { authorized: 'Failed' }, isDeleted: { $ne: true } },
-                        {
-                            $lookup: {
-                                from: 'cases',
-                                localField: 'caseId',
-                                foreignField: '_id',
-                                as: 'caseDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails' },
-                        {
-                            $lookup: {
-                                from: 'debtors',
-                                localField: 'caseDetails.debtor',
-                                foreignField: '_id',
-                                as: 'caseDetails.debtorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.debtorDetails' },
-                        {
-                            $lookup: {
-                                from: 'creditors',
-                                localField: 'caseDetails.creditor',
-                                foreignField: '_id',
-                                as: 'caseDetails.creditorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.creditorDetails' },
-                        {
-                            $project: {
-                                _id: 1,
-                                caseId: 1,
-                                caseDetails: 1,
-                                authorized: 1,
-                                captured: 1,
-                                status: 1,
-                                amount: 1,
-                                dueDate: 1,
-                                frequency: 1,
-                                intervalId: 1,
-                                failedReasonAuthorization: 1,
-                                failedReasonCaptured: 1,
-                                rescheduled: 1,
-                                transactionId: 1,
-                                retriesAuth: 1,
-                                retriesCapture: 1,
-                                commission: 1,
-                                creditorAmount: 1,
-                                timePeriod: 1,
-                                createdAt: 1,
-                                updatedAt: 1,
-                            },
-                        },
-                    ],
-                    failedCaptured: [
-                        {
-                            $match: { authorized: 'Success', captured: 'Failed' },
-                            isDeleted: { $ne: true },
-                        },
-                        {
-                            $lookup: {
-                                from: 'cases',
-                                localField: 'caseId',
-                                foreignField: '_id',
-                                as: 'caseDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails' },
-                        {
-                            $lookup: {
-                                from: 'debtors',
-                                localField: 'caseDetails.debtor',
-                                foreignField: '_id',
-                                as: 'caseDetails.debtorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.debtorDetails' },
-                        {
-                            $lookup: {
-                                from: 'creditors',
-                                localField: 'caseDetails.creditor',
-                                foreignField: '_id',
-                                as: 'caseDetails.creditorDetails',
-                            },
-                        },
-                        { $unwind: '$caseDetails.creditorDetails' },
-                        {
-                            $project: {
-                                _id: 1,
-                                caseId: 1,
-                                caseDetails: 1,
-                                authorized: 1,
-                                captured: 1,
-                                status: 1,
-                                amount: 1,
-                                dueDate: 1,
-                                frequency: 1,
-                                intervalId: 1,
-                                failedReasonAuthorization: 1,
-                                failedReasonCaptured: 1,
-                                rescheduled: 1,
-                                transactionId: 1,
-                                retriesAuth: 1,
-                                retriesCapture: 1,
-                                commission: 1,
-                                creditorAmount: 1,
-                                timePeriod: 1,
-                                createdAt: 1,
-                                updatedAt: 1,
-                            },
-                        },
-                    ],
-                },
-            },
-        ];
-        return await this.paymentRepository.applyAggregate(pipeline);
+    async getPendingAuthorized() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: { $ne: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
+    async getPendingCaptured() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: { $ne: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getFailedAuthorized() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Failed',
+            isDeleted: { $ne: true },
+            caseId: { $ne: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getFailedCaptured() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Failed',
+            isDeleted: { $ne: true },
+            caseId: { $ne: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    // async getAllCronJobPayments() {
+    //   const pipeline = [
+    //     {
+    //       $facet: {
+    //         pendingAuthorized: [
+    //           {
+    //             $match: {
+    //               authorized: 'Pending',
+    //               isDeleted: {$ne: true},
+    //             },
+    //           },
+    //           {
+    //             $lookup: {
+    //               from: 'cases',
+    //               localField: 'caseId',
+    //               foreignField: '_id',
+    //               as: 'caseDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'debtors',
+    //               localField: 'caseDetails.debtor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.debtorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.debtorDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'creditors',
+    //               localField: 'caseDetails.creditor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.creditorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.creditorDetails'},
+    //           {
+    //             $project: {
+    //               _id: 1,
+    //               caseId: 1,
+    //               caseDetails: 1,
+    //               authorized: 1,
+    //               captured: 1,
+    //               status: 1,
+    //               amount: 1,
+    //               dueDate: 1,
+    //               frequency: 1,
+    //               intervalId: 1,
+    //               failedReasonAuthorization: 1,
+    //               failedReasonCaptured: 1,
+    //               rescheduled: 1,
+    //               debtorTransId: 1,
+    //               retriesAuth: 1,
+    //               retriesCapture: 1,
+    //               commission: 1,
+    //               creditorAmount: 1,
+    //               timePeriod: 1,
+    //               createdAt: 1,
+    //               updatedAt: 1,
+    //             },
+    //           },
+    //         ],
+    //         pendingCaptured: [
+    //           {
+    //             $match: {
+    //               authorized: 'Success',
+    //               captured: 'Pending',
+    //               isDeleted: {$ne: true},
+    //             },
+    //           },
+    //           {
+    //             $lookup: {
+    //               from: 'cases',
+    //               localField: 'caseId',
+    //               foreignField: '_id',
+    //               as: 'caseDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'debtors',
+    //               localField: 'caseDetails.debtor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.debtorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.debtorDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'creditors',
+    //               localField: 'caseDetails.creditor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.creditorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.creditorDetails'},
+    //           {
+    //             $project: {
+    //               _id: 1,
+    //               caseId: 1,
+    //               caseDetails: 1,
+    //               authorized: 1,
+    //               captured: 1,
+    //               status: 1,
+    //               amount: 1,
+    //               dueDate: 1,
+    //               frequency: 1,
+    //               intervalId: 1,
+    //               failedReasonAuthorization: 1,
+    //               failedReasonCaptured: 1,
+    //               rescheduled: 1,
+    //               transactionId: 1,
+    //               retriesAuth: 1,
+    //               retriesCapture: 1,
+    //               commission: 1,
+    //               creditorAmount: 1,
+    //               timePeriod: 1,
+    //               createdAt: 1,
+    //               updatedAt: 1,
+    //             },
+    //           },
+    //         ],
+    //         failedAuthorized: [
+    //           {
+    //             $match: {
+    //               authorized: 'Failed',
+    //               isDeleted: {$ne: true},
+    //             },
+    //           },
+    //           {
+    //             $lookup: {
+    //               from: 'cases',
+    //               localField: 'caseId',
+    //               foreignField: '_id',
+    //               as: 'caseDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'debtors',
+    //               localField: 'caseDetails.debtor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.debtorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.debtorDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'creditors',
+    //               localField: 'caseDetails.creditor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.creditorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.creditorDetails'},
+    //           {
+    //             $project: {
+    //               _id: 1,
+    //               caseId: 1,
+    //               caseDetails: 1,
+    //               authorized: 1,
+    //               captured: 1,
+    //               status: 1,
+    //               amount: 1,
+    //               dueDate: 1,
+    //               frequency: 1,
+    //               intervalId: 1,
+    //               failedReasonAuthorization: 1,
+    //               failedReasonCaptured: 1,
+    //               rescheduled: 1,
+    //               transactionId: 1,
+    //               retriesAuth: 1,
+    //               retriesCapture: 1,
+    //               commission: 1,
+    //               creditorAmount: 1,
+    //               timePeriod: 1,
+    //               createdAt: 1,
+    //               updatedAt: 1,
+    //             },
+    //           },
+    //         ],
+    //         failedCaptured: [
+    //           {
+    //             $match: {
+    //               authorized: 'Success',
+    //               captured: 'Failed',
+    //               isDeleted: {$ne: true},
+    //             },
+    //           },
+    //           {
+    //             $lookup: {
+    //               from: 'cases',
+    //               localField: 'caseId',
+    //               foreignField: '_id',
+    //               as: 'caseDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'debtors',
+    //               localField: 'caseDetails.debtor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.debtorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.debtorDetails'},
+    //           {
+    //             $lookup: {
+    //               from: 'creditors',
+    //               localField: 'caseDetails.creditor',
+    //               foreignField: '_id',
+    //               as: 'caseDetails.creditorDetails',
+    //             },
+    //           },
+    //           {$unwind: '$caseDetails.creditorDetails'},
+    //           {
+    //             $project: {
+    //               _id: 1,
+    //               caseId: 1,
+    //               caseDetails: 1,
+    //               authorized: 1,
+    //               captured: 1,
+    //               status: 1,
+    //               amount: 1,
+    //               dueDate: 1,
+    //               frequency: 1,
+    //               intervalId: 1,
+    //               failedReasonAuthorization: 1,
+    //               failedReasonCaptured: 1,
+    //               rescheduled: 1,
+    //               transactionId: 1,
+    //               retriesAuth: 1,
+    //               retriesCapture: 1,
+    //               commission: 1,
+    //               creditorAmount: 1,
+    //               timePeriod: 1,
+    //               createdAt: 1,
+    //               updatedAt: 1,
+    //             },
+    //           },
+    //         ],
+    //       },
+    //     },
+    //   ];
+    //   return await this.paymentRepository.applyAggregate<IPayment>(pipeline);
+    // }
     async searchAndFilterHomePayments(payments, req) {
         // Helper function to apply text search
         const applyTextSearch = (paymentObj, text) => {

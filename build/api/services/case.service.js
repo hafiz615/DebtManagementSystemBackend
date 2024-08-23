@@ -122,41 +122,49 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
-            if (!findCase.intervals.length &&
-                req.body?.intervals &&
-                req.body?.intervals.length) {
-                let weeklyBudgetObj;
-                if (req.body.feePayment && req.body.feePayment === 'toPay') {
-                    weeklyBudgetObj = await case_util_1.default.checkWeeklyBudget(req.body, true, findCase.debtor);
-                    if (!weeklyBudgetObj.status) {
-                        return [
-                            false,
-                            'Weekly budget is not fulfiling the payment plan of debtor',
-                        ];
-                    }
-                    await this.debtorRepository.updateById(findCase.debtor._id, {
-                        totalCommission: weeklyBudgetObj.totalCommission,
-                        weeklyCommission: weeklyBudgetObj.commission,
-                    });
-                }
+            if (req.body?.intervals?.length && req.body?.commission) {
+                // let weeklyBudgetObj: {
+                //   status: boolean;
+                //   commission: number;
+                //   totalCommission: number;
+                // };
+                // if (req.body.feePayment && req.body.feePayment === 'toPay') {
+                //   weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
+                //     req.body,
+                //     true,
+                //     findCase.debtor
+                //   );
+                // if (!weeklyBudgetObj.status) {
+                //   return [
+                //     false,
+                //     'Weekly budget is not fulfiling the payment plan of debtor',
+                //   ];
+                // }
+                //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+                //     totalCommission: weeklyBudgetObj.totalCommission,
+                //     weeklyCommission: weeklyBudgetObj.commission,
+                //   });
+                // }
+                await this.debtorRepository.updateById(findCase.debtor._id, {
+                    totalCommission: req.body.totalCommission,
+                    weeklyCommission: req.body.commission,
+                });
             }
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
-            if (!findCase.intervals.length &&
-                req.body.intervals &&
-                req.body.intervals.length) {
-                await case_util_1.default.createPayment(caseUpdated);
-            }
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
-            if (req.body.intervals) {
-                await case_util_1.default.createPayment(caseUpdated);
+            if (req.body.intervals && req.body.intervals.length) {
+                case_util_1.default.createPayment(caseUpdated);
             }
-            const getDebtor = await this.debtorRepository.getById(String(caseUpdated.debtor));
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            // if (req.body.intervals) {
+            //   await caseUtil.createPayment(caseUpdated);
+            // }
+            const getDebtor = findCase.debtor;
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {
                 strategyOne_1: false,
                 strategyOne_2: false,
@@ -279,18 +287,17 @@ class CaseService {
             if (!checkCasePayment[0])
                 return checkCasePayment;
             const result = await case_util_1.default.createCreditorsCases(req, reqTemp.name, reqTemp.id);
-            if (!result[0])
-                return [false, result[1]];
-            return [true, result[1]];
+            // if (!result[0]) return result;
+            return result;
         };
         this.getScoresSettlementRange = async (req) => {
             if (!req.query.all) {
                 return [false, 'Query param missing'];
             }
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
-            const debtor = caseTemp.debtor;
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
+            const debtor = caseTemp.debtor;
             let getScores = null, creditorNames = null;
             let creditors = null;
             let settlementRange = null;
@@ -305,6 +312,8 @@ class CaseService {
                 caseId: String(caseTemp._id),
                 name: 'strategy_one',
             });
+            data['creditors'] = creditors;
+            data['debtor'] = debtor;
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
                 result.data.creditorNames) {
@@ -312,8 +321,8 @@ class CaseService {
                 data['creditorNames'] = creditorNames;
             }
             if (hardReload === 'true') {
-                let extractedFieldsTemp = null;
-                if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+                let extractedFieldsTemp = [];
+                if (!debtor?.extractedFields?.length) {
                     const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
                     if (extractedFields) {
                         this.debtorRepository.updateById(debtor._id, {
@@ -324,6 +333,11 @@ class CaseService {
                 }
                 creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
                 data['creditorNames'] = creditorNames;
+                if (typeof creditorNames === 'string') {
+                    data['getScores'] = null;
+                    data['settlementRange'] = null;
+                    return [true, data];
+                }
             }
             if (req.query.all === 'true') {
                 if (hardReload !== 'true' &&
@@ -335,14 +349,21 @@ class CaseService {
                 else {
                     getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
+                    if (typeof getScores === 'string') {
+                        data['settlementRange'] = null;
+                        return [true, data];
+                    }
                 }
             }
             else {
                 if (req.body.creditorNames.length) {
                     const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: debtor }, undefined, undefined, undefined, ['creditor']);
-                    console.log(casesCreditors);
                     getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
+                    if (typeof getScores === 'string') {
+                        data['settlementRange'] = null;
+                        return [true, data];
+                    }
                 }
             }
             if (hardReload !== 'true' &&
@@ -355,8 +376,6 @@ class CaseService {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
                 data['settlementRange'] = settlementRange;
             }
-            data['creditors'] = creditors;
-            data['debtor'] = debtor;
             return [true, data];
         };
         this.addNotes = async (req) => {
@@ -403,6 +422,11 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            data['creditors'] = creditors;
+            debtor = await this.debtorRepository.updateById(debtor._id, {
+                commissionPercentage: comm,
+            });
+            data['debtor'] = debtor;
             let extractedFieldsTemp = null;
             if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
                 const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
@@ -414,25 +438,33 @@ class CaseService {
                 }
             }
             creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
+            data['creditorNames'] = creditorNames;
+            if (typeof creditorNames === 'string') {
+                data['getScores'] = null;
+                data['settlementRange'] = null;
+                return [true, data];
+            }
             if (req.query.all === 'true') {
                 getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, comm);
                 data['getScores'] = getScores;
+                if (typeof getScores === 'string') {
+                    data['settlementRange'] = null;
+                    return [true, data];
+                }
             }
             else {
                 if (req.body.creditorNames.length) {
                     const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: debtor }, undefined, undefined, undefined, ['creditor']);
                     getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, comm);
+                    if (typeof getScores === 'string') {
+                        data['settlementRange'] = null;
+                        return [true, data];
+                    }
                     data['getScores'] = getScores;
                 }
             }
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
             data['settlementRange'] = settlementRange;
-            debtor = await this.debtorRepository.updateById(debtor._id, {
-                commissionPercentage: comm,
-            });
-            data['creditorNames'] = creditorNames;
-            data['creditors'] = creditors;
-            data['debtor'] = debtor;
             return [true, data];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
@@ -483,6 +515,38 @@ class CaseService {
         if (caseUpdate) {
             await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', previousCase._id, '', userId);
         }
+    }
+    async getWeeklyAndTotalCommission(req) {
+        const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+        if (!findCase) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        if (findCase.intervals.length) {
+            return [false, 'Payment plan already exist!'];
+        }
+        findCase.intervals = req.body.intervals;
+        let weeklyBudgetObj;
+        const debtor = findCase.debtor;
+        weeklyBudgetObj = await case_util_1.default.checkWeeklyBudget(findCase, true, debtor);
+        if (!weeklyBudgetObj.status) {
+            return [
+                false,
+                'Weekly budget is not fulfiling the payment plan of debtor.Please updated weekly budget',
+            ];
+        }
+        return [
+            true,
+            {
+                commission: weeklyBudgetObj.commission,
+                totalCommission: weeklyBudgetObj.totalCommission,
+                commissionPercentage: debtor.commissionPercentage,
+            },
+        ];
+    }
+    async sendSettlementEmail(req) {
+        const { from, sendTo, subject, content, cc } = req.body;
+        const buffer = await email_util_1.default.generatePdfFromHtml(content);
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer);
     }
 }
 exports.default = CaseService;

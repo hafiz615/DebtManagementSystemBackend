@@ -190,7 +190,7 @@ class CaseValidate {
                 }),
                 businessInformation: joi_1.default.object({
                     companyName: joi_1.default.string().required(),
-                    businessCategory: joi_1.default.string().required(),
+                    businessCategory: joi_1.default.string().allow(''),
                 }),
                 contacts: joi_1.default.array()
                     .items(joi_1.default.object({
@@ -224,6 +224,8 @@ class CaseValidate {
             totalDebt: joi_1.default.number().strict().optional(),
             lastPaymentDate: joi_1.default.date().optional().allow(''),
             paidAmount: joi_1.default.number().strict().optional(),
+            commission: joi_1.default.number().strict().allow(0),
+            totalCommission: joi_1.default.number().strict().allow(0),
             remaining: joi_1.default.number().strict().optional(),
             confidence: joi_1.default.number().strict(),
             isExempt: joi_1.default.boolean().optional(),
@@ -273,7 +275,7 @@ class CaseValidate {
                     }),
                     businessInformation: joi_1.default.object({
                         companyName: joi_1.default.string().required(),
-                        businessCategory: joi_1.default.string().required(),
+                        businessCategory: joi_1.default.string().allow(''),
                     }),
                     contacts: joi_1.default.array().items(joi_1.default.object({
                         name: joi_1.default.string().required(),
@@ -340,6 +342,24 @@ class CaseValidate {
     async validateAddNotes(req, res, next) {
         const schema = joi_1.default.object({
             notes: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async sendSettlementEmail(req, res, next) {
+        const schema = joi_1.default.object({
+            sendTo: joi_1.default.string().required(),
+            from: joi_1.default.string().required(),
+            content: joi_1.default.string().required(),
+            subject: joi_1.default.string().required(),
+            cc: joi_1.default.array().items(joi_1.default.string()),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

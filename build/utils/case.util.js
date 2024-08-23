@@ -342,9 +342,10 @@ class CaseUtil {
         //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
         //       };
         // }
-        let commisionPercentage = body.commisionPercentage
-            ? body.commisionPercentage / 100
-            : 0.19;
+        // let commisionPercentage = body.commisionPercentage
+        //   ? body.commisionPercentage / 100
+        //   : 0.19;
+        let commisionPercentage = debtor.commissionPercentage / 100;
         if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
             debt = body.remaining ?? 0;
@@ -352,16 +353,21 @@ class CaseUtil {
         }
         weeklyBudget = debtor.basicInformation.weeklyBudget;
         const cases = await this.caseRepository.getAllWithoutPagination({
+            _id: { $ne: body._id },
             debtor: debtor._id,
             isDeleted: false,
         });
         for (const caseTemp of cases) {
-            console.log(caseTemp.intervals);
             if (caseTemp.intervals.length) {
                 amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
                 debt += caseTemp.remaining;
             }
         }
+        console.log(cases, 'casessss');
+        console.log(weeklyBudget, 'weeklyBudget');
+        console.log(amount, 'amounttttt');
+        console.log(debt, 'debteeee');
+        console.log(commisionPercentage);
         return amount >= weeklyBudget
             ? {
                 status: false,
@@ -1419,7 +1425,7 @@ class CaseUtil {
     async getCreditorHistoryAI(creditorId, token) {
         const url = `${process.env.baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
         try {
-            const response = await axios_1.default.post(url, {}, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
                 headers: {
                     accept: 'application/json',
                     token: token,
@@ -1480,13 +1486,43 @@ class CaseUtil {
                 this.caseRepository.updateById(caseTemp._id, { strategyThree: false });
                 return [false, response.data.error];
             }
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_three' }, { 'data.fullProfitSettlement': response.data });
+            const thirdStrategy = await this.getSettlementMapping(response.data);
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_three' }, { 'data.fullProfitSettlement': thirdStrategy });
             this.caseRepository.updateById(caseTemp._id, { strategyThree: true });
             return [true, response.data];
         }
         catch (error) {
+            console.log(error);
             return [false, error.message];
         }
+    }
+    async getSettlementMapping(data) {
+        if (data.settlement_range) {
+            data.settlement_range = await this.getSettlementRangeSummery(data.settlement_range);
+        }
+        if (data.percentage_settlement_over_weekly_true_revenue) {
+            data.percentage_settlement_over_weekly_true_revenue =
+                await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_true_revenue);
+        }
+        if (data.percentage_settlement_over_weekly_budget) {
+            data.percentage_settlement_over_weekly_budget =
+                await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_budget);
+        }
+        if (data.new_default_risk_score) {
+            data.new_default_risk_score = await this.riskScoreMapping(data.new_default_risk_score);
+        }
+        if (data.weeks_till_paid) {
+            data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
+            const result = await this.getSummaryWeeksTillPaid(data.weeks_till_paid);
+            data.weeks_till_paid.Summary = result;
+            // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+            //   getSettlementRange.weeks_till_paid
+            // );
+        }
+        if (data.commission_range) {
+            data.commission_range = await this.getSettlementRangeSummery(data.commission_range);
+        }
+        return data;
     }
     async getSummary(req, caseTemp) {
         if (!global_1.AIAuth.auth_token ||
@@ -1499,7 +1535,7 @@ class CaseUtil {
             financial_health_summary: req.body.financialHealthSummary,
         };
         try {
-            const response = await axios_1.default.post(url, data, {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     accept: 'application/json',
                     token: global_1.AIAuth.auth_token,
@@ -1609,34 +1645,53 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        if (getSettlementRange.settlement_range) {
-            getSettlementRange.settlement_range =
-                await this.getSettlementRangeSummery(getSettlementRange.settlement_range);
-        }
-        if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
-            getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-                await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_true_revenue);
-        }
-        if (getSettlementRange.percentage_settlement_over_weekly_budget) {
-            getSettlementRange.percentage_settlement_over_weekly_budget =
-                await this.getSettlementRangeSummery(getSettlementRange.percentage_settlement_over_weekly_budget);
-        }
-        if (getSettlementRange.new_default_risk_score) {
-            getSettlementRange.new_default_risk_score = await this.riskScoreMapping(getSettlementRange.new_default_risk_score);
-        }
-        if (getSettlementRange.weeks_till_paid) {
-            getSettlementRange.weeks_till_paid = await this.transformData(getSettlementRange.weeks_till_paid);
-            const result = await this.getSummaryWeeksTillPaid(getSettlementRange.weeks_till_paid);
-            getSettlementRange.weeks_till_paid.Summary = result;
-            // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-            //   getSettlementRange.weeks_till_paid
-            // );
-        }
+        let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
+        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
         if (getSettlementRange.commission_range) {
-            getSettlementRange.commission_range =
-                await this.getSettlementRangeSummery(getSettlementRange.commission_range);
+            console.log(getSettlementRange.commission_range);
+            console.log(getSettlementRange.weeks_till_paid);
         }
+        // if (getSettlementRange.settlement_range) {
+        //   getSettlementRange.settlement_range =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.settlement_range
+        //     );
+        // }
+        // if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
+        //   getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.percentage_settlement_over_weekly_true_revenue
+        //     );
+        // }
+        // if (getSettlementRange.percentage_settlement_over_weekly_budget) {
+        //   getSettlementRange.percentage_settlement_over_weekly_budget =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.percentage_settlement_over_weekly_budget
+        //     );
+        // }
+        // if (getSettlementRange.new_default_risk_score) {
+        //   getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
+        //     getSettlementRange.new_default_risk_score
+        //   );
+        // }
+        // if (getSettlementRange.weeks_till_paid) {
+        //   getSettlementRange.weeks_till_paid = await this.transformData(
+        //     getSettlementRange.weeks_till_paid
+        //   );
+        //   const result = await this.getSummaryWeeksTillPaid(
+        //     getSettlementRange.weeks_till_paid
+        //   );
+        //   getSettlementRange.weeks_till_paid.Summary = result;
+        //   // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+        //   //   getSettlementRange.weeks_till_paid
+        //   // );
+        // }
+        // if (getSettlementRange.commission_range) {
+        //   getSettlementRange.commission_range =
+        //     await this.getSettlementRangeSummery(
+        //       getSettlementRange.commission_range
+        //     );
+        // }
         if (typeof getSettlementRange !== 'string') {
             this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, { 'data.settlementRange': getSettlementRange });
             this.caseRepository.updateById(caseTemp._id, { strategyOne_3: true });
@@ -1721,7 +1776,7 @@ class CaseUtil {
     async storeAuthToken(username, partnerToken) {
         const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
         try {
-            const response = await axios_1.default.get(url);
+            const response = await axiosInstanceInterceptor_1.default.get(url);
             if (response && response.data) {
                 global_1.AIAuth.auth_token = response.data.auth_token;
                 global_1.AIAuth.expires_in = response.data.expires_in;
@@ -1743,22 +1798,26 @@ class CaseUtil {
             const getCreditor = await this.creditorRepository.getOne({
                 'businessInformation.companyName': body.creditor.businessInformation.companyName,
             });
-            if (body?.intervals) {
-                let weeklyBudgetObj;
-                if (body.feePayment && body.feePayment === 'toPay') {
-                    weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-                    if (!weeklyBudgetObj.status) {
-                        return [
-                            false,
-                            'Weekly budget is not fulfiling the payment plan of debtor',
-                        ];
-                    }
-                    await this.debtRepository.updateById(debtor._id, {
-                        totalCommission: weeklyBudgetObj.totalCommission,
-                        weeklyCommission: weeklyBudgetObj.commission,
-                    });
-                }
-            }
+            // if (body?.intervals) {
+            //   let weeklyBudgetObj: {
+            //     status: boolean;
+            //     commission: number;
+            //     totalCommission: number;
+            //   };
+            //   if (body.feePayment && body.feePayment === 'toPay') {
+            //     weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+            //     if (!weeklyBudgetObj.status) {
+            //       return [
+            //         false,
+            //         'Weekly budget is not fulfiling the payment plan of debtor',
+            //       ];
+            //     }
+            //     await this.debtRepository.updateById<IDebtor>(debtor._id, {
+            //       totalCommission: weeklyBudgetObj.totalCommission,
+            //       weeklyCommission: weeklyBudgetObj.commission,
+            //     });
+            //   }
+            // }
             // if (body.creditor.paymentToken && body.creditor.paymentType) {
             //   const customerVaultResponse = await this.createVault(body.paymentToken);
             //   if (!customerVaultResponse[0]) return customerVaultResponse;
@@ -1863,15 +1922,17 @@ class CaseUtil {
         return result;
     }
     async getSummaryWeeksTillPaid(weeksTillPaid) {
-        const summary = {
-            'Weeks remaining based on recommendation 1': { min: 0, max: 0 },
-            'Weeks remaining based on recommendation 2': { min: 0, max: 0 },
-            'Weeks remaining based on recommendation 3': { min: 0, max: 0 },
-        };
+        // const summary = {
+        //   'Weeks remaining based on recommendation 1': {min: 0, max: 0},
+        //   'Weeks remaining based on recommendation 2': {min: 0, max: 0},
+        //   'Weeks remaining based on recommendation 3': {min: 0, max: 0},
+        // };
+        const summary = {};
         if (Object.keys(weeksTillPaid).length) {
             Object.values(weeksTillPaid).forEach(company => {
                 for (const key of Object.keys(company)) {
                     if (company[key]) {
+                        summary[key] = { min: 0, max: 0 };
                         summary[key].min = Math.max(summary[key].min, company[key].min);
                         summary[key].max = Math.max(summary[key].max, company[key].max);
                     }
@@ -1894,8 +1955,8 @@ class CaseUtil {
                 for (const key of Object.keys(company)) {
                     if (company[key]) {
                         company[key] = {
-                            min: Math.min(...company[key]),
-                            max: Math.max(...company[key]),
+                            max: Math.min(...company[key]),
+                            min: Math.max(...company[key]),
                         };
                     }
                 }
