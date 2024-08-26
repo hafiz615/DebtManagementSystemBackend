@@ -39,40 +39,45 @@ class DebtorService {
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
-    const debtor = await this.debtorRepository.getAll<IDebtor>({
-      $or: [
-        {
-          'basicInformation.email': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+    const debtor = await this.debtorRepository.getAll<IDebtor>(
+      {
+        $or: [
+          {
+            'basicInformation.email': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.fullName': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+          {
+            'basicInformation.fullName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.SSID': {
-            $regex: new RegExp(text), // Case-insensitive match for SSID
+          {
+            'basicInformation.SSID': {
+              $regex: new RegExp(text), // Case-insensitive match for SSID
+            },
           },
-        },
-        {
-          'basicInformation.phone': {
-            $regex: new RegExp(text), // Case-insensitive match for phone
+          {
+            'basicInformation.phone': {
+              $regex: new RegExp(text), // Case-insensitive match for phone
+            },
           },
-        },
-        {
-          'businessInformation.EIN': {
-            $regex: new RegExp(text), // Case-insensitive match for phone
+          {
+            'businessInformation.EIN': {
+              $regex: new RegExp(text), // Case-insensitive match for phone
+            },
           },
-        },
-        {
-          'businessInformation.companyName': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for phone
+          {
+            'businessInformation.companyName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for phone
+            },
           },
-        },
-      ],
-    });
+        ],
+      },
+      undefined,
+      undefined,
+      {_id: -1}
+    );
     // const uploadUtil = new UploadUtil();
     // for (let doc of debtor[0].documents) {
     //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
@@ -524,8 +529,12 @@ class DebtorService {
   getAllDebtors = async (
     req: Request
   ): Promise<[boolean, Partial<IDebtor[]> | string]> => {
-    let debtors =
-      await this.debtorRepository.getAllWithoutPagination<IDebtor>();
+    let debtors = await this.debtorRepository.getAllWithoutPagination<IDebtor>(
+      {},
+      undefined,
+      undefined,
+      {_id: -1}
+    );
     if (!debtors.length) {
       return [false, constantsUtil.notFoundMessage('debtors')];
     }

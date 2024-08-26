@@ -17,30 +17,35 @@ class CreditorService {
   }
 
   async getCreditor(text: string): Promise<[boolean, ICreditor[] | string]> {
-    const creditor = await this.creditorRepository.getAll<ICreditor>({
-      $or: [
-        {
-          'basicInformation.email': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+    const creditor = await this.creditorRepository.getAll<ICreditor>(
+      {
+        $or: [
+          {
+            'basicInformation.email': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.fullName': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+          {
+            'basicInformation.fullName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.phone': {
-            $regex: new RegExp(text),
+          {
+            'basicInformation.phone': {
+              $regex: new RegExp(text),
+            },
           },
-        },
-        {
-          'businessInformation.companyName': {
-            $regex: new RegExp(text, 'i'),
+          {
+            'businessInformation.companyName': {
+              $regex: new RegExp(text, 'i'),
+            },
           },
-        },
-      ],
-    });
+        ],
+      },
+      undefined,
+      undefined,
+      {_id: -1}
+    );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
     }

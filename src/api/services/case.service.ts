@@ -28,6 +28,8 @@ import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
 import creditorUtil from '../../utils/creditor.util';
 import emailUtil from '../../utils/email.util';
+import {ICaseHistory} from '../../database/interfaces/caseHistory.interface';
+import {CaseHistoryRepository} from '../repository/caseHistory/caseHistory.repository';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -39,6 +41,7 @@ class CaseService {
   private chatSummaryRepository: ChatSummaryRepository;
   private userRepository: UserRepository;
   private strategyRepository: StrategyRepository;
+  private caseHistoryRepository: CaseHistoryRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -49,6 +52,7 @@ class CaseService {
     this.chatSummaryRepository = new ChatSummaryRepository();
     this.userRepository = new UserRepository();
     this.strategyRepository = new StrategyRepository();
+    this.caseHistoryRepository = new CaseHistoryRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -86,7 +90,7 @@ class CaseService {
       {isDeleted: false},
       undefined,
       undefined,
-      undefined,
+      {_id: -1},
       undefined,
       undefined,
       Number(req.query.page),
@@ -231,16 +235,26 @@ class CaseService {
         totalCommission: req.body.totalCommission,
         weeklyCommission: req.body.commission,
       });
+      findCase.intervals = req.body?.intervals?.length;
+      findCase.isExempt = req.body.isExempt;
+      const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+      if (!checkCasePayment[0]) return checkCasePayment;
     }
-    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
-    if (!checkCasePayment[0]) return checkCasePayment;
-    const caseUpdated = await this.caseRepository.updateById<ICase>(
+    let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
     );
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
+    await caseUtil.addInHistory(
+      {
+        time: new Date(commonUtil.getCurrentDate()),
+        action: 'Case Updated',
+        createdBy: reqTemp.name,
+      },
+      caseUpdated._id
+    );
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }
@@ -249,6 +263,12 @@ class CaseService {
     //   await caseUtil.createPayment(caseUpdated);
     // }
     const getDebtor = findCase.debtor;
+    caseUpdated = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
     const allStrategyFalse = await this.caseRepository.updateById<ICase>(
       caseUpdated._id,
       {
@@ -390,9 +410,14 @@ class CaseService {
       ['debtor']
     );
     const response =
-      await this.chatSummaryRepository.getAllWithoutPagination<IChatSummary>({
-        chatId: caseTemp.chatId,
-      });
+      await this.chatSummaryRepository.getAllWithoutPagination<IChatSummary>(
+        {
+          chatId: caseTemp.chatId,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
     if (!response.length) {
       return [false, constantsUtil.notFoundMessage('Summaries')];
     }
@@ -433,7 +458,7 @@ class CaseService {
           {creditor: {$in: req.body.creditorNames}},
           undefined,
           undefined,
-          undefined,
+          {_id: -1},
           ['creditor']
         );
       const creditors = cases.map(obj => ({
@@ -587,7 +612,7 @@ class CaseService {
             {creditor: {$in: req.body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
-            undefined,
+            {_id: -1},
             ['creditor']
           );
         getScores = await caseUtil.getScores(
@@ -629,22 +654,33 @@ class CaseService {
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-
+    let action = 'Add Notes';
+    const notes = req.body.notes;
     if (typeof findCase.notes === 'string') {
       result = await this.caseRepository.updateById<ICase>(req.params.id, {
         $set: {
           notes: [
             {
               userId: reqTemp.id,
-              value: req.body.notes,
+              value: notes,
               createdAt: commonUtil.getCurrentDate(),
             },
           ],
         },
       });
+      action = 'Update Notes';
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
+    await caseUtil.addInHistory(
+      {
+        action,
+        username: reqTemp.name,
+        content: notes,
+        time: new Date(commonUtil.getCurrentDate()),
+      },
+      findCase._id
+    );
     await emailUtil.sendEmailOrSmsByEvent(
       'case_details_update',
       result._id,
@@ -728,7 +764,7 @@ class CaseService {
             {creditor: {$in: req.body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
-            undefined,
+            {_id: -1},
             ['creditor']
           );
         getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
@@ -851,6 +887,17 @@ class CaseService {
       cc,
       buffer
     );
+  }
+
+  async caseHistory(req: Request) {
+    const findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    const result = await this.caseHistoryRepository.getOne<ICaseHistory>({
+      caseId: req.params.id,
+    });
+    return [true, result?.caseHistory];
   }
 }
 

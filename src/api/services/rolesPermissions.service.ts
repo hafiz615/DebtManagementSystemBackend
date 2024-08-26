@@ -58,7 +58,10 @@ class RolesPermissionsService {
     }
     const result =
       await this.rolesPermissionsRepository.getAllWithoutPagination<IRolesPermissions>(
-        filter
+        filter,
+        undefined,
+        undefined,
+        {_id: -1}
       );
     if (!result.length) {
       return [false, constantsUtil.notFoundMessage('roles')];

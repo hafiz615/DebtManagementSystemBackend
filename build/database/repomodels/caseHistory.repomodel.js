@@ -3,9 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = void 0;
+exports.CaseHistory = void 0;
 const common_util_1 = __importDefault(require("../../utils/common.util"));
-class User {
+class CaseHistory {
     constructor() {
         this.caseId = '';
         this.caseHistory = Array();
@@ -13,5 +13,5 @@ class User {
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
 }
-exports.User = User;
+exports.CaseHistory = CaseHistory;
 //# sourceMappingURL=caseHistory.repomodel.js.map

@@ -18,7 +18,7 @@ const strategy_repository_1 = require("../repository/strategy/strategy.repositor
 class DebtorService {
     constructor() {
         this.getAllDebtors = async (req) => {
-            let debtors = await this.debtorRepository.getAllWithoutPagination();
+            let debtors = await this.debtorRepository.getAllWithoutPagination({}, undefined, undefined, { _id: -1 });
             if (!debtors.length) {
                 return [false, constants_util_2.default.notFoundMessage('debtors')];
             }
@@ -100,7 +100,7 @@ class DebtorService {
                     },
                 },
             ],
-        });
+        }, undefined, undefined, { _id: -1 });
         // const uploadUtil = new UploadUtil();
         // for (let doc of debtor[0].documents) {
         //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);

@@ -34,6 +34,8 @@ import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
 import FormData from 'form-data';
 import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
+import {CaseHistoryRepository} from '../api/repository/caseHistory/caseHistory.repository';
+import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -46,7 +48,7 @@ class CaseUtil {
   private paymentLoggingRepository: PaymentLoggingRepository;
   private uploadUtil: UploadUtil;
   private strategyRepository: StrategyRepository;
-
+  private caseHistoryRepository: CaseHistoryRepository;
   constructor() {
     this.contactRepository = new ContactRepository();
     this.debtRepository = new DebtorRepository();
@@ -58,6 +60,7 @@ class CaseUtil {
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.uploadUtil = new UploadUtil();
     this.strategyRepository = new StrategyRepository();
+    this.caseHistoryRepository = new CaseHistoryRepository();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -251,7 +254,7 @@ class CaseUtil {
       {debtor: debtorId, isDeleted: false},
       'totalDebt caseCode status remaining contractDetails',
       undefined,
-      undefined,
+      {_id: -1},
       {
         path: 'creditor',
         select: [
@@ -477,7 +480,7 @@ class CaseUtil {
     }
   }
   async checkCasePayment(body: any): Promise<[boolean, string]> {
-    let isExempt = body.isExempt ?? true;
+    let isExempt = body?.isExempt ?? true;
     if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
@@ -495,6 +498,9 @@ class CaseUtil {
           amount += multipliedAmount;
         }
       }
+      console.log(amount, 'amonuttttt');
+      console.log(body.remaining, 'body.remaininggg');
+
       if (amount !== body.remaining) {
         return [
           false,
@@ -1891,7 +1897,7 @@ class CaseUtil {
       caseTemp,
       creditors
     );
-    if (getScores.Scores['Weekly Budget']) {
+    if (typeof getScores !== 'string') {
       const sum = await this.sumOfWeeklyBudgetValues(
         getScores.Scores['Weekly Budget']
       );
@@ -1913,7 +1919,7 @@ class CaseUtil {
       caseTemp,
       creditors
     );
-    if (getScores.Scores['Weekly Budget']) {
+    if (typeof getScores !== 'string') {
       const sum = await this.sumOfWeeklyBudgetValues(
         getScores.Scores['Weekly Budget']
       );
@@ -2061,7 +2067,6 @@ class CaseUtil {
         },
       });
       if (!response.data.error) {
-        console.log('hehehehehehehe');
         this.strategyRepository.upsert(
           {caseId: caseTemp._id, name: 'strategy_one'},
           {'data.getScoresAIForAllCreditors': response.data}
@@ -2176,10 +2181,18 @@ class CaseUtil {
               accountTitleMapping: accountTitles,
             });
           }
+          await this.addInHistory(
+            {
+              time: new Date(commonUtil.getCurrentDate()),
+              action: 'Case Created',
+              createdBy: name,
+            },
+            caseCreated._id
+          );
         }
-        if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-          await this.createPayment(caseCreated);
-        }
+        // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+        //   await this.createPayment(caseCreated);
+        // }
       }
     }
     if (!createdCases.length) return [false, createdCases];
@@ -2292,6 +2305,17 @@ class CaseUtil {
         },
       },
     });
+  }
+
+  async addInHistory(history: any, id: string) {
+    console.log(history);
+    const res = await this.caseHistoryRepository.upsert<ICaseHistory>(
+      {caseId: id},
+      {
+        $push: {caseHistory: {$each: [history], $position: 0}},
+      }
+    );
+    console.log(res);
   }
 }
 export default new CaseUtil();

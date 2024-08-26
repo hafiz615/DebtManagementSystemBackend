@@ -29,6 +29,7 @@ const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInter
 const dotenv_1 = __importDefault(require("dotenv"));
 const form_data_1 = __importDefault(require("form-data"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
+const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -42,6 +43,7 @@ class CaseUtil {
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.uploadUtil = new upload_util_1.default();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
+        this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
     }
     async createContacts(data) {
         const validatedContacts = [];
@@ -191,7 +193,7 @@ class CaseUtil {
         }));
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails', undefined, undefined, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',
@@ -397,7 +399,7 @@ class CaseUtil {
         }
     }
     async checkCasePayment(body) {
-        let isExempt = body.isExempt ?? true;
+        let isExempt = body?.isExempt ?? true;
         if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
@@ -415,6 +417,8 @@ class CaseUtil {
                     amount += multipliedAmount;
                 }
             }
+            console.log(amount, 'amonuttttt');
+            console.log(body.remaining, 'body.remaininggg');
             if (amount !== body.remaining) {
                 return [
                     false,
@@ -1643,7 +1647,7 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAI(comm, global_1.AIAuth.auth_token, caseTemp, creditors);
-        if (getScores.Scores['Weekly Budget']) {
+        if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
         }
@@ -1655,7 +1659,7 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAIForAllCreditors(comm, global_1.AIAuth.auth_token, caseTemp, creditors);
-        if (getScores.Scores['Weekly Budget']) {
+        if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
         }
@@ -1777,7 +1781,6 @@ class CaseUtil {
                 },
             });
             if (!response.data.error) {
-                console.log('hehehehehehehe');
                 this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, { 'data.getScoresAIForAllCreditors': response.data });
                 this.caseRepository.updateById(caseTemp._id, { strategyOne_2: true });
             }
@@ -1884,10 +1887,15 @@ class CaseUtil {
                             accountTitleMapping: accountTitles,
                         });
                     }
+                    await this.addInHistory({
+                        time: new Date(common_util_1.default.getCurrentDate()),
+                        action: 'Case Created',
+                        createdBy: name,
+                    }, caseCreated._id);
                 }
-                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-                    await this.createPayment(caseCreated);
-                }
+                // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+                //   await this.createPayment(caseCreated);
+                // }
             }
         }
         if (!createdCases.length)
@@ -1986,6 +1994,13 @@ class CaseUtil {
                 },
             },
         });
+    }
+    async addInHistory(history, id) {
+        console.log(history);
+        const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
+            $push: { caseHistory: { $each: [history], $position: 0 } },
+        });
+        console.log(res);
     }
 }
 exports.default = new CaseUtil();

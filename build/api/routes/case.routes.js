@@ -33,5 +33,6 @@ authorize_middleware_1.default.validateAuth, case_validate_1.default.validateAdd
 router.post('/getScoresSettlementByCommPercentage/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementByCommPercentage);
 router.post('/getWeeklyAndTotalCommission/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getWeeklyAndTotalCommission);
 router.post('/sendSettlementEmail', authorize_middleware_1.default.validateAuth, case_validate_1.default.sendSettlementEmail, case_controller_1.default.sendSettlementEmail);
+router.get('/caseHistory/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.caseHistory);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

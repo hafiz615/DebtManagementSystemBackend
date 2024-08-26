@@ -108,4 +108,10 @@ router.post(
   caseValidate.sendSettlementEmail,
   caseController.sendSettlementEmail
 );
+
+router.get(
+  '/caseHistory/:id',
+  authorize.validateAuth,
+  caseController.caseHistory
+);
 export default router;

@@ -1,5 +1,5 @@
 import commonUtil from '../../utils/common.util';
-export class User {
+export class CaseHistory {
   caseId = '';
   caseHistory = Array<any>();
   createdAt = commonUtil.getCurrentDate();

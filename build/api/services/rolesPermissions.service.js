@@ -44,7 +44,7 @@ class RolesPermissionsService {
                 filter['name'] = { $nin: ['Super User'] };
             }
         }
-        const result = await this.rolesPermissionsRepository.getAllWithoutPagination(filter);
+        const result = await this.rolesPermissionsRepository.getAllWithoutPagination(filter, undefined, undefined, { _id: -1 });
         if (!result.length) {
             return [false, constants_util_1.default.notFoundMessage('roles')];
         }

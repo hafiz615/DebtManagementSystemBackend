@@ -16,6 +16,8 @@ const handlebars_1 = __importDefault(require("handlebars"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const twilio_1 = __importDefault(require("twilio"));
 const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
+const case_util_1 = __importDefault(require("./case.util"));
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -75,9 +77,20 @@ class EmailUtil {
                     const html = compiledHtml(nestedObject);
                     const emails = await this.getEmail(caseTemp, userPermission.role);
                     if (emails) {
-                        await this.sendEmail(emails, template.from
+                        const from = template.from
                             ? template.from
-                            : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
+                            : 'ralph@firstchoicedebtsolutions.org';
+                        await this.sendEmail(emails, from, template.subject, html);
+                        if (caseId) {
+                            const time = new Date(common_util_1.default.getCurrentDate());
+                            await case_util_1.default.addInHistory({
+                                from: from,
+                                to: emails,
+                                content: template.content,
+                                time: time,
+                                action: 'EMAIL',
+                            }, caseId);
+                        }
                     }
                 }
                 if (userPermission.sms_allowed && userPermission.sms_template) {
@@ -94,13 +107,26 @@ class EmailUtil {
                     const compiledContent = handlebars_1.default.compile(template.content);
                     const text = compiledContent(nestedObject);
                     let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
-                    if (userPermission.role === 'Admin') {
-                        for (const phone of phoneNumbers) {
-                            await this.sendSms(text, phone);
+                    if (phoneNumbers) {
+                        const fromNumber = process.env.twilioFromNumber;
+                        if (userPermission.role === 'Admin') {
+                            for (const phone of phoneNumbers) {
+                                await this.sendSms(text, phone, fromNumber);
+                            }
                         }
-                    }
-                    else {
-                        await this.sendSms(text, phoneNumbers);
+                        else {
+                            await this.sendSms(text, phoneNumbers, fromNumber);
+                        }
+                        if (caseId) {
+                            const time = new Date(common_util_1.default.getCurrentDate());
+                            await case_util_1.default.addInHistory({
+                                from: fromNumber,
+                                to: phoneNumbers,
+                                content: template.content,
+                                time: time,
+                                action: 'SMS',
+                            }, caseId);
+                        }
                     }
                 }
             }
@@ -310,6 +336,7 @@ class EmailUtil {
                 },
             ];
         }
+        await case_util_1.default;
         try {
             await mail_1.default.send(msg);
             return [true, 'Email sent successfully'];
@@ -319,11 +346,11 @@ class EmailUtil {
             return [false, error.response.body.errors[0].message];
         }
     }
-    async sendSms(body, phone) {
+    async sendSms(body, phone, from) {
         try {
             const result = await this.client.messages.create({
                 body: body,
-                from: process.env.twilioFromNumber, //the phone number provided by Twillio
+                from: from, //the phone number provided by Twillio
                 to: phone, // your own phone number
             });
         }

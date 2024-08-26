@@ -126,7 +126,7 @@ class SettingsService {
         const target = String(req.query.target);
         const customFields = await this.customFieldsRepository.getAllWithoutPagination({
             $or: [{ target: target }, { shared: true }],
-        });
+        }, undefined, undefined, { _id: -1 });
         if (!customFields.length) {
             return [false, constants_util_1.default.notFoundMessage('Custom fields')];
         }
@@ -190,7 +190,7 @@ class SettingsService {
         let findCustomFieldInCase = await this.targetCFRepository.getAllWithoutPagination({
             customFields: { $elemMatch: { name: findCustomField.name } },
         });
-        if (findCustomFieldInCase) {
+        if (findCustomFieldInCase.length) {
             return [
                 false,
                 'The custom field is currently assigned to a case and cannot be deleted. Please delete it from all cases before deleting',
