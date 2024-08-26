@@ -45,7 +45,6 @@ class StatusValidate {
             return next();
         }
         else {
-            console.log(error.details[0]);
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));

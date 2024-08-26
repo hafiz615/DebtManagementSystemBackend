@@ -169,9 +169,14 @@ class SettingsService {
     if (!req.query.target) return [false, 'Target is missing'];
     const target = String(req.query.target);
     const customFields =
-      await this.customFieldsRepository.getAllWithoutPagination<ICustomField>({
-        $or: [{target: target}, {shared: true}],
-      });
+      await this.customFieldsRepository.getAllWithoutPagination<ICustomField>(
+        {
+          $or: [{target: target}, {shared: true}],
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
     if (!customFields.length) {
       return [false, constants.notFoundMessage('Custom fields')];
     }
@@ -245,7 +250,6 @@ class SettingsService {
           $pull: {customFields: req.body},
         }
       );
-    console.log(targetCF);
     if (!targetCF) {
       return [false, constants.notFoundMessage('custom field')];
     }
@@ -264,7 +268,7 @@ class SettingsService {
           customFields: {$elemMatch: {name: findCustomField.name}},
         }
       );
-    if (findCustomFieldInCase) {
+    if (findCustomFieldInCase.length) {
       return [
         false,
         'The custom field is currently assigned to a case and cannot be deleted. Please delete it from all cases before deleting',

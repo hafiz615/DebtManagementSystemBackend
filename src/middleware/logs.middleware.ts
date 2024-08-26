@@ -13,40 +13,43 @@ const logMiddleware = (
 
   // Capture the original send function
   const originalSend = res.send;
-
+  let logCreated = false;
   // Override the send function to capture the response payload
   res.send = function (body: any): Response {
-    const end = new Date(commonUtil.getCurrentDate()).getTime();
-    const timeTaken = end - start;
+    if (!logCreated) {
+      const end = new Date(commonUtil.getCurrentDate()).getTime();
+      const timeTaken = end - start;
 
-    // Convert response body to JSON if it is not already an object
-    let responsePayload;
-    try {
-      responsePayload = JSON.parse(body);
-    } catch (error) {
-      responsePayload = body;
-    }
-    const store = asyncLocalStorage.getStore();
-    let traceId = '';
-    if (store) {
-      traceId = store.get('traceId');
-    }
-    const logEntry = new Log({
-      traceId: traceId,
-      ip: req.ip,
-      url: req.originalUrl,
-      method: req.method,
-      requestPayload: req.body,
-      responsePayload,
-      responseStatus: res.statusCode,
-      userId: (req as any).id, // Assuming userId is attached to req object
-      timeTaken,
-      calledAt: start,
-    });
+      // Convert response body to JSON if it is not already an object
+      let responsePayload;
+      try {
+        responsePayload = JSON.parse(body);
+      } catch (error) {
+        responsePayload = body;
+      }
+      const store = asyncLocalStorage.getStore();
+      let traceId = '';
+      if (store) {
+        traceId = store.get('traceId');
+      }
+      const logEntry = new Log({
+        traceId: traceId,
+        ip: req.ip,
+        url: req.originalUrl,
+        method: req.method,
+        requestPayload: req.body,
+        responsePayload,
+        responseStatus: res.statusCode,
+        userId: (req as any).id, // Assuming userId is attached to req object
+        timeTaken,
+        calledAt: start,
+      });
 
-    logEntry.save().catch(err => {
-      console.error('Error saving log entry', err);
-    });
+      logEntry.save().catch(err => {
+        console.error('Error saving log entry', err);
+      });
+      logCreated = true;
+    }
 
     // Call the original send function with the response data and return the response object
     return originalSend.call(this, body);

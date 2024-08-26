@@ -28,6 +28,8 @@ import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
 import creditorUtil from '../../utils/creditor.util';
 import emailUtil from '../../utils/email.util';
+import {ICaseHistory} from '../../database/interfaces/caseHistory.interface';
+import {CaseHistoryRepository} from '../repository/caseHistory/caseHistory.repository';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -39,6 +41,7 @@ class CaseService {
   private chatSummaryRepository: ChatSummaryRepository;
   private userRepository: UserRepository;
   private strategyRepository: StrategyRepository;
+  private caseHistoryRepository: CaseHistoryRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -49,6 +52,7 @@ class CaseService {
     this.chatSummaryRepository = new ChatSummaryRepository();
     this.userRepository = new UserRepository();
     this.strategyRepository = new StrategyRepository();
+    this.caseHistoryRepository = new CaseHistoryRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -86,7 +90,7 @@ class CaseService {
       {isDeleted: false},
       undefined,
       undefined,
-      undefined,
+      {_id: -1},
       undefined,
       undefined,
       Number(req.query.page),
@@ -231,16 +235,26 @@ class CaseService {
         totalCommission: req.body.totalCommission,
         weeklyCommission: req.body.commission,
       });
+      findCase.intervals = req.body?.intervals?.length;
+      findCase.isExempt = req.body.isExempt;
+      const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+      if (!checkCasePayment[0]) return checkCasePayment;
     }
-    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
-    if (!checkCasePayment[0]) return checkCasePayment;
-    const caseUpdated = await this.caseRepository.updateById<ICase>(
+    let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
     );
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
+      },
+      caseUpdated._id
+    );
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }
@@ -249,6 +263,12 @@ class CaseService {
     //   await caseUtil.createPayment(caseUpdated);
     // }
     const getDebtor = findCase.debtor;
+    caseUpdated = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
     const allStrategyFalse = await this.caseRepository.updateById<ICase>(
       caseUpdated._id,
       {
@@ -308,39 +328,27 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-
+    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    // caseUtil.addInHistory(
+    //   {
+    //     time: new Date(commonUtil.getCurrentDate()),
+    //     action: 'Case Updated',
+    //     updatedBy: reqTemp.name,
+    //   },
+    //   caseUpdated._id
+    // );
     return [true, caseUpdated];
   };
 
   async deleteCase(req: Request): Promise<[boolean, boolean | string]> {
-    // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    if (caseTemp?.intervals?.length) {
+      return [false, constantsUtil.failureDeleteMessage('case with payments')];
+    }
     const result = await this.caseRepository.updateById<ICase>(req.params.id, {
       isDeleted: true,
     });
-    await this.paymentRepository.updateMany<IPayment>(
-      {caseId: req.params.id},
-      {isDeleted: true}
-    );
-    let weeklyBudgetObj: {
-      status: boolean;
-      commission: number;
-      totalCommission: number;
-    };
-    weeklyBudgetObj = await caseUtil.getUpdatedCommAndTotalComm(
-      String(result.debtor)
-    );
-    if (!weeklyBudgetObj.status) {
-      return [
-        false,
-        'Weekly budget is not fulfiling the payment plan of debtor',
-      ];
-    }
-    await this.debtorRepository.updateById<IDebtor>(String(result.debtor), {
-      totalCommission: weeklyBudgetObj.totalCommission,
-      weeklyCommission: weeklyBudgetObj.commission,
-    });
-
     if (!result) {
       return [false, constantsUtil.failureDeleteMessage('case')];
     }
@@ -390,9 +398,14 @@ class CaseService {
       ['debtor']
     );
     const response =
-      await this.chatSummaryRepository.getAllWithoutPagination<IChatSummary>({
-        chatId: caseTemp.chatId,
-      });
+      await this.chatSummaryRepository.getAllWithoutPagination<IChatSummary>(
+        {
+          chatId: caseTemp.chatId,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
     if (!response.length) {
       return [false, constantsUtil.notFoundMessage('Summaries')];
     }
@@ -433,7 +446,7 @@ class CaseService {
           {creditor: {$in: req.body.creditorNames}},
           undefined,
           undefined,
-          undefined,
+          {_id: -1},
           ['creditor']
         );
       const creditors = cases.map(obj => ({
@@ -521,6 +534,8 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    data['creditorsContractDetailsSum'] =
+      await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
       caseId: String(caseTemp._id),
       name: 'strategy_one',
@@ -585,7 +600,7 @@ class CaseService {
             {creditor: {$in: req.body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
-            undefined,
+            {_id: -1},
             ['creditor']
           );
         getScores = await caseUtil.getScores(
@@ -627,22 +642,33 @@ class CaseService {
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-
+    let Action = 'Add Notes';
+    const notes = req.body.notes;
     if (typeof findCase.notes === 'string') {
       result = await this.caseRepository.updateById<ICase>(req.params.id, {
         $set: {
           notes: [
             {
               userId: reqTemp.id,
-              value: req.body.notes,
+              value: notes,
               createdAt: commonUtil.getCurrentDate(),
             },
           ],
         },
       });
+      Action = 'Update Notes';
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
+    await caseUtil.addInHistory(
+      {
+        Action,
+        Username: reqTemp.name,
+        Content: notes,
+        Time: new Date(commonUtil.getCurrentDate()),
+      },
+      findCase._id
+    );
     await emailUtil.sendEmailOrSmsByEvent(
       'case_details_update',
       result._id,
@@ -680,6 +706,8 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    data['creditorsContractDetailsSum'] =
+      await this.calculateContractDetailsSum(creditors);
     data['creditors'] = creditors;
     debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
       commissionPercentage: comm,
@@ -724,7 +752,7 @@ class CaseService {
             {creditor: {$in: req.body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
-            undefined,
+            {_id: -1},
             ['creditor']
           );
         getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
@@ -739,6 +767,20 @@ class CaseService {
     data['settlementRange'] = settlementRange;
     return [true, data];
   };
+
+  async calculateContractDetailsSum(creditors: any) {
+    let payableAmount = 0;
+    let loanAmount = 0;
+    for (const creditor of creditors) {
+      payableAmount += caseUtil.getCleanAmount(
+        creditor?.contractDetails?.payable_amount
+      );
+      loanAmount += caseUtil.getCleanAmount(
+        creditor?.contractDetails?.loan_amount
+      );
+    }
+    return {payableAmount, loanAmount};
+  }
   async sendCaseEmails(
     userId: string,
     previousCase: ICase,
@@ -823,6 +865,7 @@ class CaseService {
   async sendSettlementEmail(req: Request) {
     const {from, sendTo, subject, content, cc} = req.body;
     const buffer = await emailUtil.generatePdfFromHtml(content);
+    // const buffer = Buffer.from(content);
     return await emailUtil.sendEmail(
       sendTo,
       from,
@@ -831,6 +874,17 @@ class CaseService {
       cc,
       buffer
     );
+  }
+
+  async caseHistory(req: Request) {
+    const findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    const result = await this.caseHistoryRepository.getOne<ICaseHistory>({
+      caseId: req.params.id,
+    });
+    return [true, result?.caseHistory ?? []];
   }
 }
 

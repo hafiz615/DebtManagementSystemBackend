@@ -37,7 +37,12 @@ class PipelineStatusService {
     req: Request
   ): Promise<[boolean, IPipelineStatus[] | string]> {
     const result =
-      await this.pipelineStatusRepository.getAllWithoutPagination<IPipelineStatus>();
+      await this.pipelineStatusRepository.getAllWithoutPagination<IPipelineStatus>(
+        {},
+        undefined,
+        undefined,
+        {_id: -1}
+      );
     if (!result.length) {
       return [false, constantsUtil.notFoundMessage('pipelines')];
     }
@@ -196,7 +201,7 @@ class PipelineStatusService {
         {isDeleted: false},
         undefined,
         undefined,
-        undefined,
+        {_id: -1},
         ['debtor', 'creditor']
       );
     if (!pipeline || !cases.length) {

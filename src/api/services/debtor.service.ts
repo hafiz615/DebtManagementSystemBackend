@@ -20,6 +20,7 @@ import uploadUtil from '../../utils/upload.util';
 import UploadUtil from '../../utils/upload.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
+import emailUtil from '../../utils/email.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -39,40 +40,45 @@ class DebtorService {
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
-    const debtor = await this.debtorRepository.getAll<IDebtor>({
-      $or: [
-        {
-          'basicInformation.email': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+    const debtor = await this.debtorRepository.getAll<IDebtor>(
+      {
+        $or: [
+          {
+            'basicInformation.email': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.fullName': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+          {
+            'basicInformation.fullName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.SSID': {
-            $regex: new RegExp(text), // Case-insensitive match for SSID
+          {
+            'basicInformation.SSID': {
+              $regex: new RegExp(text), // Case-insensitive match for SSID
+            },
           },
-        },
-        {
-          'basicInformation.phone': {
-            $regex: new RegExp(text), // Case-insensitive match for phone
+          {
+            'basicInformation.phone': {
+              $regex: new RegExp(text), // Case-insensitive match for phone
+            },
           },
-        },
-        {
-          'businessInformation.EIN': {
-            $regex: new RegExp(text), // Case-insensitive match for phone
+          {
+            'businessInformation.EIN': {
+              $regex: new RegExp(text), // Case-insensitive match for phone
+            },
           },
-        },
-        {
-          'businessInformation.companyName': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for phone
+          {
+            'businessInformation.companyName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for phone
+            },
           },
-        },
-      ],
-    });
+        ],
+      },
+      undefined,
+      undefined,
+      {_id: -1}
+    );
     // const uploadUtil = new UploadUtil();
     // for (let doc of debtor[0].documents) {
     //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
@@ -403,6 +409,9 @@ class DebtorService {
       undefined,
       {path: 'caseId', populate: [{path: 'debtor'}, {path: 'creditor'}]}
     );
+    if (!payment) {
+      return [false, constantsUtil.notFoundMessage('payment')];
+    }
     let response: any;
     if (payment.caseId.debtor.paymentType === 'cc') {
       response = await this.paymentService.authorizeCreditCard(
@@ -416,17 +425,27 @@ class DebtorService {
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
-      console.log(transactionId, 'transactionId');
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
       updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_authorization',
+        '',
+        paymentId,
+        ''
+      );
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
       // paymentLogging.failReason = responseText;
-      console.log('send email through template');
+      await emailUtil.sendEmailOrSmsByEvent(
+        'failed_authorization',
+        '',
+        paymentId,
+        ''
+      );
     }
     if (Object.keys(updateObjPayment).length) {
       const newPayment = new PaymentLogging();
@@ -461,6 +480,9 @@ class DebtorService {
       undefined,
       {path: 'caseId', populate: [{path: 'debtor'}, {path: 'creditor'}]}
     );
+    if (!payment) {
+      return [false, constantsUtil.notFoundMessage('payment')];
+    }
     let response: any;
     if (payment.caseId.debtor.paymentType === 'cc') {
       response = await this.paymentService.captureCreditCard(
@@ -489,11 +511,22 @@ class DebtorService {
       }
       // paymentLogging.successReason = responseText;
       result = true;
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_payment',
+        '',
+        paymentId,
+        ''
+      );
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
       // paymentLogging.failReason = responseText;
 
-      console.log('send email'); // add code
+      await emailUtil.sendEmailOrSmsByEvent(
+        'failed_payment',
+        '',
+        paymentId,
+        ''
+      );
     }
     if (Object.keys(updateObjPayment).length) {
       const newPayment = new PaymentLogging();
@@ -524,8 +557,12 @@ class DebtorService {
   getAllDebtors = async (
     req: Request
   ): Promise<[boolean, Partial<IDebtor[]> | string]> => {
-    let debtors =
-      await this.debtorRepository.getAllWithoutPagination<IDebtor>();
+    let debtors = await this.debtorRepository.getAllWithoutPagination<IDebtor>(
+      {},
+      undefined,
+      undefined,
+      {_id: -1}
+    );
     if (!debtors.length) {
       return [false, constantsUtil.notFoundMessage('debtors')];
     }

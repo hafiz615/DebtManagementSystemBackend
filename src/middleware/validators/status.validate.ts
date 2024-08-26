@@ -50,7 +50,6 @@ class StatusValidate {
     if (!error) {
       return next();
     } else {
-      console.log(error.details[0]);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(

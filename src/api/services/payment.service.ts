@@ -7,6 +7,7 @@ import paymentUtil from '../../utils/payment.util';
 import {CaseRepository} from '../repository/case/case.repository';
 import {PaymentRepository} from '../repository/payment/payment.repository';
 import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstanceInterceptor';
 
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -220,7 +221,7 @@ class PaymentService {
     };
 
     try {
-      const response = await axios.get(url, {params});
+      const response = await axiosInstance.get(url, {params});
       console.log('Response:', response.data);
       return response.data;
     } catch (error) {
@@ -251,7 +252,7 @@ class PaymentService {
     };
 
     try {
-      const response = await axios.get(url, {params});
+      const response = await axiosInstance.get(url, {params});
       console.log('Response:', response.data);
       return response.data;
     } catch (error) {
@@ -284,7 +285,7 @@ class PaymentService {
     };
 
     try {
-      const response = await axios.get(url, {params});
+      const response = await axiosInstance.get(url, {params});
       console.log('Response:', response.data);
       return response.data;
     } catch (error) {

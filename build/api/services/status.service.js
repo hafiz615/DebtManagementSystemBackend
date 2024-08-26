@@ -37,7 +37,7 @@ class StatusService {
         if (duplicateStatus && duplicateStatus.status) {
             return [false, constants_util_1.default.Messages.STATUS_CASE_EXIST];
         }
-        const result = await this.statusRepository.updateById(statusFind._id, { $addToSet: { status: capitalizeStatus } });
+        const result = await this.statusRepository.updateById(statusFind._id, { $push: { status: { $each: [capitalizeStatus], $position: 0 } } });
         if (!result) {
             return [false, constants_util_1.default.notFoundMessage('status')];
         }

@@ -46,7 +46,7 @@ class StatusService {
     }
     const result = await this.statusRepository.updateById<IStatus>(
       statusFind._id,
-      {$addToSet: {status: capitalizeStatus}}
+      {$push: {status: {$each: [capitalizeStatus], $position: 0}}}
     );
     if (!result) {
       return [false, constantsUtil.notFoundMessage('status')];

@@ -21,7 +21,6 @@ const constants_util_1 = __importDefault(require("./constants.util"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const paymentLogging_repository_1 = require("../api/repository/paymentLogging/paymentLogging.repository");
 const uuid_1 = require("uuid");
-const axios_1 = __importDefault(require("axios"));
 const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
@@ -29,6 +28,7 @@ const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInter
 const dotenv_1 = __importDefault(require("dotenv"));
 const form_data_1 = __importDefault(require("form-data"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
+const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -42,6 +42,7 @@ class CaseUtil {
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.uploadUtil = new upload_util_1.default();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
+        this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
     }
     async createContacts(data) {
         const validatedContacts = [];
@@ -191,7 +192,7 @@ class CaseUtil {
         }));
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails', undefined, undefined, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',
@@ -397,7 +398,7 @@ class CaseUtil {
         }
     }
     async checkCasePayment(body) {
-        let isExempt = body.isExempt ?? true;
+        let isExempt = body?.isExempt ?? true;
         if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
@@ -415,6 +416,8 @@ class CaseUtil {
                     amount += multipliedAmount;
                 }
             }
+            console.log(amount, 'amonuttttt');
+            console.log(body.remaining, 'body.remaininggg');
             if (amount !== body.remaining) {
                 return [
                     false,
@@ -1513,16 +1516,29 @@ class CaseUtil {
         }
         if (data.weeks_till_paid) {
             data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
-            const result = await this.getSummaryWeeksTillPaid(data.weeks_till_paid);
+            const result = await this.getSummaryInverse(data.weeks_till_paid);
             data.weeks_till_paid.Summary = result;
             // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
             //   getSettlementRange.weeks_till_paid
             // );
         }
         if (data.commission_range) {
-            data.commission_range = await this.getSettlementRangeSummery(data.commission_range);
+            // data.commission_range = await this.getSettlementRangeSummery(
+            //   data.commission_range
+            // );
+            data.commission_range = await this.transformData(data.commission_range);
+            const result = await this.getSummaryInverse(data.commission_range);
+            data.commission_range.Summary = result;
+        }
+        if (data.weekly_budget) {
+            const sum = await this.sumOfWeeklyBudgetValues(data.weekly_budget);
+            data.weekly_budget.Summary = sum;
         }
         return data;
+    }
+    async sumOfWeeklyBudgetValues(weekly_budget) {
+        const total = Object.values(weekly_budget).reduce((sum, value) => sum + value, 0);
+        return total;
     }
     async getSummary(req, caseTemp) {
         if (!global_1.AIAuth.auth_token ||
@@ -1554,7 +1570,7 @@ class CaseUtil {
     async getAIToken(username, partnerToken) {
         const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
         try {
-            const response = await axios_1.default.get(url);
+            const response = await axiosInstanceInterceptor_1.default.get(url);
             return response.data.error ? [] : response.data;
         }
         catch (error) {
@@ -1630,6 +1646,10 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAI(comm, global_1.AIAuth.auth_token, caseTemp, creditors);
+        if (typeof getScores !== 'string') {
+            const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
+            getScores.Scores['Weekly Budget'].Summary = sum;
+        }
         return getScores;
     }
     async getScoresForAllCreditors(caseTemp, creditors, comm) {
@@ -1638,6 +1658,10 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getScores = await this.getScoresAIForAllCreditors(comm, global_1.AIAuth.auth_token, caseTemp, creditors);
+        if (typeof getScores !== 'string') {
+            const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
+            getScores.Scores['Weekly Budget'].Summary = sum;
+        }
         return getScores;
     }
     async getSettlementRange(caseTemp) {
@@ -1647,10 +1671,6 @@ class CaseUtil {
         }
         let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
         getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-        if (getSettlementRange.commission_range) {
-            console.log(getSettlementRange.commission_range);
-            console.log(getSettlementRange.weeks_till_paid);
-        }
         // if (getSettlementRange.settlement_range) {
         //   getSettlementRange.settlement_range =
         //     await this.getSettlementRangeSummery(
@@ -1760,7 +1780,6 @@ class CaseUtil {
                 },
             });
             if (!response.data.error) {
-                console.log('hehehehehehehe');
                 this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, { 'data.getScoresAIForAllCreditors': response.data });
                 this.caseRepository.updateById(caseTemp._id, { strategyOne_2: true });
             }
@@ -1867,10 +1886,15 @@ class CaseUtil {
                             accountTitleMapping: accountTitles,
                         });
                     }
+                    await this.addInHistory({
+                        Time: new Date(common_util_1.default.getCurrentDate()),
+                        Action: 'Case Created',
+                        'Created By': name,
+                    }, caseCreated._id);
                 }
-                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-                    await this.createPayment(caseCreated);
-                }
+                // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+                //   await this.createPayment(caseCreated);
+                // }
             }
         }
         if (!createdCases.length)
@@ -1884,7 +1908,7 @@ class CaseUtil {
             security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
             payment_token: paymentToken,
         };
-        const response = await axios_1.default.get(url, { params });
+        const response = await axiosInstanceInterceptor_1.default.get(url, { params });
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
@@ -1921,12 +1945,7 @@ class CaseUtil {
         }
         return result;
     }
-    async getSummaryWeeksTillPaid(weeksTillPaid) {
-        // const summary = {
-        //   'Weeks remaining based on recommendation 1': {min: 0, max: 0},
-        //   'Weeks remaining based on recommendation 2': {min: 0, max: 0},
-        //   'Weeks remaining based on recommendation 3': {min: 0, max: 0},
-        // };
+    async getSummaryInverse(weeksTillPaid) {
         const summary = {};
         if (Object.keys(weeksTillPaid).length) {
             Object.values(weeksTillPaid).forEach(company => {
@@ -1974,6 +1993,13 @@ class CaseUtil {
                 },
             },
         });
+    }
+    async addInHistory(history, id) {
+        console.log(history);
+        const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
+            $push: { caseHistory: { $each: [history], $position: 0 } },
+        });
+        console.log(res);
     }
 }
 exports.default = new CaseUtil();
