@@ -23,7 +23,6 @@ class RolesPermissionsService {
         name: req.body.name,
         isDeleted: false,
       });
-    console.log(findRole);
     if (findRole) {
       return [false, constantsUtil.alreadyExistsMessage('Role')];
     }

@@ -15,6 +15,7 @@ const paymentLogging_repository_1 = require("../repository/paymentLogging/paymen
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
+const email_util_1 = __importDefault(require("../../utils/email.util"));
 class DebtorService {
     constructor() {
         this.getAllDebtors = async (req) => {
@@ -373,6 +374,9 @@ class DebtorService {
     async retryAuth(paymentId) {
         let result = false;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
+        if (!payment) {
+            return [false, constants_util_2.default.notFoundMessage('payment')];
+        }
         let response;
         if (payment.caseId.debtor.paymentType === 'cc') {
             response = await this.paymentService.authorizeCreditCard(payment.amount, payment.caseId.debtor.customerVaultId);
@@ -383,17 +387,17 @@ class DebtorService {
         const updateObjPayment = {};
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
-            console.log(transactionId, 'transactionId');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['status'] = 'Pending';
             // paymentLogging.successReason = responseText;
             result = true;
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
         }
         else {
             updateObjPayment['failedReasonAuthorization'] = responseText;
             // paymentLogging.failReason = responseText;
-            console.log('send email through template');
+            await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
             const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
@@ -415,6 +419,9 @@ class DebtorService {
     async retryCapture(paymentId) {
         let result = false;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
+        if (!payment) {
+            return [false, constants_util_2.default.notFoundMessage('payment')];
+        }
         let response;
         if (payment.caseId.debtor.paymentType === 'cc') {
             response = await this.paymentService.captureCreditCard(payment.caseId.debtor.customerVaultId, payment.debtorTransId, payment.caseId.creditor.creditorSecurityKey);
@@ -435,11 +442,12 @@ class DebtorService {
             }
             // paymentLogging.successReason = responseText;
             result = true;
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', paymentId, '');
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
             // paymentLogging.failReason = responseText;
-            console.log('send email'); // add code
+            await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
             const newPayment = new paymentLogging_repomodel_1.PaymentLogging();

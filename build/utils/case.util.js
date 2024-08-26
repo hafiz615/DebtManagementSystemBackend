@@ -21,7 +21,6 @@ const constants_util_1 = __importDefault(require("./constants.util"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const paymentLogging_repository_1 = require("../api/repository/paymentLogging/paymentLogging.repository");
 const uuid_1 = require("uuid");
-const axios_1 = __importDefault(require("axios"));
 const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const global_1 = require("../database/repomodels/global");
@@ -1571,7 +1570,7 @@ class CaseUtil {
     async getAIToken(username, partnerToken) {
         const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
         try {
-            const response = await axios_1.default.get(url);
+            const response = await axiosInstanceInterceptor_1.default.get(url);
             return response.data.error ? [] : response.data;
         }
         catch (error) {
@@ -1888,9 +1887,9 @@ class CaseUtil {
                         });
                     }
                     await this.addInHistory({
-                        time: new Date(common_util_1.default.getCurrentDate()),
-                        action: 'Case Created',
-                        createdBy: name,
+                        Time: new Date(common_util_1.default.getCurrentDate()),
+                        Action: 'Case Created',
+                        'Created By': name,
                     }, caseCreated._id);
                 }
                 // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
@@ -1909,7 +1908,7 @@ class CaseUtil {
             security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
             payment_token: paymentToken,
         };
-        const response = await axios_1.default.get(url, { params });
+        const response = await axiosInstanceInterceptor_1.default.get(url, { params });
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');

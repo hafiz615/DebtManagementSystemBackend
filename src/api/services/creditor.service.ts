@@ -6,6 +6,7 @@ import {CaseRepository} from '../repository/case/case.repository';
 import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
 import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstanceInterceptor';
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
@@ -221,7 +222,7 @@ class CreditorService {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
       payment_token: paymentToken,
     };
-    const response = await axios.get(url, {params});
+    const response = await axiosInstance.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(

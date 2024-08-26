@@ -63,7 +63,6 @@ class EmailUtil {
             for (const userPermission of userPermissions) {
                 if (userPermission.email_allowed && userPermission.email_template) {
                     const template = await this.getTemplate(userPermission.email_template);
-                    console.log(template);
                     if (!template)
                         continue;
                     const allValues = await this.getValues(template.content);
@@ -84,11 +83,11 @@ class EmailUtil {
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
-                                from: from,
-                                to: emails,
-                                content: template.content,
-                                time: time,
-                                action: 'EMAIL',
+                                From: from,
+                                To: emails,
+                                Content: template.content,
+                                Time: time,
+                                Action: 'EMAIL',
                             }, caseId);
                         }
                     }
@@ -120,11 +119,11 @@ class EmailUtil {
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
-                                from: fromNumber,
-                                to: phoneNumbers,
-                                content: template.content,
-                                time: time,
-                                action: 'SMS',
+                                From: fromNumber,
+                                To: phoneNumbers,
+                                Content: template.content,
+                                Time: time,
+                                Action: 'SMS',
                             }, caseId);
                         }
                     }
@@ -252,7 +251,6 @@ class EmailUtil {
             : null;
     }
     async initializeValues(caseId, paymentId, userId) {
-        console.log(userId, 'userIduserId');
         let debtor = null, creditor = null, user = null, payment = null, caseTemp = null;
         if (caseId) {
             const result = await this.caseRepository.getById(caseId, undefined, undefined, ['debtor', 'creditor']);

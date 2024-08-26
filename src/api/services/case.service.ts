@@ -249,9 +249,9 @@ class CaseService {
     }
     await caseUtil.addInHistory(
       {
-        time: new Date(commonUtil.getCurrentDate()),
-        action: 'Case Updated',
-        createdBy: reqTemp.name,
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
       },
       caseUpdated._id
     );
@@ -328,39 +328,27 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-
+    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    // caseUtil.addInHistory(
+    //   {
+    //     time: new Date(commonUtil.getCurrentDate()),
+    //     action: 'Case Updated',
+    //     updatedBy: reqTemp.name,
+    //   },
+    //   caseUpdated._id
+    // );
     return [true, caseUpdated];
   };
 
   async deleteCase(req: Request): Promise<[boolean, boolean | string]> {
-    // const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    if (caseTemp?.intervals?.length) {
+      return [false, constantsUtil.failureDeleteMessage('case with payments')];
+    }
     const result = await this.caseRepository.updateById<ICase>(req.params.id, {
       isDeleted: true,
     });
-    await this.paymentRepository.updateMany<IPayment>(
-      {caseId: req.params.id},
-      {isDeleted: true}
-    );
-    let weeklyBudgetObj: {
-      status: boolean;
-      commission: number;
-      totalCommission: number;
-    };
-    weeklyBudgetObj = await caseUtil.getUpdatedCommAndTotalComm(
-      String(result.debtor)
-    );
-    if (!weeklyBudgetObj.status) {
-      return [
-        false,
-        'Weekly budget is not fulfiling the payment plan of debtor',
-      ];
-    }
-    await this.debtorRepository.updateById<IDebtor>(String(result.debtor), {
-      totalCommission: weeklyBudgetObj.totalCommission,
-      weeklyCommission: weeklyBudgetObj.commission,
-    });
-
     if (!result) {
       return [false, constantsUtil.failureDeleteMessage('case')];
     }
@@ -654,7 +642,7 @@ class CaseService {
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    let action = 'Add Notes';
+    let Action = 'Add Notes';
     const notes = req.body.notes;
     if (typeof findCase.notes === 'string') {
       result = await this.caseRepository.updateById<ICase>(req.params.id, {
@@ -668,16 +656,16 @@ class CaseService {
           ],
         },
       });
-      action = 'Update Notes';
+      Action = 'Update Notes';
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
     await caseUtil.addInHistory(
       {
-        action,
-        username: reqTemp.name,
-        content: notes,
-        time: new Date(commonUtil.getCurrentDate()),
+        Action,
+        Username: reqTemp.name,
+        Content: notes,
+        Time: new Date(commonUtil.getCurrentDate()),
       },
       findCase._id
     );
@@ -784,7 +772,6 @@ class CaseService {
     let payableAmount = 0;
     let loanAmount = 0;
     for (const creditor of creditors) {
-      console.log(creditor, 'jkjkjkjkjkj');
       payableAmount += caseUtil.getCleanAmount(
         creditor?.contractDetails?.payable_amount
       );
@@ -897,7 +884,7 @@ class CaseService {
     const result = await this.caseHistoryRepository.getOne<ICaseHistory>({
       caseId: req.params.id,
     });
-    return [true, result?.caseHistory];
+    return [true, result?.caseHistory ?? []];
   }
 }
 

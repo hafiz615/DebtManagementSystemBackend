@@ -56,13 +56,13 @@ class TasksService {
       return [false, constantsUtil.failureAddMessage('task')];
     }
     const history = {
-      action: 'Task Created',
-      status: 'To do',
-      title: vaildatedTask.title,
-      dueDate: vaildatedTask.dueDate,
-      time: new Date(vaildatedTask.createdAt),
-      assignee: vaildatedTask.assignee,
-      assigner: reqTemp.name,
+      Action: 'Task Created',
+      Status: 'To do',
+      Title: vaildatedTask.title,
+      'Due Date': vaildatedTask.dueDate,
+      Time: new Date(vaildatedTask.createdAt),
+      Assignee: vaildatedTask.assignee,
+      Assigner: reqTemp.name,
     };
     if (vaildatedTask.notes) history['notes'] = vaildatedTask.notes;
     await caseUtil.addInHistory(history, caseId);
@@ -80,12 +80,12 @@ class TasksService {
       return [false, constantsUtil.failureUpdateMessage('task')];
     }
     const history = {
-      action: 'Task Updated',
-      status: req.body.status,
-      dueDate: req.body.dueDate,
-      time: new Date(commonUtil.getCurrentDate()),
-      assignee: req.body.assignee,
-      assigner: reqTemp.name,
+      Action: 'Task Updated',
+      Status: req.body.status,
+      'Due Date': req.body.dueDate,
+      Time: new Date(commonUtil.getCurrentDate()),
+      Assignee: req.body.assignee,
+      Assigner: reqTemp.name,
     };
     if (req.body.notes) history['notes'] = req.body.notes;
     await caseUtil.addInHistory(history, updatedTask.caseId);
@@ -104,10 +104,10 @@ class TasksService {
       return [false, constantsUtil.failureDeleteMessage('task')];
     }
     const history = {
-      action: 'Task Deleted',
-      title: task.title,
-      time: new Date(commonUtil.getCurrentDate()),
-      deleteBy: reqTemp.name,
+      Action: 'Task Deleted',
+      Title: task.title,
+      Time: new Date(commonUtil.getCurrentDate()),
+      'Delete By': reqTemp.name,
     };
     await caseUtil.addInHistory(history, task.caseId);
     return [true, task];

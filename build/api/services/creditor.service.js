@@ -7,7 +7,7 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
-const axios_1 = __importDefault(require("axios"));
+const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -182,7 +182,7 @@ class CreditorService {
             security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
             payment_token: paymentToken,
         };
-        const response = await axios_1.default.get(url, { params });
+        const response = await axiosInstanceInterceptor_1.default.get(url, { params });
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');

@@ -51,13 +51,13 @@ class TasksService {
             return [false, constants_util_1.default.failureAddMessage('task')];
         }
         const history = {
-            action: 'Task Created',
-            status: 'To do',
-            title: vaildatedTask.title,
-            dueDate: vaildatedTask.dueDate,
-            time: new Date(vaildatedTask.createdAt),
-            assignee: vaildatedTask.assignee,
-            assigner: reqTemp.name,
+            Action: 'Task Created',
+            Status: 'To do',
+            Title: vaildatedTask.title,
+            'Due Date': vaildatedTask.dueDate,
+            Time: new Date(vaildatedTask.createdAt),
+            Assignee: vaildatedTask.assignee,
+            Assigner: reqTemp.name,
         };
         if (vaildatedTask.notes)
             history['notes'] = vaildatedTask.notes;
@@ -71,12 +71,12 @@ class TasksService {
             return [false, constants_util_1.default.failureUpdateMessage('task')];
         }
         const history = {
-            action: 'Task Updated',
-            status: req.body.status,
-            dueDate: req.body.dueDate,
-            time: new Date(common_util_1.default.getCurrentDate()),
-            assignee: req.body.assignee,
-            assigner: reqTemp.name,
+            Action: 'Task Updated',
+            Status: req.body.status,
+            'Due Date': req.body.dueDate,
+            Time: new Date(common_util_1.default.getCurrentDate()),
+            Assignee: req.body.assignee,
+            Assigner: reqTemp.name,
         };
         if (req.body.notes)
             history['notes'] = req.body.notes;
@@ -92,10 +92,10 @@ class TasksService {
             return [false, constants_util_1.default.failureDeleteMessage('task')];
         }
         const history = {
-            action: 'Task Deleted',
-            title: task.title,
-            time: new Date(common_util_1.default.getCurrentDate()),
-            deleteBy: reqTemp.name,
+            Action: 'Task Deleted',
+            Title: task.title,
+            Time: new Date(common_util_1.default.getCurrentDate()),
+            'Delete By': reqTemp.name,
         };
         await case_util_1.default.addInHistory(history, task.caseId);
         return [true, task];

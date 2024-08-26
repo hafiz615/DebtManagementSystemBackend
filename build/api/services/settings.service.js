@@ -176,7 +176,6 @@ class SettingsService {
         let targetCF = await this.targetCFRepository.updateByOne({ target: String(req.query.target), caseId: String(req.query.caseId) }, {
             $pull: { customFields: req.body },
         });
-        console.log(targetCF);
         if (!targetCF) {
             return [false, constants_util_1.default.notFoundMessage('custom field')];
         }

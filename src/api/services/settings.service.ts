@@ -250,7 +250,6 @@ class SettingsService {
           $pull: {customFields: req.body},
         }
       );
-    console.log(targetCF);
     if (!targetCF) {
       return [false, constants.notFoundMessage('custom field')];
     }

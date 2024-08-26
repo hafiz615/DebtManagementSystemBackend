@@ -90,7 +90,6 @@ class EmailUtil {
           const template = await this.getTemplate(
             userPermission.email_template
           );
-          console.log(template);
           if (!template) continue;
           const allValues = await this.getValues(template.content);
           if (!allValues.length) continue;
@@ -117,11 +116,11 @@ class EmailUtil {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
                 {
-                  from: from,
-                  to: emails,
-                  content: template.content,
-                  time: time,
-                  action: 'EMAIL',
+                  From: from,
+                  To: emails,
+                  Content: template.content,
+                  Time: time,
+                  Action: 'EMAIL',
                 },
                 caseId
               );
@@ -160,11 +159,11 @@ class EmailUtil {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
                 {
-                  from: fromNumber,
-                  to: phoneNumbers,
-                  content: template.content,
-                  time: time,
-                  action: 'SMS',
+                  From: fromNumber,
+                  To: phoneNumbers,
+                  Content: template.content,
+                  Time: time,
+                  Action: 'SMS',
                 },
                 caseId
               );
@@ -331,7 +330,6 @@ class EmailUtil {
   }
 
   async initializeValues(caseId: string, paymentId: string, userId: string) {
-    console.log(userId, 'userIduserId');
     let debtor = null,
       creditor = null,
       user = null,

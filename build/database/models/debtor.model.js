@@ -187,7 +187,6 @@ debtorSchema.pre('save', async function (next) {
 const logUpdate = async function (next) {
     const query = this.getQuery();
     const update = this.getUpdate();
-    console.log(this.model.modelName, 'this.model.modelName');
     // Retrieve the document before update
     const previousDoc = await this.model.findOne(query);
     this.previousDoc = previousDoc;

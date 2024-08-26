@@ -1798,7 +1798,7 @@ class CaseUtil {
   async getAIToken(username: string, partnerToken: string) {
     const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       return response.data.error ? [] : response.data;
     } catch (error) {
       return [];
@@ -2183,9 +2183,9 @@ class CaseUtil {
           }
           await this.addInHistory(
             {
-              time: new Date(commonUtil.getCurrentDate()),
-              action: 'Case Created',
-              createdBy: name,
+              Time: new Date(commonUtil.getCurrentDate()),
+              Action: 'Case Created',
+              'Created By': name,
             },
             caseCreated._id
           );
@@ -2207,7 +2207,7 @@ class CaseUtil {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
       payment_token: paymentToken,
     };
-    const response = await axios.get(url, {params});
+    const response = await axiosInstance.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(

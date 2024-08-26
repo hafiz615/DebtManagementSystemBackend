@@ -83,7 +83,6 @@ class CronJob {
             };
             if (!debtor.weeklyCommissionPaid) {
                 for (const account of debtor.accounts) {
-                    console.log(account);
                     if (payment.authorized === 'Pending') {
                         if (account.paymentType === 'cc') {
                             const response = await this.paymentService.authorizeCreditCard(commisionToPay, account.customerVaultId);
@@ -177,9 +176,7 @@ class CronJob {
                 if (paynoteCustomer.user.status === 'unverified')
                     continue;
                 const paymentResult = await paynote_util_1.default.sendPayment(payment);
-                console.log(paymentResult);
                 if (paymentResult.error) {
-                    console.log('Send Email');
                     const message = paymentResult.messages[0];
                     console.log(message, 'message');
                     await this.paymentRepository.updateById(payment._id, {
@@ -453,7 +450,6 @@ class CronJob {
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email through template');
             await email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
         }
         if (retryPlus)
@@ -512,7 +508,6 @@ class CronJob {
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email'); // add code
             await email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
         }
         if (retryPlus)
@@ -684,10 +679,6 @@ class CronJob {
     async processAuthorized(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
-            if (accounts.length) {
-                console.log(accounts);
-                console.log(payment.caseId.debtor);
-            }
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId);
@@ -732,7 +723,6 @@ class CronJob {
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email through template');
             await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
         }
         if (retryPlus)
@@ -782,7 +772,6 @@ class CronJob {
     async processCapture(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
-            console.log(accounts);
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, '');
@@ -833,7 +822,6 @@ class CronJob {
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email'); // add code
             await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
         }
         if (retryPlus)

@@ -113,7 +113,6 @@ class CronJob {
 
       if (!debtor.weeklyCommissionPaid) {
         for (const account of debtor.accounts) {
-          console.log(account);
           if (payment.authorized === 'Pending') {
             if (account.paymentType === 'cc') {
               const response = await this.paymentService.authorizeCreditCard(
@@ -293,9 +292,7 @@ class CronJob {
         if (paynoteCustomer.error) continue;
         if (paynoteCustomer.user.status === 'unverified') continue;
         const paymentResult = await paynoteUtil.sendPayment(payment);
-        console.log(paymentResult);
         if (paymentResult.error) {
-          console.log('Send Email');
           const message = paymentResult.messages[0];
           console.log(message, 'message');
           await this.paymentRepository.updateById<IPayment>(payment._id, {
@@ -718,7 +715,6 @@ class CronJob {
       );
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
-      console.log('send email through template');
       await emailUtil.sendEmailOrSmsByEventForCommission(
         'failed_payment',
         payment
@@ -801,7 +797,6 @@ class CronJob {
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
 
-      console.log('send email'); // add code
       await emailUtil.sendEmailOrSmsByEventForCommission(
         'failed_payment',
         payment
@@ -1007,10 +1002,6 @@ class CronJob {
   ) {
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
-      if (accounts.length) {
-        console.log(accounts);
-        console.log(payment.caseId.debtor);
-      }
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
@@ -1089,7 +1080,6 @@ class CronJob {
       );
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
-      console.log('send email through template');
       await emailUtil.sendEmailOrSmsByEvent(
         'failed_authorization',
         '',
@@ -1163,7 +1153,6 @@ class CronJob {
   ) {
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
-      console.log(accounts);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.captureCreditCard(
@@ -1251,7 +1240,6 @@ class CronJob {
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
 
-      console.log('send email'); // add code
       await emailUtil.sendEmailOrSmsByEvent(
         'failed_payment',
         '',

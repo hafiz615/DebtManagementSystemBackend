@@ -51,7 +51,7 @@ exports.default = {
     failureDeleteMessage: (name) => `Unable to delete ${name}`,
     successDeleteMessage: (name) => `${name} deleted successfully!`,
     successUpdateMessage: (name) => `${name} updated successfully!`,
-    notFoundMessage: (name) => `Unable to found ${name}!`,
+    notFoundMessage: (name) => `Unable to find ${name}!`,
     alreadyExistsMessage: (name) => `${name} already exists!`,
     successFoundMessage: (name) => `${name} returned successfully!`,
 };
