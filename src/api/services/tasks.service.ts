@@ -65,7 +65,7 @@ class TasksService {
       Assigner: reqTemp.name,
     };
     if (vaildatedTask.notes) history['Notes'] = vaildatedTask.notes;
-    await caseUtil.addInHistory(history, caseId);
+    caseUtil.addInHistory(history, caseId);
     return [true, task];
   }
 
@@ -88,7 +88,7 @@ class TasksService {
       Assigner: reqTemp.name,
     };
     if (req.body.notes) history['Notes'] = req.body.notes;
-    await caseUtil.addInHistory(history, updatedTask.caseId);
+    caseUtil.addInHistory(history, updatedTask.caseId);
     return [true, updatedTask];
   }
 
@@ -109,7 +109,7 @@ class TasksService {
       Time: new Date(commonUtil.getCurrentDate()),
       'Delete By': reqTemp.name,
     };
-    await caseUtil.addInHistory(history, task.caseId);
+    caseUtil.addInHistory(history, task.caseId);
     return [true, task];
   }
 }

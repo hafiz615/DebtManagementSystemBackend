@@ -72,6 +72,9 @@ class UserUtil {
           $lte: filter.dateOfBirth.end,
         };
       }
+      if (filter && typeof filter?.isActive === 'boolean') {
+        filters['isActive'] = filter.isActive;
+      }
     }
     return filters;
   }

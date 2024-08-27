@@ -2181,7 +2181,7 @@ class CaseUtil {
               accountTitleMapping: accountTitles,
             });
           }
-          await this.addInHistory(
+          this.addInHistory(
             {
               Time: new Date(commonUtil.getCurrentDate()),
               Action: 'Case Created',
@@ -2308,7 +2308,6 @@ class CaseUtil {
   }
 
   async addInHistory(history: any, id: string) {
-    console.log(history);
     const res = await this.caseHistoryRepository.upsert<ICaseHistory>(
       {caseId: id},
       {

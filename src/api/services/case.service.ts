@@ -247,7 +247,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    await caseUtil.addInHistory(
+    caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'Case Updated',
@@ -660,7 +660,13 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
-    await caseUtil.addInHistory(
+    emailUtil.sendEmailOrSmsByEvent(
+      'case_details_update',
+      result._id,
+      '',
+      reqTemp.id
+    );
+    caseUtil.addInHistory(
       {
         Action,
         Username: reqTemp.name,
@@ -668,12 +674,6 @@ class CaseService {
         Time: new Date(commonUtil.getCurrentDate()),
       },
       findCase._id
-    );
-    await emailUtil.sendEmailOrSmsByEvent(
-      'case_details_update',
-      result._id,
-      '',
-      reqTemp.id
     );
     return [true, result];
   };
@@ -790,7 +790,7 @@ class CaseService {
   ) {
     if (caseAbout) {
       if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'case_owner_changed',
           previousCase._id,
           '',
@@ -798,7 +798,7 @@ class CaseService {
         );
       }
       if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'case_negotiator_changed',
           previousCase._id,
           '',
@@ -806,7 +806,7 @@ class CaseService {
         );
       }
       if (previousCase.managerId !== updatedCase.managerId) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'case_manager_changed',
           previousCase._id,
           '',
@@ -815,7 +815,7 @@ class CaseService {
       }
     }
     if (caseUpdate) {
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'case_details_update',
         previousCase._id,
         '',
