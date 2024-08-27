@@ -328,15 +328,15 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-    // caseUtil.addInHistory(
-    //   {
-    //     time: new Date(commonUtil.getCurrentDate()),
-    //     action: 'Case Updated',
-    //     updatedBy: reqTemp.name,
-    //   },
-    //   caseUpdated._id
-    // );
+    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    caseUtil.addInHistory(
+      {
+        time: new Date(commonUtil.getCurrentDate()),
+        action: 'Case Updated',
+        updatedBy: reqTemp.name,
+      },
+      caseUpdated._id
+    );
     return [true, caseUpdated];
   };
 

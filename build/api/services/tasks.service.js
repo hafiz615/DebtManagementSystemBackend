@@ -60,7 +60,7 @@ class TasksService {
             Assigner: reqTemp.name,
         };
         if (vaildatedTask.notes)
-            history['notes'] = vaildatedTask.notes;
+            history['Notes'] = vaildatedTask.notes;
         await case_util_1.default.addInHistory(history, caseId);
         return [true, task];
     }
@@ -79,7 +79,7 @@ class TasksService {
             Assigner: reqTemp.name,
         };
         if (req.body.notes)
-            history['notes'] = req.body.notes;
+            history['Notes'] = req.body.notes;
         await case_util_1.default.addInHistory(history, updatedTask.caseId);
         return [true, updatedTask];
     }

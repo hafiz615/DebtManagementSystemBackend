@@ -40,7 +40,16 @@ class UserUtil {
   }
 
   async getAllUserFilters(req: Request) {
-    const filters = {role: {$nin: ['Admin', 'Super User']}, isDeleted: false};
+    const reqTemp: any = req;
+    const filters = {isDeleted: false};
+    switch (reqTemp.role) {
+      case 'Super User':
+        filters['role'] = {$ne: 'Super User'};
+        break;
+      default:
+        filters['role'] = {$nin: ['Admin', 'Super User']};
+        break;
+    }
     if (req.query.search === 'true') {
       const text = req.body.text;
       if (text) {

@@ -334,7 +334,6 @@ class EmailUtil {
                 },
             ];
         }
-        await case_util_1.default;
         try {
             await mail_1.default.send(msg);
             return [true, 'Email sent successfully'];

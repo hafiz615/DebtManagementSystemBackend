@@ -16,6 +16,8 @@ import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
 import mongoose from 'mongoose';
 import emailUtil from '../../utils/email.util';
+import client from '@sendgrid/client';
+import {ClientRequest} from '@sendgrid/client/src/request';
 
 class UserService {
   private userRepository: UserRepository;
@@ -26,6 +28,7 @@ class UserService {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.caseRepository = new CaseRepository();
+    client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
@@ -446,6 +449,30 @@ class UserService {
     }
     return [true, result[0]];
   };
+
+  async addSenderIdentity(req: Request) {
+    const data = {
+      from_email: 'mohsintariq132@gmail.com',
+      reply_to: 'mohsintariq132@gmail.com',
+      from_name: 'Mohsin',
+      nickname: 'Mohsin',
+      address: 'Sikandar block',
+      city: 'Lahore',
+      country: 'Pakistan',
+      verified: true,
+    };
+
+    const request: ClientRequest = {
+      url: `/v3/verified_senders`,
+      method: 'POST',
+      body: data,
+    };
+
+    const result = await client.request(request);
+    console.log(result[0].statusCode);
+    console.log(result[0]);
+    return [true, result[0].body];
+  }
 }
 
 export default UserService;

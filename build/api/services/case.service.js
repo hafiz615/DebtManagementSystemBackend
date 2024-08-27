@@ -213,15 +213,12 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-            // caseUtil.addInHistory(
-            //   {
-            //     time: new Date(commonUtil.getCurrentDate()),
-            //     action: 'Case Updated',
-            //     updatedBy: reqTemp.name,
-            //   },
-            //   caseUpdated._id
-            // );
+            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            case_util_1.default.addInHistory({
+                time: new Date(common_util_1.default.getCurrentDate()),
+                action: 'Case Updated',
+                updatedBy: reqTemp.name,
+            }, caseUpdated._id);
             return [true, caseUpdated];
         };
         // getAIIntegrationData = async (

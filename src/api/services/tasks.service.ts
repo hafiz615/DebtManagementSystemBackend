@@ -64,7 +64,7 @@ class TasksService {
       Assignee: vaildatedTask.assignee,
       Assigner: reqTemp.name,
     };
-    if (vaildatedTask.notes) history['notes'] = vaildatedTask.notes;
+    if (vaildatedTask.notes) history['Notes'] = vaildatedTask.notes;
     await caseUtil.addInHistory(history, caseId);
     return [true, task];
   }
@@ -87,7 +87,7 @@ class TasksService {
       Assignee: req.body.assignee,
       Assigner: reqTemp.name,
     };
-    if (req.body.notes) history['notes'] = req.body.notes;
+    if (req.body.notes) history['Notes'] = req.body.notes;
     await caseUtil.addInHistory(history, updatedTask.caseId);
     return [true, updatedTask];
   }

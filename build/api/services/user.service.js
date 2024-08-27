@@ -16,6 +16,7 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const uuid_1 = require("uuid");
 const case_repository_1 = require("../repository/case/case.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const client_1 = __importDefault(require("@sendgrid/client"));
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
@@ -236,6 +237,7 @@ class UserService {
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
         this.caseRepository = new case_repository_1.CaseRepository();
+        client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
     async createUser(req) {
         let user = null;
@@ -392,6 +394,27 @@ class UserService {
             return [false, constants_util_1.default.failureUpdateMessage('password')];
         }
         return [true, updateUser];
+    }
+    async addSenderIdentity(req) {
+        const data = {
+            from_email: 'mohsintariq132@gmail.com',
+            reply_to: 'mohsintariq132@gmail.com',
+            from_name: 'Mohsin',
+            nickname: 'Mohsin',
+            address: 'Sikandar block',
+            city: 'Lahore',
+            country: 'Pakistan',
+            verified: true,
+        };
+        const request = {
+            url: `/v3/verified_senders`,
+            method: 'POST',
+            body: data,
+        };
+        const result = await client_1.default.request(request);
+        console.log(result[0].statusCode);
+        console.log(result[0]);
+        return [true, result[0].body];
     }
 }
 exports.default = UserService;

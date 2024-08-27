@@ -448,7 +448,6 @@ class EmailUtil {
         },
       ];
     }
-    await caseUtil;
     try {
       await sgMail.send(msg);
       return [true, 'Email sent successfully'];
