@@ -215,9 +215,9 @@ class CaseService {
             }
             this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             case_util_1.default.addInHistory({
-                time: new Date(common_util_1.default.getCurrentDate()),
-                action: 'Case Updated',
-                updatedBy: reqTemp.name,
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case Updated',
+                'Updated By': reqTemp.name,
             }, caseUpdated._id);
             return [true, caseUpdated];
         };

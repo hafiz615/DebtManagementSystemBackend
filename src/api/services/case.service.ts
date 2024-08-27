@@ -331,9 +331,9 @@ class CaseService {
     this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
     caseUtil.addInHistory(
       {
-        time: new Date(commonUtil.getCurrentDate()),
-        action: 'Case Updated',
-        updatedBy: reqTemp.name,
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
       },
       caseUpdated._id
     );
