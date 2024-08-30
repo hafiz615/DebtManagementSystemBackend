@@ -160,7 +160,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            case_util_1.default.addInHistory({
+            await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
                 'Updated By': reqTemp.name,
@@ -213,8 +213,8 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-            case_util_1.default.addInHistory({
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
                 'Updated By': reqTemp.name,
@@ -427,8 +427,8 @@ class CaseService {
                 result = await case_util_1.default.addNotes(req, reqTemp.id);
             if (!result)
                 return [false, result];
-            email_util_1.default.sendEmailOrSmsByEvent('case_details_update', result._id, '', reqTemp.id);
-            case_util_1.default.addInHistory({
+            await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', result._id, '', reqTemp.id);
+            await case_util_1.default.addInHistory({
                 Action,
                 Username: reqTemp.name,
                 Content: notes,
@@ -542,17 +542,17 @@ class CaseService {
     async sendCaseEmails(userId, previousCase, updatedCase, caseAbout, caseUpdate) {
         if (caseAbout) {
             if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
-                email_util_1.default.sendEmailOrSmsByEvent('case_owner_changed', previousCase._id, '', userId);
+                await email_util_1.default.sendEmailOrSmsByEvent('case_owner_changed', previousCase._id, '', userId);
             }
             if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
-                email_util_1.default.sendEmailOrSmsByEvent('case_negotiator_changed', previousCase._id, '', userId);
+                await email_util_1.default.sendEmailOrSmsByEvent('case_negotiator_changed', previousCase._id, '', userId);
             }
             if (previousCase.managerId !== updatedCase.managerId) {
-                email_util_1.default.sendEmailOrSmsByEvent('case_manager_changed', previousCase._id, '', userId);
+                await email_util_1.default.sendEmailOrSmsByEvent('case_manager_changed', previousCase._id, '', userId);
             }
         }
         if (caseUpdate) {
-            email_util_1.default.sendEmailOrSmsByEvent('case_details_update', previousCase._id, '', userId);
+            await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', previousCase._id, '', userId);
         }
     }
     async getWeeklyAndTotalCommission(req) {

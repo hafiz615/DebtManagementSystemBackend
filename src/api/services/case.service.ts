@@ -247,7 +247,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    caseUtil.addInHistory(
+    await caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'Case Updated',
@@ -328,8 +328,8 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-    caseUtil.addInHistory(
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    await caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'Case Updated',
@@ -666,13 +666,13 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
-    emailUtil.sendEmailOrSmsByEvent(
+    await emailUtil.sendEmailOrSmsByEvent(
       'case_details_update',
       result._id,
       '',
       reqTemp.id
     );
-    caseUtil.addInHistory(
+    await caseUtil.addInHistory(
       {
         Action,
         Username: reqTemp.name,
@@ -800,7 +800,7 @@ class CaseService {
   ) {
     if (caseAbout) {
       if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
-        emailUtil.sendEmailOrSmsByEvent(
+        await emailUtil.sendEmailOrSmsByEvent(
           'case_owner_changed',
           previousCase._id,
           '',
@@ -808,7 +808,7 @@ class CaseService {
         );
       }
       if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
-        emailUtil.sendEmailOrSmsByEvent(
+        await emailUtil.sendEmailOrSmsByEvent(
           'case_negotiator_changed',
           previousCase._id,
           '',
@@ -816,7 +816,7 @@ class CaseService {
         );
       }
       if (previousCase.managerId !== updatedCase.managerId) {
-        emailUtil.sendEmailOrSmsByEvent(
+        await emailUtil.sendEmailOrSmsByEvent(
           'case_manager_changed',
           previousCase._id,
           '',
@@ -825,7 +825,7 @@ class CaseService {
       }
     }
     if (caseUpdate) {
-      emailUtil.sendEmailOrSmsByEvent(
+      await emailUtil.sendEmailOrSmsByEvent(
         'case_details_update',
         previousCase._id,
         '',

@@ -61,7 +61,7 @@ class TasksService {
         };
         if (vaildatedTask.notes)
             history['Notes'] = vaildatedTask.notes;
-        case_util_1.default.addInHistory(history, caseId);
+        await case_util_1.default.addInHistory(history, caseId);
         return [true, task];
     }
     async updateTask(req) {
@@ -80,7 +80,7 @@ class TasksService {
         };
         if (req.body.notes)
             history['Notes'] = req.body.notes;
-        case_util_1.default.addInHistory(history, updatedTask.caseId);
+        await case_util_1.default.addInHistory(history, updatedTask.caseId);
         return [true, updatedTask];
     }
     async deleteTask(req) {
@@ -97,7 +97,7 @@ class TasksService {
             Time: new Date(common_util_1.default.getCurrentDate()),
             'Delete By': reqTemp.name,
         };
-        case_util_1.default.addInHistory(history, task.caseId);
+        await case_util_1.default.addInHistory(history, task.caseId);
         return [true, task];
     }
 }
