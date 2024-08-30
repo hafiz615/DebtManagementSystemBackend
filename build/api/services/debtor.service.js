@@ -50,6 +50,7 @@ class DebtorService {
                 return [false, constants_util_2.default.notFoundMessage('case')];
             }
             if (caseTemp.strategyThree) {
+                console.log('i am here');
                 const result = await this.strategyRepository.getOne({
                     caseId: String(caseTemp._id),
                     name: 'strategy_three',

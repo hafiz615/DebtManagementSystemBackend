@@ -48,5 +48,10 @@ router.post(
   authorize.validateAuth,
   userController.addSenderIdentity
 );
+router.post(
+  '/verifySenderIdentity',
+  authorize.validateAuth,
+  userController.verifySenderIdentity
+);
 
 export default router;

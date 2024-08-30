@@ -319,6 +319,12 @@ class CaseService {
             let data = {};
             if (req.query.hardReload && req.query.hardReload === 'true')
                 hardReload = 'true';
+            if (hardReload === 'true') {
+                await this.caseRepository.updateById(caseTemp._id, {
+                    strategyTwo: false,
+                    strategyThree: false,
+                });
+            }
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
@@ -444,6 +450,10 @@ class CaseService {
             let settlementRange = null;
             let data = {};
             let debtor = caseTemp.debtor;
+            await this.caseRepository.updateById(caseTemp._id, {
+                strategyTwo: false,
+                strategyThree: false,
+            });
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
