@@ -1886,7 +1886,7 @@ class CaseUtil {
                             accountTitleMapping: accountTitles,
                         });
                     }
-                    this.addInHistory({
+                    await this.addInHistory({
                         Time: new Date(common_util_1.default.getCurrentDate()),
                         Action: 'Case Created',
                         'Created By': name,

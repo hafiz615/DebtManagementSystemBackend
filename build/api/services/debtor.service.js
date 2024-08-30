@@ -393,12 +393,12 @@ class DebtorService {
             updateObjPayment['status'] = 'Pending';
             // paymentLogging.successReason = responseText;
             result = true;
-            email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
         }
         else {
             updateObjPayment['failedReasonAuthorization'] = responseText;
             // paymentLogging.failReason = responseText;
-            email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
+            await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
             const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
@@ -443,12 +443,12 @@ class DebtorService {
             }
             // paymentLogging.successReason = responseText;
             result = true;
-            email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', paymentId, '');
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', paymentId, '');
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
             // paymentLogging.failReason = responseText;
-            email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
+            await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
             const newPayment = new paymentLogging_repomodel_1.PaymentLogging();

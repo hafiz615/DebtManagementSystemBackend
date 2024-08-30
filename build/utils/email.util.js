@@ -82,10 +82,10 @@ class EmailUtil {
                         await this.sendEmail(emails, from, template.subject, html);
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
-                            case_util_1.default.addInHistory({
+                            await case_util_1.default.addInHistory({
                                 From: from,
                                 To: emails,
-                                Content: template.content,
+                                Content: html,
                                 Time: time,
                                 Action: 'EMAIL',
                             }, caseId);
@@ -118,10 +118,10 @@ class EmailUtil {
                         }
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
-                            case_util_1.default.addInHistory({
+                            await case_util_1.default.addInHistory({
                                 From: fromNumber,
                                 To: phoneNumbers,
-                                Content: template.content,
+                                Content: text,
                                 Time: time,
                                 Action: 'SMS',
                             }, caseId);

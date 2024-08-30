@@ -431,7 +431,7 @@ class DebtorService {
       updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
-      emailUtil.sendEmailOrSmsByEvent(
+      await emailUtil.sendEmailOrSmsByEvent(
         'successful_authorization',
         '',
         paymentId,
@@ -440,7 +440,7 @@ class DebtorService {
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
       // paymentLogging.failReason = responseText;
-      emailUtil.sendEmailOrSmsByEvent(
+      await emailUtil.sendEmailOrSmsByEvent(
         'failed_authorization',
         '',
         paymentId,
@@ -511,12 +511,22 @@ class DebtorService {
       }
       // paymentLogging.successReason = responseText;
       result = true;
-      emailUtil.sendEmailOrSmsByEvent('successful_payment', '', paymentId, '');
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_payment',
+        '',
+        paymentId,
+        ''
+      );
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
       // paymentLogging.failReason = responseText;
 
-      emailUtil.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
+      await emailUtil.sendEmailOrSmsByEvent(
+        'failed_payment',
+        '',
+        paymentId,
+        ''
+      );
     }
     if (Object.keys(updateObjPayment).length) {
       const newPayment = new PaymentLogging();
