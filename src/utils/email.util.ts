@@ -114,7 +114,7 @@ class EmailUtil {
             await this.sendEmail(emails, from, template.subject, html);
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
-              await caseUtil.addInHistory(
+              caseUtil.addInHistory(
                 {
                   From: from,
                   To: emails,
@@ -157,7 +157,7 @@ class EmailUtil {
             }
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
-              await caseUtil.addInHistory(
+              caseUtil.addInHistory(
                 {
                   From: fromNumber,
                   To: phoneNumbers,
@@ -448,7 +448,6 @@ class EmailUtil {
         },
       ];
     }
-    await caseUtil;
     try {
       await sgMail.send(msg);
       return [true, 'Email sent successfully'];

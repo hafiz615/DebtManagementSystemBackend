@@ -247,7 +247,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    await caseUtil.addInHistory(
+    caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'Case Updated',
@@ -328,15 +328,15 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
-    // caseUtil.addInHistory(
-    //   {
-    //     time: new Date(commonUtil.getCurrentDate()),
-    //     action: 'Case Updated',
-    //     updatedBy: reqTemp.name,
-    //   },
-    //   caseUpdated._id
-    // );
+    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
+      },
+      caseUpdated._id
+    );
     return [true, caseUpdated];
   };
 
@@ -527,6 +527,12 @@ class CaseService {
     let data = {};
     if (req.query.hardReload && req.query.hardReload === 'true')
       hardReload = 'true';
+    if (hardReload === 'true') {
+      await this.caseRepository.updateById<ICase>(caseTemp._id, {
+        strategyTwo: false,
+        strategyThree: false,
+      });
+    }
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
     creditors = Array.from(
@@ -660,7 +666,13 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
-    await caseUtil.addInHistory(
+    emailUtil.sendEmailOrSmsByEvent(
+      'case_details_update',
+      result._id,
+      '',
+      reqTemp.id
+    );
+    caseUtil.addInHistory(
       {
         Action,
         Username: reqTemp.name,
@@ -668,12 +680,6 @@ class CaseService {
         Time: new Date(commonUtil.getCurrentDate()),
       },
       findCase._id
-    );
-    await emailUtil.sendEmailOrSmsByEvent(
-      'case_details_update',
-      result._id,
-      '',
-      reqTemp.id
     );
     return [true, result];
   };
@@ -699,6 +705,10 @@ class CaseService {
     let settlementRange = null;
     let data = {};
     let debtor: any = caseTemp.debtor;
+    await this.caseRepository.updateById<ICase>(caseTemp._id, {
+      strategyTwo: false,
+      strategyThree: false,
+    });
     creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
     creditors = Array.from(
@@ -790,7 +800,7 @@ class CaseService {
   ) {
     if (caseAbout) {
       if (previousCase.caseOwnerId !== updatedCase.caseOwnerId) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'case_owner_changed',
           previousCase._id,
           '',
@@ -798,7 +808,7 @@ class CaseService {
         );
       }
       if (previousCase.negotiatorId !== updatedCase.negotiatorId) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'case_negotiator_changed',
           previousCase._id,
           '',
@@ -806,7 +816,7 @@ class CaseService {
         );
       }
       if (previousCase.managerId !== updatedCase.managerId) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'case_manager_changed',
           previousCase._id,
           '',
@@ -815,7 +825,7 @@ class CaseService {
       }
     }
     if (caseUpdate) {
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'case_details_update',
         previousCase._id,
         '',

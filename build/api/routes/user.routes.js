@@ -29,5 +29,7 @@ router.post('/resendInvitationLink', user_controller_1.default.resendInvitationL
 router.post('/getAllUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getAllUsers);
 router.post('/logout', authorize_middleware_1.default.validateAuth, user_controller_1.default.signOut);
 router.post('/dashboard', authorize_middleware_1.default.validateAuth, user_controller_1.default.dashboard);
+router.post('/addSenderIdentity', authorize_middleware_1.default.validateAuth, user_controller_1.default.addSenderIdentity);
+router.post('/verifySenderIdentity', authorize_middleware_1.default.validateAuth, user_controller_1.default.verifySenderIdentity);
 exports.default = router;
 //# sourceMappingURL=user.routes.js.map

@@ -572,7 +572,7 @@ class CronJob {
     //         await this.paymentRepository.updateById<IPayment>(payment._id, {
     //           sendViaPaynote: 'Failed',
     //         });
-    //         await emailUtil.sendEmailOrSmsByEvent(
+    //         emailUtil.sendEmailOrSmsByEvent(
     //           'failed_payment',
     //           '',
     //           payment._id,
@@ -581,7 +581,7 @@ class CronJob {
     //         continue;
     //       }
 
-    //       await emailUtil.sendEmailOrSmsByEvent(
+    //       emailUtil.sendEmailOrSmsByEvent(
     //         'successful_payment',
     //         '',
     //         payment._id,
@@ -615,7 +615,7 @@ class CronJob {
         });
 
       for (const payment of payments) {
-        await emailUtil.sendEmailOrSmsByEvent(
+        emailUtil.sendEmailOrSmsByEvent(
           'upcoming_payment',
           '',
           payment._id,
@@ -698,7 +698,7 @@ class CronJob {
 
       // paymentLogging.successReason = responseText;
       successAuth = true;
-      await emailUtil.sendEmailOrSmsByEventForCommission(
+      emailUtil.sendEmailOrSmsByEventForCommission(
         'successful_payment',
         payment
       );
@@ -715,10 +715,7 @@ class CronJob {
       );
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
-      await emailUtil.sendEmailOrSmsByEventForCommission(
-        'failed_payment',
-        payment
-      );
+      emailUtil.sendEmailOrSmsByEventForCommission('failed_payment', payment);
     }
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
     if (Object.keys(updateObjPayment).length) {
@@ -776,7 +773,7 @@ class CronJob {
         weeklyCommissionPaid: true,
       });
       successCapture = true;
-      await emailUtil.sendEmailOrSmsByEventForCommission(
+      emailUtil.sendEmailOrSmsByEventForCommission(
         'successful_payment',
         payment
       );
@@ -797,10 +794,7 @@ class CronJob {
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
 
-      await emailUtil.sendEmailOrSmsByEventForCommission(
-        'failed_payment',
-        payment
-      );
+      emailUtil.sendEmailOrSmsByEventForCommission('failed_payment', payment);
     }
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
@@ -1059,7 +1053,7 @@ class CronJob {
       updateObjPayment['authorized'] = 'Success';
       updateObjPayment['status'] = 'Pending';
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'successful_authorization',
         '',
         payment._id,
@@ -1080,7 +1074,7 @@ class CronJob {
       );
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'failed_authorization',
         '',
         payment._id,
@@ -1216,7 +1210,7 @@ class CronJob {
       }
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'successful_payment',
         '',
         payment._id,
@@ -1240,12 +1234,7 @@ class CronJob {
       updateObjPayment['rescheduled'] = retryDate;
       // paymentLogging.failReason = responseText;
 
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_payment',
-        '',
-        payment._id,
-        ''
-      );
+      emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
     }
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;

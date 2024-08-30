@@ -431,7 +431,7 @@ class DebtorService {
       updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'successful_authorization',
         '',
         paymentId,
@@ -440,7 +440,7 @@ class DebtorService {
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
       // paymentLogging.failReason = responseText;
-      await emailUtil.sendEmailOrSmsByEvent(
+      emailUtil.sendEmailOrSmsByEvent(
         'failed_authorization',
         '',
         paymentId,
@@ -511,22 +511,12 @@ class DebtorService {
       }
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_payment',
-        '',
-        paymentId,
-        ''
-      );
+      emailUtil.sendEmailOrSmsByEvent('successful_payment', '', paymentId, '');
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
       // paymentLogging.failReason = responseText;
 
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_payment',
-        '',
-        paymentId,
-        ''
-      );
+      emailUtil.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
     }
     if (Object.keys(updateObjPayment).length) {
       const newPayment = new PaymentLogging();
@@ -719,6 +709,7 @@ class DebtorService {
       return [false, constantsUtil.notFoundMessage('case')];
     }
     if (caseTemp.strategyThree) {
+      console.log('i am here');
       const result = await this.strategyRepository.getOne<IStrategy>({
         caseId: String(caseTemp._id),
         name: 'strategy_three',

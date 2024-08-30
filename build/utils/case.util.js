@@ -1886,7 +1886,7 @@ class CaseUtil {
                             accountTitleMapping: accountTitles,
                         });
                     }
-                    await this.addInHistory({
+                    this.addInHistory({
                         Time: new Date(common_util_1.default.getCurrentDate()),
                         Action: 'Case Created',
                         'Created By': name,
@@ -1995,7 +1995,6 @@ class CaseUtil {
         });
     }
     async addInHistory(history, id) {
-        console.log(history);
         const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
             $push: { caseHistory: { $each: [history], $position: 0 } },
         });
