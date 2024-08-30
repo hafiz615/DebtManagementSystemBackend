@@ -16,6 +16,8 @@ import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
 import mongoose from 'mongoose';
 import emailUtil from '../../utils/email.util';
+import client from '@sendgrid/client';
+import {ClientRequest} from '@sendgrid/client/src/request';
 
 class UserService {
   private userRepository: UserRepository;
@@ -26,6 +28,7 @@ class UserService {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.caseRepository = new CaseRepository();
+    client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
@@ -446,6 +449,48 @@ class UserService {
     }
     return [true, result[0]];
   };
+
+  async addSenderIdentity(req: Request) {
+    const data = {
+      from_email: 'umar.iqbal@luminogics.com',
+      reply_to: 'umar.iqbal@luminogics.com',
+      from_name: 'Mohsin',
+      nickname: 'Umar',
+      address: 'Sikandar block',
+      city: 'Lahore',
+      country: 'Pakistan',
+    };
+
+    const request: ClientRequest = {
+      url: `/v3/verified_senders`,
+      method: 'POST',
+      body: data,
+    };
+
+    const result = await client.request(request);
+    console.log(result[0].statusCode);
+    console.log(result[0]);
+    return [true, result[0].body];
+  }
+
+  async verifySenderIdentity(req: Request) {
+    const url = req.body.url;
+    const decodedUrl = decodeURIComponent(url);
+    console.log(decodedUrl);
+    const splitArray = decodedUrl.split('?');
+    const queryString = splitArray[splitArray.length - 1];
+    const token = new URLSearchParams(queryString).get('token');
+    console.log(token);
+    const request: ClientRequest = {
+      url: `/v3/verified_senders/verify/${token}`,
+      method: 'GET',
+    };
+
+    const result = await client.request(request);
+    console.log(result[0].statusCode);
+    console.log(result[0]);
+    return [true, result[0].body];
+  }
 }
 
 export default UserService;

@@ -9,6 +9,7 @@ const payment_util_1 = __importDefault(require("../../utils/payment.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const axios_1 = __importDefault(require("axios"));
+const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
 class PaymentService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -167,7 +168,7 @@ class PaymentService {
             amount: amount,
         };
         try {
-            const response = await axios_1.default.get(url, { params });
+            const response = await axiosInstanceInterceptor_1.default.get(url, { params });
             console.log('Response:', response.data);
             return response.data;
         }
@@ -195,7 +196,7 @@ class PaymentService {
             type: 'capture',
         };
         try {
-            const response = await axios_1.default.get(url, { params });
+            const response = await axiosInstanceInterceptor_1.default.get(url, { params });
             console.log('Response:', response.data);
             return response.data;
         }
@@ -224,7 +225,7 @@ class PaymentService {
             payment: 'check',
         };
         try {
-            const response = await axios_1.default.get(url, { params });
+            const response = await axiosInstanceInterceptor_1.default.get(url, { params });
             console.log('Response:', response.data);
             return response.data;
         }

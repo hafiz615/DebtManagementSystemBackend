@@ -282,7 +282,7 @@ class SettingsController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
-                    message: constants_util_1.default.successFoundMessage('Notification Configuration'),
+                    message: constants_util_1.default.successRegisterMessage('Notification Configuration'),
                 }));
             }
             catch (error) {
@@ -302,7 +302,7 @@ class SettingsController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
-                    message: constants_util_1.default.successUpdateMessage('Notification Configuration'),
+                    message: constants_util_1.default.successFoundMessage('Notification Configuration'),
                 }));
             }
             catch (error) {

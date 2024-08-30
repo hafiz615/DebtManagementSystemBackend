@@ -363,6 +363,52 @@ class UserController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
+
+  addSenderIdentity = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.addSenderIdentity(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successRegisterMessage('Sender identity'),
+        })
+      );
+    } catch (error) {
+      console.log(error.response.body);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  verifySenderIdentity = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.verifySenderIdentity(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: 'Sender identity verified successfully',
+        })
+      );
+    } catch (error) {
+      console.log(error.response.body);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 }
 
 export default new UserController();

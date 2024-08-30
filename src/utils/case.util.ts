@@ -34,6 +34,8 @@ import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
 import FormData from 'form-data';
 import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
+import {CaseHistoryRepository} from '../api/repository/caseHistory/caseHistory.repository';
+import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -46,7 +48,7 @@ class CaseUtil {
   private paymentLoggingRepository: PaymentLoggingRepository;
   private uploadUtil: UploadUtil;
   private strategyRepository: StrategyRepository;
-
+  private caseHistoryRepository: CaseHistoryRepository;
   constructor() {
     this.contactRepository = new ContactRepository();
     this.debtRepository = new DebtorRepository();
@@ -58,6 +60,7 @@ class CaseUtil {
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.uploadUtil = new UploadUtil();
     this.strategyRepository = new StrategyRepository();
+    this.caseHistoryRepository = new CaseHistoryRepository();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -251,7 +254,7 @@ class CaseUtil {
       {debtor: debtorId, isDeleted: false},
       'totalDebt caseCode status remaining contractDetails',
       undefined,
-      undefined,
+      {_id: -1},
       {
         path: 'creditor',
         select: [
@@ -422,9 +425,10 @@ class CaseUtil {
     //         totalCommission: parseInt((debt * 0.19).toFixed(2)),
     //       };
     // }
-    let commisionPercentage = body.commisionPercentage
-      ? body.commisionPercentage / 100
-      : 0.19;
+    // let commisionPercentage = body.commisionPercentage
+    //   ? body.commisionPercentage / 100
+    //   : 0.19;
+    let commisionPercentage = debtor.commissionPercentage / 100;
     if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
       debt = body.remaining ?? 0;
@@ -432,16 +436,21 @@ class CaseUtil {
     }
     weeklyBudget = debtor.basicInformation.weeklyBudget;
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
+      _id: {$ne: body._id},
       debtor: debtor._id,
       isDeleted: false,
     });
     for (const caseTemp of cases) {
-      console.log(caseTemp.intervals);
       if (caseTemp.intervals.length) {
         amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
         debt += caseTemp.remaining;
       }
     }
+    console.log(cases, 'casessss');
+    console.log(weeklyBudget, 'weeklyBudget');
+    console.log(amount, 'amounttttt');
+    console.log(debt, 'debteeee');
+    console.log(commisionPercentage);
     return amount >= weeklyBudget
       ? {
           status: false,
@@ -471,7 +480,7 @@ class CaseUtil {
     }
   }
   async checkCasePayment(body: any): Promise<[boolean, string]> {
-    let isExempt = body.isExempt ?? true;
+    let isExempt = body?.isExempt ?? true;
     if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
@@ -489,6 +498,9 @@ class CaseUtil {
           amount += multipliedAmount;
         }
       }
+      console.log(amount, 'amonuttttt');
+      console.log(body.remaining, 'body.remaininggg');
+
       if (amount !== body.remaining) {
         return [
           false,
@@ -1600,7 +1612,7 @@ class CaseUtil {
   async getCreditorHistoryAI(creditorId: string, token: string) {
     const url = `${process.env.baseUrlAI}get-creditor-history?creditor_id=${creditorId}`;
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         url,
         {},
         {
@@ -1684,15 +1696,71 @@ class CaseUtil {
         this.caseRepository.updateById(caseTemp._id, {strategyThree: false});
         return [false, response.data.error];
       }
+      const thirdStrategy = await this.getSettlementMapping(response.data);
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_three'},
-        {'data.fullProfitSettlement': response.data}
+        {'data.fullProfitSettlement': thirdStrategy}
       );
       this.caseRepository.updateById(caseTemp._id, {strategyThree: true});
       return [true, response.data];
     } catch (error) {
+      console.log(error);
       return [false, error.message];
     }
+  }
+
+  async getSettlementMapping(data: any) {
+    if (data.settlement_range) {
+      data.settlement_range = await this.getSettlementRangeSummery(
+        data.settlement_range
+      );
+    }
+    if (data.percentage_settlement_over_weekly_true_revenue) {
+      data.percentage_settlement_over_weekly_true_revenue =
+        await this.getSettlementRangeSummery(
+          data.percentage_settlement_over_weekly_true_revenue
+        );
+    }
+    if (data.percentage_settlement_over_weekly_budget) {
+      data.percentage_settlement_over_weekly_budget =
+        await this.getSettlementRangeSummery(
+          data.percentage_settlement_over_weekly_budget
+        );
+    }
+    if (data.new_default_risk_score) {
+      data.new_default_risk_score = await this.riskScoreMapping(
+        data.new_default_risk_score
+      );
+    }
+    if (data.weeks_till_paid) {
+      data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
+      const result = await this.getSummaryInverse(data.weeks_till_paid);
+      data.weeks_till_paid.Summary = result;
+      // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+      //   getSettlementRange.weeks_till_paid
+      // );
+    }
+    if (data.commission_range) {
+      // data.commission_range = await this.getSettlementRangeSummery(
+      //   data.commission_range
+      // );
+      data.commission_range = await this.transformData(data.commission_range);
+      const result = await this.getSummaryInverse(data.commission_range);
+      data.commission_range.Summary = result;
+    }
+    if (data.weekly_budget) {
+      const sum = await this.sumOfWeeklyBudgetValues(data.weekly_budget);
+      data.weekly_budget.Summary = sum;
+    }
+    return data;
+  }
+
+  async sumOfWeeklyBudgetValues(weekly_budget: any) {
+    const total = Object.values(weekly_budget).reduce(
+      (sum: number, value: string) => sum + value,
+      0
+    );
+    return total;
   }
 
   async getSummary(req: any, caseTemp: any) {
@@ -1711,7 +1779,7 @@ class CaseUtil {
       financial_health_summary: req.body.financialHealthSummary,
     };
     try {
-      const response = await axios.post(url, data, {
+      const response = await axiosInstance.post(url, data, {
         headers: {
           accept: 'application/json',
           token: AIAuth.auth_token,
@@ -1730,7 +1798,7 @@ class CaseUtil {
   async getAIToken(username: string, partnerToken: string) {
     const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       return response.data.error ? [] : response.data;
     } catch (error) {
       return [];
@@ -1829,6 +1897,12 @@ class CaseUtil {
       caseTemp,
       creditors
     );
+    if (typeof getScores !== 'string') {
+      const sum = await this.sumOfWeeklyBudgetValues(
+        getScores.Scores['Weekly Budget']
+      );
+      getScores.Scores['Weekly Budget'].Summary = sum;
+    }
     return getScores;
   }
 
@@ -1845,6 +1919,12 @@ class CaseUtil {
       caseTemp,
       creditors
     );
+    if (typeof getScores !== 'string') {
+      const sum = await this.sumOfWeeklyBudgetValues(
+        getScores.Scores['Weekly Budget']
+      );
+      getScores.Scores['Weekly Budget'].Summary = sum;
+    }
     return getScores;
   }
 
@@ -1855,51 +1935,52 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    const getSettlementRange = await this.getSettlementRangeAI(
+    let getSettlementRange = await this.getSettlementRangeAI(
       caseTemp,
       AIAuth.auth_token
     );
-    if (getSettlementRange.settlement_range) {
-      getSettlementRange.settlement_range =
-        await this.getSettlementRangeSummery(
-          getSettlementRange.settlement_range
-        );
-    }
-    if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
-      getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-        await this.getSettlementRangeSummery(
-          getSettlementRange.percentage_settlement_over_weekly_true_revenue
-        );
-    }
-    if (getSettlementRange.percentage_settlement_over_weekly_budget) {
-      getSettlementRange.percentage_settlement_over_weekly_budget =
-        await this.getSettlementRangeSummery(
-          getSettlementRange.percentage_settlement_over_weekly_budget
-        );
-    }
-    if (getSettlementRange.new_default_risk_score) {
-      getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
-        getSettlementRange.new_default_risk_score
-      );
-    }
-    if (getSettlementRange.weeks_till_paid) {
-      getSettlementRange.weeks_till_paid = await this.transformData(
-        getSettlementRange.weeks_till_paid
-      );
-      const result = await this.getSummaryWeeksTillPaid(
-        getSettlementRange.weeks_till_paid
-      );
-      getSettlementRange.weeks_till_paid.Summary = result;
-      // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-      //   getSettlementRange.weeks_till_paid
-      // );
-    }
-    if (getSettlementRange.commission_range) {
-      getSettlementRange.commission_range =
-        await this.getSettlementRangeSummery(
-          getSettlementRange.commission_range
-        );
-    }
+    getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+    // if (getSettlementRange.settlement_range) {
+    //   getSettlementRange.settlement_range =
+    //     await this.getSettlementRangeSummery(
+    //       getSettlementRange.settlement_range
+    //     );
+    // }
+    // if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
+    //   getSettlementRange.percentage_settlement_over_weekly_true_revenue =
+    //     await this.getSettlementRangeSummery(
+    //       getSettlementRange.percentage_settlement_over_weekly_true_revenue
+    //     );
+    // }
+    // if (getSettlementRange.percentage_settlement_over_weekly_budget) {
+    //   getSettlementRange.percentage_settlement_over_weekly_budget =
+    //     await this.getSettlementRangeSummery(
+    //       getSettlementRange.percentage_settlement_over_weekly_budget
+    //     );
+    // }
+    // if (getSettlementRange.new_default_risk_score) {
+    //   getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
+    //     getSettlementRange.new_default_risk_score
+    //   );
+    // }
+    // if (getSettlementRange.weeks_till_paid) {
+    //   getSettlementRange.weeks_till_paid = await this.transformData(
+    //     getSettlementRange.weeks_till_paid
+    //   );
+    //   const result = await this.getSummaryWeeksTillPaid(
+    //     getSettlementRange.weeks_till_paid
+    //   );
+    //   getSettlementRange.weeks_till_paid.Summary = result;
+    //   // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
+    //   //   getSettlementRange.weeks_till_paid
+    //   // );
+    // }
+    // if (getSettlementRange.commission_range) {
+    //   getSettlementRange.commission_range =
+    //     await this.getSettlementRangeSummery(
+    //       getSettlementRange.commission_range
+    //     );
+    // }
     if (typeof getSettlementRange !== 'string') {
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_one'},
@@ -1986,7 +2067,6 @@ class CaseUtil {
         },
       });
       if (!response.data.error) {
-        console.log('hehehehehehehe');
         this.strategyRepository.upsert(
           {caseId: caseTemp._id, name: 'strategy_one'},
           {'data.getScoresAIForAllCreditors': response.data}
@@ -2005,7 +2085,7 @@ class CaseUtil {
   async storeAuthToken(username: string, partnerToken: string): Promise<void> {
     const url = `${process.env.baseUrlAI}get-auth-token?username=${username}&partner_token=${partnerToken}`;
     try {
-      const response = await axios.get(url);
+      const response = await axiosInstance.get(url);
       if (response && response.data) {
         AIAuth.auth_token = response.data.auth_token;
         AIAuth.expires_in = response.data.expires_in;
@@ -2028,26 +2108,26 @@ class CaseUtil {
         'businessInformation.companyName':
           body.creditor.businessInformation.companyName,
       });
-      if (body?.intervals) {
-        let weeklyBudgetObj: {
-          status: boolean;
-          commission: number;
-          totalCommission: number;
-        };
-        if (body.feePayment && body.feePayment === 'toPay') {
-          weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-          if (!weeklyBudgetObj.status) {
-            return [
-              false,
-              'Weekly budget is not fulfiling the payment plan of debtor',
-            ];
-          }
-          await this.debtRepository.updateById<IDebtor>(debtor._id, {
-            totalCommission: weeklyBudgetObj.totalCommission,
-            weeklyCommission: weeklyBudgetObj.commission,
-          });
-        }
-      }
+      // if (body?.intervals) {
+      //   let weeklyBudgetObj: {
+      //     status: boolean;
+      //     commission: number;
+      //     totalCommission: number;
+      //   };
+      //   if (body.feePayment && body.feePayment === 'toPay') {
+      //     weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
+      //     if (!weeklyBudgetObj.status) {
+      //       return [
+      //         false,
+      //         'Weekly budget is not fulfiling the payment plan of debtor',
+      //       ];
+      //     }
+      //     await this.debtRepository.updateById<IDebtor>(debtor._id, {
+      //       totalCommission: weeklyBudgetObj.totalCommission,
+      //       weeklyCommission: weeklyBudgetObj.commission,
+      //     });
+      //   }
+      // }
       // if (body.creditor.paymentToken && body.creditor.paymentType) {
       //   const customerVaultResponse = await this.createVault(body.paymentToken);
       //   if (!customerVaultResponse[0]) return customerVaultResponse;
@@ -2101,10 +2181,18 @@ class CaseUtil {
               accountTitleMapping: accountTitles,
             });
           }
+          await this.addInHistory(
+            {
+              Time: new Date(commonUtil.getCurrentDate()),
+              Action: 'Case Created',
+              'Created By': name,
+            },
+            caseCreated._id
+          );
         }
-        if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-          await this.createPayment(caseCreated);
-        }
+        // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+        //   await this.createPayment(caseCreated);
+        // }
       }
     }
     if (!createdCases.length) return [false, createdCases];
@@ -2119,7 +2207,7 @@ class CaseUtil {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
       payment_token: paymentToken,
     };
-    const response = await axios.get(url, {params});
+    const response = await axiosInstance.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(
@@ -2167,16 +2255,13 @@ class CaseUtil {
     return result;
   }
 
-  async getSummaryWeeksTillPaid(weeksTillPaid: any) {
-    const summary = {
-      'Weeks remaining based on recommendation 1': {min: 0, max: 0},
-      'Weeks remaining based on recommendation 2': {min: 0, max: 0},
-      'Weeks remaining based on recommendation 3': {min: 0, max: 0},
-    };
+  async getSummaryInverse(weeksTillPaid: any) {
+    const summary = {};
     if (Object.keys(weeksTillPaid).length) {
       Object.values(weeksTillPaid).forEach(company => {
         for (const key of Object.keys(company)) {
           if (company[key]) {
+            summary[key] = {min: 0, max: 0};
             summary[key].min = Math.max(summary[key].min, company[key].min);
             summary[key].max = Math.max(summary[key].max, company[key].max);
           }
@@ -2200,8 +2285,8 @@ class CaseUtil {
         for (const key of Object.keys(company)) {
           if (company[key]) {
             company[key] = {
-              min: Math.min(...company[key]),
-              max: Math.max(...company[key]),
+              max: Math.min(...company[key]),
+              min: Math.max(...company[key]),
             };
           }
         }
@@ -2220,6 +2305,16 @@ class CaseUtil {
         },
       },
     });
+  }
+
+  async addInHistory(history: any, id: string) {
+    const res = await this.caseHistoryRepository.upsert<ICaseHistory>(
+      {caseId: id},
+      {
+        $push: {caseHistory: {$each: [history], $position: 0}},
+      }
+    );
+    console.log(res);
   }
 }
 export default new CaseUtil();

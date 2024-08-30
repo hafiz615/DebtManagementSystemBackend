@@ -83,7 +83,6 @@ class CronJob {
             };
             if (!debtor.weeklyCommissionPaid) {
                 for (const account of debtor.accounts) {
-                    console.log(account);
                     if (payment.authorized === 'Pending') {
                         if (account.paymentType === 'cc') {
                             const response = await this.paymentService.authorizeCreditCard(commisionToPay, account.customerVaultId);
@@ -177,9 +176,7 @@ class CronJob {
                 if (paynoteCustomer.user.status === 'unverified')
                     continue;
                 const paymentResult = await paynote_util_1.default.sendPayment(payment);
-                console.log(paymentResult);
                 if (paymentResult.error) {
-                    console.log('Send Email');
                     const message = paymentResult.messages[0];
                     console.log(message, 'message');
                     await this.paymentRepository.updateById(payment._id, {
@@ -197,8 +194,8 @@ class CronJob {
     startCronJob() {
         node_cron_1.default.schedule('0 * * * *', async () => {
             console.log('Running a task every zero of an hour');
-            const payments = await payment_util_1.default.getAllCronJobPayments();
-            await this.processPayments(payments);
+            // const payments: any = await paymentUtil.getAllCronJobPayments();
+            await this.processPayments();
         });
         node_cron_1.default.schedule('30 * * * *', async () => {
             console.log('Running a task every 30 min of an hour');
@@ -315,39 +312,56 @@ class CronJob {
                 }
             }
         });
-        node_cron_1.default.schedule('15 * * * *', async () => {
-            const payments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
-                path: 'caseId',
-                select: ['_id'],
-                populate: ['creditor'],
-            });
-            for (const payment of payments) {
-                if (payment.caseId.creditor.paynoteUserId) {
-                    const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
-                    if (paynoteCustomer.error)
-                        continue;
-                    if (paynoteCustomer.user.status === 'unverified')
-                        continue;
-                    const paymentResult = await paynote_util_1.default.sendPayment(payment);
-                    console.log(paymentResult);
-                    if (paymentResult.error) {
-                        console.log('Send Email');
-                        const message = paymentResult.messages[0];
-                        console.log(message, 'message');
-                        await this.paymentRepository.updateById(payment._id, {
-                            sendViaPaynote: 'Failed',
-                        });
-                        await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
-                        continue;
-                    }
-                    await email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
-                    await this.paymentRepository.updateById(payment._id, {
-                        paynoteCheckId: paymentResult.check.check_id,
-                        sendViaPaynote: 'Success',
-                    });
-                }
-            }
-        });
+        // cron.schedule('15 * * * *', async () => {
+        //   const payments =
+        //     await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        //       {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+        //       undefined,
+        //       undefined,
+        //       undefined,
+        //       {
+        //         path: 'caseId',
+        //         select: ['_id'],
+        //         populate: ['creditor'],
+        //       }
+        //     );
+        //   for (const payment of payments as any) {
+        //     if (payment.caseId.creditor.paynoteUserId) {
+        //       const paynoteCustomer = await paynoteUtil.getCustomer(
+        //         payment.caseId.creditor
+        //       );
+        //       if (paynoteCustomer.error) continue;
+        //       if (paynoteCustomer.user.status === 'unverified') continue;
+        //       const paymentResult = await paynoteUtil.sendPayment(payment);
+        //       console.log(paymentResult);
+        //       if (paymentResult.error) {
+        //         console.log('Send Email');
+        //         const message = paymentResult.messages[0];
+        //         console.log(message, 'message');
+        //         await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //           sendViaPaynote: 'Failed',
+        //         });
+        //         emailUtil.sendEmailOrSmsByEvent(
+        //           'failed_payment',
+        //           '',
+        //           payment._id,
+        //           ''
+        //         );
+        //         continue;
+        //       }
+        //       emailUtil.sendEmailOrSmsByEvent(
+        //         'successful_payment',
+        //         '',
+        //         payment._id,
+        //         ''
+        //       );
+        //       await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //         paynoteCheckId: paymentResult.check.check_id,
+        //         sendViaPaynote: 'Success',
+        //       });
+        //     }
+        //   }
+        // });
         node_cron_1.default.schedule('0 21 * * *', async () => {
             const today = new Date(common_util_1.default.getCurrentDate());
             const targetDate = new Date(common_util_1.default.getCurrentDate());
@@ -364,18 +378,22 @@ class CronJob {
                 },
             });
             for (const payment of payments) {
-                await email_util_1.default.sendEmailOrSmsByEvent('upcoming_payment', '', payment._id, '');
+                email_util_1.default.sendEmailOrSmsByEvent('upcoming_payment', '', payment._id, '');
             }
         });
     }
-    async processPayments(payments) {
+    async processPayments() {
         // const payments: any = await paymentUtil.getAllCronJobPayments();
         const settings = await this.settingsRepository.getAllWithoutPagination();
         const cronId = (0, uuid_1.v4)();
-        await this.pendingAuthorized(settings, payments, cronId);
-        await this.pendingCaptured(payments, cronId, settings);
-        await this.failedAuthorized(payments, cronId, settings);
-        await this.failedCaptured(payments, cronId, settings);
+        const paymentsPendingAuthorized = await payment_util_1.default.getPendingAuthorized();
+        await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
+        const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptured();
+        await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
+        const paymentsFailedAuthorized = await payment_util_1.default.getFailedAuthorized();
+        await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
+        const paymentsFailedCaptured = await payment_util_1.default.getFailedCaptured();
+        await this.failedCaptured(paymentsFailedCaptured, cronId, settings);
     }
     async updateDebtorPaidValues(id, commission) {
         await this.debtorRepository.updateById(id, {
@@ -421,7 +439,7 @@ class CronJob {
             updateObjPayment['status'] = 'Pending';
             // paymentLogging.successReason = responseText;
             successAuth = true;
-            await email_util_1.default.sendEmailOrSmsByEventForCommission('successful_payment', payment);
+            email_util_1.default.sendEmailOrSmsByEventForCommission('successful_payment', payment);
         }
         else {
             updateObjPayment['authorized'] = 'Failed';
@@ -432,8 +450,7 @@ class CronJob {
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email through template');
-            await email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
+            email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
@@ -477,7 +494,7 @@ class CronJob {
                 weeklyCommissionPaid: true,
             });
             successCapture = true;
-            await email_util_1.default.sendEmailOrSmsByEventForCommission('successful_payment', payment);
+            email_util_1.default.sendEmailOrSmsByEventForCommission('successful_payment', payment);
         }
         else {
             if (type === 'ck') {
@@ -491,8 +508,7 @@ class CronJob {
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email'); // add code
-            await email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
+            email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
         }
         if (retryPlus)
             updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
@@ -576,7 +592,17 @@ class CronJob {
         const { authorizationInterval } = settings.length
             ? settings[0].paymentsAuthorizations
             : this.defaultAuthInterval();
-        const pendingAuthorized = payments[0].pendingAuthorized.filter((payment) => {
+        // const pendingAuthorized = payments[0].pendingAuthorized.filter(
+        //   (payment: IPayment) => {
+        //     if (payment.timePeriod) {
+        //       const interval =
+        //         authorizationInterval[payment.timePeriod.toLowerCase()];
+        //       return this.shouldAuthorize(interval.unit, interval.value, payment);
+        //     }
+        //     return false;
+        //   }
+        // );
+        const pendingAuthorized = payments.filter((payment) => {
             if (payment.timePeriod) {
                 const interval = authorizationInterval[payment.timePeriod.toLowerCase()];
                 return this.shouldAuthorize(interval.unit, interval.value, payment);
@@ -601,7 +627,12 @@ class CronJob {
     }
     async pendingCaptured(payments, cronId, settings) {
         const currentDate = new Date(common_util_1.default.getCurrentDate());
-        const pendingCaptured = payments[0].pendingCaptured.filter((payment) => {
+        // const pendingCaptured = payments[0].pendingCaptured.filter(
+        //   (payment: IPayment) => {
+        //     return currentDate.getTime() >= new Date(payment.dueDate).getTime();
+        //   }
+        // );
+        const pendingCaptured = payments.filter((payment) => {
             return currentDate.getTime() >= new Date(payment.dueDate).getTime();
         });
         await this.processCapture(pendingCaptured, cronId, false, settings);
@@ -630,8 +661,15 @@ class CronJob {
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
             : this.defaultRetryInterval();
-        const filterPaymentWithRetries = payments[0].failedAuthorized.filter((payment) => {
-            return (payment.retriesAuth != retryInterval.failedAuthorization.maxRetry);
+        // const filterPaymentWithRetries = payments[0].failedAuthorized.filter(
+        //   (payment: IPayment) => {
+        //     return (
+        //       payment.retriesAuth != retryInterval.failedAuthorization.maxRetry
+        //     );
+        //   }
+        // );
+        const filterPaymentWithRetries = payments.filter((payment) => {
+            return payment.retriesAuth != retryInterval.failedAuthorization.maxRetry;
         });
         const failedAuthorized = filterPaymentWithRetries.filter((payment) => {
             return this.retry(payment.rescheduled);
@@ -640,7 +678,7 @@ class CronJob {
     }
     async processAuthorized(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
-            const accounts = payment.caseDetails.debtorDetails.accounts;
+            const accounts = payment.caseId.debtor.accounts;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId);
@@ -672,7 +710,7 @@ class CronJob {
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['status'] = 'Pending';
             result = true;
-            await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', payment._id, '');
+            email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', payment._id, '');
             // paymentLogging.successReason = responseText;
         }
         else {
@@ -685,8 +723,7 @@ class CronJob {
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email through template');
-            await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
+            email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
@@ -724,7 +761,7 @@ class CronJob {
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
             : this.defaultRetryInterval();
-        const filterPaymentWithRetries = payments[0].failedCaptured.filter((payment) => {
+        const filterPaymentWithRetries = payments.filter((payment) => {
             return payment.retriesCapture != retryInterval.failedPayment.maxRetry;
         });
         const failedCaptured = filterPaymentWithRetries.filter((payment) => {
@@ -734,7 +771,7 @@ class CronJob {
     }
     async processCapture(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
-            const accounts = payment.caseDetails.debtorDetails.accounts;
+            const accounts = payment.caseId.debtor.accounts;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, '');
@@ -770,7 +807,7 @@ class CronJob {
             }
             // paymentLogging.successReason = responseText;
             result = true;
-            await email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+            email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
         }
         else {
             if (type === 'ck') {
@@ -785,8 +822,7 @@ class CronJob {
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            console.log('send email'); // add code
-            await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+            email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
         }
         if (retryPlus)
             updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;

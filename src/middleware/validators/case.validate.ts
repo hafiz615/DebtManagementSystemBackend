@@ -202,7 +202,7 @@ class CaseValidate {
         }),
         businessInformation: Joi.object({
           companyName: Joi.string().required(),
-          businessCategory: Joi.string().required(),
+          businessCategory: Joi.string().allow(''),
         }),
         contacts: Joi.array()
           .items(
@@ -238,6 +238,8 @@ class CaseValidate {
       totalDebt: Joi.number().strict().optional(),
       lastPaymentDate: Joi.date().optional().allow(''),
       paidAmount: Joi.number().strict().optional(),
+      commission: Joi.number().strict().allow(0),
+      totalCommission: Joi.number().strict().allow(0),
       remaining: Joi.number().strict().optional(),
       confidence: Joi.number().strict(),
       isExempt: Joi.boolean().optional(),
@@ -298,7 +300,7 @@ class CaseValidate {
             }),
             businessInformation: Joi.object({
               companyName: Joi.string().required(),
-              businessCategory: Joi.string().required(),
+              businessCategory: Joi.string().allow(''),
             }),
             contacts: Joi.array().items(
               Joi.object({
@@ -374,6 +376,27 @@ class CaseValidate {
   async validateAddNotes(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       notes: Joi.string().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+  async sendSettlementEmail(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      sendTo: Joi.string().required(),
+      from: Joi.string().required(),
+      content: Joi.string().required(),
+      subject: Joi.string().required(),
+      cc: Joi.array().items(Joi.string()),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

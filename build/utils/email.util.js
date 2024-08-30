@@ -14,6 +14,10 @@ const user_repository_1 = require("../api/repository/user/user.repository");
 const lodash_1 = __importDefault(require("lodash"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const twilio_1 = __importDefault(require("twilio"));
+const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
+const case_util_1 = __importDefault(require("./case.util"));
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -25,6 +29,7 @@ class EmailUtil {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.userRepository = new user_repository_1.UserRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
     }
     async sendInvitationLink(user, link) {
         const msg = {
@@ -60,7 +65,7 @@ class EmailUtil {
                     const template = await this.getTemplate(userPermission.email_template);
                     if (!template)
                         continue;
-                    const allValues = await this.getValuesFromHtml(template.content);
+                    const allValues = await this.getValues(template.content);
                     if (!allValues.length)
                         continue;
                     let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
@@ -70,11 +75,58 @@ class EmailUtil {
                     const compiledHtml = handlebars_1.default.compile(template.content);
                     const html = compiledHtml(nestedObject);
                     const emails = await this.getEmail(caseTemp, userPermission.role);
-                    await this.sendEmail(emails, template.from
-                        ? template.from
-                        : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
+                    if (emails) {
+                        const from = template.from
+                            ? template.from
+                            : 'ralph@firstchoicedebtsolutions.org';
+                        await this.sendEmail(emails, from, template.subject, html);
+                        if (caseId) {
+                            const time = new Date(common_util_1.default.getCurrentDate());
+                            await case_util_1.default.addInHistory({
+                                From: from,
+                                To: emails,
+                                Content: html,
+                                Time: time,
+                                Action: 'EMAIL',
+                            }, caseId);
+                        }
+                    }
                 }
                 if (userPermission.sms_allowed && userPermission.sms_template) {
+                    const template = await this.getTemplate(userPermission.sms_template);
+                    if (!template)
+                        continue;
+                    const allValues = await this.getValues(template.content);
+                    if (!allValues.length)
+                        continue;
+                    let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
+                    if (!Object.keys(replacements).length)
+                        continue;
+                    const nestedObject = await this.unflat(replacements);
+                    const compiledContent = handlebars_1.default.compile(template.content);
+                    const text = compiledContent(nestedObject);
+                    let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
+                    if (phoneNumbers) {
+                        const fromNumber = process.env.twilioFromNumber;
+                        if (userPermission.role === 'Admin') {
+                            for (const phone of phoneNumbers) {
+                                await this.sendSms(text, phone, fromNumber);
+                            }
+                        }
+                        else {
+                            await this.sendSms(text, phoneNumbers, fromNumber);
+                        }
+                        if (caseId) {
+                            const time = new Date(common_util_1.default.getCurrentDate());
+                            await case_util_1.default.addInHistory({
+                                From: fromNumber,
+                                To: phoneNumbers,
+                                Content: text,
+                                Time: time,
+                                Action: 'SMS',
+                            }, caseId);
+                        }
+                    }
                 }
             }
         }
@@ -89,7 +141,7 @@ class EmailUtil {
                     const template = await this.getTemplate(userPermission.email_template);
                     if (!template)
                         continue;
-                    const allValues = await this.getValuesFromHtml(template.content);
+                    const allValues = await this.getValues(template.content);
                     if (!allValues.length)
                         continue;
                     let replacements = await this.getPopulatedObject(event, debtor, null, null, null, payment, allValues);
@@ -103,6 +155,24 @@ class EmailUtil {
                         : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
                 }
                 if (userPermission.sms_allowed && userPermission.sms_template) {
+                    // const template = await this.getTemplate(userPermission.sms_template);
+                    // if (!template) continue;
+                    // const allValues = await this.getValues(template.content);
+                    // if (!allValues.length) continue;
+                    // let replacements = await this.getPopulatedObject(
+                    //   event,
+                    //   debtor,
+                    //   null,
+                    //   null,
+                    //   null,
+                    //   payment,
+                    //   allValues
+                    // );
+                    // if (!Object.keys(replacements).length) continue;
+                    // const nestedObject = await this.unflat(replacements);
+                    // const compiledContent = handlebars.compile(template.content);
+                    // const text = compiledContent(nestedObject);
+                    // await this.sendSms(text, '');
                 }
             }
         }
@@ -116,17 +186,47 @@ class EmailUtil {
                 const emails = users.map(user => {
                     return user.email;
                 });
-                return emails;
+                return emails?.length ? emails : null;
             case 'Debtor':
-                return caseTemp.debtor.basicInformation.email;
+                return caseTemp?.debtor?.basicInformation?.email
+                    ? caseTemp.debtor.basicInformation.email
+                    : null;
             case 'Creditor':
-                return caseTemp.creditor.basicInformation.email;
+                return caseTemp?.creditor?.basicInformation?.email
+                    ? caseTemp.creditor.basicInformation.email
+                    : null;
             case 'Case Manager':
                 const manager = await this.userRepository.getById(caseTemp.managerId);
-                return manager.email;
+                return manager?.email ? manager.email : null;
             case 'Negotiator':
                 const negotiator = await this.userRepository.getById(caseTemp.negotiatorId);
-                return negotiator.email;
+                return negotiator?.email ? negotiator.email : null;
+        }
+    }
+    async getPhone(caseTemp, role) {
+        switch (role) {
+            case 'Admin':
+                const users = await this.userRepository.getAllWithoutPagination({
+                    role: role,
+                });
+                const phoneNumbers = users.map(user => {
+                    return user.phone;
+                });
+                return phoneNumbers?.length ? phoneNumbers : null;
+            case 'Debtor':
+                return caseTemp?.debtor?.basicInformation?.phone
+                    ? caseTemp.debtor.basicInformation.phone
+                    : null;
+            case 'Creditor':
+                return caseTemp?.creditor?.basicInformation?.phone
+                    ? caseTemp.creditor.basicInformation.phone
+                    : null;
+            case 'Case Manager':
+                const manager = await this.userRepository.getById(caseTemp.managerId);
+                return manager?.phone ? manager.phone : null;
+            case 'Negotiator':
+                const negotiator = await this.userRepository.getById(caseTemp.negotiatorId);
+                return negotiator?.phone ? negotiator.phone : null;
             default:
                 break;
         }
@@ -151,7 +251,6 @@ class EmailUtil {
             : null;
     }
     async initializeValues(caseId, paymentId, userId) {
-        console.log(userId, 'userIduserId');
         let debtor = null, creditor = null, user = null, payment = null, caseTemp = null;
         if (caseId) {
             const result = await this.caseRepository.getById(caseId, undefined, undefined, ['debtor', 'creditor']);
@@ -174,7 +273,7 @@ class EmailUtil {
         }
         return [user, debtor, creditor, caseTemp, payment];
     }
-    async getValuesFromHtml(html) {
+    async getValues(html) {
         const regex = /\{\{([^}]+)\}\}/g;
         const matches = [];
         let match = [];
@@ -215,20 +314,62 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, html) {
+    async sendEmail(to, from, subject, content, cc, buffer) {
         const msg = {
             to: to,
             from: from, // Use the email address or domain you verified above
             subject: subject,
-            html: html,
+            html: content,
         };
+        if (cc?.length) {
+            msg['cc'] = cc;
+        }
+        if (Buffer.isBuffer(buffer)) {
+            msg['attachments'] = [
+                {
+                    content: buffer.toString('base64'),
+                    filename: 'Settlement Agreement.pdf',
+                    type: 'application/pdf',
+                    disposition: 'attachment',
+                },
+            ];
+        }
         try {
             await mail_1.default.send(msg);
+            return [true, 'Email sent successfully'];
         }
         catch (error) {
-            console.log(error.response.body);
+            console.log(error.response.body.errors[0].message);
+            return [false, error.response.body.errors[0].message];
+        }
+    }
+    async sendSms(body, phone, from) {
+        try {
+            const result = await this.client.messages.create({
+                body: body,
+                from: from, //the phone number provided by Twillio
+                to: phone, // your own phone number
+            });
+        }
+        catch (error) {
+            console.log(error);
             return error.message;
         }
+    }
+    async generatePdfFromHtml(htmlString) {
+        const browser = await puppeteer_core_1.default.launch({
+            executablePath: '/usr/bin/chromium-browser',
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
+        const page = await browser.newPage();
+        await page.setContent(htmlString, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+        });
+        await browser.close();
+        return Buffer.from(pdfBuffer);
     }
 }
 exports.default = new EmailUtil();

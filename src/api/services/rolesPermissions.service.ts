@@ -23,7 +23,6 @@ class RolesPermissionsService {
         name: req.body.name,
         isDeleted: false,
       });
-    console.log(findRole);
     if (findRole) {
       return [false, constantsUtil.alreadyExistsMessage('Role')];
     }
@@ -58,7 +57,10 @@ class RolesPermissionsService {
     }
     const result =
       await this.rolesPermissionsRepository.getAllWithoutPagination<IRolesPermissions>(
-        filter
+        filter,
+        undefined,
+        undefined,
+        {_id: -1}
       );
     if (!result.length) {
       return [false, constantsUtil.notFoundMessage('roles')];

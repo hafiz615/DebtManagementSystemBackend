@@ -6,6 +6,7 @@ import {CaseRepository} from '../repository/case/case.repository';
 import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
 import axios from 'axios';
+import axiosInstance from '../../utils/axiosInstanceInterceptor';
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
@@ -17,30 +18,35 @@ class CreditorService {
   }
 
   async getCreditor(text: string): Promise<[boolean, ICreditor[] | string]> {
-    const creditor = await this.creditorRepository.getAll<ICreditor>({
-      $or: [
-        {
-          'basicInformation.email': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+    const creditor = await this.creditorRepository.getAll<ICreditor>(
+      {
+        $or: [
+          {
+            'basicInformation.email': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.fullName': {
-            $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+          {
+            'basicInformation.fullName': {
+              $regex: new RegExp(text, 'i'), // Case-insensitive match for email
+            },
           },
-        },
-        {
-          'basicInformation.phone': {
-            $regex: new RegExp(text),
+          {
+            'basicInformation.phone': {
+              $regex: new RegExp(text),
+            },
           },
-        },
-        {
-          'businessInformation.companyName': {
-            $regex: new RegExp(text, 'i'),
+          {
+            'businessInformation.companyName': {
+              $regex: new RegExp(text, 'i'),
+            },
           },
-        },
-      ],
-    });
+        ],
+      },
+      undefined,
+      undefined,
+      {_id: -1}
+    );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
     }
@@ -216,7 +222,7 @@ class CreditorService {
       security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
       payment_token: paymentToken,
     };
-    const response = await axios.get(url, {params});
+    const response = await axiosInstance.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(

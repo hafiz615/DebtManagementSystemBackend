@@ -16,6 +16,7 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const uuid_1 = require("uuid");
 const case_repository_1 = require("../repository/case/case.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const client_1 = __importDefault(require("@sendgrid/client"));
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
@@ -236,6 +237,7 @@ class UserService {
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
         this.caseRepository = new case_repository_1.CaseRepository();
+        client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
     async createUser(req) {
         let user = null;
@@ -392,6 +394,43 @@ class UserService {
             return [false, constants_util_1.default.failureUpdateMessage('password')];
         }
         return [true, updateUser];
+    }
+    async addSenderIdentity(req) {
+        const data = {
+            from_email: 'umar.iqbal@luminogics.com',
+            reply_to: 'umar.iqbal@luminogics.com',
+            from_name: 'Mohsin',
+            nickname: 'Umar',
+            address: 'Sikandar block',
+            city: 'Lahore',
+            country: 'Pakistan',
+        };
+        const request = {
+            url: `/v3/verified_senders`,
+            method: 'POST',
+            body: data,
+        };
+        const result = await client_1.default.request(request);
+        console.log(result[0].statusCode);
+        console.log(result[0]);
+        return [true, result[0].body];
+    }
+    async verifySenderIdentity(req) {
+        const url = req.body.url;
+        const decodedUrl = decodeURIComponent(url);
+        console.log(decodedUrl);
+        const splitArray = decodedUrl.split('?');
+        const queryString = splitArray[splitArray.length - 1];
+        const token = new URLSearchParams(queryString).get('token');
+        console.log(token);
+        const request = {
+            url: `/v3/verified_senders/verify/${token}`,
+            method: 'GET',
+        };
+        const result = await client_1.default.request(request);
+        console.log(result[0].statusCode);
+        console.log(result[0]);
+        return [true, result[0].body];
     }
 }
 exports.default = UserService;
