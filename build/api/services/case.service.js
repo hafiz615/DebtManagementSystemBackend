@@ -213,7 +213,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
