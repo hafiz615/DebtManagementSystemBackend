@@ -462,7 +462,7 @@ class EmailUtil {
       const result = await this.client.messages.create({
         body: body,
         from: from, //the phone number provided by Twillio
-        to: phone, // your own phone number
+        to: '+1' + phone, // your own phone number
       });
     } catch (error: any) {
       console.log(error);

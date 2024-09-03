@@ -21,7 +21,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
         weeklyBudget: Joi.number(),
@@ -37,7 +37,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
       }),
@@ -45,7 +45,7 @@ class DebtorRequests {
         name: Joi.string().required(),
         title: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         email: Joi.string().email().required(),
         relationWithDebtor: Joi.string().allow(''),
@@ -91,7 +91,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
         weeklyBudget: Joi.number(),
@@ -107,7 +107,7 @@ class DebtorRequests {
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
       }),
@@ -116,7 +116,7 @@ class DebtorRequests {
           name: Joi.string().required(),
           title: Joi.string().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
+            .pattern(/^\d{10}$/)
             .required(),
           email: Joi.string().email().required(),
           relationWithDebtor: Joi.string().allow(''),
