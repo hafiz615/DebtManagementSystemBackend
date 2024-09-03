@@ -30,6 +30,8 @@ import creditorUtil from '../../utils/creditor.util';
 import emailUtil from '../../utils/email.util';
 import {ICaseHistory} from '../../database/interfaces/caseHistory.interface';
 import {CaseHistoryRepository} from '../repository/caseHistory/caseHistory.repository';
+import {Justification} from '../../database/repomodels/justification.repomodel';
+import {JustificationRepository} from '../repository/justification/justification.repository';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -42,6 +44,7 @@ class CaseService {
   private userRepository: UserRepository;
   private strategyRepository: StrategyRepository;
   private caseHistoryRepository: CaseHistoryRepository;
+  private justificationRepository: JustificationRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -53,6 +56,7 @@ class CaseService {
     this.userRepository = new UserRepository();
     this.strategyRepository = new StrategyRepository();
     this.caseHistoryRepository = new CaseHistoryRepository();
+    this.justificationRepository = new JustificationRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -895,6 +899,17 @@ class CaseService {
       caseId: req.params.id,
     });
     return [true, result?.caseHistory ?? []];
+  }
+
+  async saveJustification(req: Request) {
+    const justification = await this.justificationRepository.upsert<ICase>(
+      {},
+      req.body
+    );
+    if (!justification) {
+      return [false, constantsUtil.notFoundMessage('justification')];
+    }
+    return [true, justification];
   }
 }
 

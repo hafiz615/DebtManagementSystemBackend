@@ -114,4 +114,11 @@ router.get(
   authorize.validateAuth,
   caseController.caseHistory
 );
+
+router.post(
+  '/saveJustification',
+  authorize.validateAuth,
+  caseValidate.saveJustification,
+  caseController.saveJustification
+);
 export default router;

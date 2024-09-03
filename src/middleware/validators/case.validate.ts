@@ -85,7 +85,6 @@ class CaseValidate {
               .required(),
             email: Joi.string().email().required(),
             relationWithCreditor: Joi.string().allow(''),
-            country: Joi.string().allow(''),
             state: Joi.string().allow(''),
             city: Joi.string().allow(''),
             zipCode: Joi.string().allow(''),
@@ -214,7 +213,6 @@ class CaseValidate {
                 .required(),
               email: Joi.string().email().required(),
               relationWithCreditor: Joi.string().allow(''),
-              country: Joi.string().allow(''),
               state: Joi.string().allow(''),
               city: Joi.string().allow(''),
               zipCode: Joi.string().allow(''),
@@ -311,7 +309,6 @@ class CaseValidate {
                   .required(),
                 email: Joi.string().email().required(),
                 relationWithCreditor: Joi.string().allow(''),
-                country: Joi.string().allow(''),
                 state: Joi.string().allow(''),
                 city: Joi.string().allow(''),
                 zipCode: Joi.string().allow(''),
@@ -397,6 +394,26 @@ class CaseValidate {
       content: Joi.string().required(),
       subject: Joi.string().required(),
       cc: Joi.array().items(Joi.string()),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async saveJustification(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      gemini: Joi.boolean().required(),
+      llama: Joi.boolean().required(),
+      chatGpt: Joi.boolean().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

@@ -6,7 +6,6 @@ export class Debtor {
     fullName: '',
     email: '',
     SSID: '',
-    country: '',
     state: '',
     city: '',
     zipCode: '',
@@ -20,7 +19,6 @@ export class Debtor {
     EIN: '',
     businessCategory: '',
     description: '',
-    country: '',
     state: '',
     city: '',
     zipCode: '',
@@ -37,7 +35,6 @@ export class Debtor {
     phone: '';
     email: '';
     relationWithDebtor: '';
-    country: '';
     state: '';
     city: '';
     zipCode: '';

@@ -30,7 +30,6 @@ export class Creditor {
     phone: '';
     email: '';
     relationWithCreditor: '';
-    country: '';
     state: '';
     city: '';
     zipCode: '';

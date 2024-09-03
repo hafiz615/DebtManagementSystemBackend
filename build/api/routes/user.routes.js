@@ -25,7 +25,7 @@ router.delete('/deleteUserById/:id', authorize_middleware_1.default.validateAuth
 // authorize.validateRole,
 user_controller_1.default.deleteUserById);
 router.post('/verifyInvitationLink', user_controller_1.default.verifyInvitationLink);
-router.post('/resendInvitationLink', user_controller_1.default.resendInvitationLink);
+router.post('/resendInvitationLink', authorize_middleware_1.default.validateAuth, user_controller_1.default.resendInvitationLink);
 router.post('/getAllUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getAllUsers);
 router.post('/logout', authorize_middleware_1.default.validateAuth, user_controller_1.default.signOut);
 router.post('/dashboard', authorize_middleware_1.default.validateAuth, user_controller_1.default.dashboard);

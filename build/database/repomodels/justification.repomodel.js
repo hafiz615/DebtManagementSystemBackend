@@ -3,21 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Contact = void 0;
+exports.Justification = void 0;
 const common_util_1 = __importDefault(require("../../utils/common.util"));
-class Contact {
+class Justification {
     constructor() {
-        this.name = '';
-        this.title = '';
-        this.phone = '';
-        this.email = '';
-        this.relationWithDebtor = '';
-        this.state = '';
-        this.city = '';
-        this.zipCode = '';
+        this.gemini = false;
+        this.llama = false;
+        this.chatGpt = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
 }
-exports.Contact = Contact;
-//# sourceMappingURL=contact.repomodel.js.map
+exports.Justification = Justification;
+//# sourceMappingURL=justification.repomodel.js.map

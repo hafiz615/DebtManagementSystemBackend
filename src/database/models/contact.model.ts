@@ -26,9 +26,6 @@ const contactModel: Schema = new Schema({
   relationWithDebtor: {
     type: String,
   },
-  country: {
-    type: String,
-  },
   state: {
     type: String,
   },

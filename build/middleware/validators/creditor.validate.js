@@ -32,7 +32,6 @@ class CreditorRequests {
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithCreditor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
