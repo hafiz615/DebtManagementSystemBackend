@@ -20,6 +20,7 @@ const strategy_repository_1 = require("../repository/strategy/strategy.repositor
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const caseHistory_repository_1 = require("../repository/caseHistory/caseHistory.repository");
+const justification_repository_1 = require("../repository/justification/justification.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -514,6 +515,7 @@ class CaseService {
         this.userRepository = new user_repository_1.UserRepository();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
+        this.justificationRepository = new justification_repository_1.JustificationRepository();
     }
     async deleteCase(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id);
@@ -597,6 +599,13 @@ class CaseService {
             caseId: req.params.id,
         });
         return [true, result?.caseHistory ?? []];
+    }
+    async saveJustification(req) {
+        const justification = await this.justificationRepository.upsert({}, req.body);
+        if (!justification) {
+            return [false, constants_util_1.default.notFoundMessage('justification')];
+        }
+        return [true, justification];
     }
 }
 exports.default = CaseService;

@@ -87,7 +87,6 @@ class CaseValidate {
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithCreditor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
@@ -201,7 +200,6 @@ class CaseValidate {
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithCreditor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
@@ -285,7 +283,6 @@ class CaseValidate {
                             .required(),
                         email: joi_1.default.string().email().required(),
                         relationWithCreditor: joi_1.default.string().allow(''),
-                        country: joi_1.default.string().allow(''),
                         state: joi_1.default.string().allow(''),
                         city: joi_1.default.string().allow(''),
                         zipCode: joi_1.default.string().allow(''),
@@ -360,6 +357,22 @@ class CaseValidate {
             content: joi_1.default.string().required(),
             subject: joi_1.default.string().required(),
             cc: joi_1.default.array().items(joi_1.default.string()),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async saveJustification(req, res, next) {
+        const schema = joi_1.default.object({
+            gemini: joi_1.default.boolean().required(),
+            llama: joi_1.default.boolean().required(),
+            chatGpt: joi_1.default.boolean().required(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

@@ -6,7 +6,6 @@ export interface IContact extends Document {
   phone: string;
   email: string;
   relationWithDebtor: string;
-  country: string;
   state: string;
   city: string;
   zipCode: string;

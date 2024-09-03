@@ -18,9 +18,6 @@ const debtorSchema: Schema = new Schema({
       type: String,
       required: true,
     },
-    country: {
-      type: String,
-    },
     state: {
       type: String,
     },
@@ -60,9 +57,6 @@ const debtorSchema: Schema = new Schema({
     description: {
       type: String,
     },
-    country: {
-      type: String,
-    },
     state: {
       type: String,
     },
@@ -87,7 +81,6 @@ const debtorSchema: Schema = new Schema({
         phone: String,
         email: String,
         relationWithDebtor: String,
-        country: String,
         state: String,
         city: String,
         zipCode: String,

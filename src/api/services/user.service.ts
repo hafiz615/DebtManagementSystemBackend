@@ -155,6 +155,9 @@ class UserService {
     if (!user) {
       return [false, constants.notFoundMessage('User')];
     }
+    if (user.isActive) {
+      return [false, 'Could not send invitation link to active user'];
+    }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
     await emailUtil.sendInvitationLink(user, invitationLink);

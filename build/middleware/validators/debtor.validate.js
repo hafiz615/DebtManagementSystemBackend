@@ -20,7 +20,6 @@ class DebtorRequests {
                     SSID: joi_1.default.string()
                         .pattern(/^\d{9}$/)
                         .required(),
-                    country: joi_1.default.string().required(),
                     state: joi_1.default.string().required(),
                     status: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
@@ -38,7 +37,6 @@ class DebtorRequests {
                         .required(),
                     businessCategory: joi_1.default.string().required(),
                     description: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().required(),
                     state: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
@@ -55,7 +53,6 @@ class DebtorRequests {
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
@@ -87,7 +84,6 @@ class DebtorRequests {
                     SSID: joi_1.default.string()
                         .pattern(/^\d{9}$/)
                         .required(),
-                    country: joi_1.default.string().required(),
                     state: joi_1.default.string().required(),
                     status: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
@@ -105,7 +101,6 @@ class DebtorRequests {
                         .required(),
                     businessCategory: joi_1.default.string().required(),
                     description: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().required(),
                     state: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
@@ -122,7 +117,6 @@ class DebtorRequests {
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),

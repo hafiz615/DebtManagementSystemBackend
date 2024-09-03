@@ -53,9 +53,6 @@ const contactModel = new mongoose_1.Schema({
     relationWithDebtor: {
         type: String,
     },
-    country: {
-        type: String,
-    },
     state: {
         type: String,
     },

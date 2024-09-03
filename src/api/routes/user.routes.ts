@@ -39,7 +39,11 @@ router.delete(
   userController.deleteUserById
 );
 router.post('/verifyInvitationLink', userController.verifyInvitationLink);
-router.post('/resendInvitationLink', userController.resendInvitationLink);
+router.post(
+  '/resendInvitationLink',
+  authorize.validateAuth,
+  userController.resendInvitationLink
+);
 router.post('/getAllUsers', authorize.validateAuth, userController.getAllUsers);
 router.post('/logout', authorize.validateAuth, userController.signOut);
 router.post('/dashboard', authorize.validateAuth, userController.dashboard);
