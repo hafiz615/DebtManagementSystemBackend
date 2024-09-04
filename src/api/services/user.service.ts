@@ -156,8 +156,8 @@ class UserService {
     if (!user) {
       return [false, constants.notFoundMessage('User')];
     }
-    if (user.isActive) {
-      return [false, 'Could not send invitation link to active user'];
+    if (!user.isActive) {
+      return [false, 'Could not send invitation link to inactive user'];
     }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
@@ -165,6 +165,36 @@ class UserService {
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
     });
+    return [true, user];
+  }
+
+  async forgotPassword(email: string): Promise<[boolean, IUser | string]> {
+    const user = await this.userRepository.getOne<IUser>({email: email});
+    if (!user) {
+      return [false, constants.notFoundMessage('User')];
+    }
+    if (!user.isActive) {
+      return [false, 'Inactive users cannot do forgot password'];
+    }
+    const token = await this.tokenService.createVerifyToken(user.email);
+    const updateUser = await this.userRepository.updateById<IUser>(user._id, {
+      verifyToken: token,
+    });
+    if (!updateUser) {
+      return [false, constants.notFoundMessage('User')];
+    }
+    const invitationLink = await userUtil.getInvitationLink(token);
+    const text = `Dear ${user.name},
+
+    You've been invited to join our platform! To complete your account setup, please click the link below to set your password:
+
+    ${invitationLink}
+
+    If you didn't request this, you can safely ignore this email.
+
+   Thank you,
+   Debt-Settlement Team`;
+    await emailUtil.sendLink(user, text, constantsUtil.FORGOT_PASSWORD_SUBJECT);
     return [true, user];
   }
 

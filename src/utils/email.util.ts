@@ -50,7 +50,7 @@ class EmailUtil {
   async sendInvitationLink(user: IUser, link: string) {
     const msg = {
       to: user.email,
-      from: 'ralph@firstchoicedebtsolutions.org', // Use the email address or domain you verified above
+      from: 'ralph@firstchoicedebtsolutions.org',
       subject: `${constantsUtil.ACCOUNT_INVITATION_SUBJECT}`,
       text: `Dear ${user.name},
 
@@ -62,6 +62,21 @@ class EmailUtil {
 
             Thank you,
             Debt-Settlement Team`,
+    };
+    try {
+      await sgMail.send(msg);
+    } catch (error: any) {
+      console.log(error.message);
+      return error.message;
+    }
+  }
+
+  async sendLink(user: IUser, text: string, subject: string) {
+    const msg = {
+      to: user.email,
+      from: 'ralph@firstchoicedebtsolutions.org',
+      subject: subject,
+      text: text,
     };
     try {
       await sgMail.send(msg);
