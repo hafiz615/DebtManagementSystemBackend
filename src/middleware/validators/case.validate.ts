@@ -387,7 +387,7 @@ class CaseValidate {
         );
     }
   }
-  async sendSettlementEmail(req: Request, res: Response, next: NextFunction) {
+  async sendEmail(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       sendTo: Joi.string().required(),
       from: Joi.string().required(),

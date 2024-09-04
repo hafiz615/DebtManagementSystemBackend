@@ -1998,7 +1998,6 @@ class CaseUtil {
         const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
             $push: { caseHistory: { $each: [history], $position: 0 } },
         });
-        console.log(res);
     }
 }
 exports.default = new CaseUtil();

@@ -66,26 +66,27 @@ class EmailUtil {
                     if (!template)
                         continue;
                     const allValues = await this.getValues(template.content);
-                    if (!allValues.length)
-                        continue;
-                    let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
-                    if (!Object.keys(replacements).length)
-                        continue;
-                    const nestedObject = await this.unflat(replacements);
-                    const compiledHtml = handlebars_1.default.compile(template.content);
-                    const html = compiledHtml(nestedObject);
+                    let content = template.content;
+                    if (allValues.length) {
+                        let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
+                        if (Object.keys(replacements).length) {
+                            const nestedObject = await this.unflat(replacements);
+                            const compiledHtml = handlebars_1.default.compile(content);
+                            content = compiledHtml(nestedObject);
+                        }
+                    }
                     const emails = await this.getEmail(caseTemp, userPermission.role);
                     if (emails) {
                         const from = template.from
                             ? template.from
                             : 'ralph@firstchoicedebtsolutions.org';
-                        await this.sendEmail(emails, from, template.subject, html);
+                        await this.sendEmail(emails, from, template.subject, content);
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
                                 From: from,
                                 To: emails,
-                                Content: html,
+                                Content: content,
                                 Time: time,
                                 Action: 'EMAIL',
                             }, caseId);
@@ -97,31 +98,32 @@ class EmailUtil {
                     if (!template)
                         continue;
                     const allValues = await this.getValues(template.content);
-                    if (!allValues.length)
-                        continue;
-                    let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
-                    if (!Object.keys(replacements).length)
-                        continue;
-                    const nestedObject = await this.unflat(replacements);
-                    const compiledContent = handlebars_1.default.compile(template.content);
-                    const text = compiledContent(nestedObject);
+                    let content = template.content;
+                    if (allValues.length) {
+                        let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
+                        if (Object.keys(replacements).length) {
+                            const nestedObject = await this.unflat(replacements);
+                            const compiledContent = handlebars_1.default.compile(content);
+                            content = compiledContent(nestedObject);
+                        }
+                    }
                     let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
                     if (phoneNumbers) {
                         const fromNumber = process.env.twilioFromNumber;
                         if (userPermission.role === 'Admin') {
                             for (const phone of phoneNumbers) {
-                                await this.sendSms(text, phone, fromNumber);
+                                await this.sendSms(content, phone, fromNumber);
                             }
                         }
                         else {
-                            await this.sendSms(text, phoneNumbers, fromNumber);
+                            await this.sendSms(content, phoneNumbers, fromNumber);
                         }
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
                                 From: fromNumber,
                                 To: phoneNumbers,
-                                Content: text,
+                                Content: content,
                                 Time: time,
                                 Action: 'SMS',
                             }, caseId);
@@ -130,6 +132,48 @@ class EmailUtil {
                 }
             }
         }
+    }
+    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type) {
+        let { from, sendTo, subject, content } = body;
+        const allValues = await this.getValues(content);
+        if (allValues.length) {
+            let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, '', userId);
+            let replacements = await this.getPopulatedObject(null, debtor, creditor, caseTemp, user, payment, allValues);
+            if (Object.keys(replacements).length) {
+                const nestedObject = await this.unflat(replacements);
+                const compiledString = handlebars_1.default.compile(content);
+                content = compiledString(nestedObject);
+            }
+        }
+        const time = new Date(common_util_1.default.getCurrentDate());
+        switch (type) {
+            case 'email':
+                const result = await this.sendEmail(sendTo, from, subject, content);
+                if (result[0]) {
+                    await case_util_1.default.addInHistory({
+                        From: from,
+                        To: sendTo,
+                        Content: content,
+                        Time: time,
+                        Action: 'EMAIL',
+                    }, caseId);
+                }
+                return result;
+            case 'sms':
+                const fromNumber = process.env.twilioFromNumber;
+                const smsResult = await this.sendSms(content, sendTo, fromNumber);
+                if (smsResult[0]) {
+                    await case_util_1.default.addInHistory({
+                        From: fromNumber,
+                        To: sendTo,
+                        Content: content,
+                        Time: time,
+                        Action: 'SMS',
+                    }, caseId);
+                }
+                return smsResult;
+        }
+        return [true, `Your ${type} is delivered successfully`];
     }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
@@ -142,17 +186,18 @@ class EmailUtil {
                     if (!template)
                         continue;
                     const allValues = await this.getValues(template.content);
-                    if (!allValues.length)
-                        continue;
-                    let replacements = await this.getPopulatedObject(event, debtor, null, null, null, payment, allValues);
-                    if (!Object.keys(replacements).length)
-                        continue;
-                    const nestedObject = await this.unflat(replacements);
-                    const compiledHtml = handlebars_1.default.compile(template.content);
-                    const html = compiledHtml(nestedObject);
+                    let content = template.content;
+                    if (allValues.length) {
+                        let replacements = await this.getPopulatedObject(event, debtor, null, null, null, payment, allValues);
+                        if (Object.keys(replacements).length) {
+                            const nestedObject = await this.unflat(replacements);
+                            const compiledHtml = handlebars_1.default.compile(content);
+                            content = compiledHtml(nestedObject);
+                        }
+                    }
                     await this.sendEmail('ralph@firstchoicedebtsolutions.org', template.from
                         ? template.from
-                        : 'ralph@firstchoicedebtsolutions.org', template.subject, html);
+                        : 'ralph@firstchoicedebtsolutions.org', template.subject, content);
                 }
                 if (userPermission.sms_allowed && userPermission.sms_template) {
                     // const template = await this.getTemplate(userPermission.sms_template);
@@ -336,9 +381,10 @@ class EmailUtil {
         }
         try {
             await mail_1.default.send(msg);
-            return [true, 'Email sent successfully'];
+            return [true, `Your email is delivered successfully`];
         }
         catch (error) {
+            console.log(error);
             console.log(error.response.body.errors[0].message);
             return [false, error.response.body.errors[0].message];
         }
@@ -350,10 +396,14 @@ class EmailUtil {
                 from: from, //the phone number provided by Twillio
                 to: '+1' + phone, // your own phone number
             });
+            if (result.sid) {
+                return [true, `Your sms is delivered successfully`];
+            }
+            return [false, 'Could not send sms'];
         }
         catch (error) {
             console.log(error);
-            return error.message;
+            return [false, error.message];
         }
     }
     async generatePdfFromHtml(htmlString) {

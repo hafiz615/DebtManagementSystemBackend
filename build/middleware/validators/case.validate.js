@@ -350,7 +350,7 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
-    async sendSettlementEmail(req, res, next) {
+    async sendEmail(req, res, next) {
         const schema = joi_1.default.object({
             sendTo: joi_1.default.string().required(),
             from: joi_1.default.string().required(),
