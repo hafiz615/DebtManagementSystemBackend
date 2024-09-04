@@ -33,15 +33,12 @@ class UserService {
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
     let user = null;
+    const email = req.body.email.toLowerCase();
     user = await this.userRepository.getOne<IUser>({
-      $or: [
-        {email: req.body.email.toLowerCase()},
-        {phone: req.body.phone},
-        {SSID: req.body.SSID},
-      ],
+      $or: [{email: email}, {phone: req.body.phone}, {SSID: req.body.SSID}],
     });
     if (user && !user.isDeleted) {
-      if (user.email === req.body.email.toLowerCase()) {
+      if (user.email === email) {
         return [false, constants.alreadyExistsMessage('Email')];
       }
       if (user.SSID === req.body.SSID) {
@@ -50,7 +47,7 @@ class UserService {
       return [false, constants.alreadyExistsMessage('Phone')];
     }
     if (!user) {
-      req.body.email = req.body.email.toLowerCase();
+      req.body.email = email;
       const newUser = new User();
       const validatedUser = DataCopier.copy(newUser, req.body as IUser);
       user = await this.userRepository.create<IUser>(validatedUser);
@@ -58,14 +55,18 @@ class UserService {
         return [false, constants.failureRegisterMessage('User')];
       }
     }
-    const token = await this.tokenService.createVerifyToken(user.email);
-    const invitationLink = await userUtil.getInvitationLink(token);
-    await emailUtil.sendInvitationLink(user, invitationLink);
+    const token = await this.tokenService.createVerifyToken(email);
     req.body.verifyToken = token;
     req.body.isDeleted = false;
     let updatedUser = await this.userRepository.updateById<IUser>(user._id, {
       ...req.body,
     });
+    if (!updatedUser) {
+      return [false, constants.failureRegisterMessage('User')];
+    }
+    const invitationLink = await userUtil.getInvitationLink(token);
+    await emailUtil.sendInvitationLink(updatedUser, invitationLink);
+
     return [true, updatedUser];
   }
 

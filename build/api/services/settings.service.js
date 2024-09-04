@@ -14,6 +14,7 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const notificationConfiguration_repository_1 = require("../repository/notificationConfiguration/notificationConfiguration.repository");
 const notificationConfiguration_repomodel_1 = require("../../database/repomodels/notificationConfiguration.repomodel");
+const justification_repository_1 = require("../repository/justification/justification.repository");
 class SettingsService {
     constructor() {
         this.settingsRepository = new settings_repository_1.SettingsRepository();
@@ -21,6 +22,7 @@ class SettingsService {
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
         this.notificationConfigurationRepository =
             new notificationConfiguration_repository_1.NotificationConfigurationRepository();
+        this.justificationRepository = new justification_repository_1.JustificationRepository();
     }
     async addSettings(req, keyword) {
         let settigns = null;
@@ -81,6 +83,7 @@ class SettingsService {
     async getSettings(templatePermission, paymentsPermission, customFieldsPermission) {
         const findSettings = await this.settingsRepository.getAllWithoutPagination();
         const customFields = await this.customFieldsRepository.getAllWithoutPagination();
+        const justification = await this.justificationRepository.getOne({});
         if (!findSettings.length) {
             return [
                 true,
@@ -88,6 +91,7 @@ class SettingsService {
                     paymentsAuthorizations: null,
                     notificationTemplates: null,
                     customFields: customFields.length ? customFields : null,
+                    justification: justification ? justification : null,
                 },
             ];
         }
@@ -101,6 +105,7 @@ class SettingsService {
                     ? findSettings[0].notificationTemplates
                     : null,
                 customFields: customFieldsPermission ? customFields : null,
+                justification: justification ? justification : null,
             },
         ];
     }
