@@ -353,7 +353,7 @@ class CaseValidate {
     async sendEmail(req, res, next) {
         const schema = joi_1.default.object({
             sendTo: joi_1.default.string().required(),
-            from: joi_1.default.string().required().allow(''),
+            from: joi_1.default.string().optional(),
             content: joi_1.default.string().required(),
             subject: joi_1.default.string().required(),
             cc: joi_1.default.array().items(joi_1.default.string()),

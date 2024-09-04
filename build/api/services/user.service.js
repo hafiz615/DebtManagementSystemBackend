@@ -382,7 +382,7 @@ class UserService {
    Thank you,
    Debt-Settlement Team`;
         await email_util_1.default.sendLink(user, text, constants_util_2.default.FORGOT_PASSWORD_SUBJECT);
-        return [true, user];
+        return [true, 'Reset password link sent successfully'];
     }
     async updatePassword(req) {
         const findUser = await this.userRepository.getOne({

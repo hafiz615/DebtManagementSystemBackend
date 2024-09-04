@@ -31,6 +31,6 @@ router.post('/logout', authorize_middleware_1.default.validateAuth, user_control
 router.post('/dashboard', authorize_middleware_1.default.validateAuth, user_controller_1.default.dashboard);
 router.post('/addSenderIdentity', authorize_middleware_1.default.validateAuth, user_controller_1.default.addSenderIdentity);
 router.post('/verifySenderIdentity', authorize_middleware_1.default.validateAuth, user_controller_1.default.verifySenderIdentity);
-router.put('/forgotPassword', user_controller_1.default.updatePassword);
+router.post('/forgotPassword', user_controller_1.default.forgotPassword);
 exports.default = router;
 //# sourceMappingURL=user.routes.js.map

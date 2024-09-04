@@ -195,7 +195,7 @@ class UserService {
    Thank you,
    Debt-Settlement Team`;
     await emailUtil.sendLink(user, text, constantsUtil.FORGOT_PASSWORD_SUBJECT);
-    return [true, user];
+    return [true, 'Reset password link sent successfully'];
   }
 
   async updatePassword(

@@ -58,6 +58,6 @@ router.post(
   userController.verifySenderIdentity
 );
 
-router.put('/forgotPassword', userController.updatePassword);
+router.post('/forgotPassword', userController.forgotPassword);
 
 export default router;
