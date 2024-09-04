@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
@@ -237,11 +236,13 @@ class CaseService {
         this.getSummary = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const response = await case_util_1.default.getSummary(req, caseTemp);
-            const newSummary = new chatSummary_repomodel_1.ChatSummary();
-            newSummary.chatId = caseTemp.chatId;
-            newSummary.prompt = req.body.humanInput;
-            const validatedSummary = dataCopier_util_1.DataCopier.copy(newSummary, response);
-            await this.chatSummaryRepository.create(validatedSummary);
+            if (response[0]) {
+                const newSummary = new chatSummary_repomodel_1.ChatSummary();
+                newSummary.chatId = caseTemp.chatId;
+                newSummary.prompt = req.body.humanInput;
+                newSummary.chat = response[1];
+                await this.chatSummaryRepository.create(newSummary);
+            }
             return response;
         };
         this.getAIToken = async (req) => {
@@ -252,7 +253,7 @@ class CaseService {
             const caseTemp = await this.caseRepository.getById(req.params.id, 'chatId', undefined, ['debtor']);
             const response = await this.chatSummaryRepository.getAllWithoutPagination({
                 chatId: caseTemp.chatId,
-            }, undefined, undefined, { _id: -1 });
+            }, undefined, undefined);
             if (!response.length) {
                 return [false, constants_util_1.default.notFoundMessage('Summaries')];
             }

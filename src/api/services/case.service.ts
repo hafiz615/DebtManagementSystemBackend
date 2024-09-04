@@ -380,11 +380,13 @@ class CaseService {
       ['debtor']
     );
     const response = await caseUtil.getSummary(req, caseTemp);
-    const newSummary = new ChatSummary();
-    newSummary.chatId = caseTemp.chatId;
-    newSummary.prompt = req.body.humanInput;
-    const validatedSummary = DataCopier.copy(newSummary, response);
-    await this.chatSummaryRepository.create(validatedSummary);
+    if (response[0]) {
+      const newSummary = new ChatSummary();
+      newSummary.chatId = caseTemp.chatId;
+      newSummary.prompt = req.body.humanInput;
+      newSummary.chat = response[1];
+      await this.chatSummaryRepository.create(newSummary as any);
+    }
     return response;
   };
 
@@ -408,8 +410,7 @@ class CaseService {
           chatId: caseTemp.chatId,
         },
         undefined,
-        undefined,
-        {_id: -1}
+        undefined
       );
     if (!response.length) {
       return [false, constantsUtil.notFoundMessage('Summaries')];
