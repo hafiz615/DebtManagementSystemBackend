@@ -2,6 +2,7 @@ import {Document} from 'mongoose';
 
 export interface IChatSummary extends Document {
   chatId: string;
+  prompt: string;
   settlement_range_1: {
     lower_bound: number;
     upper_bound: number;

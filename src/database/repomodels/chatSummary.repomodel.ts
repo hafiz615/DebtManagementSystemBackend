@@ -2,6 +2,7 @@ import commonUtil from '../../utils/common.util';
 
 export class ChatSummary {
   chatId = '';
+  prompt = '';
   settlement_range_1 = {
     lower_bound: 0,
     upper_bound: 0,

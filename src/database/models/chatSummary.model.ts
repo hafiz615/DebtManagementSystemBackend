@@ -8,6 +8,9 @@ const SettlementRangeSchema = new Schema({
   chatId: {
     type: String,
   },
+  prompt: {
+    type: String,
+  },
   settlement_range_1: {
     lower_bound: {
       type: Number,

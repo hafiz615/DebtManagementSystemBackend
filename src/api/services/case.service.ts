@@ -382,6 +382,7 @@ class CaseService {
     const response = await caseUtil.getSummary(req, caseTemp);
     const newSummary = new ChatSummary();
     newSummary.chatId = caseTemp.chatId;
+    newSummary.prompt = req.body.humanInput;
     const validatedSummary = DataCopier.copy(newSummary, response);
     await this.chatSummaryRepository.create(validatedSummary);
     return response;

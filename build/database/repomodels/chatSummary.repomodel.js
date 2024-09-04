@@ -8,6 +8,7 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class ChatSummary {
     constructor() {
         this.chatId = '';
+        this.prompt = '';
         this.settlement_range_1 = {
             lower_bound: 0,
             upper_bound: 0,

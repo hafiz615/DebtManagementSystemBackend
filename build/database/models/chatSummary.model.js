@@ -35,6 +35,9 @@ const SettlementRangeSchema = new mongoose_1.Schema({
     chatId: {
         type: String,
     },
+    prompt: {
+        type: String,
+    },
     settlement_range_1: {
         lower_bound: {
             type: Number,
