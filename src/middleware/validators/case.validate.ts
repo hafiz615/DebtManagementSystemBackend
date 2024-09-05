@@ -428,7 +428,7 @@ class CaseValidate {
           .pattern(/^\d{10}$/)
           .required(),
         content: Joi.string().required(),
-        subject: Joi.string(),
+        subject: Joi.string().optional(),
       });
     }
     const schema = object;
