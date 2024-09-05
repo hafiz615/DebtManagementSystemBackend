@@ -69,7 +69,7 @@ class CaseValidate {
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
+            .pattern(/^\d{10}$/)
             .required(),
         }),
         businessInformation: Joi.object({
@@ -81,7 +81,7 @@ class CaseValidate {
             name: Joi.string().required(),
             title: Joi.string().required(),
             phone: Joi.string()
-              .pattern(/^\+\d{11}$/)
+              .pattern(/^\d{10}$/)
               .required(),
             email: Joi.string().email().required(),
             relationWithCreditor: Joi.string().allow(''),
@@ -196,7 +196,7 @@ class CaseValidate {
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
+            .pattern(/^\d{10}$/)
             .required(),
         }),
         businessInformation: Joi.object({
@@ -209,7 +209,7 @@ class CaseValidate {
               name: Joi.string().required(),
               title: Joi.string().required(),
               phone: Joi.string()
-                .pattern(/^\+\d{11}$/)
+                .pattern(/^\d{10}$/)
                 .required(),
               email: Joi.string().email().required(),
               relationWithCreditor: Joi.string().allow(''),
@@ -293,7 +293,7 @@ class CaseValidate {
               fullName: Joi.string().required(),
               email: Joi.string().email().required(),
               phone: Joi.string()
-                .pattern(/^\+\d{11}$/)
+                .pattern(/^\d{10}$/)
                 .required(),
             }),
             businessInformation: Joi.object({
@@ -305,7 +305,7 @@ class CaseValidate {
                 name: Joi.string().required(),
                 title: Joi.string().required(),
                 phone: Joi.string()
-                  .pattern(/^\+\d{11}$/)
+                  .pattern(/^\d{10}$/)
                   .required(),
                 email: Joi.string().email().required(),
                 relationWithCreditor: Joi.string().allow(''),
@@ -387,10 +387,10 @@ class CaseValidate {
         );
     }
   }
-  async sendSettlementEmail(req: Request, res: Response, next: NextFunction) {
+  async sendEmail(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       sendTo: Joi.string().required(),
-      from: Joi.string().required(),
+      from: Joi.string().optional(),
       content: Joi.string().required(),
       subject: Joi.string().required(),
       cc: Joi.array().items(Joi.string()),

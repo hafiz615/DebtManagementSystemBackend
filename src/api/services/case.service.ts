@@ -380,10 +380,13 @@ class CaseService {
       ['debtor']
     );
     const response = await caseUtil.getSummary(req, caseTemp);
-    const newSummary = new ChatSummary();
-    newSummary.chatId = caseTemp.chatId;
-    const validatedSummary = DataCopier.copy(newSummary, response);
-    await this.chatSummaryRepository.create(validatedSummary);
+    if (response[0]) {
+      const newSummary = new ChatSummary();
+      newSummary.chatId = caseTemp.chatId;
+      newSummary.prompt = req.body.humanInput;
+      newSummary.chat = response[1];
+      await this.chatSummaryRepository.create(newSummary as any);
+    }
     return response;
   };
 
@@ -407,8 +410,7 @@ class CaseService {
           chatId: caseTemp.chatId,
         },
         undefined,
-        undefined,
-        {_id: -1}
+        undefined
       );
     if (!response.length) {
       return [false, constantsUtil.notFoundMessage('Summaries')];
@@ -879,7 +881,18 @@ class CaseService {
   async sendSettlementEmail(req: Request) {
     const {from, sendTo, subject, content, cc} = req.body;
     const buffer = await emailUtil.generatePdfFromHtml(content);
-    // const buffer = Buffer.from(content);
+    const caseId = req.params.id;
+    const time = new Date(commonUtil.getCurrentDate());
+    await caseUtil.addInHistory(
+      {
+        From: from,
+        To: sendTo,
+        Content: content,
+        Time: time,
+        Action: 'EMAIL',
+      },
+      caseId
+    );
     return await emailUtil.sendEmail(
       sendTo,
       from,

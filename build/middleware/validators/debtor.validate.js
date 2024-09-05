@@ -25,7 +25,7 @@ class DebtorRequests {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                     weeklyBudget: joi_1.default.number(),
@@ -41,7 +41,7 @@ class DebtorRequests {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                 }),
@@ -49,7 +49,7 @@ class DebtorRequests {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),
@@ -89,7 +89,7 @@ class DebtorRequests {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                     weeklyBudget: joi_1.default.number(),
@@ -105,7 +105,7 @@ class DebtorRequests {
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     address: joi_1.default.string().required(),
                 }),
@@ -113,7 +113,7 @@ class DebtorRequests {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithDebtor: joi_1.default.string().allow(''),

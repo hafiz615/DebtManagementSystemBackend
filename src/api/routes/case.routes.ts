@@ -103,9 +103,9 @@ router.post(
 );
 
 router.post(
-  '/sendSettlementEmail',
+  '/sendSettlementEmail/:id',
   authorize.validateAuth,
-  caseValidate.sendSettlementEmail,
+  caseValidate.sendEmail,
   caseController.sendSettlementEmail
 );
 

@@ -2314,7 +2314,6 @@ class CaseUtil {
         $push: {caseHistory: {$each: [history], $position: 0}},
       }
     );
-    console.log(res);
   }
 }
 export default new CaseUtil();
