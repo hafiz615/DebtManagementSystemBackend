@@ -421,7 +421,7 @@ class EmailUtil {
     }
     async generatePdfFromHtml(htmlString) {
         const browser = await puppeteer_core_1.default.launch({
-            // executablePath: '/usr/bin/chromium-browser',
+            executablePath: '/usr/bin/chromium-browser',
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
