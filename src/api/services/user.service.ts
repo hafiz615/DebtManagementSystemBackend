@@ -186,11 +186,11 @@ class UserService {
     const invitationLink = await userUtil.getInvitationLink(token);
     const text = `Dear ${user.name},
 
-    You've been invited to join our platform! To complete your account setup, please click the link below to set your password:
+    You've requested to reset your password. To proceed, please click the link below to set a new password:
 
     ${invitationLink}
 
-    If you didn't request this, you can safely ignore this email.
+    If you didn't request this, you can safely ignore this email. Your account will remain secure.
 
    Thank you,
    Debt-Settlement Team`;

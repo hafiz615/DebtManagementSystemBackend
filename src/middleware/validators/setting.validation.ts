@@ -66,5 +66,64 @@ class SettingValidate {
         );
     }
   }
+
+  async paymentsAuthorizations(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    const schema = Joi.object({
+      paymentsAuthorizations: Joi.object({
+        retryInterval: Joi.object({
+          failedAuthorization: Joi.object({
+            unit: Joi.string().valid('days', 'hours').required(),
+            value: Joi.number().positive().required(),
+            maxRetry: Joi.number().positive().required(),
+          }),
+          failedPayment: Joi.object({
+            unit: Joi.string().valid('days', 'hours').required(),
+            value: Joi.number().positive().required(),
+            maxRetry: Joi.number().positive().required(),
+          }),
+        }),
+        authorizationInterval: Joi.object({
+          custom: Joi.object({
+            unit: Joi.string().valid('hours', 'days').required(),
+            value: Joi.number().positive().required(),
+          }),
+          daily: Joi.object({
+            unit: Joi.string().valid('hours', 'days').required(),
+            value: Joi.number().positive().required(),
+          }),
+          weekly: Joi.object({
+            unit: Joi.string().valid('hours', 'days').required(),
+            value: Joi.number().positive().required(),
+          }),
+          fortnightly: Joi.object({
+            unit: Joi.string().valid('hours', 'days').required(),
+            value: Joi.number().positive().required(),
+          }),
+          monthly: Joi.object({
+            unit: Joi.string().valid('hours', 'days').required(),
+            value: Joi.number().positive().required(),
+          }),
+        }),
+      }),
+      notificationTemplates: Joi.array(),
+    });
+
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
 }
 export default new SettingValidate();

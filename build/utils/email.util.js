@@ -399,8 +399,6 @@ class EmailUtil {
             return [true, `Your email is delivered successfully`];
         }
         catch (error) {
-            console.log(error);
-            console.log(error.response.body.errors[0].message);
             return [false, error.response.body.errors[0].message];
         }
     }
@@ -423,7 +421,7 @@ class EmailUtil {
     }
     async generatePdfFromHtml(htmlString) {
         const browser = await puppeteer_core_1.default.launch({
-            executablePath: '/usr/bin/chromium-browser',
+            // executablePath: '/usr/bin/chromium-browser',
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });

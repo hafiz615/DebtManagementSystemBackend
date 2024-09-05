@@ -589,7 +589,15 @@ class CaseService {
     async sendSettlementEmail(req) {
         const { from, sendTo, subject, content, cc } = req.body;
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
-        // const buffer = Buffer.from(content);
+        const caseId = req.params.id;
+        const time = new Date(common_util_1.default.getCurrentDate());
+        await case_util_1.default.addInHistory({
+            From: from,
+            To: sendTo,
+            Content: content,
+            Time: time,
+            Action: 'EMAIL',
+        }, caseId);
         return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer);
     }
     async caseHistory(req) {

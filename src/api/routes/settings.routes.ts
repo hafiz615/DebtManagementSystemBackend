@@ -8,6 +8,7 @@ const router = Router();
 router.post(
   '/addSettings',
   authorize.validateAuth,
+  settingValidate.paymentsAuthorizations,
   settingsController.addSettings
 );
 

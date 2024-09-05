@@ -36,6 +36,56 @@ class SettingValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
+    async paymentsAuthorizations(req, res, next) {
+        const schema = joi_1.default.object({
+            paymentsAuthorizations: joi_1.default.object({
+                retryInterval: joi_1.default.object({
+                    failedAuthorization: joi_1.default.object({
+                        unit: joi_1.default.string().valid('days', 'hours').required(),
+                        value: joi_1.default.number().positive().required(),
+                        maxRetry: joi_1.default.number().positive().required(),
+                    }),
+                    failedPayment: joi_1.default.object({
+                        unit: joi_1.default.string().valid('days', 'hours').required(),
+                        value: joi_1.default.number().positive().required(),
+                        maxRetry: joi_1.default.number().positive().required(),
+                    }),
+                }),
+                authorizationInterval: joi_1.default.object({
+                    custom: joi_1.default.object({
+                        unit: joi_1.default.string().valid('hours', 'days').required(),
+                        value: joi_1.default.number().positive().required(),
+                    }),
+                    daily: joi_1.default.object({
+                        unit: joi_1.default.string().valid('hours', 'days').required(),
+                        value: joi_1.default.number().positive().required(),
+                    }),
+                    weekly: joi_1.default.object({
+                        unit: joi_1.default.string().valid('hours', 'days').required(),
+                        value: joi_1.default.number().positive().required(),
+                    }),
+                    fortnightly: joi_1.default.object({
+                        unit: joi_1.default.string().valid('hours', 'days').required(),
+                        value: joi_1.default.number().positive().required(),
+                    }),
+                    monthly: joi_1.default.object({
+                        unit: joi_1.default.string().valid('hours', 'days').required(),
+                        value: joi_1.default.number().positive().required(),
+                    }),
+                }),
+            }),
+            notificationTemplates: joi_1.default.array(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
 }
 exports.default = new SettingValidate();
 //# sourceMappingURL=setting.validation.js.map

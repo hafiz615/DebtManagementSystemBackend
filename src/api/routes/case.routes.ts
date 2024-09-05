@@ -103,7 +103,7 @@ router.post(
 );
 
 router.post(
-  '/sendSettlementEmail',
+  '/sendSettlementEmail/:id',
   authorize.validateAuth,
   caseValidate.sendEmail,
   caseController.sendSettlementEmail

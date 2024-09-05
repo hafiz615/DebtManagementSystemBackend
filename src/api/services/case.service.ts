@@ -881,7 +881,18 @@ class CaseService {
   async sendSettlementEmail(req: Request) {
     const {from, sendTo, subject, content, cc} = req.body;
     const buffer = await emailUtil.generatePdfFromHtml(content);
-    // const buffer = Buffer.from(content);
+    const caseId = req.params.id;
+    const time = new Date(commonUtil.getCurrentDate());
+    await caseUtil.addInHistory(
+      {
+        From: from,
+        To: sendTo,
+        Content: content,
+        Time: time,
+        Action: 'EMAIL',
+      },
+      caseId
+    );
     return await emailUtil.sendEmail(
       sendTo,
       from,

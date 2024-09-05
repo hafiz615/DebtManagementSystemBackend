@@ -541,8 +541,6 @@ class EmailUtil {
       await sgMail.send(msg);
       return [true, `Your email is delivered successfully`];
     } catch (error: any) {
-      console.log(error);
-      console.log(error.response.body.errors[0].message);
       return [false, error.response.body.errors[0].message];
     }
   }
@@ -566,7 +564,7 @@ class EmailUtil {
 
   async generatePdfFromHtml(htmlString: string): Promise<Buffer> {
     const browser = await puppeteer.launch({
-      executablePath: '/usr/bin/chromium-browser',
+      // executablePath: '/usr/bin/chromium-browser',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
