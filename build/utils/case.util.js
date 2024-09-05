@@ -416,8 +416,6 @@ class CaseUtil {
                     amount += multipliedAmount;
                 }
             }
-            console.log(amount, 'amonuttttt');
-            console.log(body.remaining, 'body.remaininggg');
             if (amount !== body.remaining) {
                 return [
                     false,

@@ -924,6 +924,27 @@ class CaseService {
     }
     return [true, justification];
   }
+
+  async calculateIntervalsAmount(req: Request) {
+    const findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    let amount = 0;
+    for (const interval of findCase.intervals) {
+      if (!interval.frequency) {
+        amount += interval.amount;
+      }
+      if (interval.frequency) {
+        // for (let i = 0; i < interval.frequency; i++) {
+        //   amount += interval.amount;
+        // }
+        let multipliedAmount = interval.frequency * interval.amount;
+        amount += multipliedAmount;
+      }
+    }
+    return [true, amount];
+  }
 }
 
 export default CaseService;
