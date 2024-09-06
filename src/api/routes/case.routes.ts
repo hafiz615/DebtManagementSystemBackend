@@ -127,4 +127,10 @@ router.get(
   authorize.validateAuth,
   caseController.calculateIntervalsAmount
 );
+
+router.get(
+  '/getSettlementJustifications/:id',
+  authorize.validateAuth,
+  caseController.getSettlementJustifications
+);
 export default router;

@@ -180,6 +180,7 @@ class CaseService {
                 strategyOne_3: false,
                 strategyTwo: false,
                 strategyThree: false,
+                justifications: false,
             });
             if (allStrategyFalse) {
                 const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -326,6 +327,7 @@ class CaseService {
                 await this.caseRepository.updateById(caseTemp._id, {
                     strategyTwo: false,
                     strategyThree: false,
+                    justifications: false,
                 });
             }
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
@@ -456,6 +458,7 @@ class CaseService {
             await this.caseRepository.updateById(caseTemp._id, {
                 strategyTwo: false,
                 strategyThree: false,
+                justifications: false,
             });
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
@@ -506,6 +509,21 @@ class CaseService {
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
             data['settlementRange'] = settlementRange;
             return [true, data];
+        };
+        this.getSettlementJustifications = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            if (caseTemp.justifications) {
+                const result = await this.strategyRepository.getOne({
+                    caseId: String(caseTemp._id),
+                    name: 'justifications',
+                });
+                return [true, result.data.justifications];
+            }
+            const justifications = await case_util_1.default.getSettlementJustifications(caseTemp);
+            return justifications;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();

@@ -360,6 +360,7 @@ class DebtorService {
         strategyOne_3: false,
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -657,6 +658,7 @@ class DebtorService {
         strategyOne_3: false,
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       }
     );
     if (allStrategyFalse) {

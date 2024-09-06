@@ -1439,6 +1439,34 @@ class CaseUtil {
             return [];
         }
     }
+    async getSettlementJustifications(caseTemp) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
+        try {
+            console.log('I am in get-settlement-justifications');
+            console.log('URL: ', url);
+            console.log('Payload: ', 'No payload for this call');
+            const response = await axiosInstanceInterceptor_1.default.post(url, {}, {
+                headers: {
+                    accept: 'application/json',
+                    token: global_1.AIAuth.auth_token,
+                },
+            });
+            if (response.data && response.data.error) {
+                this.caseRepository.updateById(caseTemp._id, { justifications: false });
+                return [false, response.data.error];
+            }
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'justifications' }, { 'data.justifications': response.data });
+            this.caseRepository.updateById(caseTemp._id, { justifications: true });
+            return [true, response.data];
+        }
+        catch (error) {
+            return [false, error.message];
+        }
+    }
     async getLumpSumAmount(caseTemp) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {

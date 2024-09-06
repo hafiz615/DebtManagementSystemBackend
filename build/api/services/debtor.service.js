@@ -345,6 +345,7 @@ class DebtorService {
             strategyOne_3: false,
             strategyTwo: false,
             strategyThree: false,
+            justifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -538,6 +539,7 @@ class DebtorService {
             strategyOne_3: false,
             strategyTwo: false,
             strategyThree: false,
+            justifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(updatedDebtor);

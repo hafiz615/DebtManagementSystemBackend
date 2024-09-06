@@ -47,6 +47,7 @@ export interface ICase extends Document {
   strategyOne_3: boolean;
   strategyTwo: boolean;
   strategyThree: boolean;
+  justifications: boolean;
   createdAt: string;
   updatedAt: string;
 }

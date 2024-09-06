@@ -301,7 +301,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Debtor amount'),
+          message: constants.successFoundMessage('Debtor lump-sum-amount'),
         })
       );
     } catch (error) {

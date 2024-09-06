@@ -140,6 +140,9 @@ const caseModel = new mongoose_1.Schema({
     strategyThree: {
         type: Boolean,
     },
+    justifications: {
+        type: Boolean,
+    },
     logTrackingId: {
         type: String,
     },

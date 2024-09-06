@@ -1627,6 +1627,47 @@ class CaseUtil {
     }
   }
 
+  async getSettlementJustifications(caseTemp: ICase) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${
+      process.env.baseUrlAI
+    }get-settlement-justifications?debtor_id=${String(
+      caseTemp.debtor
+    )}&enable_cache=${true}`;
+    try {
+      console.log('I am in get-settlement-justifications');
+      console.log('URL: ', url);
+      console.log('Payload: ', 'No payload for this call');
+      const response = await axiosInstance.post(
+        url,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+            token: AIAuth.auth_token,
+          },
+        }
+      );
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {justifications: false});
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'justifications'},
+        {'data.justifications': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {justifications: true});
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
   async getLumpSumAmount(caseTemp: ICase) {
     if (
       !AIAuth.auth_token ||

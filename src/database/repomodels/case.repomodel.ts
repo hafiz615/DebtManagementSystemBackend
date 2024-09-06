@@ -36,6 +36,7 @@ export class Case {
   strategyOne_3 = false;
   strategyTwo = false;
   strategyThree = false;
+  justifications = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
   createdAt = commonUtil.getCurrentDate();

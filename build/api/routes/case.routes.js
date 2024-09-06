@@ -36,5 +36,6 @@ router.post('/sendSettlementEmail/:id', authorize_middleware_1.default.validateA
 router.get('/caseHistory/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.caseHistory);
 router.post('/saveJustification', authorize_middleware_1.default.validateAuth, case_validate_1.default.saveJustification, case_controller_1.default.saveJustification);
 router.get('/calculateIntervalsAmount/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.calculateIntervalsAmount);
+router.get('/getSettlementJustifications/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getSettlementJustifications);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

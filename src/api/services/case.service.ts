@@ -281,6 +281,7 @@ class CaseService {
         strategyOne_3: false,
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -537,6 +538,7 @@ class CaseService {
       await this.caseRepository.updateById<ICase>(caseTemp._id, {
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       });
     }
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
@@ -714,6 +716,7 @@ class CaseService {
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       strategyTwo: false,
       strategyThree: false,
+      justifications: false,
     });
     creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -945,6 +948,22 @@ class CaseService {
     }
     return [true, amount];
   }
+
+  getSettlementJustifications = async (req: Request) => {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    if (caseTemp.justifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'justifications',
+      });
+      return [true, result.data.justifications];
+    }
+    const justifications = await caseUtil.getSettlementJustifications(caseTemp);
+    return justifications;
+  };
 }
 
 export default CaseService;
