@@ -450,7 +450,8 @@ class CaseValidate {
     const schema = Joi.object({
       gemini: Joi.boolean().required(),
       llama: Joi.boolean().required(),
-      chatGpt: Joi.boolean().required(),
+      chatgpt: Joi.boolean().required(),
+      claude: Joi.boolean().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

@@ -343,7 +343,7 @@ class CaseService {
             data['debtor'] = debtor;
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
-                result.data.creditorNames) {
+                result?.data?.creditorNames) {
                 creditorNames = result.data.creditorNames;
                 data['creditorNames'] = creditorNames;
             }
@@ -369,7 +369,7 @@ class CaseService {
             if (req.query.all === 'true') {
                 if (hardReload !== 'true' &&
                     caseTemp.strategyOne_2 &&
-                    result.data.getScoresAIForAllCreditors) {
+                    result?.data?.getScoresAIForAllCreditors) {
                     getScores = result.data.getScoresAIForAllCreditors;
                     data['getScores'] = getScores;
                 }
@@ -395,7 +395,7 @@ class CaseService {
             }
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_3 &&
-                result.data.settlementRange) {
+                result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
                 data['settlementRange'] = settlementRange;
             }
@@ -520,9 +520,11 @@ class CaseService {
                     caseId: String(caseTemp._id),
                     name: 'justifications',
                 });
-                return [true, result.data.justifications];
+                if (result?.data?.justifications)
+                    return [true, result.data.justifications];
             }
-            const justifications = await case_util_1.default.getSettlementJustifications(caseTemp);
+            const models = await case_util_1.default.getJustificationModels();
+            const justifications = await case_util_1.default.getSettlementJustifications(caseTemp, models);
             return justifications;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
@@ -633,6 +635,7 @@ class CaseService {
         if (!justification) {
             return [false, constants_util_1.default.notFoundMessage('justification')];
         }
+        this.caseRepository.updateMany({}, { justifications: false });
         return [true, justification];
     }
     async calculateIntervalsAmount(req) {

@@ -8,7 +8,10 @@ const JustificationSchema: Schema = new Schema({
   llama: {
     type: Boolean,
   },
-  chatGpt: {
+  chatgpt: {
+    type: Boolean,
+  },
+  claude: {
     type: Boolean,
   },
   createdAt: {

@@ -24,7 +24,7 @@ class DebtorRequests {
           .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
-        weeklyBudget: Joi.number(),
+        weeklyBudget: Joi.number().optional(),
       }),
       businessInformation: Joi.object({
         companyName: Joi.string().required(),

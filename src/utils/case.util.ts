@@ -36,6 +36,8 @@ import FormData from 'form-data';
 import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
 import {CaseHistoryRepository} from '../api/repository/caseHistory/caseHistory.repository';
 import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
+import {JustificationRepository} from '../api/repository/justification/justification.repository';
+import {IJustification} from '../database/interfaces/justification.interface';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -49,6 +51,7 @@ class CaseUtil {
   private uploadUtil: UploadUtil;
   private strategyRepository: StrategyRepository;
   private caseHistoryRepository: CaseHistoryRepository;
+  private justificationRepository: JustificationRepository;
   constructor() {
     this.contactRepository = new ContactRepository();
     this.debtRepository = new DebtorRepository();
@@ -61,6 +64,7 @@ class CaseUtil {
     this.uploadUtil = new UploadUtil();
     this.strategyRepository = new StrategyRepository();
     this.caseHistoryRepository = new CaseHistoryRepository();
+    this.justificationRepository = new JustificationRepository();
   }
   async createContacts(data: IContact[]) {
     const validatedContacts: IContact[] = [];
@@ -1627,7 +1631,7 @@ class CaseUtil {
     }
   }
 
-  async getSettlementJustifications(caseTemp: ICase) {
+  async getSettlementJustifications(caseTemp: ICase, models: string[]) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -1639,20 +1643,17 @@ class CaseUtil {
     }get-settlement-justifications?debtor_id=${String(
       caseTemp.debtor
     )}&enable_cache=${true}`;
+    const data = {LLMs: models};
     try {
       console.log('I am in get-settlement-justifications');
       console.log('URL: ', url);
-      console.log('Payload: ', 'No payload for this call');
-      const response = await axiosInstance.post(
-        url,
-        {},
-        {
-          headers: {
-            accept: 'application/json',
-            token: AIAuth.auth_token,
-          },
-        }
-      );
+      console.log('Payload: ', data);
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+        },
+      });
       if (response.data && response.data.error) {
         this.caseRepository.updateById(caseTemp._id, {justifications: false});
         return [false, response.data.error];
@@ -2353,6 +2354,20 @@ class CaseUtil {
         $push: {caseHistory: {$each: [history], $position: 0}},
       }
     );
+  }
+
+  async getJustificationModels() {
+    const justification =
+      await this.justificationRepository.getOne<IJustification>({});
+    console.log(justification, 'justification');
+    const defaultModels = ['chatgpt', 'claude', 'gemini', 'llama'];
+    if (!justification) return defaultModels;
+    const arrayModels = Array<string>();
+    if (justification.llama) arrayModels.push('llama');
+    if (justification.chatgpt) arrayModels.push('chatgpt');
+    if (justification.gemini) arrayModels.push('gemini');
+    if (justification.claude) arrayModels.push('claude');
+    return arrayModels.length ? arrayModels : defaultModels;
   }
 }
 export default new CaseUtil();

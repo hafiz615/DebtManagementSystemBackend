@@ -705,7 +705,7 @@ class DebtorService {
         caseId: String(caseTemp._id),
         name: 'strategy_two',
       });
-      return [true, result.data.lumpSumAmount];
+      if (result?.data?.lumpSumAmount) return [true, result.data.lumpSumAmount];
     }
     const lumpSumResult = await caseUtil.getLumpSumAmount(caseTemp);
     return lumpSumResult;
