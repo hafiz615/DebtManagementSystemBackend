@@ -29,6 +29,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const form_data_1 = __importDefault(require("form-data"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
+const justification_repository_1 = require("../api/repository/justification/justification.repository");
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -43,6 +44,7 @@ class CaseUtil {
         this.uploadUtil = new upload_util_1.default();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
+        this.justificationRepository = new justification_repository_1.JustificationRepository();
     }
     async createContacts(data) {
         const validatedContacts = [];
@@ -57,10 +59,12 @@ class CaseUtil {
         });
     }
     async createDebtor(req) {
-        const data = req.body;
+        let data = req.body;
         const reqTemp = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
         newDebtor.createdBy = reqTemp.id;
+        if (!data?.basicInformation?.weeklyBudget)
+            data.basicInformation.weeklyBudget = 1;
         const validatedDebtor = dataCopier_util_1.DataCopier.copy(newDebtor, data);
         return await this.debtRepository.create(validatedDebtor);
     }
@@ -416,8 +420,6 @@ class CaseUtil {
                     amount += multipliedAmount;
                 }
             }
-            console.log(amount, 'amonuttttt');
-            console.log(body.remaining, 'body.remaininggg');
             if (amount !== body.remaining) {
                 return [
                     false,
@@ -1441,6 +1443,35 @@ class CaseUtil {
             return [];
         }
     }
+    async getSettlementJustifications(caseTemp, models) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
+        const data = { LLMs: models };
+        try {
+            console.log('I am in get-settlement-justifications');
+            console.log('URL: ', url);
+            console.log('Payload: ', data);
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
+                headers: {
+                    accept: 'application/json',
+                    token: global_1.AIAuth.auth_token,
+                },
+            });
+            if (response.data && response.data.error) {
+                this.caseRepository.updateById(caseTemp._id, { justifications: false });
+                return [false, response.data.error];
+            }
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'justifications' }, { 'data.justifications': response.data });
+            this.caseRepository.updateById(caseTemp._id, { justifications: true });
+            return [true, response.data];
+        }
+        catch (error) {
+            return [false, error.message];
+        }
+    }
     async getLumpSumAmount(caseTemp) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
@@ -1998,6 +2029,23 @@ class CaseUtil {
         const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
             $push: { caseHistory: { $each: [history], $position: 0 } },
         });
+    }
+    async getJustificationModels() {
+        const justification = await this.justificationRepository.getOne({});
+        console.log(justification, 'justification');
+        const defaultModels = ['chatgpt', 'claude', 'gemini', 'llama'];
+        if (!justification)
+            return defaultModels;
+        const arrayModels = Array();
+        if (justification.llama)
+            arrayModels.push('llama');
+        if (justification.chatgpt)
+            arrayModels.push('chatgpt');
+        if (justification.gemini)
+            arrayModels.push('gemini');
+        if (justification.claude)
+            arrayModels.push('claude');
+        return arrayModels.length ? arrayModels : defaultModels;
     }
 }
 exports.default = new CaseUtil();

@@ -281,6 +281,7 @@ class CaseService {
         strategyOne_3: false,
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -537,6 +538,7 @@ class CaseService {
       await this.caseRepository.updateById<ICase>(caseTemp._id, {
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       });
     }
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
@@ -557,7 +559,7 @@ class CaseService {
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_1 &&
-      result.data.creditorNames
+      result?.data?.creditorNames
     ) {
       creditorNames = result.data.creditorNames;
       data['creditorNames'] = creditorNames;
@@ -589,7 +591,7 @@ class CaseService {
       if (
         hardReload !== 'true' &&
         caseTemp.strategyOne_2 &&
-        result.data.getScoresAIForAllCreditors
+        result?.data?.getScoresAIForAllCreditors
       ) {
         getScores = result.data.getScoresAIForAllCreditors;
         data['getScores'] = getScores;
@@ -630,7 +632,7 @@ class CaseService {
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_3 &&
-      result.data.settlementRange
+      result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
       data['settlementRange'] = settlementRange;
@@ -714,6 +716,7 @@ class CaseService {
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       strategyTwo: false,
       strategyThree: false,
+      justifications: false,
     });
     creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -922,8 +925,51 @@ class CaseService {
     if (!justification) {
       return [false, constantsUtil.notFoundMessage('justification')];
     }
+    this.caseRepository.updateMany({}, {justifications: false});
     return [true, justification];
   }
+
+  async calculateIntervalsAmount(req: Request) {
+    const findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    let amount = 0;
+    for (const interval of findCase.intervals) {
+      if (!interval.frequency) {
+        amount += interval.amount;
+      }
+      if (interval.frequency) {
+        // for (let i = 0; i < interval.frequency; i++) {
+        //   amount += interval.amount;
+        // }
+        let multipliedAmount = interval.frequency * interval.amount;
+        amount += multipliedAmount;
+      }
+    }
+    return [true, amount];
+  }
+
+  getSettlementJustifications = async (req: Request) => {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    if (caseTemp.justifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'justifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
+    const models = await caseUtil.getJustificationModels();
+    const justifications = await caseUtil.getSettlementJustifications(
+      caseTemp,
+      models
+    );
+    return justifications;
+  };
 }
 
 export default CaseService;

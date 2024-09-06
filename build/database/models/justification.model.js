@@ -32,7 +32,10 @@ const JustificationSchema = new mongoose_1.Schema({
     llama: {
         type: Boolean,
     },
-    chatGpt: {
+    chatgpt: {
+        type: Boolean,
+    },
+    claude: {
         type: Boolean,
     },
     createdAt: {

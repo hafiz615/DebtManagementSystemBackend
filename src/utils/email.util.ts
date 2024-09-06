@@ -50,7 +50,7 @@ class EmailUtil {
   async sendInvitationLink(user: IUser, link: string) {
     const msg = {
       to: user.email,
-      from: 'ralph@firstchoicedebtsolutions.org',
+      from: process.env.defaultEmail,
       subject: `${constantsUtil.ACCOUNT_INVITATION_SUBJECT}`,
       text: `Dear ${user.name},
 
@@ -74,7 +74,7 @@ class EmailUtil {
   async sendLink(user: IUser, text: string, subject: string) {
     const msg = {
       to: user.email,
-      from: 'ralph@firstchoicedebtsolutions.org',
+      from: process.env.defaultEmail,
       subject: subject,
       text: text,
     };
@@ -128,7 +128,7 @@ class EmailUtil {
           if (emails) {
             const from = template.from
               ? template.from
-              : 'ralph@firstchoicedebtsolutions.org';
+              : process.env.defaultEmail;
             await this.sendEmail(emails, from, template.subject, content);
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
@@ -295,10 +295,8 @@ class EmailUtil {
             }
           }
           await this.sendEmail(
-            'ralph@firstchoicedebtsolutions.org',
-            template.from
-              ? template.from
-              : 'ralph@firstchoicedebtsolutions.org',
+            process.env.defaultEmail,
+            template.from ? template.from : process.env.defaultEmail,
             template.subject,
             content
           );
@@ -564,7 +562,7 @@ class EmailUtil {
 
   async generatePdfFromHtml(htmlString: string): Promise<Buffer> {
     const browser = await puppeteer.launch({
-      // executablePath: '/usr/bin/chromium-browser',
+      executablePath: '/usr/bin/chromium-browser',
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });

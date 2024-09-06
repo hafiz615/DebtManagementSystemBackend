@@ -15,7 +15,7 @@ class EmailController {
       const response = await this.emailService.sendSmsEmailDebtorCreditor(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(

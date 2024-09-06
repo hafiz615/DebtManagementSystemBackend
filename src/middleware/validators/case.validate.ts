@@ -389,12 +389,49 @@ class CaseValidate {
   }
   async sendEmail(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
-      sendTo: Joi.string().required(),
-      from: Joi.string().optional(),
+      sendTo: Joi.string().email().required(),
+      from: Joi.string().email().required(),
       content: Joi.string().required(),
       subject: Joi.string().required(),
-      cc: Joi.array().items(Joi.string()),
+      cc: Joi.array().items(Joi.string().email()),
     });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async sendSmsEmailDebtorCreditor(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    const type = String(req.query.type);
+    let object = Joi.object({
+      sendTo: Joi.string().email().required(),
+      from: Joi.string().email().required(),
+      content: Joi.string().required(),
+      subject: Joi.string().required(),
+      cc: Joi.array().items(Joi.string().email()),
+    });
+    if (type === 'sms') {
+      object = Joi.object({
+        sendTo: Joi.string()
+          .pattern(/^\d{10}$/)
+          .required(),
+        content: Joi.string().required(),
+        subject: Joi.string().optional(),
+      });
+    }
+    const schema = object;
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();
@@ -413,7 +450,8 @@ class CaseValidate {
     const schema = Joi.object({
       gemini: Joi.boolean().required(),
       llama: Joi.boolean().required(),
-      chatGpt: Joi.boolean().required(),
+      chatgpt: Joi.boolean().required(),
+      claude: Joi.boolean().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

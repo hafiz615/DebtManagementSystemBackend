@@ -121,4 +121,16 @@ router.post(
   caseValidate.saveJustification,
   caseController.saveJustification
 );
+
+router.get(
+  '/calculateIntervalsAmount/:id',
+  authorize.validateAuth,
+  caseController.calculateIntervalsAmount
+);
+
+router.get(
+  '/getSettlementJustifications/:id',
+  authorize.validateAuth,
+  caseController.getSettlementJustifications
+);
 export default router;

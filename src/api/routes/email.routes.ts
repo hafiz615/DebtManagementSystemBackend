@@ -8,7 +8,7 @@ const router = Router();
 router.post(
   '/sendSmsEmailDebtorCreditor/:id',
   authorize.validateAuth,
-  caseValidate.sendEmail,
+  caseValidate.sendSmsEmailDebtorCreditor,
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use
 export default router;

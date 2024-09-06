@@ -9,7 +9,8 @@ class Justification {
     constructor() {
         this.gemini = false;
         this.llama = false;
-        this.chatGpt = false;
+        this.chatgpt = false;
+        this.claude = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

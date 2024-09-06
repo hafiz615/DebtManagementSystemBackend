@@ -35,7 +35,8 @@ class DebtorService {
                     caseId: String(caseTemp._id),
                     name: 'strategy_two',
                 });
-                return [true, result.data.lumpSumAmount];
+                if (result?.data?.lumpSumAmount)
+                    return [true, result.data.lumpSumAmount];
             }
             const lumpSumResult = await case_util_1.default.getLumpSumAmount(caseTemp);
             return lumpSumResult;
@@ -309,6 +310,8 @@ class DebtorService {
             //   }
             //   req.body.weeklyCommission = response.commission;
             // }
+            if (!req.body.basicInformation.weeklyBudget)
+                req.body.basicInformation.weeklyBudget = 1;
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (req.body.contact && req.query.contact === 'add') {
@@ -345,6 +348,7 @@ class DebtorService {
             strategyOne_3: false,
             strategyTwo: false,
             strategyThree: false,
+            justifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -497,8 +501,11 @@ class DebtorService {
             debtor = await case_util_1.default.createDebtor(req);
         }
         if (getDebtor) {
+            console.log('i am infind');
             if (account.length)
                 req.body.accounts = getDebtor.accounts.concat(account);
+            if (!req.body.basicInformation?.weeklyBudget)
+                req.body.basicInformation.weeklyBudget = 1;
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (!debtor) {
@@ -538,6 +545,7 @@ class DebtorService {
             strategyOne_3: false,
             strategyTwo: false,
             strategyThree: false,
+            justifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(updatedDebtor);

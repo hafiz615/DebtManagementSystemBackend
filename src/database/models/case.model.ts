@@ -117,6 +117,9 @@ const caseModel: Schema = new Schema({
   strategyThree: {
     type: Boolean,
   },
+  justifications: {
+    type: Boolean,
+  },
   logTrackingId: {
     type: String,
   },
