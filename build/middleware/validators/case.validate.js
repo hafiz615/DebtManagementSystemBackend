@@ -72,7 +72,7 @@ class CaseValidate {
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                 }),
                 businessInformation: joi_1.default.object({
@@ -83,11 +83,10 @@ class CaseValidate {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithCreditor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
@@ -185,7 +184,7 @@ class CaseValidate {
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                 }),
                 businessInformation: joi_1.default.object({
@@ -197,11 +196,10 @@ class CaseValidate {
                     name: joi_1.default.string().required(),
                     title: joi_1.default.string().required(),
                     phone: joi_1.default.string()
-                        .pattern(/^\+\d{11}$/)
+                        .pattern(/^\d{10}$/)
                         .required(),
                     email: joi_1.default.string().email().required(),
                     relationWithCreditor: joi_1.default.string().allow(''),
-                    country: joi_1.default.string().allow(''),
                     state: joi_1.default.string().allow(''),
                     city: joi_1.default.string().allow(''),
                     zipCode: joi_1.default.string().allow(''),
@@ -270,7 +268,7 @@ class CaseValidate {
                         fullName: joi_1.default.string().required(),
                         email: joi_1.default.string().email().required(),
                         phone: joi_1.default.string()
-                            .pattern(/^\+\d{11}$/)
+                            .pattern(/^\d{10}$/)
                             .required(),
                     }),
                     businessInformation: joi_1.default.object({
@@ -281,11 +279,10 @@ class CaseValidate {
                         name: joi_1.default.string().required(),
                         title: joi_1.default.string().required(),
                         phone: joi_1.default.string()
-                            .pattern(/^\+\d{11}$/)
+                            .pattern(/^\d{10}$/)
                             .required(),
                         email: joi_1.default.string().email().required(),
                         relationWithCreditor: joi_1.default.string().allow(''),
-                        country: joi_1.default.string().allow(''),
                         state: joi_1.default.string().allow(''),
                         city: joi_1.default.string().allow(''),
                         zipCode: joi_1.default.string().allow(''),
@@ -353,13 +350,59 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
-    async sendSettlementEmail(req, res, next) {
+    async sendEmail(req, res, next) {
         const schema = joi_1.default.object({
-            sendTo: joi_1.default.string().required(),
-            from: joi_1.default.string().required(),
+            sendTo: joi_1.default.string().email().required(),
+            from: joi_1.default.string().email().required(),
             content: joi_1.default.string().required(),
             subject: joi_1.default.string().required(),
-            cc: joi_1.default.array().items(joi_1.default.string()),
+            cc: joi_1.default.array().items(joi_1.default.string().email()),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async sendSmsEmailDebtorCreditor(req, res, next) {
+        const type = String(req.query.type);
+        let object = joi_1.default.object({
+            sendTo: joi_1.default.string().email().required(),
+            from: joi_1.default.string().email().required(),
+            content: joi_1.default.string().required(),
+            subject: joi_1.default.string().required(),
+            cc: joi_1.default.array().items(joi_1.default.string().email()),
+        });
+        if (type === 'sms') {
+            object = joi_1.default.object({
+                sendTo: joi_1.default.string()
+                    .pattern(/^\d{10}$/)
+                    .required(),
+                content: joi_1.default.string().required(),
+                subject: joi_1.default.string().optional(),
+            });
+        }
+        const schema = object;
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async saveJustification(req, res, next) {
+        const schema = joi_1.default.object({
+            gemini: joi_1.default.boolean().required(),
+            llama: joi_1.default.boolean().required(),
+            chatgpt: joi_1.default.boolean().required(),
+            claude: joi_1.default.boolean().required(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

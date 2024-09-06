@@ -12,7 +12,6 @@ class Contact {
         this.phone = '';
         this.email = '';
         this.relationWithDebtor = '';
-        this.country = '';
         this.state = '';
         this.city = '';
         this.zipCode = '';

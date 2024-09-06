@@ -33,15 +33,12 @@ class UserService {
 
   async createUser(req: Request): Promise<[boolean, Partial<IUser> | string]> {
     let user = null;
+    const email = req.body.email.toLowerCase();
     user = await this.userRepository.getOne<IUser>({
-      $or: [
-        {email: req.body.email.toLowerCase()},
-        {phone: req.body.phone},
-        {SSID: req.body.SSID},
-      ],
+      $or: [{email: email}, {phone: req.body.phone}, {SSID: req.body.SSID}],
     });
     if (user && !user.isDeleted) {
-      if (user.email === req.body.email.toLowerCase()) {
+      if (user.email === email) {
         return [false, constants.alreadyExistsMessage('Email')];
       }
       if (user.SSID === req.body.SSID) {
@@ -50,7 +47,7 @@ class UserService {
       return [false, constants.alreadyExistsMessage('Phone')];
     }
     if (!user) {
-      req.body.email = req.body.email.toLowerCase();
+      req.body.email = email;
       const newUser = new User();
       const validatedUser = DataCopier.copy(newUser, req.body as IUser);
       user = await this.userRepository.create<IUser>(validatedUser);
@@ -58,14 +55,18 @@ class UserService {
         return [false, constants.failureRegisterMessage('User')];
       }
     }
-    const token = await this.tokenService.createVerifyToken(user.email);
-    const invitationLink = await userUtil.getInvitationLink(token);
-    await emailUtil.sendInvitationLink(user, invitationLink);
+    const token = await this.tokenService.createVerifyToken(email);
     req.body.verifyToken = token;
     req.body.isDeleted = false;
     let updatedUser = await this.userRepository.updateById<IUser>(user._id, {
       ...req.body,
     });
+    if (!updatedUser) {
+      return [false, constants.failureRegisterMessage('User')];
+    }
+    const invitationLink = await userUtil.getInvitationLink(token);
+    await emailUtil.sendInvitationLink(updatedUser, invitationLink);
+
     return [true, updatedUser];
   }
 
@@ -155,6 +156,9 @@ class UserService {
     if (!user) {
       return [false, constants.notFoundMessage('User')];
     }
+    if (user.isActive) {
+      return [false, 'Could not send invitation link to active user'];
+    }
     const token = await this.tokenService.createVerifyToken(user.email);
     const invitationLink = await userUtil.getInvitationLink(token);
     await emailUtil.sendInvitationLink(user, invitationLink);
@@ -162,6 +166,36 @@ class UserService {
       verifyToken: token,
     });
     return [true, user];
+  }
+
+  async forgotPassword(email: string): Promise<[boolean, IUser | string]> {
+    const user = await this.userRepository.getOne<IUser>({email: email});
+    if (!user) {
+      return [false, constants.notFoundMessage('User')];
+    }
+    if (!user.isActive) {
+      return [false, 'Inactive users cannot do forgot password'];
+    }
+    const token = await this.tokenService.createVerifyToken(user.email);
+    const updateUser = await this.userRepository.updateById<IUser>(user._id, {
+      verifyToken: token,
+    });
+    if (!updateUser) {
+      return [false, constants.notFoundMessage('User')];
+    }
+    const invitationLink = await userUtil.getInvitationLink(token);
+    const text = `Dear ${user.name},
+
+    You've requested to reset your password. To proceed, please click the link below to set a new password:
+
+    ${invitationLink}
+
+    If you didn't request this, you can safely ignore this email. Your account will remain secure.
+
+   Thank you,
+   Debt-Settlement Team`;
+    await emailUtil.sendLink(user, text, constantsUtil.FORGOT_PASSWORD_SUBJECT);
+    return [true, 'Reset password link sent successfully'];
   }
 
   async updatePassword(

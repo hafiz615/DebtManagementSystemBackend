@@ -10,7 +10,6 @@ interface businessInformation {
   EIN: string;
   businessCategory: string;
   description: string;
-  country: string;
   state: string;
   city: string;
   zipCode: string;
@@ -22,7 +21,6 @@ interface basicInformation {
   fullName: string;
   email: string;
   SSID: string;
-  country: string;
   state: string;
   city: string;
   zipCode: string;
@@ -40,7 +38,6 @@ export interface IDebtor extends Document {
     phone: string;
     email: string;
     relationWithDebtor: string;
-    country: string;
     state: string;
     city: string;
     zipCode: string;

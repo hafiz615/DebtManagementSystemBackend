@@ -40,6 +40,7 @@ exports.default = {
         PIPELINE_DELETE_STATUS_ERROR: 'All statuses must be deleted to delete pipeline',
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
+    FORGOT_PASSWORD_SUBJECT: 'Reset Your Password',
     ACCOUNT_INVITATION_BASE_LINK: 'https://debt-management-system-front-end.vercel.app/set-password',
     ACCOUNT_INVITATION_BASE_LINK_DEV: 'https://debt-management-system-dev.vercel.app/set-password',
     passwordRegex: /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,

@@ -45,9 +45,6 @@ const debtorSchema = new mongoose_1.Schema({
             type: String,
             required: true,
         },
-        country: {
-            type: String,
-        },
         state: {
             type: String,
         },
@@ -87,9 +84,6 @@ const debtorSchema = new mongoose_1.Schema({
         description: {
             type: String,
         },
-        country: {
-            type: String,
-        },
         state: {
             type: String,
         },
@@ -114,7 +108,6 @@ const debtorSchema = new mongoose_1.Schema({
                 phone: String,
                 email: String,
                 relationWithDebtor: String,
-                country: String,
                 state: String,
                 city: String,
                 zipCode: String,

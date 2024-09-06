@@ -41,6 +41,7 @@ export default {
       'All statuses must be deleted to delete pipeline',
   },
   ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
+  FORGOT_PASSWORD_SUBJECT: 'Reset Your Password',
   ACCOUNT_INVITATION_BASE_LINK:
     'https://debt-management-system-front-end.vercel.app/set-password',
   ACCOUNT_INVITATION_BASE_LINK_DEV:

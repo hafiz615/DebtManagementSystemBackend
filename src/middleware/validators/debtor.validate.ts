@@ -16,16 +16,15 @@ class DebtorRequests {
         SSID: Joi.string()
           .pattern(/^\d{9}$/)
           .required(),
-        country: Joi.string().required(),
         state: Joi.string().required(),
         status: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
-        weeklyBudget: Joi.number(),
+        weeklyBudget: Joi.number().optional(),
       }),
       businessInformation: Joi.object({
         companyName: Joi.string().required(),
@@ -34,12 +33,11 @@ class DebtorRequests {
           .required(),
         businessCategory: Joi.string().required(),
         description: Joi.string().allow(''),
-        country: Joi.string().required(),
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
       }),
@@ -47,11 +45,10 @@ class DebtorRequests {
         name: Joi.string().required(),
         title: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         email: Joi.string().email().required(),
         relationWithDebtor: Joi.string().allow(''),
-        country: Joi.string().allow(''),
         state: Joi.string().allow(''),
         city: Joi.string().allow(''),
         zipCode: Joi.string().allow(''),
@@ -89,16 +86,15 @@ class DebtorRequests {
         SSID: Joi.string()
           .pattern(/^\d{9}$/)
           .required(),
-        country: Joi.string().required(),
         state: Joi.string().required(),
         status: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
-        weeklyBudget: Joi.number(),
+        weeklyBudget: Joi.number().optional(),
       }),
       businessInformation: Joi.object({
         companyName: Joi.string().required(),
@@ -107,12 +103,11 @@ class DebtorRequests {
           .required(),
         businessCategory: Joi.string().required(),
         description: Joi.string().allow(''),
-        country: Joi.string().required(),
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
         phone: Joi.string()
-          .pattern(/^\+\d{11}$/)
+          .pattern(/^\d{10}$/)
           .required(),
         address: Joi.string().required(),
       }),
@@ -121,11 +116,10 @@ class DebtorRequests {
           name: Joi.string().required(),
           title: Joi.string().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
+            .pattern(/^\d{10}$/)
             .required(),
           email: Joi.string().email().required(),
           relationWithDebtor: Joi.string().allow(''),
-          country: Joi.string().allow(''),
           state: Joi.string().allow(''),
           city: Joi.string().allow(''),
           zipCode: Joi.string().allow(''),

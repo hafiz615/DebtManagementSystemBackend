@@ -30,6 +30,8 @@ import creditorUtil from '../../utils/creditor.util';
 import emailUtil from '../../utils/email.util';
 import {ICaseHistory} from '../../database/interfaces/caseHistory.interface';
 import {CaseHistoryRepository} from '../repository/caseHistory/caseHistory.repository';
+import {Justification} from '../../database/repomodels/justification.repomodel';
+import {JustificationRepository} from '../repository/justification/justification.repository';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -42,6 +44,7 @@ class CaseService {
   private userRepository: UserRepository;
   private strategyRepository: StrategyRepository;
   private caseHistoryRepository: CaseHistoryRepository;
+  private justificationRepository: JustificationRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -53,6 +56,7 @@ class CaseService {
     this.userRepository = new UserRepository();
     this.strategyRepository = new StrategyRepository();
     this.caseHistoryRepository = new CaseHistoryRepository();
+    this.justificationRepository = new JustificationRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -277,6 +281,7 @@ class CaseService {
         strategyOne_3: false,
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -376,10 +381,13 @@ class CaseService {
       ['debtor']
     );
     const response = await caseUtil.getSummary(req, caseTemp);
-    const newSummary = new ChatSummary();
-    newSummary.chatId = caseTemp.chatId;
-    const validatedSummary = DataCopier.copy(newSummary, response);
-    await this.chatSummaryRepository.create(validatedSummary);
+    if (response[0]) {
+      const newSummary = new ChatSummary();
+      newSummary.chatId = caseTemp.chatId;
+      newSummary.prompt = req.body.humanInput;
+      newSummary.chat = response[1];
+      await this.chatSummaryRepository.create(newSummary as any);
+    }
     return response;
   };
 
@@ -403,8 +411,7 @@ class CaseService {
           chatId: caseTemp.chatId,
         },
         undefined,
-        undefined,
-        {_id: -1}
+        undefined
       );
     if (!response.length) {
       return [false, constantsUtil.notFoundMessage('Summaries')];
@@ -531,6 +538,7 @@ class CaseService {
       await this.caseRepository.updateById<ICase>(caseTemp._id, {
         strategyTwo: false,
         strategyThree: false,
+        justifications: false,
       });
     }
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
@@ -551,7 +559,7 @@ class CaseService {
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_1 &&
-      result.data.creditorNames
+      result?.data?.creditorNames
     ) {
       creditorNames = result.data.creditorNames;
       data['creditorNames'] = creditorNames;
@@ -583,7 +591,7 @@ class CaseService {
       if (
         hardReload !== 'true' &&
         caseTemp.strategyOne_2 &&
-        result.data.getScoresAIForAllCreditors
+        result?.data?.getScoresAIForAllCreditors
       ) {
         getScores = result.data.getScoresAIForAllCreditors;
         data['getScores'] = getScores;
@@ -624,7 +632,7 @@ class CaseService {
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_3 &&
-      result.data.settlementRange
+      result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
       data['settlementRange'] = settlementRange;
@@ -708,6 +716,7 @@ class CaseService {
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       strategyTwo: false,
       strategyThree: false,
+      justifications: false,
     });
     creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -875,7 +884,18 @@ class CaseService {
   async sendSettlementEmail(req: Request) {
     const {from, sendTo, subject, content, cc} = req.body;
     const buffer = await emailUtil.generatePdfFromHtml(content);
-    // const buffer = Buffer.from(content);
+    const caseId = req.params.id;
+    const time = new Date(commonUtil.getCurrentDate());
+    await caseUtil.addInHistory(
+      {
+        From: from,
+        To: sendTo,
+        Content: content,
+        Time: time,
+        Action: 'EMAIL',
+      },
+      caseId
+    );
     return await emailUtil.sendEmail(
       sendTo,
       from,
@@ -896,6 +916,60 @@ class CaseService {
     });
     return [true, result?.caseHistory ?? []];
   }
+
+  async saveJustification(req: Request) {
+    const justification = await this.justificationRepository.upsert<ICase>(
+      {},
+      req.body
+    );
+    if (!justification) {
+      return [false, constantsUtil.notFoundMessage('justification')];
+    }
+    this.caseRepository.updateMany({}, {justifications: false});
+    return [true, justification];
+  }
+
+  async calculateIntervalsAmount(req: Request) {
+    const findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    let amount = 0;
+    for (const interval of findCase.intervals) {
+      if (!interval.frequency) {
+        amount += interval.amount;
+      }
+      if (interval.frequency) {
+        // for (let i = 0; i < interval.frequency; i++) {
+        //   amount += interval.amount;
+        // }
+        let multipliedAmount = interval.frequency * interval.amount;
+        amount += multipliedAmount;
+      }
+    }
+    return [true, amount];
+  }
+
+  getSettlementJustifications = async (req: Request) => {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    if (caseTemp.justifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'justifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
+    const models = await caseUtil.getJustificationModels();
+    const justifications = await caseUtil.getSettlementJustifications(
+      caseTemp,
+      models
+    );
+    return justifications;
+  };
 }
 
 export default CaseService;

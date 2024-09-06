@@ -11,6 +11,7 @@ import statusRouter from './status.routes';
 import rolesPermissionsRouter from './rolesPermissions.routes';
 import tasksRouter from './tasks.routes';
 import loggingRouter from './logging.routes';
+import emailRouter from './email.routes';
 
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
@@ -25,4 +26,5 @@ export default function setup(app: Application) {
   app.use('/api/v1/roles', rolesPermissionsRouter);
   app.use('/api/v1/task', tasksRouter);
   app.use('/api/v1/logs', loggingRouter);
+  app.use('/api/v1/email', emailRouter);
 }

@@ -8,56 +8,11 @@ const SettlementRangeSchema = new Schema({
   chatId: {
     type: String,
   },
-  settlement_range_1: {
-    lower_bound: {
-      type: Number,
-    },
-    upper_bound: {
-      type: Number,
-    },
-    weeks_to_payoff_lower_bound: {
-      type: Number,
-    },
-    weeks_to_payoff_upper_bound: {
-      type: Number,
-    },
-    reason: {
-      type: String,
-    },
+  prompt: {
+    type: String,
   },
-  settlement_range_2: {
-    lower_bound: {
-      type: Number,
-    },
-    upper_bound: {
-      type: Number,
-    },
-    weeks_to_payoff_lower_bound: {
-      type: Number,
-    },
-    weeks_to_payoff_upper_bound: {
-      type: Number,
-    },
-    reason: {
-      type: String,
-    },
-  },
-  settlement_range_3: {
-    lower_bound: {
-      type: Number,
-    },
-    upper_bound: {
-      type: Number,
-    },
-    weeks_to_payoff_lower_bound: {
-      type: Number,
-    },
-    weeks_to_payoff_upper_bound: {
-      type: Number,
-    },
-    reason: {
-      type: String,
-    },
+  chat: {
+    type: Schema.Types.Mixed,
   },
   logTrackingId: {
     type: String,

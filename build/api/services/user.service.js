@@ -241,15 +241,12 @@ class UserService {
     }
     async createUser(req) {
         let user = null;
+        const email = req.body.email.toLowerCase();
         user = await this.userRepository.getOne({
-            $or: [
-                { email: req.body.email.toLowerCase() },
-                { phone: req.body.phone },
-                { SSID: req.body.SSID },
-            ],
+            $or: [{ email: email }, { phone: req.body.phone }, { SSID: req.body.SSID }],
         });
         if (user && !user.isDeleted) {
-            if (user.email === req.body.email.toLowerCase()) {
+            if (user.email === email) {
                 return [false, constants_util_1.default.alreadyExistsMessage('Email')];
             }
             if (user.SSID === req.body.SSID) {
@@ -258,7 +255,7 @@ class UserService {
             return [false, constants_util_1.default.alreadyExistsMessage('Phone')];
         }
         if (!user) {
-            req.body.email = req.body.email.toLowerCase();
+            req.body.email = email;
             const newUser = new user_repomodel_1.User();
             const validatedUser = dataCopier_util_1.DataCopier.copy(newUser, req.body);
             user = await this.userRepository.create(validatedUser);
@@ -266,14 +263,17 @@ class UserService {
                 return [false, constants_util_1.default.failureRegisterMessage('User')];
             }
         }
-        const token = await this.tokenService.createVerifyToken(user.email);
-        const invitationLink = await user_util_1.default.getInvitationLink(token);
-        await email_util_1.default.sendInvitationLink(user, invitationLink);
+        const token = await this.tokenService.createVerifyToken(email);
         req.body.verifyToken = token;
         req.body.isDeleted = false;
         let updatedUser = await this.userRepository.updateById(user._id, {
             ...req.body,
         });
+        if (!updatedUser) {
+            return [false, constants_util_1.default.failureRegisterMessage('User')];
+        }
+        const invitationLink = await user_util_1.default.getInvitationLink(token);
+        await email_util_1.default.sendInvitationLink(updatedUser, invitationLink);
         return [true, updatedUser];
     }
     async signIn(email, password) {
@@ -344,6 +344,9 @@ class UserService {
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
+        if (user.isActive) {
+            return [false, 'Could not send invitation link to active user'];
+        }
         const token = await this.tokenService.createVerifyToken(user.email);
         const invitationLink = await user_util_1.default.getInvitationLink(token);
         await email_util_1.default.sendInvitationLink(user, invitationLink);
@@ -351,6 +354,35 @@ class UserService {
             verifyToken: token,
         });
         return [true, user];
+    }
+    async forgotPassword(email) {
+        const user = await this.userRepository.getOne({ email: email });
+        if (!user) {
+            return [false, constants_util_1.default.notFoundMessage('User')];
+        }
+        if (!user.isActive) {
+            return [false, 'Inactive users cannot do forgot password'];
+        }
+        const token = await this.tokenService.createVerifyToken(user.email);
+        const updateUser = await this.userRepository.updateById(user._id, {
+            verifyToken: token,
+        });
+        if (!updateUser) {
+            return [false, constants_util_1.default.notFoundMessage('User')];
+        }
+        const invitationLink = await user_util_1.default.getInvitationLink(token);
+        const text = `Dear ${user.name},
+
+    You've requested to reset your password. To proceed, please click the link below to set a new password:
+
+    ${invitationLink}
+
+    If you didn't request this, you can safely ignore this email. Your account will remain secure.
+
+   Thank you,
+   Debt-Settlement Team`;
+        await email_util_1.default.sendLink(user, text, constants_util_2.default.FORGOT_PASSWORD_SUBJECT);
+        return [true, 'Reset password link sent successfully'];
     }
     async updatePassword(req) {
         const findUser = await this.userRepository.getOne({

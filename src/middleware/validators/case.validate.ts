@@ -69,7 +69,7 @@ class CaseValidate {
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
+            .pattern(/^\d{10}$/)
             .required(),
         }),
         businessInformation: Joi.object({
@@ -81,11 +81,10 @@ class CaseValidate {
             name: Joi.string().required(),
             title: Joi.string().required(),
             phone: Joi.string()
-              .pattern(/^\+\d{11}$/)
+              .pattern(/^\d{10}$/)
               .required(),
             email: Joi.string().email().required(),
             relationWithCreditor: Joi.string().allow(''),
-            country: Joi.string().allow(''),
             state: Joi.string().allow(''),
             city: Joi.string().allow(''),
             zipCode: Joi.string().allow(''),
@@ -197,7 +196,7 @@ class CaseValidate {
           fullName: Joi.string().required(),
           email: Joi.string().email().required(),
           phone: Joi.string()
-            .pattern(/^\+\d{11}$/)
+            .pattern(/^\d{10}$/)
             .required(),
         }),
         businessInformation: Joi.object({
@@ -210,11 +209,10 @@ class CaseValidate {
               name: Joi.string().required(),
               title: Joi.string().required(),
               phone: Joi.string()
-                .pattern(/^\+\d{11}$/)
+                .pattern(/^\d{10}$/)
                 .required(),
               email: Joi.string().email().required(),
               relationWithCreditor: Joi.string().allow(''),
-              country: Joi.string().allow(''),
               state: Joi.string().allow(''),
               city: Joi.string().allow(''),
               zipCode: Joi.string().allow(''),
@@ -295,7 +293,7 @@ class CaseValidate {
               fullName: Joi.string().required(),
               email: Joi.string().email().required(),
               phone: Joi.string()
-                .pattern(/^\+\d{11}$/)
+                .pattern(/^\d{10}$/)
                 .required(),
             }),
             businessInformation: Joi.object({
@@ -307,11 +305,10 @@ class CaseValidate {
                 name: Joi.string().required(),
                 title: Joi.string().required(),
                 phone: Joi.string()
-                  .pattern(/^\+\d{11}$/)
+                  .pattern(/^\d{10}$/)
                   .required(),
                 email: Joi.string().email().required(),
                 relationWithCreditor: Joi.string().allow(''),
-                country: Joi.string().allow(''),
                 state: Joi.string().allow(''),
                 city: Joi.string().allow(''),
                 zipCode: Joi.string().allow(''),
@@ -390,13 +387,71 @@ class CaseValidate {
         );
     }
   }
-  async sendSettlementEmail(req: Request, res: Response, next: NextFunction) {
+  async sendEmail(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
-      sendTo: Joi.string().required(),
-      from: Joi.string().required(),
+      sendTo: Joi.string().email().required(),
+      from: Joi.string().email().required(),
       content: Joi.string().required(),
       subject: Joi.string().required(),
-      cc: Joi.array().items(Joi.string()),
+      cc: Joi.array().items(Joi.string().email()),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async sendSmsEmailDebtorCreditor(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    const type = String(req.query.type);
+    let object = Joi.object({
+      sendTo: Joi.string().email().required(),
+      from: Joi.string().email().required(),
+      content: Joi.string().required(),
+      subject: Joi.string().required(),
+      cc: Joi.array().items(Joi.string().email()),
+    });
+    if (type === 'sms') {
+      object = Joi.object({
+        sendTo: Joi.string()
+          .pattern(/^\d{10}$/)
+          .required(),
+        content: Joi.string().required(),
+        subject: Joi.string().optional(),
+      });
+    }
+    const schema = object;
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async saveJustification(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      gemini: Joi.boolean().required(),
+      llama: Joi.boolean().required(),
+      chatgpt: Joi.boolean().required(),
+      claude: Joi.boolean().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

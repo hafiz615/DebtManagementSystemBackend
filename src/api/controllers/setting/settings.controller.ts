@@ -437,7 +437,6 @@ class SettingsController {
             'businessInformation.EIN': 'Debtor business EIN',
             'businessInformation.businessCategory': 'Debtor business Category',
             'businessInformation.description': 'Debtor business description',
-            'businessInformation.country': 'Debtor business country',
             'businessInformation.state': 'Debtor business state',
             'businessInformation.city': 'Debtor business city',
             'businessInformation.zipCode': 'Debtor business zipCode',

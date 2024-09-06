@@ -6,7 +6,6 @@ export class Contact {
   phone = '';
   email = '';
   relationWithDebtor = '';
-  country = '';
   state = '';
   city = '';
   zipCode = '';

@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
@@ -20,6 +19,7 @@ const strategy_repository_1 = require("../repository/strategy/strategy.repositor
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const caseHistory_repository_1 = require("../repository/caseHistory/caseHistory.repository");
+const justification_repository_1 = require("../repository/justification/justification.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -180,6 +180,7 @@ class CaseService {
                 strategyOne_3: false,
                 strategyTwo: false,
                 strategyThree: false,
+                justifications: false,
             });
             if (allStrategyFalse) {
                 const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -236,10 +237,13 @@ class CaseService {
         this.getSummary = async (req) => {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const response = await case_util_1.default.getSummary(req, caseTemp);
-            const newSummary = new chatSummary_repomodel_1.ChatSummary();
-            newSummary.chatId = caseTemp.chatId;
-            const validatedSummary = dataCopier_util_1.DataCopier.copy(newSummary, response);
-            await this.chatSummaryRepository.create(validatedSummary);
+            if (response[0]) {
+                const newSummary = new chatSummary_repomodel_1.ChatSummary();
+                newSummary.chatId = caseTemp.chatId;
+                newSummary.prompt = req.body.humanInput;
+                newSummary.chat = response[1];
+                await this.chatSummaryRepository.create(newSummary);
+            }
             return response;
         };
         this.getAIToken = async (req) => {
@@ -250,7 +254,7 @@ class CaseService {
             const caseTemp = await this.caseRepository.getById(req.params.id, 'chatId', undefined, ['debtor']);
             const response = await this.chatSummaryRepository.getAllWithoutPagination({
                 chatId: caseTemp.chatId,
-            }, undefined, undefined, { _id: -1 });
+            }, undefined, undefined);
             if (!response.length) {
                 return [false, constants_util_1.default.notFoundMessage('Summaries')];
             }
@@ -323,6 +327,7 @@ class CaseService {
                 await this.caseRepository.updateById(caseTemp._id, {
                     strategyTwo: false,
                     strategyThree: false,
+                    justifications: false,
                 });
             }
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
@@ -338,7 +343,7 @@ class CaseService {
             data['debtor'] = debtor;
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
-                result.data.creditorNames) {
+                result?.data?.creditorNames) {
                 creditorNames = result.data.creditorNames;
                 data['creditorNames'] = creditorNames;
             }
@@ -364,7 +369,7 @@ class CaseService {
             if (req.query.all === 'true') {
                 if (hardReload !== 'true' &&
                     caseTemp.strategyOne_2 &&
-                    result.data.getScoresAIForAllCreditors) {
+                    result?.data?.getScoresAIForAllCreditors) {
                     getScores = result.data.getScoresAIForAllCreditors;
                     data['getScores'] = getScores;
                 }
@@ -390,7 +395,7 @@ class CaseService {
             }
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_3 &&
-                result.data.settlementRange) {
+                result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
                 data['settlementRange'] = settlementRange;
             }
@@ -453,6 +458,7 @@ class CaseService {
             await this.caseRepository.updateById(caseTemp._id, {
                 strategyTwo: false,
                 strategyThree: false,
+                justifications: false,
             });
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
@@ -504,6 +510,23 @@ class CaseService {
             data['settlementRange'] = settlementRange;
             return [true, data];
         };
+        this.getSettlementJustifications = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            if (caseTemp.justifications) {
+                const result = await this.strategyRepository.getOne({
+                    caseId: String(caseTemp._id),
+                    name: 'justifications',
+                });
+                if (result?.data?.justifications)
+                    return [true, result.data.justifications];
+            }
+            const models = await case_util_1.default.getJustificationModels();
+            const justifications = await case_util_1.default.getSettlementJustifications(caseTemp, models);
+            return justifications;
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
@@ -514,6 +537,7 @@ class CaseService {
         this.userRepository = new user_repository_1.UserRepository();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
+        this.justificationRepository = new justification_repository_1.JustificationRepository();
     }
     async deleteCase(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id);
@@ -585,7 +609,15 @@ class CaseService {
     async sendSettlementEmail(req) {
         const { from, sendTo, subject, content, cc } = req.body;
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
-        // const buffer = Buffer.from(content);
+        const caseId = req.params.id;
+        const time = new Date(common_util_1.default.getCurrentDate());
+        await case_util_1.default.addInHistory({
+            From: from,
+            To: sendTo,
+            Content: content,
+            Time: time,
+            Action: 'EMAIL',
+        }, caseId);
         return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer);
     }
     async caseHistory(req) {
@@ -597,6 +629,34 @@ class CaseService {
             caseId: req.params.id,
         });
         return [true, result?.caseHistory ?? []];
+    }
+    async saveJustification(req) {
+        const justification = await this.justificationRepository.upsert({}, req.body);
+        if (!justification) {
+            return [false, constants_util_1.default.notFoundMessage('justification')];
+        }
+        this.caseRepository.updateMany({}, { justifications: false });
+        return [true, justification];
+    }
+    async calculateIntervalsAmount(req) {
+        const findCase = await this.caseRepository.getById(req.params.id);
+        if (!findCase) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        let amount = 0;
+        for (const interval of findCase.intervals) {
+            if (!interval.frequency) {
+                amount += interval.amount;
+            }
+            if (interval.frequency) {
+                // for (let i = 0; i < interval.frequency; i++) {
+                //   amount += interval.amount;
+                // }
+                let multipliedAmount = interval.frequency * interval.amount;
+                amount += multipliedAmount;
+            }
+        }
+        return [true, amount];
     }
 }
 exports.default = CaseService;

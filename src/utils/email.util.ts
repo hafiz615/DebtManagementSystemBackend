@@ -50,7 +50,7 @@ class EmailUtil {
   async sendInvitationLink(user: IUser, link: string) {
     const msg = {
       to: user.email,
-      from: 'ralph@firstchoicedebtsolutions.org', // Use the email address or domain you verified above
+      from: process.env.defaultEmail,
       subject: `${constantsUtil.ACCOUNT_INVITATION_SUBJECT}`,
       text: `Dear ${user.name},
 
@@ -62,6 +62,21 @@ class EmailUtil {
 
             Thank you,
             Debt-Settlement Team`,
+    };
+    try {
+      await sgMail.send(msg);
+    } catch (error: any) {
+      console.log(error.message);
+      return error.message;
+    }
+  }
+
+  async sendLink(user: IUser, text: string, subject: string) {
+    const msg = {
+      to: user.email,
+      from: process.env.defaultEmail,
+      subject: subject,
+      text: text,
     };
     try {
       await sgMail.send(msg);
@@ -92,33 +107,36 @@ class EmailUtil {
           );
           if (!template) continue;
           const allValues = await this.getValues(template.content);
-          if (!allValues.length) continue;
-          let replacements = await this.getPopulatedObject(
-            event,
-            debtor,
-            creditor,
-            caseTemp,
-            user,
-            payment,
-            allValues
-          );
-          if (!Object.keys(replacements).length) continue;
-          const nestedObject = await this.unflat(replacements);
-          const compiledHtml = handlebars.compile(template.content);
-          const html = compiledHtml(nestedObject);
+          let content = template.content;
+          if (allValues.length) {
+            let replacements = await this.getPopulatedObject(
+              event,
+              debtor,
+              creditor,
+              caseTemp,
+              user,
+              payment,
+              allValues
+            );
+            if (Object.keys(replacements).length) {
+              const nestedObject = await this.unflat(replacements);
+              const compiledHtml = handlebars.compile(content);
+              content = compiledHtml(nestedObject);
+            }
+          }
           const emails = await this.getEmail(caseTemp, userPermission.role);
           if (emails) {
             const from = template.from
               ? template.from
-              : 'ralph@firstchoicedebtsolutions.org';
-            await this.sendEmail(emails, from, template.subject, html);
+              : process.env.defaultEmail;
+            await this.sendEmail(emails, from, template.subject, content);
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
                 {
                   From: from,
                   To: emails,
-                  Content: html,
+                  Content: content,
                   Time: time,
                   Action: 'EMAIL',
                 },
@@ -131,29 +149,32 @@ class EmailUtil {
           const template = await this.getTemplate(userPermission.sms_template);
           if (!template) continue;
           const allValues = await this.getValues(template.content);
-          if (!allValues.length) continue;
-          let replacements = await this.getPopulatedObject(
-            event,
-            debtor,
-            creditor,
-            caseTemp,
-            user,
-            payment,
-            allValues
-          );
-          if (!Object.keys(replacements).length) continue;
-          const nestedObject = await this.unflat(replacements);
-          const compiledContent = handlebars.compile(template.content);
-          const text = compiledContent(nestedObject);
+          let content = template.content;
+          if (allValues.length) {
+            let replacements = await this.getPopulatedObject(
+              event,
+              debtor,
+              creditor,
+              caseTemp,
+              user,
+              payment,
+              allValues
+            );
+            if (Object.keys(replacements).length) {
+              const nestedObject = await this.unflat(replacements);
+              const compiledContent = handlebars.compile(content);
+              content = compiledContent(nestedObject);
+            }
+          }
           let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
           if (phoneNumbers) {
             const fromNumber = process.env.twilioFromNumber;
             if (userPermission.role === 'Admin') {
               for (const phone of phoneNumbers) {
-                await this.sendSms(text, phone, fromNumber);
+                await this.sendSms(content, phone, fromNumber);
               }
             } else {
-              await this.sendSms(text, phoneNumbers, fromNumber);
+              await this.sendSms(content, phoneNumbers, fromNumber);
             }
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
@@ -161,7 +182,7 @@ class EmailUtil {
                 {
                   From: fromNumber,
                   To: phoneNumbers,
-                  Content: text,
+                  Content: content,
                   Time: time,
                   Action: 'SMS',
                 },
@@ -172,6 +193,71 @@ class EmailUtil {
         }
       }
     }
+  }
+
+  async sendEmailSmsToDebtorCreditor(
+    caseId: string,
+    userId: string,
+    body: any,
+    type: string
+  ) {
+    let {from, sendTo, subject, content} = body;
+
+    const allValues = await this.getValues(content);
+    if (allValues.length) {
+      let [user, debtor, creditor, caseTemp, payment] =
+        await this.initializeValues(caseId, '', userId);
+      let replacements = await this.getPopulatedObject(
+        null,
+        debtor,
+        creditor,
+        caseTemp,
+        user,
+        payment,
+        allValues
+      );
+      if (Object.keys(replacements).length) {
+        const nestedObject = await this.unflat(replacements);
+        const compiledString = handlebars.compile(content);
+        content = compiledString(nestedObject);
+      }
+    }
+
+    const time = new Date(commonUtil.getCurrentDate());
+    switch (type) {
+      case 'email':
+        const result = await this.sendEmail(sendTo, from, subject, content);
+        if (result[0]) {
+          await caseUtil.addInHistory(
+            {
+              From: from,
+              To: sendTo,
+              Content: content,
+              Time: time,
+              Action: 'EMAIL',
+            },
+            caseId
+          );
+        }
+        return result;
+      case 'sms':
+        const fromNumber = process.env.twilioFromNumber;
+        const smsResult = await this.sendSms(content, sendTo, fromNumber);
+        if (smsResult[0]) {
+          await caseUtil.addInHistory(
+            {
+              From: fromNumber,
+              To: sendTo,
+              Content: content,
+              Time: time,
+              Action: 'SMS',
+            },
+            caseId
+          );
+        }
+        return smsResult;
+    }
+    return [true, `Your ${type} is delivered successfully`];
   }
 
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {
@@ -191,27 +277,28 @@ class EmailUtil {
           );
           if (!template) continue;
           const allValues = await this.getValues(template.content);
-          if (!allValues.length) continue;
-          let replacements = await this.getPopulatedObject(
-            event,
-            debtor,
-            null,
-            null,
-            null,
-            payment,
-            allValues
-          );
-          if (!Object.keys(replacements).length) continue;
-          const nestedObject = await this.unflat(replacements);
-          const compiledHtml = handlebars.compile(template.content);
-          const html = compiledHtml(nestedObject);
+          let content = template.content;
+          if (allValues.length) {
+            let replacements = await this.getPopulatedObject(
+              event,
+              debtor,
+              null,
+              null,
+              null,
+              payment,
+              allValues
+            );
+            if (Object.keys(replacements).length) {
+              const nestedObject = await this.unflat(replacements);
+              const compiledHtml = handlebars.compile(content);
+              content = compiledHtml(nestedObject);
+            }
+          }
           await this.sendEmail(
-            'ralph@firstchoicedebtsolutions.org',
-            template.from
-              ? template.from
-              : 'ralph@firstchoicedebtsolutions.org',
+            process.env.defaultEmail,
+            template.from ? template.from : process.env.defaultEmail,
             template.subject,
-            html
+            content
           );
         }
         if (userPermission.sms_allowed && userPermission.sms_template) {
@@ -450,9 +537,8 @@ class EmailUtil {
     }
     try {
       await sgMail.send(msg);
-      return [true, 'Email sent successfully'];
+      return [true, `Your email is delivered successfully`];
     } catch (error: any) {
-      console.log(error.response.body.errors[0].message);
       return [false, error.response.body.errors[0].message];
     }
   }
@@ -462,11 +548,15 @@ class EmailUtil {
       const result = await this.client.messages.create({
         body: body,
         from: from, //the phone number provided by Twillio
-        to: phone, // your own phone number
+        to: '+1' + phone, // your own phone number
       });
+      if (result.sid) {
+        return [true, `Your sms is delivered successfully`];
+      }
+      return [false, 'Could not send sms'];
     } catch (error: any) {
       console.log(error);
-      return error.message;
+      return [false, error.message];
     }
   }
 

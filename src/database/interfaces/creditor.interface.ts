@@ -19,7 +19,6 @@ export interface ICreditor extends Document {
     phone: string;
     email: string;
     relationWithCreditor: string;
-    country: string;
     state: string;
     city: string;
     zipCode: string;

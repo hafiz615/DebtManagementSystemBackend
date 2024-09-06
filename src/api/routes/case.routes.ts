@@ -103,9 +103,9 @@ router.post(
 );
 
 router.post(
-  '/sendSettlementEmail',
+  '/sendSettlementEmail/:id',
   authorize.validateAuth,
-  caseValidate.sendSettlementEmail,
+  caseValidate.sendEmail,
   caseController.sendSettlementEmail
 );
 
@@ -113,5 +113,24 @@ router.get(
   '/caseHistory/:id',
   authorize.validateAuth,
   caseController.caseHistory
+);
+
+router.post(
+  '/saveJustification',
+  authorize.validateAuth,
+  caseValidate.saveJustification,
+  caseController.saveJustification
+);
+
+router.get(
+  '/calculateIntervalsAmount/:id',
+  authorize.validateAuth,
+  caseController.calculateIntervalsAmount
+);
+
+router.get(
+  '/getSettlementJustifications/:id',
+  authorize.validateAuth,
+  caseController.getSettlementJustifications
 );
 export default router;

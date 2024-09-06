@@ -37,7 +37,6 @@ const creditorModel: Schema = new Schema({
         phone: String,
         email: String,
         relationWithCreditor: String,
-        country: String,
         state: String,
         city: String,
         zipCode: String,
