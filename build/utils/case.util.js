@@ -59,10 +59,12 @@ class CaseUtil {
         });
     }
     async createDebtor(req) {
-        const data = req.body;
+        let data = req.body;
         const reqTemp = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
         newDebtor.createdBy = reqTemp.id;
+        if (!data?.basicInformation?.weeklyBudget)
+            data.basicInformation.weeklyBudget = 1;
         const validatedDebtor = dataCopier_util_1.DataCopier.copy(newDebtor, data);
         return await this.debtRepository.create(validatedDebtor);
     }

@@ -310,6 +310,8 @@ class DebtorService {
             //   }
             //   req.body.weeklyCommission = response.commission;
             // }
+            if (!req.body.basicInformation.weeklyBudget)
+                req.body.basicInformation.weeklyBudget = 1;
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (req.body.contact && req.query.contact === 'add') {
@@ -499,8 +501,11 @@ class DebtorService {
             debtor = await case_util_1.default.createDebtor(req);
         }
         if (getDebtor) {
+            console.log('i am infind');
             if (account.length)
                 req.body.accounts = getDebtor.accounts.concat(account);
+            if (!req.body.basicInformation?.weeklyBudget)
+                req.body.basicInformation.weeklyBudget = 1;
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (!debtor) {
