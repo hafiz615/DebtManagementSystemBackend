@@ -306,6 +306,7 @@ class DebtorController {
         };
         this.getFullProfitJustifications = async (req, res) => {
             try {
+                console.log('jeheheh');
                 const response = await this.debtorService.fullProfitJustifications(req);
                 if (!response[0]) {
                     return res

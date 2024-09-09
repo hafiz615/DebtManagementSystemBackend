@@ -763,15 +763,18 @@ class DebtorService {
   };
 
   fullProfitJustifications = async (req: Request) => {
+    console.log('okoko');
     const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
+    console.log(' i am here');
     if (caseTemp.fullProfitJustifications) {
       const result = await this.strategyRepository.getOne<IStrategy>({
         caseId: String(caseTemp._id),
         name: 'fullProfitJustifications',
       });
+      console.log(result);
       if (result?.data?.justifications)
         return [true, result.data.justifications];
     }
