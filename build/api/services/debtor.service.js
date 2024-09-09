@@ -62,6 +62,40 @@ class DebtorService {
             const fullProfitResult = await case_util_1.default.getFullProfitSettlement(caseTemp);
             return fullProfitResult;
         };
+        this.lumpSumJustifications = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_2.default.notFoundMessage('case')];
+            }
+            if (caseTemp.lumpSumJustifications) {
+                const result = await this.strategyRepository.getOne({
+                    caseId: String(caseTemp._id),
+                    name: 'lumpSumJustifications',
+                });
+                if (result?.data?.justifications)
+                    return [true, result.data.justifications];
+            }
+            const models = await case_util_1.default.getJustificationModels();
+            const justifications = await case_util_1.default.lumpSumJustifications(caseTemp, models);
+            return justifications;
+        };
+        this.fullProfitJustifications = async (req) => {
+            const caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_2.default.notFoundMessage('case')];
+            }
+            if (caseTemp.fullProfitJustifications) {
+                const result = await this.strategyRepository.getOne({
+                    caseId: String(caseTemp._id),
+                    name: 'fullProfitJustifications',
+                });
+                if (result?.data?.justifications)
+                    return [true, result.data.justifications];
+            }
+            const models = await case_util_1.default.getJustificationModels();
+            const justifications = await case_util_1.default.fullProfitJustifications(caseTemp, models);
+            return justifications;
+        };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -349,6 +383,7 @@ class DebtorService {
             strategyTwo: false,
             strategyThree: false,
             justifications: false,
+            lumpSumJustifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -546,6 +581,7 @@ class DebtorService {
             strategyTwo: false,
             strategyThree: false,
             justifications: false,
+            lumpSumJustifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(updatedDebtor);

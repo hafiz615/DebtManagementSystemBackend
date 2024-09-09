@@ -48,6 +48,8 @@ export interface ICase extends Document {
   strategyTwo: boolean;
   strategyThree: boolean;
   justifications: boolean;
+  lumpSumJustifications: boolean;
+  fullProfitJustifications: boolean;
   createdAt: string;
   updatedAt: string;
 }

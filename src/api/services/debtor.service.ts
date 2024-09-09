@@ -363,6 +363,7 @@ class DebtorService {
         strategyTwo: false,
         strategyThree: false,
         justifications: false,
+        lumpSumJustifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -665,6 +666,7 @@ class DebtorService {
         strategyTwo: false,
         strategyThree: false,
         justifications: false,
+        lumpSumJustifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -737,6 +739,48 @@ class DebtorService {
     }
     const fullProfitResult = await caseUtil.getFullProfitSettlement(caseTemp);
     return fullProfitResult;
+  };
+
+  lumpSumJustifications = async (req: Request) => {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    if (caseTemp.lumpSumJustifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'lumpSumJustifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
+    const models = await caseUtil.getJustificationModels();
+    const justifications = await caseUtil.lumpSumJustifications(
+      caseTemp,
+      models
+    );
+    return justifications;
+  };
+
+  fullProfitJustifications = async (req: Request) => {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    if (caseTemp.fullProfitJustifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'fullProfitJustifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
+    const models = await caseUtil.getJustificationModels();
+    const justifications = await caseUtil.fullProfitJustifications(
+      caseTemp,
+      models
+    );
+    return justifications;
   };
 }
 

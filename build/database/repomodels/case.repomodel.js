@@ -35,6 +35,8 @@ class Case {
         this.strategyTwo = false;
         this.strategyThree = false;
         this.justifications = false;
+        this.lumpSumJustifications = false;
+        this.fullProfitJustifications = false;
         this.notes = Array();
         this.chatId = '';
         this.createdAt = common_util_1.default.getCurrentDate();

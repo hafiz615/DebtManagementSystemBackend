@@ -181,6 +181,7 @@ class CaseService {
                 strategyTwo: false,
                 strategyThree: false,
                 justifications: false,
+                lumpSumJustifications: false,
             });
             if (allStrategyFalse) {
                 const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);

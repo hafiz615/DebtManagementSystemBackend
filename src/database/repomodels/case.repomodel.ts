@@ -37,6 +37,8 @@ export class Case {
   strategyTwo = false;
   strategyThree = false;
   justifications = false;
+  lumpSumJustifications = false;
+  fullProfitJustifications = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
   createdAt = commonUtil.getCurrentDate();

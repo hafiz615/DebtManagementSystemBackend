@@ -282,6 +282,7 @@ class CaseService {
         strategyTwo: false,
         strategyThree: false,
         justifications: false,
+        lumpSumJustifications: false,
       }
     );
     if (allStrategyFalse) {

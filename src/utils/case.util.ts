@@ -1671,6 +1671,90 @@ class CaseUtil {
     }
   }
 
+  async lumpSumJustifications(caseTemp: ICase, models: string[]) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${
+      process.env.baseUrlAI
+    }get-lump-sum-justifications?debtor_id=${String(
+      caseTemp.debtor
+    )}&enable_cache=${true}`;
+    const data = {LLMs: models};
+    try {
+      console.log('I am in get-lump-sum-justifications');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+        },
+      });
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {
+          lumpSumJustifications: false,
+        });
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'lumpSumJustifications'},
+        {'data.justifications': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {
+        lumpSumJustifications: true,
+      });
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
+  async fullProfitJustifications(caseTemp: ICase, models: string[]) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${
+      process.env.baseUrlAI
+    }get-full-profit-justifications?debtor_id=${String(
+      caseTemp.debtor
+    )}&enable_cache=${true}`;
+    const data = {LLMs: models};
+    try {
+      console.log('I am in get-full-profit-justifications');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+        },
+      });
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {
+          fullProfitJustifications: false,
+        });
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'fullProfitJustifications'},
+        {'data.justifications': response.data}
+      );
+      this.caseRepository.updateById(caseTemp._id, {
+        fullProfitJustifications: true,
+      });
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
   async getLumpSumAmount(caseTemp: ICase) {
     if (
       !AIAuth.auth_token ||

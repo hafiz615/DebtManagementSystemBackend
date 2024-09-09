@@ -65,4 +65,16 @@ router.get(
   debtorController.getFullProfitSettlement
 );
 
+router.get(
+  '/getLumpSumJustifications/:id',
+  authorize.validateAuth,
+  debtorController.getLumpSumJustifications
+);
+
+router.get(
+  '/getFullProfitJustifications/:id',
+  authorize.validateAuth,
+  debtorController.getFullProfitJustifications
+);
+
 export default router;
