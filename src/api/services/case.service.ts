@@ -283,6 +283,7 @@ class CaseService {
         strategyThree: false,
         justifications: false,
         lumpSumJustifications: false,
+        fullProfitJustifications: false,
       }
     );
     if (allStrategyFalse) {
@@ -540,6 +541,8 @@ class CaseService {
         strategyTwo: false,
         strategyThree: false,
         justifications: false,
+        lumpSumJustifications: false,
+        fullProfitJustifications: false,
       });
     }
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
@@ -718,6 +721,8 @@ class CaseService {
       strategyTwo: false,
       strategyThree: false,
       justifications: false,
+      lumpSumJustifications: false,
+      fullProfitJustifications: false,
     });
     creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);

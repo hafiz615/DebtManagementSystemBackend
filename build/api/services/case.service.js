@@ -182,6 +182,7 @@ class CaseService {
                 strategyThree: false,
                 justifications: false,
                 lumpSumJustifications: false,
+                fullProfitJustifications: false,
             });
             if (allStrategyFalse) {
                 const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -329,6 +330,8 @@ class CaseService {
                     strategyTwo: false,
                     strategyThree: false,
                     justifications: false,
+                    lumpSumJustifications: false,
+                    fullProfitJustifications: false,
                 });
             }
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
@@ -460,6 +463,8 @@ class CaseService {
                 strategyTwo: false,
                 strategyThree: false,
                 justifications: false,
+                lumpSumJustifications: false,
+                fullProfitJustifications: false,
             });
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);

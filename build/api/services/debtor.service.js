@@ -80,18 +80,15 @@ class DebtorService {
             return justifications;
         };
         this.fullProfitJustifications = async (req) => {
-            console.log('okoko');
             const caseTemp = await this.caseRepository.getById(req.params.id);
             if (!caseTemp) {
                 return [false, constants_util_2.default.notFoundMessage('case')];
             }
-            console.log(' i am here');
             if (caseTemp.fullProfitJustifications) {
                 const result = await this.strategyRepository.getOne({
                     caseId: String(caseTemp._id),
                     name: 'fullProfitJustifications',
                 });
-                console.log(result);
                 if (result?.data?.justifications)
                     return [true, result.data.justifications];
             }
@@ -387,6 +384,7 @@ class DebtorService {
             strategyThree: false,
             justifications: false,
             lumpSumJustifications: false,
+            fullProfitJustifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -585,6 +583,7 @@ class DebtorService {
             strategyThree: false,
             justifications: false,
             lumpSumJustifications: false,
+            fullProfitJustifications: false,
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(updatedDebtor);
