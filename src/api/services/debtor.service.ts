@@ -316,6 +316,7 @@ class DebtorService {
       // }
       if (!req.body.basicInformation.weeklyBudget)
         req.body.basicInformation.weeklyBudget = 1;
+      req.body.updatedAt = commonUtil.getCurrentDate();
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
         req.body
@@ -324,6 +325,7 @@ class DebtorService {
     if (req.body.contact && req.query.contact === 'add') {
       debtor = await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
         $push: {contacts: req.body.contact},
+        updatedAt: commonUtil.getCurrentDate(),
       });
     }
     if (req.body.contact && req.query.contact === 'edit') {
@@ -332,7 +334,10 @@ class DebtorService {
           _id: getDebtor._id,
           contacts: {$elemMatch: {_id: req.body.contact._id}},
         },
-        {$set: {'contacts.$': req.body.contact}}
+        {
+          $set: {'contacts.$': req.body.contact},
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
     }
     if (req.body.paymentToken && req.body.paymentType) {
@@ -352,6 +357,7 @@ class DebtorService {
             ],
           },
         },
+        updatedAt: commonUtil.getCurrentDate(),
       });
     }
     const allStrategyFalse = await this.caseRepository.updateById<ICase>(
@@ -365,6 +371,7 @@ class DebtorService {
         justifications: false,
         lumpSumJustifications: false,
         fullProfitJustifications: false,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (allStrategyFalse) {
@@ -380,6 +387,7 @@ class DebtorService {
         if (extractedFields) {
           this.debtorRepository.updateById(getDebtor._id, {
             extractedFields: extractedFields.extracted_fields,
+            updatedAt: commonUtil.getCurrentDate(),
           });
           extractedFieldsTemp = extractedFields.extracted_fields;
         }
@@ -604,12 +612,11 @@ class DebtorService {
       debtor = await caseUtil.createDebtor(req);
     }
     if (getDebtor) {
-      console.log('i am infind');
       if (account.length)
         req.body.accounts = getDebtor.accounts.concat(account);
       if (!req.body.basicInformation?.weeklyBudget)
         req.body.basicInformation.weeklyBudget = 1;
-
+      req.body.updatedAt = commonUtil.getCurrentDate();
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
         req.body
@@ -649,6 +656,7 @@ class DebtorService {
             $each: req.body.documents,
           },
         },
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (!updatedDebtor) {
@@ -669,6 +677,7 @@ class DebtorService {
         justifications: false,
         lumpSumJustifications: false,
         fullProfitJustifications: false,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (allStrategyFalse) {
@@ -682,6 +691,7 @@ class DebtorService {
       if (extractedFields) {
         this.debtorRepository.updateById(caseTemp.debtor._id, {
           extractedFields: extractedFields.extracted_fields,
+          updatedAt: commonUtil.getCurrentDate(),
         });
       }
       if (extractedFields)

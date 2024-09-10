@@ -58,6 +58,7 @@ class UserService {
     const token = await this.tokenService.createVerifyToken(email);
     req.body.verifyToken = token;
     req.body.isDeleted = false;
+    req.body.updatedAt = commonUtil.getCurrentDate();
     let updatedUser = await this.userRepository.updateById<IUser>(user._id, {
       ...req.body,
     });
@@ -83,6 +84,7 @@ class UserService {
     const token = await this.tokenService.create(userExist._id, uuid);
     await this.userRepository.updateById<IUser>(userExist._id, {
       $push: {sessionIds: uuid},
+      updatedAt: commonUtil.getCurrentDate(),
     });
     return [
       true,
@@ -115,7 +117,7 @@ class UserService {
     delete bodyUser.password;
     const user = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
-      {...bodyUser}
+      {...bodyUser, updatedAt: commonUtil.getCurrentDate()}
     );
     if (!user) {
       return [false, constants.notFoundMessage('User')];
@@ -128,6 +130,7 @@ class UserService {
       isDeleted: true,
       isActive: false,
       password: '',
+      updatedAt: commonUtil.getCurrentDate(),
     });
     if (!user) {
       return [false, constants.notFoundMessage('User')];
@@ -164,6 +167,7 @@ class UserService {
     await emailUtil.sendInvitationLink(user, invitationLink);
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
+      updatedAt: commonUtil.getCurrentDate(),
     });
     return [true, user];
   }
@@ -179,6 +183,7 @@ class UserService {
     const token = await this.tokenService.createVerifyToken(user.email);
     const updateUser = await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
+      updatedAt: commonUtil.getCurrentDate(),
     });
     if (!updateUser) {
       return [false, constants.notFoundMessage('User')];
@@ -216,7 +221,7 @@ class UserService {
     user.sessionIds = [uuid];
     const updatedUser = await this.userRepository.updateByOne<IUser>(
       {email: req.body.email},
-      {...user}
+      {...user, updatedAt: commonUtil.getCurrentDate()}
     );
     if (!updatedUser) {
       return [false, constants.notFoundMessage('User')];
@@ -250,6 +255,7 @@ class UserService {
 
     await this.userRepository.updateById<IUser>(userId, {
       $pull: {sessionIds: sessionId},
+      updatedAt: commonUtil.getCurrentDate(),
     });
 
     return [true, []];
@@ -273,6 +279,7 @@ class UserService {
     const hashPassword = await commonUtil.hashPassword(newPassword);
     const updateUser = await this.userRepository.updateById<IUser>(reqTemp.id, {
       password: hashPassword,
+      updatedAt: commonUtil.getCurrentDate(),
     });
     if (!updateUser) {
       return [false, constants.failureUpdateMessage('password')];

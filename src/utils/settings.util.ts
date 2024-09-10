@@ -55,6 +55,7 @@ class SettingsUtil {
               {target: target, caseId: caseId},
               {
                 $addToSet: {customFields: body},
+                updatedAt: commonUtil.getCurrentDate(),
               }
             );
         }

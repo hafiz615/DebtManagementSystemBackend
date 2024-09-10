@@ -9,10 +9,13 @@ const pipelineStatus_repomodel_1 = require("../../database/repomodels/pipelineSt
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const lodash_1 = require("lodash");
 const case_repository_1 = require("../repository/case/case.repository");
+const targetCF_repository_1 = require("../repository/targetCustomFields/targetCF.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class PipelineStatusService {
     constructor() {
         this.pipelineStatusRepository = new pipelineStatus_repository_1.PipelineStatusRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
     }
     async createPipeline(req) {
         const reqTemp = req;
@@ -41,7 +44,7 @@ class PipelineStatusService {
         if (findStatus && findStatus.status) {
             return [false, constants_util_1.default.Messages.STATUS_PIPELINE_EXIST];
         }
-        const result = await this.pipelineStatusRepository.updateById(req.params.id, { $addToSet: { status: req.body } });
+        const result = await this.pipelineStatusRepository.updateById(req.params.id, { $addToSet: { status: req.body }, updatedAt: common_util_1.default.getCurrentDate() });
         if (!result) {
             return [false, constants_util_1.default.notFoundMessage('pipeline')];
         }
@@ -56,6 +59,7 @@ class PipelineStatusService {
     }
     async updatePipeline(req) {
         req.body.pipeline = (0, lodash_1.capitalize)(req.body.pipeline);
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         const result = await this.pipelineStatusRepository.updateById(req.params.id, req.body);
         if (!result) {
             return [false, constants_util_1.default.failureUpdateMessage('pipeline')];
@@ -90,7 +94,10 @@ class PipelineStatusService {
         const result = await this.pipelineStatusRepository.updateByOne({
             _id: req.params.id,
             status: { $elemMatch: { name: req.body.original.name } },
-        }, { $set: { 'status.$': req.body.update } });
+        }, {
+            $set: { 'status.$': req.body.update },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         if (!result) {
             return [false, constants_util_1.default.failureUpdateMessage('pipeline')];
         }
@@ -114,7 +121,7 @@ class PipelineStatusService {
             statusArr[originalIndex] = req.body.update;
             statusArr.splice(updateIndex, 1);
             // result = await this.deleteStatus(req.params.id, req.body.original);
-            result = await this.pipelineStatusRepository.updateById(req.params.id, { status: statusArr });
+            result = await this.pipelineStatusRepository.updateById(req.params.id, { status: statusArr, updatedAt: common_util_1.default.getCurrentDate() });
         }
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('status')];
@@ -124,17 +131,50 @@ class PipelineStatusService {
     async deleteStatus(id, original) {
         return await this.pipelineStatusRepository.updateById(id, {
             $pull: { status: original },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
     }
     async getPipelineDetails(req) {
         const pipeline = await this.pipelineStatusRepository.getById(req.params.id);
-        const cases = await this.caseRepository.getAllWithoutPagination({ isDeleted: false }, undefined, undefined, { _id: -1 }, ['debtor', 'creditor']);
-        if (!pipeline || !cases.length) {
-            return [false, constants_util_1.default.notFoundMessage('pipeline or cases')];
+        if (!pipeline) {
+            return [false, constants_util_1.default.notFoundMessage('pipeline')];
         }
         if (!pipeline.status.length)
             return [false, constants_util_1.default.notFoundMessage('pipeline statuses')];
         const statusNames = pipeline.status.map(status => status.name);
+        const cases = await this.caseRepository.getAllWithoutPagination({ isDeleted: false, status: { $in: statusNames } }, undefined, undefined, { _id: -1 }, ['debtor', 'creditor']);
+        if (!cases.length) {
+            return [false, constants_util_1.default.notFoundMessage('cases')];
+        }
+        const result = {};
+        statusNames.forEach(statusName => {
+            const matchingCases = cases.filter(caseItem => caseItem.status === statusName);
+            console.log(matchingCases.length);
+            const annualizedValue = matchingCases.reduce((sum, obj) => sum + (obj.totalDebt || 0), 0);
+            result[statusName] = { cases: matchingCases, annualizedValue };
+        });
+        return [true, result];
+    }
+    async getCasesByCustomFieldAndValue(req) {
+        const { name, value } = req.body;
+        const pipeline = await this.pipelineStatusRepository.getById(req.params.id);
+        if (!pipeline) {
+            return [false, constants_util_1.default.notFoundMessage('pipeline')];
+        }
+        if (!pipeline.status.length)
+            return [false, constants_util_1.default.notFoundMessage('pipeline statuses')];
+        const statusNames = pipeline.status.map(status => status.name);
+        let customFields = await this.targetCFRepository.getAllWithoutPagination({
+            customFields: { $elemMatch: { name: name, value: value } },
+        });
+        const caseIds = customFields.map(data => {
+            return data.caseId;
+        });
+        console.log(caseIds, 'caseIdssss');
+        const cases = await this.caseRepository.getAllWithoutPagination({ isDeleted: false, status: { $in: statusNames }, _id: caseIds }, undefined, undefined, { _id: -1 }, ['debtor', 'creditor']);
+        if (!cases.length) {
+            return [false, constants_util_1.default.notFoundMessage('cases')];
+        }
         const result = {};
         statusNames.forEach(statusName => {
             const matchingCases = cases.filter(caseItem => caseItem.status === statusName);

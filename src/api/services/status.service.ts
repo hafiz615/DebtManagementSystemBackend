@@ -6,6 +6,7 @@ import {Status} from '../../database/repomodels/status.repomodel';
 import {capitalize} from 'lodash';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
+import commonUtil from '../../utils/common.util';
 
 class StatusService {
   private statusRepository: StatusRepository;
@@ -46,7 +47,10 @@ class StatusService {
     }
     const result = await this.statusRepository.updateById<IStatus>(
       statusFind._id,
-      {$push: {status: {$each: [capitalizeStatus], $position: 0}}}
+      {
+        $push: {status: {$each: [capitalizeStatus], $position: 0}},
+        updatedAt: commonUtil.getCurrentDate(),
+      }
     );
     if (!result) {
       return [false, constantsUtil.notFoundMessage('status')];
@@ -77,7 +81,10 @@ class StatusService {
         _id: req.params.id,
         status: {$in: originalStatusCap},
       },
-      {$set: {'status.$': updateStatusCap}}
+      {
+        $set: {'status.$': updateStatusCap},
+        updatedAt: commonUtil.getCurrentDate(),
+      }
     );
     if (!result) {
       return [false, constantsUtil.failureUpdateMessage('status')];
@@ -90,6 +97,7 @@ class StatusService {
       req.params.id,
       {
         status: req.body.status,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (!result) {
@@ -118,6 +126,7 @@ class StatusService {
       req.params.id,
       {
         status: statusArr,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (!result) {
@@ -125,7 +134,7 @@ class StatusService {
     }
     await this.caseRepository.updateMany<ICase>(
       {status: req.body.original, isDeleted: false},
-      {status: req.body.update}
+      {status: req.body.update, updatedAt: commonUtil.getCurrentDate()}
     );
     return [true, result];
   }

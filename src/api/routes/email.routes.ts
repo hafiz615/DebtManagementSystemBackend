@@ -11,4 +11,6 @@ router.post(
   caseValidate.sendSmsEmailDebtorCreditor,
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use
+
+router.post('/sendGridParseEmail', emailController.sendGridEmail);
 export default router;

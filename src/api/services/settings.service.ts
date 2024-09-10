@@ -94,10 +94,10 @@ class SettingsService {
         findSettings[0],
         req.body
       );
-      settigns = await this.settingsRepository.updateById(
-        findSettings[0].id,
-        mergedSettings
-      );
+      settigns = await this.settingsRepository.updateById(findSettings[0].id, {
+        ...mergedSettings,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
     }
     if (!settigns) {
       return [false, constants.failureUpdateMessage('settings')];
@@ -160,6 +160,7 @@ class SettingsService {
   async editCustomField(
     req: Request
   ): Promise<[boolean, ICustomField | string]> {
+    req.body.updatedAt = commonUtil.getCurrentDate();
     let customField =
       await this.customFieldsRepository.updateById<ICustomField>(
         req.params.id,
@@ -232,7 +233,10 @@ class SettingsService {
     const targetCF =
       await this.targetCFRepository.updateByOne<ITargetCustomFields>(
         {target: target, caseId: String(req.query.caseId)},
-        {$set: {customFields: updatedCustomFields}}
+        {
+          $set: {customFields: updatedCustomFields},
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
 
     if (!targetCF) {
@@ -256,6 +260,7 @@ class SettingsService {
         {target: String(req.query.target), caseId: String(req.query.caseId)},
         {
           $pull: {customFields: req.body},
+          updatedAt: commonUtil.getCurrentDate(),
         }
       );
     if (!targetCF) {
@@ -310,6 +315,7 @@ class SettingsService {
         $set: {
           'notificationTemplates.$': req.body,
         },
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     //  break;
@@ -347,6 +353,7 @@ class SettingsService {
         $pull: {
           notificationTemplates: {templateId},
         },
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     // break;
@@ -397,12 +404,14 @@ class SettingsService {
             id: createConfiguration.id,
           },
         },
+        updatedAt: commonUtil.getCurrentDate(),
       });
     } else {
       result = await this.notificationConfigurationRepository.updateByOne(
         {value: req.body.value},
         {
           $set: req.body,
+          updatedAt: commonUtil.getCurrentDate(),
         }
       );
     }

@@ -7,6 +7,7 @@ import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
 import axios from 'axios';
 import axiosInstance from '../../utils/axiosInstanceInterceptor';
+import commonUtil from '../../utils/common.util';
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
@@ -74,6 +75,7 @@ class CreditorService {
           ),
         ];
       }
+      req.body.updatedAt = commonUtil.getCurrentDate();
       creditor = await this.creditorRepository.updateById<ICreditor>(
         req.params.id,
         req.body
@@ -84,6 +86,7 @@ class CreditorService {
         req.params.id,
         {
           $push: {contacts: req.body.contact},
+          updatedAt: commonUtil.getCurrentDate(),
         }
       );
     }
@@ -93,7 +96,10 @@ class CreditorService {
           _id: req.params.id,
           contacts: {$elemMatch: {_id: req.body.contact._id}},
         },
-        {$set: {'contacts.$': req.body.contact}}
+        {
+          $set: {'contacts.$': req.body.contact},
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
     }
     // if (req.body.paymentToken && req.body.paymentType) {
@@ -207,7 +213,7 @@ class CreditorService {
     if (!title) return [false, 'Title is missing'];
     const creditor = await this.creditorRepository.updateById<ICreditor>(
       req.params.id,
-      {accountTitle: title}
+      {accountTitle: title, updatedAt: commonUtil.getCurrentDate()}
     );
     if (!creditor) {
       return [false, constants.notFoundMessage('Creditor')];
@@ -231,6 +237,7 @@ class CreditorService {
       const debtor = await this.creditorRepository.updateById<ICreditor>(id, {
         customerVaultId: customerVault,
         paymentType: paymentType,
+        updatedAt: commonUtil.getCurrentDate(),
       });
       return [true, debtor];
     }

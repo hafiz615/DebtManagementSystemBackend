@@ -11,6 +11,7 @@ const url_1 = require("url");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const payment_service_1 = __importDefault(require("./payment.service"));
 const paymentLogging_repomodel_1 = require("../../database/repomodels/paymentLogging.repomodel");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
 const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
@@ -346,18 +347,23 @@ class DebtorService {
             // }
             if (!req.body.basicInformation.weeklyBudget)
                 req.body.basicInformation.weeklyBudget = 1;
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (req.body.contact && req.query.contact === 'add') {
             debtor = await this.debtorRepository.updateById(getDebtor._id, {
                 $push: { contacts: req.body.contact },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         if (req.body.contact && req.query.contact === 'edit') {
             debtor = await this.debtorRepository.updateByOne({
                 _id: getDebtor._id,
                 contacts: { $elemMatch: { _id: req.body.contact._id } },
-            }, { $set: { 'contacts.$': req.body.contact } });
+            }, {
+                $set: { 'contacts.$': req.body.contact },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         if (req.body.paymentToken && req.body.paymentType) {
             const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
@@ -374,6 +380,7 @@ class DebtorService {
                         ],
                     },
                 },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         const allStrategyFalse = await this.caseRepository.updateById(req.params.id, {
@@ -385,6 +392,7 @@ class DebtorService {
             justifications: false,
             lumpSumJustifications: false,
             fullProfitJustifications: false,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -395,6 +403,7 @@ class DebtorService {
                 if (extractedFields) {
                     this.debtorRepository.updateById(getDebtor._id, {
                         extractedFields: extractedFields.extracted_fields,
+                        updatedAt: common_util_1.default.getCurrentDate(),
                     });
                     extractedFieldsTemp = extractedFields.extracted_fields;
                 }
@@ -537,11 +546,11 @@ class DebtorService {
             debtor = await case_util_1.default.createDebtor(req);
         }
         if (getDebtor) {
-            console.log('i am infind');
             if (account.length)
                 req.body.accounts = getDebtor.accounts.concat(account);
             if (!req.body.basicInformation?.weeklyBudget)
                 req.body.basicInformation.weeklyBudget = 1;
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
         if (!debtor) {
@@ -567,6 +576,7 @@ class DebtorService {
                     $each: req.body.documents,
                 },
             },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!updatedDebtor) {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
@@ -584,6 +594,7 @@ class DebtorService {
             justifications: false,
             lumpSumJustifications: false,
             fullProfitJustifications: false,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (allStrategyFalse) {
             const response = await case_util_1.default.getAllCreditorsOfDebtor(updatedDebtor);
@@ -592,6 +603,7 @@ class DebtorService {
             if (extractedFields) {
                 this.debtorRepository.updateById(caseTemp.debtor._id, {
                     extractedFields: extractedFields.extracted_fields,
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
             }
             if (extractedFields)

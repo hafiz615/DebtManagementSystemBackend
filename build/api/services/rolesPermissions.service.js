@@ -90,6 +90,7 @@ class RolesPermissionsService {
         if (role.name === 'Admin' && reqTemp.role !== 'Super User') {
             return [false, 'Only a super user can update an admin role'];
         }
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         const result = await this.rolesPermissionsRepository.updateById(req.params.id, req.body);
         if (!result) {
             return [false, constants_util_1.default.failureUpdateMessage('role')];
@@ -117,7 +118,7 @@ class RolesPermissionsService {
                 'The role is currently assigned to users and cannot be deleted. Please unassign the role from all users before deleting',
             ];
         }
-        const result = await this.rolesPermissionsRepository.updateById(req.params.id, { isDeleted: true });
+        const result = await this.rolesPermissionsRepository.updateById(req.params.id, { isDeleted: true, updatedAt: common_util_1.default.getCurrentDate() });
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('role')];
         }

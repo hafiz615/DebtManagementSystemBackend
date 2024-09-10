@@ -34,6 +34,7 @@ class UserService {
             const sessionId = reqTemp?.sessionId;
             await this.userRepository.updateById(userId, {
                 $pull: { sessionIds: sessionId },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, []];
         };
@@ -266,6 +267,7 @@ class UserService {
         const token = await this.tokenService.createVerifyToken(email);
         req.body.verifyToken = token;
         req.body.isDeleted = false;
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         let updatedUser = await this.userRepository.updateById(user._id, {
             ...req.body,
         });
@@ -284,6 +286,7 @@ class UserService {
         const token = await this.tokenService.create(userExist._id, uuid);
         await this.userRepository.updateById(userExist._id, {
             $push: { sessionIds: uuid },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [
             true,
@@ -311,7 +314,7 @@ class UserService {
         const bodyUser = req.body;
         delete bodyUser.isActive;
         delete bodyUser.password;
-        const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser });
+        const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser, updatedAt: common_util_1.default.getCurrentDate() });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
@@ -322,6 +325,7 @@ class UserService {
             isDeleted: true,
             isActive: false,
             password: '',
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
@@ -352,6 +356,7 @@ class UserService {
         await email_util_1.default.sendInvitationLink(user, invitationLink);
         await this.userRepository.updateById(user._id, {
             verifyToken: token,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [true, user];
     }
@@ -366,6 +371,7 @@ class UserService {
         const token = await this.tokenService.createVerifyToken(user.email);
         const updateUser = await this.userRepository.updateById(user._id, {
             verifyToken: token,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!updateUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];
@@ -400,7 +406,7 @@ class UserService {
         const uuid = (0, uuid_1.v4)();
         const token = await this.tokenService.create(findUser._id, uuid);
         user.sessionIds = [uuid];
-        const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user });
+        const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user, updatedAt: common_util_1.default.getCurrentDate() });
         if (!updatedUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
@@ -421,6 +427,7 @@ class UserService {
         const hashPassword = await common_util_1.default.hashPassword(newPassword);
         const updateUser = await this.userRepository.updateById(reqTemp.id, {
             password: hashPassword,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!updateUser) {
             return [false, constants_util_1.default.failureUpdateMessage('password')];

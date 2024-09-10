@@ -1,5 +1,6 @@
 import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
 import {ICreditor} from '../database/interfaces/creditor.interface';
+import commonUtil from './common.util';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
@@ -26,6 +27,7 @@ class CreditorUtil {
           creditor.creditorId,
           {
             accountTitleMapping: accountTitles,
+            updatedAt: commonUtil.getCurrentDate(),
           }
         );
       }

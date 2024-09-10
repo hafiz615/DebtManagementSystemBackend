@@ -113,6 +113,7 @@ class CaseService {
                             constants_util_1.default.alreadyExistsMessage(`Creditor with companyName ${req.body.creditor.businessInformation.companyName}`),
                         ];
                     }
+                    req.body.creditor.updatedAt = common_util_1.default.getCurrentDate();
                     await this.creditorRepository.updateById(req.body.creditor._id, req.body.creditor);
                 }
                 await case_util_1.default.updateCreditor(req.body.creditor);
@@ -149,6 +150,7 @@ class CaseService {
                 await this.debtorRepository.updateById(findCase.debtor._id, {
                     totalCommission: req.body.totalCommission,
                     weeklyCommission: req.body.commission,
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
                 findCase.intervals = req.body?.intervals?.length;
                 findCase.isExempt = req.body.isExempt;
@@ -156,6 +158,7 @@ class CaseService {
                 if (!checkCasePayment[0])
                     return checkCasePayment;
             }
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
             let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
@@ -183,6 +186,7 @@ class CaseService {
                 justifications: false,
                 lumpSumJustifications: false,
                 fullProfitJustifications: false,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             if (allStrategyFalse) {
                 const response = await case_util_1.default.getAllCreditorsOfDebtor(getDebtor);
@@ -193,6 +197,7 @@ class CaseService {
                     if (extractedFields) {
                         this.debtorRepository.updateById(getDebtor._id, {
                             extractedFields: extractedFields.extracted_fields,
+                            updatedAt: common_util_1.default.getCurrentDate(),
                         });
                         extractedFieldsTemp = extractedFields.extracted_fields;
                     }
@@ -212,6 +217,7 @@ class CaseService {
             let findCase = await this.caseRepository.getById(req.params.id);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
             const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
@@ -332,6 +338,7 @@ class CaseService {
                     justifications: false,
                     lumpSumJustifications: false,
                     fullProfitJustifications: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
             }
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
@@ -358,6 +365,7 @@ class CaseService {
                     if (extractedFields) {
                         this.debtorRepository.updateById(debtor._id, {
                             extractedFields: extractedFields.extracted_fields,
+                            updatedAt: common_util_1.default.getCurrentDate(),
                         });
                         extractedFieldsTemp = extractedFields.extracted_fields;
                     }
@@ -429,6 +437,7 @@ class CaseService {
                             },
                         ],
                     },
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
                 Action = 'Update Notes';
             }
@@ -465,6 +474,7 @@ class CaseService {
                 justifications: false,
                 lumpSumJustifications: false,
                 fullProfitJustifications: false,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
@@ -474,6 +484,7 @@ class CaseService {
             data['creditors'] = creditors;
             debtor = await this.debtorRepository.updateById(debtor._id, {
                 commissionPercentage: comm,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             data['debtor'] = debtor;
             let extractedFieldsTemp = null;
@@ -482,6 +493,7 @@ class CaseService {
                 if (extractedFields) {
                     this.debtorRepository.updateById(debtor._id, {
                         extractedFields: extractedFields.extracted_fields,
+                        updatedAt: common_util_1.default.getCurrentDate(),
                     });
                     extractedFieldsTemp = extractedFields.extracted_fields;
                 }
@@ -554,6 +566,7 @@ class CaseService {
         }
         const result = await this.caseRepository.updateById(req.params.id, {
             isDeleted: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('case')];
@@ -637,11 +650,12 @@ class CaseService {
         return [true, result?.caseHistory ?? []];
     }
     async saveJustification(req) {
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         const justification = await this.justificationRepository.upsert({}, req.body);
         if (!justification) {
             return [false, constants_util_1.default.notFoundMessage('justification')];
         }
-        this.caseRepository.updateMany({}, { justifications: false });
+        this.caseRepository.updateMany({}, { justifications: false, updatedAt: common_util_1.default.getCurrentDate() });
         return [true, justification];
     }
     async calculateIntervalsAmount(req) {

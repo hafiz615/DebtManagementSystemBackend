@@ -17,10 +17,6 @@ const strategy: Schema = new Schema({
   logTrackingId: {
     type: String,
   },
-  createdAt: {
-    type: Date,
-    required: true,
-  },
   updatedAt: {
     type: Date,
     required: true,

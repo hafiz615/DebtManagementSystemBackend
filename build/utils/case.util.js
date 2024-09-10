@@ -322,6 +322,7 @@ class CaseUtil {
         if (findCreditor) {
             await this.creditorRepository.updateById(creditor._id, {
                 'businessInformation.accountTitle': creditor.businessInformation.companyName,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         return [true, { caseCreated, findCreditor, creditorNames }];
@@ -1287,9 +1288,11 @@ class CaseUtil {
         }
     }
     async updateDebtor(data) {
+        data.updatedAt = common_util_1.default.getCurrentDate();
         return await this.debtRepository.updateById(data._id, { ...data });
     }
     async updateCreditor(data) {
+        data.updatedAt = common_util_1.default.getCurrentDate();
         return await this.creditorRepository.updateById(data._id, {
             ...data,
         });
@@ -1344,11 +1347,20 @@ class CaseUtil {
                 },
             });
             if (!response.data.error && caseId) {
-                this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, { 'data.creditorNames': response.data });
-                this.caseRepository.updateById(caseId, { strategyOne_1: true });
+                this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, {
+                    'data.creditorNames': response.data,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                this.caseRepository.updateById(caseId, {
+                    strategyOne_1: true,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
             }
             if (response.data.error && caseId) {
-                this.caseRepository.updateById(caseId, { strategyOne_1: false });
+                this.caseRepository.updateById(caseId, {
+                    strategyOne_1: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
             }
             return response.data.error ? response.data.error : response.data;
         }
@@ -1402,6 +1414,8 @@ class CaseUtil {
         }
     }
     getCleanAmount(data) {
+        if (!data)
+            return 0;
         const cleanedAmount = data.replace(/\$|,/g, '');
         let amount = parseInt(cleanedAmount, 10);
         if (isNaN(amount)) {
@@ -1461,11 +1475,20 @@ class CaseUtil {
                 },
             });
             if (response.data && response.data.error) {
-                this.caseRepository.updateById(caseTemp._id, { justifications: false });
+                this.caseRepository.updateById(caseTemp._id, {
+                    justifications: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
                 return [false, response.data.error];
             }
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'justifications' }, { 'data.justifications': response.data });
-            this.caseRepository.updateById(caseTemp._id, { justifications: true });
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'justifications' }, {
+                'data.justifications': response.data,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            this.caseRepository.updateById(caseTemp._id, {
+                justifications: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
             return [true, response.data];
         }
         catch (error) {
@@ -1492,12 +1515,17 @@ class CaseUtil {
             if (response.data && response.data.error) {
                 this.caseRepository.updateById(caseTemp._id, {
                     lumpSumJustifications: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
                 return [false, response.data.error];
             }
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'lumpSumJustifications' }, { 'data.justifications': response.data });
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'lumpSumJustifications' }, {
+                'data.justifications': response.data,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
             this.caseRepository.updateById(caseTemp._id, {
                 lumpSumJustifications: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, response.data];
         }
@@ -1525,12 +1553,17 @@ class CaseUtil {
             if (response.data && response.data.error) {
                 this.caseRepository.updateById(caseTemp._id, {
                     fullProfitJustifications: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
                 return [false, response.data.error];
             }
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'fullProfitJustifications' }, { 'data.justifications': response.data });
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'fullProfitJustifications' }, {
+                'data.justifications': response.data,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
             this.caseRepository.updateById(caseTemp._id, {
                 fullProfitJustifications: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, response.data];
         }
@@ -1555,11 +1588,20 @@ class CaseUtil {
                 },
             });
             if (response.data && response.data.error) {
-                this.caseRepository.updateById(caseTemp._id, { strategyTwo: false });
+                this.caseRepository.updateById(caseTemp._id, {
+                    strategyTwo: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
                 return [false, response.data.error];
             }
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_two' }, { 'data.lumpSumAmount': response.data });
-            this.caseRepository.updateById(caseTemp._id, { strategyTwo: true });
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_two' }, {
+                'data.lumpSumAmount': response.data,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            this.caseRepository.updateById(caseTemp._id, {
+                strategyTwo: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
             return [true, response.data];
         }
         catch (error) {
@@ -1583,12 +1625,21 @@ class CaseUtil {
                 },
             });
             if (response.data && response.data.error) {
-                this.caseRepository.updateById(caseTemp._id, { strategyThree: false });
+                this.caseRepository.updateById(caseTemp._id, {
+                    strategyThree: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
                 return [false, response.data.error];
             }
             const thirdStrategy = await this.getSettlementMapping(response.data);
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_three' }, { 'data.fullProfitSettlement': thirdStrategy });
-            this.caseRepository.updateById(caseTemp._id, { strategyThree: true });
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_three' }, {
+                'data.fullProfitSettlement': thirdStrategy,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            this.caseRepository.updateById(caseTemp._id, {
+                strategyThree: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
             return [true, response.data];
         }
         catch (error) {
@@ -1810,11 +1861,20 @@ class CaseUtil {
         //     );
         // }
         if (typeof getSettlementRange !== 'string') {
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, { 'data.settlementRange': getSettlementRange });
-            this.caseRepository.updateById(caseTemp._id, { strategyOne_3: true });
+            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
+                'data.settlementRange': getSettlementRange,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            this.caseRepository.updateById(caseTemp._id, {
+                strategyOne_3: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         if (typeof getSettlementRange === 'string') {
-            this.caseRepository.updateById(caseTemp._id, { strategyOne_3: false });
+            this.caseRepository.updateById(caseTemp._id, {
+                strategyOne_3: false,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         return getSettlementRange;
     }
@@ -1877,11 +1937,20 @@ class CaseUtil {
                 },
             });
             if (!response.data.error) {
-                this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, { 'data.getScoresAIForAllCreditors': response.data });
-                this.caseRepository.updateById(caseTemp._id, { strategyOne_2: true });
+                this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
+                    'data.getScoresAIForAllCreditors': response.data,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                this.caseRepository.updateById(caseTemp._id, {
+                    strategyOne_2: true,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
             }
             if (response.data.error) {
-                this.caseRepository.updateById(caseTemp._id, { strategyOne_2: false });
+                this.caseRepository.updateById(caseTemp._id, {
+                    strategyOne_2: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
             }
             return response.data.error ? response.data.error : response.data;
         }
@@ -1943,6 +2012,7 @@ class CaseUtil {
                 creditor = await this.createCreditor(body.creditor);
             }
             if (getCreditor) {
+                body.updatedAt = common_util_1.default.getCurrentDate();
                 creditor = await this.creditorRepository.updateById(getCreditor._id, body.creditor);
             }
             if (creditor) {
@@ -1981,6 +2051,7 @@ class CaseUtil {
                         });
                         await this.creditorRepository.updateById(creditor._id, {
                             accountTitleMapping: accountTitles,
+                            updatedAt: common_util_1.default.getCurrentDate(),
                         });
                     }
                     await this.addInHistory({
@@ -2089,11 +2160,13 @@ class CaseUtil {
                     createdAt: common_util_1.default.getCurrentDate(),
                 },
             },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
     }
     async addInHistory(history, id) {
         const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
             $push: { caseHistory: { $each: [history], $position: 0 } },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
     }
     async getJustificationModels() {

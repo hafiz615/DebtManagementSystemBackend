@@ -8,6 +8,7 @@ const creditor_repository_1 = require("../repository/creditor/creditor.repositor
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -60,18 +61,23 @@ class CreditorService {
                     constants_util_1.default.alreadyExistsMessage(`Creditor with companyName ${req.body.businessInformation.companyName}`),
                 ];
             }
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
             creditor = await this.creditorRepository.updateById(req.params.id, req.body);
         }
         if (req.body.contact && req.query.contact === 'add') {
             creditor = await this.creditorRepository.updateById(req.params.id, {
                 $push: { contacts: req.body.contact },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         if (req.body.contact && req.query.contact === 'edit') {
             creditor = await this.creditorRepository.updateByOne({
                 _id: req.params.id,
                 contacts: { $elemMatch: { _id: req.body.contact._id } },
-            }, { $set: { 'contacts.$': req.body.contact } });
+            }, {
+                $set: { 'contacts.$': req.body.contact },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         // if (req.body.paymentToken && req.body.paymentType) {
         //   const customerVaultResponse = await caseUtil.createVault(
@@ -169,7 +175,7 @@ class CreditorService {
         const title = String(req.query.title);
         if (!title)
             return [false, 'Title is missing'];
-        const creditor = await this.creditorRepository.updateById(req.params.id, { accountTitle: title });
+        const creditor = await this.creditorRepository.updateById(req.params.id, { accountTitle: title, updatedAt: common_util_1.default.getCurrentDate() });
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }
@@ -189,6 +195,7 @@ class CreditorService {
             const debtor = await this.creditorRepository.updateById(id, {
                 customerVaultId: customerVault,
                 paymentType: paymentType,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, debtor];
         }

@@ -41,6 +41,7 @@ class SettingsUtil {
                     targetCF =
                         await this.targetCFRepository.updateByOne({ target: target, caseId: caseId }, {
                             $addToSet: { customFields: body },
+                            updatedAt: common_util_1.default.getCurrentDate(),
                         });
                 }
                 break;

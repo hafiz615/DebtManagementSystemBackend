@@ -32,6 +32,7 @@ import {ICaseHistory} from '../../database/interfaces/caseHistory.interface';
 import {CaseHistoryRepository} from '../repository/caseHistory/caseHistory.repository';
 import {Justification} from '../../database/repomodels/justification.repomodel';
 import {JustificationRepository} from '../repository/justification/justification.repository';
+import {IJustification} from '../../database/interfaces/justification.interface';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -196,6 +197,7 @@ class CaseService {
             ),
           ];
         }
+        req.body.creditor.updatedAt = commonUtil.getCurrentDate();
         await this.creditorRepository.updateById<ICreditor>(
           req.body.creditor._id,
           req.body.creditor
@@ -238,12 +240,14 @@ class CaseService {
       await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
         totalCommission: req.body.totalCommission,
         weeklyCommission: req.body.commission,
+        updatedAt: commonUtil.getCurrentDate(),
       });
       findCase.intervals = req.body?.intervals?.length;
       findCase.isExempt = req.body.isExempt;
       const checkCasePayment = await caseUtil.checkCasePayment(findCase);
       if (!checkCasePayment[0]) return checkCasePayment;
     }
+    req.body.updatedAt = commonUtil.getCurrentDate();
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -284,6 +288,7 @@ class CaseService {
         justifications: false,
         lumpSumJustifications: false,
         fullProfitJustifications: false,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (allStrategyFalse) {
@@ -299,6 +304,7 @@ class CaseService {
         if (extractedFields) {
           this.debtorRepository.updateById(getDebtor._id, {
             extractedFields: extractedFields.extracted_fields,
+            updatedAt: commonUtil.getCurrentDate(),
           });
           extractedFieldsTemp = extractedFields.extracted_fields;
         }
@@ -328,6 +334,7 @@ class CaseService {
     let reqTemp: any = req;
     let findCase = await this.caseRepository.getById<ICase>(req.params.id);
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
+    req.body.updatedAt = commonUtil.getCurrentDate();
     const caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -355,6 +362,7 @@ class CaseService {
     }
     const result = await this.caseRepository.updateById<ICase>(req.params.id, {
       isDeleted: true,
+      updatedAt: commonUtil.getCurrentDate(),
     });
     if (!result) {
       return [false, constantsUtil.failureDeleteMessage('case')];
@@ -543,6 +551,7 @@ class CaseService {
         justifications: false,
         lumpSumJustifications: false,
         fullProfitJustifications: false,
+        updatedAt: commonUtil.getCurrentDate(),
       });
     }
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
@@ -575,6 +584,7 @@ class CaseService {
         if (extractedFields) {
           this.debtorRepository.updateById(debtor._id, {
             extractedFields: extractedFields.extracted_fields,
+            updatedAt: commonUtil.getCurrentDate(),
           });
           extractedFieldsTemp = extractedFields.extracted_fields;
         }
@@ -673,6 +683,7 @@ class CaseService {
             },
           ],
         },
+        updatedAt: commonUtil.getCurrentDate(),
       });
       Action = 'Update Notes';
     } else result = await caseUtil.addNotes(req, reqTemp.id);
@@ -723,6 +734,7 @@ class CaseService {
       justifications: false,
       lumpSumJustifications: false,
       fullProfitJustifications: false,
+      updatedAt: commonUtil.getCurrentDate(),
     });
     creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -736,6 +748,7 @@ class CaseService {
     data['creditors'] = creditors;
     debtor = await this.debtorRepository.updateById<IDebtor>(debtor._id, {
       commissionPercentage: comm,
+      updatedAt: commonUtil.getCurrentDate(),
     });
     data['debtor'] = debtor;
     let extractedFieldsTemp = null;
@@ -744,6 +757,7 @@ class CaseService {
       if (extractedFields) {
         this.debtorRepository.updateById(debtor._id, {
           extractedFields: extractedFields.extracted_fields,
+          updatedAt: commonUtil.getCurrentDate(),
         });
         extractedFieldsTemp = extractedFields.extracted_fields;
       }
@@ -924,14 +938,16 @@ class CaseService {
   }
 
   async saveJustification(req: Request) {
-    const justification = await this.justificationRepository.upsert<ICase>(
-      {},
-      req.body
-    );
+    req.body.updatedAt = commonUtil.getCurrentDate();
+    const justification =
+      await this.justificationRepository.upsert<IJustification>({}, req.body);
     if (!justification) {
       return [false, constantsUtil.notFoundMessage('justification')];
     }
-    this.caseRepository.updateMany({}, {justifications: false});
+    this.caseRepository.updateMany(
+      {},
+      {justifications: false, updatedAt: commonUtil.getCurrentDate()}
+    );
     return [true, justification];
   }
 
