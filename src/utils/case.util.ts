@@ -1581,6 +1581,7 @@ class CaseUtil {
   }
 
   getCleanAmount(data: string) {
+    if (!data) return 0;
     const cleanedAmount = data.replace(/\$|,/g, '');
     let amount = parseInt(cleanedAmount, 10);
     if (isNaN(amount)) {
