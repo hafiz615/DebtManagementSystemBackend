@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../../utils/constants.util"));
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const email_service_1 = __importDefault(require("../../services/email.service"));
+const mailparser_1 = require("mailparser");
 class EmailController {
     constructor() {
         this.sendSmsEmailDebtorCreditor = async (req, res) => {
@@ -32,8 +33,9 @@ class EmailController {
         this.sendGridEmail = async (req, res) => {
             try {
                 // Access the parsed email data sent by SendGrid
-                console.log('req.bodyyyy', req.body);
                 const emailData = req.body;
+                const parseData = await (0, mailparser_1.simpleParser)(req.body);
+                console.log(parseData, 'parse dataaaaa');
                 // Extract email fields
                 const to = emailData.to; // Recipient
                 const from = emailData.from; // Sender

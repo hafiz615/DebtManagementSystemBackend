@@ -7,8 +7,11 @@ const express_1 = require("express");
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const case_validate_1 = __importDefault(require("../../middleware/validators/case.validate"));
 const email_controller_1 = __importDefault(require("../controllers/email/email.controller"));
+const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
+const storage = multer_1.default.memoryStorage();
+const upload = (0, multer_1.default)({ storage });
 router.post('/sendSmsEmailDebtorCreditor/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.sendSmsEmailDebtorCreditor, email_controller_1.default.sendSmsEmailDebtorCreditor); // not in current use
-router.post('/sendGridParseEmail', email_controller_1.default.sendGridEmail);
+router.post('/sendGridParseEmail', upload.any(), email_controller_1.default.sendGridEmail);
 exports.default = router;
 //# sourceMappingURL=email.routes.js.map

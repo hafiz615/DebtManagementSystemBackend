@@ -2,8 +2,11 @@ import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import caseValidate from '../../middleware/validators/case.validate';
 import emailController from '../controllers/email/email.controller';
+import multer from 'multer';
 
 const router = Router();
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 
 router.post(
   '/sendSmsEmailDebtorCreditor/:id',
@@ -12,5 +15,5 @@ router.post(
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use
 
-router.post('/sendGridParseEmail', emailController.sendGridEmail);
+router.post('/sendGridParseEmail', upload.any(), emailController.sendGridEmail);
 export default router;

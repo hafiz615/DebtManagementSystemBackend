@@ -3,6 +3,7 @@ import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import UploadService from '../../services/upload.service';
 import EmailService from '../../services/email.service';
+import {simpleParser} from 'mailparser';
 
 class EmailController {
   protected emailService: EmailService;
@@ -36,9 +37,9 @@ class EmailController {
   sendGridEmail = async (req: Request, res: Response) => {
     try {
       // Access the parsed email data sent by SendGrid
-      console.log('req.bodyyyy', req.body);
       const emailData = req.body;
-
+      const parseData = await simpleParser(req.body);
+      console.log(parseData, 'parse dataaaaa');
       // Extract email fields
       const to = emailData.to; // Recipient
       const from = emailData.from; // Sender
