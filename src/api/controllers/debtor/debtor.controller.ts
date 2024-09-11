@@ -358,7 +358,6 @@ class DebtorController {
 
   getFullProfitJustifications = async (req: Request, res: Response) => {
     try {
-      console.log('jeheheh');
       const response = await this.debtorService.fullProfitJustifications(req);
       if (!response[0]) {
         return res
@@ -370,6 +369,27 @@ class DebtorController {
           statusCode: constants.CODE.OK,
           data: response[1],
           message: constants.successFoundMessage('Full profit justifications'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+  getExtractedFields = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.getExtractedFields(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Extracted data'),
         })
       );
     } catch (error) {

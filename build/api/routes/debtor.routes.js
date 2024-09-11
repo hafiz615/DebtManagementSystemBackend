@@ -26,5 +26,6 @@ router.get('/getLumpSumAmount/:id', authorize_middleware_1.default.validateAuth,
 router.get('/getFullProfitSettlement/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getFullProfitSettlement);
 router.get('/getLumpSumJustifications/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getLumpSumJustifications);
 router.get('/getFullProfitJustifications/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getFullProfitJustifications);
+router.post('/getExtractedFields/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getExtractedFields);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

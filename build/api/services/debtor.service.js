@@ -617,6 +617,17 @@ class DebtorService {
         }
         return [true, updatedDebtor];
     }
+    async getExtractedFields(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp) {
+            return [false, constants_util_2.default.notFoundMessage('case')];
+        }
+        const extractedFields = await case_util_1.default.getExtractionMCA(req.body);
+        if (!extractedFields) {
+            return [false, constants_util_2.default.notFoundMessage('extrcated data')];
+        }
+        return [true, extractedFields];
+    }
 }
 exports.default = DebtorService;
 //# sourceMappingURL=debtor.service.js.map

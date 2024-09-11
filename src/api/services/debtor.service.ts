@@ -794,6 +794,18 @@ class DebtorService {
     );
     return justifications;
   };
+
+  async getExtractedFields(req: Request) {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    const extractedFields = await caseUtil.getExtractionMCA(req.body);
+    if (!extractedFields) {
+      return [false, constantsUtil.notFoundMessage('extrcated data')];
+    }
+    return [true, extractedFields];
+  }
 }
 
 export default DebtorService;
