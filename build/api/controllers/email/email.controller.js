@@ -32,31 +32,16 @@ class EmailController {
         };
         this.sendGridEmail = async (req, res) => {
             try {
-                // Access the parsed email data sent by SendGrid
-                const emailData = req.body;
-                const parseData = await (0, mailparser_1.simpleParser)(req.body);
-                console.log(parseData, 'parse dataaaaa');
-                // Extract email fields
-                const to = emailData.to; // Recipient
-                const from = emailData.from; // Sender
-                const subject = emailData.subject; // Subject
-                const text = emailData.text; // Body (plain text)
-                const html = emailData.html; // Body (HTML)
-                console.log(to, 'to');
-                console.log(from, 'from');
-                console.log(subject, 'subject');
-                console.log(text, 'text');
-                console.log(html, 'html');
-                // Handle attachments
-                if (req.files && Array.isArray(req.files)) {
-                    req.files.forEach(file => {
-                        console.log(`Received file: ${file.originalname}`);
-                        // file.buffer contains the binary data of the file
-                    });
-                }
-                if (req?.file) {
-                    console.log('File:', req.file?.originalname);
-                }
+                const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
+                console.log(parseData.to, 'to');
+                console.log(parseData.from, 'from');
+                console.log(parseData.subject, 'subject');
+                console.log(parseData.text, 'text');
+                console.log(parseData.textAsHtml, 'textAsHtml');
+                console.log(parseData.html, 'html');
+                console.log(parseData.attachments, 'attachments');
+                console.log(parseData.date, 'date');
+                console.log(parseData.replyTo, 'replyTo');
                 return res.status(200).send('ok');
             }
             catch (error) {

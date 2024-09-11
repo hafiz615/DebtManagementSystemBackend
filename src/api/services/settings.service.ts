@@ -444,6 +444,16 @@ class SettingsService {
     }
     return [true, result];
   }
+
+  async getCustomFields() {
+    const customFields =
+      await this.customFieldsRepository.getAllWithoutPagination<ICustomField>();
+
+    if (!customFields.length) {
+      return [false, constants.notFoundMessage('custom fields')];
+    }
+    return [true, customFields];
+  }
 }
 
 export default SettingsService;

@@ -330,6 +330,13 @@ class SettingsService {
         }
         return [true, result];
     }
+    async getCustomFields() {
+        const customFields = await this.customFieldsRepository.getAllWithoutPagination();
+        if (!customFields.length) {
+            return [false, constants_util_1.default.notFoundMessage('custom fields')];
+        }
+        return [true, customFields];
+    }
 }
 exports.default = SettingsService;
 //# sourceMappingURL=settings.service.js.map
