@@ -33,6 +33,7 @@ import {CaseHistoryRepository} from '../repository/caseHistory/caseHistory.repos
 import {Justification} from '../../database/repomodels/justification.repomodel';
 import {JustificationRepository} from '../repository/justification/justification.repository';
 import {IJustification} from '../../database/interfaces/justification.interface';
+import {Creditor} from '../../database/repomodels/creditor.repomodel';
 
 class CaseService {
   private caseRepository: CaseRepository;
@@ -130,16 +131,16 @@ class CaseService {
       );
       doc.url = url;
     }
-    const cases: ICase[] = await caseUtil.getAllCreditorsOfDebtorForCase(
+    const cases: any = await caseUtil.getAllCreditorsOfDebtorForCase(
       findCase.debtor._id,
       findCase.creditor._id
     );
-    const creditors: any = cases.map(caseTemp => {
-      return caseTemp.creditor;
-    });
+    // const creditors: any = cases.map(caseTemp => {
+    //   return caseTemp.creditor;
+    // });
     const uniqueResult: any = Array.from(
       new Map(
-        creditors.map(creditor => [String(creditor._id), creditor])
+        cases.map(caseTemp => [String(caseTemp.creditor._id), caseTemp])
       ).values()
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
