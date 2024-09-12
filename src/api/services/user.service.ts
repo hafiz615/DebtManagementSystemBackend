@@ -18,6 +18,7 @@ import mongoose from 'mongoose';
 import emailUtil from '../../utils/email.util';
 import client from '@sendgrid/client';
 import {ClientRequest} from '@sendgrid/client/src/request';
+import {compare} from 'bcryptjs';
 
 class UserService {
   private userRepository: UserRepository;
@@ -65,7 +66,7 @@ class UserService {
     if (!updatedUser) {
       return [false, constants.failureRegisterMessage('User')];
     }
-    const invitationLink = await userUtil.getInvitationLink(token);
+    const invitationLink = await userUtil.getInvitationLink(token, 'update');
     await emailUtil.sendInvitationLink(updatedUser, invitationLink);
 
     return [true, updatedUser];
@@ -163,7 +164,7 @@ class UserService {
       return [false, 'Could not send invitation link to active user'];
     }
     const token = await this.tokenService.createVerifyToken(user.email);
-    const invitationLink = await userUtil.getInvitationLink(token);
+    const invitationLink = await userUtil.getInvitationLink(token, 'update');
     await emailUtil.sendInvitationLink(user, invitationLink);
     await this.userRepository.updateById<IUser>(user._id, {
       verifyToken: token,
@@ -172,7 +173,7 @@ class UserService {
     return [true, user];
   }
 
-  async forgotPassword(email: string): Promise<[boolean, IUser | string]> {
+  async forgotPasswordLink(email: string): Promise<[boolean, IUser | string]> {
     const user = await this.userRepository.getOne<IUser>({email: email});
     if (!user) {
       return [false, constants.notFoundMessage('User')];
@@ -188,7 +189,7 @@ class UserService {
     if (!updateUser) {
       return [false, constants.notFoundMessage('User')];
     }
-    const invitationLink = await userUtil.getInvitationLink(token);
+    const invitationLink = await userUtil.getInvitationLink(token, 'forgot');
     const text = `Dear ${user.name},
 
     You've requested to reset your password. To proceed, please click the link below to set a new password:
@@ -493,13 +494,13 @@ class UserService {
 
   async addSenderIdentity(req: Request) {
     const data = {
-      from_email: 'umar.iqbal@luminogics.com',
-      reply_to: 'umar.iqbal@luminogics.com',
-      from_name: 'Mohsin',
-      nickname: 'Umar',
-      address: 'Sikandar block',
-      city: 'Lahore',
-      country: 'Pakistan',
+      from_email: req.body.email,
+      reply_to: req.body.email,
+      from_name: req.body.name,
+      nickname: req.body.nickname,
+      address: req.body.address,
+      city: req.body.city,
+      country: req.body.country,
     };
 
     const request: ClientRequest = {
@@ -531,6 +532,48 @@ class UserService {
     console.log(result[0].statusCode);
     console.log(result[0]);
     return [true, result[0].body];
+  }
+
+  async getVerifySenders(req: Request) {
+    const request: ClientRequest = {
+      url: `/v3/verified_senders`,
+      method: 'GET',
+    };
+
+    const result: any = await client.request(request);
+    let emails = [];
+    if (result[0]?.body?.results?.length) {
+      emails = result[0].body.results.map(temp => {
+        return temp.from_email;
+      });
+    }
+    return [true, emails];
+  }
+
+  async forgotPasswordUpdate(req: Request): Promise<[boolean, IUser | string]> {
+    const findUser = await this.userRepository.getOne<IUser>(
+      {
+        verifyToken: req.query.token,
+      },
+      '+password'
+    );
+    if (!findUser) return [false, constants.notFoundMessage('User')];
+    const checkPassword = await userUtil.checkPassword(req.body.password);
+    if (!checkPassword) return [false, constants.Messages.PASSWORD_FORMAT];
+    if (await compare(req.body.password, findUser.password)) {
+      return [false, 'Password already in use. Please enter new password'];
+    }
+    req.body.password = await commonUtil.hashPassword(req.body.password);
+    let user = req.body as IUser;
+    user.verifyToken = '';
+    const updatedUser = await this.userRepository.updateByOne<IUser>(
+      {email: req.body.email},
+      {...user, updatedAt: commonUtil.getCurrentDate()}
+    );
+    if (!updatedUser) {
+      return [false, constants.notFoundMessage('User')];
+    }
+    return [true, 'Password reset successfully'];
   }
 }
 

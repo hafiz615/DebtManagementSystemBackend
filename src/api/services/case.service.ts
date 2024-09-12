@@ -130,12 +130,15 @@ class CaseService {
       );
       doc.url = url;
     }
-    const creditors = await caseUtil.getAllCreditorsOfDebtor(
-      findCase.debtor as any
+    const cases: ICase[] = await caseUtil.getAllCreditorsOfDebtorForCase(
+      findCase.debtor._id
     );
+    const creditors: any = cases.map(caseTemp => {
+      return caseTemp.creditor;
+    });
     const uniqueResult = Array.from(
       new Map(
-        creditors.map(creditor => [creditor.creditorId, creditor])
+        creditors.map(creditor => [String(creditor._id), creditor])
       ).values()
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({

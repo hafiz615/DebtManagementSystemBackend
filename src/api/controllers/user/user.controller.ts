@@ -264,6 +264,28 @@ class UserController {
     }
   };
 
+  forgotPasswordUpdate = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.forgotPasswordUpdate(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('User'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   getAllUsers = async (req: Request, res: Response) => {
     try {
       const checkPermission = await commonUtil.checkPermission(
@@ -383,7 +405,13 @@ class UserController {
       console.log(error.response.body);
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+        .send(
+          responseHelper.get4xxResponse(
+            error.response.body.errors[0].field +
+              ' ' +
+              error.response.body.errors[0].message
+          )
+        );
     }
   };
 
@@ -410,9 +438,9 @@ class UserController {
     }
   };
 
-  forgotPassword = async (req: Request, res: Response) => {
+  forgotPasswordLink = async (req: Request, res: Response) => {
     try {
-      const response = await this.userService.forgotPassword(
+      const response = await this.userService.forgotPasswordLink(
         req.body.email ? req.body.email : ''
       );
       if (!response[0]) {
@@ -428,6 +456,29 @@ class UserController {
         })
       );
     } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getVerifySenders = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.getVerifySenders(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Verified senders'),
+        })
+      );
+    } catch (error) {
+      console.log(error.response.body);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));

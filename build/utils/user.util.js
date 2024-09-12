@@ -28,8 +28,8 @@ class UserUtil {
         }
         return userExist;
     }
-    async getInvitationLink(token) {
-        const invitationLink = `${setEnv_1.EnvSetup.invitationLink}?token=${token}`;
+    async getInvitationLink(token, type) {
+        const invitationLink = `${setEnv_1.EnvSetup.invitationLink}?token=${token}&type=${type}`;
         return invitationLink;
     }
     async getAllUserFilters(req) {

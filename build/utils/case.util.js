@@ -206,6 +206,12 @@ class CaseUtil {
         });
         return cases;
     }
+    async getAllCreditorsOfDebtorForCase(debtorId) {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, '_id', undefined, { _id: -1 }, {
+            path: 'creditor',
+        });
+        return cases;
+    }
     async createCase(body, name, id) {
         let contactIds = null;
         let debtor = null;
