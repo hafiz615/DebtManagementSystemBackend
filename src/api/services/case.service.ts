@@ -131,12 +131,13 @@ class CaseService {
       doc.url = url;
     }
     const cases: ICase[] = await caseUtil.getAllCreditorsOfDebtorForCase(
-      findCase.debtor._id
+      findCase.debtor._id,
+      findCase.creditor._id
     );
     const creditors: any = cases.map(caseTemp => {
       return caseTemp.creditor;
     });
-    const uniqueResult = Array.from(
+    const uniqueResult: any = Array.from(
       new Map(
         creditors.map(creditor => [String(creditor._id), creditor])
       ).values()
@@ -161,12 +162,11 @@ class CaseService {
           )
         : [];
 
-    const tempCase: any = findCase;
-    tempCase['creditors'] = uniqueResult;
-    tempCase['customFields'] = temp ? temp.customFields : [];
-    tempCase['notes'] = updateNotesForm ?? [];
+    findCase['creditors'] = uniqueResult;
+    findCase['customFields'] = temp ? temp.customFields : [];
+    findCase['notes'] = updateNotesForm ?? [];
 
-    return [true, tempCase];
+    return [true, findCase];
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {

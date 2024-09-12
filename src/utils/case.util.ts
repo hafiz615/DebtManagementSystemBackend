@@ -273,9 +273,9 @@ class CaseUtil {
     return cases;
   }
 
-  async getAllCreditorsOfDebtorForCase(debtorId: string) {
+  async getAllCreditorsOfDebtorForCase(debtorId: string, creditorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
-      {debtor: debtorId, isDeleted: false},
+      {debtor: debtorId, isDeleted: false, creditor: {$ne: creditorId}},
       '_id',
       undefined,
       {_id: -1},

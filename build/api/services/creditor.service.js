@@ -192,14 +192,27 @@ class CreditorService {
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
-            const debtor = await this.creditorRepository.updateById(id, {
+            const creditor = await this.creditorRepository.updateById(id, {
                 customerVaultId: customerVault,
                 paymentType: paymentType,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
-            return [true, debtor];
+            return [true, creditor];
         }
         return [false, 'Unable to create customer vault'];
+    }
+    async updateMultipleCreditors(req) {
+        const creditors = req.body.creditors;
+        const result = [];
+        for (const creditor of creditors) {
+            creditor.updatedAt = common_util_1.default.getCurrentDate();
+            const updatedCreditor = await this.creditorRepository.updateById(creditor._id, creditor);
+            if (updatedCreditor)
+                result.push(true);
+        }
+        if (!result.length)
+            return [false, constants_util_1.default.failureUpdateMessage('creditors')];
+        return [true, constants_util_1.default.successUpdateMessage('Creditors')];
     }
 }
 exports.default = CreditorService;

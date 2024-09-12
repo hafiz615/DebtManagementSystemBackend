@@ -71,7 +71,7 @@ class CaseService {
                 );
                 doc.url = url;
             }
-            const cases = await case_util_1.default.getAllCreditorsOfDebtorForCase(findCase.debtor._id);
+            const cases = await case_util_1.default.getAllCreditorsOfDebtorForCase(findCase.debtor._id, findCase.creditor._id);
             const creditors = cases.map(caseTemp => {
                 return caseTemp.creditor;
             });
@@ -89,11 +89,10 @@ class CaseService {
                     };
                 }))
                 : [];
-            const tempCase = findCase;
-            tempCase['creditors'] = uniqueResult;
-            tempCase['customFields'] = temp ? temp.customFields : [];
-            tempCase['notes'] = updateNotesForm ?? [];
-            return [true, tempCase];
+            findCase['creditors'] = uniqueResult;
+            findCase['customFields'] = temp ? temp.customFields : [];
+            findCase['notes'] = updateNotesForm ?? [];
+            return [true, findCase];
         };
         this.updateCase = async (req) => {
             let reqTemp = req;
