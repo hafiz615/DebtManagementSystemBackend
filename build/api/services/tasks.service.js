@@ -66,6 +66,7 @@ class TasksService {
     }
     async updateTask(req) {
         const reqTemp = req;
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         const updatedTask = await this.tasksRepository.updateById(req.params.id, req.body);
         if (!updatedTask) {
             return [false, constants_util_1.default.failureUpdateMessage('task')];
@@ -87,6 +88,7 @@ class TasksService {
         const reqTemp = req;
         const task = await this.tasksRepository.updateByOne({ _id: req.params.id }, {
             isDeleted: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!task) {
             return [false, constants_util_1.default.failureDeleteMessage('task')];

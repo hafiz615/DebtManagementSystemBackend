@@ -25,7 +25,7 @@ class Case {
         // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
         this.intervals = Array();
         this.isDeleted = false;
-        this.contractDetails = {};
+        this.contractDetails = null;
         this.isExempt = '';
         this.confidence = 0;
         this.closeDate = '';
@@ -35,6 +35,8 @@ class Case {
         this.strategyTwo = false;
         this.strategyThree = false;
         this.justifications = false;
+        this.lumpSumJustifications = false;
+        this.fullProfitJustifications = false;
         this.notes = Array();
         this.chatId = '';
         this.createdAt = common_util_1.default.getCurrentDate();

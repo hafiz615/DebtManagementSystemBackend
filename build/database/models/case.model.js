@@ -143,6 +143,12 @@ const caseModel = new mongoose_1.Schema({
     justifications: {
         type: Boolean,
     },
+    lumpSumJustifications: {
+        type: Boolean,
+    },
+    fullProfitJustifications: {
+        type: Boolean,
+    },
     logTrackingId: {
         type: String,
     },

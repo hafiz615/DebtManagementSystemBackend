@@ -124,6 +124,7 @@ class RolesPermissionsService {
     if (role.name === 'Admin' && reqTemp.role !== 'Super User') {
       return [false, 'Only a super user can update an admin role'];
     }
+    req.body.updatedAt = commonUtil.getCurrentDate();
     const result =
       await this.rolesPermissionsRepository.updateById<IRolesPermissions>(
         req.params.id,
@@ -163,7 +164,7 @@ class RolesPermissionsService {
     const result =
       await this.rolesPermissionsRepository.updateById<IRolesPermissions>(
         req.params.id,
-        {isDeleted: true}
+        {isDeleted: true, updatedAt: commonUtil.getCurrentDate()}
       );
     if (!result) {
       return [false, constantsUtil.failureDeleteMessage('role')];

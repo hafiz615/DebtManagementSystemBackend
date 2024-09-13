@@ -44,10 +44,6 @@ const strategy = new mongoose_1.Schema({
     logTrackingId: {
         type: String,
     },
-    createdAt: {
-        type: Date,
-        required: true,
-    },
     updatedAt: {
         type: Date,
         required: true,

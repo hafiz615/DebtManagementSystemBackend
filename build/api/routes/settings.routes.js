@@ -23,5 +23,6 @@ router.post('/deleteNotificationTemplate', authorize_middleware_1.default.valida
 router.post('/addNotificationConfiguration', authorize_middleware_1.default.validateAuth, setting_validation_1.default.validateNotificationConfiguration, settings_controller_1.default.notificationConfiguration);
 router.get('/getNotificationConfiguration', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getNotificationConfiguration);
 router.get('/getSystemTemplate', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getSystemTemplate);
+router.get('/getCustomFields', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getCustomFields);
 exports.default = router;
 //# sourceMappingURL=settings.routes.js.map

@@ -7,13 +7,18 @@ import {DataCopier} from '../../utils/dataCopier.util';
 import {capitalize} from 'lodash';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
+import {ITargetCustomFields} from '../../database/interfaces/customField.interface';
+import {TargetCFRepository} from '../repository/targetCustomFields/targetCF.repository';
+import commonUtil from '../../utils/common.util';
 
 class PipelineStatusService {
   private pipelineStatusRepository: PipelineStatusRepository;
   private caseRepository: CaseRepository;
+  private targetCFRepository: TargetCFRepository;
   constructor() {
     this.pipelineStatusRepository = new PipelineStatusRepository();
     this.caseRepository = new CaseRepository();
+    this.targetCFRepository = new TargetCFRepository();
   }
   async createPipeline(
     req: Request
@@ -66,7 +71,7 @@ class PipelineStatusService {
     const result =
       await this.pipelineStatusRepository.updateById<IPipelineStatus>(
         req.params.id,
-        {$addToSet: {status: req.body}}
+        {$addToSet: {status: req.body}, updatedAt: commonUtil.getCurrentDate()}
       );
     if (!result) {
       return [false, constantsUtil.notFoundMessage('pipeline')];
@@ -88,6 +93,7 @@ class PipelineStatusService {
     req: Request
   ): Promise<[boolean, IPipelineStatus | string]> {
     req.body.pipeline = capitalize(req.body.pipeline);
+    req.body.updatedAt = commonUtil.getCurrentDate();
     const result =
       await this.pipelineStatusRepository.updateById<IPipelineStatus>(
         req.params.id,
@@ -140,7 +146,10 @@ class PipelineStatusService {
           _id: req.params.id,
           status: {$elemMatch: {name: req.body.original.name}},
         },
-        {$set: {'status.$': req.body.update}}
+        {
+          $set: {'status.$': req.body.update},
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
     if (!result) {
       return [false, constantsUtil.failureUpdateMessage('pipeline')];
@@ -176,7 +185,7 @@ class PipelineStatusService {
       // result = await this.deleteStatus(req.params.id, req.body.original);
       result = await this.pipelineStatusRepository.updateById<IPipelineStatus>(
         req.params.id,
-        {status: statusArr}
+        {status: statusArr, updatedAt: commonUtil.getCurrentDate()}
       );
     }
     if (!result) {
@@ -188,6 +197,7 @@ class PipelineStatusService {
   private async deleteStatus(id: string, original: any) {
     return await this.pipelineStatusRepository.updateById<IPipelineStatus>(id, {
       $pull: {status: original},
+      updatedAt: commonUtil.getCurrentDate(),
     });
   }
 
@@ -196,20 +206,71 @@ class PipelineStatusService {
       await this.pipelineStatusRepository.getById<IPipelineStatus>(
         req.params.id
       );
+    if (!pipeline) {
+      return [false, constantsUtil.notFoundMessage('pipeline')];
+    }
+    if (!pipeline.status.length)
+      return [false, constantsUtil.notFoundMessage('pipeline statuses')];
+    const statusNames = pipeline.status.map(status => status.name);
     const cases: ICase[] =
       await this.caseRepository.getAllWithoutPagination<ICase>(
-        {isDeleted: false},
+        {isDeleted: false, status: {$in: statusNames}},
         undefined,
         undefined,
         {_id: -1},
         ['debtor', 'creditor']
       );
-    if (!pipeline || !cases.length) {
-      return [false, constantsUtil.notFoundMessage('pipeline or cases')];
+    if (!cases.length) {
+      return [false, constantsUtil.notFoundMessage('cases')];
+    }
+    const result = {};
+    statusNames.forEach(statusName => {
+      const matchingCases = cases.filter(
+        caseItem => caseItem.status === statusName
+      );
+      console.log(matchingCases.length);
+      const annualizedValue = matchingCases.reduce(
+        (sum, obj) => sum + (obj.totalDebt || 0),
+        0
+      );
+      result[statusName] = {cases: matchingCases, annualizedValue};
+    });
+    return [true, result];
+  }
+
+  async getCasesByCustomFieldAndValue(req: Request) {
+    const {name, value} = req.body;
+    const pipeline =
+      await this.pipelineStatusRepository.getById<IPipelineStatus>(
+        req.params.id
+      );
+    if (!pipeline) {
+      return [false, constantsUtil.notFoundMessage('pipeline')];
     }
     if (!pipeline.status.length)
       return [false, constantsUtil.notFoundMessage('pipeline statuses')];
     const statusNames = pipeline.status.map(status => status.name);
+    let customFields: ITargetCustomFields[] =
+      await this.targetCFRepository.getAllWithoutPagination<ITargetCustomFields>(
+        {
+          customFields: {$elemMatch: {name: name, value: value}},
+        }
+      );
+    const caseIds = customFields.map(data => {
+      return data.caseId;
+    });
+    console.log(caseIds, 'caseIdssss');
+    const cases: ICase[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        {isDeleted: false, status: {$in: statusNames}, _id: caseIds},
+        undefined,
+        undefined,
+        {_id: -1},
+        ['debtor', 'creditor']
+      );
+    if (!cases.length) {
+      return [false, constantsUtil.notFoundMessage('cases')];
+    }
     const result = {};
     statusNames.forEach(statusName => {
       const matchingCases = cases.filter(

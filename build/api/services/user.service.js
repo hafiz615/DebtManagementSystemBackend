@@ -17,6 +17,7 @@ const uuid_1 = require("uuid");
 const case_repository_1 = require("../repository/case/case.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
+const bcryptjs_1 = require("bcryptjs");
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
@@ -34,6 +35,7 @@ class UserService {
             const sessionId = reqTemp?.sessionId;
             await this.userRepository.updateById(userId, {
                 $pull: { sessionIds: sessionId },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, []];
         };
@@ -266,13 +268,14 @@ class UserService {
         const token = await this.tokenService.createVerifyToken(email);
         req.body.verifyToken = token;
         req.body.isDeleted = false;
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         let updatedUser = await this.userRepository.updateById(user._id, {
             ...req.body,
         });
         if (!updatedUser) {
             return [false, constants_util_1.default.failureRegisterMessage('User')];
         }
-        const invitationLink = await user_util_1.default.getInvitationLink(token);
+        const invitationLink = await user_util_1.default.getInvitationLink(token, 'update');
         await email_util_1.default.sendInvitationLink(updatedUser, invitationLink);
         return [true, updatedUser];
     }
@@ -284,6 +287,7 @@ class UserService {
         const token = await this.tokenService.create(userExist._id, uuid);
         await this.userRepository.updateById(userExist._id, {
             $push: { sessionIds: uuid },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [
             true,
@@ -311,7 +315,7 @@ class UserService {
         const bodyUser = req.body;
         delete bodyUser.isActive;
         delete bodyUser.password;
-        const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser });
+        const user = await this.userRepository.updateByOne({ email: req.body.email }, { ...bodyUser, updatedAt: common_util_1.default.getCurrentDate() });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
@@ -322,6 +326,7 @@ class UserService {
             isDeleted: true,
             isActive: false,
             password: '',
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
@@ -348,14 +353,15 @@ class UserService {
             return [false, 'Could not send invitation link to active user'];
         }
         const token = await this.tokenService.createVerifyToken(user.email);
-        const invitationLink = await user_util_1.default.getInvitationLink(token);
+        const invitationLink = await user_util_1.default.getInvitationLink(token, 'update');
         await email_util_1.default.sendInvitationLink(user, invitationLink);
         await this.userRepository.updateById(user._id, {
             verifyToken: token,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [true, user];
     }
-    async forgotPassword(email) {
+    async forgotPasswordLink(email) {
         const user = await this.userRepository.getOne({ email: email });
         if (!user) {
             return [false, constants_util_1.default.notFoundMessage('User')];
@@ -366,11 +372,12 @@ class UserService {
         const token = await this.tokenService.createVerifyToken(user.email);
         const updateUser = await this.userRepository.updateById(user._id, {
             verifyToken: token,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!updateUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
-        const invitationLink = await user_util_1.default.getInvitationLink(token);
+        const invitationLink = await user_util_1.default.getInvitationLink(token, 'forgot');
         const text = `Dear ${user.name},
 
     You've requested to reset your password. To proceed, please click the link below to set a new password:
@@ -400,7 +407,7 @@ class UserService {
         const uuid = (0, uuid_1.v4)();
         const token = await this.tokenService.create(findUser._id, uuid);
         user.sessionIds = [uuid];
-        const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user });
+        const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user, updatedAt: common_util_1.default.getCurrentDate() });
         if (!updatedUser) {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
@@ -421,6 +428,7 @@ class UserService {
         const hashPassword = await common_util_1.default.hashPassword(newPassword);
         const updateUser = await this.userRepository.updateById(reqTemp.id, {
             password: hashPassword,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!updateUser) {
             return [false, constants_util_1.default.failureUpdateMessage('password')];
@@ -429,13 +437,13 @@ class UserService {
     }
     async addSenderIdentity(req) {
         const data = {
-            from_email: 'umar.iqbal@luminogics.com',
-            reply_to: 'umar.iqbal@luminogics.com',
-            from_name: 'Mohsin',
-            nickname: 'Umar',
-            address: 'Sikandar block',
-            city: 'Lahore',
-            country: 'Pakistan',
+            from_email: req.body.email,
+            reply_to: req.body.email,
+            from_name: req.body.name,
+            nickname: req.body.nickname,
+            address: req.body.address,
+            city: req.body.city,
+            country: req.body.country,
         };
         const request = {
             url: `/v3/verified_senders`,
@@ -463,6 +471,41 @@ class UserService {
         console.log(result[0].statusCode);
         console.log(result[0]);
         return [true, result[0].body];
+    }
+    async getVerifySenders(req) {
+        const request = {
+            url: `/v3/verified_senders`,
+            method: 'GET',
+        };
+        const result = await client_1.default.request(request);
+        let emails = [];
+        if (result[0]?.body?.results?.length) {
+            emails = result[0].body.results.map(temp => {
+                return temp.from_email;
+            });
+        }
+        return [true, emails];
+    }
+    async forgotPasswordUpdate(req) {
+        const findUser = await this.userRepository.getOne({
+            verifyToken: req.query.token,
+        }, '+password');
+        if (!findUser)
+            return [false, constants_util_1.default.notFoundMessage('User')];
+        const checkPassword = await user_util_1.default.checkPassword(req.body.password);
+        if (!checkPassword)
+            return [false, constants_util_1.default.Messages.PASSWORD_FORMAT];
+        if (await (0, bcryptjs_1.compare)(req.body.password, findUser.password)) {
+            return [false, 'Password already in use. Please enter new password'];
+        }
+        req.body.password = await common_util_1.default.hashPassword(req.body.password);
+        let user = req.body;
+        user.verifyToken = '';
+        const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user, updatedAt: common_util_1.default.getCurrentDate() });
+        if (!updatedUser) {
+            return [false, constants_util_1.default.notFoundMessage('User')];
+        }
+        return [true, 'Password reset successfully'];
     }
 }
 exports.default = UserService;

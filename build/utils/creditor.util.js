@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
+const common_util_1 = __importDefault(require("./common.util"));
 class CreditorUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -23,6 +27,7 @@ class CreditorUtil {
                 creditor.accountTitleMapping = accountTitles;
                 await this.creditorRepository.updateById(creditor.creditorId, {
                     accountTitleMapping: accountTitles,
+                    updatedAt: common_util_1.default.getCurrentDate(),
                 });
             }
         }

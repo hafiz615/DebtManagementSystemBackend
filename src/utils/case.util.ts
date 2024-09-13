@@ -273,6 +273,19 @@ class CaseUtil {
     return cases;
   }
 
+  async getAllCreditorsOfDebtorForCase(debtorId: string, creditorId: string) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {debtor: debtorId, isDeleted: false, creditor: {$ne: creditorId}},
+      undefined,
+      undefined,
+      {_id: -1},
+      {
+        path: 'creditor',
+      }
+    );
+    return cases;
+  }
+
   async createCase(body: any, name: string, id: string) {
     let contactIds = null;
     let debtor: IDebtor = null;
@@ -402,9 +415,10 @@ class CaseUtil {
     );
     console.log(findCreditor, 'findCrediotrrr');
     if (findCreditor) {
-      await this.creditorRepository.updateById(creditor._id, {
+      await this.creditorRepository.updateById<ICreditor>(creditor._id, {
         'businessInformation.accountTitle':
           creditor.businessInformation.companyName,
+        updatedAt: commonUtil.getCurrentDate(),
       });
     }
     return [true, {caseCreated, findCreditor, creditorNames}];
@@ -1446,10 +1460,12 @@ class CaseUtil {
   }
 
   async updateDebtor(data: IDebtor) {
+    data.updatedAt = commonUtil.getCurrentDate();
     return await this.debtRepository.updateById<IDebtor>(data._id, {...data});
   }
 
   async updateCreditor(data: ICreditor) {
+    data.updatedAt = commonUtil.getCurrentDate();
     return await this.creditorRepository.updateById<ICreditor>(data._id, {
       ...data,
     });
@@ -1516,12 +1532,21 @@ class CaseUtil {
       if (!response.data.error && caseId) {
         this.strategyRepository.upsert(
           {caseId: caseId, name: 'strategy_one'},
-          {'data.creditorNames': response.data}
+          {
+            'data.creditorNames': response.data,
+            updatedAt: commonUtil.getCurrentDate(),
+          }
         );
-        this.caseRepository.updateById(caseId, {strategyOne_1: true});
+        this.caseRepository.updateById(caseId, {
+          strategyOne_1: true,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
       }
       if (response.data.error && caseId) {
-        this.caseRepository.updateById(caseId, {strategyOne_1: false});
+        this.caseRepository.updateById(caseId, {
+          strategyOne_1: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
       }
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
@@ -1658,14 +1683,117 @@ class CaseUtil {
         },
       });
       if (response.data && response.data.error) {
-        this.caseRepository.updateById(caseTemp._id, {justifications: false});
+        this.caseRepository.updateById(caseTemp._id, {
+          justifications: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
         return [false, response.data.error];
       }
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'justifications'},
-        {'data.justifications': response.data}
+        {
+          'data.justifications': response.data,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
-      this.caseRepository.updateById(caseTemp._id, {justifications: true});
+      this.caseRepository.updateById(caseTemp._id, {
+        justifications: true,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
+  async lumpSumJustifications(caseTemp: ICase, models: string[]) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${
+      process.env.baseUrlAI
+    }get-lump-sum-justifications?debtor_id=${String(
+      caseTemp.debtor
+    )}&enable_cache=${true}`;
+    const data = {LLMs: models};
+    try {
+      console.log('I am in get-lump-sum-justifications');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+        },
+      });
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {
+          lumpSumJustifications: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'lumpSumJustifications'},
+        {
+          'data.justifications': response.data,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
+      );
+      this.caseRepository.updateById(caseTemp._id, {
+        lumpSumJustifications: true,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
+
+  async fullProfitJustifications(caseTemp: ICase, models: string[]) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${
+      process.env.baseUrlAI
+    }get-full-profit-justifications?debtor_id=${String(
+      caseTemp.debtor
+    )}&enable_cache=${true}`;
+    const data = {LLMs: models};
+    try {
+      console.log('I am in get-full-profit-justifications');
+      console.log('URL: ', url);
+      console.log('Payload: ', data);
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+        },
+      });
+      if (response.data && response.data.error) {
+        this.caseRepository.updateById(caseTemp._id, {
+          fullProfitJustifications: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
+        return [false, response.data.error];
+      }
+      this.strategyRepository.upsert(
+        {caseId: caseTemp._id, name: 'fullProfitJustifications'},
+        {
+          'data.justifications': response.data,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
+      );
+      this.caseRepository.updateById(caseTemp._id, {
+        fullProfitJustifications: true,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
       return [true, response.data];
     } catch (error) {
       return [false, error.message];
@@ -1697,14 +1825,23 @@ class CaseUtil {
         }
       );
       if (response.data && response.data.error) {
-        this.caseRepository.updateById(caseTemp._id, {strategyTwo: false});
+        this.caseRepository.updateById(caseTemp._id, {
+          strategyTwo: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
         return [false, response.data.error];
       }
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_two'},
-        {'data.lumpSumAmount': response.data}
+        {
+          'data.lumpSumAmount': response.data,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
-      this.caseRepository.updateById(caseTemp._id, {strategyTwo: true});
+      this.caseRepository.updateById(caseTemp._id, {
+        strategyTwo: true,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
       return [true, response.data];
     } catch (error) {
       return [false, error.message];
@@ -1736,15 +1873,24 @@ class CaseUtil {
         }
       );
       if (response.data && response.data.error) {
-        this.caseRepository.updateById(caseTemp._id, {strategyThree: false});
+        this.caseRepository.updateById(caseTemp._id, {
+          strategyThree: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
         return [false, response.data.error];
       }
       const thirdStrategy = await this.getSettlementMapping(response.data);
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_three'},
-        {'data.fullProfitSettlement': thirdStrategy}
+        {
+          'data.fullProfitSettlement': thirdStrategy,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
-      this.caseRepository.updateById(caseTemp._id, {strategyThree: true});
+      this.caseRepository.updateById(caseTemp._id, {
+        strategyThree: true,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
       return [true, response.data];
     } catch (error) {
       console.log(error);
@@ -2027,12 +2173,21 @@ class CaseUtil {
     if (typeof getSettlementRange !== 'string') {
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_one'},
-        {'data.settlementRange': getSettlementRange}
+        {
+          'data.settlementRange': getSettlementRange,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
       );
-      this.caseRepository.updateById(caseTemp._id, {strategyOne_3: true});
+      this.caseRepository.updateById(caseTemp._id, {
+        strategyOne_3: true,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
     }
     if (typeof getSettlementRange === 'string') {
-      this.caseRepository.updateById(caseTemp._id, {strategyOne_3: false});
+      this.caseRepository.updateById(caseTemp._id, {
+        strategyOne_3: false,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
     }
     return getSettlementRange;
   }
@@ -2112,12 +2267,21 @@ class CaseUtil {
       if (!response.data.error) {
         this.strategyRepository.upsert(
           {caseId: caseTemp._id, name: 'strategy_one'},
-          {'data.getScoresAIForAllCreditors': response.data}
+          {
+            'data.getScoresAIForAllCreditors': response.data,
+            updatedAt: commonUtil.getCurrentDate(),
+          }
         );
-        this.caseRepository.updateById(caseTemp._id, {strategyOne_2: true});
+        this.caseRepository.updateById(caseTemp._id, {
+          strategyOne_2: true,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
       }
       if (response.data.error) {
-        this.caseRepository.updateById(caseTemp._id, {strategyOne_2: false});
+        this.caseRepository.updateById(caseTemp._id, {
+          strategyOne_2: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
       }
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
@@ -2180,6 +2344,7 @@ class CaseUtil {
         creditor = await this.createCreditor(body.creditor as ICreditor);
       }
       if (getCreditor) {
+        body.updatedAt = commonUtil.getCurrentDate();
         creditor = await this.creditorRepository.updateById<ICreditor>(
           getCreditor._id,
           body.creditor
@@ -2222,6 +2387,7 @@ class CaseUtil {
             });
             await this.creditorRepository.updateById<ICreditor>(creditor._id, {
               accountTitleMapping: accountTitles,
+              updatedAt: commonUtil.getCurrentDate(),
             });
           }
           await this.addInHistory(
@@ -2236,6 +2402,78 @@ class CaseUtil {
         // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
         //   await this.createPayment(caseCreated);
         // }
+      }
+    }
+    if (!createdCases.length) return [false, createdCases];
+
+    return [true, createdCases];
+  }
+
+  async createCreditorsCasesFromExtraction(
+    dataArray: any,
+    name: string,
+    id: string,
+    debtorId: string
+  ) {
+    let creditor: ICreditor = null;
+    const createdCases = [];
+    for (const body of dataArray) {
+      body.creditor.basicInformation.email =
+        body.creditor.basicInformation.email.toLowerCase();
+      const getCreditor = await this.creditorRepository.getOne<ICreditor>({
+        'businessInformation.companyName':
+          body.creditor.businessInformation.companyName,
+      });
+      if (!getCreditor) {
+        creditor = await this.createCreditor(body.creditor as ICreditor);
+      }
+      if (getCreditor) {
+        body.updatedAt = commonUtil.getCurrentDate();
+        creditor = await this.creditorRepository.updateById<ICreditor>(
+          getCreditor._id,
+          body.creditor
+        );
+      }
+      if (creditor) {
+        body.debtor = debtorId;
+        body.creditor = creditor?._id;
+        const newCase = new Case();
+        newCase.caseOwner = name;
+        newCase.caseOwnerId = id;
+        newCase.negotiator = name;
+        newCase.negotiatorId = id;
+        newCase.manager = name;
+        newCase.managerId = id;
+        newCase.chatId = v4();
+        newCase.caseCode = await this.getCaseCode();
+        const validatedCase = DataCopier.copy(newCase, body);
+        const caseCreated =
+          await this.caseRepository.create<ICase>(validatedCase);
+        // if (!caseCreated) {
+        //   return [false, constantsUtil.failureAddMessage('case')];
+        // }
+        if (caseCreated) {
+          createdCases.push(caseCreated);
+          const accountTitles = creditor.accountTitleMapping;
+          if (creditor.accountTitle) {
+            accountTitles.push({
+              caseId: String(caseCreated._id),
+              accountTitle: creditor.accountTitle,
+            });
+            await this.creditorRepository.updateById<ICreditor>(creditor._id, {
+              accountTitleMapping: accountTitles,
+              updatedAt: commonUtil.getCurrentDate(),
+            });
+          }
+          await this.addInHistory(
+            {
+              Time: new Date(commonUtil.getCurrentDate()),
+              Action: 'Case Created',
+              'Created By': name,
+            },
+            caseCreated._id
+          );
+        }
       }
     }
     if (!createdCases.length) return [false, createdCases];
@@ -2347,6 +2585,7 @@ class CaseUtil {
           createdAt: commonUtil.getCurrentDate(),
         },
       },
+      updatedAt: commonUtil.getCurrentDate(),
     });
   }
 
@@ -2355,6 +2594,7 @@ class CaseUtil {
       {caseId: id},
       {
         $push: {caseHistory: {$each: [history], $position: 0}},
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
   }

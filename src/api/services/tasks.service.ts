@@ -71,6 +71,7 @@ class TasksService {
 
   async updateTask(req: Request): Promise<[boolean, ITasks | string]> {
     const reqTemp: any = req;
+    req.body.updatedAt = commonUtil.getCurrentDate();
     const updatedTask = await this.tasksRepository.updateById<ITasks>(
       req.params.id,
       req.body
@@ -98,6 +99,7 @@ class TasksService {
       {_id: req.params.id},
       {
         isDeleted: true,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
     if (!task) {

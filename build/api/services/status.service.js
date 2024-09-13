@@ -8,6 +8,7 @@ const status_repository_1 = require("../repository/status/status.repository");
 const status_repomodel_1 = require("../../database/repomodels/status.repomodel");
 const lodash_1 = require("lodash");
 const case_repository_1 = require("../repository/case/case.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class StatusService {
     constructor() {
         this.statusRepository = new status_repository_1.StatusRepository();
@@ -37,7 +38,10 @@ class StatusService {
         if (duplicateStatus && duplicateStatus.status) {
             return [false, constants_util_1.default.Messages.STATUS_CASE_EXIST];
         }
-        const result = await this.statusRepository.updateById(statusFind._id, { $push: { status: { $each: [capitalizeStatus], $position: 0 } } });
+        const result = await this.statusRepository.updateById(statusFind._id, {
+            $push: { status: { $each: [capitalizeStatus], $position: 0 } },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         if (!result) {
             return [false, constants_util_1.default.notFoundMessage('status')];
         }
@@ -63,7 +67,10 @@ class StatusService {
         const result = await this.statusRepository.updateByOne({
             _id: req.params.id,
             status: { $in: originalStatusCap },
-        }, { $set: { 'status.$': updateStatusCap } });
+        }, {
+            $set: { 'status.$': updateStatusCap },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         if (!result) {
             return [false, constants_util_1.default.failureUpdateMessage('status')];
         }
@@ -72,6 +79,7 @@ class StatusService {
     async updateStatusArray(req) {
         const result = await this.statusRepository.updateById(req.params.id, {
             status: req.body.status,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!result) {
             return [false, constants_util_1.default.failureUpdateMessage('status')];
@@ -92,11 +100,12 @@ class StatusService {
         statusArr.splice(updateIndex, 1);
         const result = await this.statusRepository.updateById(req.params.id, {
             status: statusArr,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!result) {
             return [false, constants_util_1.default.failureDeleteMessage('status')];
         }
-        await this.caseRepository.updateMany({ status: req.body.original, isDeleted: false }, { status: req.body.update });
+        await this.caseRepository.updateMany({ status: req.body.original, isDeleted: false }, { status: req.body.update, updatedAt: common_util_1.default.getCurrentDate() });
         return [true, result];
     }
 }
