@@ -27,7 +27,7 @@ export class Case {
     | []
   >();
   isDeleted = false;
-  contractDetails = {};
+  contractDetails = null;
   isExempt = '';
   confidence = 0;
   closeDate = '';

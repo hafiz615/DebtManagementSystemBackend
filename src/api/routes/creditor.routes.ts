@@ -30,7 +30,7 @@ router.post(
 );
 
 router.put(
-  '/updateMultipleCreditors',
+  '/updateMultipleCreditors/:id',
   creditorValidate.validateMultipleCreditors,
   authorize.validateAuth,
   creditorController.updateMultipleCreditors

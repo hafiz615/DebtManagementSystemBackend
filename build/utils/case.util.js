@@ -2075,6 +2075,64 @@ class CaseUtil {
             return [false, createdCases];
         return [true, createdCases];
     }
+    async createCreditorsCasesFromExtraction(dataArray, name, id, debtorId) {
+        let creditor = null;
+        const createdCases = [];
+        for (const body of dataArray) {
+            body.creditor.basicInformation.email =
+                body.creditor.basicInformation.email.toLowerCase();
+            const getCreditor = await this.creditorRepository.getOne({
+                'businessInformation.companyName': body.creditor.businessInformation.companyName,
+            });
+            if (!getCreditor) {
+                creditor = await this.createCreditor(body.creditor);
+            }
+            if (getCreditor) {
+                body.updatedAt = common_util_1.default.getCurrentDate();
+                creditor = await this.creditorRepository.updateById(getCreditor._id, body.creditor);
+            }
+            if (creditor) {
+                body.debtor = debtorId;
+                body.creditor = creditor?._id;
+                const newCase = new case_repomodel_1.Case();
+                newCase.caseOwner = name;
+                newCase.caseOwnerId = id;
+                newCase.negotiator = name;
+                newCase.negotiatorId = id;
+                newCase.manager = name;
+                newCase.managerId = id;
+                newCase.chatId = (0, uuid_1.v4)();
+                newCase.caseCode = await this.getCaseCode();
+                const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
+                const caseCreated = await this.caseRepository.create(validatedCase);
+                // if (!caseCreated) {
+                //   return [false, constantsUtil.failureAddMessage('case')];
+                // }
+                if (caseCreated) {
+                    createdCases.push(caseCreated);
+                    const accountTitles = creditor.accountTitleMapping;
+                    if (creditor.accountTitle) {
+                        accountTitles.push({
+                            caseId: String(caseCreated._id),
+                            accountTitle: creditor.accountTitle,
+                        });
+                        await this.creditorRepository.updateById(creditor._id, {
+                            accountTitleMapping: accountTitles,
+                            updatedAt: common_util_1.default.getCurrentDate(),
+                        });
+                    }
+                    await this.addInHistory({
+                        Time: new Date(common_util_1.default.getCurrentDate()),
+                        Action: 'Case Created',
+                        'Created By': name,
+                    }, caseCreated._id);
+                }
+            }
+        }
+        if (!createdCases.length)
+            return [false, createdCases];
+        return [true, createdCases];
+    }
     async createVault(paymentToken) {
         const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
         const params = {

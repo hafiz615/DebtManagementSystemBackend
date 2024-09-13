@@ -204,16 +204,24 @@ class CreditorService {
     async updateMultipleCreditors(req) {
         const cases = req.body.cases;
         const result = [];
+        const createCases = [];
         for (const tempCase of cases) {
+            if (!tempCase?.creditor?._id) {
+                createCases.push(tempCase);
+                continue;
+            }
             tempCase.creditor.updatedAt = common_util_1.default.getCurrentDate();
             const updatedCreditor = await this.creditorRepository.updateById(tempCase.creditor._id, tempCase.creditor);
             delete tempCase.creditor;
-            console.log(tempCase, 'tempCaseeeee');
             let caseUpdated = await this.caseRepository.updateById(tempCase._id, tempCase);
             if (updatedCreditor && caseUpdated)
                 result.push(true);
         }
-        if (!result.length)
+        if (createCases.length) {
+            const reqTemp = req;
+            case_util_1.default.createCreditorsCasesFromExtraction(createCases, reqTemp.name, reqTemp.id, req.params.id);
+        }
+        if (!result.length && !createCases.length)
             return [false, constants_util_1.default.failureUpdateMessage('cases and creditors')];
         return [true, constants_util_1.default.successUpdateMessage('Creditors and cases')];
     }
