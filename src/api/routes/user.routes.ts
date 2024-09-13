@@ -58,6 +58,14 @@ router.post(
   userController.verifySenderIdentity
 );
 
-router.post('/forgotPassword', userController.forgotPassword);
+router.post('/forgotPassword', userController.forgotPasswordLink);
+
+router.put('/forgotPasswordUpdate', userController.forgotPasswordUpdate);
+
+router.get(
+  '/getVerifySenders',
+  authorize.validateAuth,
+  userController.getVerifySenders
+);
 
 export default router;

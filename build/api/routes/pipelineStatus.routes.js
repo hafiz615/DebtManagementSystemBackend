@@ -17,5 +17,6 @@ router.delete('/deletePipeline/:id', authorize_middleware_1.default.validateAuth
 router.post('/updateStatusPipeline/:id', authorize_middleware_1.default.validateAuth, pipelineStatus_validate_1.default.updateStatusPipeline, pipelineStatus_controller_1.default.updateStatusPipeline);
 router.post('/deleteStatusPipeline/:id', authorize_middleware_1.default.validateAuth, pipelineStatus_validate_1.default.deleteStatusPipeline, pipelineStatus_controller_1.default.deleteStatusPipeline);
 router.get('/getPipelineDetails/:id', authorize_middleware_1.default.validateAuth, pipelineStatus_controller_1.default.getPipelineDetails);
+router.post('/getCasesByCustomFieldAndValue/:id', authorize_middleware_1.default.validateAuth, pipelineStatus_controller_1.default.getCasesByCustomFieldAndValue);
 exports.default = router;
 //# sourceMappingURL=pipelineStatus.routes.js.map

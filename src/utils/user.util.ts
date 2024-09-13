@@ -34,8 +34,8 @@ class UserUtil {
     return userExist;
   }
 
-  async getInvitationLink(token: string) {
-    const invitationLink = `${EnvSetup.invitationLink}?token=${token}`;
+  async getInvitationLink(token: string, type: string) {
+    const invitationLink = `${EnvSetup.invitationLink}?token=${token}&type=${type}`;
     return invitationLink;
   }
 

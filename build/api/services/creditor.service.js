@@ -8,6 +8,7 @@ const creditor_repository_1 = require("../repository/creditor/creditor.repositor
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -60,18 +61,23 @@ class CreditorService {
                     constants_util_1.default.alreadyExistsMessage(`Creditor with companyName ${req.body.businessInformation.companyName}`),
                 ];
             }
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
             creditor = await this.creditorRepository.updateById(req.params.id, req.body);
         }
         if (req.body.contact && req.query.contact === 'add') {
             creditor = await this.creditorRepository.updateById(req.params.id, {
                 $push: { contacts: req.body.contact },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         if (req.body.contact && req.query.contact === 'edit') {
             creditor = await this.creditorRepository.updateByOne({
                 _id: req.params.id,
                 contacts: { $elemMatch: { _id: req.body.contact._id } },
-            }, { $set: { 'contacts.$': req.body.contact } });
+            }, {
+                $set: { 'contacts.$': req.body.contact },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         // if (req.body.paymentToken && req.body.paymentType) {
         //   const customerVaultResponse = await caseUtil.createVault(
@@ -169,7 +175,7 @@ class CreditorService {
         const title = String(req.query.title);
         if (!title)
             return [false, 'Title is missing'];
-        const creditor = await this.creditorRepository.updateById(req.params.id, { accountTitle: title });
+        const creditor = await this.creditorRepository.updateById(req.params.id, { accountTitle: title, updatedAt: common_util_1.default.getCurrentDate() });
         if (!creditor) {
             return [false, constants_util_1.default.notFoundMessage('Creditor')];
         }
@@ -186,13 +192,38 @@ class CreditorService {
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
-            const debtor = await this.creditorRepository.updateById(id, {
+            const creditor = await this.creditorRepository.updateById(id, {
                 customerVaultId: customerVault,
                 paymentType: paymentType,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
-            return [true, debtor];
+            return [true, creditor];
         }
         return [false, 'Unable to create customer vault'];
+    }
+    async updateMultipleCreditors(req) {
+        const cases = req.body.cases;
+        const result = [];
+        const createCases = [];
+        for (const tempCase of cases) {
+            if (!tempCase?.creditor?._id) {
+                createCases.push(tempCase);
+                continue;
+            }
+            tempCase.creditor.updatedAt = common_util_1.default.getCurrentDate();
+            const updatedCreditor = await this.creditorRepository.updateById(tempCase.creditor._id, tempCase.creditor);
+            delete tempCase.creditor;
+            let caseUpdated = await this.caseRepository.updateById(tempCase._id, tempCase);
+            if (updatedCreditor && caseUpdated)
+                result.push(true);
+        }
+        if (createCases.length) {
+            const reqTemp = req;
+            case_util_1.default.createCreditorsCasesFromExtraction(createCases, reqTemp.name, reqTemp.id, req.params.id);
+        }
+        if (!result.length && !createCases.length)
+            return [false, constants_util_1.default.failureUpdateMessage('cases and creditors')];
+        return [true, constants_util_1.default.successUpdateMessage('Creditors and cases')];
     }
 }
 exports.default = CreditorService;

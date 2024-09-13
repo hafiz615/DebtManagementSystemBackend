@@ -120,6 +120,12 @@ const caseModel: Schema = new Schema({
   justifications: {
     type: Boolean,
   },
+  lumpSumJustifications: {
+    type: Boolean,
+  },
+  fullProfitJustifications: {
+    type: Boolean,
+  },
   logTrackingId: {
     type: String,
   },

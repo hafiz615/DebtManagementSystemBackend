@@ -56,4 +56,10 @@ router.get(
   pipelineStatusController.getPipelineDetails
 );
 
+router.post(
+  '/getCasesByCustomFieldAndValue/:id',
+  authorize.validateAuth,
+  pipelineStatusController.getCasesByCustomFieldAndValue
+);
+
 export default router;

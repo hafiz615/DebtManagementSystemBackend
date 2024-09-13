@@ -73,7 +73,10 @@ class SettingsService {
                 }
             }
             const mergedSettings = await settings_util_1.default.mergeSettings(findSettings[0], req.body);
-            settigns = await this.settingsRepository.updateById(findSettings[0].id, mergedSettings);
+            settigns = await this.settingsRepository.updateById(findSettings[0].id, {
+                ...mergedSettings,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         if (!settigns) {
             return [false, constants_util_1.default.failureUpdateMessage('settings')];
@@ -119,6 +122,7 @@ class SettingsService {
         return [true, customField];
     }
     async editCustomField(req) {
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
         let customField = await this.customFieldsRepository.updateById(req.params.id, req.body);
         if (!customField) {
             return [false, constants_util_1.default.failureUpdateMessage('Custom field')];
@@ -165,7 +169,10 @@ class SettingsService {
         if (!updatedCustomFields || !updatedCustomFields.length)
             return [false, 'CustomFields missing!'];
         // Update the target custom field with the new custom fields array
-        const targetCF = await this.targetCFRepository.updateByOne({ target: target, caseId: String(req.query.caseId) }, { $set: { customFields: updatedCustomFields } });
+        const targetCF = await this.targetCFRepository.updateByOne({ target: target, caseId: String(req.query.caseId) }, {
+            $set: { customFields: updatedCustomFields },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         if (!targetCF) {
             return [false, constants_util_1.default.failureUpdateMessage('custom fields')];
         }
@@ -180,6 +187,7 @@ class SettingsService {
         }
         let targetCF = await this.targetCFRepository.updateByOne({ target: String(req.query.target), caseId: String(req.query.caseId) }, {
             $pull: { customFields: req.body },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!targetCF) {
             return [false, constants_util_1.default.notFoundMessage('custom field')];
@@ -223,6 +231,7 @@ class SettingsService {
             $set: {
                 'notificationTemplates.$': req.body,
             },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         //  break;
         // case 'email':
@@ -254,6 +263,7 @@ class SettingsService {
             $pull: {
                 notificationTemplates: { templateId },
             },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         // break;
         //   case 'email':
@@ -288,11 +298,13 @@ class SettingsService {
                         id: createConfiguration.id,
                     },
                 },
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         else {
             result = await this.notificationConfigurationRepository.updateByOne({ value: req.body.value }, {
                 $set: req.body,
+                updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
         if (!result) {
@@ -317,6 +329,13 @@ class SettingsService {
             return [false, constants_util_1.default.failureUpdateMessage('notification template')];
         }
         return [true, result];
+    }
+    async getCustomFields() {
+        const customFields = await this.customFieldsRepository.getAllWithoutPagination();
+        if (!customFields.length) {
+            return [false, constants_util_1.default.notFoundMessage('custom fields')];
+        }
+        return [true, customFields];
     }
 }
 exports.default = SettingsService;

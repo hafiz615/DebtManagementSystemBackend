@@ -1,9 +1,8 @@
 import commonUtil from '../../utils/common.util';
 
-export class Status {
+export class Strategy {
   caseId = '';
   name = '';
   data = null;
-  createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
