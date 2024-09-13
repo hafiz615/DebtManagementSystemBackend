@@ -70,53 +70,67 @@ class CreditorRequests {
     next: NextFunction
   ) => {
     const schema = Joi.object({
-      creditors: Joi.array().items(
+      cases: Joi.array().items(
         Joi.object({
-          aggression: Joi.number().optional().min(0).max(10),
           _id: Joi.string().optional().allow(''),
-          paymentType: Joi.string().allow(''),
-          paymentToken: Joi.string().allow(''),
-          basicInformation: Joi.object({
-            fullName: Joi.string().required(),
-            email: Joi.string().email().required(),
-            phone: Joi.string()
-              .pattern(/^\d{10}$/)
-              .required(),
-          }),
-          businessInformation: Joi.object({
-            companyName: Joi.string().required(),
-            businessCategory: Joi.string().allow(''),
-          }),
-          contacts: Joi.array()
-            .items(
-              Joi.object({
-                name: Joi.string().required(),
-                title: Joi.string().required(),
-                phone: Joi.string()
-                  .pattern(/^\d{10}$/)
-                  .required(),
-                email: Joi.string().email().required(),
-                relationWithCreditor: Joi.string().allow(''),
-                state: Joi.string().allow(''),
-                city: Joi.string().allow(''),
-                zipCode: Joi.string().allow(''),
-                _id: Joi.string().optional(),
-              })
-            )
-            .optional(),
-          notes: Joi.string().allow(''),
-          creditorSecurityKey: Joi.string().optional().allow(''),
-          paynoteSourceId: Joi.string().optional().allow(''),
-          paynoteUserId: Joi.string().optional().allow(''),
-          accountTitle: Joi.string().optional().allow('', null),
-          lastFundedDate: Joi.date().optional().allow(''),
-          historicalRange: Joi.object({
-            minimum: Joi.number().strict().optional(),
-            maximum: Joi.number().strict().optional(),
-          }),
+          totalDebt: Joi.number().strict().optional(),
+          lastPaymentDate: Joi.date().optional().allow(''),
+          paidAmount: Joi.number().strict().optional(),
+          remaining: Joi.number().strict().optional(),
+          confidence: Joi.number().strict(),
+          contractDetails: Joi.object().optional().allow(null),
+          status: Joi.string().optional(),
+          feePayment: Joi.string()
+            .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+            .optional()
+            .allow(''),
+          creditor: Joi.object({
+            aggression: Joi.number().optional().min(0).max(10),
+            _id: Joi.string().optional().allow(''),
+            paymentType: Joi.string().allow(''),
+            paymentToken: Joi.string().allow(''),
+            basicInformation: Joi.object({
+              fullName: Joi.string().required(),
+              email: Joi.string().email().required(),
+              phone: Joi.string()
+                .pattern(/^\d{10}$/)
+                .required(),
+            }),
+            businessInformation: Joi.object({
+              companyName: Joi.string().required(),
+              businessCategory: Joi.string().allow(''),
+            }),
+            contacts: Joi.array()
+              .items(
+                Joi.object({
+                  name: Joi.string().required(),
+                  title: Joi.string().required(),
+                  phone: Joi.string()
+                    .pattern(/^\d{10}$/)
+                    .required(),
+                  email: Joi.string().email().required(),
+                  relationWithCreditor: Joi.string().allow(''),
+                  state: Joi.string().allow(''),
+                  city: Joi.string().allow(''),
+                  zipCode: Joi.string().allow(''),
+                  _id: Joi.string().optional(),
+                })
+              )
+              .optional(),
+            notes: Joi.string().allow(''),
+            creditorSecurityKey: Joi.string().optional().allow(''),
+            paynoteSourceId: Joi.string().optional().allow(''),
+            paynoteUserId: Joi.string().optional().allow(''),
+            accountTitle: Joi.string().optional().allow('', null),
+            lastFundedDate: Joi.date().optional().allow(''),
+            historicalRange: Joi.object({
+              minimum: Joi.number().strict().optional(),
+              maximum: Joi.number().strict().optional(),
+            }),
+          })
+            .optional()
+            .allow(null),
         })
-          .optional()
-          .allow(null)
       ),
     });
     const {error} = schema.validate(req.body);

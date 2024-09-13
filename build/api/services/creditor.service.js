@@ -202,17 +202,20 @@ class CreditorService {
         return [false, 'Unable to create customer vault'];
     }
     async updateMultipleCreditors(req) {
-        const creditors = req.body.creditors;
+        const cases = req.body.cases;
         const result = [];
-        for (const creditor of creditors) {
-            creditor.updatedAt = common_util_1.default.getCurrentDate();
-            const updatedCreditor = await this.creditorRepository.updateById(creditor._id, creditor);
-            if (updatedCreditor)
+        for (const tempCase of cases) {
+            tempCase.creditor.updatedAt = common_util_1.default.getCurrentDate();
+            const updatedCreditor = await this.creditorRepository.updateById(tempCase.creditor._id, tempCase.creditor);
+            delete tempCase.creditor;
+            console.log(tempCase, 'tempCaseeeee');
+            let caseUpdated = await this.caseRepository.updateById(tempCase._id, tempCase);
+            if (updatedCreditor && caseUpdated)
                 result.push(true);
         }
         if (!result.length)
-            return [false, constants_util_1.default.failureUpdateMessage('creditors')];
-        return [true, constants_util_1.default.successUpdateMessage('Creditors')];
+            return [false, constants_util_1.default.failureUpdateMessage('cases and creditors')];
+        return [true, constants_util_1.default.successUpdateMessage('Creditors and cases')];
     }
 }
 exports.default = CreditorService;
