@@ -403,15 +403,18 @@ class UserController {
       );
     } catch (error) {
       console.log(error.response.body);
+      let message = '';
+      if (error.response.body?.errors[0]?.field) {
+        message =
+          error.response.body.errors[0].field +
+          ' ' +
+          error.response.body.errors[0].message;
+      } else {
+        message = error.response.body.errors[0].message;
+      }
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(
-          responseHelper.get4xxResponse(
-            error.response.body.errors[0].field +
-              ' ' +
-              error.response.body.errors[0].message
-          )
-        );
+        .send(responseHelper.get4xxResponse(message));
     }
   };
 
@@ -432,9 +435,18 @@ class UserController {
       );
     } catch (error) {
       console.log(error.response.body);
+      let message = '';
+      if (error.response.body?.errors[0]?.field) {
+        message =
+          error.response.body.errors[0].field +
+          ' ' +
+          error.response.body.errors[0].message;
+      } else {
+        message = error.response.body.errors[0].message;
+      }
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+        .send(responseHelper.get4xxResponse(message));
     }
   };
 

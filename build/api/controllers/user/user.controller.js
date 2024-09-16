@@ -336,11 +336,19 @@ class UserController {
             }
             catch (error) {
                 console.log(error.response.body);
+                let message = '';
+                if (error.response.body?.errors[0]?.field) {
+                    message =
+                        error.response.body.errors[0].field +
+                            ' ' +
+                            error.response.body.errors[0].message;
+                }
+                else {
+                    message = error.response.body.errors[0].message;
+                }
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(error.response.body.errors[0].field +
-                    ' ' +
-                    error.response.body.errors[0].message));
+                    .send(responseHelper_util_1.default.get4xxResponse(message));
             }
         };
         this.verifySenderIdentity = async (req, res) => {
@@ -359,9 +367,19 @@ class UserController {
             }
             catch (error) {
                 console.log(error.response.body);
+                let message = '';
+                if (error.response.body?.errors[0]?.field) {
+                    message =
+                        error.response.body.errors[0].field +
+                            ' ' +
+                            error.response.body.errors[0].message;
+                }
+                else {
+                    message = error.response.body.errors[0].message;
+                }
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(message));
             }
         };
         this.forgotPasswordLink = async (req, res) => {
