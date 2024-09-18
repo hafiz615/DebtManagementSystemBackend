@@ -132,6 +132,64 @@ class DebtorRequests {
                     .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
             }
         };
+        this.createMultipleDebtors = (req, res, next) => {
+            const schema = joi_1.default.object({
+                debtors: joi_1.default.array().items(joi_1.default.object({
+                    paymentType: joi_1.default.string().allow(''),
+                    paymentToken: joi_1.default.string().allow(''),
+                    extractedFields: joi_1.default.array().allow(null).optional(),
+                    driveUrl: joi_1.default.string().allow(''),
+                    basicInformation: joi_1.default.object({
+                        fullName: joi_1.default.string().required(),
+                        email: joi_1.default.string().email().required(),
+                        SSID: joi_1.default.string()
+                            .pattern(/^\d{9}$/)
+                            .required(),
+                        state: joi_1.default.string(),
+                        status: joi_1.default.string(),
+                        city: joi_1.default.string(),
+                        zipCode: joi_1.default.string(),
+                        phone: joi_1.default.string().pattern(/^\d{10}$/),
+                        address: joi_1.default.string(),
+                        weeklyBudget: joi_1.default.number().optional(),
+                    }),
+                    businessInformation: joi_1.default.object({
+                        companyName: joi_1.default.string().required(),
+                        EIN: joi_1.default.string()
+                            .pattern(/^\d{9}$/)
+                            .required(),
+                        businessCategory: joi_1.default.string(),
+                        description: joi_1.default.string().allow(''),
+                        state: joi_1.default.string(),
+                        city: joi_1.default.string(),
+                        zipCode: joi_1.default.string(),
+                        phone: joi_1.default.string().pattern(/^\d{10}$/),
+                        address: joi_1.default.string(),
+                    }),
+                    contacts: joi_1.default.array().items(joi_1.default.object({
+                        name: joi_1.default.string().required(),
+                        title: joi_1.default.string().required(),
+                        phone: joi_1.default.string()
+                            .pattern(/^\d{10}$/)
+                            .required(),
+                        email: joi_1.default.string().email().required(),
+                        relationWithDebtor: joi_1.default.string().allow(''),
+                        state: joi_1.default.string().allow(''),
+                        city: joi_1.default.string().allow(''),
+                        zipCode: joi_1.default.string().allow(''),
+                    })),
+                })),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+            }
+        };
     }
 }
 exports.default = new DebtorRequests();

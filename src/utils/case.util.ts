@@ -81,11 +81,11 @@ class CaseUtil {
     });
   }
 
-  async createDebtor(req: Request) {
-    let data = req.body as IDebtor;
-    const reqTemp: any = req;
+  async createDebtor(data: IDebtor, createdBy: string) {
+    // let data = req.body as IDebtor;
+    // const reqTemp: any = req;
     const newDebtor = new Debtor();
-    newDebtor.createdBy = reqTemp.id;
+    newDebtor.createdBy = createdBy;
     if (!data?.basicInformation?.weeklyBudget)
       data.basicInformation.weeklyBudget = 1;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
@@ -338,7 +338,7 @@ class CaseUtil {
       // const debtorData = {
       //   ...body.debtor,
       // };
-      debtor = await this.createDebtor(body);
+      debtor = await this.createDebtor(body, '');
     }
     if (!getCreditor) {
       // contactIds = await this.createContacts(

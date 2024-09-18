@@ -140,6 +140,12 @@ const debtorSchema: Schema = new Schema({
   logTrackingId: {
     type: String,
   },
+  driveUrl: {
+    type: String,
+  },
+  bulkUpload: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

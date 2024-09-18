@@ -48,6 +48,8 @@ export class Debtor {
   weeklyCommissionDate = '';
   commissionPaymentId = '';
   commissionPercentage = 20;
+  driveUrl = '';
+  bulkUpload = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

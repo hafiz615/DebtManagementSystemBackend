@@ -163,6 +163,12 @@ const debtorSchema = new mongoose_1.Schema({
     logTrackingId: {
         type: String,
     },
+    driveUrl: {
+        type: String,
+    },
+    bulkUpload: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

@@ -58,11 +58,11 @@ class CaseUtil {
             return contact._id;
         });
     }
-    async createDebtor(req) {
-        let data = req.body;
-        const reqTemp = req;
+    async createDebtor(data, createdBy) {
+        // let data = req.body as IDebtor;
+        // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
-        newDebtor.createdBy = reqTemp.id;
+        newDebtor.createdBy = createdBy;
         if (!data?.basicInformation?.weeklyBudget)
             data.basicInformation.weeklyBudget = 1;
         const validatedDebtor = dataCopier_util_1.DataCopier.copy(newDebtor, data);
@@ -258,7 +258,7 @@ class CaseUtil {
             // const debtorData = {
             //   ...body.debtor,
             // };
-            debtor = await this.createDebtor(body);
+            debtor = await this.createDebtor(body, '');
         }
         if (!getCreditor) {
             // contactIds = await this.createContacts(

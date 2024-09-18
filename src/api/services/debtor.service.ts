@@ -583,6 +583,7 @@ class DebtorService {
   };
 
   async createDebtor(req: Request) {
+    const reqTemp: any = req;
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
@@ -609,7 +610,7 @@ class DebtorService {
     }
     if (!getDebtor) {
       if (account.length) req.body.accounts = account;
-      debtor = await caseUtil.createDebtor(req);
+      debtor = await caseUtil.createDebtor(req.body, reqTemp.id);
     }
     if (getDebtor) {
       if (account.length)
@@ -805,6 +806,58 @@ class DebtorService {
       return [false, constantsUtil.notFoundMessage('extrcated data')];
     }
     return [true, extractedFields];
+  }
+
+  async createMultipleDebtors(req: Request) {
+    const debtors = req.body.debtors;
+    const reqTemp: any = req;
+    let debtorsCount = 0;
+    for (const body of debtors) {
+      const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+        $or: [
+          {
+            'businessInformation.companyName':
+              body.businessInformation.companyName,
+          },
+          {
+            'businessInformation.EIN': body.businessInformation.EIN,
+          },
+        ],
+      });
+      let debtor: IDebtor = null;
+      let account = [];
+      if (body.paymentToken && body.paymentType) {
+        const customerVaultResponse = await caseUtil.createVault(
+          body.paymentToken
+        );
+        if (!customerVaultResponse[0]) return customerVaultResponse;
+        // req.body.customerVaultId = customerVaultResponse[1];
+        account.push({
+          paymentType: body.paymentType,
+          customerVaultId: customerVaultResponse[1],
+        });
+      }
+      if (!getDebtor) {
+        if (account.length) body.accounts = account;
+        body.bulkUpload = true;
+        debtor = await caseUtil.createDebtor(body, reqTemp.id);
+      }
+      if (getDebtor) {
+        if (account.length) body.accounts = getDebtor.accounts.concat(account);
+        if (!body.basicInformation?.weeklyBudget)
+          body.basicInformation.weeklyBudget = 1;
+        body.updatedAt = commonUtil.getCurrentDate();
+        debtor = await this.debtorRepository.updateById<IDebtor>(
+          getDebtor._id,
+          body
+        );
+      }
+      if (debtor) debtorsCount += 1;
+    }
+    if (!debtorsCount) {
+      return [false, constantsUtil.failureAddMessage('debtors')];
+    }
+    return [true, constants.successAddMessage('Debtors')];
   }
 }
 
