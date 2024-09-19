@@ -1804,10 +1804,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            this.debtRepository.updateById(caseTemp.debtor._id, {
-                'basicInformation.weeklyBudget': sum,
-                weeklyBudgetUpdated: true,
-            });
+            if (sum) {
+                await this.debtRepository.updateById(caseTemp.debtor._id, {
+                    'basicInformation.weeklyBudget': sum,
+                    weeklyBudgetUpdated: true,
+                });
+            }
         }
         return getScores;
     }
@@ -1820,10 +1822,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            this.debtRepository.updateById(caseTemp.debtor._id, {
-                'basicInformation.weeklyBudget': sum,
-                weeklyBudgetUpdated: true,
-            });
+            if (sum) {
+                await this.debtRepository.updateById(caseTemp.debtor._id, {
+                    'basicInformation.weeklyBudget': sum,
+                    weeklyBudgetUpdated: true,
+                });
+            }
         }
         return getScores;
     }

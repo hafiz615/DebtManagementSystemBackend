@@ -2095,10 +2095,12 @@ class CaseUtil {
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
-      this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
-        'basicInformation.weeklyBudget': sum,
-        weeklyBudgetUpdated: true,
-      });
+      if (sum) {
+        await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+          'basicInformation.weeklyBudget': sum,
+          weeklyBudgetUpdated: true,
+        });
+      }
     }
     return getScores;
   }
@@ -2121,10 +2123,12 @@ class CaseUtil {
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
-      this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
-        'basicInformation.weeklyBudget': sum,
-        weeklyBudgetUpdated: true,
-      });
+      if (sum) {
+        await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+          'basicInformation.weeklyBudget': sum,
+          weeklyBudgetUpdated: true,
+        });
+      }
     }
     return getScores;
   }
