@@ -55,6 +55,7 @@ export interface IDebtor extends Document {
   weeklyCommissionDate: string;
   commissionPercentage: number;
   commissionPaymentId: string;
+  weeklyBudgetUpdated: boolean;
   createdAt: string;
   updatedAt: string;
 }

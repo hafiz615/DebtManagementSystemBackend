@@ -1577,12 +1577,16 @@ class CaseUtil {
         accTitleObj && accTitleObj?.accountTitle
           ? accTitleObj.accountTitle
           : creditor.creditor.accountTitle;
+      let weekly_budget = Math.max(
+        (creditor.remaining * 0.09) / 4,
+        caseTemp.debtor.basicInformation.weeklyBudget
+      );
       let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
       if (accountTitle) {
         data[`${accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
-          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          weekly_budget: weekly_budget,
           principle_amount: amount,
         };
       }
@@ -2091,6 +2095,10 @@ class CaseUtil {
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
+      this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+        'basicInformation.weeklyBudget': sum,
+        weeklyBudgetUpdated: true,
+      });
     }
     return getScores;
   }
@@ -2113,6 +2121,10 @@ class CaseUtil {
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
+      this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+        'basicInformation.weeklyBudget': sum,
+        weeklyBudgetUpdated: true,
+      });
     }
     return getScores;
   }
@@ -2242,12 +2254,16 @@ class CaseUtil {
         accTitleObj && accTitleObj?.accountTitle
           ? accTitleObj.accountTitle
           : creditor.creditorAccountTitle;
+      let weekly_budget = Math.max(
+        (creditor.remaining * 0.09) / 4,
+        caseTemp.debtor.basicInformation.weeklyBudget
+      );
       let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
       if (accountTitle) {
         data[`${accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
-          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          weekly_budget: weekly_budget,
           principle_amount: amount,
         };
       }

@@ -140,6 +140,9 @@ const debtorSchema: Schema = new Schema({
   logTrackingId: {
     type: String,
   },
+  weeklyBudgetUpdated: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

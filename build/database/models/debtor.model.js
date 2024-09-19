@@ -163,6 +163,9 @@ const debtorSchema = new mongoose_1.Schema({
     logTrackingId: {
         type: String,
     },
+    weeklyBudgetUpdated: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,
