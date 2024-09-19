@@ -86,8 +86,8 @@ class CaseUtil {
     const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = reqTemp.id;
-    if (!data?.basicInformation?.weeklyBudget)
-      data.basicInformation.weeklyBudget = 1;
+    // if (!data?.basicInformation?.weeklyBudget)
+    //   data.basicInformation.weeklyBudget = 1;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }

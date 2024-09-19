@@ -624,6 +624,7 @@ class CaseService {
           data['settlementRange'] = null;
           return [true, data];
         }
+        data['debtor'] = await this.debtorRepository.getById(debtor._id);
       }
     } else {
       if (req.body.creditorNames.length) {
@@ -645,6 +646,7 @@ class CaseService {
           data['settlementRange'] = null;
           return [true, data];
         }
+        data['debtor'] = await this.debtorRepository.getById(debtor._id);
       }
     }
     if (
