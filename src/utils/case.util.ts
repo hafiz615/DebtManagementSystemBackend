@@ -2091,11 +2091,11 @@ class CaseUtil {
       creditors
     );
     if (typeof getScores !== 'string') {
-      const sum = await this.sumOfWeeklyBudgetValues(
+      const sum: any = await this.sumOfWeeklyBudgetValues(
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
-      if (sum) {
+      if (sum > 0) {
         await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
           'basicInformation.weeklyBudget': sum,
           weeklyBudgetUpdated: true,
@@ -2119,11 +2119,11 @@ class CaseUtil {
       creditors
     );
     if (typeof getScores !== 'string') {
-      const sum = await this.sumOfWeeklyBudgetValues(
+      const sum: any = await this.sumOfWeeklyBudgetValues(
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
-      if (sum) {
+      if (sum > 0) {
         await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
           'basicInformation.weeklyBudget': sum,
           weeklyBudgetUpdated: true,
