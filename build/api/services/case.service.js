@@ -394,6 +394,7 @@ class CaseService {
                         data['settlementRange'] = null;
                         return [true, data];
                     }
+                    data['debtor'] = await this.debtorRepository.getById(debtor._id);
                 }
             }
             else {
@@ -405,6 +406,7 @@ class CaseService {
                         data['settlementRange'] = null;
                         return [true, data];
                     }
+                    data['debtor'] = await this.debtorRepository.getById(debtor._id);
                 }
             }
             if (hardReload !== 'true' &&
@@ -514,16 +516,18 @@ class CaseService {
                     data['settlementRange'] = null;
                     return [true, data];
                 }
+                data['debtor'] = await this.debtorRepository.getById(debtor._id);
             }
             else {
                 if (req.body.creditorNames.length) {
                     const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: debtor }, undefined, undefined, { _id: -1 }, ['creditor']);
                     getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, comm);
+                    data['getScores'] = getScores;
                     if (typeof getScores === 'string') {
                         data['settlementRange'] = null;
                         return [true, data];
                     }
-                    data['getScores'] = getScores;
+                    data['debtor'] = await this.debtorRepository.getById(debtor._id);
                 }
             }
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
