@@ -548,8 +548,8 @@ class DebtorService {
         if (getDebtor) {
             if (account.length)
                 req.body.accounts = getDebtor.accounts.concat(account);
-            if (!req.body.basicInformation?.weeklyBudget)
-                req.body.basicInformation.weeklyBudget = 1;
+            // if (!req.body.basicInformation?.weeklyBudget)
+            //   req.body.basicInformation.weeklyBudget = 1;
             req.body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
