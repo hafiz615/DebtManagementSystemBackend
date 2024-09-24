@@ -2027,6 +2027,20 @@ class CaseUtil {
     return extractedFields;
   }
 
+  async getExtractionMCABuffer(documents: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const extractedFields = await this.getExtractionMCA_AIBuffer(
+      documents,
+      AIAuth.auth_token
+    );
+    return extractedFields;
+  }
+
   async findMCASubStr(str: string) {
     const regex = /mca/i;
     const match = str.match(regex);
@@ -2067,6 +2081,37 @@ class CaseUtil {
       });
       console.log('Response Data', response.data);
       return response.data.error ? null : response.data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
+  async getExtractionMCA_AIBuffer(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        form.append('MCA_pdf', doc.buffer, {
+          filename: doc.originalname,
+          contentType: 'application/pdf',
+        });
+      }
+      form.getLength((err, length) => {
+        if (err) return null;
+      });
+      console.log('I am in getExtractionMCA_AIBuffer');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      console.log('Response Data', response.data);
+      return response.data.error ? response.data.error : response.data;
     } catch (error) {
       console.log(error);
       return null;
@@ -2303,11 +2348,16 @@ class CaseUtil {
     }
   }
 
-  async createCreditorsCases(req: Request, name: string, id: string) {
+  async createCreditorsCases(
+    body: any,
+    name: string,
+    id: string,
+    debtorId: string
+  ) {
     let creditor: ICreditor = null;
-    let dataArray = req.body.data;
+    let dataArray = body.data;
     const createdCases = [];
-    const debtor = await this.debtRepository.getById<IDebtor>(req.params.id);
+    const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
     for (const body of dataArray) {
       body.creditor.basicInformation.email =
         body.creditor.basicInformation.email.toLowerCase();
@@ -2372,6 +2422,7 @@ class CaseUtil {
         newCase.chatId = v4();
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = DataCopier.copy(newCase, body);
+        console.log(validatedCase, 'validated caseeee');
         const caseCreated =
           await this.caseRepository.create<ICase>(validatedCase);
         // if (!caseCreated) {

@@ -21,6 +21,9 @@ import UploadUtil from '../../utils/upload.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
 import emailUtil from '../../utils/email.util';
+import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.repository';
+import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
+import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -29,6 +32,7 @@ class DebtorService {
   private paymentService: PaymentService;
   private paymentLoggingRepository: PaymentLoggingRepository;
   private strategyRepository: StrategyRepository;
+  private bulkUploadRepository: BulkUploadRepository;
 
   constructor() {
     this.debtorRepository = new DebtorRepository();
@@ -37,6 +41,7 @@ class DebtorService {
     this.paymentService = new PaymentService();
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.strategyRepository = new StrategyRepository();
+    this.bulkUploadRepository = new BulkUploadRepository();
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
@@ -851,6 +856,22 @@ class DebtorService {
           getDebtor._id,
           body
         );
+      }
+      if (body.driveUrl) {
+        const getDebtorBulk =
+          await this.bulkUploadRepository.getOne<IBulkUpload>({
+            driveUrl: body.driveUrl,
+          });
+        if (!getDebtorBulk) {
+          const newBulkUpload = new BulkUpload();
+          newBulkUpload.driveUrl = body.driveUrl;
+          newBulkUpload.debtor = debtor._id;
+          newBulkUpload.createdByName = reqTemp.name;
+          newBulkUpload.createdById = reqTemp.id;
+          await this.bulkUploadRepository.create<IBulkUpload>(
+            newBulkUpload as any
+          );
+        }
       }
       if (debtor) debtorsCount += 1;
     }

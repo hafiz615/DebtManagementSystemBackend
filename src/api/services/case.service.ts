@@ -520,9 +520,10 @@ class CaseService {
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
     const result = await caseUtil.createCreditorsCases(
-      req,
+      req.body,
       reqTemp.name,
-      reqTemp.id
+      reqTemp.id,
+      req.params.id
     );
     // if (!result[0]) return result;
     return result;

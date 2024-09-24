@@ -27,6 +27,7 @@ class UploadUtil {
   async awsS3FileUpload(
     files: any
   ): Promise<{key: string; originalFileName: string}[]> {
+    console.log(files, 'filessss');
     let s3FileKeys = [];
     const uploadPromises = [];
     for (let file of files) {

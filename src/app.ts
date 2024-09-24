@@ -8,6 +8,8 @@ import logMiddleware from './middleware/logs.middleware'; // Import the logging 
 import asyncLocalStorage from './utils/localStorage.util';
 import {EnvSetup} from './database/repomodels/setEnv';
 import emailUtil from './utils/email.util';
+import googleDriveUtil from './utils/googleDrive.util';
+import bulkUploadCronjob from './cron-job/bulkUpload.cronjob';
 
 class App {
   protected app: Application;
@@ -39,11 +41,17 @@ class App {
     setup(this.app);
   }
 
-  public start(): void {
+  public async start(): Promise<void> {
     const appPort = process.env.PORT || 3000;
     this.app.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
+    await bulkUploadCronjob.testBulkCron();
+    // const result = await googleDriveUtil.listFiles(
+    //   '186GSZ1s1N58oWVZL5thsuFKQoGDW_22l'
+    // );
+    //125CHiLQxw6N_s4Ky7cqMLbFPQPc_QDL5
+    // console.log(result, 'resiulttttt');
     // emailUtil.sendEmailOrSmsByEvent(
     //   'successful_payment',
     //   '66b104dacab3400ef1bd74a7',
