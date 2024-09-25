@@ -8,6 +8,8 @@ export interface IBulkUpload extends Document {
   errorMessage: string;
   createdByName: string;
   createdById: string;
+  caseIds: Array<string>;
+  time: Array<string>;
   createdAt: string;
   updatedAt: string;
 }

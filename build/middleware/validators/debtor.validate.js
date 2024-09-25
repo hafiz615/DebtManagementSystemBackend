@@ -140,31 +140,37 @@ class DebtorRequests {
                     extractedFields: joi_1.default.array().allow(null).optional(),
                     driveUrl: joi_1.default.string().allow(''),
                     basicInformation: joi_1.default.object({
-                        fullName: joi_1.default.string().required(),
-                        email: joi_1.default.string().email().required(),
+                        fullName: joi_1.default.string().required().allow(''),
+                        email: joi_1.default.string().email().required().allow(''),
                         SSID: joi_1.default.string()
                             .pattern(/^\d{9}$/)
-                            .required(),
-                        state: joi_1.default.string(),
-                        status: joi_1.default.string(),
-                        city: joi_1.default.string(),
-                        zipCode: joi_1.default.string(),
-                        phone: joi_1.default.string().pattern(/^\d{10}$/),
-                        address: joi_1.default.string(),
+                            .required()
+                            .allow(''),
+                        state: joi_1.default.string().allow(''),
+                        status: joi_1.default.string().allow(''),
+                        city: joi_1.default.string().allow(''),
+                        zipCode: joi_1.default.string().allow(''),
+                        phone: joi_1.default.string()
+                            .pattern(/^\d{10}$/)
+                            .allow(''),
+                        address: joi_1.default.string().allow(''),
                         weeklyBudget: joi_1.default.number().optional(),
                     }),
                     businessInformation: joi_1.default.object({
-                        companyName: joi_1.default.string().required(),
+                        companyName: joi_1.default.string().required().allow(''),
                         EIN: joi_1.default.string()
                             .pattern(/^\d{9}$/)
-                            .required(),
-                        businessCategory: joi_1.default.string(),
+                            .required()
+                            .allow(''),
+                        businessCategory: joi_1.default.string().allow(''),
                         description: joi_1.default.string().allow(''),
-                        state: joi_1.default.string(),
-                        city: joi_1.default.string(),
-                        zipCode: joi_1.default.string(),
-                        phone: joi_1.default.string().pattern(/^\d{10}$/),
-                        address: joi_1.default.string(),
+                        state: joi_1.default.string().allow(''),
+                        city: joi_1.default.string().allow(''),
+                        zipCode: joi_1.default.string().allow(''),
+                        phone: joi_1.default.string()
+                            .pattern(/^\d{10}$/)
+                            .allow(''),
+                        address: joi_1.default.string().allow(''),
                     }),
                     contacts: joi_1.default.array().items(joi_1.default.object({
                         name: joi_1.default.string().required(),

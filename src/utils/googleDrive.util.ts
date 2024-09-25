@@ -81,10 +81,10 @@ class GoogleDriveUtil {
   }
 
   async mapCreditorsCases(data: any, creditorData: any) {
-    const creditor = {};
-    const basicInformation = {};
-    const businessInformation = {};
-    const caseTemp = {};
+    let creditor = {};
+    let basicInformation = {};
+    let businessInformation = {};
+    let caseTemp = {};
     const cases = [];
     for (const extractedData of data) {
       basicInformation['email'] =
@@ -131,6 +131,10 @@ class GoogleDriveUtil {
       caseTemp['totalDebt'] = amount;
       caseTemp['creditor'] = creditor;
       cases.push(caseTemp);
+      creditor = {};
+      basicInformation = {};
+      businessInformation = {};
+      caseTemp = {};
     }
     console.log(cases);
     return cases;

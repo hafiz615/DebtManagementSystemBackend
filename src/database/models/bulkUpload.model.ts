@@ -27,6 +27,12 @@ const bulkUploadModel: Schema = new Schema({
   createdById: {
     type: String,
   },
+  caseIds: {
+    type: Array<String>,
+  },
+  time: {
+    type: Array<Date>,
+  },
   createdAt: {
     type: Date,
     required: true,

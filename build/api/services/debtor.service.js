@@ -17,6 +17,8 @@ const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
+const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 class DebtorService {
     constructor() {
         this.getAllDebtors = async (req) => {
@@ -103,6 +105,7 @@ class DebtorService {
         this.paymentService = new payment_service_1.default();
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
+        this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -669,6 +672,19 @@ class DebtorService {
                     body.basicInformation.weeklyBudget = 1;
                 body.updatedAt = common_util_1.default.getCurrentDate();
                 debtor = await this.debtorRepository.updateById(getDebtor._id, body);
+            }
+            if (body.driveUrl) {
+                const getDebtorBulk = await this.bulkUploadRepository.getOne({
+                    driveUrl: body.driveUrl,
+                });
+                if (!getDebtorBulk) {
+                    const newBulkUpload = new bulkUpload_repomodel_1.BulkUpload();
+                    newBulkUpload.driveUrl = body.driveUrl;
+                    newBulkUpload.debtor = debtor._id;
+                    newBulkUpload.createdByName = reqTemp.name;
+                    newBulkUpload.createdById = reqTemp.id;
+                    await this.bulkUploadRepository.create(newBulkUpload);
+                }
             }
             if (debtor)
                 debtorsCount += 1;

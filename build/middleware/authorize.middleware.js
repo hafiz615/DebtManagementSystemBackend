@@ -52,7 +52,7 @@ class Authorize {
                             .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_REQUIRED));
                     }
                     const exists = await new token_service_1.default().validateToken(token, decoded?.userId, decoded?.sessionId);
-                    if (exists === null) {
+                    if (exists === null || exists.isDeleted) {
                         return res
                             .status(constants_util_1.default.CODE.FORBIDDEN)
                             .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_ERROR));

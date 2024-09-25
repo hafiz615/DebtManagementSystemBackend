@@ -26,145 +26,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Debtor = void 0;
+exports.BulkUpload = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const uuid_1 = require("uuid");
-const debtorSchema = new mongoose_1.Schema({
-    basicInformation: {
-        fullName: {
-            type: String,
-            required: true,
-        },
-        email: {
-            type: String,
-            required: true,
-        },
-        SSID: {
-            type: String,
-            required: true,
-        },
-        state: {
-            type: String,
-        },
-        city: {
-            type: String,
-        },
-        zipCode: {
-            type: String,
-        },
-        status: {
-            type: String,
-        },
-        phone: {
-            type: String,
-            required: true,
-        },
-        address: {
-            type: String,
-        },
-        weeklyBudget: {
-            type: Number,
-        },
+const bulkUploadModel = new mongoose_1.Schema({
+    debtor: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Debtors',
     },
-    businessInformation: {
-        companyName: {
-            type: String,
-            required: true,
-        },
-        EIN: {
-            type: String,
-            required: true,
-        },
-        businessCategory: {
-            type: String,
-            required: true,
-        },
-        description: {
-            type: String,
-        },
-        state: {
-            type: String,
-        },
-        city: {
-            type: String,
-        },
-        zipCode: {
-            type: String,
-        },
-        phone: {
-            type: String,
-        },
-        address: {
-            type: String,
-        },
+    status: {
+        type: String,
     },
-    contacts: {
-        type: [
-            {
-                name: String,
-                title: String,
-                phone: String,
-                email: String,
-                relationWithDebtor: String,
-                state: String,
-                city: String,
-                zipCode: String,
-            },
-        ],
+    retries: {
+        type: Number,
     },
-    documents: {
+    driveUrl: {
+        type: String,
+    },
+    errorMessage: {
+        type: String,
+    },
+    createdByName: {
+        type: String,
+    },
+    createdById: {
+        type: String,
+    },
+    caseIds: {
         type: (Array),
     },
-    accounts: {
+    time: {
         type: (Array),
-    },
-    // paymentType: {
-    //   type: String,
-    // },
-    createdBy: {
-        type: String,
-    },
-    // customerVaultId: {
-    //   type: String,
-    // },
-    extractedFields: {
-        type: mongoose_1.Schema.Types.Mixed,
-    },
-    totalCommission: {
-        type: Number,
-        select: false,
-    },
-    commissionPercentage: {
-        type: Number,
-    },
-    commissionPaid: {
-        type: Number,
-        select: false,
-    },
-    weeklyCommission: {
-        type: Number,
-        select: false,
-    },
-    weeklyCommissionPaid: {
-        type: Boolean,
-        select: false,
-    },
-    weeklyCommissionDate: {
-        type: Date,
-        select: false,
-    },
-    commissionPaymentId: {
-        type: String,
-        // ref: 'Payments',
-        select: false,
-    },
-    logTrackingId: {
-        type: String,
-    },
-    bulkUpload: {
-        type: Boolean,
     },
     createdAt: {
         type: Date,
@@ -175,11 +69,10 @@ const debtorSchema = new mongoose_1.Schema({
         required: true,
     },
 });
-debtorSchema.pre('save', async function (next) {
+bulkUploadModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();
     next();
 });
-// Middleware for logging updates
 const logUpdate = async function (next) {
     const query = this.getQuery();
     const update = this.getUpdate();
@@ -219,11 +112,11 @@ const logUpdatePost = async function (doc) {
         console.error('Error saving log entry', err);
     });
 };
-debtorSchema.pre('findOneAndUpdate', logUpdate);
-debtorSchema.pre('updateMany', logUpdate);
-debtorSchema.pre('updateOne', logUpdate);
-debtorSchema.post('findOneAndUpdate', logUpdatePost);
-debtorSchema.post('updateMany', logUpdatePost);
-debtorSchema.post('updateOne', logUpdatePost);
-exports.Debtor = mongoose_1.default.model('Debtors', debtorSchema);
-//# sourceMappingURL=debtor.model.js.map
+bulkUploadModel.pre('findOneAndUpdate', logUpdate);
+bulkUploadModel.pre('updateMany', logUpdate);
+bulkUploadModel.pre('updateOne', logUpdate);
+bulkUploadModel.post('findOneAndUpdate', logUpdatePost);
+bulkUploadModel.post('updateMany', logUpdatePost);
+bulkUploadModel.post('updateOne', logUpdatePost);
+exports.BulkUpload = mongoose_1.default.model('BulkUpload', bulkUploadModel);
+//# sourceMappingURL=bulkUpload.model.js.map

@@ -12,6 +12,7 @@ const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"))
 const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware")); // Import the logging middleware
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 const setEnv_1 = require("./database/repomodels/setEnv");
+const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -37,11 +38,17 @@ class App {
         });
         (0, base_route_1.default)(this.app);
     }
-    start() {
+    async start() {
         const appPort = process.env.PORT || 3000;
         this.app.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
+        await bulkUpload_cronjob_1.default.testBulkCron();
+        // const result = await googleDriveUtil.listFiles(
+        //   '186GSZ1s1N58oWVZL5thsuFKQoGDW_22l'
+        // );
+        //125CHiLQxw6N_s4Ky7cqMLbFPQPc_QDL5
+        // console.log(result, 'resiulttttt');
         // emailUtil.sendEmailOrSmsByEvent(
         //   'successful_payment',
         //   '66b104dacab3400ef1bd74a7',

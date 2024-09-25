@@ -8,6 +8,8 @@ export class BulkUpload {
   errorMessage = '';
   createdByName = '';
   createdById = '';
+  caseIds = Array<string>();
+  time = Array<string>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

@@ -2359,6 +2359,7 @@ class CaseUtil {
     const createdCases = [];
     const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
     for (const body of dataArray) {
+      console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
         body.creditor.basicInformation.email.toLowerCase();
       const getCreditor = await this.creditorRepository.getOne<ICreditor>({

@@ -1748,6 +1748,14 @@ class CaseUtil {
         const extractedFields = await this.getExtractionMCA_AI(debtor.documents, global_1.AIAuth.auth_token);
         return extractedFields;
     }
+    async getExtractionMCABuffer(documents) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const extractedFields = await this.getExtractionMCA_AIBuffer(documents, global_1.AIAuth.auth_token);
+        return extractedFields;
+    }
     async findMCASubStr(str) {
         const regex = /mca/i;
         const match = str.match(regex);
@@ -1788,6 +1796,38 @@ class CaseUtil {
             });
             console.log('Response Data', response.data);
             return response.data.error ? null : response.data;
+        }
+        catch (error) {
+            console.log(error);
+            return null;
+        }
+    }
+    async getExtractionMCA_AIBuffer(documents, token) {
+        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+        try {
+            const form = new form_data_1.default();
+            for (let doc of documents) {
+                form.append('MCA_pdf', doc.buffer, {
+                    filename: doc.originalname,
+                    contentType: 'application/pdf',
+                });
+            }
+            form.getLength((err, length) => {
+                if (err)
+                    return null;
+            });
+            console.log('I am in getExtractionMCA_AIBuffer');
+            console.log('URL: ', url);
+            console.log('Payload: ', form);
+            const response = await axiosInstanceInterceptor_1.default.post(url, form, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    ...form.getHeaders(),
+                },
+            });
+            console.log('Response Data', response.data);
+            return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
             console.log(error);
@@ -1978,12 +2018,13 @@ class CaseUtil {
             global_1.AIAuth.expires_in = common_util_1.default.getCurrentDate();
         }
     }
-    async createCreditorsCases(req, name, id) {
+    async createCreditorsCases(body, name, id, debtorId) {
         let creditor = null;
-        let dataArray = req.body.data;
+        let dataArray = body.data;
         const createdCases = [];
-        const debtor = await this.debtRepository.getById(req.params.id);
+        const debtor = await this.debtRepository.getById(debtorId);
         for (const body of dataArray) {
+            console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
                 body.creditor.basicInformation.email.toLowerCase();
             const getCreditor = await this.creditorRepository.getOne({
@@ -2043,6 +2084,7 @@ class CaseUtil {
                 newCase.chatId = (0, uuid_1.v4)();
                 newCase.caseCode = await this.getCaseCode();
                 const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
+                console.log(validatedCase, 'validated caseeee');
                 const caseCreated = await this.caseRepository.create(validatedCase);
                 // if (!caseCreated) {
                 //   return [false, constantsUtil.failureAddMessage('case')];
