@@ -86,8 +86,9 @@ class CaseUtil {
     // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
-    if (!data?.basicInformation?.weeklyBudget)
-      data.basicInformation.weeklyBudget = 1;
+    // newDebtor.createdBy = reqTemp.id;
+    // if (!data?.basicInformation?.weeklyBudget)
+    //   data.basicInformation.weeklyBudget = 1;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }
@@ -1577,12 +1578,16 @@ class CaseUtil {
         accTitleObj && accTitleObj?.accountTitle
           ? accTitleObj.accountTitle
           : creditor.creditor.accountTitle;
+      let weekly_budget = Math.max(
+        (creditor.remaining * 0.09) / 4,
+        caseTemp.debtor.basicInformation.weeklyBudget
+      );
       let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
       if (accountTitle) {
         data[`${accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
-          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          weekly_budget: weekly_budget,
           principle_amount: amount,
         };
       }
@@ -2132,10 +2137,16 @@ class CaseUtil {
       creditors
     );
     if (typeof getScores !== 'string') {
-      const sum = await this.sumOfWeeklyBudgetValues(
+      const sum: any = await this.sumOfWeeklyBudgetValues(
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
+      if (sum > 0) {
+        await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+          'basicInformation.weeklyBudget': sum,
+          weeklyBudgetUpdated: true,
+        });
+      }
     }
     return getScores;
   }
@@ -2154,10 +2165,16 @@ class CaseUtil {
       creditors
     );
     if (typeof getScores !== 'string') {
-      const sum = await this.sumOfWeeklyBudgetValues(
+      const sum: any = await this.sumOfWeeklyBudgetValues(
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
+      if (sum > 0) {
+        await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+          'basicInformation.weeklyBudget': sum,
+          weeklyBudgetUpdated: true,
+        });
+      }
     }
     return getScores;
   }
@@ -2287,12 +2304,16 @@ class CaseUtil {
         accTitleObj && accTitleObj?.accountTitle
           ? accTitleObj.accountTitle
           : creditor.creditorAccountTitle;
+      let weekly_budget = Math.max(
+        (creditor.remaining * 0.09) / 4,
+        caseTemp.debtor.basicInformation.weeklyBudget
+      );
       let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
       if (accountTitle) {
         data[`${accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
-          weekly_budget: caseTemp.debtor.basicInformation.weeklyBudget,
+          weekly_budget: weekly_budget,
           principle_amount: amount,
         };
       }

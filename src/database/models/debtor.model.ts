@@ -143,6 +143,9 @@ const debtorSchema: Schema = new Schema({
   bulkUpload: {
     type: Boolean,
   },
+  weeklyBudgetUpdated: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

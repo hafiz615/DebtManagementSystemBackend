@@ -166,6 +166,9 @@ const debtorSchema = new mongoose_1.Schema({
     bulkUpload: {
         type: Boolean,
     },
+    weeklyBudgetUpdated: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,
