@@ -135,7 +135,7 @@ class GoogleDriveUtil {
         return cases;
     }
     async cleanPhoneNumber(phoneNumber) {
-        let cleanedNumber = phoneNumber.replace(/\D/g, '');
+        let cleanedNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
         if (cleanedNumber.startsWith('1')) {
             cleanedNumber = cleanedNumber.substring(1);
         }

@@ -46,8 +46,8 @@ class App {
     this.app.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
-    // await bulkUploadCronjob.testBulkCron();
-    bulkUploadCronjob.startCronJob();
+    await bulkUploadCronjob.testBulkCron();
+    // bulkUploadCronjob.startCronJob();
     // const result = await googleDriveUtil.listFiles(
     //   '186GSZ1s1N58oWVZL5thsuFKQoGDW_22l'
     // );
