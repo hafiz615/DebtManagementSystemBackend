@@ -348,8 +348,8 @@ class DebtorService {
             //   }
             //   req.body.weeklyCommission = response.commission;
             // }
-            if (!req.body.basicInformation.weeklyBudget)
-                req.body.basicInformation.weeklyBudget = 1;
+            // if (!req.body.basicInformation.weeklyBudget)
+            //   req.body.basicInformation.weeklyBudget = 1;
             req.body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
@@ -635,7 +635,7 @@ class DebtorService {
     async createMultipleDebtors(req) {
         const debtors = req.body.debtors;
         const reqTemp = req;
-        let debtorsCount = 0;
+        let bulkCount = 0;
         for (const body of debtors) {
             const getDebtor = await this.debtorRepository.getOne({
                 $or: [
@@ -648,7 +648,7 @@ class DebtorService {
                 ],
             });
             let debtor = null;
-            let account = [];
+            // let account = [];
             // if (body.paymentToken && body.paymentType) {
             //   const customerVaultResponse = await caseUtil.createVault(
             //     body.paymentToken
@@ -665,16 +665,17 @@ class DebtorService {
                 body.bulkUpload = true;
                 debtor = await case_util_1.default.createDebtor(body, reqTemp.id);
             }
-            // if (getDebtor) {
-            //   if (account.length) body.accounts = getDebtor.accounts.concat(account);
-            //   // if (!body.basicInformation?.weeklyBudget)
-            //   //   body.basicInformation.weeklyBudget = 1;
-            //   body.updatedAt = commonUtil.getCurrentDate();
-            //   debtor = await this.debtorRepository.updateById<IDebtor>(
-            //     getDebtor._id,
-            //     body
-            //   );
-            // }
+            if (getDebtor) {
+                // if (account.length) body.accounts = getDebtor.accounts.concat(account);
+                // if (!body.basicInformation?.weeklyBudget)
+                //   body.basicInformation.weeklyBudget = 1;
+                // body.updatedAt = commonUtil.getCurrentDate();
+                // debtor = await this.debtorRepository.updateById<IDebtor>(
+                //   getDebtor._id,
+                //   body
+                // );
+                debtor = getDebtor;
+            }
             if (body.driveUrl) {
                 const getDebtorBulk = await this.bulkUploadRepository.getOne({
                     driveUrl: body.driveUrl,
@@ -693,13 +694,15 @@ class DebtorService {
                     newBulkUpload.createdByName = reqTemp.name;
                     newBulkUpload.createdById = reqTemp.id;
                     await this.bulkUploadRepository.create(newBulkUpload);
+                    bulkCount += 1;
                 }
             }
-            if (debtor)
-                debtorsCount += 1;
         }
-        if (!debtorsCount) {
-            return [false, constants_util_2.default.failureAddMessage('debtors')];
+        if (!bulkCount) {
+            return [
+                false,
+                constants_util_2.default.alreadyExistsMessage('Bulk upload with same drive urls'),
+            ];
         }
         return [true, constants_util_1.default.successAddMessage('Debtors')];
     }

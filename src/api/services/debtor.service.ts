@@ -319,8 +319,8 @@ class DebtorService {
       //   }
       //   req.body.weeklyCommission = response.commission;
       // }
-      if (!req.body.basicInformation.weeklyBudget)
-        req.body.basicInformation.weeklyBudget = 1;
+      // if (!req.body.basicInformation.weeklyBudget)
+      //   req.body.basicInformation.weeklyBudget = 1;
       req.body.updatedAt = commonUtil.getCurrentDate();
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
@@ -816,7 +816,7 @@ class DebtorService {
   async createMultipleDebtors(req: Request) {
     const debtors = req.body.debtors;
     const reqTemp: any = req;
-    let debtorsCount = 0;
+    let bulkCount = 0;
     for (const body of debtors) {
       const getDebtor = await this.debtorRepository.getOne<IDebtor>({
         $or: [
@@ -830,7 +830,7 @@ class DebtorService {
         ],
       });
       let debtor: IDebtor = null;
-      let account = [];
+      // let account = [];
       // if (body.paymentToken && body.paymentType) {
       //   const customerVaultResponse = await caseUtil.createVault(
       //     body.paymentToken
@@ -847,16 +847,17 @@ class DebtorService {
         body.bulkUpload = true;
         debtor = await caseUtil.createDebtor(body, reqTemp.id);
       }
-      // if (getDebtor) {
-      //   if (account.length) body.accounts = getDebtor.accounts.concat(account);
-      //   // if (!body.basicInformation?.weeklyBudget)
-      //   //   body.basicInformation.weeklyBudget = 1;
-      //   body.updatedAt = commonUtil.getCurrentDate();
-      //   debtor = await this.debtorRepository.updateById<IDebtor>(
-      //     getDebtor._id,
-      //     body
-      //   );
-      // }
+      if (getDebtor) {
+        // if (account.length) body.accounts = getDebtor.accounts.concat(account);
+        // if (!body.basicInformation?.weeklyBudget)
+        //   body.basicInformation.weeklyBudget = 1;
+        // body.updatedAt = commonUtil.getCurrentDate();
+        // debtor = await this.debtorRepository.updateById<IDebtor>(
+        //   getDebtor._id,
+        //   body
+        // );
+        debtor = getDebtor;
+      }
       if (body.driveUrl) {
         const getDebtorBulk =
           await this.bulkUploadRepository.getOne<IBulkUpload>({
@@ -876,12 +877,15 @@ class DebtorService {
           await this.bulkUploadRepository.create<IBulkUpload>(
             newBulkUpload as any
           );
+          bulkCount += 1;
         }
       }
-      if (debtor) debtorsCount += 1;
     }
-    if (!debtorsCount) {
-      return [false, constantsUtil.failureAddMessage('debtors')];
+    if (!bulkCount) {
+      return [
+        false,
+        constantsUtil.alreadyExistsMessage('Bulk upload with same drive urls'),
+      ];
     }
     return [true, constants.successAddMessage('Debtors')];
   }
