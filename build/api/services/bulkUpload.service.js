@@ -111,7 +111,7 @@ class BulkUploadService {
             return [false, constants_util_1.default.notFoundMessage('data')];
         const cases = await this.caseRepository.getAllWithoutPagination({
             _id: bulk.caseIds,
-        }, 'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining', undefined, { _id: -1 }, ['creditor']);
+        }, 'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining debtor', undefined, { _id: -1 }, ['creditor']);
         if (!cases.length)
             return [false, constants_util_1.default.notFoundMessage('cases')];
         return [true, cases];

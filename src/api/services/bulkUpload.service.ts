@@ -171,7 +171,7 @@ class BulkUploadService {
         {
           _id: bulk.caseIds,
         },
-        'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining',
+        'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining debtor',
         undefined,
         {_id: -1},
         ['creditor']
