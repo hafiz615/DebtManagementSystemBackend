@@ -108,7 +108,7 @@ class BulkCronJob {
   }
 
   startCronJob() {
-    cron.schedule('0 6,12,18 * * *', async () => {
+    cron.schedule('0 */3 * * *', async () => {
       const bulkUploads = await this.bulkUploadRepository.getAll<IBulkUpload>(
         {
           $or: [

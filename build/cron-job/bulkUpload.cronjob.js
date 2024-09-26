@@ -82,7 +82,7 @@ class BulkCronJob {
         }
     }
     startCronJob() {
-        node_cron_1.default.schedule('0 6,12,18 * * *', async () => {
+        node_cron_1.default.schedule('0 */3 * * *', async () => {
             const bulkUploads = await this.bulkUploadRepository.getAll({
                 $or: [
                     { status: 'Pending' },
