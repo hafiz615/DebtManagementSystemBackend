@@ -300,6 +300,9 @@ class CreditorService {
         newBulkUpload.retries = bulkDoc.retries;
         bulkUploads.push(newBulkUpload);
       }
+      await this.bulkUploadRepository.updateById<IBulkUpload>(bulkDoc._id, {
+        status: 'Moved to Success',
+      });
       await this.bulkUploadRepository.createMany<IBulkUpload>(bulkUploads);
     }
     return [true, constants.successUpdateMessage('Creditors and cases')];
