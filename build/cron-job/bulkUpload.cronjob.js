@@ -29,10 +29,12 @@ class BulkCronJob {
                 let checkError = false;
                 if (!bulkUpload.driveUrl)
                     continue;
-                const folderId = await this.getFolderId(bulkUpload.driveUrl);
-                checkError = await this.checkErrorAI(bulkUpload, folderId);
-                if (checkError)
+                let folderId = await this.getFolderId(bulkUpload.driveUrl);
+                if (!folderId) {
+                    folderId = 'Invalid drive url';
+                    await this.checkErrorAI(bulkUpload, folderId);
                     continue;
+                }
                 console.log(folderId, 'folderIdd');
                 const getFilesData = await googleDrive_util_1.default.listFiles(folderId);
                 checkError = await this.checkErrorAI(bulkUpload, getFilesData);
@@ -149,7 +151,7 @@ class BulkCronJob {
         if (match && match[1]) {
             return match[1];
         }
-        return 'Invalid drive url';
+        return '';
     }
     async checkErrorAI(bulkUpload, checkError) {
         if (typeof checkError === 'string' && bulkUpload.status === 'Pending') {

@@ -21,10 +21,12 @@ class BulkUploadService {
     let successBulkUploads = [];
     let pendingBulkUploads = [];
     let arBulkUploads = [];
+    let duplicateBulkUploads = [];
     let pendingBulkUploadsCount = 0;
     let failedBulkUploadsCount = 0;
     let successBulkUploadsCount = 0;
     let arBulkUploadsCount = 0;
+    let duplicateBulkUploadsCount = 0;
     let page = 1;
     let limit = 5;
 
@@ -95,16 +97,33 @@ class BulkUploadService {
           await this.bulkUploadRepository.getCount<IBulkUpload>({
             status: 'Action Required',
           });
+        duplicateBulkUploads =
+          await this.bulkUploadRepository.getAll<IBulkUpload>(
+            {status: 'Duplicate'},
+            undefined,
+            undefined,
+            {_id: -1},
+            {path: 'debtor', select: ['basicInformation.fullName']},
+            undefined,
+            page,
+            limit
+          );
+        duplicateBulkUploadsCount =
+          await this.bulkUploadRepository.getCount<IBulkUpload>({
+            status: 'Duplicate',
+          });
         const response = {
           pending: pendingBulkUploads,
           success: successBulkUploads,
           failed: failedBulkUploads,
           actionRequired: arBulkUploads,
+          duplicate: duplicateBulkUploads,
           count: {
             pending: pendingBulkUploadsCount,
             success: successBulkUploadsCount,
             failed: failedBulkUploadsCount,
             actionRequired: arBulkUploadsCount,
+            duplicate: duplicateBulkUploadsCount,
           },
         };
         return [true, response];
@@ -119,6 +138,9 @@ class BulkUploadService {
         break;
       case 'success':
         filter['status'] = 'Success';
+        break;
+      case 'duplicate':
+        filter['status'] = 'Duplicate';
     }
     const result = await this.bulkUploadRepository.getAll<IBulkUpload>(
       filter,
@@ -149,7 +171,7 @@ class BulkUploadService {
         {
           _id: bulk.caseIds,
         },
-        undefined,
+        'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining',
         undefined,
         {_id: -1},
         ['creditor']

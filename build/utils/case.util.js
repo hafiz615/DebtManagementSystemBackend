@@ -1814,10 +1814,10 @@ class CaseUtil {
                     contentType: 'application/pdf',
                 });
             }
-            form.getLength((err, length) => {
-                if (err)
-                    return null;
-            });
+            // form.getLength((err, length) => {
+            //   if (err) return 'null';
+            //   return ''
+            // });
             console.log('I am in getExtractionMCA_AIBuffer');
             console.log('URL: ', url);
             console.log('Payload: ', form);
@@ -1833,7 +1833,7 @@ class CaseUtil {
         }
         catch (error) {
             console.log(error);
-            return null;
+            return error.message;
         }
     }
     async getScores(caseTemp, creditors, comm) {

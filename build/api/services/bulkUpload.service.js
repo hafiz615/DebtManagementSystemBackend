@@ -18,10 +18,12 @@ class BulkUploadService {
             let successBulkUploads = [];
             let pendingBulkUploads = [];
             let arBulkUploads = [];
+            let duplicateBulkUploads = [];
             let pendingBulkUploadsCount = 0;
             let failedBulkUploadsCount = 0;
             let successBulkUploadsCount = 0;
             let arBulkUploadsCount = 0;
+            let duplicateBulkUploadsCount = 0;
             let page = 1;
             let limit = 5;
             // Check if pageNumber and pageSize are provided and valid
@@ -55,16 +57,24 @@ class BulkUploadService {
                         await this.bulkUploadRepository.getCount({
                             status: 'Action Required',
                         });
+                    duplicateBulkUploads =
+                        await this.bulkUploadRepository.getAll({ status: 'Duplicate' }, undefined, undefined, { _id: -1 }, { path: 'debtor', select: ['basicInformation.fullName'] }, undefined, page, limit);
+                    duplicateBulkUploadsCount =
+                        await this.bulkUploadRepository.getCount({
+                            status: 'Duplicate',
+                        });
                     const response = {
                         pending: pendingBulkUploads,
                         success: successBulkUploads,
                         failed: failedBulkUploads,
                         actionRequired: arBulkUploads,
+                        duplicate: duplicateBulkUploads,
                         count: {
                             pending: pendingBulkUploadsCount,
                             success: successBulkUploadsCount,
                             failed: failedBulkUploadsCount,
                             actionRequired: arBulkUploadsCount,
+                            duplicate: duplicateBulkUploadsCount,
                         },
                     };
                     return [true, response];
@@ -79,6 +89,9 @@ class BulkUploadService {
                     break;
                 case 'success':
                     filter['status'] = 'Success';
+                    break;
+                case 'duplicate':
+                    filter['status'] = 'Duplicate';
             }
             const result = await this.bulkUploadRepository.getAll(filter, undefined, undefined, { _id: -1 }, { path: 'debtor', select: ['basicInformation.fullName'] }, undefined, page, limit);
             const count = await this.bulkUploadRepository.getCount(filter);
@@ -98,7 +111,7 @@ class BulkUploadService {
             return [false, constants_util_1.default.notFoundMessage('data')];
         const cases = await this.caseRepository.getAllWithoutPagination({
             _id: bulk.caseIds,
-        }, undefined, undefined, { _id: -1 }, ['creditor']);
+        }, 'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining', undefined, { _id: -1 }, ['creditor']);
         if (!cases.length)
             return [false, constants_util_1.default.notFoundMessage('cases')];
         return [true, cases];

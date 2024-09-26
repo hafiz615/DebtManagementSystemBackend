@@ -668,8 +668,8 @@ class DebtorService {
             if (getDebtor) {
                 if (account.length)
                     body.accounts = getDebtor.accounts.concat(account);
-                if (!body.basicInformation?.weeklyBudget)
-                    body.basicInformation.weeklyBudget = 1;
+                // if (!body.basicInformation?.weeklyBudget)
+                //   body.basicInformation.weeklyBudget = 1;
                 body.updatedAt = common_util_1.default.getCurrentDate();
                 debtor = await this.debtorRepository.updateById(getDebtor._id, body);
             }
@@ -678,9 +678,14 @@ class DebtorService {
                     driveUrl: body.driveUrl,
                 });
                 if (!getDebtorBulk) {
+                    const caseTemp = await this.caseRepository.getOne({
+                        debtor: debtor._id,
+                    });
                     const newBulkUpload = new bulkUpload_repomodel_1.BulkUpload();
                     newBulkUpload.driveUrl = body.driveUrl;
                     newBulkUpload.debtor = debtor._id;
+                    if (caseTemp)
+                        newBulkUpload.status = 'Duplicate';
                     newBulkUpload.createdByName = reqTemp.name;
                     newBulkUpload.createdById = reqTemp.id;
                     await this.bulkUploadRepository.create(newBulkUpload);
