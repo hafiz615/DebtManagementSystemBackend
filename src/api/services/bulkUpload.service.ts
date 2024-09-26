@@ -3,13 +3,16 @@ import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.reposito
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import constantsUtil from '../../utils/constants.util';
 import {CaseRepository} from '../repository/case/case.repository';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
 
 class BulkUploadService {
   private bulkUploadRepository: BulkUploadRepository;
   private caseRepository: CaseRepository;
+  private debtorRepository: DebtorRepository;
   constructor() {
     this.bulkUploadRepository = new BulkUploadRepository();
     this.caseRepository = new CaseRepository();
+    this.debtorRepository = new DebtorRepository();
   }
 
   getBulkUploadAnalytics = async (req: Request) => {
@@ -176,8 +179,10 @@ class BulkUploadService {
         {_id: -1},
         ['creditor']
       );
+    const debtor = await this.debtorRepository.getById(String(bulk.debtor));
+    if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
     if (!cases.length) return [false, constantsUtil.notFoundMessage('cases')];
-    return [true, cases];
+    return [true, {cases, debtor}];
   }
 }
 

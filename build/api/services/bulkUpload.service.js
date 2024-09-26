@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const case_repository_1 = require("../repository/case/case.repository");
+const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 class BulkUploadService {
     constructor() {
         this.getBulkUploadAnalytics = async (req) => {
@@ -104,6 +105,7 @@ class BulkUploadService {
         };
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
     }
     async getBulkCasesDetails(req) {
         const bulk = await this.bulkUploadRepository.getById(req.params.id);
@@ -112,9 +114,12 @@ class BulkUploadService {
         const cases = await this.caseRepository.getAllWithoutPagination({
             _id: bulk.caseIds,
         }, 'totalDebt lastPaymentDate paidAmount status contractDetails feePayment remaining debtor', undefined, { _id: -1 }, ['creditor']);
+        const debtor = await this.debtorRepository.getById(String(bulk.debtor));
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
         if (!cases.length)
             return [false, constants_util_1.default.notFoundMessage('cases')];
-        return [true, cases];
+        return [true, { cases, debtor }];
     }
 }
 exports.default = BulkUploadService;

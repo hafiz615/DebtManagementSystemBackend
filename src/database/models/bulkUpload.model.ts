@@ -33,6 +33,9 @@ const bulkUploadModel: Schema = new Schema({
   time: {
     type: Array<Date>,
   },
+  debtorAlreadyExisted: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

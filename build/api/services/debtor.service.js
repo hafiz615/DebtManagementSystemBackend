@@ -649,30 +649,32 @@ class DebtorService {
             });
             let debtor = null;
             let account = [];
-            if (body.paymentToken && body.paymentType) {
-                const customerVaultResponse = await case_util_1.default.createVault(body.paymentToken);
-                if (!customerVaultResponse[0])
-                    return customerVaultResponse;
-                // req.body.customerVaultId = customerVaultResponse[1];
-                account.push({
-                    paymentType: body.paymentType,
-                    customerVaultId: customerVaultResponse[1],
-                });
-            }
+            // if (body.paymentToken && body.paymentType) {
+            //   const customerVaultResponse = await caseUtil.createVault(
+            //     body.paymentToken
+            //   );
+            //   if (!customerVaultResponse[0]) return customerVaultResponse;
+            //   // req.body.customerVaultId = customerVaultResponse[1];
+            //   account.push({
+            //     paymentType: body.paymentType,
+            //     customerVaultId: customerVaultResponse[1],
+            //   });
+            // }
             if (!getDebtor) {
-                if (account.length)
-                    body.accounts = account;
+                // if (account.length) body.accounts = account;
                 body.bulkUpload = true;
                 debtor = await case_util_1.default.createDebtor(body, reqTemp.id);
             }
-            if (getDebtor) {
-                if (account.length)
-                    body.accounts = getDebtor.accounts.concat(account);
-                // if (!body.basicInformation?.weeklyBudget)
-                //   body.basicInformation.weeklyBudget = 1;
-                body.updatedAt = common_util_1.default.getCurrentDate();
-                debtor = await this.debtorRepository.updateById(getDebtor._id, body);
-            }
+            // if (getDebtor) {
+            //   if (account.length) body.accounts = getDebtor.accounts.concat(account);
+            //   // if (!body.basicInformation?.weeklyBudget)
+            //   //   body.basicInformation.weeklyBudget = 1;
+            //   body.updatedAt = commonUtil.getCurrentDate();
+            //   debtor = await this.debtorRepository.updateById<IDebtor>(
+            //     getDebtor._id,
+            //     body
+            //   );
+            // }
             if (body.driveUrl) {
                 const getDebtorBulk = await this.bulkUploadRepository.getOne({
                     driveUrl: body.driveUrl,
@@ -684,6 +686,8 @@ class DebtorService {
                     const newBulkUpload = new bulkUpload_repomodel_1.BulkUpload();
                     newBulkUpload.driveUrl = body.driveUrl;
                     newBulkUpload.debtor = debtor._id;
+                    if (getDebtor)
+                        newBulkUpload.debtorAlreadyExisted = true;
                     if (caseTemp)
                         newBulkUpload.status = 'Duplicate';
                     newBulkUpload.createdByName = reqTemp.name;

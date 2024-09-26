@@ -60,6 +60,9 @@ const bulkUploadModel = new mongoose_1.Schema({
     time: {
         type: (Array),
     },
+    debtorAlreadyExisted: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

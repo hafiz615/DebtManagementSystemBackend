@@ -10,6 +10,7 @@ export class BulkUpload {
   createdById = '';
   caseIds = Array<string>();
   time = Array<string>();
+  debtorAlreadyExisted = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
