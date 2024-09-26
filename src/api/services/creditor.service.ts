@@ -8,14 +8,19 @@ import {ICase} from '../../database/interfaces/case.interface';
 import axios from 'axios';
 import axiosInstance from '../../utils/axiosInstanceInterceptor';
 import commonUtil from '../../utils/common.util';
+import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.repository';
+import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
+import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
   private caseRepository: CaseRepository;
+  private bulkUploadRepository: BulkUploadRepository;
 
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.caseRepository = new CaseRepository();
+    this.bulkUploadRepository = new BulkUploadRepository();
   }
 
   async getCreditor(text: string): Promise<[boolean, ICreditor[] | string]> {
@@ -277,6 +282,26 @@ class CreditorService {
     }
     if (!result.length && !createCases.length)
       return [false, constants.failureUpdateMessage('cases and creditors')];
+    const bulkId = String(req.query.bulk);
+    if (bulkId !== 'undefined') {
+      const bulkDoc =
+        await this.bulkUploadRepository.getById<IBulkUpload>(bulkId);
+      const caseIds = bulkDoc.caseIds;
+      const bulkUploads = [];
+      for (const caseId of caseIds) {
+        const newBulkUpload = new BulkUpload();
+        newBulkUpload.driveUrl = bulkDoc.driveUrl;
+        newBulkUpload.debtor = bulkDoc.debtor;
+        newBulkUpload.status = 'Success';
+        newBulkUpload.createdByName = bulkDoc.createdByName;
+        newBulkUpload.createdById = bulkDoc.createdById;
+        newBulkUpload.caseIds = [caseId];
+        newBulkUpload.time = [new Date(commonUtil.getCurrentDate())] as any;
+        newBulkUpload.retries = bulkDoc.retries;
+        bulkUploads.push(newBulkUpload);
+      }
+      await this.bulkUploadRepository.createMany<IBulkUpload>(bulkUploads);
+    }
     return [true, constants.successUpdateMessage('Creditors and cases')];
   }
 }

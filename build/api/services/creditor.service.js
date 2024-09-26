@@ -9,10 +9,13 @@ const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
+const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
+const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
     }
     async getCreditor(text) {
         const creditor = await this.creditorRepository.getAll({
@@ -223,6 +226,25 @@ class CreditorService {
         }
         if (!result.length && !createCases.length)
             return [false, constants_util_1.default.failureUpdateMessage('cases and creditors')];
+        const bulkId = String(req.query.bulk);
+        if (bulkId !== 'undefined') {
+            const bulkDoc = await this.bulkUploadRepository.getById(bulkId);
+            const caseIds = bulkDoc.caseIds;
+            const bulkUploads = [];
+            for (const caseId of caseIds) {
+                const newBulkUpload = new bulkUpload_repomodel_1.BulkUpload();
+                newBulkUpload.driveUrl = bulkDoc.driveUrl;
+                newBulkUpload.debtor = bulkDoc.debtor;
+                newBulkUpload.status = 'Success';
+                newBulkUpload.createdByName = bulkDoc.createdByName;
+                newBulkUpload.createdById = bulkDoc.createdById;
+                newBulkUpload.caseIds = [caseId];
+                newBulkUpload.time = [new Date(common_util_1.default.getCurrentDate())];
+                newBulkUpload.retries = bulkDoc.retries;
+                bulkUploads.push(newBulkUpload);
+            }
+            await this.bulkUploadRepository.createMany(bulkUploads);
+        }
         return [true, constants_util_1.default.successUpdateMessage('Creditors and cases')];
     }
 }
