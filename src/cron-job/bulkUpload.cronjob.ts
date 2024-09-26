@@ -38,11 +38,13 @@ class BulkCronJob {
     console.log(bulkUploads, 'bulkuploadssss');
     for (const bulkUpload of bulkUploads) {
       try {
+        let checkError = false;
         if (!bulkUpload.driveUrl) continue;
         const folderId = await this.getFolderId(bulkUpload.driveUrl);
+        checkError = await this.checkErrorAI(bulkUpload, folderId);
+        if (checkError) continue;
         console.log(folderId, 'folderIdd');
         const getFilesData = await googleDriveUtil.listFiles(folderId);
-        let checkError = false;
         checkError = await this.checkErrorAI(bulkUpload, getFilesData);
         if (checkError) continue;
         console.log(getFilesData, 'get filesss');
@@ -122,11 +124,13 @@ class BulkCronJob {
       console.log(bulkUploads, 'bulkuploadssss');
       for (const bulkUpload of bulkUploads) {
         try {
+          let checkError = false;
           if (!bulkUpload.driveUrl) continue;
           const folderId = await this.getFolderId(bulkUpload.driveUrl);
+          checkError = await this.checkErrorAI(bulkUpload, folderId);
+          if (checkError) continue;
           console.log(folderId, 'folderIdd');
           const getFilesData = await googleDriveUtil.listFiles(folderId);
-          let checkError = false;
           checkError = await this.checkErrorAI(bulkUpload, getFilesData);
           if (checkError) continue;
           console.log(getFilesData, 'get filesss');
@@ -192,7 +196,7 @@ class BulkCronJob {
     if (match && match[1]) {
       return match[1] as string;
     }
-    return '';
+    return 'Invalid drive url';
   }
 
   async checkErrorAI(bulkUpload: IBulkUpload, checkError: any) {

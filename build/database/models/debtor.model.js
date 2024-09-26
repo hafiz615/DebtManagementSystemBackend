@@ -35,15 +35,12 @@ const debtorSchema = new mongoose_1.Schema({
     basicInformation: {
         fullName: {
             type: String,
-            required: true,
         },
         email: {
             type: String,
-            required: true,
         },
         SSID: {
             type: String,
-            required: true,
         },
         state: {
             type: String,
@@ -59,7 +56,6 @@ const debtorSchema = new mongoose_1.Schema({
         },
         phone: {
             type: String,
-            required: true,
         },
         address: {
             type: String,
@@ -71,15 +67,12 @@ const debtorSchema = new mongoose_1.Schema({
     businessInformation: {
         companyName: {
             type: String,
-            required: true,
         },
         EIN: {
             type: String,
-            required: true,
         },
         businessCategory: {
             type: String,
-            required: true,
         },
         description: {
             type: String,
