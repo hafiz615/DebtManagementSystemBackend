@@ -925,21 +925,32 @@ class DebtorService {
           await this.bulkUploadRepository.getOne<IBulkUpload>({
             driveUrl: body.driveUrl,
           });
+        const newBulkUpload = new BulkUpload();
+        newBulkUpload.driveUrl = body.driveUrl;
+        newBulkUpload.debtor = debtor._id;
+        newBulkUpload.createdByName = reqTemp.name;
+        newBulkUpload.createdById = reqTemp.id;
+        if (getDebtorBulk) {
+          newBulkUpload.status = 'Duplicate';
+        }
         if (!getDebtorBulk) {
           const caseTemp = await this.caseRepository.getOne<ICase>({
             debtor: debtor._id,
           });
-          const newBulkUpload = new BulkUpload();
-          newBulkUpload.driveUrl = body.driveUrl;
-          newBulkUpload.debtor = debtor._id;
+          // const newBulkUpload = new BulkUpload();
+          // newBulkUpload.driveUrl = body.driveUrl;
+          // newBulkUpload.debtor = debtor._id;
           if (caseTemp) newBulkUpload.status = 'Duplicate';
-          newBulkUpload.createdByName = reqTemp.name;
-          newBulkUpload.createdById = reqTemp.id;
-          await this.bulkUploadRepository.create<IBulkUpload>(
-            newBulkUpload as any
-          );
-          bulkCount += 1;
+          // newBulkUpload.createdByName = reqTemp.name;
+          // newBulkUpload.createdById = reqTemp.id;
+          // await this.bulkUploadRepository.create<IBulkUpload>(
+          //   newBulkUpload as any
+          // );
         }
+        await this.bulkUploadRepository.create<IBulkUpload>(
+          newBulkUpload as any
+        );
+        bulkCount += 1;
       }
     }
     if (!bulkCount) {
