@@ -82,4 +82,18 @@ router.post(
   debtorController.getExtractedFields
 );
 
+router.post(
+  '/createMultipleDebtors',
+  authorize.validateAuth,
+  debtor.createMultipleDebtors,
+  debtorController.createMultipleDebtors
+);
+
+router.put(
+  '/updateDebtorBulk/:id',
+  authorize.validateAuth,
+  debtor.updateDebtorBulk,
+  debtorController.updateDebtorBulk
+);
+
 export default router;

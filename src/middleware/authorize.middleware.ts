@@ -41,7 +41,7 @@ class Authorize {
             decoded?.userId,
             decoded?.sessionId
           );
-          if (exists === null) {
+          if (exists === null || exists.isDeleted) {
             return res
               .status(constants.CODE.FORBIDDEN)
               .send(

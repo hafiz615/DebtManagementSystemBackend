@@ -20,6 +20,7 @@ const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const caseHistory_repository_1 = require("../repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../repository/justification/justification.repository");
+const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -314,7 +315,7 @@ class CaseService {
             const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
             if (!checkCasePayment[0])
                 return checkCasePayment;
-            const result = await case_util_1.default.createCreditorsCases(req, reqTemp.name, reqTemp.id);
+            const result = await case_util_1.default.createCreditorsCases(req.body, reqTemp.name, reqTemp.id, req.params.id);
             // if (!result[0]) return result;
             return result;
         };
@@ -562,6 +563,7 @@ class CaseService {
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
         this.justificationRepository = new justification_repository_1.JustificationRepository();
+        this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
     }
     async deleteCase(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id);

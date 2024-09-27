@@ -70,7 +70,7 @@ class CreditorRequests {
                     remaining: joi_1.default.number().strict().optional(),
                     confidence: joi_1.default.number().strict(),
                     contractDetails: joi_1.default.object().optional().allow(null),
-                    status: joi_1.default.string().optional(),
+                    status: joi_1.default.string().optional().allow(''),
                     feePayment: joi_1.default.string()
                         .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
                         .optional()

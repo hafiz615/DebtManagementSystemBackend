@@ -34,7 +34,8 @@ import {Justification} from '../../database/repomodels/justification.repomodel';
 import {JustificationRepository} from '../repository/justification/justification.repository';
 import {IJustification} from '../../database/interfaces/justification.interface';
 import {Creditor} from '../../database/repomodels/creditor.repomodel';
-
+import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.repository';
+import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
@@ -47,6 +48,7 @@ class CaseService {
   private strategyRepository: StrategyRepository;
   private caseHistoryRepository: CaseHistoryRepository;
   private justificationRepository: JustificationRepository;
+  private bulkUploadRepository: BulkUploadRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -59,6 +61,7 @@ class CaseService {
     this.strategyRepository = new StrategyRepository();
     this.caseHistoryRepository = new CaseHistoryRepository();
     this.justificationRepository = new JustificationRepository();
+    this.bulkUploadRepository = new BulkUploadRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -520,9 +523,10 @@ class CaseService {
     const checkCasePayment = await caseUtil.checkCasePayment(req.body);
     if (!checkCasePayment[0]) return checkCasePayment;
     const result = await caseUtil.createCreditorsCases(
-      req,
+      req.body,
       reqTemp.name,
-      reqTemp.id
+      reqTemp.id,
+      req.params.id
     );
     // if (!result[0]) return result;
     return result;

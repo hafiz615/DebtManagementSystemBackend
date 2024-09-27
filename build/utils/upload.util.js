@@ -45,6 +45,7 @@ class UploadUtil {
         });
     }
     async awsS3FileUpload(files) {
+        console.log(files, 'filessss');
         let s3FileKeys = [];
         const uploadPromises = [];
         for (let file of files) {

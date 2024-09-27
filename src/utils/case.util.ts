@@ -81,11 +81,12 @@ class CaseUtil {
     });
   }
 
-  async createDebtor(req: Request) {
-    let data = req.body as IDebtor;
-    const reqTemp: any = req;
+  async createDebtor(data: IDebtor, createdBy: string) {
+    // let data = req.body as IDebtor;
+    // const reqTemp: any = req;
     const newDebtor = new Debtor();
-    newDebtor.createdBy = reqTemp.id;
+    newDebtor.createdBy = createdBy;
+    // newDebtor.createdBy = reqTemp.id;
     // if (!data?.basicInformation?.weeklyBudget)
     //   data.basicInformation.weeklyBudget = 1;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
@@ -338,7 +339,7 @@ class CaseUtil {
       // const debtorData = {
       //   ...body.debtor,
       // };
-      debtor = await this.createDebtor(body);
+      debtor = await this.createDebtor(body, '');
     }
     if (!getCreditor) {
       // contactIds = await this.createContacts(
@@ -2031,6 +2032,20 @@ class CaseUtil {
     return extractedFields;
   }
 
+  async getExtractionMCABuffer(documents: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const extractedFields = await this.getExtractionMCA_AIBuffer(
+      documents,
+      AIAuth.auth_token
+    );
+    return extractedFields;
+  }
+
   async findMCASubStr(str: string) {
     const regex = /mca/i;
     const match = str.match(regex);
@@ -2074,6 +2089,38 @@ class CaseUtil {
     } catch (error) {
       console.log(error);
       return null;
+    }
+  }
+
+  async getExtractionMCA_AIBuffer(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        form.append('MCA_pdf', doc.buffer, {
+          filename: doc.originalname,
+          contentType: 'application/pdf',
+        });
+      }
+      // form.getLength((err, length) => {
+      //   if (err) return 'null';
+      //   return ''
+      // });
+      console.log('I am in getExtractionMCA_AIBuffer');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      console.log('Response Data', response.data);
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      console.log(error);
+      return error.message;
     }
   }
 
@@ -2323,12 +2370,18 @@ class CaseUtil {
     }
   }
 
-  async createCreditorsCases(req: Request, name: string, id: string) {
+  async createCreditorsCases(
+    body: any,
+    name: string,
+    id: string,
+    debtorId: string
+  ) {
     let creditor: ICreditor = null;
-    let dataArray = req.body.data;
+    let dataArray = body.data;
     const createdCases = [];
-    const debtor = await this.debtRepository.getById<IDebtor>(req.params.id);
+    const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
     for (const body of dataArray) {
+      console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
         body.creditor.basicInformation.email.toLowerCase();
       const getCreditor = await this.creditorRepository.getOne<ICreditor>({
@@ -2392,6 +2445,7 @@ class CaseUtil {
         newCase.chatId = v4();
         newCase.caseCode = await this.getCaseCode();
         const validatedCase = DataCopier.copy(newCase, body);
+        console.log(validatedCase, 'validated caseeee');
         const caseCreated =
           await this.caseRepository.create<ICase>(validatedCase);
         // if (!caseCreated) {
