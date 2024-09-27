@@ -424,6 +424,46 @@ class DebtorService {
         }
         return [true, debtor];
     }
+    async updateDebtorBulk(req) {
+        let debtor = null;
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const alreadyPresent = await this.debtorRepository.getOne({
+            _id: { $ne: getDebtor._id },
+            $or: [
+                {
+                    'businessInformation.companyName': req.body.businessInformation.companyName,
+                },
+                {
+                    'businessInformation.EIN': req.body.businessInformation.EIN,
+                },
+            ],
+        });
+        if (alreadyPresent) {
+            if (alreadyPresent.businessInformation.companyName ===
+                req.body.businessInformation.companyName) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage(`Debtor with companyName ${req.body.businessInformation.companyName}`),
+                ];
+            }
+            if (alreadyPresent.businessInformation.EIN ===
+                req.body.businessInformation.EIN) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage(`Debtor with EIN ${req.body.businessInformation.EIN}`),
+                ];
+            }
+        }
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
+        debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        return [true, debtor];
+    }
     async retryAuth(paymentId) {
         let result = false;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
@@ -691,8 +731,6 @@ class DebtorService {
                     const newBulkUpload = new bulkUpload_repomodel_1.BulkUpload();
                     newBulkUpload.driveUrl = body.driveUrl;
                     newBulkUpload.debtor = debtor._id;
-                    if (getDebtor)
-                        newBulkUpload.debtorAlreadyExisted = true;
                     if (caseTemp)
                         newBulkUpload.status = 'Duplicate';
                     newBulkUpload.createdByName = reqTemp.name;

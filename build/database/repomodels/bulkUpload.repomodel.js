@@ -16,7 +16,6 @@ class BulkUpload {
         this.createdById = '';
         this.caseIds = Array();
         this.time = Array();
-        this.debtorAlreadyExisted = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

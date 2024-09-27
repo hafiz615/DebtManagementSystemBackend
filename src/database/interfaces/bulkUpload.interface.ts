@@ -10,7 +10,6 @@ export interface IBulkUpload extends Document {
   createdById: string;
   caseIds: Array<string>;
   time: Array<string>;
-  debtorAlreadyExisted: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -419,6 +419,61 @@ class DebtorService {
     return [true, debtor];
   }
 
+  async updateDebtorBulk(req: Request): Promise<[boolean, IDebtor | string]> {
+    let debtor = null;
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const alreadyPresent = await this.debtorRepository.getOne<IDebtor>({
+      _id: {$ne: getDebtor._id},
+      $or: [
+        {
+          'businessInformation.companyName':
+            req.body.businessInformation.companyName,
+        },
+        {
+          'businessInformation.EIN': req.body.businessInformation.EIN,
+        },
+      ],
+    });
+    if (alreadyPresent) {
+      if (
+        alreadyPresent.businessInformation.companyName ===
+        req.body.businessInformation.companyName
+      ) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            `Debtor with companyName ${req.body.businessInformation.companyName}`
+          ),
+        ];
+      }
+      if (
+        alreadyPresent.businessInformation.EIN ===
+        req.body.businessInformation.EIN
+      ) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            `Debtor with EIN ${req.body.businessInformation.EIN}`
+          ),
+        ];
+      }
+    }
+    req.body.updatedAt = commonUtil.getCurrentDate();
+    debtor = await this.debtorRepository.updateById<IDebtor>(
+      getDebtor._id,
+      req.body
+    );
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    return [true, debtor];
+  }
+
   async retryAuth(paymentId: string): Promise<[boolean, string]> {
     let result = false;
     const payment: any = await this.paymentRepository.getById<IPayment>(
@@ -877,7 +932,6 @@ class DebtorService {
           const newBulkUpload = new BulkUpload();
           newBulkUpload.driveUrl = body.driveUrl;
           newBulkUpload.debtor = debtor._id;
-          if (getDebtor) newBulkUpload.debtorAlreadyExisted = true;
           if (caseTemp) newBulkUpload.status = 'Duplicate';
           newBulkUpload.createdByName = reqTemp.name;
           newBulkUpload.createdById = reqTemp.id;
