@@ -58,7 +58,7 @@ class BulkUploadService {
             status: 'Pending',
           });
         failedBulkUploads = await this.bulkUploadRepository.getAll<IBulkUpload>(
-          {$and: [{retries: {$eq: 2}}, {status: 'Failed'}]},
+          {$and: [{retries: {$eq: 3}}, {status: 'Failed'}]},
           undefined,
           undefined,
           {_id: -1},
@@ -69,7 +69,7 @@ class BulkUploadService {
         );
         failedBulkUploadsCount =
           await this.bulkUploadRepository.getCount<IBulkUpload>({
-            $and: [{retries: {$eq: 2}}, {status: 'Failed'}],
+            $and: [{retries: {$eq: 3}}, {status: 'Failed'}],
           });
         successBulkUploads =
           await this.bulkUploadRepository.getAll<IBulkUpload>(
@@ -137,7 +137,7 @@ class BulkUploadService {
         filter['status'] = 'Pending';
         break;
       case 'failed':
-        filter['$and'] = [{retries: {$eq: 2}}, {status: 'Failed'}];
+        filter['$and'] = [{retries: {$eq: 3}}, {status: 'Failed'}];
         break;
       case 'success':
         filter['status'] = 'Success';

@@ -42,10 +42,10 @@ class BulkUploadService {
                         await this.bulkUploadRepository.getCount({
                             status: 'Pending',
                         });
-                    failedBulkUploads = await this.bulkUploadRepository.getAll({ $and: [{ retries: { $eq: 2 } }, { status: 'Failed' }] }, undefined, undefined, { _id: -1 }, { path: 'debtor', select: ['basicInformation.fullName'] }, undefined, page, limit);
+                    failedBulkUploads = await this.bulkUploadRepository.getAll({ $and: [{ retries: { $eq: 3 } }, { status: 'Failed' }] }, undefined, undefined, { _id: -1 }, { path: 'debtor', select: ['basicInformation.fullName'] }, undefined, page, limit);
                     failedBulkUploadsCount =
                         await this.bulkUploadRepository.getCount({
-                            $and: [{ retries: { $eq: 2 } }, { status: 'Failed' }],
+                            $and: [{ retries: { $eq: 3 } }, { status: 'Failed' }],
                         });
                     successBulkUploads =
                         await this.bulkUploadRepository.getAll({ status: 'Success' }, undefined, undefined, { _id: -1 }, { path: 'debtor', select: ['basicInformation.fullName'] }, undefined, page, limit);
@@ -86,7 +86,7 @@ class BulkUploadService {
                     filter['status'] = 'Pending';
                     break;
                 case 'failed':
-                    filter['$and'] = [{ retries: { $eq: 2 } }, { status: 'Failed' }];
+                    filter['$and'] = [{ retries: { $eq: 3 } }, { status: 'Failed' }];
                     break;
                 case 'success':
                     filter['status'] = 'Success';

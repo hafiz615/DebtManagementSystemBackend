@@ -111,14 +111,11 @@ class BulkCronJob {
     cron.schedule('0 */3 * * *', async () => {
       const bulkUploads = await this.bulkUploadRepository.getAll<IBulkUpload>(
         {
-          $or: [
-            {status: 'Pending'},
-            {$and: [{retries: {$lt: 2}}, {status: 'Failed'}]},
-          ],
+          status: 'Pending',
         },
         undefined,
         undefined,
-        {_id: -1},
+        undefined,
         undefined,
         undefined,
         1,
@@ -129,9 +126,12 @@ class BulkCronJob {
         try {
           let checkError = false;
           if (!bulkUpload.driveUrl) continue;
-          const folderId = await this.getFolderId(bulkUpload.driveUrl);
-          checkError = await this.checkErrorAI(bulkUpload, folderId);
-          if (checkError) continue;
+          let folderId = await this.getFolderId(bulkUpload.driveUrl);
+          if (!folderId) {
+            folderId = 'Invalid drive url';
+            await this.checkErrorAI(bulkUpload, folderId);
+            continue;
+          }
           console.log(folderId, 'folderIdd');
           const getFilesData = await googleDriveUtil.listFiles(folderId);
           checkError = await this.checkErrorAI(bulkUpload, getFilesData);
@@ -203,16 +203,21 @@ class BulkCronJob {
   }
 
   async checkErrorAI(bulkUpload: IBulkUpload, checkError: any) {
-    if (typeof checkError === 'string' && bulkUpload.status === 'Pending') {
-      await this.bulkUploadRepository.updateById<IBulkUpload>(bulkUpload._id, {
+    if (
+      typeof checkError === 'string' &&
+      bulkUpload.status === 'Pending' &&
+      bulkUpload.retries === 2
+    ) {
+      await this.bulkUploadRepository.updateById(bulkUpload._id, {
         status: 'Failed',
+        $inc: {retries: 1},
         errorMessage: checkError,
         $push: {time: new Date(commonUtil.getCurrentDate())},
       });
       return true;
     }
-    if (typeof checkError === 'string' && bulkUpload.status === 'Failed') {
-      await this.bulkUploadRepository.updateById(bulkUpload._id, {
+    if (typeof checkError === 'string' && bulkUpload.status === 'Pending') {
+      await this.bulkUploadRepository.updateById<IBulkUpload>(bulkUpload._id, {
         $inc: {retries: 1},
         errorMessage: checkError,
         $push: {time: new Date(commonUtil.getCurrentDate())},

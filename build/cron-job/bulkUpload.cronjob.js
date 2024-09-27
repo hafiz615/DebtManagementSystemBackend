@@ -84,21 +84,20 @@ class BulkCronJob {
     startCronJob() {
         node_cron_1.default.schedule('0 */3 * * *', async () => {
             const bulkUploads = await this.bulkUploadRepository.getAll({
-                $or: [
-                    { status: 'Pending' },
-                    { $and: [{ retries: { $lt: 2 } }, { status: 'Failed' }] },
-                ],
-            }, undefined, undefined, { _id: -1 }, undefined, undefined, 1, 10);
+                status: 'Pending',
+            }, undefined, undefined, undefined, undefined, undefined, 1, 10);
             console.log(bulkUploads, 'bulkuploadssss');
             for (const bulkUpload of bulkUploads) {
                 try {
                     let checkError = false;
                     if (!bulkUpload.driveUrl)
                         continue;
-                    const folderId = await this.getFolderId(bulkUpload.driveUrl);
-                    checkError = await this.checkErrorAI(bulkUpload, folderId);
-                    if (checkError)
+                    let folderId = await this.getFolderId(bulkUpload.driveUrl);
+                    if (!folderId) {
+                        folderId = 'Invalid drive url';
+                        await this.checkErrorAI(bulkUpload, folderId);
                         continue;
+                    }
                     console.log(folderId, 'folderIdd');
                     const getFilesData = await googleDrive_util_1.default.listFiles(folderId);
                     checkError = await this.checkErrorAI(bulkUpload, getFilesData);
@@ -154,15 +153,18 @@ class BulkCronJob {
         return '';
     }
     async checkErrorAI(bulkUpload, checkError) {
-        if (typeof checkError === 'string' && bulkUpload.status === 'Pending') {
+        if (typeof checkError === 'string' &&
+            bulkUpload.status === 'Pending' &&
+            bulkUpload.retries === 2) {
             await this.bulkUploadRepository.updateById(bulkUpload._id, {
                 status: 'Failed',
+                $inc: { retries: 1 },
                 errorMessage: checkError,
                 $push: { time: new Date(common_util_1.default.getCurrentDate()) },
             });
             return true;
         }
-        if (typeof checkError === 'string' && bulkUpload.status === 'Failed') {
+        if (typeof checkError === 'string' && bulkUpload.status === 'Pending') {
             await this.bulkUploadRepository.updateById(bulkUpload._id, {
                 $inc: { retries: 1 },
                 errorMessage: checkError,
