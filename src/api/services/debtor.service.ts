@@ -818,17 +818,24 @@ class DebtorService {
     const reqTemp: any = req;
     let bulkCount = 0;
     for (const body of debtors) {
-      const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-        $or: [
-          {
-            'businessInformation.companyName':
-              body.businessInformation.companyName,
-          },
-          {
-            'businessInformation.EIN': body.businessInformation.EIN,
-          },
-        ],
-      });
+      let getDebtor = null;
+      if (
+        body?.businessInformation?.companyName ||
+        body?.businessInformation?.EIN
+      ) {
+        getDebtor = await this.debtorRepository.getOne<IDebtor>({
+          $or: [
+            {
+              'businessInformation.companyName':
+                body.businessInformation.companyName,
+            },
+            {
+              'businessInformation.EIN': body.businessInformation.EIN,
+            },
+          ],
+        });
+      }
+
       let debtor: IDebtor = null;
       // let account = [];
       // if (body.paymentToken && body.paymentType) {
