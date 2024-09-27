@@ -34,29 +34,23 @@ const uuid_1 = require("uuid");
 const caseModel = new mongoose_1.Schema({
     debtor: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        required: true,
         ref: 'Debtors',
     },
     creditor: {
         type: mongoose_1.default.Schema.Types.ObjectId,
-        required: true,
         ref: 'Creditors',
     },
     totalDebt: {
         type: Number,
-        required: true,
     },
     lastPaymentDate: {
         type: Date,
     },
     paidAmount: {
         type: Number,
-        required: true,
     },
     status: {
         type: String,
-        required: true,
-        default: 'Customer',
     },
     caseOwner: {
         type: String,
@@ -78,19 +72,10 @@ const caseModel = new mongoose_1.Schema({
     },
     caseCode: {
         type: String,
-        required: true,
     },
     remaining: {
         type: Number,
-        required: true,
     },
-    // documents: {
-    //   type: Array<{
-    //     key: {type: String; required: true};
-    //     originalFileName: {type: String; required: true};
-    //     url: {type: String; default: ''};
-    //   }>,
-    // },
     intervals: {
         type: [
             {

@@ -17,6 +17,8 @@ const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
+const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 class DebtorService {
     constructor() {
         this.getAllDebtors = async (req) => {
@@ -103,6 +105,7 @@ class DebtorService {
         this.paymentService = new payment_service_1.default();
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
+        this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -345,8 +348,8 @@ class DebtorService {
             //   }
             //   req.body.weeklyCommission = response.commission;
             // }
-            if (!req.body.basicInformation.weeklyBudget)
-                req.body.basicInformation.weeklyBudget = 1;
+            // if (!req.body.basicInformation.weeklyBudget)
+            //   req.body.basicInformation.weeklyBudget = 1;
             req.body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         }
@@ -416,6 +419,46 @@ class DebtorService {
             case_util_1.default.getLumpSumAmount(caseTemp);
             case_util_1.default.getFullProfitSettlement(caseTemp);
         }
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        return [true, debtor];
+    }
+    async updateDebtorBulk(req) {
+        let debtor = null;
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const alreadyPresent = await this.debtorRepository.getOne({
+            _id: { $ne: getDebtor._id },
+            $or: [
+                {
+                    'businessInformation.companyName': req.body.businessInformation.companyName,
+                },
+                {
+                    'businessInformation.EIN': req.body.businessInformation.EIN,
+                },
+            ],
+        });
+        if (alreadyPresent) {
+            if (alreadyPresent.businessInformation.companyName ===
+                req.body.businessInformation.companyName) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage(`Debtor with companyName ${req.body.businessInformation.companyName}`),
+                ];
+            }
+            if (alreadyPresent.businessInformation.EIN ===
+                req.body.businessInformation.EIN) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage(`Debtor with EIN ${req.body.businessInformation.EIN}`),
+                ];
+            }
+        }
+        req.body.updatedAt = common_util_1.default.getCurrentDate();
+        debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -518,6 +561,7 @@ class DebtorService {
         return [false, 'Unable to capture payment!'];
     }
     async createDebtor(req) {
+        const reqTemp = req;
         const getDebtor = await this.debtorRepository.getOne({
             $or: [
                 {
@@ -543,7 +587,7 @@ class DebtorService {
         if (!getDebtor) {
             if (account.length)
                 req.body.accounts = account;
-            debtor = await case_util_1.default.createDebtor(req);
+            debtor = await case_util_1.default.createDebtor(req.body, reqTemp.id);
         }
         if (getDebtor) {
             if (account.length)
@@ -627,6 +671,93 @@ class DebtorService {
             return [false, constants_util_2.default.notFoundMessage('extrcated data')];
         }
         return [true, extractedFields];
+    }
+    async createMultipleDebtors(req) {
+        const debtors = req.body.debtors;
+        const reqTemp = req;
+        let bulkCount = 0;
+        for (const body of debtors) {
+            let getDebtor = null;
+            if (body?.businessInformation?.companyName ||
+                body?.businessInformation?.EIN) {
+                getDebtor = await this.debtorRepository.getOne({
+                    $or: [
+                        {
+                            'businessInformation.companyName': body.businessInformation.companyName,
+                        },
+                        {
+                            'businessInformation.EIN': body.businessInformation.EIN,
+                        },
+                    ],
+                });
+            }
+            let debtor = null;
+            // let account = [];
+            // if (body.paymentToken && body.paymentType) {
+            //   const customerVaultResponse = await caseUtil.createVault(
+            //     body.paymentToken
+            //   );
+            //   if (!customerVaultResponse[0]) return customerVaultResponse;
+            //   // req.body.customerVaultId = customerVaultResponse[1];
+            //   account.push({
+            //     paymentType: body.paymentType,
+            //     customerVaultId: customerVaultResponse[1],
+            //   });
+            // }
+            if (!getDebtor) {
+                // if (account.length) body.accounts = account;
+                body.bulkUpload = true;
+                debtor = await case_util_1.default.createDebtor(body, reqTemp.id);
+            }
+            if (getDebtor) {
+                // if (account.length) body.accounts = getDebtor.accounts.concat(account);
+                // if (!body.basicInformation?.weeklyBudget)
+                //   body.basicInformation.weeklyBudget = 1;
+                // body.updatedAt = commonUtil.getCurrentDate();
+                // debtor = await this.debtorRepository.updateById<IDebtor>(
+                //   getDebtor._id,
+                //   body
+                // );
+                debtor = getDebtor;
+            }
+            if (body.driveUrl) {
+                const getDebtorBulk = await this.bulkUploadRepository.getOne({
+                    driveUrl: body.driveUrl,
+                });
+                const newBulkUpload = new bulkUpload_repomodel_1.BulkUpload();
+                newBulkUpload.driveUrl = body.driveUrl;
+                newBulkUpload.debtor = debtor._id;
+                newBulkUpload.createdByName = reqTemp.name;
+                newBulkUpload.createdById = reqTemp.id;
+                if (getDebtorBulk) {
+                    newBulkUpload.status = 'Duplicate';
+                }
+                if (!getDebtorBulk) {
+                    const caseTemp = await this.caseRepository.getOne({
+                        debtor: debtor._id,
+                    });
+                    // const newBulkUpload = new BulkUpload();
+                    // newBulkUpload.driveUrl = body.driveUrl;
+                    // newBulkUpload.debtor = debtor._id;
+                    if (caseTemp)
+                        newBulkUpload.status = 'Duplicate';
+                    // newBulkUpload.createdByName = reqTemp.name;
+                    // newBulkUpload.createdById = reqTemp.id;
+                    // await this.bulkUploadRepository.create<IBulkUpload>(
+                    //   newBulkUpload as any
+                    // );
+                }
+                await this.bulkUploadRepository.create(newBulkUpload);
+                bulkCount += 1;
+            }
+        }
+        if (!bulkCount) {
+            return [
+                false,
+                constants_util_2.default.alreadyExistsMessage('Bulk upload with same drive urls'),
+            ];
+        }
+        return [true, constants_util_1.default.successAddMessage('Debtors')];
     }
 }
 exports.default = DebtorService;

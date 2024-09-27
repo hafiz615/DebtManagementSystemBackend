@@ -122,6 +122,155 @@ class PaynoteUtil {
       return error.message;
     }
   }
+
+  async addFundingSource(data: any, userId: string) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/on-demand/funding-source`;
+    data['user_id'] = userId;
+    console.log('I am in addFundingSource');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async initiateFundingSourceVerifcation(sourceId: string, userId: string) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/initiate/verification`;
+    const data = {
+      user_id: userId,
+      source_id: sourceId,
+    };
+    console.log('I am in initiateFundingSourceVerifcation');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async verifyFundingSource(sourceId: string) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/verify`;
+    const data = {
+      source_id: sourceId,
+      amount1: 0.01,
+      amount2: 0.02,
+    };
+    console.log('I am in verifyFundingSource');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async updateFundingSource(data: any, userId: string) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/update`;
+    data['user_id'] = userId;
+    console.log('I am in updateFundingSource');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async removeFundingSource(sourceId: string, userId: string) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/remove`;
+    const data = {
+      user_id: userId,
+      source_id: sourceId,
+    };
+    console.log('I am in removeFundingSource');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async getFundingSource(sourceId: any) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/:${sourceId}`;
+    console.log('I am in getFundingSource');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', {});
+    try {
+      const response = await axiosInstance.post(
+        apiUrl,
+        {},
+        {
+          headers: {
+            Authorization: process.env.paynoteSecretKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async getCustomerFundingSources(userId: any) {
+    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/user/:${userId}`;
+    console.log('I am in getCustomerFundingSources');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', {});
+    try {
+      const response = await axiosInstance.post(
+        apiUrl,
+        {},
+        {
+          headers: {
+            Authorization: process.env.paynoteSecretKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return error.message;
+    }
+  }
 }
 
 export default new PaynoteUtil();

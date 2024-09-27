@@ -8,25 +8,20 @@ const creditorModel: Schema = new Schema({
   basicInformation: {
     fullName: {
       type: String,
-      required: true,
     },
     email: {
       type: String,
-      required: true,
     },
     phone: {
       type: String,
-      required: true,
     },
   },
   businessInformation: {
     companyName: {
       type: String,
-      required: true,
     },
     businessCategory: {
       type: String,
-      required: true,
     },
   },
   contacts: {
@@ -48,16 +43,13 @@ const creditorModel: Schema = new Schema({
   },
   lastFundedDate: {
     type: Date,
-    required: false,
   },
   historicalRange: {
     minimum: {
       type: Number,
-      required: false,
     },
     maximum: {
       type: Number,
-      required: true,
     },
   },
   // creditorSecurityKey: {
