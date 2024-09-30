@@ -8,14 +8,19 @@ import {CaseRepository} from '../repository/case/case.repository';
 import {PaymentRepository} from '../repository/payment/payment.repository';
 import axios from 'axios';
 import axiosInstance from '../../utils/axiosInstanceInterceptor';
+import {CreditorRepository} from '../repository/creditor/creditor.repository';
+import {ICreditor} from '../../database/interfaces/creditor.interface';
+import paynoteUtil from '../../utils/paynote.util';
 
 class PaymentService {
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
+  private creditorReposiotry: CreditorRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.caseRepository = new CaseRepository();
+    this.creditorReposiotry = new CreditorRepository();
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
@@ -177,7 +182,7 @@ class PaymentService {
     );
     paymentsObj.upcomingPayments.sort(
       (a: any, b: any) =>
-        new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
     return [
       true,
@@ -300,6 +305,26 @@ class PaymentService {
         console.error('Unexpected error:', error);
       }
     }
+  }
+
+  async addACHDetailsCreditor(req: Request) {
+    const creditor = await this.creditorReposiotry.getById<ICreditor>(
+      req.params.id
+    );
+    if (!creditor) return [false, constants.notFoundMessage('creditor')];
+
+    const data = req.body;
+    const fundingSource = await paynoteUtil.addFundingSource(
+      data,
+      'd3e73330-6f93-11ef-b474-4b26e6be0816'
+    );
+    // if (typeof fundingSource === 'string')
+    //   return [false, constants.failureAddMessage('ACH details')];
+    console.log(fundingSource);
+    // await this.creditorReposiotry.updateById(creditor._id, {
+    //   paynoteSourceId: fundingSource.source_id,
+    // });
+    return [true, constants.successAddMessage('ACH details')];
   }
 }
 

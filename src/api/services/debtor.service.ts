@@ -961,6 +961,34 @@ class DebtorService {
     }
     return [true, constants.successAddMessage('Debtors')];
   }
+
+  async addDebtorAccount(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const customerVaultResponse = await caseUtil.createVault(
+      req.body.paymentToken
+    );
+    if (!customerVaultResponse[0]) return customerVaultResponse;
+
+    await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
+      $push: {
+        accounts: {
+          $each: [
+            {
+              paymentType: req.body.paymentType,
+              customerVaultId: customerVaultResponse[1],
+            },
+          ],
+        },
+      },
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+    return [true, constants.successAddMessage('Debtor account details')];
+  }
 }
 
 export default DebtorService;

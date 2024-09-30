@@ -16,4 +16,9 @@ router.get(
   paymentController.getCasePayments
 );
 
+router.post(
+  '/addACHDetailsCreditor/:id',
+  authorize.validateAuth,
+  paymentController.addACHDetailsCreditor
+);
 export default router;

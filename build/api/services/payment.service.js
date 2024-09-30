@@ -10,10 +10,13 @@ const case_repository_1 = require("../repository/case/case.repository");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const axios_1 = __importDefault(require("axios"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
+const creditor_repository_1 = require("../repository/creditor/creditor.repository");
+const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 class PaymentService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.creditorReposiotry = new creditor_repository_1.CreditorRepository();
     }
     async getHomePayments(req) {
         let arrayName = String(req.query.arrayName);
@@ -134,7 +137,7 @@ class PaymentService {
             remainingAmount: upcomingAmount + failedAmount,
         };
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        paymentsObj.upcomingPayments.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         return [
             true,
             {
@@ -242,6 +245,20 @@ class PaymentService {
                 console.error('Unexpected error:', error);
             }
         }
+    }
+    async addACHDetailsCreditor(req) {
+        const creditor = await this.creditorReposiotry.getById(req.params.id);
+        if (!creditor)
+            return [false, constants_util_1.default.notFoundMessage('creditor')];
+        const data = req.body;
+        const fundingSource = await paynote_util_1.default.addFundingSource(data, 'd3e73330-6f93-11ef-b474-4b26e6be0816');
+        // if (typeof fundingSource === 'string')
+        //   return [false, constants.failureAddMessage('ACH details')];
+        console.log(fundingSource);
+        // await this.creditorReposiotry.updateById(creditor._id, {
+        //   paynoteSourceId: fundingSource.source_id,
+        // });
+        return [true, constants_util_1.default.successAddMessage('ACH details')];
     }
 }
 exports.default = PaymentService;

@@ -9,5 +9,6 @@ const payment_controller_1 = __importDefault(require("../controllers/payment/pay
 const router = (0, express_1.Router)();
 router.post('/getHomePayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getHomePayments);
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
+router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.addACHDetailsCreditor);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

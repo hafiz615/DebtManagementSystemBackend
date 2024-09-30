@@ -136,9 +136,11 @@ class PaynoteUtil {
                     'Content-Type': 'application/json',
                 },
             });
+            console.log(response, 'popopop');
             return response.data;
         }
         catch (error) {
+            console.log(error.response.data, 'okokokoko');
             return error.message;
         }
     }

@@ -96,4 +96,11 @@ router.put(
   debtorController.updateDebtorBulk
 );
 
+router.post(
+  '/addDebtorAccount/:id',
+  authorize.validateAuth,
+  debtor.addDebtorAccount,
+  debtorController.addDebtorAccount
+);
+
 export default router;

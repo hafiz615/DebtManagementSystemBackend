@@ -27,11 +27,47 @@ class PaymentUtil {
         return this.getFilteredPaymentsObj(transformedArray);
     }
     async getFilteredPaymentsObj(transformedArray) {
-        const failedPayments = transformedArray.filter(payment => payment.captured === 'Failed');
-        const successPayments = transformedArray.filter(payment => payment.captured === 'Success');
-        const failedAuthorizations = transformedArray.filter(payment => payment.authorized === 'Failed');
-        const successAuthorizations = transformedArray.filter(payment => payment.authorized === 'Success');
-        const upcomingPayments = transformedArray.filter(payment => payment.status === 'Upcoming');
+        // const failedPayments = transformedArray.filter(
+        //   payment => payment.captured === 'Failed'
+        // );
+        // const successPayments = transformedArray.filter(
+        //   payment => payment.captured === 'Success'
+        // );
+        // const failedAuthorizations = transformedArray.filter(
+        //   payment => payment.authorized === 'Failed'
+        // );
+        // const successAuthorizations = transformedArray.filter(
+        //   payment => payment.authorized === 'Success'
+        // );
+        // const upcomingPayments = transformedArray.filter(
+        //   payment => payment.status === 'Upcoming'
+        // );
+        const failedPayments = [];
+        const successPayments = [];
+        const failedAuthorizations = [];
+        const successAuthorizations = [];
+        const upcomingPayments = [];
+        for (const payment of transformedArray) {
+            switch (payment.captured) {
+                case 'Failed':
+                    failedPayments.push(payment);
+                    break;
+                case 'Success':
+                    successPayments.push(payment);
+                    break;
+            }
+            switch (payment.authorized) {
+                case 'Failed':
+                    failedAuthorizations.push(payment);
+                    break;
+                case 'Success':
+                    successAuthorizations.push(payment);
+                    break;
+            }
+            if (payment.status === 'Upcoming') {
+                upcomingPayments.push(payment);
+            }
+        }
         return {
             failedPayments: failedPayments,
             successPayments: successPayments,

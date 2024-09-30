@@ -29,5 +29,6 @@ router.get('/getFullProfitJustifications/:id', authorize_middleware_1.default.va
 router.post('/getExtractedFields/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getExtractedFields);
 router.post('/createMultipleDebtors', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createMultipleDebtors, debtor_controller_1.default.createMultipleDebtors);
 router.put('/updateDebtorBulk/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorBulk, debtor_controller_1.default.updateDebtorBulk);
+router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map
