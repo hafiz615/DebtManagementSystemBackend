@@ -3,6 +3,8 @@ import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import PaymentService from '../../services/payment.service';
 import commonUtil from '../../../utils/common.util';
+import bulkUploadCronjob from '../../../cron-job/bulkUpload.cronjob';
+import paymentCronjob from '../../../cron-job/payment.cronjob';
 
 class PaymentController {
   protected paymentService: PaymentService;
@@ -84,17 +86,54 @@ class PaymentController {
       const response = await this.paymentService.addACHDetailsCreditor(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.OK)
+          .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Case payments'),
+          message: response[1],
         })
       );
     } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  processAuthAndCapture = async (req: Request, res: Response) => {
+    try {
+      await paymentCronjob.processPayments();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Payments auth and capture is done',
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  processPaynoteTransfer = async (req: Request, res: Response) => {
+    try {
+      await paymentCronjob.testPaynote();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Payments transfer via paynote is done',
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));

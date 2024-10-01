@@ -6,9 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const payment_controller_1 = __importDefault(require("../controllers/payment/payment.controller"));
+const payment_validate_1 = __importDefault(require("../../middleware/validators/payment.validate"));
 const router = (0, express_1.Router)();
 router.post('/getHomePayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getHomePayments);
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
-router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.addACHDetailsCreditor);
+router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetailsCreditor, payment_controller_1.default.addACHDetailsCreditor);
+router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
+router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

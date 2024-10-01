@@ -3,6 +3,7 @@ import constants from '../../../utils/constants.util';
 import responseHelper from '../../../utils/responseHelper.util';
 import CaseService from '../../services/case.service';
 import BulkUploadService from '../../services/bulkUpload.service';
+import bulkUploadCronjob from '../../../cron-job/bulkUpload.cronjob';
 
 class BulkUploadController {
   protected bulkUploadService: BulkUploadService;
@@ -50,6 +51,24 @@ class BulkUploadController {
         })
       );
     } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  processBulkCronJob = async (req: Request, res: Response) => {
+    try {
+      await bulkUploadCronjob.testBulkCron();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Bulk cron job is done',
+        })
+      );
+    } catch (error: any) {
       console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)

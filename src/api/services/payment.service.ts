@@ -11,7 +11,9 @@ import axiosInstance from '../../utils/axiosInstanceInterceptor';
 import {CreditorRepository} from '../repository/creditor/creditor.repository';
 import {ICreditor} from '../../database/interfaces/creditor.interface';
 import paynoteUtil from '../../utils/paynote.util';
-
+import {decrypt, encrypt} from 'n-krypta';
+import dotenv from 'dotenv';
+dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
@@ -313,17 +315,33 @@ class PaymentService {
     );
     if (!creditor) return [false, constants.notFoundMessage('creditor')];
 
-    const data = req.body;
+    const data = req.body.data;
+    const paymentObj = decrypt(data, process.env.kryptaSecretKey);
+    if (!creditor.paynoteUserId)
+      return [false, 'User is not added in paynote!'];
     const fundingSource = await paynoteUtil.addFundingSource(
-      data,
-      'd3e73330-6f93-11ef-b474-4b26e6be0816'
+      paymentObj,
+      creditor.paynoteUserId
     );
-    // if (typeof fundingSource === 'string')
-    //   return [false, constants.failureAddMessage('ACH details')];
     console.log(fundingSource);
-    // await this.creditorReposiotry.updateById(creditor._id, {
-    //   paynoteSourceId: fundingSource.source_id,
-    // });
+    if (fundingSource?.error) {
+      let message = '';
+      if (fundingSource?.messages) {
+        message = fundingSource.messages[0];
+      } else {
+        message = fundingSource.message;
+      }
+      return [false, message];
+    }
+    const sourceId = fundingSource.funding_source.source_id;
+    this.creditorReposiotry.updateById(creditor._id, {
+      paynoteSourceId: fundingSource.funding_source.source_id,
+    });
+    paynoteUtil.initiateFundingSourceVerifcation(
+      sourceId,
+      creditor.paynoteUserId
+    );
+    paynoteUtil.verifyFundingSource(sourceId);
     return [true, constants.successAddMessage('ACH details')];
   }
 }

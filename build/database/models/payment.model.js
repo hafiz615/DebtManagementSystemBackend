@@ -72,6 +72,9 @@ const PaymentModel = new mongoose_1.Schema({
     failedReasonCaptured: {
         type: String,
     },
+    failedReasonPaynote: {
+        type: String,
+    },
     rescheduled: {
         type: Date,
     },
@@ -82,6 +85,9 @@ const PaymentModel = new mongoose_1.Schema({
         type: Number,
     },
     retriesCapture: {
+        type: Number,
+    },
+    retriesPaynote: {
         type: Number,
     },
     timePeriod: {

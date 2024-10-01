@@ -12,6 +12,9 @@ const axios_1 = __importDefault(require("axios"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
+const n_krypta_1 = require("n-krypta");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class PaymentService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -250,14 +253,28 @@ class PaymentService {
         const creditor = await this.creditorReposiotry.getById(req.params.id);
         if (!creditor)
             return [false, constants_util_1.default.notFoundMessage('creditor')];
-        const data = req.body;
-        const fundingSource = await paynote_util_1.default.addFundingSource(data, 'd3e73330-6f93-11ef-b474-4b26e6be0816');
-        // if (typeof fundingSource === 'string')
-        //   return [false, constants.failureAddMessage('ACH details')];
+        const data = req.body.data;
+        const paymentObj = (0, n_krypta_1.decrypt)(data, process.env.kryptaSecretKey);
+        if (!creditor.paynoteUserId)
+            return [false, 'User is not added in paynote!'];
+        const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);
         console.log(fundingSource);
-        // await this.creditorReposiotry.updateById(creditor._id, {
-        //   paynoteSourceId: fundingSource.source_id,
-        // });
+        if (fundingSource?.error) {
+            let message = '';
+            if (fundingSource?.messages) {
+                message = fundingSource.messages[0];
+            }
+            else {
+                message = fundingSource.message;
+            }
+            return [false, message];
+        }
+        const sourceId = fundingSource.funding_source.source_id;
+        this.creditorReposiotry.updateById(creditor._id, {
+            paynoteSourceId: fundingSource.funding_source.source_id,
+        });
+        paynote_util_1.default.initiateFundingSourceVerifcation(sourceId, creditor.paynoteUserId);
+        paynote_util_1.default.verifyFundingSource(sourceId);
         return [true, constants_util_1.default.successAddMessage('ACH details')];
     }
 }

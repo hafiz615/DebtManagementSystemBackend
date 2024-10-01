@@ -14,10 +14,12 @@ export interface IPayment extends Document {
   intervalId: string;
   failedReasonAuthorization: string;
   failedReasonCaptured: string;
+  failedReasonPaynote: string;
   rescheduled: string;
   debtorTransId: string;
   retriesAuth: number;
   retriesCapture: number;
+  retriesPaynote: number;
   timePeriod: string;
   paymentReference: string;
   isDeleted: boolean;

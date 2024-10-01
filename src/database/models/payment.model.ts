@@ -48,6 +48,9 @@ const PaymentModel: Schema = new Schema({
   failedReasonCaptured: {
     type: String,
   },
+  failedReasonPaynote: {
+    type: String,
+  },
   rescheduled: {
     type: Date,
   },
@@ -58,6 +61,9 @@ const PaymentModel: Schema = new Schema({
     type: Number,
   },
   retriesCapture: {
+    type: Number,
+  },
+  retriesPaynote: {
     type: Number,
   },
   timePeriod: {

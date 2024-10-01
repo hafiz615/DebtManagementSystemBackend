@@ -38,6 +38,7 @@ import {CaseHistoryRepository} from '../api/repository/caseHistory/caseHistory.r
 import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
 import {JustificationRepository} from '../api/repository/justification/justification.repository';
 import {IJustification} from '../database/interfaces/justification.interface';
+import paynoteUtil from './paynote.util';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -2415,6 +2416,7 @@ class CaseUtil {
       // }
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
+        await paynoteUtil.createCustomer(creditor);
       }
       if (getCreditor) {
         body.updatedAt = commonUtil.getCurrentDate();
