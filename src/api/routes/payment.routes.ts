@@ -35,4 +35,10 @@ router.get(
   authorize.validateAuth,
   paymentController.processPaynoteTransfer
 );
+
+router.get(
+  '/sendPaymentPaynote/:id',
+  authorize.validateAuth,
+  paymentController.sendPaymentPaynote
+);
 export default router;

@@ -113,10 +113,15 @@ class UserService {
                         status: { $first: '$status' },
                         successfulPayments: {
                             $sum: {
+                                $cond: [{ $eq: ['$payments.status', 'Success'] }, 1, 0],
+                            },
+                        },
+                        successfulCaptures: {
+                            $sum: {
                                 $cond: [{ $eq: ['$payments.captured', 'Success'] }, 1, 0],
                             },
                         },
-                        failedPayments: {
+                        failedCaptures: {
                             $sum: {
                                 $cond: [{ $eq: ['$payments.captured', 'Failed'] }, 1, 0],
                             },
@@ -134,7 +139,7 @@ class UserService {
                         totalCapturedAmount: {
                             $sum: {
                                 $cond: [
-                                    { $eq: ['$payments.captured', 'Success'] },
+                                    { $eq: ['$payments.status', 'Success'] },
                                     '$payments.amount',
                                     0,
                                 ],
@@ -167,20 +172,22 @@ class UserService {
                                 $group: {
                                     _id: null,
                                     totalSuccessfulPayments: { $sum: '$successfulPayments' },
-                                    totalFailedPayments: { $sum: '$failedPayments' },
+                                    totalFailedCaptures: { $sum: '$failedCaptures' },
                                     totalSuccessfulAuthorizations: {
                                         $sum: '$successfulAuthorizations',
                                     },
                                     totalFailedAuthorizations: { $sum: '$failedAuthorizations' },
+                                    totalSuccessfulCaptures: { $sum: '$successfulCaptures' },
                                 },
                             },
                             {
                                 $project: {
                                     _id: 0,
                                     totalSuccessfulPayments: 1,
-                                    totalFailedPayments: 1,
+                                    totalFailedCaptures: 1,
                                     totalSuccessfulAuthorizations: 1,
                                     totalFailedAuthorizations: 1,
+                                    totalSuccessfulCaptures: 1,
                                 },
                             },
                         ],

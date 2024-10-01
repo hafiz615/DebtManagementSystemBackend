@@ -529,7 +529,7 @@ class DebtorService {
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
-            updateObjPayment['status'] = 'Success';
+            // updateObjPayment['status'] = 'Success';
             if (payment.caseId.debtor.paymentType === 'ck') {
                 updateObjPayment['debtorTransId'] = transactionId;
             }

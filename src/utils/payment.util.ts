@@ -33,20 +33,26 @@ class PaymentUtil {
   }
 
   async getFilteredPaymentsObj(transformedArray: any, arrayName: string) {
-    let failedPayments = [],
+    let failedCaptures = [],
+      successCaptures = [],
       successPayments = [],
       failedAuthorizations = [],
       successAuthorizations = [],
       upcomingPayments = [];
     switch (arrayName) {
-      case 'failedPayments':
-        failedPayments = transformedArray.filter(
+      case 'failedCaptures':
+        failedCaptures = transformedArray.filter(
           payment => payment.captured === 'Failed'
+        );
+        break;
+      case 'successCaptures':
+        successCaptures = transformedArray.filter(
+          payment => payment.captured === 'Success'
         );
         break;
       case 'successPayments':
         successPayments = transformedArray.filter(
-          payment => payment.captured === 'Success'
+          payment => payment.status === 'Success'
         );
         break;
       case 'failedAuthorizations':
@@ -68,10 +74,10 @@ class PaymentUtil {
         for (const payment of transformedArray) {
           switch (payment.captured) {
             case 'Failed':
-              failedPayments.push(payment);
+              failedCaptures.push(payment);
               break;
             case 'Success':
-              successPayments.push(payment);
+              successCaptures.push(payment);
               break;
           }
 
@@ -83,9 +89,13 @@ class PaymentUtil {
               successAuthorizations.push(payment);
               break;
           }
-
-          if (payment.status === 'Upcoming') {
-            upcomingPayments.push(payment);
+          switch (payment.status) {
+            case 'Upcoming':
+              upcomingPayments.push(payment);
+              break;
+            case 'Success':
+              successPayments.push(payment);
+              break;
           }
         }
     }
@@ -106,11 +116,12 @@ class PaymentUtil {
     // );
 
     return {
-      failedPayments: failedPayments,
+      failedCaptures: failedCaptures,
       successPayments: successPayments,
       failedAuthorizations: failedAuthorizations,
       successAuthorizations: successAuthorizations,
       upcomingPayments: upcomingPayments,
+      successCaptures: successCaptures,
     };
   }
 

@@ -12,7 +12,7 @@ class BaseRepository {
         populate && result.populate(populate);
         if (!page || !limit) {
             page = 1;
-            limit = 10;
+            limit = 5;
         }
         if (page && limit) {
             const skip = (page - 1) * limit;
@@ -21,11 +21,15 @@ class BaseRepository {
         lean && result.lean(lean);
         return (await result.exec()) || [];
     }
-    async getAllWithoutPagination(filter, projectField, select, sort, populate, lean) {
+    async getAllWithoutPagination(filter, projectField, select, sort, populate, lean, page, limit) {
         let result = this.model.find(filter || {}, projectField || '');
         select && result.select(select);
         sort && result.sort(sort);
         populate && result.populate(populate);
+        if (page && limit) {
+            const skip = (page - 1) * limit;
+            result.skip(skip).limit(limit);
+        }
         lean && result.lean(lean);
         return (await result.exec()) || [];
     }

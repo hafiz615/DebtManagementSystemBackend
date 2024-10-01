@@ -529,7 +529,7 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
                                 },
                             },
                             -1,
@@ -584,7 +584,7 @@ class CaseUtil {
                         },
                     },
                     debtorDetails: { $first: '$debtorDetails' },
-                    failedPayments: {
+                    failedCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -612,7 +612,18 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
+                                },
+                            },
+                        },
+                    },
+                    successfulCaptures: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$payments',
+                                    as: 'payment',
+                                    cond: { $eq: ['$$payment.capture', 'Success'] },
                                 },
                             },
                         },
@@ -648,7 +659,8 @@ class CaseUtil {
                         },
                     },
                     paymentCounts: {
-                        failedPayments: '$failedPayments',
+                        failedCaptures: '$failedCaptures',
+                        successfulCaptures: '$successfulCaptures',
                         failedAuthorizations: '$failedAuthorizations',
                         successfulPayments: '$successfulPayments',
                         successfulAuthorizations: '$successfulAuthorizations',
@@ -835,7 +847,7 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
                                 },
                             },
                             -1,
@@ -890,7 +902,7 @@ class CaseUtil {
                         },
                     },
                     creditorDetails: { $first: '$creditorDetails' },
-                    failedPayments: {
+                    failedCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -918,7 +930,18 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
+                                },
+                            },
+                        },
+                    },
+                    successfulCaptures: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$payments',
+                                    as: 'payment',
+                                    cond: { $eq: ['$$payment.capture', 'Success'] },
                                 },
                             },
                         },
@@ -951,9 +974,10 @@ class CaseUtil {
                         },
                     },
                     paymentCounts: {
-                        failedPayments: '$failedPayments',
+                        failedCaptures: '$failedCaptures',
                         failedAuthorizations: '$failedAuthorizations',
                         successfulPayments: '$successfulPayments',
+                        successfulCaptures: '$successfulCaptures',
                         successfulAuthorizations: '$successfulAuthorizations',
                     },
                 },

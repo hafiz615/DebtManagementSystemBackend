@@ -13,6 +13,8 @@ import {ICreditor} from '../../database/interfaces/creditor.interface';
 import paynoteUtil from '../../utils/paynote.util';
 import {decrypt, encrypt} from 'n-krypta';
 import dotenv from 'dotenv';
+import constantsUtil from '../../utils/constants.util';
+import emailUtil from '../../utils/email.util';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -145,10 +147,13 @@ class PaymentService {
     }
     if (arrayName !== 'default') {
       switch (arrayName) {
-        case 'failedPayments':
+        case 'failedCaptures':
           filters['captured'] = 'Failed';
           break;
         case 'successPayments':
+          filters['status'] = 'Success';
+          break;
+        case 'successCaptures':
           filters['captured'] = 'Success';
           break;
         case 'failedAuthorizations':
@@ -182,7 +187,7 @@ class PaymentService {
     return filters;
   }
 
-  private async getAllPayments(
+  async getAllPayments(
     req: Request,
     filters: any,
     page: number,
@@ -306,12 +311,21 @@ class PaymentService {
         limit
       );
 
+      const successPayments = {...filters};
+      upcoming['status'] = 'Success';
+      const getSuccessPayments = await this.getAllPaymentsQuery(
+        successPayments,
+        page,
+        limit
+      );
+
       const mergedArray = [
         ...getFailedAuthPayments,
         ...getFailedCapturePayments,
         ...getSuccessAuthPayments,
         ...getSuccessCapturePayments,
         ...getUpcomingPayments,
+        ...getSuccessPayments,
       ];
       return await this.getUniquePayments(mergedArray);
     }
@@ -362,17 +376,21 @@ class PaymentService {
     successCapture['captured'] = 'Success';
     const upcoming = {...filters};
     upcoming['status'] = 'Upcoming';
+    const successPaynote = {...filters};
+    successPaynote['status'] = 'Success';
     console.log(failedAuth, 'failedAuthhh');
     const successAuthorizations =
       await this.paymentRepository.getCount<IPayment>(successAuth);
-    const failedPayments =
+    const failedCaptures =
       await this.paymentRepository.getCount<IPayment>(failedCapture);
     const failedAuthorizations =
       await this.paymentRepository.getCount<IPayment>(failedAuth);
-    const successPayments =
+    const successCaptures =
       await this.paymentRepository.getCount<IPayment>(successCapture);
     const upcomingPayments =
       await this.paymentRepository.getCount<IPayment>(upcoming);
+    const successPayments =
+      await this.paymentRepository.getCount<IPayment>(successPaynote);
 
     console.log(successAuthorizations, 'cpunttttt');
 
@@ -382,7 +400,8 @@ class PaymentService {
       failedAuthorizations: failedAuthorizations,
       successPayments: successPayments,
       successAuthorizations: successAuthorizations,
-      failedPayments: failedPayments,
+      failedCaptures: failedCaptures,
+      successCaptures: successCaptures,
       upcomingPayments: upcomingPayments,
     };
   }
@@ -407,7 +426,7 @@ class PaymentService {
       (acc: any, payment: {amount: any}) => acc + payment.amount,
       0
     );
-    failedAmount = paymentsObj.failedPayments.reduce(
+    failedAmount = paymentsObj.failedCaptures.reduce(
       (acc: any, payment: {amount: any}) => acc + payment.amount,
       0
     );
@@ -417,7 +436,7 @@ class PaymentService {
     }));
 
     // Adding type to each object in successCapture array
-    const failedCapture = paymentsObj.failedPayments.map((obj: any) => ({
+    const failedCapture = paymentsObj.failedCaptures.map((obj: any) => ({
       ...obj,
       type: 'payment',
     }));
@@ -428,7 +447,7 @@ class PaymentService {
     }));
 
     // Adding type to each object in successCapture array
-    const successCapture = paymentsObj.successPayments.map((obj: any) => ({
+    const successCapture = paymentsObj.successCaptures.map((obj: any) => ({
       ...obj,
       type: 'payment',
     }));
@@ -441,8 +460,8 @@ class PaymentService {
       ...failedCapture,
     ];
     const paymentCounts = {
-      failedPayments: paymentsObj.failedPayments.length,
-      successPayments: paymentsObj.successPayments.length,
+      failedPayments: paymentsObj.failedCaptures.length,
+      successPayments: paymentsObj.successCaptures.length,
       failedAuthorizations: paymentsObj.failedAuthorizations.length,
       successAuthorizations: paymentsObj.successAuthorizations.length,
       paidAmount: paidAmount,
@@ -612,6 +631,92 @@ class PaymentService {
     );
     paynoteUtil.verifyFundingSource(sourceId);
     return [true, constants.successAddMessage('ACH details')];
+  }
+
+  async sendPaymentPaynote(req: Request) {
+    const paymentId = req.params.id;
+    const payment: any = await this.paymentRepository.getById<IPayment>(
+      paymentId,
+      undefined,
+      undefined,
+      {
+        path: 'caseId',
+        select: ['_id', 'caseCode'],
+        populate: ['creditor'],
+      }
+    );
+    const interval = {
+      unit: 'days',
+      value: 1,
+      maxRetry: 2,
+    };
+    if (!payment) {
+      return [false, constantsUtil.notFoundMessage('payment')];
+    }
+    if (
+      payment.caseId.creditor.paynoteUserId &&
+      payment.caseId.creditor.paynoteSourceId
+    ) {
+      const paynoteCustomer = await paynoteUtil.getCustomer(
+        payment.caseId.creditor
+      );
+      if (paynoteCustomer.user.status === 'unverified')
+        return [false, 'User is unverified for payments'];
+      const paymentResult = await paynoteUtil.sendPayment(payment);
+      console.log(paymentResult);
+      if (paymentResult.error) {
+        let message = '';
+        if (paymentResult?.messages) {
+          message = paymentResult.messages[0];
+        } else {
+          message = paymentResult.message;
+        }
+        console.log(message, 'message');
+        const retry = payment.retriesAuth + 1;
+        const value = interval.value * retry;
+        const retryDate = this.getRetryDate(
+          interval.unit,
+          value,
+          payment.dueDate
+        );
+        await this.paymentRepository.updateById<IPayment>(payment._id, {
+          sendViaPaynote: 'Failed',
+          rescheduled: retryDate,
+          failedReasonPaynote: message,
+        });
+        emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+        return [false, message];
+      }
+
+      emailUtil.sendEmailOrSmsByEvent(
+        'successful_payment',
+        '',
+        payment._id,
+        ''
+      );
+      await this.paymentRepository.updateById<IPayment>(payment._id, {
+        paynoteCheckId: paymentResult.check.check_id,
+        sendViaPaynote: 'Success',
+        status: 'Success',
+      });
+    }
+    return [true, 'Payment Successfull'];
+  }
+
+  getRetryDate(unit: string, value: number, dueDate: string) {
+    const dueDateTemp = new Date(dueDate);
+    let thresholdDate = new Date(dueDateTemp);
+    switch (unit) {
+      case 'hours':
+        thresholdDate.setHours(dueDateTemp.getHours() + value);
+        break;
+      case 'days':
+        thresholdDate.setDate(dueDateTemp.getDate() + value);
+        break;
+      default:
+        throw new Error(`Unsupported unit: ${unit}`);
+    }
+    return thresholdDate.toUTCString();
   }
 }
 

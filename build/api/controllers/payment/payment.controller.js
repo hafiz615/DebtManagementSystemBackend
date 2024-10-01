@@ -114,6 +114,30 @@ class PaymentController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.sendPaymentPaynote = async (req, res) => {
+            try {
+                // const response = await this.paymentService.sendPaymentPaynote(req);
+                // if (!response[0]) {
+                //   return res
+                //     .status(constants.CODE.BAD_REQUEST)
+                //     .send(responseHelper.get4xxResponse(response[1]));
+                // }
+                // return res.status(constants.CODE.OK).send(
+                //   responseHelper.get2xxResponse({
+                //     statusCode: constants.CODE.OK,
+                //     data: [],
+                //     message: response[1],
+                //   })
+                // );
+                return 'ok';
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.paymentService = new payment_service_1.default();
     }
 }

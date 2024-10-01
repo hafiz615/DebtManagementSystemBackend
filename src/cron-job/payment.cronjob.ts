@@ -4,7 +4,6 @@ import {IPayment} from '../database/interfaces/payment.interface';
 import paymentUtil from '../utils/payment.util';
 import {SettingsRepository} from '../api/repository/setting/settings.repository';
 import {ISettings} from '../database/interfaces/settings.interface';
-import PaymentService from '../api/services/payment.service';
 import {URLSearchParams} from 'url';
 import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
 import {PaymentLogging} from '../database/repomodels/paymentLogging.repomodel';
@@ -18,6 +17,7 @@ import {DataCopier} from '../utils/dataCopier.util';
 import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
 import paynoteUtil from '../utils/paynote.util';
 import emailUtil from '../utils/email.util';
+import PaymentService from '../api/services/payment.service';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -280,7 +280,7 @@ class CronJob {
         undefined,
         {
           path: 'caseId',
-          select: ['_id'],
+          select: ['_id', 'caseCode'],
           populate: ['creditor'],
         }
       );
@@ -294,7 +294,7 @@ class CronJob {
         undefined,
         {
           path: 'caseId',
-          select: ['_id'],
+          select: ['_id', 'caseCode'],
           populate: ['creditor'],
         }
       );
@@ -587,7 +587,7 @@ class CronJob {
           undefined,
           {
             path: 'caseId',
-            select: ['_id'],
+            select: ['_id', 'caseCode'],
             populate: ['creditor'],
           }
         );
@@ -601,7 +601,7 @@ class CronJob {
           undefined,
           {
             path: 'caseId',
-            select: ['_id'],
+            select: ['_id', 'caseCode'],
             populate: ['creditor'],
           }
         );
@@ -712,7 +712,7 @@ class CronJob {
     );
   }
 
-  async processPaynotePayments(
+  private async processPaynotePayments(
     payments: any,
     retryPlus: boolean,
     interval: any
@@ -726,7 +726,7 @@ class CronJob {
           payment.caseId.creditor
         );
         if (paynoteCustomer.error) continue;
-        // if (paynoteCustomer.user.status === 'unverified') continue;
+        if (paynoteCustomer.user.status === 'unverified') continue;
         const paymentResult = await paynoteUtil.sendPayment(payment);
         console.log(paymentResult);
         if (paymentResult.error) {
@@ -771,6 +771,7 @@ class CronJob {
         await this.paymentRepository.updateById<IPayment>(payment._id, {
           paynoteCheckId: paymentResult.check.check_id,
           sendViaPaynote: 'Success',
+          status: 'Success',
         });
       }
     }
@@ -1354,7 +1355,7 @@ class CronJob {
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
-      updateObjPayment['status'] = 'Success';
+      // updateObjPayment['status'] = 'Success';
       if (type === 'ck') {
         updateObjPayment['authorized'] = 'Success';
         updateObjPayment['debtorTransId'] = transactionId;

@@ -7,7 +7,6 @@ const node_cron_1 = __importDefault(require("node-cron"));
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
 const payment_util_1 = __importDefault(require("../utils/payment.util"));
 const settings_repository_1 = require("../api/repository/setting/settings.repository");
-const payment_service_1 = __importDefault(require("../api/services/payment.service"));
 const url_1 = require("url");
 const paymentLogging_repository_1 = require("../api/repository/paymentLogging/paymentLogging.repository");
 const paymentLogging_repomodel_1 = require("../database/repomodels/paymentLogging.repomodel");
@@ -19,6 +18,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const dataCopier_util_1 = require("../utils/dataCopier.util");
 const paynote_util_1 = __importDefault(require("../utils/paynote.util"));
 const email_util_1 = __importDefault(require("../utils/email.util"));
+const payment_service_1 = __importDefault(require("../api/services/payment.service"));
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -165,13 +165,13 @@ class CronJob {
     async testPaynote() {
         const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
             path: 'caseId',
-            select: ['_id'],
+            select: ['_id', 'caseCode'],
             populate: ['creditor'],
         });
         await this.paynotePending(pendingPayments);
         const failedPayments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
             path: 'caseId',
-            select: ['_id'],
+            select: ['_id', 'caseCode'],
             populate: ['creditor'],
         });
         await this.paynoteFailed(failedPayments);
@@ -342,13 +342,13 @@ class CronJob {
         node_cron_1.default.schedule('15 * * * *', async () => {
             const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id'],
+                select: ['_id', 'caseCode'],
                 populate: ['creditor'],
             });
             await this.paynotePending(pendingPayments);
             const failedPayments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id'],
+                select: ['_id', 'caseCode'],
                 populate: ['creditor'],
             });
             await this.paynoteFailed(failedPayments);
@@ -443,7 +443,8 @@ class CronJob {
                 const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
                 if (paynoteCustomer.error)
                     continue;
-                // if (paynoteCustomer.user.status === 'unverified') continue;
+                if (paynoteCustomer.user.status === 'unverified')
+                    continue;
                 const paymentResult = await paynote_util_1.default.sendPayment(payment);
                 console.log(paymentResult);
                 if (paymentResult.error) {
@@ -475,6 +476,7 @@ class CronJob {
                 await this.paymentRepository.updateById(payment._id, {
                     paynoteCheckId: paymentResult.check.check_id,
                     sendViaPaynote: 'Success',
+                    status: 'Success',
                 });
             }
         }
@@ -897,7 +899,7 @@ class CronJob {
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
-            updateObjPayment['status'] = 'Success';
+            // updateObjPayment['status'] = 'Success';
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
