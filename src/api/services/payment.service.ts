@@ -27,47 +27,66 @@ class PaymentService {
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
     let arrayName = String(req.query.arrayName);
-    const payments: IPayment[] = await this.getAllPayments(req);
+    let days = Number(req.query.days);
+    let counts = {};
+    let filters = {
+      caseId: {$ne: null},
+      isDeleted: false,
+    };
+    if (days) {
+      filters = await this.getDaysFilterPopulated(filters, days);
+    }
+    if (arrayName === 'default') {
+      counts = await this.getCountForAllPaymentsStatus({...filters});
+    }
+    const populatedFiltersResult = await this.populateFilterHomePayments(
+      {...filters},
+      req
+    );
+    let page = populatedFiltersResult.page;
+    let limit = populatedFiltersResult.limit;
+    const finalFilters = populatedFiltersResult.filters;
+    const payments: IPayment[] = await this.getAllPayments(
+      req,
+      finalFilters,
+      page,
+      limit
+    );
+    console.log(payments.length);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
-    const paymentsObj = await paymentUtil.getFilteredPayments(payments);
-    let page = 1;
-    let limit = 10;
-
-    // Check if pageNumber and pageSize are provided and valid
-    if (req.query.page && !isNaN(Number(req.query.page))) {
-      page = Number(req.query.page) ? Number(req.query.page) : page;
+    const paymentsObj = await paymentUtil.getFilteredPayments(
+      payments,
+      arrayName
+    );
+    if (
+      arrayName !== 'default' &&
+      req.query.filters !== 'true' &&
+      req.query.search !== 'true'
+    ) {
+      console.log(finalFilters, 'filiiiiii');
+      const count =
+        await this.paymentRepository.getCount<IPayment>(finalFilters);
+      counts[arrayName] = count;
     }
-    if (req.query.limit && !isNaN(Number(req.query.limit))) {
-      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-    }
-
-    let counts = {
-      failedPayments: paymentsObj.failedPayments.length,
-      successPayments: paymentsObj.successPayments.length,
-      failedAuthorizations: paymentsObj.failedAuthorizations.length,
-      successAuthorizations: paymentsObj.successAuthorizations.length,
-      upcomingPayments: paymentsObj.upcomingPayments.length,
-    };
-
-    if (arrayName === 'default') {
-      for (const key in paymentsObj) {
-        if (Array.isArray(paymentsObj[key])) {
-          paymentsObj[key] = paymentsObj[key].slice(
-            (page - 1) * limit,
-            page * limit
-          );
-        }
+    if (
+      arrayName !== 'default' &&
+      (req.query.filters === 'true' || req.query.search === 'true')
+    ) {
+      if (req.query.page && !isNaN(Number(req.query.page))) {
+        page = Number(req.query.page) ? Number(req.query.page) : page;
       }
-    } else {
+      if (req.query.limit && !isNaN(Number(req.query.limit))) {
+        limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+      }
       if (paymentsObj[arrayName]) {
         paymentsObj[arrayName] = await paymentUtil.searchAndFilterHomePayments(
           paymentsObj[arrayName],
           req
         );
-        counts[arrayName] = paymentsObj[arrayName].length;
-        paymentsObj[arrayName] = paymentsObj[arrayName].slice(
+        counts[arrayName] = paymentsObj[arrayName]?.length;
+        paymentsObj[arrayName] = paymentsObj[arrayName]?.slice(
           (page - 1) * limit,
           page * limit
         );
@@ -82,19 +101,74 @@ class PaymentService {
     ];
   }
 
-  private async getAllPayments(req: Request) {
-    let days = Number(req.query.days);
-    const filters = {
-      $or: [
-        {captured: 'Failed'},
-        {authorized: 'Failed'},
-        {authorized: 'Success'},
-        {captured: 'Success'},
-        {status: 'Upcoming'},
-      ],
-      caseId: {$ne: null},
-      isDeleted: false,
-    };
+  async populateFilterHomePayments(filters: any, req: Request) {
+    let page = 1;
+    let limit = 5;
+    let arrayName = String(req.query.arrayName);
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : page;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    }
+    // if (arrayName === 'default') {
+    //   // Check if pageNumber and pageSize are provided and valid
+    //   filters['$or'] = [
+    //     {captured: 'Failed'},
+    //     {authorized: 'Failed'},
+    //     {authorized: 'Success'},
+    //     {captured: 'Success'},
+    //     {status: 'Upcoming'},
+    //   ];
+    // }
+    let filtersApply: any;
+    if (req.query.filters === 'true') {
+      page = 0;
+      limit = 0;
+      filtersApply = req.body.filters;
+      if (filtersApply?.dueDate) {
+        filters['dueDate'] = {
+          $gte: filtersApply.dueDate.start,
+          $lte: filtersApply.dueDate.end,
+        };
+      }
+      if (filtersApply?.tryDate) {
+        filters['reschedule'] = {
+          $gte: filtersApply.tryDate.start,
+          $lte: filtersApply.tryDate.end,
+        };
+      }
+    }
+    if (req.query.search === 'true') {
+      page = 0;
+      limit = 0;
+    }
+    if (arrayName !== 'default') {
+      switch (arrayName) {
+        case 'failedPayments':
+          filters['captured'] = 'Failed';
+          break;
+        case 'successPayments':
+          filters['captured'] = 'Success';
+          break;
+        case 'failedAuthorizations':
+          filters['authorized'] = 'Failed';
+          break;
+        case 'successAuthorizations':
+          filters['authorized'] = 'Success';
+          break;
+        case 'upcomingPayments':
+          filters['status'] = 'Upcoming';
+          break;
+        default:
+          filters['authorized'] = 'Failed';
+          break;
+      }
+    }
+    return {filters, page, limit};
+  }
+
+  async getDaysFilterPopulated(filters: any, days: number) {
     if (days && (days === 3 || days === 5 || days === 7)) {
       let currentDate = commonUtil.getCurrentDate();
       const startDate = new Date(
@@ -105,6 +179,158 @@ class PaymentService {
         $lte: currentDate,
       };
     }
+    return filters;
+  }
+
+  private async getAllPayments(
+    req: Request,
+    filters: any,
+    page: number,
+    limit: number
+  ) {
+    // let arrayName = String(req.query.arrayName);
+    // const filters = {
+    //   caseId: {$ne: null},
+    //   isDeleted: false,
+    // };
+    // let page = 1;
+    // let limit = 5;
+    // if (arrayName === 'default') {
+    //   // Check if pageNumber and pageSize are provided and valid
+    //   if (req.query.page && !isNaN(Number(req.query.page))) {
+    //     page = Number(req.query.page) ? Number(req.query.page) : page;
+    //   }
+    //   if (req.query.limit && !isNaN(Number(req.query.limit))) {
+    //     limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+    //   }
+    //   filters['$or'] = [
+    //     {captured: 'Failed'},
+    //     {authorized: 'Failed'},
+    //     {authorized: 'Success'},
+    //     {captured: 'Success'},
+    //     {status: 'Upcoming'},
+    //   ];
+    // } else {
+    //   page = 0;
+    //   limit = 0;
+    //   let filtersApply: any;
+    //   if (req.query.filters === 'true') {
+    //     filtersApply = req.body.filters;
+    //     if (filtersApply?.dueDate) {
+    //       filters['dueDate'] = {
+    //         $gte: filtersApply.dueDate.start,
+    //         $lte: filtersApply.dueDate.end,
+    //       };
+    //     }
+    //     if (filtersApply?.tryDate) {
+    //       filters['reschedule'] = {
+    //         $gte: filtersApply.tryDate.start,
+    //         $lte: filtersApply.tryDate.end,
+    //       };
+    //     }
+    //   }
+    //   switch (arrayName) {
+    //     case 'failedPayments':
+    //       filters['captured'] = 'Failed';
+    //       break;
+    //     case 'successPayments':
+    //       filters['captured'] = 'Success';
+    //       break;
+    //     case 'failedAuthorizations':
+    //       filters['authorized'] = 'Failed';
+    //       break;
+    //     case 'successAuthorizations':
+    //       filters['authorized'] = 'Success';
+    //       break;
+    //     case 'upcomingPayments':
+    //       filters['status'] = 'Upcoming';
+    //       break;
+    //     default:
+    //       filters['captured'] = 'Failed';
+    //       break;
+    //   }
+    // }
+    // let days = Number(req.query.days);
+    // if (days && (days === 3 || days === 5 || days === 7)) {
+    //   let currentDate = commonUtil.getCurrentDate();
+    //   const startDate = new Date(
+    //     new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
+    //   ).toUTCString();
+    //   filters['dueDate'] = {
+    //     $gte: startDate,
+    //     $lte: currentDate,
+    //   };
+    // }
+    console.log(page, 'page');
+    console.log(limit, 'limit');
+    console.log(String(req.query.arrayName), 'req.query.arrayName');
+    console.log(filters, 'filtererrrrr');
+    if (String(req.query.arrayName) === 'default') {
+      console.log('heyyyyyy');
+      const failedAuth = {...filters};
+      failedAuth['authorized'] = 'Failed';
+      const getFailedAuthPayments = await this.getAllPaymentsQuery(
+        failedAuth,
+        page,
+        limit
+      );
+      const failedCapture = {...filters};
+      failedCapture['captured'] = 'Failed';
+      const getFailedCapturePayments = await this.getAllPaymentsQuery(
+        failedCapture,
+        page,
+        limit
+      );
+      const successAuth = {...filters};
+      successAuth['authorized'] = 'Success';
+      const getSuccessAuthPayments = await this.getAllPaymentsQuery(
+        successAuth,
+        page,
+        limit
+      );
+      console.log(successAuth, 'lplplp');
+      console.log(getSuccessAuthPayments, 'getSuccessAuthPayments');
+      const successCapture = {...filters};
+      successCapture['captured'] = 'Success';
+      const getSuccessCapturePayments = await this.getAllPaymentsQuery(
+        successCapture,
+        page,
+        limit
+      );
+
+      const upcoming = {...filters};
+      upcoming['status'] = 'Upcoming';
+      const getUpcomingPayments = await this.getAllPaymentsQuery(
+        upcoming,
+        page,
+        limit
+      );
+
+      const mergedArray = [
+        ...getFailedAuthPayments,
+        ...getFailedCapturePayments,
+        ...getSuccessAuthPayments,
+        ...getSuccessCapturePayments,
+        ...getUpcomingPayments,
+      ];
+      return await this.getUniquePayments(mergedArray);
+    }
+    return await this.getAllPaymentsQuery(filters, page, limit);
+  }
+
+  async getUniquePayments(payments: IPayment[]) {
+    const uniqueObjects = payments.reduce((acc, current) => {
+      const id = current._id.toString(); // Convert ObjectId to string to ensure proper comparison
+      if (!acc.has(id)) {
+        acc.set(id, current);
+      }
+      return acc;
+    }, new Map());
+
+    return Array.from(uniqueObjects.values());
+  }
+
+  async getAllPaymentsQuery(filters: any, page: number, limit: number) {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
@@ -117,8 +343,48 @@ class PaymentService {
           path: 'debtor',
           select: ['basicInformation.fullName', 'basicInformation.SSID'],
         },
-      }
+      },
+      undefined,
+      page,
+      limit
     );
+  }
+
+  async getCountForAllPaymentsStatus(filters: any) {
+    console.log(filters, 'filetrssssss');
+    const failedAuth = {...filters};
+    failedAuth['authorized'] = 'Failed';
+    const failedCapture = {...filters};
+    failedCapture['captured'] = 'Failed';
+    const successAuth = {...filters};
+    successAuth['authorized'] = 'Success';
+    const successCapture = {...filters};
+    successCapture['captured'] = 'Success';
+    const upcoming = {...filters};
+    upcoming['status'] = 'Upcoming';
+    console.log(failedAuth, 'failedAuthhh');
+    const successAuthorizations =
+      await this.paymentRepository.getCount<IPayment>(successAuth);
+    const failedPayments =
+      await this.paymentRepository.getCount<IPayment>(failedCapture);
+    const failedAuthorizations =
+      await this.paymentRepository.getCount<IPayment>(failedAuth);
+    const successPayments =
+      await this.paymentRepository.getCount<IPayment>(successCapture);
+    const upcomingPayments =
+      await this.paymentRepository.getCount<IPayment>(upcoming);
+
+    console.log(successAuthorizations, 'cpunttttt');
+
+    // const result = await this.paymentRepository.applyAggregate(pipeline as any);
+    // console.log(result[0], 'okokoko');
+    return {
+      failedAuthorizations: failedAuthorizations,
+      successPayments: successPayments,
+      successAuthorizations: successAuthorizations,
+      failedPayments: failedPayments,
+      upcomingPayments: upcomingPayments,
+    };
   }
 
   async getCasePayments(id: string): Promise<[boolean, {} | string]> {
@@ -126,7 +392,10 @@ class PaymentService {
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
-    const paymentsObj = await paymentUtil.getFilteredPayments(payments);
+    const paymentsObj = await paymentUtil.getFilteredPayments(
+      payments,
+      'default'
+    );
     let paidAmount = 0,
       upcomingAmount = 0,
       failedAmount = 0;
