@@ -485,6 +485,9 @@ class DebtorService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
+    if (payment.authorized === 'Success') {
+      return [false, 'Payment already authorized'];
+    }
     let response: any;
     if (payment.caseId.debtor.paymentType === 'cc') {
       response = await this.paymentService.authorizeCreditCard(
@@ -555,6 +558,9 @@ class DebtorService {
     );
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
+    }
+    if (payment.captured === 'Success') {
+      return [false, 'Payment already captured'];
     }
     let response: any;
     if (payment.caseId.debtor.paymentType === 'cc') {

@@ -523,11 +523,16 @@ class PaymentService {
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
+        if (payment.status === 'Success') {
+            return [false, 'Payment already send'];
+        }
         if (payment.caseId.creditor.paynoteUserId &&
             payment.caseId.creditor.paynoteSourceId) {
-            const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
-            if (paynoteCustomer.user.status === 'unverified')
-                return [false, 'User is unverified for payments'];
+            // const paynoteCustomer = await paynoteUtil.getCustomer(
+            //   payment.caseId.creditor
+            // );
+            // if (paynoteCustomer.user.status === 'unverified')
+            //   return [false, 'User is unverified for payments'];
             const paymentResult = await paynote_util_1.default.sendPayment(payment);
             if (paymentResult.error) {
                 let message = '';
