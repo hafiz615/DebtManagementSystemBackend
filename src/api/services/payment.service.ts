@@ -35,11 +35,16 @@ class PaymentService {
       caseId: {$ne: null},
       isDeleted: false,
     };
+    let upcomingFilter = {};
     if (days) {
       filters = await this.getDaysFilterPopulated(filters, days);
+      upcomingFilter = await this.getDaysFilterUpcoming(days);
     }
     if (arrayName === 'default') {
-      counts = await this.getCountForAllPaymentsStatus({...filters});
+      counts = await this.getCountForAllPaymentsStatus(
+        {...filters},
+        upcomingFilter
+      );
     }
     const populatedFiltersResult = await this.populateFilterHomePayments(
       {...filters},
@@ -52,8 +57,8 @@ class PaymentService {
       req,
       finalFilters,
       page,
-      limit
-      // days
+      limit,
+      upcomingFilter
     );
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
@@ -186,26 +191,26 @@ class PaymentService {
     return filters;
   }
 
-  // async getDaysFilterUpcoming(days: number) {
-  //   if (days && (days === 3 || days === 5 || days === 7)) {
-  //     let currentDate = commonUtil.getCurrentDate();
-  //     const tillDate = new Date(
-  //       new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000
-  //     ).toUTCString();
-  //     return {
-  //       $gte: new Date(currentDate),
-  //       $lte: new Date(tillDate),
-  //     };
-  //   }
-  //   return {};
-  // }
+  async getDaysFilterUpcoming(days: number) {
+    if (days && (days === 3 || days === 5 || days === 7)) {
+      let currentDate = commonUtil.getCurrentDate();
+      const tillDate = new Date(
+        new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000
+      ).toUTCString();
+      return {
+        $gte: new Date(currentDate),
+        $lte: new Date(tillDate),
+      };
+    }
+    return {};
+  }
 
   async getAllPayments(
     req: Request,
     filters: any,
     page: number,
-    limit: number
-    // days: number
+    limit: number,
+    upcomingFilter: any
   ) {
     // let arrayName = String(req.query.arrayName);
     // const filters = {
@@ -309,21 +314,17 @@ class PaymentService {
         page,
         limit
       );
-      console.log(successCapture);
-
       const upcoming = {...filters};
       upcoming['status'] = 'Upcoming';
+      upcoming['dueDate'] = upcomingFilter;
       const getUpcomingPayments = await this.getAllPaymentsQuery(
         upcoming,
         page,
         limit
       );
-      // const upcomingDateFilter = await this.getDaysFilterUpcoming(days);
-      // upcoming['dueDate'] = upcomingDateFilter;
-      // console.log(upcoming, 'upcoming');
 
       const successPayments = {...filters};
-      upcoming['status'] = 'Success';
+      successPayments['status'] = 'Success';
       const getSuccessPayments = await this.getAllPaymentsQuery(
         successPayments,
         page,
@@ -375,7 +376,7 @@ class PaymentService {
     );
   }
 
-  async getCountForAllPaymentsStatus(filters: any) {
+  async getCountForAllPaymentsStatus(filters: any, upcomingFilter: any) {
     const failedAuth = {...filters};
     failedAuth['authorized'] = 'Failed';
     const failedCapture = {...filters};
@@ -386,6 +387,7 @@ class PaymentService {
     successCapture['captured'] = 'Success';
     const upcoming = {...filters};
     upcoming['status'] = 'Upcoming';
+    upcoming['dueDate'] = upcomingFilter;
     const successPaynote = {...filters};
     successPaynote['status'] = 'Success';
     const successAuthorizations =
