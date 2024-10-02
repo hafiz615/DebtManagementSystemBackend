@@ -111,7 +111,7 @@ class PaymentController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: [],
-          message: 'Payments auth and capture is done',
+          message: 'Cron-job for auth and capture payments is completed',
         })
       );
     } catch (error: any) {
@@ -129,7 +129,25 @@ class PaymentController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: [],
-          message: 'Payments transfer via paynote is done',
+          message: 'Cron-job for payments transfer is completed',
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  firstChoiceCommission = async (req: Request, res: Response) => {
+    try {
+      await paymentCronjob.testDebtor();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Cron-job for first choice commission is completed',
         })
       );
     } catch (error: any) {

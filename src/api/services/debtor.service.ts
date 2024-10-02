@@ -494,7 +494,7 @@ class DebtorService {
     }
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -521,19 +521,19 @@ class DebtorService {
       );
     }
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -573,7 +573,7 @@ class DebtorService {
     }
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -602,19 +602,19 @@ class DebtorService {
       );
     }
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();

@@ -37,6 +37,12 @@ router.get(
 );
 
 router.get(
+  '/firstChoiceCommission',
+  authorize.validateAuth,
+  paymentController.firstChoiceCommission
+);
+
+router.get(
   '/sendPaymentPaynote/:id',
   authorize.validateAuth,
   paymentController.sendPaymentPaynote

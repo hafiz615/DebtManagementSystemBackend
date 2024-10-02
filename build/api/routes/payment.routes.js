@@ -13,6 +13,7 @@ router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, 
 router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetailsCreditor, payment_controller_1.default.addACHDetailsCreditor);
 router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
+router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceCommission);
 router.get('/sendPaymentPaynote/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.sendPaymentPaynote);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

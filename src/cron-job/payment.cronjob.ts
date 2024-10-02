@@ -60,7 +60,7 @@ class CronJob {
     const cronId = uuidv4();
     const debtors =
       await this.debtorRepository.getAllWithoutPagination<IDebtor>(
-        {_id: '66b0f13b9fa41fccbbb4080a'},
+        undefined,
         undefined,
         '+totalCommission +commissionPaid +weeklyCommission +weeklyCommissionPaid +weeklyCommissionDate +commissionPaymentId',
         {createdAt: 1}
@@ -581,7 +581,7 @@ class CronJob {
     cron.schedule('15 * * * *', async () => {
       const pendingPayments =
         await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+          {captured: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
           undefined,
           undefined,
           undefined,
@@ -595,7 +595,7 @@ class CronJob {
 
       const failedPayments =
         await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {status: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
+          {captured: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
           undefined,
           undefined,
           undefined,
@@ -840,7 +840,7 @@ class CronJob {
     let successAuth = false;
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -871,19 +871,19 @@ class CronJob {
     }
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -910,7 +910,7 @@ class CronJob {
     let successCapture = false;
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -951,19 +951,19 @@ class CronJob {
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -1196,7 +1196,7 @@ class CronJob {
       : this.defaultRetryInterval();
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -1236,19 +1236,19 @@ class CronJob {
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
 
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -1257,7 +1257,7 @@ class CronJob {
     // paymentLogging.paymentType = 'Credit Auth';
     // paymentLogging.debtor = String(payment.caseDetails.debtor);
     // paymentLogging.creditor = String(payment.caseDetails.creditor);
-    await this.paymentLoggingRepository.create(paymentLogging as any);
+    // await this.paymentLoggingRepository.create(paymentLogging as any);
     return result;
   }
 
@@ -1350,7 +1350,7 @@ class CronJob {
       : this.defaultRetryInterval();
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -1391,19 +1391,19 @@ class CronJob {
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     return result;
     // paymentLogging.caseId = String(payment.caseId);

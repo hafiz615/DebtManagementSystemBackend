@@ -145,9 +145,9 @@ class CaseUtil {
       }
     }
     await this.paymentRepository.createMany<IPayment>(paymentsArray);
-    await this.paymentLoggingRepository.createMany<IPaymentLogging>(
-      paymentsArray
-    );
+    // await this.paymentLoggingRepository.createMany<IPaymentLogging>(
+    //   paymentsArray
+    // );
   }
 
   async calculateCommision(
@@ -716,7 +716,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: {$eq: ['$$payment.capture', 'Success']},
+                  cond: {$eq: ['$$payment.captured', 'Success']},
                 },
               },
             },
@@ -1079,7 +1079,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: {$eq: ['$$payment.capture', 'Success']},
+                  cond: {$eq: ['$$payment.captured', 'Success']},
                 },
               },
             },

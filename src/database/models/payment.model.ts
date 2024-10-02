@@ -1,5 +1,8 @@
 import mongoose, {Schema} from 'mongoose';
 import {IPayment} from '../interfaces/payment.interface';
+import {v4} from 'uuid';
+import asyncLocalStorage from '../../utils/localStorage.util';
+import PaymentLog from './paymentLogs.model';
 
 const PaymentModel: Schema = new Schema({
   caseId: {
@@ -84,5 +87,59 @@ const PaymentModel: Schema = new Schema({
     required: true,
   },
 });
+
+PaymentModel.pre('save', async function (next) {
+  this.logTrackingId = v4();
+  next();
+});
+
+// Middleware for logging updates
+const logUpdate = async function (next) {
+  const query = this.getQuery();
+  const update = this.getUpdate();
+  // Retrieve the document before update
+  const previousDoc = await this.model.findOne(query);
+  this.previousDoc = previousDoc;
+  next();
+};
+
+const logUpdatePost = async function (doc) {
+  let traceId = '',
+    ip = '',
+    userId = '',
+    url = '',
+    method = '';
+  const store = asyncLocalStorage.getStore();
+  if (store) {
+    if (store.get('traceId')) traceId = store.get('traceId');
+    if (store.get('ip')) ip = store.get('ip');
+    if (store.get('userId')) userId = store.get('userId');
+    if (store.get('url')) url = store.get('url');
+    if (store.get('method')) method = store.get('method');
+  }
+  const previousDoc = this.previousDoc;
+  const logEntry = new PaymentLog({
+    traceId,
+    previousData: previousDoc,
+    currentData: doc,
+    model: this.model.modelName,
+    logTrackingId: previousDoc?.logTrackingId ?? '',
+    ip,
+    userId,
+    url,
+    method,
+  });
+  logEntry.save().catch(err => {
+    console.error('Error saving log entry', err);
+  });
+};
+
+PaymentModel.pre('findOneAndUpdate', logUpdate);
+PaymentModel.pre('updateMany', logUpdate);
+PaymentModel.pre('updateOne', logUpdate);
+
+PaymentModel.post('findOneAndUpdate', logUpdatePost);
+PaymentModel.post('updateMany', logUpdatePost);
+PaymentModel.post('updateOne', logUpdatePost);
 
 export const Payment = mongoose.model<IPayment>('Payments', PaymentModel);

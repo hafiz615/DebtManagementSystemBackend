@@ -10,10 +10,8 @@ const case_util_1 = __importDefault(require("../../utils/case.util"));
 const url_1 = require("url");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const payment_service_1 = __importDefault(require("./payment.service"));
-const paymentLogging_repomodel_1 = require("../../database/repomodels/paymentLogging.repomodel");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
-const dataCopier_util_1 = require("../../utils/dataCopier.util");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
@@ -476,7 +474,7 @@ class DebtorService {
         }
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
-        const paymentLogging = new paymentLogging_repomodel_1.PaymentLogging();
+        // const paymentLogging = new PaymentLogging();
         const updateObjPayment = {};
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
@@ -493,11 +491,16 @@ class DebtorService {
             await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
-            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
-            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
-            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            // const newPayment = new PaymentLogging();
+            // const populatedPayment = DataCopier.copy(newPayment, payment);
+            // const verifiedPayment = DataCopier.copy(
+            //   populatedPayment,
+            //   updateObjPayment
+            // );
             await this.paymentRepository.updateById(payment._id, updateObjPayment);
-            await this.paymentLoggingRepository.create(verifiedPayment);
+            // await this.paymentLoggingRepository.create<IPaymentLogging>(
+            //   verifiedPayment
+            // );
         }
         // paymentLogging.caseId = String(payment.caseId);
         // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -524,7 +527,7 @@ class DebtorService {
         }
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
-        const paymentLogging = new paymentLogging_repomodel_1.PaymentLogging();
+        // const paymentLogging = new PaymentLogging();
         const updateObjPayment = {};
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
@@ -543,11 +546,16 @@ class DebtorService {
             await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
-            const newPayment = new paymentLogging_repomodel_1.PaymentLogging();
-            const populatedPayment = dataCopier_util_1.DataCopier.copy(newPayment, payment);
-            const verifiedPayment = dataCopier_util_1.DataCopier.copy(populatedPayment, updateObjPayment);
+            // const newPayment = new PaymentLogging();
+            // const populatedPayment = DataCopier.copy(newPayment, payment);
+            // const verifiedPayment = DataCopier.copy(
+            //   populatedPayment,
+            //   updateObjPayment
+            // );
             await this.paymentRepository.updateById(payment._id, updateObjPayment);
-            await this.paymentLoggingRepository.create(verifiedPayment);
+            // await this.paymentLoggingRepository.create<IPaymentLogging>(
+            //   verifiedPayment
+            // );
         }
         // paymentLogging.caseId = String(payment.caseId);
         // paymentLogging.createdAt = commonUtil.getCurrentDate();

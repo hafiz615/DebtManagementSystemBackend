@@ -88,7 +88,7 @@ class PaymentController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
-                    message: 'Payments auth and capture is done',
+                    message: 'Cron-job for auth and capture payments is completed',
                 }));
             }
             catch (error) {
@@ -104,7 +104,23 @@ class PaymentController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
-                    message: 'Payments transfer via paynote is done',
+                    message: 'Cron-job for payments transfer is completed',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.firstChoiceCommission = async (req, res) => {
+            try {
+                await payment_cronjob_1.default.testDebtor();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Cron-job for first choice commission is completed',
                 }));
             }
             catch (error) {

@@ -57,7 +57,7 @@ class BulkUploadController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
-                    message: 'Bulk cron job is done',
+                    message: 'Bulk cron job is completed',
                 }));
             }
             catch (error) {
