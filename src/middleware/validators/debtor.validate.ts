@@ -230,43 +230,31 @@ class DebtorRequests {
           basicInformation: Joi.object({
             fullName: Joi.string().required().allow(''),
             email: Joi.string().email().required().allow(''),
-            SSID: Joi.string()
-              .pattern(/^\d{9}$/)
-              .required()
-              .allow(''),
+            SSID: Joi.string().allow(''),
             state: Joi.string().allow(''),
             status: Joi.string().allow(''),
             city: Joi.string().allow(''),
             zipCode: Joi.string().allow(''),
-            phone: Joi.string()
-              .pattern(/^\d{10}$/)
-              .allow(''),
+            phone: Joi.string().allow(''),
             address: Joi.string().allow(''),
             weeklyBudget: Joi.number().optional(),
           }),
           businessInformation: Joi.object({
             companyName: Joi.string().required().allow(''),
-            EIN: Joi.string()
-              .pattern(/^\d{9}$/)
-              .required()
-              .allow(''),
+            EIN: Joi.string().allow(''),
             businessCategory: Joi.string().allow(''),
             description: Joi.string().allow(''),
             state: Joi.string().allow(''),
             city: Joi.string().allow(''),
             zipCode: Joi.string().allow(''),
-            phone: Joi.string()
-              .pattern(/^\d{10}$/)
-              .allow(''),
+            phone: Joi.string().allow(''),
             address: Joi.string().allow(''),
           }),
           contacts: Joi.array().items(
             Joi.object({
               name: Joi.string().required(),
               title: Joi.string().required(),
-              phone: Joi.string()
-                .pattern(/^\d{10}$/)
-                .required(),
+              phone: Joi.string().required(),
               email: Joi.string().email().required(),
               relationWithDebtor: Joi.string().allow(''),
               state: Joi.string().allow(''),
