@@ -501,15 +501,15 @@ class UserService {
 
   async addSenderIdentity(req: Request) {
     const data = {
-      from_email: req.body.email,
-      reply_to: req.body.email,
-      from_name: req.body.name,
-      nickname: req.body.nickname,
+      from_email: req.body.from_email,
+      reply_to: req.body.from_email,
+      from_name: req.body.from_name,
       address: req.body.address,
       city: req.body.city,
-      country: req.body.country,
     };
-
+    data['country'] = 'USA';
+    data['nickname'] = `debtor-${new Date().getTime()}`;
+    console.log(data);
     const request: ClientRequest = {
       url: `/v3/verified_senders`,
       method: 'POST',
@@ -517,27 +517,21 @@ class UserService {
     };
 
     const result = await client.request(request);
-    console.log(result[0].statusCode);
-    console.log(result[0]);
     return [true, result[0].body];
   }
 
   async verifySenderIdentity(req: Request) {
     const url = req.body.url;
     const decodedUrl = decodeURIComponent(url);
-    console.log(decodedUrl);
     const splitArray = decodedUrl.split('?');
     const queryString = splitArray[splitArray.length - 1];
     const token = new URLSearchParams(queryString).get('token');
-    console.log(token);
     const request: ClientRequest = {
       url: `/v3/verified_senders/verify/${token}`,
       method: 'GET',
     };
 
     const result = await client.request(request);
-    console.log(result[0].statusCode);
-    console.log(result[0]);
     return [true, result[0].body];
   }
 
