@@ -14,10 +14,12 @@ export class Payment {
   intervalId = '';
   failedReasonAuthorization = '';
   failedReasonCaptured = '';
+  failedReasonPaynote = '';
   rescheduled = '';
   debtorTransId = '';
   retriesAuth = 0;
   retriesCapture = 0;
+  retriesPaynote = 0;
   timePeriod = '';
   paymentReference = '';
   isDeleted = false;

@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import paymentController from '../controllers/payment/payment.controller';
+import paymentValidate from '../../middleware/validators/payment.validate';
 
 const router = Router();
 
@@ -16,4 +17,34 @@ router.get(
   paymentController.getCasePayments
 );
 
+router.post(
+  '/addACHDetailsCreditor/:id',
+  authorize.validateAuth,
+  paymentValidate.addACHDetailsCreditor,
+  paymentController.addACHDetailsCreditor
+);
+
+router.get(
+  '/processAuthAndCapture',
+  authorize.validateAuth,
+  paymentController.processAuthAndCapture
+);
+
+router.get(
+  '/processPaynoteTransfer',
+  authorize.validateAuth,
+  paymentController.processPaynoteTransfer
+);
+
+router.get(
+  '/firstChoiceCommission',
+  authorize.validateAuth,
+  paymentController.firstChoiceCommission
+);
+
+router.get(
+  '/sendPaymentPaynote/:id',
+  authorize.validateAuth,
+  paymentController.sendPaymentPaynote
+);
 export default router;

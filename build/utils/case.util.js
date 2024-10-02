@@ -30,6 +30,7 @@ const form_data_1 = __importDefault(require("form-data"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
+const paynote_util_1 = __importDefault(require("./paynote.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -105,7 +106,9 @@ class CaseUtil {
             }
         }
         await this.paymentRepository.createMany(paymentsArray);
-        await this.paymentLoggingRepository.createMany(paymentsArray);
+        // await this.paymentLoggingRepository.createMany<IPaymentLogging>(
+        //   paymentsArray
+        // );
     }
     async calculateCommision(interval, weeklyBudget) {
         switch (interval.timePeriod.toLowerCase()) {
@@ -528,7 +531,7 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
                                 },
                             },
                             -1,
@@ -583,7 +586,7 @@ class CaseUtil {
                         },
                     },
                     debtorDetails: { $first: '$debtorDetails' },
-                    failedPayments: {
+                    failedCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -606,6 +609,17 @@ class CaseUtil {
                         },
                     },
                     successfulPayments: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$payments',
+                                    as: 'payment',
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
+                                },
+                            },
+                        },
+                    },
+                    successfulCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -647,7 +661,8 @@ class CaseUtil {
                         },
                     },
                     paymentCounts: {
-                        failedPayments: '$failedPayments',
+                        failedCaptures: '$failedCaptures',
+                        successfulCaptures: '$successfulCaptures',
                         failedAuthorizations: '$failedAuthorizations',
                         successfulPayments: '$successfulPayments',
                         successfulAuthorizations: '$successfulAuthorizations',
@@ -834,7 +849,7 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
                                 },
                             },
                             -1,
@@ -889,7 +904,7 @@ class CaseUtil {
                         },
                     },
                     creditorDetails: { $first: '$creditorDetails' },
-                    failedPayments: {
+                    failedCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -912,6 +927,17 @@ class CaseUtil {
                         },
                     },
                     successfulPayments: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$payments',
+                                    as: 'payment',
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
+                                },
+                            },
+                        },
+                    },
+                    successfulCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -950,9 +976,10 @@ class CaseUtil {
                         },
                     },
                     paymentCounts: {
-                        failedPayments: '$failedPayments',
+                        failedCaptures: '$failedCaptures',
                         failedAuthorizations: '$failedAuthorizations',
                         successfulPayments: '$successfulPayments',
+                        successfulCaptures: '$successfulCaptures',
                         successfulAuthorizations: '$successfulAuthorizations',
                     },
                 },
@@ -2072,6 +2099,7 @@ class CaseUtil {
             // }
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
+                await paynote_util_1.default.createCustomer(creditor);
             }
             if (getCreditor) {
                 body.updatedAt = common_util_1.default.getCurrentDate();

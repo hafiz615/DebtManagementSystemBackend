@@ -4,7 +4,6 @@ import {IPayment} from '../database/interfaces/payment.interface';
 import paymentUtil from '../utils/payment.util';
 import {SettingsRepository} from '../api/repository/setting/settings.repository';
 import {ISettings} from '../database/interfaces/settings.interface';
-import PaymentService from '../api/services/payment.service';
 import {URLSearchParams} from 'url';
 import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
 import {PaymentLogging} from '../database/repomodels/paymentLogging.repomodel';
@@ -18,6 +17,7 @@ import {DataCopier} from '../utils/dataCopier.util';
 import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
 import paynoteUtil from '../utils/paynote.util';
 import emailUtil from '../utils/email.util';
+import PaymentService from '../api/services/payment.service';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -60,7 +60,7 @@ class CronJob {
     const cronId = uuidv4();
     const debtors =
       await this.debtorRepository.getAllWithoutPagination<IDebtor>(
-        {_id: '66b0f13b9fa41fccbbb4080a'},
+        undefined,
         undefined,
         '+totalCommission +commissionPaid +weeklyCommission +weeklyCommissionPaid +weeklyCommissionDate +commissionPaymentId',
         {createdAt: 1}
@@ -272,7 +272,7 @@ class CronJob {
   }
 
   async testPaynote() {
-    const payments =
+    const pendingPayments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
         {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
         undefined,
@@ -280,32 +280,68 @@ class CronJob {
         undefined,
         {
           path: 'caseId',
-          select: ['_id'],
+          select: ['_id', 'caseCode'],
           populate: ['creditor'],
         }
       );
-    for (const payment of payments as any) {
-      if (payment.caseId.creditor.paynoteUserId) {
-        const paynoteCustomer = await paynoteUtil.getCustomer(
-          payment.caseId.creditor
-        );
-        if (paynoteCustomer.error) continue;
-        if (paynoteCustomer.user.status === 'unverified') continue;
-        const paymentResult = await paynoteUtil.sendPayment(payment);
-        if (paymentResult.error) {
-          const message = paymentResult.messages[0];
-          console.log(message, 'message');
-          await this.paymentRepository.updateById<IPayment>(payment._id, {
-            sendViaPaynote: 'Failed',
-          });
-          continue;
+    await this.paynotePending(pendingPayments);
+
+    const failedPayments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {status: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
+        undefined,
+        undefined,
+        undefined,
+        {
+          path: 'caseId',
+          select: ['_id', 'caseCode'],
+          populate: ['creditor'],
         }
-        await this.paymentRepository.updateById<IPayment>(payment._id, {
-          paynoteCheckId: paymentResult.check.check_id,
-          sendViaPaynote: 'Success',
-        });
-      }
-    }
+      );
+    await this.paynoteFailed(failedPayments);
+
+    // for (const payment of payments) {
+    //   if (payment.caseId.creditor.paynoteUserId) {
+    //     const paynoteCustomer = await paynoteUtil.getCustomer(
+    //       payment.caseId.creditor
+    //     );
+    //     if (paynoteCustomer.error) continue;
+    //     // if (paynoteCustomer.user.status === 'unverified') continue;
+    //     console.log(paynoteCustomer);
+    //     const paymentResult = await paynoteUtil.sendPayment(payment);
+    //     console.log(paymentResult);
+    //     if (paymentResult.error) {
+    //       console.log('Send Email');
+    //       let message = '';
+    //       if (paymentResult?.messages) {
+    //         message = paymentResult.messages[0];
+    //       } else {
+    //         message = paymentResult.message;
+    //       }
+    //       console.log(message, 'message');
+    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
+    //         sendViaPaynote: 'Failed',
+    //       });
+    //       // emailUtil.sendEmailOrSmsByEvent(
+    //       //   'failed_payment',
+    //       //   '',
+    //       //   payment._id,
+    //       //   ''
+    //       // );
+    //       continue;
+    //     }
+    //     // emailUtil.sendEmailOrSmsByEvent(
+    //     //   'successful_payment',
+    //     //   '',
+    //     //   payment._id,
+    //     //   ''
+    //     // );
+    //     await this.paymentRepository.updateById<IPayment>(payment._id, {
+    //       paynoteCheckId: paymentResult.check.check_id,
+    //       sendViaPaynote: 'Success',
+    //     });
+    //   }
+    // }
   }
   startCronJob() {
     cron.schedule('0 * * * *', async () => {
@@ -542,58 +578,79 @@ class CronJob {
       }
     });
 
-    // cron.schedule('15 * * * *', async () => {
-    //   const payments =
-    //     await this.paymentRepository.getAllWithoutPagination<IPayment>(
-    //       {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
-    //       undefined,
-    //       undefined,
-    //       undefined,
-    //       {
-    //         path: 'caseId',
-    //         select: ['_id'],
-    //         populate: ['creditor'],
-    //       }
-    //     );
+    cron.schedule('15 * * * *', async () => {
+      const pendingPayments =
+        await this.paymentRepository.getAllWithoutPagination<IPayment>(
+          {captured: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+          undefined,
+          undefined,
+          undefined,
+          {
+            path: 'caseId',
+            select: ['_id', 'caseCode'],
+            populate: ['creditor'],
+          }
+        );
+      await this.paynotePending(pendingPayments);
 
-    //   for (const payment of payments as any) {
-    //     if (payment.caseId.creditor.paynoteUserId) {
-    //       const paynoteCustomer = await paynoteUtil.getCustomer(
-    //         payment.caseId.creditor
-    //       );
-    //       if (paynoteCustomer.error) continue;
-    //       if (paynoteCustomer.user.status === 'unverified') continue;
-    //       const paymentResult = await paynoteUtil.sendPayment(payment);
-    //       console.log(paymentResult);
-    //       if (paymentResult.error) {
-    //         console.log('Send Email');
-    //         const message = paymentResult.messages[0];
-    //         console.log(message, 'message');
-    //         await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //           sendViaPaynote: 'Failed',
-    //         });
-    //         emailUtil.sendEmailOrSmsByEvent(
-    //           'failed_payment',
-    //           '',
-    //           payment._id,
-    //           ''
-    //         );
-    //         continue;
-    //       }
+      const failedPayments =
+        await this.paymentRepository.getAllWithoutPagination<IPayment>(
+          {captured: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
+          undefined,
+          undefined,
+          undefined,
+          {
+            path: 'caseId',
+            select: ['_id', 'caseCode'],
+            populate: ['creditor'],
+          }
+        );
 
-    //       emailUtil.sendEmailOrSmsByEvent(
-    //         'successful_payment',
-    //         '',
-    //         payment._id,
-    //         ''
-    //       );
-    //       await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //         paynoteCheckId: paymentResult.check.check_id,
-    //         sendViaPaynote: 'Success',
-    //       });
-    //     }
-    //   }
-    // });
+      await this.paynoteFailed(failedPayments);
+
+      // for (const payment of payments as any) {
+      //   if (payment.caseId.creditor.paynoteUserId) {
+      //     const paynoteCustomer = await paynoteUtil.getCustomer(
+      //       payment.caseId.creditor
+      //     );
+      //     if (paynoteCustomer.error) continue;
+      //     if (paynoteCustomer.user.status === 'unverified') continue;
+      //     const paymentResult = await paynoteUtil.sendPayment(payment);
+      //     console.log(paymentResult);
+      //     if (paymentResult.error) {
+      //       console.log('Send Email');
+      //       let message = '';
+      //       if (paymentResult?.messages) {
+      //         message = paymentResult.messages[0];
+      //       } else {
+      //         message = paymentResult.message;
+      //       }
+      //       console.log(message, 'message');
+      //       await this.paymentRepository.updateById<IPayment>(payment._id, {
+      //         sendViaPaynote: 'Failed',
+      //       });
+      //       emailUtil.sendEmailOrSmsByEvent(
+      //         'failed_payment',
+      //         '',
+      //         payment._id,
+      //         ''
+      //       );
+      //       continue;
+      //     }
+
+      //     emailUtil.sendEmailOrSmsByEvent(
+      //       'successful_payment',
+      //       '',
+      //       payment._id,
+      //       ''
+      //     );
+      //     await this.paymentRepository.updateById<IPayment>(payment._id, {
+      //       paynoteCheckId: paymentResult.check.check_id,
+      //       sendViaPaynote: 'Success',
+      //     });
+      //   }
+      // }
+    });
 
     cron.schedule('0 21 * * *', async () => {
       const today = new Date(commonUtil.getCurrentDate());
@@ -623,6 +680,101 @@ class CronJob {
         );
       }
     });
+  }
+
+  async paynotePending(payments: any) {
+    const retryPaynoteInterval = {
+      unit: 'days',
+      value: 1,
+      maxRetry: 2,
+    };
+    await this.processPaynotePayments(payments, false, retryPaynoteInterval);
+  }
+
+  async paynoteFailed(payments: any) {
+    const retryPaynoteInterval = {
+      unit: 'days',
+      value: 1,
+      maxRetry: 2,
+    };
+    const filterPaymentWithRetries = payments.filter((payment: IPayment) => {
+      return payment.retriesPaynote != retryPaynoteInterval.maxRetry;
+    });
+    const failedPaynote = filterPaymentWithRetries.filter(
+      (payment: IPayment) => {
+        return this.retry(payment.rescheduled);
+      }
+    );
+    await this.processPaynotePayments(
+      failedPaynote,
+      true,
+      retryPaynoteInterval
+    );
+  }
+
+  private async processPaynotePayments(
+    payments: any,
+    retryPlus: boolean,
+    interval: any
+  ) {
+    for (const payment of payments as any) {
+      if (
+        payment.caseId.creditor.paynoteUserId &&
+        payment.caseId.creditor.paynoteSourceId
+      ) {
+        const paynoteCustomer = await paynoteUtil.getCustomer(
+          payment.caseId.creditor
+        );
+        if (paynoteCustomer.error) continue;
+        if (paynoteCustomer.user.status === 'unverified') continue;
+        const paymentResult = await paynoteUtil.sendPayment(payment);
+        console.log(paymentResult);
+        if (paymentResult.error) {
+          console.log('Send Email');
+          let message = '';
+          if (paymentResult?.messages) {
+            message = paymentResult.messages[0];
+          } else {
+            message = paymentResult.message;
+          }
+          console.log(message, 'message');
+          const retry = payment.retriesAuth + 1;
+          const value = interval.value * retry;
+          const retryDate = this.getRetryDate(
+            interval.unit,
+            value,
+            payment.dueDate
+          );
+          let retries = payment.retriesAuth;
+          if (retryPlus) retries += 1;
+          await this.paymentRepository.updateById<IPayment>(payment._id, {
+            sendViaPaynote: 'Failed',
+            rescheduled: retryDate,
+            retriesPaynote: retries,
+            failedReasonPaynote: message,
+          });
+          emailUtil.sendEmailOrSmsByEvent(
+            'failed_payment',
+            '',
+            payment._id,
+            ''
+          );
+          continue;
+        }
+
+        emailUtil.sendEmailOrSmsByEvent(
+          'successful_payment',
+          '',
+          payment._id,
+          ''
+        );
+        await this.paymentRepository.updateById<IPayment>(payment._id, {
+          paynoteCheckId: paymentResult.check.check_id,
+          sendViaPaynote: 'Success',
+          status: 'Success',
+        });
+      }
+    }
   }
 
   async processPayments() {
@@ -688,7 +840,7 @@ class CronJob {
     let successAuth = false;
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -719,19 +871,19 @@ class CronJob {
     }
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -758,7 +910,7 @@ class CronJob {
     let successCapture = false;
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -799,19 +951,19 @@ class CronJob {
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -876,12 +1028,12 @@ class CronJob {
         failedAuthorization: {
           unit: 'hours',
           value: 2,
-          maxRetry: 1,
+          maxRetry: 2,
         },
         failedPayment: {
           unit: 'days',
           value: 2,
-          maxRetry: 1,
+          maxRetry: 2,
         },
       },
     };
@@ -1044,7 +1196,7 @@ class CronJob {
       : this.defaultRetryInterval();
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -1084,19 +1236,19 @@ class CronJob {
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
 
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -1105,7 +1257,7 @@ class CronJob {
     // paymentLogging.paymentType = 'Credit Auth';
     // paymentLogging.debtor = String(payment.caseDetails.debtor);
     // paymentLogging.creditor = String(payment.caseDetails.creditor);
-    await this.paymentLoggingRepository.create(paymentLogging as any);
+    // await this.paymentLoggingRepository.create(paymentLogging as any);
     return result;
   }
 
@@ -1198,12 +1350,12 @@ class CronJob {
       : this.defaultRetryInterval();
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
-      updateObjPayment['status'] = 'Success';
+      // updateObjPayment['status'] = 'Success';
       if (type === 'ck') {
         updateObjPayment['authorized'] = 'Success';
         updateObjPayment['debtorTransId'] = transactionId;
@@ -1239,19 +1391,19 @@ class CronJob {
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     return result;
     // paymentLogging.caseId = String(payment.caseId);

@@ -15,4 +15,10 @@ router.get(
   authorize.validateAuth,
   bulkUploadController.getBulkCasesDetails
 );
+
+router.get(
+  '/processBulkCronJob',
+  authorize.validateAuth,
+  bulkUploadController.processBulkCronJob
+);
 export default router;

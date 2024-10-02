@@ -43,20 +43,20 @@ class App {
         this.app.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
+        // const credR = new CreditorRepository();
+        // const allCred = await credR.getAllWithoutPagination<ICreditor>();
+        // for (const creditor of allCred) {
+        //   console.log(creditor);
+        //   if (creditor?.paynoteUserId) continue;
+        //   if (!creditor.basicInformation?.fullName) continue;
+        //   const result = await paynoteUtil.createCustomer(creditor);
+        //   if (result?.success)
+        //     await credR.updateById(creditor._id, {
+        //       paynoteUserId: result.user.user_id,
+        //     });
+        // }
         // await bulkUploadCronjob.testBulkCron();
         bulkUpload_cronjob_1.default.startCronJob();
-        // const result = await googleDriveUtil.listFiles(
-        //   '186GSZ1s1N58oWVZL5thsuFKQoGDW_22l'
-        // );
-        //125CHiLQxw6N_s4Ky7cqMLbFPQPc_QDL5
-        // console.log(result, 'resiulttttt');
-        // emailUtil.sendEmailOrSmsByEvent(
-        //   'successful_payment',
-        //   '66b104dacab3400ef1bd74a7',
-        //   '',
-        //   '66a637f0f48199294373421a'
-        // );
-        // console.log(emailUtil.getValuesFromHtml(''));
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();
         // paymentCronjob.testCron();

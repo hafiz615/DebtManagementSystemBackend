@@ -10,5 +10,6 @@ bulkUpload_controller_1.default;
 const router = (0, express_1.Router)();
 router.get('/bulkUploadAnalytics', authorize_middleware_1.default.validateAuth, bulkUpload_controller_1.default.getBulkUploadAnalytics);
 router.get('/getBulkCasesDetails/:id', authorize_middleware_1.default.validateAuth, bulkUpload_controller_1.default.getBulkCasesDetails);
+router.get('/processBulkCronJob', authorize_middleware_1.default.validateAuth, bulkUpload_controller_1.default.processBulkCronJob);
 exports.default = router;
 //# sourceMappingURL=bulkUpload.route.js.map

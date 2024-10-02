@@ -38,6 +38,7 @@ import {CaseHistoryRepository} from '../api/repository/caseHistory/caseHistory.r
 import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
 import {JustificationRepository} from '../api/repository/justification/justification.repository';
 import {IJustification} from '../database/interfaces/justification.interface';
+import paynoteUtil from './paynote.util';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -144,9 +145,9 @@ class CaseUtil {
       }
     }
     await this.paymentRepository.createMany<IPayment>(paymentsArray);
-    await this.paymentLoggingRepository.createMany<IPaymentLogging>(
-      paymentsArray
-    );
+    // await this.paymentLoggingRepository.createMany<IPaymentLogging>(
+    //   paymentsArray
+    // );
   }
 
   async calculateCommision(
@@ -621,7 +622,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: {$eq: ['$$payment.captured', 'Success']},
+                  cond: {$eq: ['$$payment.status', 'Success']},
                 },
               },
               -1,
@@ -676,7 +677,7 @@ class CaseUtil {
             },
           },
           debtorDetails: {$first: '$debtorDetails'},
-          failedPayments: {
+          failedCaptures: {
             $sum: {
               $size: {
                 $filter: {
@@ -699,6 +700,17 @@ class CaseUtil {
             },
           },
           successfulPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.status', 'Success']},
+                },
+              },
+            },
+          },
+          successfulCaptures: {
             $sum: {
               $size: {
                 $filter: {
@@ -740,7 +752,8 @@ class CaseUtil {
             },
           },
           paymentCounts: {
-            failedPayments: '$failedPayments',
+            failedCaptures: '$failedCaptures',
+            successfulCaptures: '$successfulCaptures',
             failedAuthorizations: '$failedAuthorizations',
             successfulPayments: '$successfulPayments',
             successfulAuthorizations: '$successfulAuthorizations',
@@ -972,7 +985,7 @@ class CaseUtil {
                 $filter: {
                   input: '$payments',
                   as: 'payment',
-                  cond: {$eq: ['$$payment.captured', 'Success']},
+                  cond: {$eq: ['$$payment.status', 'Success']},
                 },
               },
               -1,
@@ -1027,7 +1040,7 @@ class CaseUtil {
             },
           },
           creditorDetails: {$first: '$creditorDetails'},
-          failedPayments: {
+          failedCaptures: {
             $sum: {
               $size: {
                 $filter: {
@@ -1050,6 +1063,17 @@ class CaseUtil {
             },
           },
           successfulPayments: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: '$payments',
+                  as: 'payment',
+                  cond: {$eq: ['$$payment.status', 'Success']},
+                },
+              },
+            },
+          },
+          successfulCaptures: {
             $sum: {
               $size: {
                 $filter: {
@@ -1088,9 +1112,10 @@ class CaseUtil {
             },
           },
           paymentCounts: {
-            failedPayments: '$failedPayments',
+            failedCaptures: '$failedCaptures',
             failedAuthorizations: '$failedAuthorizations',
             successfulPayments: '$successfulPayments',
+            successfulCaptures: '$successfulCaptures',
             successfulAuthorizations: '$successfulAuthorizations',
           },
         },
@@ -2415,6 +2440,7 @@ class CaseUtil {
       // }
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
+        await paynoteUtil.createCustomer(creditor);
       }
       if (getCreditor) {
         body.updatedAt = commonUtil.getCurrentDate();

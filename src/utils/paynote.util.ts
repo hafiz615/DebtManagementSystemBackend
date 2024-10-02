@@ -1,3 +1,4 @@
+import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
 import {ICreditor} from '../database/interfaces/creditor.interface';
 import {IPayment} from '../database/interfaces/payment.interface';
 import axiosInstance from './axiosInstanceInterceptor';
@@ -5,11 +6,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 class PaynoteUtil {
+  private creditorRepository: CreditorRepository;
+  constructor() {
+    this.creditorRepository = new CreditorRepository();
+  }
   async createCustomer(creditor: ICreditor) {
     const creditorNames = creditor.basicInformation.fullName.split(' ');
     let lastName = '';
     if (!creditorNames[1]) {
       lastName = creditorNames[0];
+    } else {
+      lastName = creditorNames.slice(1).join(' ');
     }
     const apiUrl = `${process.env.paynoteSandboxUrl}/user`;
     var data = {
@@ -27,9 +34,14 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
+      if (response.data?.success) {
+        this.creditorRepository.updateById<ICreditor>(creditor._id, {
+          paynoteUserId: response.data?.user?.user_id,
+        });
+      }
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
@@ -47,7 +59,7 @@ class PaynoteUtil {
       });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
@@ -76,18 +88,19 @@ class PaynoteUtil {
       });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
   async sendPayment(payment: any) {
     const apiUrl = `${process.env.paynoteSandboxUrl}/check/send`;
     const creditor = payment.caseId.creditor;
+    console.log(payment.caseId.creditor.paynoteUserId);
     var data = {
-      recipient: creditor.paynoteSourceId,
-      name: creditor.basicInformation.fullName,
+      recipient: payment.caseId?.creditor?.paynoteUserId,
+      name: creditor.basicInformation?.fullName,
       amount: payment.amount,
-      description: 'Sending payment to creditor',
+      description: `Sending payment to creditor for ${payment.caseId.caseCode}`,
     };
     console.log('I am in sendPayment');
     console.log('URL: ', apiUrl);
@@ -101,7 +114,7 @@ class PaynoteUtil {
       });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
@@ -119,7 +132,7 @@ class PaynoteUtil {
       });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
@@ -136,9 +149,11 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
+      console.log(response, 'popopop');
       return response.data;
     } catch (error) {
-      return error.message;
+      console.log(error?.response?.data, 'okokokoko');
+      return error?.response?.data;
     }
   }
 
@@ -158,9 +173,10 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
+      console.log(response.data);
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
@@ -183,7 +199,7 @@ class PaynoteUtil {
       });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 

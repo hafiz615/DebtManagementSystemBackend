@@ -494,7 +494,7 @@ class DebtorService {
     }
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
@@ -521,19 +521,19 @@ class DebtorService {
       );
     }
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -573,12 +573,12 @@ class DebtorService {
     }
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
-    const paymentLogging = new PaymentLogging();
+    // const paymentLogging = new PaymentLogging();
     const updateObjPayment = {};
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
-      updateObjPayment['status'] = 'Success';
+      // updateObjPayment['status'] = 'Success';
       if (payment.caseId.debtor.paymentType === 'ck') {
         updateObjPayment['debtorTransId'] = transactionId;
       }
@@ -602,19 +602,19 @@ class DebtorService {
       );
     }
     if (Object.keys(updateObjPayment).length) {
-      const newPayment = new PaymentLogging();
-      const populatedPayment = DataCopier.copy(newPayment, payment);
-      const verifiedPayment = DataCopier.copy(
-        populatedPayment,
-        updateObjPayment
-      );
+      // const newPayment = new PaymentLogging();
+      // const populatedPayment = DataCopier.copy(newPayment, payment);
+      // const verifiedPayment = DataCopier.copy(
+      //   populatedPayment,
+      //   updateObjPayment
+      // );
       await this.paymentRepository.updateById<IPayment>(
         payment._id,
         updateObjPayment
       );
-      await this.paymentLoggingRepository.create<IPaymentLogging>(
-        verifiedPayment
-      );
+      // await this.paymentLoggingRepository.create<IPaymentLogging>(
+      //   verifiedPayment
+      // );
     }
     // paymentLogging.caseId = String(payment.caseId);
     // paymentLogging.createdAt = commonUtil.getCurrentDate();
@@ -960,6 +960,34 @@ class DebtorService {
       ];
     }
     return [true, constants.successAddMessage('Debtors')];
+  }
+
+  async addDebtorAccount(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const customerVaultResponse = await caseUtil.createVault(
+      req.body.paymentToken
+    );
+    if (!customerVaultResponse[0]) return customerVaultResponse;
+
+    await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
+      $push: {
+        accounts: {
+          $each: [
+            {
+              paymentType: req.body.paymentType,
+              customerVaultId: customerVaultResponse[1],
+            },
+          ],
+        },
+      },
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+    return [true, constants.successAddMessage('Debtor account details')];
   }
 }
 

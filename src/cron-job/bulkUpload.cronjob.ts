@@ -194,7 +194,7 @@ class BulkCronJob {
     });
   }
 
-  async getFolderId(url: string) {
+  private async getFolderId(url: string) {
     const match = url.match(/\/folders\/([a-zA-Z0-9-_]+)/);
     if (match && match[1]) {
       return match[1] as string;
@@ -202,7 +202,7 @@ class BulkCronJob {
     return '';
   }
 
-  async checkErrorAI(bulkUpload: IBulkUpload, checkError: any) {
+  private async checkErrorAI(bulkUpload: IBulkUpload, checkError: any) {
     if (
       typeof checkError === 'string' &&
       bulkUpload.status === 'Pending' &&
