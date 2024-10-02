@@ -459,7 +459,7 @@ class UserService {
             body: data,
         };
         const result = await client_1.default.request(request);
-        return [true, result[0].body];
+        return [true, []];
     }
     async verifySenderIdentity(req) {
         const url = req.body.url;
@@ -472,7 +472,7 @@ class UserService {
             method: 'GET',
         };
         const result = await client_1.default.request(request);
-        return [true, result[0].body];
+        return [true, []];
     }
     async getVerifySenders(req) {
         const request = {

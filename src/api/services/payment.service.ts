@@ -53,8 +53,8 @@ class PaymentService {
       finalFilters,
       page,
       limit
+      // days
     );
-    console.log(payments.length);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -67,7 +67,6 @@ class PaymentService {
       req.query.filters !== 'true' &&
       req.query.search !== 'true'
     ) {
-      console.log(finalFilters, 'filiiiiii');
       const count =
         await this.paymentRepository.getCount<IPayment>(finalFilters);
       counts[arrayName] = count;
@@ -187,11 +186,26 @@ class PaymentService {
     return filters;
   }
 
+  // async getDaysFilterUpcoming(days: number) {
+  //   if (days && (days === 3 || days === 5 || days === 7)) {
+  //     let currentDate = commonUtil.getCurrentDate();
+  //     const tillDate = new Date(
+  //       new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000
+  //     ).toUTCString();
+  //     return {
+  //       $gte: new Date(currentDate),
+  //       $lte: new Date(tillDate),
+  //     };
+  //   }
+  //   return {};
+  // }
+
   async getAllPayments(
     req: Request,
     filters: any,
     page: number,
     limit: number
+    // days: number
   ) {
     // let arrayName = String(req.query.arrayName);
     // const filters = {
@@ -266,12 +280,7 @@ class PaymentService {
     //     $lte: currentDate,
     //   };
     // }
-    console.log(page, 'page');
-    console.log(limit, 'limit');
-    console.log(String(req.query.arrayName), 'req.query.arrayName');
-    console.log(filters, 'filtererrrrr');
     if (String(req.query.arrayName) === 'default') {
-      console.log('heyyyyyy');
       const failedAuth = {...filters};
       failedAuth['authorized'] = 'Failed';
       const getFailedAuthPayments = await this.getAllPaymentsQuery(
@@ -293,8 +302,6 @@ class PaymentService {
         page,
         limit
       );
-      console.log(successAuth, 'lplplp');
-      console.log(getSuccessAuthPayments, 'getSuccessAuthPayments');
       const successCapture = {...filters};
       successCapture['captured'] = 'Success';
       const getSuccessCapturePayments = await this.getAllPaymentsQuery(
@@ -302,6 +309,7 @@ class PaymentService {
         page,
         limit
       );
+      console.log(successCapture);
 
       const upcoming = {...filters};
       upcoming['status'] = 'Upcoming';
@@ -310,6 +318,9 @@ class PaymentService {
         page,
         limit
       );
+      // const upcomingDateFilter = await this.getDaysFilterUpcoming(days);
+      // upcoming['dueDate'] = upcomingDateFilter;
+      // console.log(upcoming, 'upcoming');
 
       const successPayments = {...filters};
       upcoming['status'] = 'Success';
@@ -365,7 +376,6 @@ class PaymentService {
   }
 
   async getCountForAllPaymentsStatus(filters: any) {
-    console.log(filters, 'filetrssssss');
     const failedAuth = {...filters};
     failedAuth['authorized'] = 'Failed';
     const failedCapture = {...filters};
@@ -378,7 +388,6 @@ class PaymentService {
     upcoming['status'] = 'Upcoming';
     const successPaynote = {...filters};
     successPaynote['status'] = 'Success';
-    console.log(failedAuth, 'failedAuthhh');
     const successAuthorizations =
       await this.paymentRepository.getCount<IPayment>(successAuth);
     const failedCaptures =
@@ -391,11 +400,6 @@ class PaymentService {
       await this.paymentRepository.getCount<IPayment>(upcoming);
     const successPayments =
       await this.paymentRepository.getCount<IPayment>(successPaynote);
-
-    console.log(successAuthorizations, 'cpunttttt');
-
-    // const result = await this.paymentRepository.applyAggregate(pipeline as any);
-    // console.log(result[0], 'okokoko');
     return {
       failedAuthorizations: failedAuthorizations,
       successPayments: successPayments,
@@ -611,7 +615,6 @@ class PaymentService {
       paymentObj,
       creditor.paynoteUserId
     );
-    console.log(fundingSource);
     if (fundingSource?.error) {
       let message = '';
       if (fundingSource?.messages) {
@@ -663,7 +666,6 @@ class PaymentService {
       if (paynoteCustomer.user.status === 'unverified')
         return [false, 'User is unverified for payments'];
       const paymentResult = await paynoteUtil.sendPayment(payment);
-      console.log(paymentResult);
       if (paymentResult.error) {
         let message = '';
         if (paymentResult?.messages) {
@@ -671,7 +673,6 @@ class PaymentService {
         } else {
           message = paymentResult.message;
         }
-        console.log(message, 'message');
         const retry = payment.retriesAuth + 1;
         const value = interval.value * retry;
         const retryDate = this.getRetryDate(

@@ -41,8 +41,9 @@ class PaymentService {
         let page = populatedFiltersResult.page;
         let limit = populatedFiltersResult.limit;
         const finalFilters = populatedFiltersResult.filters;
-        const payments = await this.getAllPayments(req, finalFilters, page, limit);
-        console.log(payments.length);
+        const payments = await this.getAllPayments(req, finalFilters, page, limit
+        // days
+        );
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -50,7 +51,6 @@ class PaymentService {
         if (arrayName !== 'default' &&
             req.query.filters !== 'true' &&
             req.query.search !== 'true') {
-            console.log(finalFilters, 'filiiiiii');
             const count = await this.paymentRepository.getCount(finalFilters);
             counts[arrayName] = count;
         }
@@ -156,7 +156,22 @@ class PaymentService {
         }
         return filters;
     }
-    async getAllPayments(req, filters, page, limit) {
+    // async getDaysFilterUpcoming(days: number) {
+    //   if (days && (days === 3 || days === 5 || days === 7)) {
+    //     let currentDate = commonUtil.getCurrentDate();
+    //     const tillDate = new Date(
+    //       new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000
+    //     ).toUTCString();
+    //     return {
+    //       $gte: new Date(currentDate),
+    //       $lte: new Date(tillDate),
+    //     };
+    //   }
+    //   return {};
+    // }
+    async getAllPayments(req, filters, page, limit
+    // days: number
+    ) {
         // let arrayName = String(req.query.arrayName);
         // const filters = {
         //   caseId: {$ne: null},
@@ -230,12 +245,7 @@ class PaymentService {
         //     $lte: currentDate,
         //   };
         // }
-        console.log(page, 'page');
-        console.log(limit, 'limit');
-        console.log(String(req.query.arrayName), 'req.query.arrayName');
-        console.log(filters, 'filtererrrrr');
         if (String(req.query.arrayName) === 'default') {
-            console.log('heyyyyyy');
             const failedAuth = { ...filters };
             failedAuth['authorized'] = 'Failed';
             const getFailedAuthPayments = await this.getAllPaymentsQuery(failedAuth, page, limit);
@@ -245,14 +255,16 @@ class PaymentService {
             const successAuth = { ...filters };
             successAuth['authorized'] = 'Success';
             const getSuccessAuthPayments = await this.getAllPaymentsQuery(successAuth, page, limit);
-            console.log(successAuth, 'lplplp');
-            console.log(getSuccessAuthPayments, 'getSuccessAuthPayments');
             const successCapture = { ...filters };
             successCapture['captured'] = 'Success';
             const getSuccessCapturePayments = await this.getAllPaymentsQuery(successCapture, page, limit);
+            console.log(successCapture);
             const upcoming = { ...filters };
             upcoming['status'] = 'Upcoming';
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
+            // const upcomingDateFilter = await this.getDaysFilterUpcoming(days);
+            // upcoming['dueDate'] = upcomingDateFilter;
+            // console.log(upcoming, 'upcoming');
             const successPayments = { ...filters };
             upcoming['status'] = 'Success';
             const getSuccessPayments = await this.getAllPaymentsQuery(successPayments, page, limit);
@@ -289,7 +301,6 @@ class PaymentService {
         }, undefined, page, limit);
     }
     async getCountForAllPaymentsStatus(filters) {
-        console.log(filters, 'filetrssssss');
         const failedAuth = { ...filters };
         failedAuth['authorized'] = 'Failed';
         const failedCapture = { ...filters };
@@ -302,16 +313,12 @@ class PaymentService {
         upcoming['status'] = 'Upcoming';
         const successPaynote = { ...filters };
         successPaynote['status'] = 'Success';
-        console.log(failedAuth, 'failedAuthhh');
         const successAuthorizations = await this.paymentRepository.getCount(successAuth);
         const failedCaptures = await this.paymentRepository.getCount(failedCapture);
         const failedAuthorizations = await this.paymentRepository.getCount(failedAuth);
         const successCaptures = await this.paymentRepository.getCount(successCapture);
         const upcomingPayments = await this.paymentRepository.getCount(upcoming);
         const successPayments = await this.paymentRepository.getCount(successPaynote);
-        console.log(successAuthorizations, 'cpunttttt');
-        // const result = await this.paymentRepository.applyAggregate(pipeline as any);
-        // console.log(result[0], 'okokoko');
         return {
             failedAuthorizations: failedAuthorizations,
             successPayments: successPayments,
@@ -483,7 +490,6 @@ class PaymentService {
         if (!creditor.paynoteUserId)
             return [false, 'User is not added in paynote!'];
         const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);
-        console.log(fundingSource);
         if (fundingSource?.error) {
             let message = '';
             if (fundingSource?.messages) {
@@ -523,7 +529,6 @@ class PaymentService {
             if (paynoteCustomer.user.status === 'unverified')
                 return [false, 'User is unverified for payments'];
             const paymentResult = await paynote_util_1.default.sendPayment(payment);
-            console.log(paymentResult);
             if (paymentResult.error) {
                 let message = '';
                 if (paymentResult?.messages) {
@@ -532,7 +537,6 @@ class PaymentService {
                 else {
                     message = paymentResult.message;
                 }
-                console.log(message, 'message');
                 const retry = payment.retriesAuth + 1;
                 const value = interval.value * retry;
                 const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);

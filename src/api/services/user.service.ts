@@ -517,7 +517,7 @@ class UserService {
     };
 
     const result = await client.request(request);
-    return [true, result[0].body];
+    return [true, []];
   }
 
   async verifySenderIdentity(req: Request) {
@@ -532,7 +532,7 @@ class UserService {
     };
 
     const result = await client.request(request);
-    return [true, result[0].body];
+    return [true, []];
   }
 
   async getVerifySenders(req: Request) {
