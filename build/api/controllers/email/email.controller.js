@@ -32,10 +32,14 @@ class EmailController {
         };
         this.sendGridEmail = async (req, res) => {
             try {
+                // String(parsedMail.from?.value[0].address),
+                // Array.isArray(parsedMail.to)
+                //   ? parsedMail.to[0].text
+                //   : parsedMail.to?.text,
                 const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
                 // console.log(parseData.to, 'to');
                 // console.log(parseData.from, 'from');
-                // console.log(parseData.subject, 'subject');
+                console.log(parseData.subject, 'subject');
                 console.log(parseData.text, 'text');
                 // console.log(parseData.textAsHtml, 'textAsHtml');
                 // console.log(parseData.html, 'html');

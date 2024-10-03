@@ -105,6 +105,9 @@ const PaymentModel = new mongoose_1.Schema({
     isDeleted: {
         type: Boolean,
     },
+    logTrackingId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,
