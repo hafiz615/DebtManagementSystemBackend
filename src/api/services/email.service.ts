@@ -77,6 +77,9 @@ class EmailService {
       await this.domainVerifyRepository.getAllWithoutPagination<IDomainVerify>({
         isVerified: false,
       });
+    if (!links.length) {
+      return [false, constantsUtil.notFoundMessage('links')];
+    }
     return [true, links];
   }
 

@@ -62,6 +62,9 @@ class EmailService {
         const links = await this.domainVerifyRepository.getAllWithoutPagination({
             isVerified: false,
         });
+        if (!links.length) {
+            return [false, constants_util_1.default.notFoundMessage('links')];
+        }
         return [true, links];
     }
     async linkVerified(req) {
