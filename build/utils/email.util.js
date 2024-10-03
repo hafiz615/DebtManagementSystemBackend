@@ -432,6 +432,33 @@ class EmailUtil {
         await browser.close();
         return Buffer.from(pdfBuffer);
     }
+    async checkIfConfirmationEmail(subject, text) {
+        const confirmationKeywords = [
+            'forward',
+            'forwarding',
+            'confirmation',
+            'forwarding confirmation',
+            'automatically forward',
+            'forward mail',
+            'confirm request',
+            'click the link to confirm',
+        ];
+        const checkSubject = confirmationKeywords.some(keyword => subject.toLowerCase().includes(keyword));
+        const checkText = confirmationKeywords.some(keyword => text.toLowerCase().includes(keyword));
+        if (checkSubject || checkText)
+            return true;
+        return false;
+    }
+    async getConfirmationLinkFromEmailText(text) {
+        const linkRegex = /https:\/\/[^\s]+/g;
+        const links = text.match(linkRegex);
+        console.log(links, 'linksssss');
+        // Return the first match if found
+        if (links && links.length > 0) {
+            return links[0];
+        }
+        return null;
+    }
 }
 exports.default = new EmailUtil();
 //# sourceMappingURL=email.util.js.map

@@ -15,7 +15,6 @@ const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
-const email_util_1 = __importDefault(require("../../utils/email.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -544,10 +543,15 @@ class PaymentService {
                     rescheduled: retryDate,
                     failedReasonPaynote: message,
                 });
-                email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+                // emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
                 return [false, message];
             }
-            email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_payment',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
             await this.paymentRepository.updateById(payment._id, {
                 paynoteCheckId: paymentResult.check.check_id,
                 sendViaPaynote: 'Success',

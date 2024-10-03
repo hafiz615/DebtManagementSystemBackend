@@ -468,10 +468,20 @@ class CronJob {
                         retriesPaynote: retries,
                         failedReasonPaynote: message,
                     });
-                    email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+                    // emailUtil.sendEmailOrSmsByEvent(
+                    //   'failed_payment',
+                    //   '',
+                    //   payment._id,
+                    //   ''
+                    // );
                     continue;
                 }
-                email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+                // emailUtil.sendEmailOrSmsByEvent(
+                //   'successful_payment',
+                //   '',
+                //   payment._id,
+                //   ''
+                // );
                 await this.paymentRepository.updateById(payment._id, {
                     paynoteCheckId: paymentResult.check.check_id,
                     sendViaPaynote: 'Success',
