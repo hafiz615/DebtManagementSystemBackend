@@ -149,8 +149,8 @@ class PaymentService {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             filters['dueDate'] = {
-                $gte: startDate,
-                $lte: currentDate,
+                $gte: new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(currentDate).setUTCHours(0, 0, 0, 0)),
             };
         }
         return filters;
@@ -160,8 +160,8 @@ class PaymentService {
             let currentDate = common_util_1.default.getCurrentDate();
             const tillDate = new Date(new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000).toUTCString();
             return {
-                $gte: new Date(currentDate),
-                $lte: new Date(tillDate),
+                $gte: new Date(new Date(currentDate).setUTCHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(tillDate).setUTCHours(0, 0, 0, 0)),
             };
         }
         return {};
