@@ -1,5 +1,6 @@
 // models/Log.ts
 import {Schema, model} from 'mongoose';
+import commonUtil from '../../utils/common.util';
 
 const logSchema = new Schema({
   traceId: String,
@@ -11,6 +12,7 @@ const logSchema = new Schema({
   userId: String,
   url: String,
   method: String,
+  createdAt: {type: Date, default: commonUtil.getCurrentDate()},
 });
 
 const UpdateLog = model('UpdateLog', logSchema);

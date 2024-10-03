@@ -5,11 +5,17 @@ import emailUtil from '../../utils/email.util';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
 import {simpleParser} from 'mailparser';
+import {DomainVerifyRepository} from '../repository/domainVerify/domainVerify.repository';
+import {IDomainVerify} from '../../database/interfaces/domainVerify.interface';
+import {DomainVerify} from '../../database/repomodels/domainVerify.repomodel';
+import commonUtil from '../../utils/common.util';
 
 class EmailService {
   private caseRepository: CaseRepository;
+  private domainVerifyRepository: DomainVerifyRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
+    this.domainVerifyRepository = new DomainVerifyRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -41,13 +47,22 @@ class EmailService {
     console.log(parseData.text, 'text');
     const subject = parseData.subject;
     const text = parseData.text;
+    const from = parseData.from?.value[0].address;
     const checkIfConfirmationEmail = await emailUtil.checkIfConfirmationEmail(
       subject,
       text
     );
+    console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
     if (checkIfConfirmationEmail) {
       const link = await emailUtil.getConfirmationLinkFromEmailText(text);
+      console.log(link, 'link');
       if (link) {
+        const newDomainVerify = new DomainVerify();
+        newDomainVerify.link = link;
+        newDomainVerify.from = from;
+        await this.domainVerifyRepository.create<IDomainVerify>(
+          newDomainVerify as any
+        );
       }
     }
     // console.log(parseData.textAsHtml, 'textAsHtml');
@@ -55,6 +70,29 @@ class EmailService {
     // console.log(parseData.attachments, 'attachments');
     // console.log(parseData.date, 'date');
     // console.log(parseData.replyTo, 'replyTo');
+  }
+
+  async getAllLinks() {
+    const links =
+      await this.domainVerifyRepository.getAllWithoutPagination<IDomainVerify>({
+        isVerified: false,
+      });
+    return [true, links];
+  }
+
+  async linkVerified(req: Request): Promise<[boolean, IDomainVerify | string]> {
+    const verified =
+      await this.domainVerifyRepository.updateByOne<IDomainVerify>(
+        {_id: req.params.id},
+        {
+          isVerified: true,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
+      );
+    if (!verified) {
+      return [false, constantsUtil.failureDeleteMessage('link')];
+    }
+    return [true, ''];
   }
 }
 

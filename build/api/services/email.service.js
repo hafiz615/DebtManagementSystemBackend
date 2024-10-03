@@ -7,9 +7,13 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const mailparser_1 = require("mailparser");
+const domainVerify_repository_1 = require("../repository/domainVerify/domainVerify.repository");
+const domainVerify_repomodel_1 = require("../../database/repomodels/domainVerify.repomodel");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 class EmailService {
     constructor() {
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
     }
     async sendSmsEmailDebtorCreditor(req) {
         const reqTemp = req;
@@ -35,10 +39,17 @@ class EmailService {
         console.log(parseData.text, 'text');
         const subject = parseData.subject;
         const text = parseData.text;
+        const from = parseData.from?.value[0].address;
         const checkIfConfirmationEmail = await email_util_1.default.checkIfConfirmationEmail(subject, text);
+        console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
         if (checkIfConfirmationEmail) {
             const link = await email_util_1.default.getConfirmationLinkFromEmailText(text);
+            console.log(link, 'link');
             if (link) {
+                const newDomainVerify = new domainVerify_repomodel_1.DomainVerify();
+                newDomainVerify.link = link;
+                newDomainVerify.from = from;
+                await this.domainVerifyRepository.create(newDomainVerify);
             }
         }
         // console.log(parseData.textAsHtml, 'textAsHtml');
@@ -46,6 +57,22 @@ class EmailService {
         // console.log(parseData.attachments, 'attachments');
         // console.log(parseData.date, 'date');
         // console.log(parseData.replyTo, 'replyTo');
+    }
+    async getAllLinks() {
+        const links = await this.domainVerifyRepository.getAllWithoutPagination({
+            isVerified: false,
+        });
+        return [true, links];
+    }
+    async linkVerified(req) {
+        const verified = await this.domainVerifyRepository.updateByOne({ _id: req.params.id }, {
+            isVerified: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        if (!verified) {
+            return [false, constants_util_1.default.failureDeleteMessage('link')];
+        }
+        return [true, ''];
     }
 }
 exports.default = EmailService;

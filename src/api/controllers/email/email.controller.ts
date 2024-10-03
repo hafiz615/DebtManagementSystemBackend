@@ -36,25 +36,53 @@ class EmailController {
 
   sendGridEmail = async (req: Request, res: Response) => {
     try {
-      // String(parsedMail.from?.value[0].address),
-      // Array.isArray(parsedMail.to)
-      //   ? parsedMail.to[0].text
-      //   : parsedMail.to?.text,
-      const parseData = await simpleParser(req.body.email);
-      // console.log(parseData.to, 'to');
-      // console.log(parseData.from, 'from');
-      console.log(parseData.subject, 'subject');
-      console.log(parseData.text, 'text');
-      // console.log(parseData.textAsHtml, 'textAsHtml');
-      // console.log(parseData.html, 'html');
-      // console.log(parseData.attachments, 'attachments');
-      // console.log(parseData.date, 'date');
-      // console.log(parseData.replyTo, 'replyTo');
+      await this.emailService.sendGridEmail(req);
       return res.status(200).send('ok');
     } catch (error: any) {
       console.log(error);
       return res
         .status(constants.CODE.OK)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getAllLinks = async (req: Request, res: Response) => {
+    try {
+      const response = await this.emailService.getAllLinks();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Domain verification links'),
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  linkVerified = async (req: Request, res: Response) => {
+    try {
+      const response = await this.emailService.linkVerified(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: constants.successDeleteMessage('Link'),
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
