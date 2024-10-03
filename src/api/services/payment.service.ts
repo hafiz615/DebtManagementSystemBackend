@@ -658,6 +658,9 @@ class PaymentService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
+    if (!payment.caseId?.creditor?.paynoteSourceId) {
+      return [false, 'Account not added for user'];
+    }
     if (payment.status === 'Success') {
       return [false, 'Payment already send'];
     }
