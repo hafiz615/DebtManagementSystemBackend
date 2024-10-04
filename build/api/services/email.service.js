@@ -10,6 +10,7 @@ const mailparser_1 = require("mailparser");
 const domainVerify_repository_1 = require("../repository/domainVerify/domainVerify.repository");
 const domainVerify_repomodel_1 = require("../../database/repomodels/domainVerify.repomodel");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
+const case_util_1 = __importDefault(require("../../utils/case.util"));
 class EmailService {
     constructor() {
         this.extractCaseId = (header) => {
@@ -33,20 +34,25 @@ class EmailService {
     }
     async sendGridEmail(req) {
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
-        console.log(parseData.subject, 'subject');
-        console.log(parseData.text, 'text');
         const subject = parseData.subject;
         const text = parseData.text;
         const from = parseData.from?.value[0].address;
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
-        console.log(parseData.textAsHtml, 'textAsHtmlhahahah');
-        console.log(parseData.html, 'htmlhahahha');
-        console.log(parseData.headers, 'heardersssss');
         const referencesHeader = parseData.headers.get('references');
-        console.log(referencesHeader, 'referencesHeader');
         console.log(this.extractCaseId(referencesHeader.toString()), 'this.extractCaseId(referencesHeader.toString())');
+        const caseId = this.extractCaseId(referencesHeader.toString());
+        if (caseId) {
+            await case_util_1.default.addInHistory({
+                From: from,
+                To: to,
+                Content: parseData.textAsHtml,
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'EMAIL',
+                Subject: subject,
+            }, caseId);
+        }
         const checkIfConfirmationEmail = await email_util_1.default.checkIfConfirmationEmail(subject, text);
         console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
         if (checkIfConfirmationEmail) {

@@ -9,6 +9,7 @@ import {DomainVerifyRepository} from '../repository/domainVerify/domainVerify.re
 import {IDomainVerify} from '../../database/interfaces/domainVerify.interface';
 import {DomainVerify} from '../../database/repomodels/domainVerify.repomodel';
 import commonUtil from '../../utils/common.util';
+import caseUtil from '../../utils/case.util';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -37,23 +38,31 @@ class EmailService {
 
   async sendGridEmail(req: Request) {
     const parseData = await simpleParser(req.body.email);
-    console.log(parseData.subject, 'subject');
-    console.log(parseData.text, 'text');
     const subject = parseData.subject;
     const text = parseData.text;
     const from = parseData.from?.value[0].address;
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
-    console.log(parseData.textAsHtml, 'textAsHtmlhahahah');
-    console.log(parseData.html, 'htmlhahahha');
-    console.log(parseData.headers, 'heardersssss');
     const referencesHeader = parseData.headers.get('references');
-    console.log(referencesHeader, 'referencesHeader');
     console.log(
       this.extractCaseId(referencesHeader.toString()),
       'this.extractCaseId(referencesHeader.toString())'
     );
+    const caseId = this.extractCaseId(referencesHeader.toString());
+    if (caseId) {
+      await caseUtil.addInHistory(
+        {
+          From: from,
+          To: to,
+          Content: parseData.textAsHtml,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'EMAIL',
+          Subject: subject,
+        },
+        caseId
+      );
+    }
     const checkIfConfirmationEmail = await emailUtil.checkIfConfirmationEmail(
       subject,
       text
