@@ -14,6 +14,12 @@ const domainVerifyModel: Schema = new Schema({
   isVerified: {
     type: Boolean,
   },
+  subject: {
+    type: String,
+  },
+  text: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

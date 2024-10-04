@@ -36,18 +36,20 @@ class EmailService {
   }
 
   async sendGridEmail(req: Request) {
-    // String(parsedMail.from?.value[0].address),
-    // Array.isArray(parsedMail.to)
-    //   ? parsedMail.to[0].text
-    //   : parsedMail.to?.text,
     const parseData = await simpleParser(req.body.email);
-    // console.log(parseData.to, 'to');
-    // console.log(parseData.from, 'from');
     console.log(parseData.subject, 'subject');
     console.log(parseData.text, 'text');
     const subject = parseData.subject;
     const text = parseData.text;
     const from = parseData.from?.value[0].address;
+    const to = Array.isArray(parseData.to)
+      ? parseData.to[0].text
+      : parseData.to?.text;
+    console.log(parseData.textAsHtml, 'textAsHtmlhahahah');
+    console.log(parseData.html, 'htmlhahahha');
+    console.log(parseData.headers, 'heardersssss');
+    const caseId = parseData.headers['caseId'];
+    console.log(caseId, 'caseIdddddddddd');
     const checkIfConfirmationEmail = await emailUtil.checkIfConfirmationEmail(
       subject,
       text
@@ -60,16 +62,15 @@ class EmailService {
         const newDomainVerify = new DomainVerify();
         newDomainVerify.link = link;
         newDomainVerify.from = from;
+        newDomainVerify.subject = subject;
+        newDomainVerify.text = text;
         await this.domainVerifyRepository.create<IDomainVerify>(
           newDomainVerify as any
         );
       }
+      return true;
     }
-    // console.log(parseData.textAsHtml, 'textAsHtml');
-    // console.log(parseData.html, 'html');
-    // console.log(parseData.attachments, 'attachments');
-    // console.log(parseData.date, 'date');
-    // console.log(parseData.replyTo, 'replyTo');
+    return true;
   }
 
   async getAllLinks() {

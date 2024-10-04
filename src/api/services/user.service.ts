@@ -19,7 +19,8 @@ import emailUtil from '../../utils/email.util';
 import client from '@sendgrid/client';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import {compare} from 'bcryptjs';
-
+import dotenv from 'dotenv';
+dotenv.config();
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
@@ -542,6 +543,7 @@ class UserService {
     };
 
     const result: any = await client.request(request);
+    console.log(result[0].body.results, 'result[0].body.results');
     let emails = [];
     if (result[0]?.body?.results?.length) {
       emails = result[0].body.results.map(temp => {

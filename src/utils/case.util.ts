@@ -39,6 +39,7 @@ import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
 import {JustificationRepository} from '../api/repository/justification/justification.repository';
 import {IJustification} from '../database/interfaces/justification.interface';
 import paynoteUtil from './paynote.util';
+import {nanoid} from 'nanoid';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -87,6 +88,7 @@ class CaseUtil {
     // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
+    newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
     // newDebtor.createdBy = reqTemp.id;
     // if (!data?.basicInformation?.weeklyBudget)
     //   data.basicInformation.weeklyBudget = 1;

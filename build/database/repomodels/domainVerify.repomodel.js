@@ -10,6 +10,8 @@ class DomainVerify {
         this.link = '';
         this.isVerified = false;
         this.from = '';
+        this.subject = '';
+        this.text = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

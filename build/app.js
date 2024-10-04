@@ -56,6 +56,13 @@ class App {
         //     });
         // }
         // await bulkUploadCronjob.testBulkCron();
+        // const debtorRepo = new DebtorRepository();
+        // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
+        // for (const debtor of getAll) {
+        //   await debtorRepo.updateById(debtor._id, {
+        //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
+        //   });
+        // }
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();

@@ -637,6 +637,9 @@ class CaseService {
         const { from, sendTo, subject, content, cc } = req.body;
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
         const caseId = req.params.id;
+        const caseTemp = await this.caseRepository.getById(caseId);
+        if (!caseTemp)
+            return [false, constants_util_1.default.notFoundMessage('case')];
         const time = new Date(common_util_1.default.getCurrentDate());
         await case_util_1.default.addInHistory({
             From: from,
@@ -644,8 +647,9 @@ class CaseService {
             Content: content,
             Time: time,
             Action: 'EMAIL',
+            Subject: subject,
         }, caseId);
-        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer);
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId);
     }
     async caseHistory(req) {
         const findCase = await this.caseRepository.getById(req.params.id);

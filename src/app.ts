@@ -13,6 +13,9 @@ import bulkUploadCronjob from './cron-job/bulkUpload.cronjob';
 import {CreditorRepository} from './api/repository/creditor/creditor.repository';
 import {ICreditor} from './database/interfaces/creditor.interface';
 import paynoteUtil from './utils/paynote.util';
+import {DebtorRepository} from './api/repository/debtor/debtor.repository';
+import {IDebtor} from './database/interfaces/debtor.interface';
+import {nanoid} from 'nanoid';
 
 class App {
   protected app: Application;
@@ -62,6 +65,13 @@ class App {
     //     });
     // }
     // await bulkUploadCronjob.testBulkCron();
+    // const debtorRepo = new DebtorRepository();
+    // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
+    // for (const debtor of getAll) {
+    //   await debtorRepo.updateById(debtor._id, {
+    //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
+    //   });
+    // }
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();

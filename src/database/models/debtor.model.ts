@@ -139,6 +139,9 @@ const debtorSchema: Schema = new Schema({
   weeklyBudgetUpdated: {
     type: Boolean,
   },
+  emailKey: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

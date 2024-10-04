@@ -41,6 +41,12 @@ const domainVerifyModel = new mongoose_1.Schema({
     isVerified: {
         type: Boolean,
     },
+    subject: {
+        type: String,
+    },
+    text: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

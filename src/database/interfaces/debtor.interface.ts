@@ -57,6 +57,7 @@ export interface IDebtor extends Document {
   commissionPaymentId: string;
   bulkUpload: boolean;
   weeklyBudgetUpdated: boolean;
+  emailKey: string;
   createdAt: string;
   updatedAt: string;
 }

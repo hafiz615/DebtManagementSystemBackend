@@ -18,6 +18,8 @@ const case_repository_1 = require("../repository/case/case.repository");
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
 const bcryptjs_1 = require("bcryptjs");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class UserService {
     constructor() {
         this.getAllUsers = async (req) => {
@@ -480,6 +482,7 @@ class UserService {
             method: 'GET',
         };
         const result = await client_1.default.request(request);
+        console.log(result[0].body.results, 'result[0].body.results');
         let emails = [];
         if (result[0]?.body?.results?.length) {
             emails = result[0].body.results.map(temp => {
