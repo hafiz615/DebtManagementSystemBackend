@@ -12,6 +12,10 @@ const domainVerify_repomodel_1 = require("../../database/repomodels/domainVerify
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 class EmailService {
     constructor() {
+        this.extractCaseId = (header) => {
+            const match = header && header.match(/caseId-([^@>]+)/);
+            return match ? match[1] : null;
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
     }
@@ -40,8 +44,9 @@ class EmailService {
         console.log(parseData.textAsHtml, 'textAsHtmlhahahah');
         console.log(parseData.html, 'htmlhahahha');
         console.log(parseData.headers, 'heardersssss');
-        const caseId = parseData.headers['caseId'];
-        console.log(caseId, 'caseIdddddddddd');
+        const referencesHeader = parseData.headers.get('references');
+        console.log(referencesHeader, 'referencesHeader');
+        console.log(this.extractCaseId(referencesHeader.toString()), 'this.extractCaseId(referencesHeader.toString())');
         const checkIfConfirmationEmail = await email_util_1.default.checkIfConfirmationEmail(subject, text);
         console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
         if (checkIfConfirmationEmail) {

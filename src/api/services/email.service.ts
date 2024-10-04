@@ -48,8 +48,12 @@ class EmailService {
     console.log(parseData.textAsHtml, 'textAsHtmlhahahah');
     console.log(parseData.html, 'htmlhahahha');
     console.log(parseData.headers, 'heardersssss');
-    const caseId = parseData.headers['caseId'];
-    console.log(caseId, 'caseIdddddddddd');
+    const referencesHeader = parseData.headers.get('references');
+    console.log(referencesHeader, 'referencesHeader');
+    console.log(
+      this.extractCaseId(referencesHeader.toString()),
+      'this.extractCaseId(referencesHeader.toString())'
+    );
     const checkIfConfirmationEmail = await emailUtil.checkIfConfirmationEmail(
       subject,
       text
@@ -72,6 +76,11 @@ class EmailService {
     }
     return true;
   }
+
+  extractCaseId = (header: string) => {
+    const match = header && header.match(/caseId-([^@>]+)/);
+    return match ? match[1] : null;
+  };
 
   async getAllLinks() {
     const links =

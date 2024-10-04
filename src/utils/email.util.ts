@@ -545,7 +545,7 @@ class EmailUtil {
         }
       );
       subject += ` ${caseTemp.debtor.emailKey}`;
-      headers['caseId'] = String(caseTemp._id);
+      headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
     }
     console.log(subject, 'subject');
     const msg = {
