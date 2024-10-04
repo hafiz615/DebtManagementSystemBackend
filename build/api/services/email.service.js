@@ -41,17 +41,19 @@ class EmailService {
             ? parseData.to[0].text
             : parseData.to?.text;
         const referencesHeader = parseData.headers.get('references');
-        console.log(this.extractCaseId(referencesHeader.toString()), 'this.extractCaseId(referencesHeader.toString())');
-        const caseId = this.extractCaseId(referencesHeader.toString());
-        if (caseId) {
-            await case_util_1.default.addInHistory({
-                From: from,
-                To: to,
-                Content: parseData.textAsHtml,
-                Time: new Date(common_util_1.default.getCurrentDate()),
-                Action: 'EMAIL',
-                Subject: subject,
-            }, caseId);
+        if (referencesHeader) {
+            const caseId = this.extractCaseId(referencesHeader.toString());
+            if (caseId) {
+                await case_util_1.default.addInHistory({
+                    From: from,
+                    To: to,
+                    Content: parseData.textAsHtml,
+                    Time: new Date(common_util_1.default.getCurrentDate()),
+                    Action: 'EMAIL',
+                    Subject: subject,
+                }, caseId);
+                return true;
+            }
         }
         const checkIfConfirmationEmail = await email_util_1.default.checkIfConfirmationEmail(subject, text);
         console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
