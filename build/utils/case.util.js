@@ -1688,7 +1688,7 @@ class CaseUtil {
         if (data.settlement_range) {
             data.settlement_range = await this.getSettlementRangeSummery(data.settlement_range);
         }
-        if (data.option_2_stats.settlement_range) {
+        if (data?.option_2_stats?.settlement_range) {
             data.option_2_stats.settlement_range =
                 await this.getSettlementRangeSummery(data.option_2_stats.settlement_range);
         }
@@ -1696,7 +1696,7 @@ class CaseUtil {
             data.percentage_settlement_over_weekly_true_revenue =
                 await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_true_revenue);
         }
-        if (data.option_2_stats.percentage_settlement_over_weekly_true_revenue) {
+        if (data?.option_2_stats?.percentage_settlement_over_weekly_true_revenue) {
             data.option_2_stats.percentage_settlement_over_weekly_true_revenue =
                 await this.getSettlementRangeSummery(data.option_2_stats.percentage_settlement_over_weekly_true_revenue);
         }
@@ -1704,7 +1704,7 @@ class CaseUtil {
             data.percentage_settlement_over_weekly_budget =
                 await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_budget);
         }
-        if (data.option_2_stats.percentage_settlement_over_weekly_budget) {
+        if (data?.option_2_stats?.percentage_settlement_over_weekly_budget) {
             data.option_2_stats.percentage_settlement_over_weekly_budget =
                 await this.getSettlementRangeSummery(data.option_2_stats.percentage_settlement_over_weekly_budget);
         }
@@ -1716,7 +1716,7 @@ class CaseUtil {
             const result = await this.getSummaryInverse(data.weeks_till_paid);
             data.weeks_till_paid.Summary = result;
         }
-        if (data.option_2_stats.weeks_till_paid) {
+        if (data?.option_2_stats?.weeks_till_paid) {
             data.option_2_stats.weeks_till_paid = await this.transformData(data.option_2_stats.weeks_till_paid);
             const result = await this.getSummaryInverse(data.option_2_stats.weeks_till_paid);
             data.option_2_stats.weeks_till_paid.Summary = result;
@@ -1726,7 +1726,7 @@ class CaseUtil {
             const result = await this.getSummaryInverse(data.commission_range);
             data.commission_range.Summary = result;
         }
-        if (data.option_2_stats.commission_range) {
+        if (data?.option_2_stats?.commission_range) {
             data.option_2_stats.commission_range = await this.transformData(data.option_2_stats.commission_range);
             const result = await this.getSummaryInverse(data.option_2_stats.commission_range);
             data.option_2_stats.commission_range.Summary = result;
