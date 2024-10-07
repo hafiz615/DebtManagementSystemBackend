@@ -16,4 +16,11 @@ router.post(
 ); // not in current use
 
 router.post('/sendGridParseEmail', upload.any(), emailController.sendGridEmail);
+router.get('/getAllLinks', authorize.validateAuth, emailController.getAllLinks);
+router.delete(
+  '/deleteLink/:id',
+  authorize.validateAuth,
+  emailController.linkVerified
+);
+
 export default router;

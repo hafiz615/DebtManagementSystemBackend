@@ -11,6 +11,7 @@ const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosIns
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
+const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -249,6 +250,28 @@ class CreditorService {
             await this.bulkUploadRepository.createMany(bulkUploads);
         }
         return [true, constants_util_1.default.successUpdateMessage('Creditors and cases')];
+    }
+    async createPaynoteCustomer(req) {
+        const creditor = await this.creditorRepository.getById(req.params.id);
+        if (!creditor)
+            return [false, constants_util_1.default.notFoundMessage('creditor')];
+        const result = await paynote_util_1.default.createCustomer(creditor);
+        console.log(result);
+        if (result.error) {
+            let message = '';
+            if (result?.messages) {
+                message = result.messages[0];
+            }
+            else {
+                message = result.message;
+            }
+            return [false, message];
+        }
+        if (result?.success)
+            await this.creditorRepository.updateById(creditor._id, {
+                paynoteUserId: result.user.user_id,
+            });
+        return [true, 'Customer added successfully'];
     }
 }
 exports.default = CreditorService;

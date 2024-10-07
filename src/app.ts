@@ -13,6 +13,9 @@ import bulkUploadCronjob from './cron-job/bulkUpload.cronjob';
 import {CreditorRepository} from './api/repository/creditor/creditor.repository';
 import {ICreditor} from './database/interfaces/creditor.interface';
 import paynoteUtil from './utils/paynote.util';
+import {DebtorRepository} from './api/repository/debtor/debtor.repository';
+import {IDebtor} from './database/interfaces/debtor.interface';
+import {nanoid} from 'nanoid';
 
 class App {
   protected app: Application;
@@ -52,16 +55,27 @@ class App {
     // const credR = new CreditorRepository();
     // const allCred = await credR.getAllWithoutPagination<ICreditor>();
     // for (const creditor of allCred) {
-    //   console.log(creditor);
-    //   if (creditor?.paynoteUserId) continue;
+    //   // if (creditor?.paynoteUserId) continue;
     //   if (!creditor.basicInformation?.fullName) continue;
     //   const result = await paynoteUtil.createCustomer(creditor);
+    //   console.log(result);
     //   if (result?.success)
     //     await credR.updateById(creditor._id, {
     //       paynoteUserId: result.user.user_id,
     //     });
+    //   // await credR.updateById(creditor._id, {
+    //   //   paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
+    //   //   paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
+    //   // });
     // }
     // await bulkUploadCronjob.testBulkCron();
+    // const debtorRepo = new DebtorRepository();
+    // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
+    // for (const debtor of getAll) {
+    //   await debtorRepo.updateById(debtor._id, {
+    //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
+    //   });
+    // }
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();

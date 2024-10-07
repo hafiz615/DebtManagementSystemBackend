@@ -274,7 +274,7 @@ class CronJob {
   async testPaynote() {
     const pendingPayments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {status: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+        {captured: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
         undefined,
         undefined,
         undefined,
@@ -288,7 +288,7 @@ class CronJob {
 
     const failedPayments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {status: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
+        {captured: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
         undefined,
         undefined,
         undefined,
@@ -722,11 +722,12 @@ class CronJob {
         payment.caseId.creditor.paynoteUserId &&
         payment.caseId.creditor.paynoteSourceId
       ) {
-        const paynoteCustomer = await paynoteUtil.getCustomer(
-          payment.caseId.creditor
-        );
-        if (paynoteCustomer.error) continue;
-        if (paynoteCustomer.user.status === 'unverified') continue;
+        // const paynoteCustomer = await paynoteUtil.getCustomer(
+        //   payment.caseId.creditor
+        // );
+        // console.log(paynoteCustomer);
+        // if (paynoteCustomer.error) continue;
+        // if (paynoteCustomer.user.status === 'unverified') continue;
         const paymentResult = await paynoteUtil.sendPayment(payment);
         console.log(paymentResult);
         if (paymentResult.error) {

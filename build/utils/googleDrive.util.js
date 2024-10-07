@@ -86,6 +86,7 @@ class GoogleDriveUtil {
         let caseTemp = {};
         const cases = [];
         for (const extractedData of data) {
+            basicInformation['fullName'] = '';
             basicInformation['email'] =
                 extractedData.creditor_info[`creditor's Email address`].toLowerCase();
             basicInformation['phone'] = extractedData.creditor_info[`creditor's Phone Number`]

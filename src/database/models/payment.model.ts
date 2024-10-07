@@ -78,6 +78,9 @@ const PaymentModel: Schema = new Schema({
   isDeleted: {
     type: Boolean,
   },
+  logTrackingId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

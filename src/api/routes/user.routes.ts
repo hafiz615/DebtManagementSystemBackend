@@ -50,11 +50,13 @@ router.post('/dashboard', authorize.validateAuth, userController.dashboard);
 router.post(
   '/addSenderIdentity',
   authorize.validateAuth,
+  userValidate.addSenderIdentity,
   userController.addSenderIdentity
 );
 router.post(
   '/verifySenderIdentity',
   authorize.validateAuth,
+  userValidate.verifySenderIdentity,
   userController.verifySenderIdentity
 );
 

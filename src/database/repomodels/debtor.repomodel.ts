@@ -50,6 +50,7 @@ export class Debtor {
   commissionPercentage = 20;
   bulkUpload = false;
   weeklyBudgetUpdated = false;
+  emailKey = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

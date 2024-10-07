@@ -468,6 +468,9 @@ class DebtorService {
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
+        if (payment.authorized === 'Success') {
+            return [false, 'Payment already authorized'];
+        }
         let response;
         if (payment.caseId.debtor.paymentType === 'cc') {
             response = await this.paymentService.authorizeCreditCard(payment.amount, payment.caseId.debtor.customerVaultId);
@@ -517,6 +520,9 @@ class DebtorService {
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }, { path: 'creditor' }] });
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
+        }
+        if (payment.captured === 'Success') {
+            return [false, 'Payment already captured'];
         }
         let response;
         if (payment.caseId.debtor.paymentType === 'cc') {

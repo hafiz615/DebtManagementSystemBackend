@@ -31,18 +31,19 @@ class PaymentService {
             caseId: { $ne: null },
             isDeleted: false,
         };
+        let upcomingFilter = {};
         if (days) {
             filters = await this.getDaysFilterPopulated(filters, days);
+            upcomingFilter = await this.getDaysFilterUpcoming(days);
         }
         if (arrayName === 'default') {
-            counts = await this.getCountForAllPaymentsStatus({ ...filters });
+            counts = await this.getCountForAllPaymentsStatus({ ...filters }, upcomingFilter);
         }
         const populatedFiltersResult = await this.populateFilterHomePayments({ ...filters }, req);
         let page = populatedFiltersResult.page;
         let limit = populatedFiltersResult.limit;
         const finalFilters = populatedFiltersResult.filters;
-        const payments = await this.getAllPayments(req, finalFilters, page, limit);
-        console.log(payments.length);
+        const payments = await this.getAllPayments(req, finalFilters, page, limit, upcomingFilter);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -50,7 +51,6 @@ class PaymentService {
         if (arrayName !== 'default' &&
             req.query.filters !== 'true' &&
             req.query.search !== 'true') {
-            console.log(finalFilters, 'filiiiiii');
             const count = await this.paymentRepository.getCount(finalFilters);
             counts[arrayName] = count;
         }
@@ -150,13 +150,24 @@ class PaymentService {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             filters['dueDate'] = {
-                $gte: startDate,
-                $lte: currentDate,
+                $gte: new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(currentDate).setUTCHours(0, 0, 0, 0)),
             };
         }
         return filters;
     }
-    async getAllPayments(req, filters, page, limit) {
+    async getDaysFilterUpcoming(days) {
+        if (days && (days === 3 || days === 5 || days === 7)) {
+            let currentDate = common_util_1.default.getCurrentDate();
+            const tillDate = new Date(new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000).toUTCString();
+            return {
+                $gte: new Date(new Date(currentDate).setUTCHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(tillDate).setUTCHours(0, 0, 0, 0)),
+            };
+        }
+        return {};
+    }
+    async getAllPayments(req, filters, page, limit, upcomingFilter) {
         // let arrayName = String(req.query.arrayName);
         // const filters = {
         //   caseId: {$ne: null},
@@ -230,12 +241,7 @@ class PaymentService {
         //     $lte: currentDate,
         //   };
         // }
-        console.log(page, 'page');
-        console.log(limit, 'limit');
-        console.log(String(req.query.arrayName), 'req.query.arrayName');
-        console.log(filters, 'filtererrrrr');
         if (String(req.query.arrayName) === 'default') {
-            console.log('heyyyyyy');
             const failedAuth = { ...filters };
             failedAuth['authorized'] = 'Failed';
             const getFailedAuthPayments = await this.getAllPaymentsQuery(failedAuth, page, limit);
@@ -245,16 +251,15 @@ class PaymentService {
             const successAuth = { ...filters };
             successAuth['authorized'] = 'Success';
             const getSuccessAuthPayments = await this.getAllPaymentsQuery(successAuth, page, limit);
-            console.log(successAuth, 'lplplp');
-            console.log(getSuccessAuthPayments, 'getSuccessAuthPayments');
             const successCapture = { ...filters };
             successCapture['captured'] = 'Success';
             const getSuccessCapturePayments = await this.getAllPaymentsQuery(successCapture, page, limit);
             const upcoming = { ...filters };
             upcoming['status'] = 'Upcoming';
+            upcoming['dueDate'] = upcomingFilter;
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
             const successPayments = { ...filters };
-            upcoming['status'] = 'Success';
+            successPayments['status'] = 'Success';
             const getSuccessPayments = await this.getAllPaymentsQuery(successPayments, page, limit);
             const mergedArray = [
                 ...getFailedAuthPayments,
@@ -288,8 +293,7 @@ class PaymentService {
             },
         }, undefined, page, limit);
     }
-    async getCountForAllPaymentsStatus(filters) {
-        console.log(filters, 'filetrssssss');
+    async getCountForAllPaymentsStatus(filters, upcomingFilter) {
         const failedAuth = { ...filters };
         failedAuth['authorized'] = 'Failed';
         const failedCapture = { ...filters };
@@ -300,18 +304,15 @@ class PaymentService {
         successCapture['captured'] = 'Success';
         const upcoming = { ...filters };
         upcoming['status'] = 'Upcoming';
+        upcoming['dueDate'] = upcomingFilter;
         const successPaynote = { ...filters };
         successPaynote['status'] = 'Success';
-        console.log(failedAuth, 'failedAuthhh');
         const successAuthorizations = await this.paymentRepository.getCount(successAuth);
         const failedCaptures = await this.paymentRepository.getCount(failedCapture);
         const failedAuthorizations = await this.paymentRepository.getCount(failedAuth);
         const successCaptures = await this.paymentRepository.getCount(successCapture);
         const upcomingPayments = await this.paymentRepository.getCount(upcoming);
         const successPayments = await this.paymentRepository.getCount(successPaynote);
-        console.log(successAuthorizations, 'cpunttttt');
-        // const result = await this.paymentRepository.applyAggregate(pipeline as any);
-        // console.log(result[0], 'okokoko');
         return {
             failedAuthorizations: failedAuthorizations,
             successPayments: successPayments,
@@ -483,7 +484,6 @@ class PaymentService {
         if (!creditor.paynoteUserId)
             return [false, 'User is not added in paynote!'];
         const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);
-        console.log(fundingSource);
         if (fundingSource?.error) {
             let message = '';
             if (fundingSource?.messages) {
@@ -517,13 +517,20 @@ class PaymentService {
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
+        if (!payment.caseId?.creditor?.paynoteSourceId) {
+            return [false, 'Account not added for user'];
+        }
+        if (payment.status === 'Success') {
+            return [false, 'Payment already send'];
+        }
         if (payment.caseId.creditor.paynoteUserId &&
             payment.caseId.creditor.paynoteSourceId) {
-            const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
-            if (paynoteCustomer.user.status === 'unverified')
-                return [false, 'User is unverified for payments'];
+            // const paynoteCustomer = await paynoteUtil.getCustomer(
+            //   payment.caseId.creditor
+            // );
+            // if (paynoteCustomer.user.status === 'unverified')
+            //   return [false, 'User is unverified for payments'];
             const paymentResult = await paynote_util_1.default.sendPayment(payment);
-            console.log(paymentResult);
             if (paymentResult.error) {
                 let message = '';
                 if (paymentResult?.messages) {
@@ -532,7 +539,6 @@ class PaymentService {
                 else {
                     message = paymentResult.message;
                 }
-                console.log(message, 'message');
                 const retry = payment.retriesAuth + 1;
                 const value = interval.value * retry;
                 const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);

@@ -39,6 +39,7 @@ import {ICaseHistory} from '../database/interfaces/caseHistory.interface';
 import {JustificationRepository} from '../api/repository/justification/justification.repository';
 import {IJustification} from '../database/interfaces/justification.interface';
 import paynoteUtil from './paynote.util';
+import {nanoid} from 'nanoid';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -87,6 +88,7 @@ class CaseUtil {
     // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
+    newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
     // newDebtor.createdBy = reqTemp.id;
     // if (!data?.basicInformation?.weeklyBudget)
     //   data.basicInformation.weeklyBudget = 1;
@@ -1934,16 +1936,34 @@ class CaseUtil {
         data.settlement_range
       );
     }
+    if (data?.option_2_stats?.settlement_range) {
+      data.option_2_stats.settlement_range =
+        await this.getSettlementRangeSummery(
+          data.option_2_stats.settlement_range
+        );
+    }
     if (data.percentage_settlement_over_weekly_true_revenue) {
       data.percentage_settlement_over_weekly_true_revenue =
         await this.getSettlementRangeSummery(
           data.percentage_settlement_over_weekly_true_revenue
         );
     }
+    if (data?.option_2_stats?.percentage_settlement_over_weekly_true_revenue) {
+      data.option_2_stats.percentage_settlement_over_weekly_true_revenue =
+        await this.getSettlementRangeSummery(
+          data.option_2_stats.percentage_settlement_over_weekly_true_revenue
+        );
+    }
     if (data.percentage_settlement_over_weekly_budget) {
       data.percentage_settlement_over_weekly_budget =
         await this.getSettlementRangeSummery(
           data.percentage_settlement_over_weekly_budget
+        );
+    }
+    if (data?.option_2_stats?.percentage_settlement_over_weekly_budget) {
+      data.option_2_stats.percentage_settlement_over_weekly_budget =
+        await this.getSettlementRangeSummery(
+          data.option_2_stats.percentage_settlement_over_weekly_budget
         );
     }
     if (data.new_default_risk_score) {
@@ -1955,17 +1975,29 @@ class CaseUtil {
       data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
       const result = await this.getSummaryInverse(data.weeks_till_paid);
       data.weeks_till_paid.Summary = result;
-      // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-      //   getSettlementRange.weeks_till_paid
-      // );
+    }
+    if (data?.option_2_stats?.weeks_till_paid) {
+      data.option_2_stats.weeks_till_paid = await this.transformData(
+        data.option_2_stats.weeks_till_paid
+      );
+      const result = await this.getSummaryInverse(
+        data.option_2_stats.weeks_till_paid
+      );
+      data.option_2_stats.weeks_till_paid.Summary = result;
     }
     if (data.commission_range) {
-      // data.commission_range = await this.getSettlementRangeSummery(
-      //   data.commission_range
-      // );
       data.commission_range = await this.transformData(data.commission_range);
       const result = await this.getSummaryInverse(data.commission_range);
       data.commission_range.Summary = result;
+    }
+    if (data?.option_2_stats?.commission_range) {
+      data.option_2_stats.commission_range = await this.transformData(
+        data.option_2_stats.commission_range
+      );
+      const result = await this.getSummaryInverse(
+        data.option_2_stats.commission_range
+      );
+      data.option_2_stats.commission_range.Summary = result;
     }
     if (data.weekly_budget) {
       const sum = await this.sumOfWeeklyBudgetValues(data.weekly_budget);
@@ -2217,47 +2249,6 @@ class CaseUtil {
       AIAuth.auth_token
     );
     getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-    // if (getSettlementRange.settlement_range) {
-    //   getSettlementRange.settlement_range =
-    //     await this.getSettlementRangeSummery(
-    //       getSettlementRange.settlement_range
-    //     );
-    // }
-    // if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
-    //   getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-    //     await this.getSettlementRangeSummery(
-    //       getSettlementRange.percentage_settlement_over_weekly_true_revenue
-    //     );
-    // }
-    // if (getSettlementRange.percentage_settlement_over_weekly_budget) {
-    //   getSettlementRange.percentage_settlement_over_weekly_budget =
-    //     await this.getSettlementRangeSummery(
-    //       getSettlementRange.percentage_settlement_over_weekly_budget
-    //     );
-    // }
-    // if (getSettlementRange.new_default_risk_score) {
-    //   getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
-    //     getSettlementRange.new_default_risk_score
-    //   );
-    // }
-    // if (getSettlementRange.weeks_till_paid) {
-    //   getSettlementRange.weeks_till_paid = await this.transformData(
-    //     getSettlementRange.weeks_till_paid
-    //   );
-    //   const result = await this.getSummaryWeeksTillPaid(
-    //     getSettlementRange.weeks_till_paid
-    //   );
-    //   getSettlementRange.weeks_till_paid.Summary = result;
-    //   // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-    //   //   getSettlementRange.weeks_till_paid
-    //   // );
-    // }
-    // if (getSettlementRange.commission_range) {
-    //   getSettlementRange.commission_range =
-    //     await this.getSettlementRangeSummery(
-    //       getSettlementRange.commission_range
-    //     );
-    // }
     if (typeof getSettlementRange !== 'string') {
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_one'},

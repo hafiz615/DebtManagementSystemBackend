@@ -923,6 +923,8 @@ class CaseService {
     const {from, sendTo, subject, content, cc} = req.body;
     const buffer = await emailUtil.generatePdfFromHtml(content);
     const caseId = req.params.id;
+    const caseTemp = await this.caseRepository.getById<ICase>(caseId);
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     const time = new Date(commonUtil.getCurrentDate());
     await caseUtil.addInHistory(
       {
@@ -931,6 +933,7 @@ class CaseService {
         Content: content,
         Time: time,
         Action: 'EMAIL',
+        Subject: subject,
       },
       caseId
     );
@@ -940,7 +943,8 @@ class CaseService {
       subject,
       content,
       cc,
-      buffer
+      buffer,
+      caseId
     );
   }
 

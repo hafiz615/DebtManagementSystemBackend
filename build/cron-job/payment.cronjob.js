@@ -161,13 +161,13 @@ class CronJob {
         }
     }
     async testPaynote() {
-        const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
+        const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
             path: 'caseId',
             select: ['_id', 'caseCode'],
             populate: ['creditor'],
         });
         await this.paynotePending(pendingPayments);
-        const failedPayments = await this.paymentRepository.getAllWithoutPagination({ status: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
+        const failedPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
             path: 'caseId',
             select: ['_id', 'caseCode'],
             populate: ['creditor'],
@@ -438,11 +438,12 @@ class CronJob {
         for (const payment of payments) {
             if (payment.caseId.creditor.paynoteUserId &&
                 payment.caseId.creditor.paynoteSourceId) {
-                const paynoteCustomer = await paynote_util_1.default.getCustomer(payment.caseId.creditor);
-                if (paynoteCustomer.error)
-                    continue;
-                if (paynoteCustomer.user.status === 'unverified')
-                    continue;
+                // const paynoteCustomer = await paynoteUtil.getCustomer(
+                //   payment.caseId.creditor
+                // );
+                // console.log(paynoteCustomer);
+                // if (paynoteCustomer.error) continue;
+                // if (paynoteCustomer.user.status === 'unverified') continue;
                 const paymentResult = await paynote_util_1.default.sendPayment(payment);
                 console.log(paymentResult);
                 if (paymentResult.error) {
