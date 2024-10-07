@@ -9,7 +9,7 @@ class PaymentUtil {
   constructor() {
     this.paymentRepository = new PaymentRepository();
   }
-  async getFilteredPayments(payments: any) {
+  async getFilteredPayments(payments: any, arrayName: string) {
     const transformedArray = payments.map(obj => ({
       id: String(obj._id),
       status: obj.status,
@@ -29,32 +29,99 @@ class PaymentUtil {
       caseId: obj.caseId._id ? String(obj.caseId._id) : '',
     }));
 
-    return this.getFilteredPaymentsObj(transformedArray);
+    return this.getFilteredPaymentsObj(transformedArray, arrayName);
   }
 
-  async getFilteredPaymentsObj(transformedArray: any) {
-    const failedPayments = transformedArray.filter(
-      payment => payment.captured === 'Failed'
-    );
-    const successPayments = transformedArray.filter(
-      payment => payment.captured === 'Success'
-    );
-    const failedAuthorizations = transformedArray.filter(
-      payment => payment.authorized === 'Failed'
-    );
-    const successAuthorizations = transformedArray.filter(
-      payment => payment.authorized === 'Success'
-    );
-    const upcomingPayments = transformedArray.filter(
-      payment => payment.status === 'Upcoming'
-    );
+  async getFilteredPaymentsObj(transformedArray: any, arrayName: string) {
+    let failedCaptures = [],
+      successCaptures = [],
+      successPayments = [],
+      failedAuthorizations = [],
+      successAuthorizations = [],
+      upcomingPayments = [];
+    switch (arrayName) {
+      case 'failedCaptures':
+        failedCaptures = transformedArray.filter(
+          payment => payment.captured === 'Failed'
+        );
+        break;
+      case 'successCaptures':
+        successCaptures = transformedArray.filter(
+          payment => payment.captured === 'Success'
+        );
+        break;
+      case 'successPayments':
+        successPayments = transformedArray.filter(
+          payment => payment.status === 'Success'
+        );
+        break;
+      case 'failedAuthorizations':
+        failedAuthorizations = transformedArray.filter(
+          payment => payment.authorized === 'Failed'
+        );
+        break;
+      case 'successAuthorizations':
+        successAuthorizations = transformedArray.filter(
+          payment => payment.authorized === 'Success'
+        );
+        break;
+      case 'upcomingPayments':
+        upcomingPayments = transformedArray.filter(
+          payment => payment.status === 'Upcoming'
+        );
+        break;
+      default:
+        for (const payment of transformedArray) {
+          switch (payment.captured) {
+            case 'Failed':
+              failedCaptures.push(payment);
+              break;
+            case 'Success':
+              successCaptures.push(payment);
+              break;
+          }
+
+          switch (payment.authorized) {
+            case 'Failed':
+              failedAuthorizations.push(payment);
+              break;
+            case 'Success':
+              successAuthorizations.push(payment);
+              break;
+          }
+          switch (payment.status) {
+            case 'Upcoming':
+              upcomingPayments.push(payment);
+              break;
+            case 'Success':
+              successPayments.push(payment);
+              break;
+          }
+        }
+    }
+    // const failedPayments = transformedArray.filter(
+    //   payment => payment.captured === 'Failed'
+    // );
+    // const successPayments = transformedArray.filter(
+    //   payment => payment.captured === 'Success'
+    // );
+    // const failedAuthorizations = transformedArray.filter(
+    //   payment => payment.authorized === 'Failed'
+    // );
+    // const successAuthorizations = transformedArray.filter(
+    //   payment => payment.authorized === 'Success'
+    // );
+    // const upcomingPayments = transformedArray.filter(
+    //   payment => payment.status === 'Upcoming'
+    // );
 
     return {
-      failedPayments: failedPayments,
+      failedCaptures: failedCaptures,
       successPayments: successPayments,
       failedAuthorizations: failedAuthorizations,
       successAuthorizations: successAuthorizations,
       upcomingPayments: upcomingPayments,
+      successCaptures: successCaptures,
     };
   }
 
@@ -384,25 +451,25 @@ class PaymentUtil {
     const applyFilters = (paymentObj: any, filters: any) => {
       if (
         filters.totalDebt &&
-        (paymentObj.totalDebt < filters.totalDebt.min ||
-          paymentObj.totalDebt > filters.totalDebt.max)
+        (paymentObj.totalDebt <= filters.totalDebt.min ||
+          paymentObj.totalDebt >= filters.totalDebt.max)
       ) {
         return false;
       }
-      if (
-        filters.dueDate &&
-        (new Date(paymentObj.dueDate) < new Date(filters.dueDate.start) ||
-          new Date(paymentObj.dueDate) > new Date(filters.dueDate.end))
-      ) {
-        return false;
-      }
-      if (
-        filters.tryDate &&
-        (new Date(paymentObj.tryDate) < new Date(filters.tryDate.start) ||
-          new Date(paymentObj.tryDate) > new Date(filters.tryDate.end))
-      ) {
-        return false;
-      }
+      // if (
+      //   filters.dueDate &&
+      //   (new Date(paymentObj.dueDate) < new Date(filters.dueDate.start) ||
+      //     new Date(paymentObj.dueDate) > new Date(filters.dueDate.end))
+      // ) {
+      //   return false;
+      // }
+      // if (
+      //   filters.tryDate &&
+      //   (new Date(paymentObj.tryDate) < new Date(filters.tryDate.start) ||
+      //     new Date(paymentObj.tryDate) > new Date(filters.tryDate.end))
+      // ) {
+      //   return false;
+      // }
       return true;
     };
     let text = '',

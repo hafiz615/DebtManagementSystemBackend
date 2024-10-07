@@ -20,10 +20,12 @@ class Payment {
         this.intervalId = '';
         this.failedReasonAuthorization = '';
         this.failedReasonCaptured = '';
+        this.failedReasonPaynote = '';
         this.rescheduled = '';
         this.debtorTransId = '';
         this.retriesAuth = 0;
         this.retriesCapture = 0;
+        this.retriesPaynote = 0;
         this.timePeriod = '';
         this.paymentReference = '';
         this.isDeleted = false;

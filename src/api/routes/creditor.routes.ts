@@ -36,4 +36,10 @@ router.put(
   creditorController.updateMultipleCreditors
 );
 
+router.post(
+  '/createPaynoteCustomer/:id',
+  authorize.validateAuth,
+  creditorController.createPaynoteCustomer
+);
+
 export default router;

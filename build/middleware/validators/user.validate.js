@@ -49,6 +49,37 @@ class UserRequests {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
+    async addSenderIdentity(req, res, next) {
+        const schema = joi_1.default.object({
+            from_email: joi_1.default.string().email().required(),
+            from_name: joi_1.default.string().required(),
+            address: joi_1.default.string().required(),
+            city: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async verifySenderIdentity(req, res, next) {
+        const schema = joi_1.default.object({
+            url: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
 }
 exports.default = new UserRequests();
 //# sourceMappingURL=user.validate.js.map

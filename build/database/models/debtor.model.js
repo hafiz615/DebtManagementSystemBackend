@@ -162,6 +162,9 @@ const debtorSchema = new mongoose_1.Schema({
     weeklyBudgetUpdated: {
         type: Boolean,
     },
+    emailKey: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

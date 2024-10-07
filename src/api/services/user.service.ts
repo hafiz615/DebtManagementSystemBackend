@@ -19,7 +19,8 @@ import emailUtil from '../../utils/email.util';
 import client from '@sendgrid/client';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import {compare} from 'bcryptjs';
-
+import dotenv from 'dotenv';
+dotenv.config();
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
@@ -366,10 +367,15 @@ class UserService {
           status: {$first: '$status'},
           successfulPayments: {
             $sum: {
+              $cond: [{$eq: ['$payments.status', 'Success']}, 1, 0],
+            },
+          },
+          successfulCaptures: {
+            $sum: {
               $cond: [{$eq: ['$payments.captured', 'Success']}, 1, 0],
             },
           },
-          failedPayments: {
+          failedCaptures: {
             $sum: {
               $cond: [{$eq: ['$payments.captured', 'Failed']}, 1, 0],
             },
@@ -387,7 +393,7 @@ class UserService {
           totalCapturedAmount: {
             $sum: {
               $cond: [
-                {$eq: ['$payments.captured', 'Success']},
+                {$eq: ['$payments.status', 'Success']},
                 '$payments.amount',
                 0,
               ],
@@ -420,20 +426,22 @@ class UserService {
               $group: {
                 _id: null,
                 totalSuccessfulPayments: {$sum: '$successfulPayments'},
-                totalFailedPayments: {$sum: '$failedPayments'},
+                totalFailedCaptures: {$sum: '$failedCaptures'},
                 totalSuccessfulAuthorizations: {
                   $sum: '$successfulAuthorizations',
                 },
                 totalFailedAuthorizations: {$sum: '$failedAuthorizations'},
+                totalSuccessfulCaptures: {$sum: '$successfulCaptures'},
               },
             },
             {
               $project: {
                 _id: 0,
                 totalSuccessfulPayments: 1,
-                totalFailedPayments: 1,
+                totalFailedCaptures: 1,
                 totalSuccessfulAuthorizations: 1,
                 totalFailedAuthorizations: 1,
+                totalSuccessfulCaptures: 1,
               },
             },
           ],
@@ -494,15 +502,15 @@ class UserService {
 
   async addSenderIdentity(req: Request) {
     const data = {
-      from_email: req.body.email,
-      reply_to: req.body.email,
-      from_name: req.body.name,
-      nickname: req.body.nickname,
+      from_email: req.body.from_email,
+      reply_to: req.body.from_email,
+      from_name: req.body.from_name,
       address: req.body.address,
       city: req.body.city,
-      country: req.body.country,
     };
-
+    data['country'] = 'USA';
+    data['nickname'] = `debtor-${new Date().getTime()}`;
+    console.log(data);
     const request: ClientRequest = {
       url: `/v3/verified_senders`,
       method: 'POST',
@@ -510,28 +518,22 @@ class UserService {
     };
 
     const result = await client.request(request);
-    console.log(result[0].statusCode);
-    console.log(result[0]);
-    return [true, result[0].body];
+    return [true, []];
   }
 
   async verifySenderIdentity(req: Request) {
     const url = req.body.url;
     const decodedUrl = decodeURIComponent(url);
-    console.log(decodedUrl);
     const splitArray = decodedUrl.split('?');
     const queryString = splitArray[splitArray.length - 1];
     const token = new URLSearchParams(queryString).get('token');
-    console.log(token);
     const request: ClientRequest = {
       url: `/v3/verified_senders/verify/${token}`,
       method: 'GET',
     };
 
     const result = await client.request(request);
-    console.log(result[0].statusCode);
-    console.log(result[0]);
-    return [true, result[0].body];
+    return [true, []];
   }
 
   async getVerifySenders(req: Request) {
@@ -541,6 +543,7 @@ class UserService {
     };
 
     const result: any = await client.request(request);
+    console.log(result[0].body.results, 'result[0].body.results');
     let emails = [];
     if (result[0]?.body?.results?.length) {
       emails = result[0].body.results.map(temp => {

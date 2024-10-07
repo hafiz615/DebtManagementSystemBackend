@@ -30,6 +30,8 @@ const form_data_1 = __importDefault(require("form-data"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
+const paynote_util_1 = __importDefault(require("./paynote.util"));
+const nanoid_1 = require("nanoid");
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -63,6 +65,7 @@ class CaseUtil {
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
         newDebtor.createdBy = createdBy;
+        newDebtor.emailKey = `[${(0, nanoid_1.nanoid)(10).toUpperCase().replace(/[_-]/g, '')}]`;
         // newDebtor.createdBy = reqTemp.id;
         // if (!data?.basicInformation?.weeklyBudget)
         //   data.basicInformation.weeklyBudget = 1;
@@ -105,7 +108,9 @@ class CaseUtil {
             }
         }
         await this.paymentRepository.createMany(paymentsArray);
-        await this.paymentLoggingRepository.createMany(paymentsArray);
+        // await this.paymentLoggingRepository.createMany<IPaymentLogging>(
+        //   paymentsArray
+        // );
     }
     async calculateCommision(interval, weeklyBudget) {
         switch (interval.timePeriod.toLowerCase()) {
@@ -528,7 +533,7 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
                                 },
                             },
                             -1,
@@ -583,7 +588,7 @@ class CaseUtil {
                         },
                     },
                     debtorDetails: { $first: '$debtorDetails' },
-                    failedPayments: {
+                    failedCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -606,6 +611,17 @@ class CaseUtil {
                         },
                     },
                     successfulPayments: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$payments',
+                                    as: 'payment',
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
+                                },
+                            },
+                        },
+                    },
+                    successfulCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -647,7 +663,8 @@ class CaseUtil {
                         },
                     },
                     paymentCounts: {
-                        failedPayments: '$failedPayments',
+                        failedCaptures: '$failedCaptures',
+                        successfulCaptures: '$successfulCaptures',
                         failedAuthorizations: '$failedAuthorizations',
                         successfulPayments: '$successfulPayments',
                         successfulAuthorizations: '$successfulAuthorizations',
@@ -834,7 +851,7 @@ class CaseUtil {
                                 $filter: {
                                     input: '$payments',
                                     as: 'payment',
-                                    cond: { $eq: ['$$payment.captured', 'Success'] },
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
                                 },
                             },
                             -1,
@@ -889,7 +906,7 @@ class CaseUtil {
                         },
                     },
                     creditorDetails: { $first: '$creditorDetails' },
-                    failedPayments: {
+                    failedCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -912,6 +929,17 @@ class CaseUtil {
                         },
                     },
                     successfulPayments: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: '$payments',
+                                    as: 'payment',
+                                    cond: { $eq: ['$$payment.status', 'Success'] },
+                                },
+                            },
+                        },
+                    },
+                    successfulCaptures: {
                         $sum: {
                             $size: {
                                 $filter: {
@@ -950,9 +978,10 @@ class CaseUtil {
                         },
                     },
                     paymentCounts: {
-                        failedPayments: '$failedPayments',
+                        failedCaptures: '$failedCaptures',
                         failedAuthorizations: '$failedAuthorizations',
                         successfulPayments: '$successfulPayments',
+                        successfulCaptures: '$successfulCaptures',
                         successfulAuthorizations: '$successfulAuthorizations',
                     },
                 },
@@ -1659,13 +1688,25 @@ class CaseUtil {
         if (data.settlement_range) {
             data.settlement_range = await this.getSettlementRangeSummery(data.settlement_range);
         }
+        if (data?.option_2_stats?.settlement_range) {
+            data.option_2_stats.settlement_range =
+                await this.getSettlementRangeSummery(data.option_2_stats.settlement_range);
+        }
         if (data.percentage_settlement_over_weekly_true_revenue) {
             data.percentage_settlement_over_weekly_true_revenue =
                 await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_true_revenue);
         }
+        if (data?.option_2_stats?.percentage_settlement_over_weekly_true_revenue) {
+            data.option_2_stats.percentage_settlement_over_weekly_true_revenue =
+                await this.getSettlementRangeSummery(data.option_2_stats.percentage_settlement_over_weekly_true_revenue);
+        }
         if (data.percentage_settlement_over_weekly_budget) {
             data.percentage_settlement_over_weekly_budget =
                 await this.getSettlementRangeSummery(data.percentage_settlement_over_weekly_budget);
+        }
+        if (data?.option_2_stats?.percentage_settlement_over_weekly_budget) {
+            data.option_2_stats.percentage_settlement_over_weekly_budget =
+                await this.getSettlementRangeSummery(data.option_2_stats.percentage_settlement_over_weekly_budget);
         }
         if (data.new_default_risk_score) {
             data.new_default_risk_score = await this.riskScoreMapping(data.new_default_risk_score);
@@ -1674,17 +1715,21 @@ class CaseUtil {
             data.weeks_till_paid = await this.transformData(data.weeks_till_paid);
             const result = await this.getSummaryInverse(data.weeks_till_paid);
             data.weeks_till_paid.Summary = result;
-            // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-            //   getSettlementRange.weeks_till_paid
-            // );
+        }
+        if (data?.option_2_stats?.weeks_till_paid) {
+            data.option_2_stats.weeks_till_paid = await this.transformData(data.option_2_stats.weeks_till_paid);
+            const result = await this.getSummaryInverse(data.option_2_stats.weeks_till_paid);
+            data.option_2_stats.weeks_till_paid.Summary = result;
         }
         if (data.commission_range) {
-            // data.commission_range = await this.getSettlementRangeSummery(
-            //   data.commission_range
-            // );
             data.commission_range = await this.transformData(data.commission_range);
             const result = await this.getSummaryInverse(data.commission_range);
             data.commission_range.Summary = result;
+        }
+        if (data?.option_2_stats?.commission_range) {
+            data.option_2_stats.commission_range = await this.transformData(data.option_2_stats.commission_range);
+            const result = await this.getSummaryInverse(data.option_2_stats.commission_range);
+            data.option_2_stats.commission_range.Summary = result;
         }
         if (data.weekly_budget) {
             const sum = await this.sumOfWeeklyBudgetValues(data.weekly_budget);
@@ -1879,47 +1924,6 @@ class CaseUtil {
         }
         let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
         getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-        // if (getSettlementRange.settlement_range) {
-        //   getSettlementRange.settlement_range =
-        //     await this.getSettlementRangeSummery(
-        //       getSettlementRange.settlement_range
-        //     );
-        // }
-        // if (getSettlementRange.percentage_settlement_over_weekly_true_revenue) {
-        //   getSettlementRange.percentage_settlement_over_weekly_true_revenue =
-        //     await this.getSettlementRangeSummery(
-        //       getSettlementRange.percentage_settlement_over_weekly_true_revenue
-        //     );
-        // }
-        // if (getSettlementRange.percentage_settlement_over_weekly_budget) {
-        //   getSettlementRange.percentage_settlement_over_weekly_budget =
-        //     await this.getSettlementRangeSummery(
-        //       getSettlementRange.percentage_settlement_over_weekly_budget
-        //     );
-        // }
-        // if (getSettlementRange.new_default_risk_score) {
-        //   getSettlementRange.new_default_risk_score = await this.riskScoreMapping(
-        //     getSettlementRange.new_default_risk_score
-        //   );
-        // }
-        // if (getSettlementRange.weeks_till_paid) {
-        //   getSettlementRange.weeks_till_paid = await this.transformData(
-        //     getSettlementRange.weeks_till_paid
-        //   );
-        //   const result = await this.getSummaryWeeksTillPaid(
-        //     getSettlementRange.weeks_till_paid
-        //   );
-        //   getSettlementRange.weeks_till_paid.Summary = result;
-        //   // getSettlementRange.weeks_till_paid = await this.getSettlementRangeSummery(
-        //   //   getSettlementRange.weeks_till_paid
-        //   // );
-        // }
-        // if (getSettlementRange.commission_range) {
-        //   getSettlementRange.commission_range =
-        //     await this.getSettlementRangeSummery(
-        //       getSettlementRange.commission_range
-        //     );
-        // }
         if (typeof getSettlementRange !== 'string') {
             this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
                 'data.settlementRange': getSettlementRange,
@@ -2072,6 +2076,7 @@ class CaseUtil {
             // }
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
+                await paynote_util_1.default.createCustomer(creditor);
             }
             if (getCreditor) {
                 body.updatedAt = common_util_1.default.getCurrentDate();

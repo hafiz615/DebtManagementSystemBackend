@@ -18,6 +18,7 @@ const twilio_1 = __importDefault(require("twilio"));
 const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
+const client_1 = __importDefault(require("@sendgrid/client"));
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -30,6 +31,7 @@ class EmailUtil {
         this.userRepository = new user_repository_1.UserRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
+        client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
     async sendInvitationLink(user, link) {
         const msg = {
@@ -104,6 +106,7 @@ class EmailUtil {
                                 Content: content,
                                 Time: time,
                                 Action: 'EMAIL',
+                                Subject: template.subject,
                             }, caseId);
                         }
                     }
@@ -163,7 +166,7 @@ class EmailUtil {
         const time = new Date(common_util_1.default.getCurrentDate());
         switch (type) {
             case 'email':
-                const result = await this.sendEmail(sendTo, from, subject, content);
+                const result = await this.sendEmail(sendTo, from, subject, content, [], null, caseId);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
                         From: from,
@@ -171,6 +174,7 @@ class EmailUtil {
                         Content: content,
                         Time: time,
                         Action: 'EMAIL',
+                        Subject: subject,
                     }, caseId);
                 }
                 return result;
@@ -372,13 +376,35 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, content, cc, buffer) {
+    async sendEmail(to, from, subject, content, cc, buffer, caseId) {
+        const checkIfDebtor = await this.getVerifySender(from);
+        console.log(checkIfDebtor);
+        let headers = {};
+        if (caseId && checkIfDebtor) {
+            const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
+                path: 'debtor',
+                select: [
+                    'businessInformation.companyName',
+                    'businessInformation.EIN',
+                ],
+            });
+            if (caseTemp.debtor?.businessInformation?.companyName)
+                subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+            if (caseTemp.debtor?.businessInformation?.EIN)
+                subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+            headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+        }
+        console.log(subject, 'subject');
         const msg = {
             to: to,
             from: from, // Use the email address or domain you verified above
             subject: subject,
             html: content,
         };
+        console.log(headers, 'heardersssss');
+        if (Object.keys(headers).length)
+            msg['headers'] = headers;
+        console.log(msg);
         if (cc?.length) {
             msg['cc'] = cc;
         }
@@ -431,6 +457,46 @@ class EmailUtil {
         });
         await browser.close();
         return Buffer.from(pdfBuffer);
+    }
+    async checkIfConfirmationEmail(subject, text) {
+        const confirmationKeywords = [
+            'confirmation',
+            'forwarding confirmation',
+            'automatically forward',
+            'forward mail',
+            'confirm request',
+            'click the link to confirm',
+        ];
+        const checkSubject = confirmationKeywords.some(keyword => subject.toLowerCase().includes(keyword));
+        const checkText = confirmationKeywords.some(keyword => text.toLowerCase().includes(keyword));
+        if (checkSubject || checkText)
+            return true;
+        return false;
+    }
+    async getConfirmationLinkFromEmailText(text) {
+        const linkRegex = /https:\/\/[^\s]+/g;
+        const links = text.match(linkRegex);
+        console.log(links, 'linksssss');
+        // Return the first match if found
+        if (links && links.length > 0) {
+            return links[0];
+        }
+        return null;
+    }
+    async getVerifySender(data) {
+        const request = {
+            url: `/v3/verified_senders`,
+            method: 'GET',
+        };
+        const result = await client_1.default.request(request);
+        let email = [];
+        if (result[0]?.body?.results?.length) {
+            email = result[0].body.results.filter(temp => {
+                return temp.from_email === data;
+            });
+        }
+        console.log(email, 'kjhkjhkjhkj');
+        return email[0]?.nickname.includes('debtor') ? true : false;
     }
 }
 exports.default = new EmailUtil();

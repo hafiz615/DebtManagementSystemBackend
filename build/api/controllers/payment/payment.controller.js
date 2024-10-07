@@ -7,6 +7,7 @@ const constants_util_1 = __importDefault(require("../../../utils/constants.util"
 const responseHelper_util_1 = __importDefault(require("../../../utils/responseHelper.util"));
 const payment_service_1 = __importDefault(require("../../services/payment.service"));
 const common_util_1 = __importDefault(require("../../../utils/common.util"));
+const payment_cronjob_1 = __importDefault(require("../../../cron-job/payment.cronjob"));
 class PaymentController {
     constructor() {
         this.getHomePayments = async (req, res) => {
@@ -55,6 +56,96 @@ class PaymentController {
                 }));
             }
             catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.addACHDetailsCreditor = async (req, res) => {
+            try {
+                const response = await this.paymentService.addACHDetailsCreditor(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: response[1],
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.processAuthAndCapture = async (req, res) => {
+            try {
+                await payment_cronjob_1.default.processPayments();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Cron-job for auth and capture payments is completed',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.processPaynoteTransfer = async (req, res) => {
+            try {
+                await payment_cronjob_1.default.testPaynote();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Cron-job for payments transfer is completed',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.firstChoiceCommission = async (req, res) => {
+            try {
+                await payment_cronjob_1.default.testDebtor();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Cron-job for first choice commission is completed',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.sendPaymentPaynote = async (req, res) => {
+            try {
+                const response = await this.paymentService.sendPaymentPaynote(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: response[1],
+                }));
+            }
+            catch (error) {
+                console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));

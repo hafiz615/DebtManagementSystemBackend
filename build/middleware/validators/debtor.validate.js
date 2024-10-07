@@ -247,6 +247,21 @@ class DebtorRequests {
                     .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
             }
         };
+        this.addDebtorAccount = (req, res, next) => {
+            const schema = joi_1.default.object({
+                paymentType: joi_1.default.string().required(),
+                paymentToken: joi_1.default.string().required(),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+            }
+        };
     }
 }
 exports.default = new DebtorRequests();

@@ -22,6 +22,9 @@ import twilio, {Twilio} from 'twilio';
 import puppeteer from 'puppeteer-core';
 import caseUtil from './case.util';
 import commonUtil from './common.util';
+import UserService from '../api/services/user.service';
+import {ClientRequest} from '@sendgrid/client/src/request';
+import clientSendgrid from '@sendgrid/client';
 
 dotenv.config();
 class EmailUtil {
@@ -45,6 +48,7 @@ class EmailUtil {
       process.env.twilioAccountSid,
       process.env.twilioAuthToken
     );
+    clientSendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
   async sendInvitationLink(user: IUser, link: string) {
@@ -139,6 +143,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'EMAIL',
+                  Subject: template.subject,
                 },
                 caseId
               );
@@ -226,7 +231,15 @@ class EmailUtil {
     const time = new Date(commonUtil.getCurrentDate());
     switch (type) {
       case 'email':
-        const result = await this.sendEmail(sendTo, from, subject, content);
+        const result = await this.sendEmail(
+          sendTo,
+          from,
+          subject,
+          content,
+          [],
+          null,
+          caseId
+        );
         if (result[0]) {
           await caseUtil.addInHistory(
             {
@@ -235,6 +248,7 @@ class EmailUtil {
               Content: content,
               Time: time,
               Action: 'EMAIL',
+              Subject: subject,
             },
             caseId
           );
@@ -514,14 +528,41 @@ class EmailUtil {
     subject: string,
     content: any,
     cc?: Array<string>,
-    buffer?: Buffer
+    buffer?: Buffer,
+    caseId?: string
   ) {
+    const checkIfDebtor = await this.getVerifySender(from);
+    console.log(checkIfDebtor);
+    let headers = {};
+    if (caseId && checkIfDebtor) {
+      const caseTemp: any = await this.caseRepository.getById<ICase>(
+        caseId,
+        '_id',
+        undefined,
+        {
+          path: 'debtor',
+          select: [
+            'businessInformation.companyName',
+            'businessInformation.EIN',
+          ],
+        }
+      );
+      if (caseTemp.debtor?.businessInformation?.companyName)
+        subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+      if (caseTemp.debtor?.businessInformation?.EIN)
+        subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+      headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+    }
+    console.log(subject, 'subject');
     const msg = {
       to: to,
       from: from, // Use the email address or domain you verified above
       subject: subject,
       html: content,
     };
+    console.log(headers, 'heardersssss');
+    if (Object.keys(headers).length) msg['headers'] = headers;
+    console.log(msg);
     if (cc?.length) {
       msg['cc'] = cc;
     }
@@ -578,6 +619,55 @@ class EmailUtil {
     await browser.close();
 
     return Buffer.from(pdfBuffer);
+  }
+
+  async checkIfConfirmationEmail(subject: string, text: string) {
+    const confirmationKeywords = [
+      'confirmation',
+      'forwarding confirmation',
+      'automatically forward',
+      'forward mail',
+      'confirm request',
+      'click the link to confirm',
+    ];
+    const checkSubject = confirmationKeywords.some(keyword =>
+      subject.toLowerCase().includes(keyword)
+    );
+
+    const checkText = confirmationKeywords.some(keyword =>
+      text.toLowerCase().includes(keyword)
+    );
+    if (checkSubject || checkText) return true;
+    return false;
+  }
+
+  async getConfirmationLinkFromEmailText(text: string): Promise<string | null> {
+    const linkRegex = /https:\/\/[^\s]+/g;
+
+    const links = text.match(linkRegex);
+    console.log(links, 'linksssss');
+    // Return the first match if found
+    if (links && links.length > 0) {
+      return links[0];
+    }
+    return null;
+  }
+
+  async getVerifySender(data: string) {
+    const request: ClientRequest = {
+      url: `/v3/verified_senders`,
+      method: 'GET',
+    };
+
+    const result: any = await clientSendgrid.request(request);
+    let email = [];
+    if (result[0]?.body?.results?.length) {
+      email = result[0].body.results.filter(temp => {
+        return temp.from_email === data;
+      });
+    }
+    console.log(email, 'kjhkjhkjhkj');
+    return email[0]?.nickname.includes('debtor') ? true : false;
   }
 }
 

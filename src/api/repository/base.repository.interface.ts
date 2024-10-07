@@ -24,7 +24,9 @@ export interface IBaseRepository<D> {
     select?: string,
     sort?: QueryOptions<T>,
     populate?: PopulateOptions | (PopulateOptions | string)[],
-    lean?: boolean
+    lean?: boolean,
+    page?: number,
+    limit?: number
   ): Promise<T[] | []>;
   getOne<T>(
     filter?: FilterQuery<T>,

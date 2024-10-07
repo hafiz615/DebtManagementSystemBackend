@@ -32,7 +32,7 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     populate && result.populate(populate);
     if (!page || !limit) {
       page = 1;
-      limit = 10;
+      limit = 5;
     }
     if (page && limit) {
       const skip = (page - 1) * limit;
@@ -49,12 +49,18 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     select?: string,
     sort?: QueryOptions<T>,
     populate?: PopulateOptions | (PopulateOptions | string)[],
-    lean?: boolean
+    lean?: boolean,
+    page?: number,
+    limit?: number
   ): Promise<T[] | []> {
     let result = this.model.find(filter || {}, projectField || '');
     select && result.select(select);
     sort && result.sort(sort);
     populate && result.populate(populate);
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      result.skip(skip).limit(limit);
+    }
     lean && result.lean(lean);
     return ((await result.exec()) as T[]) || [];
   }
