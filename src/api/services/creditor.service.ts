@@ -11,6 +11,7 @@ import commonUtil from '../../utils/common.util';
 import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.repository';
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
+import paynoteUtil from '../../utils/paynote.util';
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
@@ -306,6 +307,31 @@ class CreditorService {
       await this.bulkUploadRepository.createMany<IBulkUpload>(bulkUploads);
     }
     return [true, constants.successUpdateMessage('Creditors and cases')];
+  }
+
+  async createPaynoteCustomer(
+    req: Request
+  ): Promise<[boolean, ICreditor | string]> {
+    const creditor = await this.creditorRepository.getById<ICreditor>(
+      req.params.id
+    );
+    if (!creditor) return [false, constants.notFoundMessage('creditor')];
+    const result = await paynoteUtil.createCustomer(creditor);
+    console.log(result);
+    if (result.error) {
+      let message = '';
+      if (result?.messages) {
+        message = result.messages[0];
+      } else {
+        message = result.message;
+      }
+      return [false, message];
+    }
+    if (result?.success)
+      await this.creditorRepository.updateById<ICreditor>(creditor._id, {
+        paynoteUserId: result.user.user_id,
+      });
+    return [true, 'Customer added successfully'];
   }
 }
 

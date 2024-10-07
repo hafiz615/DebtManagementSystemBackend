@@ -3,6 +3,7 @@ import {ICreditor} from '../database/interfaces/creditor.interface';
 import {IPayment} from '../database/interfaces/payment.interface';
 import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
+import constantsUtil from './constants.util';
 dotenv.config();
 
 class PaynoteUtil {
@@ -11,7 +12,17 @@ class PaynoteUtil {
     this.creditorRepository = new CreditorRepository();
   }
   async createCustomer(creditor: ICreditor) {
-    const creditorNames = creditor.basicInformation.fullName.split(' ');
+    if (!creditor.basicInformation?.fullName)
+      return {
+        error: true,
+        message: constantsUtil.notFoundMessage('creditor name'),
+      };
+    const creditorNames = creditor.basicInformation?.fullName?.split(' ');
+    if (!creditor?.basicInformation?.email)
+      return {
+        error: true,
+        message: constantsUtil.notFoundMessage('creditor email'),
+      };
     let lastName = '';
     if (!creditorNames[1]) {
       lastName = creditorNames[0];

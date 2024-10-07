@@ -541,10 +541,16 @@ class EmailUtil {
         undefined,
         {
           path: 'debtor',
-          select: ['emailKey'],
+          select: [
+            'businessInformation.companyName',
+            'businessInformation.EIN',
+          ],
         }
       );
-      subject += ` ${caseTemp.debtor.emailKey}`;
+      if (caseTemp.debtor?.businessInformation?.companyName)
+        subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+      if (caseTemp.debtor?.businessInformation?.EIN)
+        subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
       headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
     }
     console.log(subject, 'subject');

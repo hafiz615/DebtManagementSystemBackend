@@ -6,13 +6,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const constants_util_1 = __importDefault(require("./constants.util"));
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
     async createCustomer(creditor) {
-        const creditorNames = creditor.basicInformation.fullName.split(' ');
+        if (!creditor.basicInformation?.fullName)
+            return {
+                error: true,
+                message: constants_util_1.default.notFoundMessage('creditor name'),
+            };
+        const creditorNames = creditor.basicInformation?.fullName?.split(' ');
+        if (!creditor?.basicInformation?.email)
+            return {
+                error: true,
+                message: constants_util_1.default.notFoundMessage('creditor email'),
+            };
         let lastName = '';
         if (!creditorNames[1]) {
             lastName = creditorNames[0];
