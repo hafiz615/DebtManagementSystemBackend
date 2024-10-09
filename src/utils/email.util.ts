@@ -65,7 +65,7 @@ class EmailUtil {
              If you didn't request this, you can safely ignore this email.
 
             Thank you,
-            Debt-Settlement Team`,
+            First Choice Debt Solutions`,
     };
     try {
       await sgMail.send(msg);
@@ -668,6 +668,56 @@ class EmailUtil {
     }
     console.log(email, 'kjhkjhkjhkj');
     return email[0]?.nickname.includes('debtor') ? true : false;
+  }
+
+  async sendEmailIfDebtorGetsAdditionalDebt(
+    cases: ICase[],
+    debtor: IDebtor,
+    creditors: any
+  ) {
+    const remaining = cases.reduce((sum, item) => sum + item.remaining, 0);
+    for (const creditor of creditors) {
+      const content = `Dear ${creditor.creditorName},
+
+      We hope this message finds you well.
+      
+      We are writing to inform you that the debtor, ${debtor.basicInformation.fullName}, has currently taken on debt from a total of ${cases.length} creditors. The total outstanding debt across these creditors amounts to ${remaining}.
+      
+      Please feel free to reach out if you require any further details or have any questions regarding this matter.
+      
+      Thank you for your attention.
+      
+      Best regards,
+      First Choice Debt Solutions`;
+      const to = creditor.creditorEmail;
+      const from = process.env.defaultEmail;
+      const subject = `Notification Regarding Debtor's Additional Debt`;
+      await this.sendEmail(to, from, subject, content);
+    }
+  }
+
+  async sendEmailIfDebtorPaysDebt(
+    caseTemp: ICase,
+    debtor: IDebtor,
+    creditors: any
+  ) {
+    for (const creditor of creditors) {
+      const content = `Dear ${creditor.creditorName},
+
+      We are pleased to inform you that the debtor, ${debtor.basicInformation.fullName}, has successfully paid their debt. The total amount paid is ${caseTemp.remaining}.
+
+      If you have any questions or require further details, feel free to reach out. We appreciate your continued cooperation.
+            
+      Thank you for your attention.
+      
+      Best regards,
+      First Choice Debt Solutions`;
+
+      const to = creditor.creditorEmail;
+      const from = process.env.defaultEmail;
+      const subject = `Notification Regarding Debtor's Paid Debt`;
+      await this.sendEmail(to, from, subject, content);
+    }
   }
 }
 

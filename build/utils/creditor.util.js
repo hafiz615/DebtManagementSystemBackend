@@ -3,11 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const mongoose_1 = __importDefault(require("mongoose"));
+const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const common_util_1 = __importDefault(require("./common.util"));
 class CreditorUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
     }
     async checkCreditorsMapping(creditorsArray) {
         for (const creditor of creditorsArray) {
@@ -32,6 +35,42 @@ class CreditorUtil {
             }
         }
         return creditorsArray;
+    }
+    async getCreditorsEmailForDebtor(debtorId, creditorId = '') {
+        const match = {
+            debtor: new mongoose_1.default.Types.ObjectId(debtorId),
+        };
+        if (creditorId) {
+            match['creditor'] = { $ne: new mongoose_1.default.Types.ObjectId(creditorId) };
+        }
+        return await this.caseRepository.applyAggregate([
+            {
+                $match: match, // Filter for a specific debtor
+            },
+            {
+                $group: {
+                    _id: '$creditor', // Group by creditor to get unique creditors
+                },
+            },
+            {
+                $lookup: {
+                    from: 'creditors', // Name of the creditors collection
+                    localField: '_id', // Field in the cases (creditor reference)
+                    foreignField: '_id', // Field in the creditors collection (creditor _id)
+                    as: 'creditorDetails', // Output field containing the matched creditor details
+                },
+            },
+            {
+                $unwind: '$creditorDetails', // Unwind the creditorDetails array to get individual creditor details
+            },
+            {
+                $project: {
+                    _id: 1, // Exclude the default _id field
+                    creditorEmail: '$creditorDetails.basicInformation.email', // Include creditor's email
+                    creditorName: '$creditorDetails.basicInformation.fullName',
+                },
+            },
+        ]);
     }
 }
 exports.default = new CreditorUtil();

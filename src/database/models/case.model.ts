@@ -49,6 +49,9 @@ const caseModel: Schema = new Schema({
   remaining: {
     type: Number,
   },
+  remainingAmountPaid: {
+    type: Number,
+  },
   intervals: {
     type: [
       {

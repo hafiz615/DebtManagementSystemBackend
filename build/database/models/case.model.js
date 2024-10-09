@@ -76,6 +76,9 @@ const caseModel = new mongoose_1.Schema({
     remaining: {
         type: Number,
     },
+    remainingAmountPaid: {
+        type: Number,
+    },
     intervals: {
         type: [
             {

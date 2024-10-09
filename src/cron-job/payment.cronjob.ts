@@ -18,6 +18,9 @@ import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
 import paynoteUtil from '../utils/paynote.util';
 import emailUtil from '../utils/email.util';
 import PaymentService from '../api/services/payment.service';
+import {CaseRepository} from '../api/repository/case/case.repository';
+import {ICase} from '../database/interfaces/case.interface';
+import creditorUtil from '../utils/creditor.util';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -25,6 +28,7 @@ class CronJob {
   private settingsRepository: SettingsRepository;
   private paymentLoggingRepository: PaymentLoggingRepository;
   private debtorRepository: DebtorRepository;
+  private caseRepository: CaseRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
@@ -32,6 +36,7 @@ class CronJob {
     this.paymentService = new PaymentService();
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.debtorRepository = new DebtorRepository();
+    this.caseRepository = new CaseRepository();
   }
   async testCron() {
     let dbconfig =
@@ -587,8 +592,11 @@ class CronJob {
           undefined,
           {
             path: 'caseId',
-            select: ['_id', 'caseCode'],
-            populate: ['creditor'],
+            select: ['_id', 'caseCode', 'remaining'],
+            populate: [
+              {path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId']},
+              {path: 'debtor', select: ['_id', 'basicInformation.fullName']},
+            ],
           }
         );
       await this.paynotePending(pendingPayments);
@@ -601,8 +609,11 @@ class CronJob {
           undefined,
           {
             path: 'caseId',
-            select: ['_id', 'caseCode'],
-            populate: ['creditor'],
+            select: ['_id', 'caseCode', 'remaining'],
+            populate: [
+              {path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId']},
+              {path: 'debtor', select: ['_id', 'basicInformation.fullName']},
+            ],
           }
         );
 
@@ -774,6 +785,21 @@ class CronJob {
           sendViaPaynote: 'Success',
           status: 'Success',
         });
+        const updatedCase = await this.caseRepository.updateById<ICase>(
+          payment.caseId._id,
+          {$inc: {remainingAmountPaid: payment.amount}}
+        );
+        if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+          const creditors = await creditorUtil.getCreditorsEmailForDebtor(
+            String(payment.caseId.debtor._id),
+            String(payment.caseId.creditor._id)
+          );
+          emailUtil.sendEmailIfDebtorPaysDebt(
+            payment.caseId,
+            payment.caseId.debtor,
+            creditors
+          );
+        }
       }
     }
   }

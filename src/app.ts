@@ -16,6 +16,7 @@ import paynoteUtil from './utils/paynote.util';
 import {DebtorRepository} from './api/repository/debtor/debtor.repository';
 import {IDebtor} from './database/interfaces/debtor.interface';
 import {nanoid} from 'nanoid';
+import creditorUtil from './utils/creditor.util';
 
 class App {
   protected app: Application;

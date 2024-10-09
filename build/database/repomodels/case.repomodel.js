@@ -22,6 +22,7 @@ class Case {
         this.feePayment = '';
         this.paidAmount = 0;
         this.remaining = 0;
+        this.remainingAmountPaid = 0;
         // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
         this.intervals = Array();
         this.isDeleted = false;

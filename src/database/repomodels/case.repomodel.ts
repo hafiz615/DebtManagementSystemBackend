@@ -16,6 +16,7 @@ export class Case {
   feePayment = '';
   paidAmount = 0;
   remaining = 0;
+  remainingAmountPaid = 0;
   // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
   intervals = Array<
     | {

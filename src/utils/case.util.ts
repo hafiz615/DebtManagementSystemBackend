@@ -40,6 +40,8 @@ import {JustificationRepository} from '../api/repository/justification/justifica
 import {IJustification} from '../database/interfaces/justification.interface';
 import paynoteUtil from './paynote.util';
 import {nanoid} from 'nanoid';
+import creditorUtil from './creditor.util';
+import emailUtil from './email.util';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -455,7 +457,7 @@ class CaseUtil {
     let commisionPercentage = debtor.commissionPercentage / 100;
     if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
-      debt = body.remaining ?? 0;
+      debt = body.remaining ? body.remaining : 0;
       amount = await this.getWeeklyAmount(interval);
     }
     weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -474,7 +476,6 @@ class CaseUtil {
     console.log(weeklyBudget, 'weeklyBudget');
     console.log(amount, 'amounttttt');
     console.log(debt, 'debteeee');
-    console.log(commisionPercentage);
     return amount >= weeklyBudget
       ? {
           status: false,
@@ -2396,6 +2397,9 @@ class CaseUtil {
     let dataArray = body.data;
     const createdCases = [];
     const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
+    if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
+    const getCreditorsEmail: any =
+      await creditorUtil.getCreditorsEmailForDebtor(debtorId);
     for (const body of dataArray) {
       console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
@@ -2488,6 +2492,13 @@ class CaseUtil {
               'Created By': name,
             },
             caseCreated._id
+          );
+        }
+        if (getCreditorsEmail.length && createdCases.length) {
+          emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
+            createdCases,
+            debtor,
+            getCreditorsEmail
           );
         }
         // if (caseCreated?.intervals && caseCreated?.intervals?.length) {

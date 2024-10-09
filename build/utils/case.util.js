@@ -32,6 +32,8 @@ const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHist
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const nanoid_1 = require("nanoid");
+const creditor_util_1 = __importDefault(require("./creditor.util"));
+const email_util_1 = __importDefault(require("./email.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -366,7 +368,7 @@ class CaseUtil {
         let commisionPercentage = debtor.commissionPercentage / 100;
         if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
-            debt = body.remaining ?? 0;
+            debt = body.remaining ? body.remaining : 0;
             amount = await this.getWeeklyAmount(interval);
         }
         weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -385,7 +387,6 @@ class CaseUtil {
         console.log(weeklyBudget, 'weeklyBudget');
         console.log(amount, 'amounttttt');
         console.log(debt, 'debteeee');
-        console.log(commisionPercentage);
         return amount >= weeklyBudget
             ? {
                 status: false,
@@ -2042,6 +2043,9 @@ class CaseUtil {
         let dataArray = body.data;
         const createdCases = [];
         const debtor = await this.debtRepository.getById(debtorId);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const getCreditorsEmail = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
         for (const body of dataArray) {
             console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
@@ -2127,6 +2131,9 @@ class CaseUtil {
                         Action: 'Case Created',
                         'Created By': name,
                     }, caseCreated._id);
+                }
+                if (getCreditorsEmail.length && createdCases.length) {
+                    email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
                 }
                 // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
                 //   await this.createPayment(caseCreated);
