@@ -20,16 +20,21 @@ import client from '@sendgrid/client';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import {compare} from 'bcryptjs';
 import dotenv from 'dotenv';
+import caseUtil from '../../utils/case.util';
+import {IDebtor} from '../../database/interfaces/debtor.interface';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
 dotenv.config();
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
   private caseRepository: CaseRepository;
+  private debtorRepository: DebtorRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.caseRepository = new CaseRepository();
+    this.debtorRepository = new DebtorRepository();
     client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
@@ -582,43 +587,89 @@ class UserService {
   async thirdPartySignIn(
     req: Request
   ): Promise<[boolean, Partial<IUser> | string]> {
-    let updatedUser,
-      user = null;
     const email = req.body.email.toLowerCase();
     req.body.role = 'Debtor';
-    const token = await this.tokenService.createVerifyToken(email);
-    req.body.verifyToken = token;
-    user = await this.userRepository.getOne<IUser>({email: email});
+    req.body.verifyToken = await this.tokenService.createVerifyToken(email);
+
+    let user = await this.userRepository.getOne<IUser>({email});
+
+    // Function to create a new debtor object
+    const createDebtorObject = () => ({
+      basicInformation: {
+        fullName: req.body.name,
+        email: email,
+        SSID: '',
+        state: '',
+        city: '',
+        zipCode: '',
+        status: '',
+        phone: '',
+        address: '',
+        weeklyBudget: 0,
+      },
+      businessInformation: {
+        companyName: '',
+        EIN: '',
+        businessCategory: '',
+        description: '',
+        state: '',
+        city: '',
+        zipCode: '',
+        phone: '',
+        address: '',
+      },
+      contacts: [],
+      documents: [],
+      createdBy: req.body.createdBy || '',
+      accounts: [],
+      totalCommission: 0,
+      commissionPaid: 0,
+      weeklyCommission: 0,
+      weeklyCommissionPaid: false,
+      bulkUpload: false,
+      weeklyBudgetUpdated: false,
+      createdAt: commonUtil.getCurrentDate(),
+      updatedAt: commonUtil.getCurrentDate(),
+    });
 
     if (user && !user.isDeleted) {
-      if (user.email === email) {
-        updatedUser = await this.userRepository.updateById<IUser>(user._id, {
-          $set: {verifyToken: token},
-        });
+      await this.userRepository.updateById<IUser>(user._id, {
+        $set: {verifyToken: req.body.verifyToken},
+      });
 
-        return [
-          true,
-          {
-            id: updatedUser.id,
-            verifyToken: token,
-            createdBy: req.body.createdBy,
-          },
-        ];
+      let debtor = await this.debtorRepository.getOne<IDebtor>({
+        'basicInformation.email': email,
+      });
+
+      if (!debtor) {
+        debtor = await caseUtil.createDebtor(
+          createDebtorObject() as IDebtor,
+          ''
+        );
       }
-    }
 
-    if (!user) {
-      req.body.email = email;
-      const newUser = new User();
-      const validatedUser = DataCopier.copy(newUser, req.body as IUser);
-
-      user = await this.userRepository.create<IUser>(validatedUser);
-      updatedUser = await this.userRepository.updateById<IUser>(user._id, {
+      return [
+        true,
+        {
+          id: debtor.id,
+          verifyToken: req.body.verifyToken,
+          createdBy: req.body.createdBy,
+        },
+      ];
+    } else {
+      req.body.isDeleted = false;
+      user = await this.userRepository.create<IUser>(
+        DataCopier.copy(new User(), req.body as IUser)
+      );
+      let newDebtor = await caseUtil.createDebtor(
+        createDebtorObject() as IDebtor,
+        ''
+      );
+      await this.userRepository.updateById<IUser>(user._id, {
         $set: {
-          verifyToken: token,
-          email: req.body.email.toLowerCase(),
+          verifyToken: req.body.verifyToken,
+          email: req.body.email,
           role: 'Debtor',
-          isDeleted: false,
           createdBy: '',
           updatedAt: commonUtil.getCurrentDate(),
         },
@@ -627,20 +678,12 @@ class UserService {
       return [
         true,
         {
-          id: updatedUser.id,
-          verifyToken: token,
+          id: newDebtor.id,
+          verifyToken: req.body.verifyToken,
           createdBy: req.body.createdBy,
         },
       ];
     }
-
-    // Add a return statement to cover the case when the user exists but is marked for update
-    if (!this.updateUser) {
-      return [false, constants.failureRegisterMessage('User')];
-    }
-
-    // Fallback return
-    return [false, 'Unexpected error occurred.'];
   }
 }
 
