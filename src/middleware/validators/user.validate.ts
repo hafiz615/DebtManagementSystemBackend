@@ -103,7 +103,7 @@ class UserRequests {
       name: Joi.string().required(),
       email: Joi.string().email().required(),
       createdBy: Joi.string(),
-      token: Joi.string().required(),
+      //token: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

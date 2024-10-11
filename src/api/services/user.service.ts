@@ -588,9 +588,6 @@ class UserService {
     req.body.role = 'Debtor';
     const token = await this.tokenService.createVerifyToken(email);
     req.body.verifyToken = token;
-    req.body.isDeleted = false;
-    req.body.updatedAt = commonUtil.getCurrentDate();
-
     user = await this.userRepository.getOne<IUser>({email: email});
 
     if (user && !user.isDeleted) {
@@ -604,7 +601,7 @@ class UserService {
           {
             id: updatedUser.id,
             verifyToken: token,
-            createdBy: updatedUser.createdBy,
+            createdBy: req.body.createdBy,
           },
         ];
       }
@@ -617,7 +614,14 @@ class UserService {
 
       user = await this.userRepository.create<IUser>(validatedUser);
       updatedUser = await this.userRepository.updateById<IUser>(user._id, {
-        ...req.body,
+        $set: {
+          verifyToken: token,
+          email: req.body.email.toLowerCase(),
+          role: 'Debtor',
+          isDeleted: false,
+          createdBy: '',
+          updatedAt: commonUtil.getCurrentDate(),
+        },
       });
 
       return [
@@ -625,7 +629,7 @@ class UserService {
         {
           id: updatedUser.id,
           verifyToken: token,
-          createdBy: updatedUser.createdBy,
+          createdBy: req.body.createdBy,
         },
       ];
     }
