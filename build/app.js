@@ -67,6 +67,18 @@ class App {
         //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
         //   });
         // }
+        // const token = await moneyThumbUtil.authenticateUser();
+        // const app = await moneyThumbUtil.createNewApp(token, 'test');
+        // await moneyThumbUtil.convertPdf(
+        //   token,
+        //   '66b09b48d6d8ce0b91d9a8c5',
+        //   app['appid']
+        // );
+        // await moneyThumbUtil.getScoreCard(
+        //   token,
+        //   app['appid'],
+        //   '66b09b48d6d8ce0b91d9a8c5'
+        // );
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();

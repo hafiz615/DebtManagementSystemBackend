@@ -75,5 +75,16 @@ class CreditorUtil {
       },
     ]);
   }
+
+  async addBreakEven(creditors: any) {
+    for (const creditor of creditors) {
+      const fundedAmount = 0;
+      const paidBack = creditor.remainingAmountPaid;
+      const currentBalance = fundedAmount - paidBack;
+      let breakEven = fundedAmount * 1.2 - paidBack;
+      if (breakEven <= 0) breakEven = currentBalance * 0.3;
+      creditor['breakEven'] = breakEven;
+    }
+  }
 }
 export default new CreditorUtil();

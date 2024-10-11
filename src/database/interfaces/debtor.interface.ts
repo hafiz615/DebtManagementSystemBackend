@@ -58,6 +58,16 @@ export interface IDebtor extends Document {
   bulkUpload: boolean;
   weeklyBudgetUpdated: boolean;
   emailKey: string;
+  strategy1MaxProfit: number;
+  strategy3MaxProfit: number;
+  strategy1BudgetCustom: number;
+  strategy3BudgetCustom: number;
+  weeklyBudgetKeyStrategy1: string;
+  weeklyBudgetKeyStrategy3: string;
+  weeklyBudgetStrategy1: number;
+  weeklyBudgetStrategy3: number;
+  profitMargin: number;
+  moneyThumbAppId: number;
   createdAt: string;
   updatedAt: string;
 }

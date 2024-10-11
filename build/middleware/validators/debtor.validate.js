@@ -14,6 +14,7 @@ class DebtorRequests {
             const schema = joi_1.default.object({
                 paymentToken: joi_1.default.string().optional().allow(''),
                 paymentType: joi_1.default.string().optional().allow(''),
+                profitMargin: joi_1.default.number().optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -78,6 +79,7 @@ class DebtorRequests {
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
                 extractedFields: joi_1.default.array().allow(null).optional(),
+                profitMargin: joi_1.default.number().optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -141,6 +143,7 @@ class DebtorRequests {
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
                 extractedFields: joi_1.default.array().allow(null).optional(),
+                profitMargin: joi_1.default.number().optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -202,6 +205,7 @@ class DebtorRequests {
                     paymentToken: joi_1.default.string().allow(''),
                     extractedFields: joi_1.default.array().allow(null).optional(),
                     driveUrl: joi_1.default.string().allow(''),
+                    profitMargin: joi_1.default.number().optional(),
                     basicInformation: joi_1.default.object({
                         fullName: joi_1.default.string().required().allow(''),
                         email: joi_1.default.string().email().required().allow(''),

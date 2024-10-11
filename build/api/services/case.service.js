@@ -21,6 +21,8 @@ const email_util_1 = __importDefault(require("../../utils/email.util"));
 const caseHistory_repository_1 = require("../repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../repository/justification/justification.repository");
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
+const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -66,6 +68,7 @@ class CaseService {
             if (!findCase) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
+            moneyThumb_util_1.default.run(String(findCase.debtor._id));
             for (let doc of findCase.debtor.documents) {
                 const url = await this.uploadUtil.getS3FileSignedUrl(doc.key
                 //'application/pdf'
@@ -209,7 +212,7 @@ class CaseService {
                     ? getDebtor.extractedFields
                     : extractedFieldsTemp, String(findCase._id));
                 case_util_1.default.getScoresForAllCreditors(caseUpdated, creditors, getDebtor.commissionPercentage);
-                case_util_1.default.getSettlementRange(caseUpdated);
+                case_util_1.default.getSettlementRange(findCase);
                 case_util_1.default.getLumpSumAmount(caseUpdated);
                 case_util_1.default.getFullProfitSettlement(caseUpdated);
             }
@@ -326,7 +329,6 @@ class CaseService {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
-            const debtor = caseTemp.debtor;
             let getScores = null, creditorNames = null;
             let creditors = null;
             let settlementRange = null;
@@ -344,6 +346,9 @@ class CaseService {
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
             }
+            if (hardReload === 'true')
+                caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
+            const debtor = caseTemp.debtor;
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
@@ -472,6 +477,7 @@ class CaseService {
             let creditors = null;
             let settlementRange = null;
             let data = {};
+            caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
             let debtor = caseTemp.debtor;
             await this.caseRepository.updateById(caseTemp._id, {
                 strategyTwo: false,

@@ -10,6 +10,7 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentToken: Joi.string().optional().allow(''),
       paymentType: Joi.string().optional().allow(''),
+      profitMargin: Joi.number().optional(),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -80,6 +81,7 @@ class DebtorRequests {
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
       extractedFields: Joi.array().allow(null).optional(),
+      profitMargin: Joi.number().optional(),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -155,6 +157,7 @@ class DebtorRequests {
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
       extractedFields: Joi.array().allow(null).optional(),
+      profitMargin: Joi.number().optional(),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -227,6 +230,7 @@ class DebtorRequests {
           paymentToken: Joi.string().allow(''),
           extractedFields: Joi.array().allow(null).optional(),
           driveUrl: Joi.string().allow(''),
+          profitMargin: Joi.number().optional(),
           basicInformation: Joi.object({
             fullName: Joi.string().required().allow(''),
             email: Joi.string().email().required().allow(''),

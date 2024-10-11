@@ -17,6 +17,7 @@ import {DebtorRepository} from './api/repository/debtor/debtor.repository';
 import {IDebtor} from './database/interfaces/debtor.interface';
 import {nanoid} from 'nanoid';
 import creditorUtil from './utils/creditor.util';
+import moneyThumbUtil from './utils/moneyThumb.util';
 
 class App {
   protected app: Application;
@@ -77,6 +78,18 @@ class App {
     //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
     //   });
     // }
+    // const token = await moneyThumbUtil.authenticateUser();
+    // const app = await moneyThumbUtil.createNewApp(token, 'test');
+    // await moneyThumbUtil.convertPdf(
+    //   token,
+    //   '66b09b48d6d8ce0b91d9a8c5',
+    //   app['appid']
+    // );
+    // await moneyThumbUtil.getScoreCard(
+    //   token,
+    //   app['appid'],
+    //   '66b09b48d6d8ce0b91d9a8c5'
+    // );
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();

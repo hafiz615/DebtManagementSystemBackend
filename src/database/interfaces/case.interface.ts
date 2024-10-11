@@ -51,6 +51,7 @@ export interface ICase extends Document {
   justifications: boolean;
   lumpSumJustifications: boolean;
   fullProfitJustifications: boolean;
+  settlementRange: boolean;
   createdAt: string;
   updatedAt: string;
 }

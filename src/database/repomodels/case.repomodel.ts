@@ -42,6 +42,7 @@ export class Case {
   fullProfitJustifications = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
+  settlementRange = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

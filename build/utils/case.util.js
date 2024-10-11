@@ -201,6 +201,9 @@ class CaseUtil {
                 ? obj.creditor.accountTitleMapping
                 : [],
             contractDetails: obj.contractDetails ? obj.contractDetails : null,
+            remainingAmountPaid: obj.remainingAmountPaid
+                ? obj.remainingAmountPaid
+                : 0,
         }));
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
@@ -1421,7 +1424,11 @@ class CaseUtil {
                 accTitleObj && accTitleObj?.accountTitle
                     ? accTitleObj.accountTitle
                     : creditor.creditor.accountTitle;
-            let weekly_budget = Math.max((creditor.remaining * 0.09) / 4, caseTemp.debtor.basicInformation.weeklyBudget);
+            // let weekly_budget = Math.max(
+            //   (creditor.remaining * 0.09) / 4,
+            //   caseTemp.debtor.basicInformation.weeklyBudget
+            // );
+            let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
             if (accountTitle) {
                 data[`${accountTitle}`] = {
@@ -1674,6 +1681,10 @@ class CaseUtil {
                 'data.fullProfitSettlement': thirdStrategy,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            // const profitPercent = response.data['true_profit'] * 0.67;
+            // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor), {
+            //   strategy3MaxProfit: profitPercent,
+            // });
             this.caseRepository.updateById(caseTemp._id, {
                 strategyThree: true,
                 updatedAt: common_util_1.default.getCurrentDate(),
@@ -1891,12 +1902,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            if (sum > 0) {
-                await this.debtRepository.updateById(caseTemp.debtor._id, {
-                    'basicInformation.weeklyBudget': sum,
-                    weeklyBudgetUpdated: true,
-                });
-            }
+            // if (sum > 0) {
+            //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+            //     'basicInformation.weeklyBudget': sum,
+            //     weeklyBudgetUpdated: true,
+            //   });
+            // }
         }
         return getScores;
     }
@@ -1909,12 +1920,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            if (sum > 0) {
-                await this.debtRepository.updateById(caseTemp.debtor._id, {
-                    'basicInformation.weeklyBudget': sum,
-                    weeklyBudgetUpdated: true,
-                });
-            }
+            // if (sum > 0) {
+            //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+            //     'basicInformation.weeklyBudget': sum,
+            //     weeklyBudgetUpdated: true,
+            //   });
+            // }
         }
         return getScores;
     }
@@ -1924,23 +1935,26 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-        if (typeof getSettlementRange !== 'string') {
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
-                'data.settlementRange': getSettlementRange,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-            this.caseRepository.updateById(caseTemp._id, {
-                strategyOne_3: true,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-        }
         if (typeof getSettlementRange === 'string') {
             this.caseRepository.updateById(caseTemp._id, {
                 strategyOne_3: false,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            return getSettlementRange;
         }
+        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+        // const profitPercent = getSettlementRange['true_profit'] * 0.67;
+        // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor._id), {
+        //   strategy1MaxProfit: profitPercent,
+        // });
+        this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
+            'data.settlementRange': getSettlementRange,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        this.caseRepository.updateById(caseTemp._id, {
+            strategyOne_3: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         return getSettlementRange;
     }
     async riskScoreMapping(data) {
@@ -1978,7 +1992,11 @@ class CaseUtil {
                 accTitleObj && accTitleObj?.accountTitle
                     ? accTitleObj.accountTitle
                     : creditor.creditorAccountTitle;
-            let weekly_budget = Math.max((creditor.remaining * 0.09) / 4, caseTemp.debtor.basicInformation.weeklyBudget);
+            // let weekly_budget = Math.max(
+            //   (creditor.remaining * 0.09) / 4,
+            //   caseTemp.debtor.basicInformation.weeklyBudget
+            // );
+            let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
             if (accountTitle) {
                 data[`${accountTitle}`] = {

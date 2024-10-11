@@ -117,6 +117,9 @@ const caseModel: Schema = new Schema({
   logTrackingId: {
     type: String,
   },
+  settlementRange: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

@@ -165,6 +165,36 @@ const debtorSchema = new mongoose_1.Schema({
     emailKey: {
         type: String,
     },
+    strategy1MaxProfit: {
+        type: Number,
+    },
+    strategy3MaxProfit: {
+        type: Number,
+    },
+    strategy1BudgetCustom: {
+        type: Number,
+    },
+    strategy3BudgetCustom: {
+        type: Number,
+    },
+    weeklyBudgetKeyStrategy1: {
+        type: String,
+    },
+    weeklyBudgetKeyStrategy3: {
+        type: String,
+    },
+    weeklyBudgetStrategy1: {
+        type: Number,
+    },
+    weeklyBudgetStrategy3: {
+        type: Number,
+    },
+    profitMargin: {
+        type: Number,
+    },
+    moneyThumbAppId: {
+        type: Number,
+    },
     createdAt: {
         type: Date,
         required: true,
