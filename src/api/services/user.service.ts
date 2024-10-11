@@ -578,6 +578,66 @@ class UserService {
     }
     return [true, 'Password reset successfully'];
   }
+
+  async thirdPartySignIn(
+    req: Request
+  ): Promise<[boolean, Partial<IUser> | string]> {
+    let updatedUser,
+      user = null;
+    const email = req.body.email.toLowerCase();
+    req.body.role = 'Debtor';
+    const token = await this.tokenService.createVerifyToken(email);
+    req.body.verifyToken = token;
+    req.body.isDeleted = false;
+    req.body.updatedAt = commonUtil.getCurrentDate();
+
+    user = await this.userRepository.getOne<IUser>({email: email});
+
+    if (user && !user.isDeleted) {
+      if (user.email === email) {
+        updatedUser = await this.userRepository.updateById<IUser>(user._id, {
+          $set: {verifyToken: token},
+        });
+
+        return [
+          true,
+          {
+            id: updatedUser.id,
+            verifyToken: token,
+            createdBy: updatedUser.createdBy,
+          },
+        ];
+      }
+    }
+
+    if (!user) {
+      req.body.email = email;
+      const newUser = new User();
+      const validatedUser = DataCopier.copy(newUser, req.body as IUser);
+
+      user = await this.userRepository.create<IUser>(validatedUser);
+      updatedUser = await this.userRepository.updateById<IUser>(user._id, {
+        ...req.body,
+      });
+
+      return [
+        true,
+        {
+          id: updatedUser.id,
+          verifyToken: token,
+          createdBy: updatedUser.createdBy,
+        },
+      ];
+    }
+
+    // Add a return statement to cover the case when the user exists but is marked for update
+    if (!this.updateUser) {
+      return [false, constants.failureRegisterMessage('User')];
+    }
+
+    // Fallback return
+    return [false, 'Unexpected error occurred.'];
+  }
 }
 
 export default UserService;
