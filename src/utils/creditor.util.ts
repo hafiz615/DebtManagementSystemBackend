@@ -3,6 +3,7 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
 import {ICreditor} from '../database/interfaces/creditor.interface';
 import commonUtil from './common.util';
+import {IDebtor} from '../database/interfaces/debtor.interface';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
@@ -85,6 +86,31 @@ class CreditorUtil {
       if (breakEven <= 0) breakEven = currentBalance * 0.3;
       creditor['breakEven'] = breakEven;
     }
+  }
+
+  async addCreditorPercentagesAndGetPercentageCommission(
+    creditors: any,
+    debtor: IDebtor
+  ) {
+    const totalRemaining = creditors.reduce(
+      (sum, item) => sum + item.remaining,
+      0
+    );
+    for (const creditor of creditors) {
+      const percentage =
+        (creditor.remaining / totalRemaining) * debtor.weeklyBudgetStrategy3;
+      creditor.percentageReceivable = Math.round(percentage * 100) / 100;
+    }
+
+    const percentageReceivableCommission =
+      (debtor.totalCommission / (totalRemaining + debtor.totalCommission)) *
+      debtor.weeklyBudgetStrategy3;
+
+    console.log(
+      percentageReceivableCommission,
+      'percentageReceivableCommission'
+    );
+    return Math.round(percentageReceivableCommission * 100) / 100;
   }
 }
 export default new CreditorUtil();

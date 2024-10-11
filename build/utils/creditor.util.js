@@ -83,6 +83,17 @@ class CreditorUtil {
             creditor['breakEven'] = breakEven;
         }
     }
+    async addCreditorPercentagesAndGetPercentageCommission(creditors, debtor) {
+        const totalRemaining = creditors.reduce((sum, item) => sum + item.remaining, 0);
+        for (const creditor of creditors) {
+            const percentage = (creditor.remaining / totalRemaining) * debtor.weeklyBudgetStrategy3;
+            creditor.percentageReceivable = Math.round(percentage * 100) / 100;
+        }
+        const percentageReceivableCommission = (debtor.totalCommission / (totalRemaining + debtor.totalCommission)) *
+            debtor.weeklyBudgetStrategy3;
+        console.log(percentageReceivableCommission, 'percentageReceivableCommission');
+        return Math.round(percentageReceivableCommission * 100) / 100;
+    }
 }
 exports.default = new CreditorUtil();
 //# sourceMappingURL=creditor.util.js.map

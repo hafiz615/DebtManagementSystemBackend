@@ -127,7 +127,6 @@ const debtorSchema = new mongoose_1.Schema({
     },
     totalCommission: {
         type: Number,
-        select: false,
     },
     commissionPercentage: {
         type: Number,

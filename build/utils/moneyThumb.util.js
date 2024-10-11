@@ -23,7 +23,7 @@ class MoneyThumbUtil {
                 appid = app['appid'];
             }
             await this.convertPdf(token, debtorId, appid);
-            const scoreCard = await this.getScoreCard(token, appid, debtorId);
+            const scoreCard = await this.getScoreCard(token, appid);
             await this.saveData(appid, scoreCard, debtorId);
         }
         catch (error) {
@@ -126,7 +126,7 @@ class MoneyThumbUtil {
             return error.message;
         }
     }
-    async getScoreCard(token, appId, debtorId) {
+    async getScoreCard(token, appId) {
         let url = `https://online.moneythumb.com/api/v${process.env.moneyThumbVersion}/scorecard`;
         const data = {
             token: token,
@@ -142,7 +142,8 @@ class MoneyThumbUtil {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            console.log('Response Data', response.data['metrics']['metricdata']);
+            console.log('Response Data', response.data['metrics']);
+            console.log('Response Data', response.data['mcacompanies']);
             return response.data;
         }
         catch (error) {
@@ -152,33 +153,66 @@ class MoneyThumbUtil {
     }
     async saveData(appid, scoreCard, debtorId) {
         try {
+            let weeklyProfit = 0;
+            const filter = { appid: appid };
             if (scoreCard['metrics']['metricdata']) {
                 const metricData = scoreCard['metrics']['metricdata'];
                 if (metricData?.length) {
                     const profitArray = metricData.find(row => row[0] === 'Profit');
                     const trueRevenueArray = metricData.find(row => row[0] === 'True Revenue');
                     if (profitArray.length && trueRevenueArray.length) {
-                        const profitAverage = (parseFloat(profitArray[1]) + parseFloat(profitArray[2])) / 2;
-                        const trueRevenueAverage = (parseFloat(trueRevenueArray[1]) +
-                            parseFloat(trueRevenueArray[2])) /
-                            2;
-                        const profitability = (profitAverage / trueRevenueAverage) * 0.67;
+                        weeklyProfit = (parseFloat(profitArray[1]) / 22) * 5;
+                        console.log(weeklyProfit);
+                        const weeklyTrueRevenue = (parseFloat(trueRevenueArray[1]) / 22) * 5;
+                        const profitability = (weeklyProfit / weeklyTrueRevenue) * 0.67;
                         console.log(profitability, 'profitability');
-                        await this.debtorRepository.updateById(debtorId, {
-                            strategy3MaxProfit: Math.round(profitability * 100) / 100,
-                            appid: appid,
-                        });
-                        return;
+                        filter['strategy3MaxProfit'] =
+                            Math.round(profitability * 100) / 100;
                     }
-                    await this.debtorRepository.updateById(debtorId, {
-                        appid: appid,
-                    });
                 }
             }
+            if (scoreCard['mcacompanies']) {
+                const mcaCompanies = scoreCard['mcacompanies'];
+                const data = mcaCompanies.data;
+                if (data?.length) {
+                    const lastLenderOccurrences = {};
+                    for (const item of data) {
+                        lastLenderOccurrences[item.lender] = {
+                            lender: item.lender,
+                            withdrawal_total: item.withdrawal_total,
+                        };
+                    }
+                    for (let i = 0; i < data.length; i++) {
+                        if (data[i].month === 'Totals') {
+                            lastLenderOccurrences[data[i - 1].lender] = {
+                                withdrawal_total: (data[i - 1].withdrawal_total / data[i - 1].work_days) * 5,
+                            };
+                        }
+                    }
+                    console.log(lastLenderOccurrences, 'lastLenderOccurrences');
+                    let totalWithdrawl = 0;
+                    for (let lender of Object.values(lastLenderOccurrences)) {
+                        const temp = lender;
+                        totalWithdrawl += temp.withdrawal_total;
+                    }
+                    const trueProfit = (totalWithdrawl + weeklyProfit) * 0.67;
+                    filter['strategy1MaxProfit'] = Math.round(trueProfit * 100) / 100;
+                }
+            }
+            await this.debtorRepository.updateById(debtorId, filter);
         }
         catch (error) {
             console.log(error.message);
         }
+    }
+    async getDays(data) {
+        const regex = /-\s([A-Za-z]+)\s(\d+),\s(\d{4})/;
+        const match = data.match(regex);
+        const month = match[1];
+        const year = parseInt(match[3]);
+        const monthIndex = new Date(`${month} 1, ${year}`).getMonth();
+        const date = new Date(year, monthIndex + 1, 0);
+        return date.getDate();
     }
 }
 exports.default = new MoneyThumbUtil();

@@ -574,6 +574,12 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    const commisionPercentage =
+      await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
+        creditors,
+        debtor
+      );
+    data['percentageReceivableCommission'] = commisionPercentage;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({

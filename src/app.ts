@@ -79,17 +79,14 @@ class App {
     //   });
     // }
     // const token = await moneyThumbUtil.authenticateUser();
-    // const app = await moneyThumbUtil.createNewApp(token, 'test');
+    // const app = await moneyThumbUtil.createNewApp(token, 'vice versa');
     // await moneyThumbUtil.convertPdf(
     //   token,
     //   '66b09b48d6d8ce0b91d9a8c5',
     //   app['appid']
     // );
-    // await moneyThumbUtil.getScoreCard(
-    //   token,
-    //   app['appid'],
-    //   '66b09b48d6d8ce0b91d9a8c5'
-    // );
+    // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
+    // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();

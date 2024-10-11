@@ -1998,7 +1998,7 @@ class CaseUtil {
             // );
             let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-            if (accountTitle) {
+            if (accountTitle && creditor.remaining) {
                 data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
