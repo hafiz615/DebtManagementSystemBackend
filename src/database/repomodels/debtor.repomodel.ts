@@ -61,6 +61,7 @@ export class Debtor {
   weeklyBudgetStrategy3 = 0;
   profitMargin = 0;
   moneyThumbAppId = 0;
+  appid = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

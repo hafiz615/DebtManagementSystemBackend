@@ -68,7 +68,14 @@ class CaseService {
             if (!findCase) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            moneyThumb_util_1.default.run(String(findCase.debtor._id));
+            if (!findCase?.getCaseIdPercentage &&
+                !findCase?.debtor?.strategy1MaxProfit &&
+                !findCase?.debtor?.strategy3MaxProfit) {
+                await moneyThumb_util_1.default.run(String(findCase.debtor._id));
+                this.caseRepository.updateById(req.params.id, {
+                    getCaseIdPercentage: true,
+                });
+            }
             for (let doc of findCase.debtor.documents) {
                 const url = await this.uploadUtil.getS3FileSignedUrl(doc.key
                 //'application/pdf'

@@ -68,6 +68,7 @@ export interface IDebtor extends Document {
   weeklyBudgetStrategy3: number;
   profitMargin: number;
   moneyThumbAppId: number;
+  appid: number;
   createdAt: string;
   updatedAt: string;
 }

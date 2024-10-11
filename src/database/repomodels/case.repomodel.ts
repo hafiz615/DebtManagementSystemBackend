@@ -43,6 +43,7 @@ export class Case {
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
   settlementRange = false;
+  getCaseIdPercentage = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

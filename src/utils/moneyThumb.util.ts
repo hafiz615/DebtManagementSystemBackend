@@ -168,11 +168,11 @@ class MoneyThumbUtil {
           );
           if (profitArray.length && trueRevenueArray.length) {
             weeklyProfit = (parseFloat(profitArray[1]) / 22) * 5;
-            console.log(weeklyProfit);
             const weeklyTrueRevenue =
               (parseFloat(trueRevenueArray[1]) / 22) * 5;
-            const profitability = (weeklyProfit / weeklyTrueRevenue) * 0.67;
-            console.log(profitability, 'profitability');
+            const profitability = weeklyTrueRevenue
+              ? (weeklyProfit / weeklyTrueRevenue) * 0.67
+              : 0;
             filter['strategy3MaxProfit'] =
               Math.round(profitability * 100) / 100;
           }
@@ -181,31 +181,28 @@ class MoneyThumbUtil {
       if (scoreCard['mcacompanies']) {
         const mcaCompanies = scoreCard['mcacompanies'];
         const data = mcaCompanies.data;
-        if (data?.length) {
-          const lastLenderOccurrences = {};
-          for (const item of data) {
-            lastLenderOccurrences[item.lender] = {
-              lender: item.lender,
-              withdrawal_total: item.withdrawal_total,
+        const lastLenderOccurrences = {};
+        for (const item of data) {
+          lastLenderOccurrences[item.lender] = {
+            lender: item.lender,
+            withdrawal_total: item.withdrawal_total,
+          };
+        }
+        for (let i = 0; i < data.length; i++) {
+          if (data[i].month === 'Totals') {
+            lastLenderOccurrences[data[i - 1].lender] = {
+              withdrawal_total:
+                (data[i - 1].withdrawal_total / data[i - 1].work_days) * 5,
             };
           }
-          for (let i = 0; i < data.length; i++) {
-            if (data[i].month === 'Totals') {
-              lastLenderOccurrences[data[i - 1].lender] = {
-                withdrawal_total:
-                  (data[i - 1].withdrawal_total / data[i - 1].work_days) * 5,
-              };
-            }
-          }
-          console.log(lastLenderOccurrences, 'lastLenderOccurrences');
-          let totalWithdrawl = 0;
-          for (let lender of Object.values(lastLenderOccurrences as any)) {
-            const temp: any = lender;
-            totalWithdrawl += temp.withdrawal_total;
-          }
-          const trueProfit = (totalWithdrawl + weeklyProfit) * 0.67;
-          filter['strategy1MaxProfit'] = Math.round(trueProfit * 100) / 100;
         }
+        let totalWithdrawl = 0;
+        for (let lender of Object.values(lastLenderOccurrences as any)) {
+          const temp: any = lender;
+          totalWithdrawl += temp.withdrawal_total;
+        }
+        const trueProfit = (totalWithdrawl + weeklyProfit) * 0.67;
+        filter['strategy1MaxProfit'] = Math.round(trueProfit * 100) / 100;
       }
       await this.debtorRepository.updateById<IDebtor>(debtorId, filter);
     } catch (error) {

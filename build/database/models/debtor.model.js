@@ -194,6 +194,9 @@ const debtorSchema = new mongoose_1.Schema({
     moneyThumbAppId: {
         type: Number,
     },
+    appid: {
+        type: Number,
+    },
     createdAt: {
         type: Date,
         required: true,

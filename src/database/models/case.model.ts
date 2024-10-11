@@ -120,6 +120,9 @@ const caseModel: Schema = new Schema({
   settlementRange: {
     type: Boolean,
   },
+  getCaseIdPercentage: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

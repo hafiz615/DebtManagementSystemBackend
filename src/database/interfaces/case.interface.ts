@@ -52,6 +52,7 @@ export interface ICase extends Document {
   lumpSumJustifications: boolean;
   fullProfitJustifications: boolean;
   settlementRange: boolean;
+  getCaseIdPercentage: boolean;
   createdAt: string;
   updatedAt: string;
 }

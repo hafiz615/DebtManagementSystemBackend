@@ -143,6 +143,9 @@ const caseModel = new mongoose_1.Schema({
     settlementRange: {
         type: Boolean,
     },
+    getCaseIdPercentage: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

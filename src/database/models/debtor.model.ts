@@ -171,6 +171,9 @@ const debtorSchema: Schema = new Schema({
   moneyThumbAppId: {
     type: Number,
   },
+  appid: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     required: true,
