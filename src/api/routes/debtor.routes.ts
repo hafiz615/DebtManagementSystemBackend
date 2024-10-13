@@ -103,4 +103,10 @@ router.post(
   debtorController.addDebtorAccount
 );
 
+router.get(
+  '/getDebtorSummery/:id',
+  //authorize.validateAuth,
+  debtorController.getDebtorSummery
+);
+
 export default router;

@@ -24,6 +24,8 @@ import emailUtil from '../../utils/email.util';
 import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.repository';
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
+import {ICreditor} from '../../database/interfaces/creditor.interface';
+import paymentUtil from '../../utils/payment.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -973,7 +975,7 @@ class DebtorService {
       req.params.id
     );
     if (!getDebtor) {
-      return [false, constants.notFoundMessage('Debtor')];
+      return [false, constants.notFoundMessage('Debtor'), {}];
     }
     const customerVaultResponse = await caseUtil.createVault(
       req.body.paymentToken
@@ -994,6 +996,41 @@ class DebtorService {
       updatedAt: commonUtil.getCurrentDate(),
     });
     return [true, constants.successAddMessage('Debtor account details')];
+  }
+
+  async getDebtorSummery(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('Debtor'), {}];
+    }
+    let getAllCreditor: Array<ICreditor | any> | any =
+      await caseUtil.getCreditorsForDebtor(req.params.id);
+
+    let payments = await paymentUtil.getPaymentsByStatusAndDebtor(
+      'Upcoming',
+      req.params.id
+    );
+    let pendingPayments: Array<IPayment | any> | any =
+      await paymentUtil.getPaymentsByStatusAndDebtor('Pending', req.params.id);
+
+    return [
+      true,
+      constants.successFoundMessage('Debtor account details'),
+      {
+        creditorList: getAllCreditor,
+        totalCreditor: getAllCreditor?.length ?? 0,
+        totalDebt: getAllCreditor.reduce(
+          (sum, creditor) => sum + creditor.totalDebt,
+          0
+        ),
+
+        weeklyRemainingPayments: pendingPayments?.length ?? 0,
+        companyName: getDebtor?.businessInformation?.companyName,
+        upComingPayments: payments,
+      },
+    ];
   }
 }
 
