@@ -588,10 +588,10 @@ class CaseService {
         creditors,
         debtor
       );
+    await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage;
     data['percentageReceivableCommissionAmount'] =
       commisionPercentage * debtor.weeklyBudgetStrategy3;
-    debtor.weeklyBudgetStrategy3;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
@@ -781,6 +781,15 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    const commisionPercentage =
+      await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
+        creditors,
+        debtor
+      );
+    await creditorUtil.addBreakEven(creditors);
+    data['percentageReceivableCommission'] = commisionPercentage;
+    data['percentageReceivableCommissionAmount'] =
+      commisionPercentage * debtor.weeklyBudgetStrategy3;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     data['creditors'] = creditors;

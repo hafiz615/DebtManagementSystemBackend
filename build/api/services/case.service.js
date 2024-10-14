@@ -360,10 +360,10 @@ class CaseService {
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
             const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor);
+            await creditor_util_1.default.addBreakEven(creditors);
             data['percentageReceivableCommission'] = commisionPercentage;
             data['percentageReceivableCommissionAmount'] =
                 commisionPercentage * debtor.weeklyBudgetStrategy3;
-            debtor.weeklyBudgetStrategy3;
             data['creditorsContractDetailsSum'] =
                 await this.calculateContractDetailsSum(creditors);
             const result = await this.strategyRepository.getOne({
@@ -502,6 +502,11 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor);
+            await creditor_util_1.default.addBreakEven(creditors);
+            data['percentageReceivableCommission'] = commisionPercentage;
+            data['percentageReceivableCommissionAmount'] =
+                commisionPercentage * debtor.weeklyBudgetStrategy3;
             data['creditorsContractDetailsSum'] =
                 await this.calculateContractDetailsSum(creditors);
             data['creditors'] = creditors;

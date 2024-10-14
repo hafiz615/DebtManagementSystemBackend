@@ -4,6 +4,7 @@ import {CreditorRepository} from '../api/repository/creditor/creditor.repository
 import {ICreditor} from '../database/interfaces/creditor.interface';
 import commonUtil from './common.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
+import caseUtil from './case.util';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
@@ -79,10 +80,15 @@ class CreditorUtil {
 
   async addBreakEven(creditors: any) {
     for (const creditor of creditors) {
-      const fundedAmount = 0;
+      const contractDetails = creditor.contractDetails;
+      let amount = 0;
+      if (contractDetails?.loan_amount)
+        amount = caseUtil.getCleanAmount(contractDetails?.loan_amount);
+      if (contractDetails?.funded_amount)
+        amount = caseUtil.getCleanAmount(contractDetails?.funded_amount);
       const paidBack = creditor.remainingAmountPaid;
-      const currentBalance = fundedAmount - paidBack;
-      let breakEven = fundedAmount * 1.2 - paidBack;
+      const currentBalance = amount - paidBack;
+      let breakEven = amount * 1.2 - paidBack;
       if (breakEven <= 0) breakEven = currentBalance * 0.3;
       creditor['breakEven'] = breakEven;
     }

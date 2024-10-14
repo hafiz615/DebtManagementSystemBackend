@@ -7,6 +7,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const common_util_1 = __importDefault(require("./common.util"));
+const case_util_1 = __importDefault(require("./case.util"));
 class CreditorUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -74,10 +75,15 @@ class CreditorUtil {
     }
     async addBreakEven(creditors) {
         for (const creditor of creditors) {
-            const fundedAmount = 0;
+            const contractDetails = creditor.contractDetails;
+            let amount = 0;
+            if (contractDetails?.loan_amount)
+                amount = case_util_1.default.getCleanAmount(contractDetails?.loan_amount);
+            if (contractDetails?.funded_amount)
+                amount = case_util_1.default.getCleanAmount(contractDetails?.funded_amount);
             const paidBack = creditor.remainingAmountPaid;
-            const currentBalance = fundedAmount - paidBack;
-            let breakEven = fundedAmount * 1.2 - paidBack;
+            const currentBalance = amount - paidBack;
+            let breakEven = amount * 1.2 - paidBack;
             if (breakEven <= 0)
                 breakEven = currentBalance * 0.3;
             creditor['breakEven'] = breakEven;

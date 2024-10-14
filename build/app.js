@@ -79,6 +79,10 @@ class App {
         // );
         // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
         // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
+        // const debtors = await debtorRepo.getAllWithoutPagination<IDebtor>();
+        // for (let i = 23; i < debtors.length; i++) {
+        //   await moneyThumbUtil.run(String(debtors[i]._id));
+        // }
         // const strat = new StrategyRepository();
         // const caseRepo = new CaseRepository();
         // const all = await strat.getAllWithoutPagination<IStrategy>({
