@@ -100,6 +100,8 @@ class CreditorUtil {
       const percentage =
         (creditor.remaining / totalRemaining) * debtor.weeklyBudgetStrategy3;
       creditor.percentageReceivable = Math.round(percentage * 100) / 100;
+      creditor.percentageReceivableAmount =
+        creditor.percentageReceivable * creditor.remaining;
     }
 
     const percentageReceivableCommission =
