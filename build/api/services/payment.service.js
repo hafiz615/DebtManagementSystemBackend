@@ -16,6 +16,7 @@ const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -506,8 +507,11 @@ class PaymentService {
         const paymentId = req.params.id;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, {
             path: 'caseId',
-            select: ['_id', 'caseCode'],
-            populate: ['creditor'],
+            select: ['_id', 'caseCode', 'remaining'],
+            populate: [
+                { path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId'] },
+                { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+            ],
         });
         const interval = {
             unit: 'days',
@@ -556,6 +560,11 @@ class PaymentService {
                 sendViaPaynote: 'Success',
                 status: 'Success',
             });
+            const updatedCase = await this.caseRepository.updateById(payment.caseId._id, { $inc: { remainingAmountPaid: payment.amount } });
+            if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+                const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(String(payment.caseId.debtor._id), String(payment.caseId.creditor._id));
+                email_util_1.default.sendEmailIfDebtorPaysDebt(payment.caseId, payment.caseId.debtor, creditors);
+            }
         }
         return [true, 'Payment Successfull'];
     }

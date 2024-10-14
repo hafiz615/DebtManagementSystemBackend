@@ -1,11 +1,16 @@
+import mongoose from 'mongoose';
+import {CaseRepository} from '../api/repository/case/case.repository';
 import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
 import {ICreditor} from '../database/interfaces/creditor.interface';
 import commonUtil from './common.util';
+import {IDebtor} from '../database/interfaces/debtor.interface';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
+  private caseRepository: CaseRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
+    this.caseRepository = new CaseRepository();
   }
   async checkCreditorsMapping(creditorsArray: any) {
     for (const creditor of creditorsArray) {
@@ -33,6 +38,81 @@ class CreditorUtil {
       }
     }
     return creditorsArray;
+  }
+
+  async getCreditorsEmailForDebtor(debtorId: string, creditorId = '') {
+    const match = {
+      debtor: new mongoose.Types.ObjectId(debtorId),
+    };
+    if (creditorId) {
+      match['creditor'] = {$ne: new mongoose.Types.ObjectId(creditorId)};
+    }
+    return await this.caseRepository.applyAggregate([
+      {
+        $match: match, // Filter for a specific debtor
+      },
+      {
+        $group: {
+          _id: '$creditor', // Group by creditor to get unique creditors
+        },
+      },
+      {
+        $lookup: {
+          from: 'creditors', // Name of the creditors collection
+          localField: '_id', // Field in the cases (creditor reference)
+          foreignField: '_id', // Field in the creditors collection (creditor _id)
+          as: 'creditorDetails', // Output field containing the matched creditor details
+        },
+      },
+      {
+        $unwind: '$creditorDetails', // Unwind the creditorDetails array to get individual creditor details
+      },
+      {
+        $project: {
+          _id: 1, // Exclude the default _id field
+          creditorEmail: '$creditorDetails.basicInformation.email', // Include creditor's email
+          creditorName: '$creditorDetails.basicInformation.fullName',
+        },
+      },
+    ]);
+  }
+
+  async addBreakEven(creditors: any) {
+    for (const creditor of creditors) {
+      const fundedAmount = 0;
+      const paidBack = creditor.remainingAmountPaid;
+      const currentBalance = fundedAmount - paidBack;
+      let breakEven = fundedAmount * 1.2 - paidBack;
+      if (breakEven <= 0) breakEven = currentBalance * 0.3;
+      creditor['breakEven'] = breakEven;
+    }
+  }
+
+  async addCreditorPercentagesAndGetPercentageCommission(
+    creditors: any,
+    debtor: IDebtor
+  ) {
+    const totalRemaining = creditors.reduce(
+      (sum, item) => sum + item.remaining,
+      0
+    );
+    for (const creditor of creditors) {
+      const percentage =
+        (creditor.remaining / totalRemaining) * debtor.weeklyBudgetStrategy3;
+      creditor.percentageReceivable = Math.round(percentage * 100) / 100;
+      creditor.percentageReceivableAmount =
+        creditor.percentageReceivable * creditor.remaining;
+    }
+
+    const percentageReceivableCommission =
+      (debtor.totalCommission / (totalRemaining + debtor.totalCommission)) *
+      debtor.weeklyBudgetStrategy3;
+
+    console.log(
+      percentageReceivableCommission,
+      'percentageReceivableCommission'
+    );
+    return Math.round(percentageReceivableCommission * 100) / 100;
   }
 }
 export default new CreditorUtil();

@@ -46,7 +46,18 @@ class Debtor {
         this.commissionPercentage = 20;
         this.bulkUpload = false;
         this.weeklyBudgetUpdated = false;
-        this.emailKey = '';
+        this.strategy1MaxProfit = 0;
+        this.strategy3MaxProfit = 0;
+        this.strategy1BudgetCustom = 0;
+        this.strategy3BudgetCustom = 0;
+        this.weeklyBudgetKeyStrategy1 = '';
+        this.weeklyBudgetKeyStrategy3 = '';
+        this.weeklyBudgetStrategy1 = 0;
+        this.weeklyBudgetStrategy3 = 0;
+        this.profitMargin = 0;
+        this.moneyThumbAppId = 0;
+        this.appid = 0;
+        this.totalStatements = 0;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

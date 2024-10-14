@@ -15,6 +15,7 @@ import {decrypt, encrypt} from 'n-krypta';
 import dotenv from 'dotenv';
 import constantsUtil from '../../utils/constants.util';
 import emailUtil from '../../utils/email.util';
+import creditorUtil from '../../utils/creditor.util';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -646,8 +647,11 @@ class PaymentService {
       undefined,
       {
         path: 'caseId',
-        select: ['_id', 'caseCode'],
-        populate: ['creditor'],
+        select: ['_id', 'caseCode', 'remaining'],
+        populate: [
+          {path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId']},
+          {path: 'debtor', select: ['_id', 'basicInformation.fullName']},
+        ],
       }
     );
     const interval = {
@@ -708,6 +712,21 @@ class PaymentService {
         sendViaPaynote: 'Success',
         status: 'Success',
       });
+      const updatedCase = await this.caseRepository.updateById<ICase>(
+        payment.caseId._id,
+        {$inc: {remainingAmountPaid: payment.amount}}
+      );
+      if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+        const creditors = await creditorUtil.getCreditorsEmailForDebtor(
+          String(payment.caseId.debtor._id),
+          String(payment.caseId.creditor._id)
+        );
+        emailUtil.sendEmailIfDebtorPaysDebt(
+          payment.caseId,
+          payment.caseId.debtor,
+          creditors
+        );
+      }
     }
     return [true, 'Payment Successfull'];
   }

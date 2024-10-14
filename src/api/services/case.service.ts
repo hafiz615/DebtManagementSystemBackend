@@ -36,6 +36,8 @@ import {IJustification} from '../../database/interfaces/justification.interface'
 import {Creditor} from '../../database/repomodels/creditor.repomodel';
 import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.repository';
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
+import debtorUtil from '../../utils/debtor.util';
+import moneyThumbUtil from '../../utils/moneyThumb.util';
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
@@ -126,6 +128,16 @@ class CaseService {
     );
     if (!findCase) {
       return [false, constantsUtil.notFoundMessage('Case')];
+    }
+    if (
+      !findCase?.getCaseIdPercentage &&
+      !findCase?.debtor?.strategy1MaxProfit &&
+      !findCase?.debtor?.strategy3MaxProfit
+    ) {
+      await moneyThumbUtil.run(String(findCase.debtor._id));
+      this.caseRepository.updateById<ICase>(req.params.id, {
+        getCaseIdPercentage: true,
+      });
     }
     for (let doc of findCase.debtor.documents) {
       const url = await this.uploadUtil.getS3FileSignedUrl(
@@ -328,7 +340,7 @@ class CaseService {
         creditors,
         getDebtor.commissionPercentage
       );
-      caseUtil.getSettlementRange(caseUpdated);
+      caseUtil.getSettlementRange(findCase);
       caseUtil.getLumpSumAmount(caseUpdated);
       caseUtil.getFullProfitSettlement(caseUpdated);
     }
@@ -536,14 +548,13 @@ class CaseService {
     if (!req.query.all) {
       return [false, 'Query param missing'];
     }
-    const caseTemp = await this.caseRepository.getById<ICase>(
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
       [{path: 'debtor'}]
     );
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
-    const debtor: any = caseTemp.debtor;
     let getScores = null,
       creditorNames = null;
     let creditors = null;
@@ -562,6 +573,9 @@ class CaseService {
         updatedAt: commonUtil.getCurrentDate(),
       });
     }
+    if (hardReload === 'true')
+      caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
+    const debtor: any = caseTemp.debtor;
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
     creditors = Array.from(
@@ -569,6 +583,15 @@ class CaseService {
         creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
       ).values()
     );
+    const commisionPercentage =
+      await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
+        creditors,
+        debtor
+      );
+    data['percentageReceivableCommission'] = commisionPercentage;
+    data['percentageReceivableCommissionAmount'] =
+      commisionPercentage * debtor.weeklyBudgetStrategy3;
+    debtor.weeklyBudgetStrategy3;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
@@ -729,7 +752,7 @@ class CaseService {
       return [false, 'Invalid commission percentage'];
     }
     const comm = Number(req.body.commissionPercentage);
-    const caseTemp = await this.caseRepository.getById<ICase>(
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
@@ -741,6 +764,7 @@ class CaseService {
     let creditors = null;
     let settlementRange = null;
     let data = {};
+    caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
     let debtor: any = caseTemp.debtor;
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       strategyTwo: false,
