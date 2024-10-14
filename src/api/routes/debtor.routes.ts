@@ -103,4 +103,11 @@ router.post(
   debtorController.addDebtorAccount
 );
 
+router.post(
+  '/saveWeeklyBudgetValues/:id',
+  authorize.validateAuth,
+  debtor.saveWeeklyBudgetValues,
+  debtorController.saveWeeklyBudgetValues
+);
+
 export default router;

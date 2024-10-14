@@ -1019,7 +1019,7 @@ class DebtorService {
       req.params.id
     );
     if (!getDebtor) {
-      return [false, constants.notFoundMessage('Debtor')];
+      return [false, constants.notFoundMessage('debtor')];
     }
     const customerVaultResponse = await caseUtil.createVault(
       req.body.paymentToken
@@ -1040,6 +1040,23 @@ class DebtorService {
       updatedAt: commonUtil.getCurrentDate(),
     });
     return [true, constants.successAddMessage('Debtor account details')];
+  }
+
+  async saveWeeklyBudgetValues(req: Request) {
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    if (!caseTemp) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
+    if (!debtor) {
+      return [true, constants.failureUpdateMessage('weekly budget info')];
+    }
+    return [true, constants.successUpdateMessage('Weekly budget info')];
   }
 }
 

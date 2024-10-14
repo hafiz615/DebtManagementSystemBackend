@@ -305,6 +305,35 @@ class DebtorRequests {
         );
     }
   };
+
+  saveWeeklyBudgetValues = (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const schema = Joi.object({
+      strategy1Profit: Joi.number().strict(),
+      strategy1Weekly: Joi.number().strict(),
+      strategy1Custom: Joi.number().strict(),
+      strategy1Choosen: Joi.string(),
+      strategy3Profit: Joi.number().strict(),
+      strategy3ProfitMargin: Joi.number().strict(),
+      strategy3Custom: Joi.number().strict(),
+      strategy3Choosen: Joi.string(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  };
 }
 
 export default new DebtorRequests();

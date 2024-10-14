@@ -1,6 +1,7 @@
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {ICase} from '../database/interfaces/case.interface';
+import {IDebtor} from '../database/interfaces/debtor.interface';
 import commonUtil from './common.util';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
@@ -42,7 +43,7 @@ class DebtorUtil {
       settlementRange: true,
       updatedAt: commonUtil.getCurrentDate(),
     });
-    return await this.debtorRepository.updateById(
+    return await this.debtorRepository.updateById<IDebtor>(
       String(caseTemp.debtor._id),
       filter
     );
@@ -54,17 +55,18 @@ class DebtorUtil {
     debtorName: string
   ) {
     const token = await moneyThumbUtil.authenticateUser();
-    const moneyThumbApp = moneyThumbUtil.createNewApp(token, debtorId);
+    const moneyThumbApp = await moneyThumbUtil.createNewApp(token, debtorId);
     if (moneyThumbApp['totalstatements'] > totalStatements) {
-      const {accountslist} = await moneyThumbUtil.getScoreCard(
+      const scoreCard = await moneyThumbUtil.getScoreCard(
         token,
         moneyThumbApp['appid']
       );
-      if (accountslist.length > 1) {
-        const len = accountslist.length;
+      const accounts = scoreCard['accountslist'];
+      if (accounts.length > 1) {
+        const len = accounts.length;
         const percentageChange = await commonUtil.calculatePercentageChange(
-          parseFloat(accountslist[len - 2]['true_credits']),
-          parseFloat(accountslist[len - 1]['true_credits'])
+          parseFloat(accounts[len - 2]['true_credits']),
+          parseFloat(accounts[len - 1]['true_credits'])
         );
         let incDec = '',
           posNeg = '';
@@ -76,13 +78,25 @@ class DebtorUtil {
           incDec = 'Decrease';
           posNeg = 'negative';
         }
-        const previousMonth = accountslist[len - 2]['statement_month'];
-        const previousYear = accountslist[len - 2]['statement_year'];
-        const currentMonth = accountslist[len - 1]['statement_month'];
-        const currentYear = accountslist[len - 1]['statement_year'];
-
+        const previousMonth = accounts[len - 2]['statement_month'];
+        const previousYear = accounts[len - 2]['statement_year'];
+        const currentMonth = accounts[len - 1]['statement_month'];
+        const currentYear = accounts[len - 1]['statement_year'];
         const creditors =
           await creditorUtil.getCreditorsEmailForDebtor(debtorId);
+        console.log(
+          incDec,
+          posNeg,
+          previousMonth,
+          previousYear,
+          currentMonth,
+          currentYear,
+          creditors,
+          debtorName,
+          accounts[len - 2]['true_credits'],
+          accounts[len - 1]['true_credits'],
+          percentageChange
+        );
         emailUtil.percentageChangeEmail(
           incDec,
           posNeg,
@@ -92,8 +106,8 @@ class DebtorUtil {
           currentYear,
           creditors,
           debtorName,
-          accountslist[len - 2]['true_credits'],
-          accountslist[len - 1]['true_credits'],
+          accounts[len - 2]['true_credits'],
+          accounts[len - 1]['true_credits'],
           percentageChange
         );
       }

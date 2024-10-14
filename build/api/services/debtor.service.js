@@ -836,7 +836,7 @@ class DebtorService {
     async addDebtorAccount(req) {
         const getDebtor = await this.debtorRepository.getById(req.params.id);
         if (!getDebtor) {
-            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
         const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
         if (!customerVaultResponse[0])
@@ -855,6 +855,17 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [true, constants_util_1.default.successAddMessage('Debtor account details')];
+    }
+    async saveWeeklyBudgetValues(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
+        if (!debtor) {
+            return [true, constants_util_1.default.failureUpdateMessage('weekly budget info')];
+        }
+        return [true, constants_util_1.default.successUpdateMessage('Weekly budget info')];
     }
 }
 exports.default = DebtorService;
