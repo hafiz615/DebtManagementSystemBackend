@@ -537,6 +537,31 @@ class EmailUtil {
             await this.sendEmail(to, from, subject, content);
         }
     }
+    async percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, previousSale, currentSale, percentage) {
+        for (const creditor of creditors) {
+            const content = `Dear ${creditor.creditorName},
+
+      I hope this email finds you well.
+      
+      I wanted to provide you with an update on the sales performance of ${debtorName} for ${currentMonth}, ${currentYear}. We have observed a ${posNeg} change in sales compared to the previous month.
+      
+      Sales for ${currentMonth}, ${currentYear}: $${currentSale}
+      Sales for ${previousMonth}, ${previousYear}: $${previousSale}
+      Percentage Change: ${incDec} of ${percentage}%
+      This growth reflects the recent business activities, and we are closely monitoring performance to ensure that all financial commitments are managed accordingly.
+      
+      If you have any questions or would like further details, feel free to reach out.
+      
+      Thank you for your continued partnership.
+      
+      Best regards,
+      First Choice Debt Solutions`;
+            const to = creditor.creditorEmail;
+            const from = process.env.defaultEmail;
+            const subject = `Notice of Sales Performance for ${currentMonth}, ${currentYear}`;
+            await this.sendEmail(to, from, subject, content);
+        }
+    }
 }
 exports.default = new EmailUtil();
 //# sourceMappingURL=email.util.js.map

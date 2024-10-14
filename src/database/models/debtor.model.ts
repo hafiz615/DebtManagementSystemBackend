@@ -138,9 +138,6 @@ const debtorSchema: Schema = new Schema({
   weeklyBudgetUpdated: {
     type: Boolean,
   },
-  emailKey: {
-    type: String,
-  },
   strategy1MaxProfit: {
     type: Number,
   },
@@ -172,6 +169,9 @@ const debtorSchema: Schema = new Schema({
     type: Number,
   },
   appid: {
+    type: Number,
+  },
+  totalStatements: {
     type: Number,
   },
   createdAt: {

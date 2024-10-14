@@ -40,7 +40,7 @@ class MoneyThumbUtil {
         try {
             console.log('I am in authenticateUser moneythumb');
             console.log('URL: ', url);
-            console.log('Payload: ', data);
+            console.log('Payload: ', {});
             const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -143,7 +143,6 @@ class MoneyThumbUtil {
                 },
             });
             console.log('Response Data', response.data['metrics']);
-            console.log('Response Data', response.data['mcacompanies']);
             return response.data;
         }
         catch (error) {
@@ -196,6 +195,7 @@ class MoneyThumbUtil {
                 const trueProfit = (totalWithdrawl + weeklyProfit) * 0.67;
                 filter['strategy1MaxProfit'] = Math.round(trueProfit * 100) / 100;
             }
+            console.log(filter);
             await this.debtorRepository.updateById(debtorId, filter);
         }
         catch (error) {

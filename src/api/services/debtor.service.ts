@@ -25,6 +25,8 @@ import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.reposito
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
+import creditorUtil from '../../utils/creditor.util';
+import debtorUtil from '../../utils/debtor.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -98,9 +100,14 @@ class DebtorService {
 
   async listingDetails(req: Request) {
     let casesCount = 0;
-    const findCase = await this.caseRepository.getOne<ICase>({
-      debtor: req.params.id,
-    });
+    const findCase = await this.caseRepository.getOne<ICase>(
+      {
+        debtor: req.params.id,
+      },
+      undefined,
+      undefined,
+      ['debtor']
+    );
     if (!findCase) {
       const debtor = await this.debtorRepository.getById<IDebtor>(
         req.params.id
@@ -142,6 +149,19 @@ class DebtorService {
           debtorTotalCases: casesCount,
         },
       ];
+    }
+    const debtor: any = findCase.debtor;
+    const token = await moneyThumbUtil.authenticateUser();
+    const moneyThumbApp = await moneyThumbUtil.createNewApp(
+      token,
+      req.params.id
+    );
+    console.log(debtor);
+    if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
+      await this.debtorRepository.updateById(debtor._id, {
+        totalStatements: moneyThumbApp['totalStatements'],
+        updatedAt: commonUtil.getCurrentDate(),
+      });
     }
     let page = 1;
     let limit = 5;
@@ -703,6 +723,7 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
+    moneyThumbUtil.run(String(debtor._id));
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
       req.body.extractedFields
@@ -744,7 +765,16 @@ class DebtorService {
       settlementRange: false,
       updatedAt: commonUtil.getCurrentDate(),
     });
-    await moneyThumbUtil.run(String(caseTemp.debtor._id));
+    await moneyThumbUtil.run(req.params.id);
+    const statements = caseTemp.debtor?.totalStatements;
+    if (caseTemp.intervals) {
+      debtorUtil.percentageChangeEmail(
+        req.params.id,
+        statements ? statements : 0,
+        caseTemp.debtor?.basicInformation?.fullName
+      );
+    }
+
     // for (let doc of findCase.documents) {
     //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
     //   doc.url = url;

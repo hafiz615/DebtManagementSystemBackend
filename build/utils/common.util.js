@@ -33,6 +33,11 @@ class CommonUtil {
         // }
         return permissions[keyword];
     }
+    async calculatePercentageChange(oldValue, newValue) {
+        const difference = newValue - oldValue;
+        const percentageChange = (difference / oldValue) * 100;
+        return Number(percentageChange.toFixed(2)); // Returns the result rounded to 2 decimal places
+    }
 }
 exports.default = new CommonUtil();
 //# sourceMappingURL=common.util.js.map

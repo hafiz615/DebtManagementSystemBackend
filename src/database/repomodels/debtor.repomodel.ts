@@ -50,7 +50,6 @@ export class Debtor {
   commissionPercentage = 20;
   bulkUpload = false;
   weeklyBudgetUpdated = false;
-  emailKey = '';
   strategy1MaxProfit = 0;
   strategy3MaxProfit = 0;
   strategy1BudgetCustom = 0;
@@ -62,6 +61,7 @@ export class Debtor {
   profitMargin = 0;
   moneyThumbAppId = 0;
   appid = 0;
+  totalStatements = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

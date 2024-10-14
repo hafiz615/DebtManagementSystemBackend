@@ -31,7 +31,6 @@ const strategy_repository_1 = require("../api/repository/strategy/strategy.repos
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
 const paynote_util_1 = __importDefault(require("./paynote.util"));
-const nanoid_1 = require("nanoid");
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
 dotenv_1.default.config();
@@ -67,7 +66,7 @@ class CaseUtil {
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
         newDebtor.createdBy = createdBy;
-        newDebtor.emailKey = `[${(0, nanoid_1.nanoid)(10).toUpperCase().replace(/[_-]/g, '')}]`;
+        // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
         // newDebtor.createdBy = reqTemp.id;
         // if (!data?.basicInformation?.weeklyBudget)
         //   data.basicInformation.weeklyBudget = 1;

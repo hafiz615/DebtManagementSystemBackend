@@ -90,7 +90,7 @@ class CaseUtil {
     // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
-    newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
+    // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
     // newDebtor.createdBy = reqTemp.id;
     // if (!data?.basicInformation?.weeklyBudget)
     //   data.basicInformation.weeklyBudget = 1;

@@ -18,6 +18,7 @@ const email_util_1 = __importDefault(require("../../utils/email.util"));
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 class DebtorService {
     constructor() {
         this.getAllDebtors = async (req) => {
@@ -155,7 +156,7 @@ class DebtorService {
         let casesCount = 0;
         const findCase = await this.caseRepository.getOne({
             debtor: req.params.id,
-        });
+        }, undefined, undefined, ['debtor']);
         if (!findCase) {
             const debtor = await this.debtorRepository.getById(req.params.id);
             const paymentCounts = {
@@ -195,6 +196,16 @@ class DebtorService {
                     debtorTotalCases: casesCount,
                 },
             ];
+        }
+        const debtor = findCase.debtor;
+        const token = await moneyThumb_util_1.default.authenticateUser();
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, req.params.id);
+        console.log(debtor);
+        if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
+            await this.debtorRepository.updateById(debtor._id, {
+                totalStatements: moneyThumbApp['totalStatements'],
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
         }
         let page = 1;
         let limit = 5;
@@ -638,6 +649,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
+        moneyThumb_util_1.default.run(String(debtor._id));
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, req.body.extractedFields);
         return [true, { debtor, creditorNames }];
     }
@@ -667,7 +679,11 @@ class DebtorService {
             settlementRange: false,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        await moneyThumb_util_1.default.run(String(caseTemp.debtor._id));
+        await moneyThumb_util_1.default.run(req.params.id);
+        const statements = caseTemp.debtor?.totalStatements;
+        if (caseTemp.intervals) {
+            debtor_util_1.default.percentageChangeEmail(req.params.id, statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
+        }
         // for (let doc of findCase.documents) {
         //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
         //   doc.url = url;

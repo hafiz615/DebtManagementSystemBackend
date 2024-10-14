@@ -2,6 +2,9 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import commonUtil from './common.util';
+import creditorUtil from './creditor.util';
+import emailUtil from './email.util';
+import moneyThumbUtil from './moneyThumb.util';
 
 class DebtorUtil {
   private debtorRepository: DebtorRepository;
@@ -43,6 +46,58 @@ class DebtorUtil {
       String(caseTemp.debtor._id),
       filter
     );
+  }
+
+  async percentageChangeEmail(
+    debtorId: string,
+    totalStatements: number,
+    debtorName: string
+  ) {
+    const token = await moneyThumbUtil.authenticateUser();
+    const moneyThumbApp = moneyThumbUtil.createNewApp(token, debtorId);
+    if (moneyThumbApp['totalstatements'] > totalStatements) {
+      const {accountslist} = await moneyThumbUtil.getScoreCard(
+        token,
+        moneyThumbApp['appid']
+      );
+      if (accountslist.length > 1) {
+        const len = accountslist.length;
+        const percentageChange = await commonUtil.calculatePercentageChange(
+          parseFloat(accountslist[len - 2]['true_credits']),
+          parseFloat(accountslist[len - 1]['true_credits'])
+        );
+        let incDec = '',
+          posNeg = '';
+        if (percentageChange > 1) {
+          incDec = 'Increase';
+          posNeg = 'positive';
+        }
+        if (percentageChange > -1) {
+          incDec = 'Decrease';
+          posNeg = 'negative';
+        }
+        const previousMonth = accountslist[len - 2]['statement_month'];
+        const previousYear = accountslist[len - 2]['statement_year'];
+        const currentMonth = accountslist[len - 1]['statement_month'];
+        const currentYear = accountslist[len - 1]['statement_year'];
+
+        const creditors =
+          await creditorUtil.getCreditorsEmailForDebtor(debtorId);
+        emailUtil.percentageChangeEmail(
+          incDec,
+          posNeg,
+          previousMonth,
+          previousYear,
+          currentMonth,
+          currentYear,
+          creditors,
+          debtorName,
+          accountslist[len - 2]['true_credits'],
+          accountslist[len - 1]['true_credits'],
+          percentageChange
+        );
+      }
+    }
   }
 }
 export default new DebtorUtil();

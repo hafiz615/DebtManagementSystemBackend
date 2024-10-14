@@ -57,7 +57,6 @@ export interface IDebtor extends Document {
   commissionPaymentId: string;
   bulkUpload: boolean;
   weeklyBudgetUpdated: boolean;
-  emailKey: string;
   strategy1MaxProfit: number;
   strategy3MaxProfit: number;
   strategy1BudgetCustom: number;
@@ -69,6 +68,7 @@ export interface IDebtor extends Document {
   profitMargin: number;
   moneyThumbAppId: number;
   appid: number;
+  totalStatements: number;
   createdAt: string;
   updatedAt: string;
 }

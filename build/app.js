@@ -68,14 +68,34 @@ class App {
         //   });
         // }
         // const token = await moneyThumbUtil.authenticateUser();
-        // const app = await moneyThumbUtil.createNewApp(token, 'vice versa');
+        // const app = await moneyThumbUtil.createNewApp(
+        //   token,
+        //   '66f1221440020aa3522ec604'
+        // );
         // await moneyThumbUtil.convertPdf(
         //   token,
-        //   '66b09b48d6d8ce0b91d9a8c5',
+        //   '66f1221440020aa3522ec604',
         //   app['appid']
         // );
         // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
         // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
+        // const strat = new StrategyRepository();
+        // const caseRepo = new CaseRepository();
+        // const all = await strat.getAllWithoutPagination<IStrategy>({
+        //   name: 'strategy_one',
+        // });
+        // for (const strategy of all) {
+        //   const caseTemp = await caseRepo.getById<ICase>(strategy.caseId);
+        //   if (strategy?.data?.settlementRange) {
+        //     const sett = strategy.data.settlementRange;
+        //     const str1 = sett.true_profit * 0.67;
+        //     const str2 = sett.profitability * 0.67;
+        //     await debtorRepo.updateById<IDebtor>(String(caseTemp.debtor), {
+        //       strategy1MaxProfit: Math.round(str1 * 100) / 100,
+        //       strategy3MaxProfit: Math.round(str2 * 100) / 100,
+        //     });
+        //   }
+        // }
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();

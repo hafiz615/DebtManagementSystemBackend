@@ -161,9 +161,6 @@ const debtorSchema = new mongoose_1.Schema({
     weeklyBudgetUpdated: {
         type: Boolean,
     },
-    emailKey: {
-        type: String,
-    },
     strategy1MaxProfit: {
         type: Number,
     },
@@ -195,6 +192,9 @@ const debtorSchema = new mongoose_1.Schema({
         type: Number,
     },
     appid: {
+        type: Number,
+    },
+    totalStatements: {
         type: Number,
     },
     createdAt: {
