@@ -23,7 +23,7 @@ class DebtorUtil {
             weeklyBudgetKeyStrategy1: strategy1Key,
             weeklyBudgetKeyStrategy3: strategy3Key,
             weeklyBudgetStrategy1: strategy1Budget,
-            weeklyBudgetStrategy3: strategy3Budget,
+            weeklyBudgetStrategy3: strategy3Budget / 100,
             updatedAt: common_util_1.default.getCurrentDate(),
         };
         if (strategy1Key === 'strategy1Custom') {

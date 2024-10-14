@@ -25,10 +25,9 @@ class DebtorUtil {
       weeklyBudgetKeyStrategy1: strategy1Key,
       weeklyBudgetKeyStrategy3: strategy3Key,
       weeklyBudgetStrategy1: strategy1Budget,
-      weeklyBudgetStrategy3: strategy3Budget,
+      weeklyBudgetStrategy3: strategy3Budget / 100,
       updatedAt: commonUtil.getCurrentDate(),
     };
-
     if (strategy1Key === 'strategy1Custom') {
       filter['strategy1BudgetCustom'] = strategy1Budget;
       if (!caseTemp?.debtor?.basicInformation?.weeklyBudget)
