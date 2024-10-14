@@ -102,7 +102,7 @@ class MoneyThumbUtil {
                 const bytes = await this.uploadUtil.getPdfBytesFromS3(document.key);
                 if (typeof bytes === 'string')
                     continue;
-                const stringData = Buffer.from(bytes).toString();
+                const stringData = Buffer.from(bytes);
                 const data = {
                     token: token,
                     product: process.env.moneyThumbProduct,
