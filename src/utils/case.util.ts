@@ -40,6 +40,8 @@ import {JustificationRepository} from '../api/repository/justification/justifica
 import {IJustification} from '../database/interfaces/justification.interface';
 import paynoteUtil from './paynote.util';
 import {nanoid} from 'nanoid';
+import creditorUtil from './creditor.util';
+import emailUtil from './email.util';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -88,7 +90,7 @@ class CaseUtil {
     // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
-    newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
+    // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
     // newDebtor.createdBy = reqTemp.id;
     // if (!data?.basicInformation?.weeklyBudget)
     //   data.basicInformation.weeklyBudget = 1;
@@ -256,6 +258,9 @@ class CaseUtil {
         ? obj.creditor.accountTitleMapping
         : [],
       contractDetails: obj.contractDetails ? obj.contractDetails : null,
+      remainingAmountPaid: obj.remainingAmountPaid
+        ? obj.remainingAmountPaid
+        : 0,
     }));
   }
 
@@ -455,7 +460,7 @@ class CaseUtil {
     let commisionPercentage = debtor.commissionPercentage / 100;
     if (debtorFound && body.intervals) {
       const interval = body.intervals[0];
-      debt = body.remaining ?? 0;
+      debt = body.remaining ? body.remaining : 0;
       amount = await this.getWeeklyAmount(interval);
     }
     weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -474,7 +479,6 @@ class CaseUtil {
     console.log(weeklyBudget, 'weeklyBudget');
     console.log(amount, 'amounttttt');
     console.log(debt, 'debteeee');
-    console.log(commisionPercentage);
     return amount >= weeklyBudget
       ? {
           status: false,
@@ -1605,12 +1609,13 @@ class CaseUtil {
         accTitleObj && accTitleObj?.accountTitle
           ? accTitleObj.accountTitle
           : creditor.creditor.accountTitle;
-      let weekly_budget = Math.max(
-        (creditor.remaining * 0.09) / 4,
-        caseTemp.debtor.basicInformation.weeklyBudget
-      );
+      // let weekly_budget = Math.max(
+      //   (creditor.remaining * 0.09) / 4,
+      //   caseTemp.debtor.basicInformation.weeklyBudget
+      // );
+      let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
       let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
-      if (accountTitle) {
+      if (accountTitle && weekly_budget && creditor.remaining) {
         data[`${accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
@@ -1919,6 +1924,10 @@ class CaseUtil {
           updatedAt: commonUtil.getCurrentDate(),
         }
       );
+      // const profitPercent = response.data['true_profit'] * 0.67;
+      // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor), {
+      //   strategy3MaxProfit: profitPercent,
+      // });
       this.caseRepository.updateById(caseTemp._id, {
         strategyThree: true,
         updatedAt: commonUtil.getCurrentDate(),
@@ -2199,12 +2208,12 @@ class CaseUtil {
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
-      if (sum > 0) {
-        await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
-          'basicInformation.weeklyBudget': sum,
-          weeklyBudgetUpdated: true,
-        });
-      }
+      // if (sum > 0) {
+      //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+      //     'basicInformation.weeklyBudget': sum,
+      //     weeklyBudgetUpdated: true,
+      //   });
+      // }
     }
     return getScores;
   }
@@ -2227,12 +2236,12 @@ class CaseUtil {
         getScores.Scores['Weekly Budget']
       );
       getScores.Scores['Weekly Budget'].Summary = sum;
-      if (sum > 0) {
-        await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
-          'basicInformation.weeklyBudget': sum,
-          weeklyBudgetUpdated: true,
-        });
-      }
+      // if (sum > 0) {
+      //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+      //     'basicInformation.weeklyBudget': sum,
+      //     weeklyBudgetUpdated: true,
+      //   });
+      // }
     }
     return getScores;
   }
@@ -2248,26 +2257,29 @@ class CaseUtil {
       caseTemp,
       AIAuth.auth_token
     );
-    getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-    if (typeof getSettlementRange !== 'string') {
-      this.strategyRepository.upsert(
-        {caseId: caseTemp._id, name: 'strategy_one'},
-        {
-          'data.settlementRange': getSettlementRange,
-          updatedAt: commonUtil.getCurrentDate(),
-        }
-      );
-      this.caseRepository.updateById(caseTemp._id, {
-        strategyOne_3: true,
-        updatedAt: commonUtil.getCurrentDate(),
-      });
-    }
     if (typeof getSettlementRange === 'string') {
       this.caseRepository.updateById(caseTemp._id, {
         strategyOne_3: false,
         updatedAt: commonUtil.getCurrentDate(),
       });
+      return getSettlementRange;
     }
+    getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+    // const profitPercent = getSettlementRange['true_profit'] * 0.67;
+    // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor._id), {
+    //   strategy1MaxProfit: profitPercent,
+    // });
+    this.strategyRepository.upsert(
+      {caseId: caseTemp._id, name: 'strategy_one'},
+      {
+        'data.settlementRange': getSettlementRange,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    this.caseRepository.updateById(caseTemp._id, {
+      strategyOne_3: true,
+      updatedAt: commonUtil.getCurrentDate(),
+    });
     return getSettlementRange;
   }
 
@@ -2321,12 +2333,13 @@ class CaseUtil {
         accTitleObj && accTitleObj?.accountTitle
           ? accTitleObj.accountTitle
           : creditor.creditorAccountTitle;
-      let weekly_budget = Math.max(
-        (creditor.remaining * 0.09) / 4,
-        caseTemp.debtor.basicInformation.weeklyBudget
-      );
+      // let weekly_budget = Math.max(
+      //   (creditor.remaining * 0.09) / 4,
+      //   caseTemp.debtor.basicInformation.weeklyBudget
+      // );
+      let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
       let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-      if (accountTitle) {
+      if (accountTitle && creditor.remaining && weekly_budget) {
         data[`${accountTitle}`] = {
           total_debt: creditor.totalDebt,
           remaining_debt: creditor.remaining,
@@ -2396,6 +2409,9 @@ class CaseUtil {
     let dataArray = body.data;
     const createdCases = [];
     const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
+    if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
+    const getCreditorsEmail: any =
+      await creditorUtil.getCreditorsEmailForDebtor(debtorId);
     for (const body of dataArray) {
       console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
@@ -2488,6 +2504,13 @@ class CaseUtil {
               'Created By': name,
             },
             caseCreated._id
+          );
+        }
+        if (getCreditorsEmail.length && createdCases.length) {
+          emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
+            createdCases,
+            debtor,
+            getCreditorsEmail
           );
         }
         // if (caseCreated?.intervals && caseCreated?.intervals?.length) {

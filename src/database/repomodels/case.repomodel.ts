@@ -16,6 +16,7 @@ export class Case {
   feePayment = '';
   paidAmount = 0;
   remaining = 0;
+  remainingAmountPaid = 0;
   // documents = Array<{key: ''; originalFileName: ''; url: ''}>();
   intervals = Array<
     | {
@@ -41,6 +42,8 @@ export class Case {
   fullProfitJustifications = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
   chatId = '';
+  settlementRange = false;
+  getCaseIdPercentage = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

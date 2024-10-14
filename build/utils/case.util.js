@@ -31,7 +31,8 @@ const strategy_repository_1 = require("../api/repository/strategy/strategy.repos
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
 const paynote_util_1 = __importDefault(require("./paynote.util"));
-const nanoid_1 = require("nanoid");
+const creditor_util_1 = __importDefault(require("./creditor.util"));
+const email_util_1 = __importDefault(require("./email.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -65,7 +66,7 @@ class CaseUtil {
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
         newDebtor.createdBy = createdBy;
-        newDebtor.emailKey = `[${(0, nanoid_1.nanoid)(10).toUpperCase().replace(/[_-]/g, '')}]`;
+        // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
         // newDebtor.createdBy = reqTemp.id;
         // if (!data?.basicInformation?.weeklyBudget)
         //   data.basicInformation.weeklyBudget = 1;
@@ -199,6 +200,9 @@ class CaseUtil {
                 ? obj.creditor.accountTitleMapping
                 : [],
             contractDetails: obj.contractDetails ? obj.contractDetails : null,
+            remainingAmountPaid: obj.remainingAmountPaid
+                ? obj.remainingAmountPaid
+                : 0,
         }));
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
@@ -366,7 +370,7 @@ class CaseUtil {
         let commisionPercentage = debtor.commissionPercentage / 100;
         if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
-            debt = body.remaining ?? 0;
+            debt = body.remaining ? body.remaining : 0;
             amount = await this.getWeeklyAmount(interval);
         }
         weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -385,7 +389,6 @@ class CaseUtil {
         console.log(weeklyBudget, 'weeklyBudget');
         console.log(amount, 'amounttttt');
         console.log(debt, 'debteeee');
-        console.log(commisionPercentage);
         return amount >= weeklyBudget
             ? {
                 status: false,
@@ -1420,9 +1423,13 @@ class CaseUtil {
                 accTitleObj && accTitleObj?.accountTitle
                     ? accTitleObj.accountTitle
                     : creditor.creditor.accountTitle;
-            let weekly_budget = Math.max((creditor.remaining * 0.09) / 4, caseTemp.debtor.basicInformation.weeklyBudget);
+            // let weekly_budget = Math.max(
+            //   (creditor.remaining * 0.09) / 4,
+            //   caseTemp.debtor.basicInformation.weeklyBudget
+            // );
+            let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
-            if (accountTitle) {
+            if (accountTitle && weekly_budget && creditor.remaining) {
                 data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
@@ -1673,6 +1680,10 @@ class CaseUtil {
                 'data.fullProfitSettlement': thirdStrategy,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            // const profitPercent = response.data['true_profit'] * 0.67;
+            // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor), {
+            //   strategy3MaxProfit: profitPercent,
+            // });
             this.caseRepository.updateById(caseTemp._id, {
                 strategyThree: true,
                 updatedAt: common_util_1.default.getCurrentDate(),
@@ -1890,12 +1901,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            if (sum > 0) {
-                await this.debtRepository.updateById(caseTemp.debtor._id, {
-                    'basicInformation.weeklyBudget': sum,
-                    weeklyBudgetUpdated: true,
-                });
-            }
+            // if (sum > 0) {
+            //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+            //     'basicInformation.weeklyBudget': sum,
+            //     weeklyBudgetUpdated: true,
+            //   });
+            // }
         }
         return getScores;
     }
@@ -1908,12 +1919,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            if (sum > 0) {
-                await this.debtRepository.updateById(caseTemp.debtor._id, {
-                    'basicInformation.weeklyBudget': sum,
-                    weeklyBudgetUpdated: true,
-                });
-            }
+            // if (sum > 0) {
+            //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+            //     'basicInformation.weeklyBudget': sum,
+            //     weeklyBudgetUpdated: true,
+            //   });
+            // }
         }
         return getScores;
     }
@@ -1923,23 +1934,26 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-        if (typeof getSettlementRange !== 'string') {
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
-                'data.settlementRange': getSettlementRange,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-            this.caseRepository.updateById(caseTemp._id, {
-                strategyOne_3: true,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-        }
         if (typeof getSettlementRange === 'string') {
             this.caseRepository.updateById(caseTemp._id, {
                 strategyOne_3: false,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            return getSettlementRange;
         }
+        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+        // const profitPercent = getSettlementRange['true_profit'] * 0.67;
+        // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor._id), {
+        //   strategy1MaxProfit: profitPercent,
+        // });
+        this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
+            'data.settlementRange': getSettlementRange,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        this.caseRepository.updateById(caseTemp._id, {
+            strategyOne_3: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         return getSettlementRange;
     }
     async riskScoreMapping(data) {
@@ -1977,9 +1991,13 @@ class CaseUtil {
                 accTitleObj && accTitleObj?.accountTitle
                     ? accTitleObj.accountTitle
                     : creditor.creditorAccountTitle;
-            let weekly_budget = Math.max((creditor.remaining * 0.09) / 4, caseTemp.debtor.basicInformation.weeklyBudget);
+            // let weekly_budget = Math.max(
+            //   (creditor.remaining * 0.09) / 4,
+            //   caseTemp.debtor.basicInformation.weeklyBudget
+            // );
+            let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-            if (accountTitle) {
+            if (accountTitle && creditor.remaining && weekly_budget) {
                 data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
@@ -2042,6 +2060,9 @@ class CaseUtil {
         let dataArray = body.data;
         const createdCases = [];
         const debtor = await this.debtRepository.getById(debtorId);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const getCreditorsEmail = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
         for (const body of dataArray) {
             console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
@@ -2127,6 +2148,9 @@ class CaseUtil {
                         Action: 'Case Created',
                         'Created By': name,
                     }, caseCreated._id);
+                }
+                if (getCreditorsEmail.length && createdCases.length) {
+                    email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
                 }
                 // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
                 //   await this.createPayment(caseCreated);

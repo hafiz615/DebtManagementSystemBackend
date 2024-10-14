@@ -76,6 +76,9 @@ const caseModel = new mongoose_1.Schema({
     remaining: {
         type: Number,
     },
+    remainingAmountPaid: {
+        type: Number,
+    },
     intervals: {
         type: [
             {
@@ -136,6 +139,12 @@ const caseModel = new mongoose_1.Schema({
     },
     logTrackingId: {
         type: String,
+    },
+    settlementRange: {
+        type: Boolean,
+    },
+    getCaseIdPercentage: {
+        type: Boolean,
     },
     createdAt: {
         type: Date,

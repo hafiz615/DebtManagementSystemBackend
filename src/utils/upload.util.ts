@@ -64,7 +64,7 @@ class UploadUtil {
       }
     } catch (error) {
       console.error('Error fetching PDF from S3:', error);
-      throw error;
+      return error.message;
     }
   };
 

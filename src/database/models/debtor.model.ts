@@ -104,7 +104,6 @@ const debtorSchema: Schema = new Schema({
   },
   totalCommission: {
     type: Number,
-    select: false,
   },
   commissionPercentage: {
     type: Number,
@@ -139,8 +138,41 @@ const debtorSchema: Schema = new Schema({
   weeklyBudgetUpdated: {
     type: Boolean,
   },
-  emailKey: {
+  strategy1MaxProfit: {
+    type: Number,
+  },
+  strategy3MaxProfit: {
+    type: Number,
+  },
+  strategy1BudgetCustom: {
+    type: Number,
+  },
+  strategy3BudgetCustom: {
+    type: Number,
+  },
+  weeklyBudgetKeyStrategy1: {
     type: String,
+  },
+  weeklyBudgetKeyStrategy3: {
+    type: String,
+  },
+  weeklyBudgetStrategy1: {
+    type: Number,
+  },
+  weeklyBudgetStrategy3: {
+    type: Number,
+  },
+  profitMargin: {
+    type: Number,
+  },
+  moneyThumbAppId: {
+    type: Number,
+  },
+  appid: {
+    type: Number,
+  },
+  totalStatements: {
+    type: Number,
   },
   createdAt: {
     type: Date,
