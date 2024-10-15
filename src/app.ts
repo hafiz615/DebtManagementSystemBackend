@@ -117,6 +117,14 @@ class App {
     //     });
     //   }
     // }
+    // const caseRepo = new CaseRepository();
+    // const cases = await caseRepo.getAllWithoutPagination<ICase>();
+    // for (const temp of cases) {
+    //   console.log('ok');
+    //   await caseRepo.updateById(temp._id, {
+    //     remainingAmountPaid: temp.remaining,
+    //   });
+    // }
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();

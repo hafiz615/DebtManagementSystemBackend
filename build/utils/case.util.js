@@ -406,7 +406,10 @@ class CaseUtil {
             case 'custom':
                 return interval.amount;
             case 'daily':
-                return interval.amount * interval.frequency;
+                let multiple = interval.frequency;
+                if (interval.frequency > 7)
+                    multiple = 7;
+                return interval.amount * multiple;
             case 'weekly':
                 return interval.amount;
             case 'monthly':
