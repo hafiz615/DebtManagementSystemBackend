@@ -162,7 +162,7 @@ class CaseService {
       target: 'case',
       caseId: req.params.id,
     });
-
+    await debtorUtil.updateDebtorTotalCommission(findCase.debtor);
     const updateNotesForm =
       findCase.notes.length !== 0
         ? await Promise.all(
@@ -589,9 +589,8 @@ class CaseService {
         debtor
       );
     await creditorUtil.addBreakEven(creditors);
-    data['percentageReceivableCommission'] = commisionPercentage;
-    data['percentageReceivableCommissionAmount'] =
-      commisionPercentage * debtor.weeklyBudgetStrategy3;
+    data['percentageReceivableCommission'] = commisionPercentage[0];
+    data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
@@ -600,6 +599,7 @@ class CaseService {
     });
     data['creditors'] = creditors;
     data['debtor'] = debtor;
+    // return [true, data];
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_1 &&
@@ -686,9 +686,11 @@ class CaseService {
       result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
+      await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
       data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
+      await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
       data['settlementRange'] = settlementRange;
     }
     return [true, data];
@@ -787,9 +789,8 @@ class CaseService {
         debtor
       );
     await creditorUtil.addBreakEven(creditors);
-    data['percentageReceivableCommission'] = commisionPercentage;
-    data['percentageReceivableCommissionAmount'] =
-      commisionPercentage * debtor.weeklyBudgetStrategy3;
+    data['percentageReceivableCommission'] = commisionPercentage[0];
+    data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     data['creditors'] = creditors;
@@ -854,6 +855,7 @@ class CaseService {
       }
     }
     settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
     data['settlementRange'] = settlementRange;
     return [true, data];
   };

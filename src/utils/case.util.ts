@@ -488,7 +488,9 @@ class CaseUtil {
       : {
           status: true,
           commission: weeklyBudget - amount,
-          totalCommission: parseInt((debt * commisionPercentage).toFixed(2)),
+          totalCommission: parseInt(
+            (debt * (commisionPercentage / 100)).toFixed(2)
+          ),
         };
   }
   async getWeeklyAmount(interval: any) {
@@ -2466,6 +2468,7 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
+        newCase.remainingAmountPaid = body.remaining;
         body.notes = body?.notes
           ? [
               {
