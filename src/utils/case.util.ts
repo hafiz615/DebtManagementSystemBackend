@@ -267,7 +267,7 @@ class CaseUtil {
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtorId, isDeleted: false},
-      'totalDebt caseCode status remaining contractDetails',
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid',
       undefined,
       {_id: -1},
       {
