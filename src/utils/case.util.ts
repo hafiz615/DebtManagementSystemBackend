@@ -2470,7 +2470,7 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
-        newCase.remainingAmountPaid = body.remaining;
+        newCase.remainingAmountPaid = body.paidAmount;
         body.notes = body?.notes
           ? [
               {
