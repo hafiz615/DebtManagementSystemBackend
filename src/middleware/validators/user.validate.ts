@@ -102,8 +102,8 @@ class UserRequests {
     const schema = Joi.object({
       name: Joi.string().required(),
       email: Joi.string().email().required(),
-      createdBy: Joi.string(),
-      //token: Joi.string().required(),
+      platform: Joi.string(),
+      phone: Joi.string().allow(''),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

@@ -103,6 +103,11 @@ router.post(
   debtorController.addDebtorAccount
 );
 
+router.get(
+  '/getDebtorSummery/:id',
+  authorize.validateAuth,
+  debtorController.getDebtorSummery
+);
 router.post(
   '/saveWeeklyBudgetValues/:id',
   authorize.validateAuth,

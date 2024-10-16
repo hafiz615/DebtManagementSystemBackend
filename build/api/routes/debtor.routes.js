@@ -30,6 +30,7 @@ router.post('/getExtractedFields/:id', authorize_middleware_1.default.validateAu
 router.post('/createMultipleDebtors', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createMultipleDebtors, debtor_controller_1.default.createMultipleDebtors);
 router.put('/updateDebtorBulk/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorBulk, debtor_controller_1.default.updateDebtorBulk);
 router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
+router.get('/getDebtorSummery/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorSummery);
 router.post('/saveWeeklyBudgetValues/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.saveWeeklyBudgetValues, debtor_controller_1.default.saveWeeklyBudgetValues);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

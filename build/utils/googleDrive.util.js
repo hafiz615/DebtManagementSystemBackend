@@ -7,6 +7,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const drive_1 = require("googleapis/build/src/apis/drive");
 const oauth2_1 = require("googleapis/build/src/apis/oauth2");
 const case_util_1 = __importDefault(require("./case.util"));
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class GoogleDriveUtil {
     async getGdCredentials() {
@@ -90,7 +91,7 @@ class GoogleDriveUtil {
             basicInformation['email'] =
                 extractedData.creditor_info[`creditor's Email address`].toLowerCase();
             basicInformation['phone'] = extractedData.creditor_info[`creditor's Phone Number`]
-                ? await this.cleanPhoneNumber(extractedData.creditor_info[`creditor's Phone Number`])
+                ? await common_util_1.default.cleanPhoneNumber(extractedData.creditor_info[`creditor's Phone Number`])
                 : '';
             //basicInformation.fullName
             businessInformation['businessCategory'] = '';
@@ -134,13 +135,6 @@ class GoogleDriveUtil {
         }
         console.log(cases);
         return cases;
-    }
-    async cleanPhoneNumber(phoneNumber) {
-        let cleanedNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
-        if (cleanedNumber.startsWith('1')) {
-            cleanedNumber = cleanedNumber.substring(1);
-        }
-        return cleanedNumber;
     }
 }
 exports.default = new GoogleDriveUtil();

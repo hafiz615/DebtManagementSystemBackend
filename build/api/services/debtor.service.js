@@ -17,6 +17,7 @@ const strategy_repository_1 = require("../repository/strategy/strategy.repositor
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
+const payment_util_1 = __importDefault(require("../../utils/payment.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 class DebtorService {
@@ -855,6 +856,27 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [true, constants_util_1.default.successAddMessage('Debtor account details')];
+    }
+    async getDebtorSummery(req) {
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor'), {}];
+        }
+        let getAllCreditor = await case_util_1.default.getCreditorsForDebtor(req.params.id);
+        let payments = await payment_util_1.default.getPaymentsByStatusAndDebtor('Upcoming', req.params.id);
+        let pendingPayments = await payment_util_1.default.getPaymentsByStatusAndDebtor('Pending', req.params.id);
+        return [
+            true,
+            constants_util_1.default.successFoundMessage('Debtor account details'),
+            {
+                creditorList: getAllCreditor,
+                totalCreditor: getAllCreditor?.length ?? 0,
+                totalDebt: getAllCreditor.reduce((sum, creditor) => sum + creditor.totalDebt, 0),
+                weeklyRemainingPayments: pendingPayments?.length ?? 0,
+                companyName: getDebtor?.businessInformation?.companyName,
+                upComingPayments: payments,
+            },
+        ];
     }
     async saveWeeklyBudgetValues(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);

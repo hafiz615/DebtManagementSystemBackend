@@ -2731,5 +2731,51 @@ class CaseUtil {
     if (justification.claude) arrayModels.push('claude');
     return arrayModels.length ? arrayModels : defaultModels;
   }
+
+  async getCreditorsForDebtor(debtorId: string, creditorId = '') {
+    const match = {
+      debtor: new mongoose.Types.ObjectId(debtorId),
+    };
+    if (creditorId) {
+      match['creditor'] = {$ne: new mongoose.Types.ObjectId(creditorId)};
+    }
+
+    return await this.caseRepository.applyAggregate([
+      {
+        $match: match, // Filter for a specific debtor
+      },
+      {
+        $group: {
+          _id: '$creditor', // Group by creditor to get unique creditors
+          totalDebt: {$sum: '$totalDebt'}, // Sum totalDebt for each creditor
+          remaining: {$sum: '$remaining'}, // Sum remaining for each creditor
+          caseCodes: {$addToSet: '$caseCode'}, // Collect all caseCodes for unique list
+          statuses: {$addToSet: '$status'}, // Collect all statuses for unique list
+        },
+      },
+      {
+        $lookup: {
+          from: 'creditors', // Name of the creditors collection
+          localField: '_id', // Field in the cases (creditor reference)
+          foreignField: '_id', // Field in the creditors collection (creditor _id)
+          as: 'creditorDetails', // Output field containing the matched creditor details
+        },
+      },
+      {
+        $unwind: '$creditorDetails', // Unwind the creditorDetails array to get individual creditor details
+      },
+      {
+        $project: {
+          _id: 1, // Exclude the default _id field
+          creditorEmail: '$creditorDetails.basicInformation.email', // Include creditor's email
+          creditorName: '$creditorDetails.basicInformation.fullName',
+          totalDebt: 1, // Total debt for the creditor from the group stage
+          remaining: 1, // Remaining for the creditor from the group stage
+          caseCode: 1, // Case codes collected from the group stage
+          status: 1, // Statuses collected from the group stage
+        },
+      },
+    ]);
+  }
 }
 export default new CaseUtil();
