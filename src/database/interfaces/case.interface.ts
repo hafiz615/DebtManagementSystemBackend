@@ -33,6 +33,7 @@ export interface ICase extends Document {
   feePayment: string;
   paidAmount: number;
   remaining: number;
+  remainingAmountPaid: number;
   // documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
   isExempt: string;
@@ -50,6 +51,8 @@ export interface ICase extends Document {
   justifications: boolean;
   lumpSumJustifications: boolean;
   fullProfitJustifications: boolean;
+  settlementRange: boolean;
+  getCaseIdPercentage: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -426,6 +426,46 @@ class PaymentUtil {
         });
         return filteredPayments;
     }
+    async getPaymentsByStatusAndDebtor(status, debtorId) {
+        try {
+            const results = await this.paymentRepository.applyAggregate([
+                {
+                    $match: {
+                        status: status,
+                        debtorId: debtorId, // Match the string debtorId directly
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'debtors', // Ensure this matches the actual collection name
+                        localField: 'debtorId', // Field in the payments collection (string type)
+                        foreignField: 'debtorId', // Assuming debtorId is a string in the debtor model
+                        as: 'debtorDetails', // Output field for matched debtor details
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$debtorDetails', // Unwind the array to get individual debtor details
+                        preserveNullAndEmptyArrays: true, // Keep documents without matches
+                    },
+                },
+                {
+                    $project: {
+                        _id: 1, // Include the payment ID
+                        amount: 1, // Include payment amount
+                        status: 1, // Include payment status
+                        debtorId: 1, // Include debtor ID
+                        companyName: '$debtorDetails.businessInformation.companyName', // Include company name
+                    },
+                },
+            ]);
+            return results;
+        }
+        catch (error) {
+            console.error('Error fetching payments:', error);
+            throw error; // Rethrow the error for further handling
+        }
+    }
 }
 exports.default = new PaymentUtil();
 //# sourceMappingURL=payment.util.js.map

@@ -16,6 +16,12 @@ import paynoteUtil from './utils/paynote.util';
 import {DebtorRepository} from './api/repository/debtor/debtor.repository';
 import {IDebtor} from './database/interfaces/debtor.interface';
 import {nanoid} from 'nanoid';
+import creditorUtil from './utils/creditor.util';
+import moneyThumbUtil from './utils/moneyThumb.util';
+import {StrategyRepository} from './api/repository/strategy/strategy.repository';
+import {IStrategy} from './database/interfaces/strategy.interface';
+import {CaseRepository} from './api/repository/case/case.repository';
+import {ICase} from './database/interfaces/case.interface';
 
 class App {
   protected app: Application;
@@ -74,6 +80,49 @@ class App {
     // for (const debtor of getAll) {
     //   await debtorRepo.updateById(debtor._id, {
     //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
+    //   });
+    // }
+    // const token = await moneyThumbUtil.authenticateUser();
+    // const app = await moneyThumbUtil.createNewApp(
+    //   token,
+    //   '66f1221440020aa3522ec604'
+    // );
+    // await moneyThumbUtil.convertPdf(
+    //   token,
+    //   '66f1221440020aa3522ec604',
+    //   app['appid']
+    // );
+    // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
+    // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
+
+    // const debtors = await debtorRepo.getAllWithoutPagination<IDebtor>();
+    // for (let i = 23; i < debtors.length; i++) {
+    //   await moneyThumbUtil.run(String(debtors[i]._id));
+    // }
+    // const strat = new StrategyRepository();
+    // const caseRepo = new CaseRepository();
+    // const all = await strat.getAllWithoutPagination<IStrategy>({
+    //   name: 'strategy_one',
+    // });
+    // for (const strategy of all) {
+    //   const caseTemp = await caseRepo.getById<ICase>(strategy.caseId);
+    //   if (strategy?.data?.settlementRange) {
+    //     const sett = strategy.data.settlementRange;
+    //     const str1 = sett.true_profit * 0.67;
+    //     const str2 = sett.profitability * 0.67;
+
+    //     await debtorRepo.updateById<IDebtor>(String(caseTemp.debtor), {
+    //       strategy1MaxProfit: Math.round(str1 * 100) / 100,
+    //       strategy3MaxProfit: Math.round(str2 * 100) / 100,
+    //     });
+    //   }
+    // }
+    // const caseRepo = new CaseRepository();
+    // const cases = await caseRepo.getAllWithoutPagination<ICase>();
+    // for (const temp of cases) {
+    //   console.log('ok');
+    //   await caseRepo.updateById(temp._id, {
+    //     remainingAmountPaid: temp.remaining,
     //   });
     // }
     bulkUploadCronjob.startCronJob();

@@ -49,6 +49,9 @@ const caseModel: Schema = new Schema({
   remaining: {
     type: Number,
   },
+  remainingAmountPaid: {
+    type: Number,
+  },
   intervals: {
     type: [
       {
@@ -113,6 +116,12 @@ const caseModel: Schema = new Schema({
   },
   logTrackingId: {
     type: String,
+  },
+  settlementRange: {
+    type: Boolean,
+  },
+  getCaseIdPercentage: {
+    type: Boolean,
   },
   createdAt: {
     type: Date,

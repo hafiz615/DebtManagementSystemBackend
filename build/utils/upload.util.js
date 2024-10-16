@@ -26,7 +26,7 @@ class UploadUtil {
             }
             catch (error) {
                 console.error('Error fetching PDF from S3:', error);
-                throw error;
+                return error.message;
             }
         };
         this.s3Client = new client_s3_1.S3Client({

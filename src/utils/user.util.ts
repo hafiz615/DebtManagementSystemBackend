@@ -21,7 +21,7 @@ class UserUtil {
   }
   async checkUserAndComparePassword(email: string, password: string) {
     const userExist = await this.userRepository.getOne<IUser>(
-      {email},
+      {email: email, isDeleted: false},
       '+password'
     );
     if (!userExist) return false;

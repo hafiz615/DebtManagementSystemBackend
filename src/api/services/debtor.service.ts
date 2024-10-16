@@ -26,6 +26,9 @@ import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 import {ICreditor} from '../../database/interfaces/creditor.interface';
 import paymentUtil from '../../utils/payment.util';
+import moneyThumbUtil from '../../utils/moneyThumb.util';
+import creditorUtil from '../../utils/creditor.util';
+import debtorUtil from '../../utils/debtor.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -99,9 +102,14 @@ class DebtorService {
 
   async listingDetails(req: Request) {
     let casesCount = 0;
-    const findCase = await this.caseRepository.getOne<ICase>({
-      debtor: req.params.id,
-    });
+    const findCase = await this.caseRepository.getOne<ICase>(
+      {
+        debtor: req.params.id,
+      },
+      undefined,
+      undefined,
+      ['debtor']
+    );
     if (!findCase) {
       const debtor = await this.debtorRepository.getById<IDebtor>(
         req.params.id
@@ -143,6 +151,19 @@ class DebtorService {
           debtorTotalCases: casesCount,
         },
       ];
+    }
+    const debtor: any = findCase.debtor;
+    const token = await moneyThumbUtil.authenticateUser();
+    const moneyThumbApp = await moneyThumbUtil.createNewApp(
+      token,
+      req.params.id
+    );
+    console.log(debtor);
+    if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
+      await this.debtorRepository.updateById(debtor._id, {
+        totalStatements: moneyThumbApp['totalStatements'],
+        updatedAt: commonUtil.getCurrentDate(),
+      });
     }
     let page = 1;
     let limit = 5;
@@ -328,6 +349,16 @@ class DebtorService {
         getDebtor._id,
         req.body
       );
+      if (
+        getDebtor.basicInformation.weeklyBudget !==
+          debtor.basicInformation.weeklyBudget ||
+        getDebtor.profitMargin !== debtor.profitMargin
+      ) {
+        await this.caseRepository.updateById<ICase>(req.params.id, {
+          settlementRange: false,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
+      }
     }
     if (req.body.contact && req.query.contact === 'add') {
       debtor = await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
@@ -367,54 +398,54 @@ class DebtorService {
         updatedAt: commonUtil.getCurrentDate(),
       });
     }
-    const allStrategyFalse = await this.caseRepository.updateById<ICase>(
-      req.params.id,
-      {
-        strategyOne_1: false,
-        strategyOne_2: false,
-        strategyOne_3: false,
-        strategyTwo: false,
-        strategyThree: false,
-        justifications: false,
-        lumpSumJustifications: false,
-        fullProfitJustifications: false,
-        updatedAt: commonUtil.getCurrentDate(),
-      }
-    );
-    if (allStrategyFalse) {
-      const response = await caseUtil.getAllCreditorsOfDebtor(getDebtor);
-      const creditors = Array.from(
-        new Map(
-          response.map(creditor => [creditor.creditorId, creditor])
-        ).values()
-      );
-      let extractedFieldsTemp = null;
-      if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-        const extractedFields = await caseUtil.getExtractionMCA(debtor);
-        if (extractedFields) {
-          this.debtorRepository.updateById(getDebtor._id, {
-            extractedFields: extractedFields.extracted_fields,
-            updatedAt: commonUtil.getCurrentDate(),
-          });
-          extractedFieldsTemp = extractedFields.extracted_fields;
-        }
-      }
-      caseUtil.getCreditorNames(
-        getDebtor,
-        getDebtor.extractedFields
-          ? getDebtor.extractedFields
-          : extractedFieldsTemp,
-        String(caseTemp._id)
-      );
-      caseUtil.getScoresForAllCreditors(
-        caseTemp,
-        creditors,
-        getDebtor.commissionPercentage
-      );
-      caseUtil.getSettlementRange(caseTemp);
-      caseUtil.getLumpSumAmount(caseTemp);
-      caseUtil.getFullProfitSettlement(caseTemp);
-    }
+    // const allStrategyFalse = await this.caseRepository.updateById<ICase>(
+    //   req.params.id,
+    //   {
+    //     strategyOne_1: false,
+    // strategyOne_2: false,
+    // strategyOne_3: false,
+    // strategyTwo: false,
+    // strategyThree: false,
+    // justifications: false,
+    // lumpSumJustifications: false,
+    // fullProfitJustifications: false,
+    //     updatedAt: commonUtil.getCurrentDate(),
+    //   }
+    // );
+    // if (allStrategyFalse) {
+    //   const response = await caseUtil.getAllCreditorsOfDebtor(getDebtor);
+    //   const creditors = Array.from(
+    //     new Map(
+    //       response.map(creditor => [creditor.creditorId, creditor])
+    //     ).values()
+    //   );
+    //   let extractedFieldsTemp = null;
+    //   if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
+    //     const extractedFields = await caseUtil.getExtractionMCA(debtor);
+    //     if (extractedFields) {
+    //       this.debtorRepository.updateById(getDebtor._id, {
+    //         extractedFields: extractedFields.extracted_fields,
+    //         updatedAt: commonUtil.getCurrentDate(),
+    //       });
+    //       extractedFieldsTemp = extractedFields.extracted_fields;
+    //     }
+    //   }
+    //   caseUtil.getCreditorNames(
+    //     getDebtor,
+    //     getDebtor.extractedFields
+    //       ? getDebtor.extractedFields
+    //       : extractedFieldsTemp,
+    //     String(caseTemp._id)
+    //   );
+    //   caseUtil.getScoresForAllCreditors(
+    //     caseTemp,
+    //     creditors,
+    //     getDebtor.commissionPercentage
+    //   );
+    //   caseUtil.getSettlementRange(caseTemp);
+    //   caseUtil.getLumpSumAmount(caseTemp);
+    //   caseUtil.getFullProfitSettlement(caseTemp);
+    // }
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
@@ -694,6 +725,7 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
+    moneyThumbUtil.run(String(debtor._id));
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
       req.body.extractedFields
@@ -731,56 +763,70 @@ class DebtorService {
     if (!updatedDebtor) {
       return [false, constants.failureUpdateMessage('debtor')];
     }
+    this.caseRepository.updateById<ICase>(req.params.id, {
+      settlementRange: false,
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+    await moneyThumbUtil.run(req.params.id);
+    const statements = caseTemp.debtor?.totalStatements;
+    if (caseTemp.intervals) {
+      debtorUtil.percentageChangeEmail(
+        req.params.id,
+        statements ? statements : 0,
+        caseTemp.debtor?.basicInformation?.fullName
+      );
+    }
+
     // for (let doc of findCase.documents) {
     //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
     //   doc.url = url;
     // }
-    const allStrategyFalse = await this.caseRepository.updateById<ICase>(
-      caseTemp._id,
-      {
-        strategyOne_1: false,
-        strategyOne_2: false,
-        strategyOne_3: false,
-        strategyTwo: false,
-        strategyThree: false,
-        justifications: false,
-        lumpSumJustifications: false,
-        fullProfitJustifications: false,
-        updatedAt: commonUtil.getCurrentDate(),
-      }
-    );
-    if (allStrategyFalse) {
-      const response = await caseUtil.getAllCreditorsOfDebtor(updatedDebtor);
-      const creditors = Array.from(
-        new Map(
-          response.map(creditor => [creditor.creditorId, creditor])
-        ).values()
-      );
-      const extractedFields = await caseUtil.getExtractionMCA(updatedDebtor);
-      if (extractedFields) {
-        this.debtorRepository.updateById(caseTemp.debtor._id, {
-          extractedFields: extractedFields.extracted_fields,
-          updatedAt: commonUtil.getCurrentDate(),
-        });
-      }
-      if (extractedFields)
-        caseUtil.getCreditorNames(
-          updatedDebtor,
-          extractedFields
-            ? extractedFields.extracted_fields
-            : updatedDebtor.extractedFields,
-          String(caseTemp._id)
-        );
+    // const allStrategyFalse = await this.caseRepository.updateById<ICase>(
+    //   caseTemp._id,
+    //   {
+    //     strategyOne_1: false,
+    //     strategyOne_2: false,
+    //     strategyOne_3: false,
+    //     strategyTwo: false,
+    //     strategyThree: false,
+    //     justifications: false,
+    //     lumpSumJustifications: false,
+    //     fullProfitJustifications: false,
+    //     updatedAt: commonUtil.getCurrentDate(),
+    //   }
+    // );
+    // if (allStrategyFalse) {
+    //   const response = await caseUtil.getAllCreditorsOfDebtor(updatedDebtor);
+    //   const creditors = Array.from(
+    //     new Map(
+    //       response.map(creditor => [creditor.creditorId, creditor])
+    //     ).values()
+    //   );
+    //   const extractedFields = await caseUtil.getExtractionMCA(updatedDebtor);
+    //   if (extractedFields) {
+    //     this.debtorRepository.updateById(caseTemp.debtor._id, {
+    //       extractedFields: extractedFields.extracted_fields,
+    //       updatedAt: commonUtil.getCurrentDate(),
+    //     });
+    //   }
+    //   if (extractedFields)
+    //     caseUtil.getCreditorNames(
+    //       updatedDebtor,
+    //       extractedFields
+    //         ? extractedFields.extracted_fields
+    //         : updatedDebtor.extractedFields,
+    //       String(caseTemp._id)
+    //     );
 
-      caseUtil.getScoresForAllCreditors(
-        caseTemp,
-        creditors,
-        updatedDebtor.commissionPercentage
-      );
-      caseUtil.getSettlementRange(caseTemp);
-      caseUtil.getLumpSumAmount(caseTemp);
-      caseUtil.getFullProfitSettlement(caseTemp);
-    }
+    //   caseUtil.getScoresForAllCreditors(
+    //     caseTemp,
+    //     creditors,
+    //     updatedDebtor.commissionPercentage
+    //   );
+    //   caseUtil.getSettlementRange(caseTemp);
+    //   caseUtil.getLumpSumAmount(caseTemp);
+    //   caseUtil.getFullProfitSettlement(caseTemp);
+    // }
     return [true, updatedDebtor];
   }
 
@@ -975,7 +1021,7 @@ class DebtorService {
       req.params.id
     );
     if (!getDebtor) {
-      return [false, constants.notFoundMessage('Debtor'), {}];
+      return [false, constants.notFoundMessage('debtor')];
     }
     const customerVaultResponse = await caseUtil.createVault(
       req.body.paymentToken
@@ -1031,6 +1077,23 @@ class DebtorService {
         upComingPayments: payments,
       },
     ];
+  }
+
+  async saveWeeklyBudgetValues(req: Request) {
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{path: 'debtor'}]
+    );
+    if (!caseTemp) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
+    if (!debtor) {
+      return [true, constants.failureUpdateMessage('weekly budget info')];
+    }
+    return [true, constants.successUpdateMessage('Weekly budget info')];
   }
 }
 

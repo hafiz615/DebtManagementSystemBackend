@@ -105,8 +105,14 @@ router.post(
 
 router.get(
   '/getDebtorSummery/:id',
-  //authorize.validateAuth,
+  authorize.validateAuth,
   debtorController.getDebtorSummery
+);
+router.post(
+  '/saveWeeklyBudgetValues/:id',
+  authorize.validateAuth,
+  debtor.saveWeeklyBudgetValues,
+  debtorController.saveWeeklyBudgetValues
 );
 
 export default router;

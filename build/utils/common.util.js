@@ -33,6 +33,18 @@ class CommonUtil {
         // }
         return permissions[keyword];
     }
+    async calculatePercentageChange(oldValue, newValue) {
+        const difference = newValue - oldValue;
+        const percentageChange = (difference / oldValue) * 100;
+        return Number(percentageChange.toFixed(2)); // Returns the result rounded to 2 decimal places
+    }
+    async cleanPhoneNumber(phoneNumber) {
+        let cleanedNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
+        if (cleanedNumber.startsWith('1')) {
+            cleanedNumber = cleanedNumber.substring(1);
+        }
+        return cleanedNumber;
+    }
 }
 exports.default = new CommonUtil();
 //# sourceMappingURL=common.util.js.map

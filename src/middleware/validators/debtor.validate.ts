@@ -10,6 +10,7 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentToken: Joi.string().optional().allow(''),
       paymentType: Joi.string().optional().allow(''),
+      profitMargin: Joi.number().optional(),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -80,6 +81,7 @@ class DebtorRequests {
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
       extractedFields: Joi.array().allow(null).optional(),
+      profitMargin: Joi.number().optional(),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -155,6 +157,7 @@ class DebtorRequests {
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
       extractedFields: Joi.array().allow(null).optional(),
+      profitMargin: Joi.number().optional(),
       basicInformation: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -227,6 +230,7 @@ class DebtorRequests {
           paymentToken: Joi.string().allow(''),
           extractedFields: Joi.array().allow(null).optional(),
           driveUrl: Joi.string().allow(''),
+          profitMargin: Joi.number().optional(),
           basicInformation: Joi.object({
             fullName: Joi.string().required().allow(''),
             email: Joi.string().email().required().allow(''),
@@ -287,6 +291,35 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentType: Joi.string().required(),
       paymentToken: Joi.string().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  };
+
+  saveWeeklyBudgetValues = (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const schema = Joi.object({
+      strategy1Profit: Joi.number().strict(),
+      strategy1Weekly: Joi.number().strict(),
+      strategy1Custom: Joi.number().strict(),
+      strategy1Choosen: Joi.string(),
+      strategy3Profit: Joi.number().strict(),
+      strategy3ProfitMargin: Joi.number().strict(),
+      strategy3Custom: Joi.number().strict(),
+      strategy3Choosen: Joi.string(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

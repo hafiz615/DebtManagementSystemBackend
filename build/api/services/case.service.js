@@ -21,6 +21,8 @@ const email_util_1 = __importDefault(require("../../utils/email.util"));
 const caseHistory_repository_1 = require("../repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../repository/justification/justification.repository");
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
+const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -66,6 +68,14 @@ class CaseService {
             if (!findCase) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
+            if (!findCase?.getCaseIdPercentage &&
+                !findCase?.debtor?.strategy1MaxProfit &&
+                !findCase?.debtor?.strategy3MaxProfit) {
+                await moneyThumb_util_1.default.run(String(findCase.debtor._id));
+                this.caseRepository.updateById(req.params.id, {
+                    getCaseIdPercentage: true,
+                });
+            }
             for (let doc of findCase.debtor.documents) {
                 const url = await this.uploadUtil.getS3FileSignedUrl(doc.key
                 //'application/pdf'
@@ -81,6 +91,7 @@ class CaseService {
                 target: 'case',
                 caseId: req.params.id,
             });
+            await debtor_util_1.default.updateDebtorTotalCommission(findCase.debtor);
             const updateNotesForm = findCase.notes.length !== 0
                 ? await Promise.all(findCase.notes.map(async (note) => {
                     const userName = await this.userRepository.getById(note.userId);
@@ -209,7 +220,7 @@ class CaseService {
                     ? getDebtor.extractedFields
                     : extractedFieldsTemp, String(findCase._id));
                 case_util_1.default.getScoresForAllCreditors(caseUpdated, creditors, getDebtor.commissionPercentage);
-                case_util_1.default.getSettlementRange(caseUpdated);
+                case_util_1.default.getSettlementRange(findCase);
                 case_util_1.default.getLumpSumAmount(caseUpdated);
                 case_util_1.default.getFullProfitSettlement(caseUpdated);
             }
@@ -326,7 +337,6 @@ class CaseService {
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
-            const debtor = caseTemp.debtor;
             let getScores = null, creditorNames = null;
             let creditors = null;
             let settlementRange = null;
@@ -344,9 +354,16 @@ class CaseService {
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
             }
+            if (hardReload === 'true')
+                caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
+            const debtor = caseTemp.debtor;
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor);
+            await creditor_util_1.default.addBreakEven(creditors);
+            data['percentageReceivableCommission'] = commisionPercentage[0];
+            data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
             data['creditorsContractDetailsSum'] =
                 await this.calculateContractDetailsSum(creditors);
             const result = await this.strategyRepository.getOne({
@@ -355,6 +372,7 @@ class CaseService {
             });
             data['creditors'] = creditors;
             data['debtor'] = debtor;
+            // return [true, data];
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
                 result?.data?.creditorNames) {
@@ -414,10 +432,12 @@ class CaseService {
                 caseTemp.strategyOne_3 &&
                 result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
+                await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
                 data['settlementRange'] = settlementRange;
             }
             else {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+                await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
                 data['settlementRange'] = settlementRange;
             }
             return [true, data];
@@ -472,6 +492,7 @@ class CaseService {
             let creditors = null;
             let settlementRange = null;
             let data = {};
+            caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
             let debtor = caseTemp.debtor;
             await this.caseRepository.updateById(caseTemp._id, {
                 strategyTwo: false,
@@ -484,6 +505,10 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor);
+            await creditor_util_1.default.addBreakEven(creditors);
+            data['percentageReceivableCommission'] = commisionPercentage[0];
+            data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
             data['creditorsContractDetailsSum'] =
                 await this.calculateContractDetailsSum(creditors);
             data['creditors'] = creditors;
@@ -532,6 +557,7 @@ class CaseService {
                 }
             }
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+            await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
             data['settlementRange'] = settlementRange;
             return [true, data];
         };

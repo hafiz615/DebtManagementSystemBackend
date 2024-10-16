@@ -31,7 +31,8 @@ const strategy_repository_1 = require("../api/repository/strategy/strategy.repos
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
 const paynote_util_1 = __importDefault(require("./paynote.util"));
-const nanoid_1 = require("nanoid");
+const creditor_util_1 = __importDefault(require("./creditor.util"));
+const email_util_1 = __importDefault(require("./email.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -65,7 +66,7 @@ class CaseUtil {
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
         newDebtor.createdBy = createdBy;
-        newDebtor.emailKey = `[${(0, nanoid_1.nanoid)(10).toUpperCase().replace(/[_-]/g, '')}]`;
+        // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
         // newDebtor.createdBy = reqTemp.id;
         // if (!data?.basicInformation?.weeklyBudget)
         //   data.basicInformation.weeklyBudget = 1;
@@ -199,10 +200,13 @@ class CaseUtil {
                 ? obj.creditor.accountTitleMapping
                 : [],
             contractDetails: obj.contractDetails ? obj.contractDetails : null,
+            remainingAmountPaid: obj.remainingAmountPaid
+                ? obj.remainingAmountPaid
+                : 0,
         }));
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails', undefined, { _id: -1 }, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',
@@ -366,7 +370,7 @@ class CaseUtil {
         let commisionPercentage = debtor.commissionPercentage / 100;
         if (debtorFound && body.intervals) {
             const interval = body.intervals[0];
-            debt = body.remaining ?? 0;
+            debt = body.remaining ? body.remaining : 0;
             amount = await this.getWeeklyAmount(interval);
         }
         weeklyBudget = debtor.basicInformation.weeklyBudget;
@@ -385,7 +389,6 @@ class CaseUtil {
         console.log(weeklyBudget, 'weeklyBudget');
         console.log(amount, 'amounttttt');
         console.log(debt, 'debteeee');
-        console.log(commisionPercentage);
         return amount >= weeklyBudget
             ? {
                 status: false,
@@ -395,7 +398,7 @@ class CaseUtil {
             : {
                 status: true,
                 commission: weeklyBudget - amount,
-                totalCommission: parseInt((debt * commisionPercentage).toFixed(2)),
+                totalCommission: parseInt((debt * (commisionPercentage / 100)).toFixed(2)),
             };
     }
     async getWeeklyAmount(interval) {
@@ -403,7 +406,10 @@ class CaseUtil {
             case 'custom':
                 return interval.amount;
             case 'daily':
-                return interval.amount * interval.frequency;
+                let multiple = interval.frequency;
+                if (interval.frequency > 7)
+                    multiple = 7;
+                return interval.amount * multiple;
             case 'weekly':
                 return interval.amount;
             case 'monthly':
@@ -1420,9 +1426,13 @@ class CaseUtil {
                 accTitleObj && accTitleObj?.accountTitle
                     ? accTitleObj.accountTitle
                     : creditor.creditor.accountTitle;
-            let weekly_budget = Math.max((creditor.remaining * 0.09) / 4, caseTemp.debtor.basicInformation.weeklyBudget);
+            // let weekly_budget = Math.max(
+            //   (creditor.remaining * 0.09) / 4,
+            //   caseTemp.debtor.basicInformation.weeklyBudget
+            // );
+            let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
-            if (accountTitle) {
+            if (accountTitle && weekly_budget && creditor.remaining) {
                 data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
@@ -1673,6 +1683,10 @@ class CaseUtil {
                 'data.fullProfitSettlement': thirdStrategy,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            // const profitPercent = response.data['true_profit'] * 0.67;
+            // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor), {
+            //   strategy3MaxProfit: profitPercent,
+            // });
             this.caseRepository.updateById(caseTemp._id, {
                 strategyThree: true,
                 updatedAt: common_util_1.default.getCurrentDate(),
@@ -1890,12 +1904,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            if (sum > 0) {
-                await this.debtRepository.updateById(caseTemp.debtor._id, {
-                    'basicInformation.weeklyBudget': sum,
-                    weeklyBudgetUpdated: true,
-                });
-            }
+            // if (sum > 0) {
+            //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+            //     'basicInformation.weeklyBudget': sum,
+            //     weeklyBudgetUpdated: true,
+            //   });
+            // }
         }
         return getScores;
     }
@@ -1908,12 +1922,12 @@ class CaseUtil {
         if (typeof getScores !== 'string') {
             const sum = await this.sumOfWeeklyBudgetValues(getScores.Scores['Weekly Budget']);
             getScores.Scores['Weekly Budget'].Summary = sum;
-            if (sum > 0) {
-                await this.debtRepository.updateById(caseTemp.debtor._id, {
-                    'basicInformation.weeklyBudget': sum,
-                    weeklyBudgetUpdated: true,
-                });
-            }
+            // if (sum > 0) {
+            //   await this.debtRepository.updateById<IDebtor>(caseTemp.debtor._id, {
+            //     'basicInformation.weeklyBudget': sum,
+            //     weeklyBudgetUpdated: true,
+            //   });
+            // }
         }
         return getScores;
     }
@@ -1923,23 +1937,26 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         let getSettlementRange = await this.getSettlementRangeAI(caseTemp, global_1.AIAuth.auth_token);
-        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
-        if (typeof getSettlementRange !== 'string') {
-            this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
-                'data.settlementRange': getSettlementRange,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-            this.caseRepository.updateById(caseTemp._id, {
-                strategyOne_3: true,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-        }
         if (typeof getSettlementRange === 'string') {
             this.caseRepository.updateById(caseTemp._id, {
                 strategyOne_3: false,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            return getSettlementRange;
         }
+        getSettlementRange = await this.getSettlementMapping(getSettlementRange);
+        // const profitPercent = getSettlementRange['true_profit'] * 0.67;
+        // await this.debtRepository.updateById<IDebtor>(String(caseTemp.debtor._id), {
+        //   strategy1MaxProfit: profitPercent,
+        // });
+        this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_one' }, {
+            'data.settlementRange': getSettlementRange,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        this.caseRepository.updateById(caseTemp._id, {
+            strategyOne_3: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         return getSettlementRange;
     }
     async riskScoreMapping(data) {
@@ -1977,9 +1994,13 @@ class CaseUtil {
                 accTitleObj && accTitleObj?.accountTitle
                     ? accTitleObj.accountTitle
                     : creditor.creditorAccountTitle;
-            let weekly_budget = Math.max((creditor.remaining * 0.09) / 4, caseTemp.debtor.basicInformation.weeklyBudget);
+            // let weekly_budget = Math.max(
+            //   (creditor.remaining * 0.09) / 4,
+            //   caseTemp.debtor.basicInformation.weeklyBudget
+            // );
+            let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
-            if (accountTitle) {
+            if (accountTitle && creditor.remaining && weekly_budget) {
                 data[`${accountTitle}`] = {
                     total_debt: creditor.totalDebt,
                     remaining_debt: creditor.remaining,
@@ -2042,6 +2063,9 @@ class CaseUtil {
         let dataArray = body.data;
         const createdCases = [];
         const debtor = await this.debtRepository.getById(debtorId);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const getCreditorsEmail = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
         for (const body of dataArray) {
             console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
@@ -2092,6 +2116,7 @@ class CaseUtil {
                 newCase.negotiatorId = id;
                 newCase.manager = name;
                 newCase.managerId = id;
+                newCase.remainingAmountPaid = body.paidAmount;
                 body.notes = body?.notes
                     ? [
                         {
@@ -2127,6 +2152,9 @@ class CaseUtil {
                         Action: 'Case Created',
                         'Created By': name,
                     }, caseCreated._id);
+                }
+                if (getCreditorsEmail.length && createdCases.length) {
+                    email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
                 }
                 // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
                 //   await this.createPayment(caseCreated);
@@ -2311,6 +2339,50 @@ class CaseUtil {
         if (justification.claude)
             arrayModels.push('claude');
         return arrayModels.length ? arrayModels : defaultModels;
+    }
+    async getCreditorsForDebtor(debtorId, creditorId = '') {
+        const match = {
+            debtor: new mongoose_1.default.Types.ObjectId(debtorId),
+        };
+        if (creditorId) {
+            match['creditor'] = { $ne: new mongoose_1.default.Types.ObjectId(creditorId) };
+        }
+        return await this.caseRepository.applyAggregate([
+            {
+                $match: match, // Filter for a specific debtor
+            },
+            {
+                $group: {
+                    _id: '$creditor', // Group by creditor to get unique creditors
+                    totalDebt: { $sum: '$totalDebt' }, // Sum totalDebt for each creditor
+                    remaining: { $sum: '$remaining' }, // Sum remaining for each creditor
+                    caseCodes: { $addToSet: '$caseCode' }, // Collect all caseCodes for unique list
+                    statuses: { $addToSet: '$status' }, // Collect all statuses for unique list
+                },
+            },
+            {
+                $lookup: {
+                    from: 'creditors', // Name of the creditors collection
+                    localField: '_id', // Field in the cases (creditor reference)
+                    foreignField: '_id', // Field in the creditors collection (creditor _id)
+                    as: 'creditorDetails', // Output field containing the matched creditor details
+                },
+            },
+            {
+                $unwind: '$creditorDetails', // Unwind the creditorDetails array to get individual creditor details
+            },
+            {
+                $project: {
+                    _id: 1, // Exclude the default _id field
+                    creditorEmail: '$creditorDetails.basicInformation.email', // Include creditor's email
+                    creditorName: '$creditorDetails.basicInformation.fullName',
+                    totalDebt: 1, // Total debt for the creditor from the group stage
+                    remaining: 1, // Remaining for the creditor from the group stage
+                    caseCode: 1, // Case codes collected from the group stage
+                    status: 1, // Statuses collected from the group stage
+                },
+            },
+        ]);
     }
 }
 exports.default = new CaseUtil();

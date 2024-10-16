@@ -97,5 +97,26 @@ class UserRequests {
         );
     }
   }
+
+  async thirdPartySignIn(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      name: Joi.string().required(),
+      email: Joi.string().email().required(),
+      platform: Joi.string(),
+      phone: Joi.string().allow(''),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
 }
 export default new UserRequests();

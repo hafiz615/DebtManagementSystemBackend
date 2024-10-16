@@ -14,6 +14,7 @@ class DebtorRequests {
             const schema = joi_1.default.object({
                 paymentToken: joi_1.default.string().optional().allow(''),
                 paymentType: joi_1.default.string().optional().allow(''),
+                profitMargin: joi_1.default.number().optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -78,6 +79,7 @@ class DebtorRequests {
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
                 extractedFields: joi_1.default.array().allow(null).optional(),
+                profitMargin: joi_1.default.number().optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -141,6 +143,7 @@ class DebtorRequests {
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
                 extractedFields: joi_1.default.array().allow(null).optional(),
+                profitMargin: joi_1.default.number().optional(),
                 basicInformation: joi_1.default.object({
                     fullName: joi_1.default.string().required(),
                     email: joi_1.default.string().email().required(),
@@ -202,6 +205,7 @@ class DebtorRequests {
                     paymentToken: joi_1.default.string().allow(''),
                     extractedFields: joi_1.default.array().allow(null).optional(),
                     driveUrl: joi_1.default.string().allow(''),
+                    profitMargin: joi_1.default.number().optional(),
                     basicInformation: joi_1.default.object({
                         fullName: joi_1.default.string().required().allow(''),
                         email: joi_1.default.string().email().required().allow(''),
@@ -251,6 +255,27 @@ class DebtorRequests {
             const schema = joi_1.default.object({
                 paymentType: joi_1.default.string().required(),
                 paymentToken: joi_1.default.string().required(),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+            }
+        };
+        this.saveWeeklyBudgetValues = (req, res, next) => {
+            const schema = joi_1.default.object({
+                strategy1Profit: joi_1.default.number().strict(),
+                strategy1Weekly: joi_1.default.number().strict(),
+                strategy1Custom: joi_1.default.number().strict(),
+                strategy1Choosen: joi_1.default.string(),
+                strategy3Profit: joi_1.default.number().strict(),
+                strategy3ProfitMargin: joi_1.default.number().strict(),
+                strategy3Custom: joi_1.default.number().strict(),
+                strategy3Choosen: joi_1.default.string(),
             });
             const { error } = schema.validate(req.body);
             if (!error) {

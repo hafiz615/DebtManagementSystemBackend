@@ -17,6 +17,8 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const paynote_util_1 = __importDefault(require("../utils/paynote.util"));
 const email_util_1 = __importDefault(require("../utils/email.util"));
 const payment_service_1 = __importDefault(require("../api/services/payment.service"));
+const case_repository_1 = require("../api/repository/case/case.repository");
+const creditor_util_1 = __importDefault(require("../utils/creditor.util"));
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -24,6 +26,7 @@ class CronJob {
         this.paymentService = new payment_service_1.default();
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
     }
     async testCron() {
         let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
@@ -340,14 +343,20 @@ class CronJob {
         node_cron_1.default.schedule('15 * * * *', async () => {
             const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode'],
-                populate: ['creditor'],
+                select: ['_id', 'caseCode', 'remaining'],
+                populate: [
+                    { path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId'] },
+                    { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+                ],
             });
             await this.paynotePending(pendingPayments);
             const failedPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode'],
-                populate: ['creditor'],
+                select: ['_id', 'caseCode', 'remaining'],
+                populate: [
+                    { path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId'] },
+                    { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+                ],
             });
             await this.paynoteFailed(failedPayments);
             // for (const payment of payments as any) {
@@ -477,6 +486,11 @@ class CronJob {
                     sendViaPaynote: 'Success',
                     status: 'Success',
                 });
+                const updatedCase = await this.caseRepository.updateById(payment.caseId._id, { $inc: { remainingAmountPaid: payment.amount } });
+                if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+                    const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(String(payment.caseId.debtor._id), String(payment.caseId.creditor._id));
+                    email_util_1.default.sendEmailIfDebtorPaysDebt(payment.caseId, payment.caseId.debtor, creditors);
+                }
             }
         }
     }
