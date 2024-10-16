@@ -20,16 +20,21 @@ import client from '@sendgrid/client';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import {compare} from 'bcryptjs';
 import dotenv from 'dotenv';
+import caseUtil from '../../utils/case.util';
+import {IDebtor} from '../../database/interfaces/debtor.interface';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
 dotenv.config();
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
   private caseRepository: CaseRepository;
+  private debtorRepository: DebtorRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.caseRepository = new CaseRepository();
+    this.debtorRepository = new DebtorRepository();
     client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
@@ -577,6 +582,108 @@ class UserService {
       return [false, constants.notFoundMessage('User')];
     }
     return [true, 'Password reset successfully'];
+  }
+
+  async thirdPartySignIn(
+    req: Request
+  ): Promise<[boolean, Partial<IUser> | string]> {
+    const email = req.body.email.toLowerCase();
+    req.body.role = 'Debtor';
+    req.body.verifyToken = await this.tokenService.createVerifyToken(email);
+
+    let user = await this.userRepository.getOne<IUser>({email});
+
+    // Function to create a new debtor object
+    const createDebtorObject = () => ({
+      basicInformation: {
+        fullName: req.body.name,
+        email: email,
+        SSID: '',
+        state: '',
+        city: '',
+        zipCode: '',
+        status: '',
+        phone: '',
+        address: '',
+        weeklyBudget: 0,
+      },
+      businessInformation: {
+        companyName: '',
+        EIN: '',
+        businessCategory: '',
+        description: '',
+        state: '',
+        city: '',
+        zipCode: '',
+        phone: '',
+        address: '',
+      },
+      contacts: [],
+      documents: [],
+      createdBy: req.body.createdBy || '',
+      accounts: [],
+      totalCommission: 0,
+      commissionPaid: 0,
+      weeklyCommission: 0,
+      weeklyCommissionPaid: false,
+      bulkUpload: false,
+      weeklyBudgetUpdated: false,
+      createdAt: commonUtil.getCurrentDate(),
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+
+    if (user && !user.isDeleted) {
+      await this.userRepository.updateById<IUser>(user._id, {
+        $set: {verifyToken: req.body.verifyToken},
+      });
+
+      let debtor = await this.debtorRepository.getOne<IDebtor>({
+        'basicInformation.email': email,
+      });
+
+      if (!debtor) {
+        debtor = await caseUtil.createDebtor(
+          createDebtorObject() as IDebtor,
+          ''
+        );
+      }
+
+      return [
+        true,
+        {
+          id: debtor.id,
+          verifyToken: req.body.verifyToken,
+          createdBy: req.body.createdBy,
+        },
+      ];
+    } else {
+      req.body.isDeleted = false;
+      user = await this.userRepository.create<IUser>(
+        DataCopier.copy(new User(), req.body as IUser)
+      );
+      let newDebtor = await caseUtil.createDebtor(
+        createDebtorObject() as IDebtor,
+        ''
+      );
+      await this.userRepository.updateById<IUser>(user._id, {
+        $set: {
+          verifyToken: req.body.verifyToken,
+          email: req.body.email,
+          role: 'Debtor',
+          createdBy: '',
+          updatedAt: commonUtil.getCurrentDate(),
+        },
+      });
+
+      return [
+        true,
+        {
+          id: newDebtor.id,
+          verifyToken: req.body.verifyToken,
+          createdBy: req.body.createdBy,
+        },
+      ];
+    }
   }
 }
 
