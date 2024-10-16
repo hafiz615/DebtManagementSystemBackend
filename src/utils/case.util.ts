@@ -267,7 +267,7 @@ class CaseUtil {
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtorId, isDeleted: false},
-      'totalDebt caseCode status remaining contractDetails',
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid',
       undefined,
       {_id: -1},
       {
@@ -488,7 +488,9 @@ class CaseUtil {
       : {
           status: true,
           commission: weeklyBudget - amount,
-          totalCommission: parseInt((debt * commisionPercentage).toFixed(2)),
+          totalCommission: parseInt(
+            (debt * (commisionPercentage / 100)).toFixed(2)
+          ),
         };
   }
   async getWeeklyAmount(interval: any) {
@@ -496,7 +498,9 @@ class CaseUtil {
       case 'custom':
         return interval.amount;
       case 'daily':
-        return interval.amount * interval.frequency;
+        let multiple = interval.frequency;
+        if (interval.frequency > 7) multiple = 7;
+        return interval.amount * multiple;
       case 'weekly':
         return interval.amount;
       case 'monthly':
@@ -2466,6 +2470,7 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
+        newCase.remainingAmountPaid = body.paidAmount;
         body.notes = body?.notes
           ? [
               {

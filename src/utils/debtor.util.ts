@@ -25,10 +25,9 @@ class DebtorUtil {
       weeklyBudgetKeyStrategy1: strategy1Key,
       weeklyBudgetKeyStrategy3: strategy3Key,
       weeklyBudgetStrategy1: strategy1Budget,
-      weeklyBudgetStrategy3: strategy3Budget,
+      weeklyBudgetStrategy3: strategy3Budget / 100,
       updatedAt: commonUtil.getCurrentDate(),
     };
-
     if (strategy1Key === 'strategy1Custom') {
       filter['strategy1BudgetCustom'] = strategy1Budget;
       if (!caseTemp?.debtor?.basicInformation?.weeklyBudget)
@@ -62,11 +61,11 @@ class DebtorUtil {
         moneyThumbApp['appid']
       );
       const accounts = scoreCard['accountslist'];
-      if (accounts.length > 1) {
-        const len = accounts.length;
+      if (accounts.data.length > 1) {
+        const len = accounts.data.length;
         const percentageChange = await commonUtil.calculatePercentageChange(
-          parseFloat(accounts[len - 2]['true_credits']),
-          parseFloat(accounts[len - 1]['true_credits'])
+          parseFloat(accounts.data[len - 2]['true_credits']),
+          parseFloat(accounts.data[len - 1]['true_credits'])
         );
         let incDec = '',
           posNeg = '';
@@ -78,10 +77,10 @@ class DebtorUtil {
           incDec = 'Decrease';
           posNeg = 'negative';
         }
-        const previousMonth = accounts[len - 2]['statement_month'];
-        const previousYear = accounts[len - 2]['statement_year'];
-        const currentMonth = accounts[len - 1]['statement_month'];
-        const currentYear = accounts[len - 1]['statement_year'];
+        const previousMonth = accounts.data[len - 2]['statement_month'];
+        const previousYear = accounts.data[len - 2]['statement_year'];
+        const currentMonth = accounts.data[len - 1]['statement_month'];
+        const currentYear = accounts.data[len - 1]['statement_year'];
         const creditors =
           await creditorUtil.getCreditorsEmailForDebtor(debtorId);
         console.log(
@@ -93,8 +92,8 @@ class DebtorUtil {
           currentYear,
           creditors,
           debtorName,
-          accounts[len - 2]['true_credits'],
-          accounts[len - 1]['true_credits'],
+          accounts.data[len - 2]['true_credits'],
+          accounts.data[len - 1]['true_credits'],
           percentageChange
         );
         emailUtil.percentageChangeEmail(
@@ -106,12 +105,30 @@ class DebtorUtil {
           currentYear,
           creditors,
           debtorName,
-          accounts[len - 2]['true_credits'],
-          accounts[len - 1]['true_credits'],
+          accounts.data[len - 2]['true_credits'],
+          accounts.data[len - 1]['true_credits'],
           percentageChange
         );
       }
     }
+  }
+
+  async updateDebtorTotalCommission(debtor: IDebtor) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>({
+      debtor: debtor._id,
+      isDeleted: false,
+    });
+    let debt = 0;
+    for (const caseTemp of cases) {
+      if (caseTemp.intervals.length) {
+        debt += caseTemp.remaining;
+      }
+    }
+    const amount = debt * (debtor.commissionPercentage / 100);
+    console.log(amount, 'amountttt');
+    await this.debtorRepository.updateById<IDebtor>(debtor._id, {
+      totalCommission: Math.round(amount * 100) / 100,
+    });
   }
 }
 export default new DebtorUtil();
