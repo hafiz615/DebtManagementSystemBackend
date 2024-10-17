@@ -78,6 +78,10 @@ class App {
         //   app['appid']
         // );
         // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
+        // const kk = await debtorUtil.getPaidAmountOfCreditors(
+        //   '66f1221440020aa3522ec604'
+        // );
+        // console.log(kk, 'ookoko');
         // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
         // const debtors = await debtorRepo.getAllWithoutPagination<IDebtor>();
         // for (let i = 23; i < debtors.length; i++) {

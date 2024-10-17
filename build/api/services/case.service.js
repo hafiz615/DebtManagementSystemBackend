@@ -71,7 +71,7 @@ class CaseService {
             if (!findCase?.getCaseIdPercentage &&
                 !findCase?.debtor?.strategy1MaxProfit &&
                 !findCase?.debtor?.strategy3MaxProfit) {
-                await moneyThumb_util_1.default.run(String(findCase.debtor._id));
+                await moneyThumb_util_1.default.run(String(findCase.debtor._id), findCase.debtor.businessInformation.companyName);
                 this.caseRepository.updateById(req.params.id, {
                     getCaseIdPercentage: true,
                 });

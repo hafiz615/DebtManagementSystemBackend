@@ -725,7 +725,10 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    moneyThumbUtil.run(String(debtor._id));
+    moneyThumbUtil.run(
+      String(debtor._id),
+      debtor.businessInformation.companyName
+    );
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
       req.body.extractedFields
@@ -767,7 +770,10 @@ class DebtorService {
       settlementRange: false,
       updatedAt: commonUtil.getCurrentDate(),
     });
-    await moneyThumbUtil.run(req.params.id);
+    await moneyThumbUtil.run(
+      String(updatedDebtor._id),
+      updatedDebtor.businessInformation.companyName
+    );
     const statements = caseTemp.debtor?.totalStatements;
     if (caseTemp.intervals) {
       debtorUtil.percentageChangeEmail(
@@ -1095,6 +1101,38 @@ class DebtorService {
     }
     return [true, constants.successUpdateMessage('Weekly budget info')];
   }
+
+  // async getMcaAndFinancials(req: Request) {
+  //   const {mca, bankStatements} = req.body;
+  //   const documents = mca.concat(bankStatements);
+  //   const extractedFields =
+  //   await caseUtil.getExtractionMCABuffer(getFilesData);
+  // checkError = await this.checkErrorAI(bulkUpload, extractedFields);
+  // if (checkError) continue;
+  // console.log(
+  //   extractedFields.extracted_fields,
+  //   'extractedFields.extracted_fields'
+  // );
+  // const creditorData = await caseUtil.getCreditorNames(
+  //   updatedDebtor,
+  //   extractedFields.extracted_fields,
+  //   ''
+  // );
+  // console.log(creditorData, 'creditor Dataaaa');
+  // checkError = await this.checkErrorAI(bulkUpload, creditorData);
+  // if (checkError) continue;
+  // const caseTemp = await googleDriveUtil.mapCreditorsCases(
+  //   extractedFields.extracted_fields,
+  //   creditorData
+  // );
+  // console.log(caseTemp, 'caseTempoppp');
+  // const result = await caseUtil.createCreditorsCases(
+  //   {data: caseTemp},
+  //   bulkUpload.createdByName,
+  //   bulkUpload.createdById,
+  //   String(bulkUpload.debtor)
+  // );
+  // }
 }
 
 export default DebtorService;

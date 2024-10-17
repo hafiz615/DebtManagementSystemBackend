@@ -650,7 +650,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        moneyThumb_util_1.default.run(String(debtor._id));
+        moneyThumb_util_1.default.run(String(debtor._id), debtor.businessInformation.companyName);
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, req.body.extractedFields);
         return [true, { debtor, creditorNames }];
     }
@@ -680,7 +680,7 @@ class DebtorService {
             settlementRange: false,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        await moneyThumb_util_1.default.run(req.params.id);
+        await moneyThumb_util_1.default.run(String(updatedDebtor._id), updatedDebtor.businessInformation.companyName);
         const statements = caseTemp.debtor?.totalStatements;
         if (caseTemp.intervals) {
             debtor_util_1.default.percentageChangeEmail(req.params.id, statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);

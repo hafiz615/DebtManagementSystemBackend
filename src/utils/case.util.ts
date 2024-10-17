@@ -42,6 +42,7 @@ import paynoteUtil from './paynote.util';
 import {nanoid} from 'nanoid';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
+import debtorUtil from './debtor.util';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -2416,6 +2417,9 @@ class CaseUtil {
     if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
     const getCreditorsEmail: any =
       await creditorUtil.getCreditorsEmailForDebtor(debtorId);
+    const creditorsPaidAmount = await debtorUtil.getPaidAmountOfCreditors(
+      debtor.businessInformation.companyName
+    );
     for (const body of dataArray) {
       console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
@@ -2470,6 +2474,10 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
+        if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
+          body.paidAmount =
+            creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
+        }
         newCase.remainingAmountPaid = body.paidAmount;
         body.notes = body?.notes
           ? [

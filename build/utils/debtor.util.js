@@ -87,6 +87,24 @@ class DebtorUtil {
             totalCommission: Math.round(amount * 100) / 100,
         });
     }
+    async getPaidAmountOfCreditors(debtorCompanyName) {
+        const lastLenderOccurrences = {};
+        const token = await moneyThumb_util_1.default.authenticateUser();
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorCompanyName);
+        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
+        if (scoreCard['mcacompanies']) {
+            const mcaCompanies = scoreCard['mcacompanies'];
+            const data = mcaCompanies.data;
+            for (let i = 0; i < data.length; i++) {
+                if (data[i].month === 'Totals') {
+                    lastLenderOccurrences[data[i].lender] = {
+                        withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
+                    };
+                }
+            }
+        }
+        return lastLenderOccurrences;
+    }
 }
 exports.default = new DebtorUtil();
 //# sourceMappingURL=debtor.util.js.map
