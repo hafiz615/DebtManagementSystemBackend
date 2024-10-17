@@ -2129,7 +2129,7 @@ class CaseUtil {
   }
 
   async getExtractionMCA_AI(documents: any, token: string) {
-    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
     try {
       const form = new FormData();
       for (let doc of documents) {
@@ -2164,7 +2164,7 @@ class CaseUtil {
   }
 
   async getExtractionMCA_AIBuffer(documents: any, token: string) {
-    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
     try {
       const form = new FormData();
       for (let doc of documents) {
