@@ -758,6 +758,28 @@ class EmailUtil {
       await this.sendEmail(to, from, subject, content);
     }
   }
+
+  async sendEmailToDebtorForInitialOverView(debtor: IDebtor, videoLink: any) {
+    const content = `\t\t Dear ${debtor.basicInformation.fullName},
+
+      We hope this message finds you well!
+
+      We are excited to share a video that highlights the exclusive benefits tailored just for you. This video provides insights into how you can maximize your experience with us and take full advantage of what we offer.
+
+       \nYou can watch the video here: ${videoLink}.\n\n
+
+      \n If you have any questions or would like to discuss these benefits further, please do not hesitate to reach out. We are here to help! \n
+
+           \nThank you for being a valued member of our community.\n 
+
+      \tBest regards,\n 
+      \tFirst Choice Debt Solutions`;
+
+    const to = debtor.basicInformation?.email;
+    const from = process.env.defaultEmail;
+    const subject = `Discover Your Exclusive Benefits with DMS`;
+    await this.sendEmail(to, from, subject, content);
+  }
 }
 
 export default new EmailUtil();

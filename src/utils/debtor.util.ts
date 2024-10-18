@@ -2,6 +2,7 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import {IDebtor} from '../database/interfaces/debtor.interface';
+import axiosInstance from './axiosInstanceInterceptor';
 import commonUtil from './common.util';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
@@ -129,6 +130,74 @@ class DebtorUtil {
     await this.debtorRepository.updateById<IDebtor>(debtor._id, {
       totalCommission: Math.round(amount * 100) / 100,
     });
+  }
+
+  async generateVideoWithGenAi(debtor: IDebtor) {
+    try {
+      //login : This endpoint can be used for login. The response contains an access token and a refresh token which need to be used in the Authorization header in the future API calls.
+
+      let getAccessKeys = await axiosInstance.post(
+        process.env.ganAiLoginUrl,
+        {
+          email: process.env.ganAiEmail,
+          password: process.env.ganAiPassword,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const getDynamicToken = await axiosInstance.post(
+        process.env.generateTokenUrl,
+        {
+          expiry_time: {days: 1, hours: 24, minutes: 1440},
+          token_name: `${debtor?._id?.toString()} - ${
+            debtor.basicInformation.fullName
+          }`,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const getProject = await axiosInstance.get(
+        process.env.getGanAiProjectEndpoint,
+        {
+          headers: {
+            Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const response = await axiosInstance.post(
+        process.env.createDynamicVideoUrl,
+        [
+          {
+            name: debtor.basicInformation.fullName,
+            unique_id: debtor._id.toString(),
+          },
+        ],
+        {
+          headers: {
+            Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          params: {
+            project_id: getProject?.data?.data[0]?.project_id,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
+      return error.message;
+    }
   }
 }
 export default new DebtorUtil();

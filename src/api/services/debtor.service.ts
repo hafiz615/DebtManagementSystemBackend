@@ -29,6 +29,9 @@ import paymentUtil from '../../utils/payment.util';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
 import creditorUtil from '../../utils/creditor.util';
 import debtorUtil from '../../utils/debtor.util';
+import {UserRepository} from '../repository/user/user.repository';
+import {IUser} from '../../database/interfaces/user.interface';
+import _ from 'lodash';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -38,6 +41,7 @@ class DebtorService {
   private paymentLoggingRepository: PaymentLoggingRepository;
   private strategyRepository: StrategyRepository;
   private bulkUploadRepository: BulkUploadRepository;
+  private userRepository: UserRepository;
 
   constructor() {
     this.debtorRepository = new DebtorRepository();
@@ -47,6 +51,7 @@ class DebtorService {
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.strategyRepository = new StrategyRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
+    this.userRepository = new UserRepository();
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
@@ -1094,6 +1099,25 @@ class DebtorService {
       return [true, constants.failureUpdateMessage('weekly budget info')];
     }
     return [true, constants.successUpdateMessage('Weekly budget info')];
+  }
+
+  async generateVideoWithGenAi(req: Request) {
+    const user = await this.userRepository.getById<IUser>(req.params.id);
+    if (!user) return [false, constants.notFoundMessage('User'), {}];
+
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>(user.id);
+
+    if (!getDebtor) return [false, constants.notFoundMessage('Debtor'), {}];
+
+    let getVideo = await debtorUtil.generateVideoWithGenAi(getDebtor);
+    await emailUtil.sendEmailToDebtorForInitialOverView(
+      getDebtor,
+      getVideo[0]?.permalink
+    );
+
+    return !_.isEmpty(getVideo[0]?.permalink)
+      ? [true, constants.successFoundMessage('Video'), getVideo]
+      : [false, constants.notFoundMessage('Video'), getVideo];
   }
 }
 

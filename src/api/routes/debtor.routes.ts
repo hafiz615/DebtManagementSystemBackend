@@ -115,4 +115,6 @@ router.post(
   debtorController.saveWeeklyBudgetValues
 );
 
+router.get('/getSummeryVideo/:id', debtorController.generateVideoWithGenAi);
+
 export default router;
