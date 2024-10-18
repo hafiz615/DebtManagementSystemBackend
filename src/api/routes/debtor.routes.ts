@@ -115,6 +115,10 @@ router.post(
   debtorController.saveWeeklyBudgetValues
 );
 
-router.get('/getSummeryVideo/:id', debtorController.generateVideoWithGenAi);
+router.get(
+  '/getSummeryVideo/:id',
+  authorize.validateAuth,
+  debtorController.generateVideoWithGenAi
+);
 
 export default router;

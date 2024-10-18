@@ -1050,9 +1050,11 @@ class DebtorService {
   }
 
   async getDebtorSummery(req: Request) {
-    const getDebtor = await this.debtorRepository.getById<IDebtor>(
-      req.params.id
-    );
+    let reqTemp: any;
+    const user = await this.userRepository.getById<IUser>(reqTemp.id);
+    if (!user) return [false, constants.notFoundMessage('User'), {}];
+
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>(user._id);
     if (!getDebtor) {
       return [false, constants.notFoundMessage('Debtor'), {}];
     }
@@ -1102,10 +1104,11 @@ class DebtorService {
   }
 
   async generateVideoWithGenAi(req: Request) {
-    const user = await this.userRepository.getById<IUser>(req.params.id);
+    let reqTemp: any;
+    const user = await this.userRepository.getById<IUser>(reqTemp.id);
     if (!user) return [false, constants.notFoundMessage('User'), {}];
 
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>(user.id);
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>(user._id);
 
     if (!getDebtor) return [false, constants.notFoundMessage('Debtor'), {}];
 
