@@ -595,6 +595,7 @@ class UserService {
     if (!user) {
       req.body.phone = await commonUtil.cleanPhoneNumber(req.body.phone);
       req.body.isActive = true;
+      req.body.isPlatform = true;
       const newUser = new User();
       const validatedUser = DataCopier.copy(newUser, req.body as IUser);
       user = await this.userRepository.create(validatedUser);
@@ -604,6 +605,10 @@ class UserService {
     }
     const uuid = uuidv4();
     const token = await this.tokenService.create(user._id, uuid);
+    await this.userRepository.updateById<IUser>(user._id, {
+      $push: {sessionIds: uuid},
+      updatedAt: commonUtil.getCurrentDate(),
+    });
     return [true, {user, token: token}];
   }
 }
