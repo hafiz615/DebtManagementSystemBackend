@@ -2121,6 +2121,7 @@ class CaseUtil {
                 if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
                     body.paidAmount =
                         creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
+                    body.remaining = body.totalDebt - body.paidAmount;
                 }
                 newCase.remainingAmountPaid = body.paidAmount;
                 body.notes = body?.notes
