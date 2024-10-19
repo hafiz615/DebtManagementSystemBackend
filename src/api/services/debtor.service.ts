@@ -719,8 +719,8 @@ class DebtorService {
       // if (!req.body.basicInformation?.weeklyBudget)
       //   req.body.basicInformation.weeklyBudget = 1;
       body.updatedAt = commonUtil.getCurrentDate();
-      if (body?.documents && body?.documents?.length)
-        body.documents = getDebtor.documents.concat(body.documents);
+      // if (body?.documents && body?.documents?.length)
+      //   body.documents = getDebtor.documents.concat(body.documents);
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
         body
