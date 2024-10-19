@@ -105,6 +105,87 @@ class DebtorUtil {
         }
         return lastLenderOccurrences;
     }
+    async mapDebtor(data) {
+        const missingFieldsBasic = [];
+        const missingFieldsBusiness = [];
+        const basicInformation = {};
+        const businessInformation = {};
+        //weekly budget calculate
+        const basicInformationKeys = {
+            "Debtor's Name": 'fullName',
+            "Debtor's Email address": 'email',
+            "Debtor's SSN": 'SSID',
+            "Debtor's State Name": 'state',
+            "Debtor's City Name": 'city',
+            "Debtor's Zip code": 'zipCode',
+            "Debtor's Phone Number": 'phone',
+            "Debtor's Address": 'address',
+        };
+        const businessInformationKeys = {
+            'Business Legal Name': 'companyName',
+            'Business EIN Number': 'EIN',
+            'Business Category': 'businessCategory',
+            'Business State Name': 'state',
+            'Business City Name': 'city',
+            'Business Zip code': 'zipCode',
+            'Business Phone Number': 'phone',
+            'Business Street Address': 'address',
+        };
+        const firstObj = data[0];
+        for (const key in basicInformationKeys) {
+            let value = firstObj.debtor_info[key];
+            if (key === "Debtor's Email address" && value)
+                value = value.toLowerCase();
+            if (key === "Debtor's SSN" && value)
+                value = await common_util_1.default.removeDashesAndRoundBrackets(value);
+            if (key === "Debtor's Phone Number" && value)
+                value = await common_util_1.default.cleanPhoneNumber(value);
+            basicInformation[basicInformationKeys[key]] = value;
+            if (!value)
+                missingFieldsBasic.push(key);
+        }
+        for (const key in businessInformationKeys) {
+            let value = firstObj.bussiness_info[key];
+            if (key === 'Business EIN Number' && value)
+                value = await common_util_1.default.removeDashesAndRoundBrackets(value);
+            if (key === 'Business Phone Number' && value)
+                value = await common_util_1.default.cleanPhoneNumber(value);
+            businessInformation[businessInformationKeys[key]] = value;
+            if (!value)
+                missingFieldsBusiness.push(key);
+        }
+        if (data.length > 1 &&
+            (missingFieldsBasic.length || missingFieldsBusiness.length)) {
+            data.shift();
+            for (const key of missingFieldsBasic) {
+                for (const extractedData of data) {
+                    let value = extractedData.debtor_info[key];
+                    if (key === "Debtor's Email address" && value)
+                        value = value.toLowerCase();
+                    if (key === "Debtor's SSN" && value)
+                        value = await common_util_1.default.removeDashesAndRoundBrackets(value);
+                    if (key === "Debtor's Phone Number" && value)
+                        value = await common_util_1.default.cleanPhoneNumber(value);
+                    basicInformation[basicInformationKeys[key]] = value;
+                    if (value)
+                        break;
+                }
+            }
+            for (const key of missingFieldsBusiness) {
+                for (const extractedData of data) {
+                    let value = extractedData.bussiness_info[key];
+                    if (key === 'Business EIN Number' && value)
+                        value = await common_util_1.default.removeDashesAndRoundBrackets(value);
+                    if (key === 'Business Phone Number' && value)
+                        value = await common_util_1.default.cleanPhoneNumber(value);
+                    businessInformation[businessInformationKeys[key]] = value;
+                    if (value)
+                        break;
+                }
+            }
+        }
+        return { basicInformation, businessInformation };
+    }
 }
 exports.default = new DebtorUtil();
 //# sourceMappingURL=debtor.util.js.map

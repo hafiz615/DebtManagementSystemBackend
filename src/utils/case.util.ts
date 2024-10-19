@@ -2090,6 +2090,7 @@ class CaseUtil {
   }
 
   async getExtractionMCA(debtor: IDebtor) {
+    console.log('hahahahahah');
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -2478,6 +2479,7 @@ class CaseUtil {
           body.paidAmount =
             creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
           body.remaining = body.totalDebt - body.paidAmount;
+          if (body.totalDebt - body.paidAmount < 0) body.remaining = 0;
         }
         newCase.remainingAmountPaid = body.paidAmount;
         body.notes = body?.notes
@@ -2527,9 +2529,9 @@ class CaseUtil {
             getCreditorsEmail
           );
         }
-        // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-        //   await this.createPayment(caseCreated);
-        // }
+        if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+          await this.createPayment(caseCreated);
+        }
       }
     }
     if (!createdCases.length) return [false, createdCases];

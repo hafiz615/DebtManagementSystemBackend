@@ -45,6 +45,26 @@ class CommonUtil {
         }
         return cleanedNumber;
     }
+    async removeDashesAndRoundBrackets(data) {
+        if (typeof data === 'number')
+            return String(data);
+        if (!data)
+            return '-';
+        return data.replace(/[-()]/g, '');
+    }
+    async getValuePercenatge(data) {
+        if (typeof data === 'number')
+            return String(data);
+        if (!data)
+            return '-';
+        const result = data.match(/\d+%/);
+        if (result) {
+            return result[0];
+        }
+        else {
+            return data;
+        }
+    }
 }
 exports.default = new CommonUtil();
 //# sourceMappingURL=common.util.js.map

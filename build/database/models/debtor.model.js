@@ -197,6 +197,9 @@ const debtorSchema = new mongoose_1.Schema({
     totalStatements: {
         type: Number,
     },
+    userId: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         required: true,

@@ -226,7 +226,8 @@ class DebtorController {
         };
         this.createDebtor = async (req, res) => {
             try {
-                const response = await this.debtorService.createDebtor(req);
+                const reqTemp = req;
+                const response = await this.debtorService.createDebtor(req.body, reqTemp);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
@@ -417,8 +418,8 @@ class DebtorController {
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
-                    data: response[2],
-                    message: response[1],
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Debtor account details'),
                 }));
             }
             catch (error) {
@@ -440,6 +441,27 @@ class DebtorController {
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
                     message: response[1],
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.getMcaAndFinancials = async (req, res) => {
+            try {
+                const response = await this.debtorService.getMcaAndFinancials(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successAddMessage('Cases'),
                 }));
             }
             catch (error) {

@@ -104,7 +104,7 @@ router.post(
 );
 
 router.get(
-  '/getDebtorSummery/:id',
+  '/getDebtorSummery',
   authorize.validateAuth,
   debtorController.getDebtorSummery
 );
@@ -113,6 +113,11 @@ router.post(
   authorize.validateAuth,
   debtor.saveWeeklyBudgetValues,
   debtorController.saveWeeklyBudgetValues
+);
+router.post(
+  '/getMcaAndFinancials',
+  authorize.validateAuth,
+  debtorController.getMcaAndFinancials
 );
 
 export default router;

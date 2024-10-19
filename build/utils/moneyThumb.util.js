@@ -142,7 +142,7 @@ class MoneyThumbUtil {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            console.log('Response Data', response.data['mcacompanies']['data']);
+            //   console.log('Response Data', response.data['mcacompanies']['data']);
             return response.data;
         }
         catch (error) {

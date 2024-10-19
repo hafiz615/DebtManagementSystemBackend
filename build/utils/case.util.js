@@ -1803,6 +1803,7 @@ class CaseUtil {
         return creditorNames;
     }
     async getExtractionMCA(debtor) {
+        console.log('hahahahahah');
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
@@ -2122,6 +2123,8 @@ class CaseUtil {
                     body.paidAmount =
                         creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
                     body.remaining = body.totalDebt - body.paidAmount;
+                    if (body.totalDebt - body.paidAmount < 0)
+                        body.remaining = 0;
                 }
                 newCase.remainingAmountPaid = body.paidAmount;
                 body.notes = body?.notes
@@ -2163,9 +2166,9 @@ class CaseUtil {
                 if (getCreditorsEmail.length && createdCases.length) {
                     email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
                 }
-                // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-                //   await this.createPayment(caseCreated);
-                // }
+                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+                    await this.createPayment(caseCreated);
+                }
             }
         }
         if (!createdCases.length)

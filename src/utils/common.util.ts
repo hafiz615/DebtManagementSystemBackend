@@ -47,5 +47,23 @@ class CommonUtil {
     }
     return cleanedNumber;
   }
+
+  async removeDashesAndRoundBrackets(data: string) {
+    if (typeof data === 'number') return String(data);
+    if (!data) return '-';
+    return data.replace(/[-()]/g, '');
+  }
+
+  async getValuePercenatge(data: string) {
+    if (typeof data === 'number') return String(data);
+    if (!data) return '-';
+    const result = data.match(/\d+%/);
+
+    if (result) {
+      return result[0];
+    } else {
+      return data;
+    }
+  }
 }
 export default new CommonUtil();

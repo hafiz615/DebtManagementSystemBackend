@@ -29,6 +29,9 @@ import paymentUtil from '../../utils/payment.util';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
 import creditorUtil from '../../utils/creditor.util';
 import debtorUtil from '../../utils/debtor.util';
+import bulkUploadCronjob from '../../cron-job/bulkUpload.cronjob';
+import googleDriveUtil from '../../utils/googleDrive.util';
+import {cloneDeep} from 'lodash';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -681,45 +684,44 @@ class DebtorService {
     return [true, debtors];
   };
 
-  async createDebtor(req: Request) {
-    const reqTemp: any = req;
+  async createDebtor(body: any, id: string) {
+    // const reqTemp: any = req;
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
           'businessInformation.companyName':
-            req.body.businessInformation.companyName,
+            body.businessInformation.companyName,
         },
         {
-          'businessInformation.EIN': req.body.businessInformation.EIN,
+          'businessInformation.EIN': body.businessInformation.EIN,
         },
       ],
     });
     let debtor: IDebtor = null;
     let account = [];
-    if (req.body.paymentToken && req.body.paymentType) {
+    if (body.paymentToken && body.paymentType) {
       const customerVaultResponse = await caseUtil.createVault(
-        req.body.paymentToken
+        body.paymentToken
       );
       if (!customerVaultResponse[0]) return customerVaultResponse;
       // req.body.customerVaultId = customerVaultResponse[1];
       account.push({
-        paymentType: req.body.paymentType,
+        paymentType: body.paymentType,
         customerVaultId: customerVaultResponse[1],
       });
     }
     if (!getDebtor) {
-      if (account.length) req.body.accounts = account;
-      debtor = await caseUtil.createDebtor(req.body, reqTemp.id);
+      if (account.length) body.accounts = account;
+      debtor = await caseUtil.createDebtor(body, id);
     }
     if (getDebtor) {
-      if (account.length)
-        req.body.accounts = getDebtor.accounts.concat(account);
+      if (account.length) body.accounts = getDebtor.accounts.concat(account);
       // if (!req.body.basicInformation?.weeklyBudget)
       //   req.body.basicInformation.weeklyBudget = 1;
-      req.body.updatedAt = commonUtil.getCurrentDate();
+      body.updatedAt = commonUtil.getCurrentDate();
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
-        req.body
+        body
       );
     }
     if (!debtor) {
@@ -731,7 +733,7 @@ class DebtorService {
     );
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
-      req.body.extractedFields
+      body.extractedFields
     );
     return [true, {debtor, creditorNames}];
   }
@@ -1051,25 +1053,29 @@ class DebtorService {
   }
 
   async getDebtorSummery(req: Request) {
-    const getDebtor = await this.debtorRepository.getById<IDebtor>(
-      req.params.id
-    );
+    const reqTemp: any = req;
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      userId: reqTemp.id,
+    });
+    console.log(getDebtor);
     if (!getDebtor) {
-      return [false, constants.notFoundMessage('Debtor'), {}];
+      return [false, constants.notFoundMessage('debtor')];
     }
     let getAllCreditor: Array<ICreditor | any> | any =
-      await caseUtil.getCreditorsForDebtor(req.params.id);
+      await caseUtil.getCreditorsForDebtor(String(getDebtor._id));
 
     let payments = await paymentUtil.getPaymentsByStatusAndDebtor(
       'Upcoming',
-      req.params.id
+      String(getDebtor._id)
     );
     let pendingPayments: Array<IPayment | any> | any =
-      await paymentUtil.getPaymentsByStatusAndDebtor('Pending', req.params.id);
+      await paymentUtil.getPaymentsByStatusAndDebtor(
+        'Pending',
+        String(getDebtor._id)
+      );
 
     return [
       true,
-      constants.successFoundMessage('Debtor account details'),
       {
         creditorList: getAllCreditor,
         totalCreditor: getAllCreditor?.length ?? 0,
@@ -1102,37 +1108,59 @@ class DebtorService {
     return [true, constants.successUpdateMessage('Weekly budget info')];
   }
 
-  // async getMcaAndFinancials(req: Request) {
-  //   const {mca, bankStatements} = req.body;
-  //   const documents = mca.concat(bankStatements);
-  //   const extractedFields =
-  //   await caseUtil.getExtractionMCABuffer(getFilesData);
-  // checkError = await this.checkErrorAI(bulkUpload, extractedFields);
-  // if (checkError) continue;
-  // console.log(
-  //   extractedFields.extracted_fields,
-  //   'extractedFields.extracted_fields'
-  // );
-  // const creditorData = await caseUtil.getCreditorNames(
-  //   updatedDebtor,
-  //   extractedFields.extracted_fields,
-  //   ''
-  // );
-  // console.log(creditorData, 'creditor Dataaaa');
-  // checkError = await this.checkErrorAI(bulkUpload, creditorData);
-  // if (checkError) continue;
-  // const caseTemp = await googleDriveUtil.mapCreditorsCases(
-  //   extractedFields.extracted_fields,
-  //   creditorData
-  // );
-  // console.log(caseTemp, 'caseTempoppp');
-  // const result = await caseUtil.createCreditorsCases(
-  //   {data: caseTemp},
-  //   bulkUpload.createdByName,
-  //   bulkUpload.createdById,
-  //   String(bulkUpload.debtor)
-  // );
-  // }
+  async getMcaAndFinancials(req: Request) {
+    const reqTemp: any = req;
+    const {mca, bankStatements} = req.body;
+    const documents = mca.concat(bankStatements);
+    const extractedFields = await caseUtil.getExtractionMCA({
+      documents: documents,
+    } as any);
+    if (!extractedFields)
+      return [false, 'Could not extract data from documents'];
+    const debtorBody = await debtorUtil.mapDebtor(
+      extractedFields.extracted_fields
+    );
+    debtorBody['extractedFields'] = extractedFields.extracted_fields;
+    const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
+    let finalObj = {};
+    const finalArray = [];
+    if (createDebtor[0]) {
+      await this.debtorRepository.updateById<IDebtor>(
+        String(createDebtor[1]['debtor']._id),
+        {userId: reqTemp.id}
+      );
+      const caseTemp = await googleDriveUtil.mapCreditorsCases(
+        extractedFields.extracted_fields,
+        createDebtor[1]['creditorNames']
+      );
+      const copyCaseTemp = cloneDeep(caseTemp);
+      const result = await caseUtil.createCreditorsCases(
+        {data: caseTemp},
+        reqTemp.name,
+        reqTemp.id,
+        String(createDebtor[1]['debtor']._id)
+      );
+      if (result[0]) {
+        for (let i = 0; i < copyCaseTemp.length; i++) {
+          finalObj['creditorName'] =
+            copyCaseTemp[i].creditor?.basicInformation?.fullName;
+          finalObj['paybackAmount'] = result[1][i].totalDebt;
+          finalObj['balance'] = result[1][i].remaining;
+          finalObj['apr'] = await commonUtil.getValuePercenatge(
+            result[1][i].contractDetails.purchased_percentage
+          );
+          finalObj['currentPayment'] =
+            await commonUtil.removeDashesAndRoundBrackets(
+              result[1][i].contractDetails.repayment_amount
+            );
+          finalArray.push(finalObj);
+          finalObj = {};
+        }
+      }
+    }
+    if (!finalArray.length) return [false, 'Could not create cases'];
+    return [true, finalArray];
+  }
 }
 
 export default DebtorService;
