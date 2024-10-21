@@ -271,7 +271,10 @@ class DebtorController {
   createDebtor = async (req: Request, res: Response) => {
     try {
       const reqTemp: any = req;
-      const response = await this.debtorService.createDebtor(req.body, reqTemp);
+      const response = await this.debtorService.createDebtor(
+        req.body,
+        reqTemp.id
+      );
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -285,6 +288,7 @@ class DebtorController {
         })
       );
     } catch (error) {
+      // console.log(error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));

@@ -177,6 +177,9 @@ const debtorSchema: Schema = new Schema({
   userId: {
     type: String,
   },
+  platform: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

@@ -200,6 +200,9 @@ const debtorSchema = new mongoose_1.Schema({
     userId: {
         type: String,
     },
+    platform: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

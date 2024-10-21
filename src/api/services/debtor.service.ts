@@ -32,6 +32,7 @@ import debtorUtil from '../../utils/debtor.util';
 import bulkUploadCronjob from '../../cron-job/bulkUpload.cronjob';
 import googleDriveUtil from '../../utils/googleDrive.util';
 import {cloneDeep} from 'lodash';
+import CaseService from './case.service';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -41,7 +42,7 @@ class DebtorService {
   private paymentLoggingRepository: PaymentLoggingRepository;
   private strategyRepository: StrategyRepository;
   private bulkUploadRepository: BulkUploadRepository;
-
+  private caseService: CaseService;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -50,6 +51,7 @@ class DebtorService {
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.strategyRepository = new StrategyRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
+    this.caseService = new CaseService();
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
@@ -712,6 +714,9 @@ class DebtorService {
     }
     if (!getDebtor) {
       if (account.length) body.accounts = account;
+      if (body.basicInformation.weeklyBudget) {
+        body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
+      }
       debtor = await caseUtil.createDebtor(body, id);
     }
     if (getDebtor) {
@@ -729,10 +734,7 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    moneyThumbUtil.run(
-      String(debtor._id),
-      debtor.businessInformation.companyName
-    );
+    moneyThumbUtil.run(debtor, debtor.businessInformation.companyName);
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
       body.extractedFields
@@ -775,7 +777,7 @@ class DebtorService {
       updatedAt: commonUtil.getCurrentDate(),
     });
     await moneyThumbUtil.run(
-      String(updatedDebtor._id),
+      updatedDebtor,
       updatedDebtor.businessInformation.companyName
     );
     const statements = caseTemp.debtor?.totalStatements;
@@ -1135,6 +1137,10 @@ class DebtorService {
         extractedFields.extracted_fields,
         createDebtor[1]['creditorNames']
       );
+      for (const bin of caseTemp) {
+        bin['platform'] = true;
+        bin.creditor.platform = true;
+      }
       const copyCaseTemp = cloneDeep(caseTemp);
       const result = await caseUtil.createCreditorsCases(
         {data: caseTemp},
@@ -1162,6 +1168,91 @@ class DebtorService {
     }
     if (!finalArray.length) return [false, 'Could not create cases'];
     return [true, finalArray];
+  }
+
+  async analyzeAndGetSettlementRanges(req: Request) {
+    const reqTemp: any = req;
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      userId: reqTemp.id,
+    });
+    console.log(getDebtor);
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    const caseTemp = await this.caseRepository.getOne<ICase>({
+      debtor: getDebtor._id,
+      platform: true,
+    });
+
+    const getScoresSettlementRange: any =
+      await this.caseService.getScoresSettlementRange(
+        'true',
+        'false',
+        null,
+        caseTemp._id
+      );
+    const combineResult = {};
+    const plans = {};
+    const allCreditorsResult = [];
+    const token = await moneyThumbUtil.authenticateUser();
+    const moneyThumbApp = await moneyThumbUtil.createNewApp(
+      token,
+      getDebtor.businessInformation.companyName
+    );
+    const scoreCard = await moneyThumbUtil.getScoreCard(
+      token,
+      moneyThumbApp['appid']
+    );
+    const metricData = scoreCard['metrics']['metricdata'];
+    if (metricData?.length) {
+      const revenueArray = metricData.find(row => row[0] === 'Revenue');
+      combineResult['avgMonthlySales'] = revenueArray[1];
+    }
+    const mcaCompanies = scoreCard['mcacompanies'];
+    const getTotalBudget = await moneyThumbUtil.getTotalBudget(mcaCompanies);
+    const getProfitAndTrueRevenue =
+      await moneyThumbUtil.getAnuallyProfitAndTrueRevenue(metricData);
+    const netProfitMargin =
+      (getTotalBudget + getProfitAndTrueRevenue.profit) /
+      getProfitAndTrueRevenue.trueRevenue;
+    const netProfitMargin100 = netProfitMargin * 100;
+    combineResult['netProfitMargin'] =
+      Math.round(netProfitMargin100 * 100) / 100;
+    if (getScoresSettlementRange[0]) {
+      const data = getScoresSettlementRange[1];
+      if (data.settlementRange) {
+        plans['weeklyPayment'] = data.settlementRange?.weekly_budget?.Summary
+          ? data.settlementRange.weekly_budget.Summary
+          : 0;
+        plans['maximum'] = data.creditors.reduce(
+          (sum, obj) => sum + obj.breakEven,
+          0
+        );
+        plans['percentageShare'] = data.creditors.reduce(
+          (sum, obj) => sum + obj.percentageReceivable,
+          0
+        );
+        for (const creditor of data.creditors) {
+          const capture = {};
+          capture['name'] = creditor.creditorAccountTitle;
+          capture['payableAmount'] = creditor.totalDebt;
+          capture['balance'] =
+            creditor.totalDebt - creditor.remainingAmountPaid;
+          capture['weeklyPayment'] = '';
+          if (
+            data.settlementRange?.weekly_budget &&
+            data.settlementRange?.weekly_budget[creditor.creditorAccountTitle]
+          ) {
+            capture['weeklyPayment'] =
+              data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
+          }
+          capture['interestRate'] = '12';
+          allCreditorsResult.push(capture);
+        }
+      }
+    }
+
+    return [true, 'ok'];
   }
 }
 

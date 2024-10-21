@@ -234,7 +234,7 @@ class DebtorUtil {
         }
       }
     }
-    return {basicInformation, businessInformation};
+    return {basicInformation, businessInformation, platform: true};
   }
 }
 export default new DebtorUtil();

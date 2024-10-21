@@ -112,9 +112,6 @@ class App {
         //     remainingAmountPaid: temp.remaining,
         //   });
         // }
-        const finalObj = {};
-        finalObj['apr'] = 'okok';
-        console.log(finalObj);
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();

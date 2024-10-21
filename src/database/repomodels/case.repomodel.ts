@@ -44,6 +44,7 @@ export class Case {
   chatId = '';
   settlementRange = false;
   getCaseIdPercentage = false;
+  platform = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

@@ -123,6 +123,9 @@ const caseModel: Schema = new Schema({
   getCaseIdPercentage: {
     type: Boolean,
   },
+  platform: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

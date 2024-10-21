@@ -70,6 +70,7 @@ export interface IDebtor extends Document {
   appid: number;
   totalStatements: number;
   userId: string;
+  platform: boolean;
   createdAt: string;
   updatedAt: string;
 }

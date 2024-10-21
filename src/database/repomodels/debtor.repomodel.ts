@@ -63,6 +63,7 @@ export class Debtor {
   appid = 0;
   totalStatements = 0;
   userId = '';
+  platform = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

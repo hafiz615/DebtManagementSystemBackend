@@ -63,6 +63,7 @@ class CaseUtil {
         });
     }
     async createDebtor(data, createdBy) {
+        console.log(createdBy, 'plplplpl');
         // let data = req.body as IDebtor;
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();

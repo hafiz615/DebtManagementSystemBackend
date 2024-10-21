@@ -87,6 +87,7 @@ class CaseUtil {
   }
 
   async createDebtor(data: IDebtor, createdBy: string) {
+    console.log(createdBy, 'plplplpl');
     // let data = req.body as IDebtor;
     // const reqTemp: any = req;
     const newDebtor = new Debtor();

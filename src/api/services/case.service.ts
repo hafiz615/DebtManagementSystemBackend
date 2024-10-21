@@ -135,7 +135,7 @@ class CaseService {
       !findCase?.debtor?.strategy3MaxProfit
     ) {
       await moneyThumbUtil.run(
-        String(findCase.debtor._id),
+        findCase.debtor,
         findCase.debtor.businessInformation.companyName
       );
       this.caseRepository.updateById<ICase>(req.params.id, {
@@ -547,12 +547,14 @@ class CaseService {
     return result;
   };
 
-  getScoresSettlementRange = async (req: Request) => {
-    if (!req.query.all) {
-      return [false, 'Query param missing'];
-    }
+  getScoresSettlementRange = async (
+    all: string,
+    hardReload: string,
+    body: any,
+    caseId: string
+  ) => {
     const caseTemp: any = await this.caseRepository.getById<ICase>(
-      req.params.id,
+      caseId,
       undefined,
       undefined,
       [{path: 'debtor'}]
@@ -562,10 +564,10 @@ class CaseService {
       creditorNames = null;
     let creditors = null;
     let settlementRange = null;
-    let hardReload = 'false';
+    // let hardReload = 'false';
     let data = {};
-    if (req.query.hardReload && req.query.hardReload === 'true')
-      hardReload = 'true';
+    // if (req.query.hardReload && req.query.hardReload === 'true')
+    //   hardReload = 'true';
     if (hardReload === 'true') {
       await this.caseRepository.updateById<ICase>(caseTemp._id, {
         strategyTwo: false,
@@ -577,7 +579,7 @@ class CaseService {
       });
     }
     if (hardReload === 'true')
-      caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
+      caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
     const debtor: any = caseTemp.debtor;
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -635,7 +637,7 @@ class CaseService {
         return [true, data];
       }
     }
-    if (req.query.all === 'true') {
+    if (all === 'true') {
       if (
         hardReload !== 'true' &&
         caseTemp.strategyOne_2 &&
@@ -659,10 +661,10 @@ class CaseService {
         );
       }
     } else {
-      if (req.body.creditorNames.length) {
+      if (body.creditorNames.length) {
         const casesCreditors: any =
           await this.caseRepository.getAllWithoutPagination<ICase>(
-            {creditor: {$in: req.body.creditorNames}, debtor: debtor},
+            {creditor: {$in: body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
             {_id: -1},

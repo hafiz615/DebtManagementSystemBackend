@@ -53,6 +53,7 @@ export interface ICase extends Document {
   fullProfitJustifications: boolean;
   settlementRange: boolean;
   getCaseIdPercentage: boolean;
+  platform: boolean;
   createdAt: string;
   updatedAt: string;
 }

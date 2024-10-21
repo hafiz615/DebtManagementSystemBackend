@@ -103,6 +103,9 @@ const creditorModel = new mongoose_1.Schema({
     logTrackingId: {
         type: String,
     },
+    platform: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

@@ -22,6 +22,7 @@ const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util")
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
 const lodash_1 = require("lodash");
+const case_service_1 = __importDefault(require("./case.service"));
 class DebtorService {
     constructor() {
         this.getAllDebtors = async (req) => {
@@ -109,6 +110,7 @@ class DebtorService {
         this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
+        this.caseService = new case_service_1.default();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -639,6 +641,9 @@ class DebtorService {
         if (!getDebtor) {
             if (account.length)
                 body.accounts = account;
+            if (body.basicInformation.weeklyBudget) {
+                body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
+            }
             debtor = await case_util_1.default.createDebtor(body, id);
         }
         if (getDebtor) {
@@ -654,7 +659,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        moneyThumb_util_1.default.run(String(debtor._id), debtor.businessInformation.companyName);
+        moneyThumb_util_1.default.run(debtor, debtor.businessInformation.companyName);
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, body.extractedFields);
         return [true, { debtor, creditorNames }];
     }
@@ -684,7 +689,7 @@ class DebtorService {
             settlementRange: false,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        await moneyThumb_util_1.default.run(String(updatedDebtor._id), updatedDebtor.businessInformation.companyName);
+        await moneyThumb_util_1.default.run(updatedDebtor, updatedDebtor.businessInformation.companyName);
         const statements = caseTemp.debtor?.totalStatements;
         if (caseTemp.intervals) {
             debtor_util_1.default.percentageChangeEmail(req.params.id, statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
@@ -913,6 +918,10 @@ class DebtorService {
         if (createDebtor[0]) {
             await this.debtorRepository.updateById(String(createDebtor[1]['debtor']._id), { userId: reqTemp.id });
             const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(extractedFields.extracted_fields, createDebtor[1]['creditorNames']);
+            for (const bin of caseTemp) {
+                bin['platform'] = true;
+                bin.creditor.platform = true;
+            }
             const copyCaseTemp = (0, lodash_1.cloneDeep)(caseTemp);
             const result = await case_util_1.default.createCreditorsCases({ data: caseTemp }, reqTemp.name, reqTemp.id, String(createDebtor[1]['debtor']._id));
             if (result[0]) {
@@ -932,6 +941,66 @@ class DebtorService {
         if (!finalArray.length)
             return [false, 'Could not create cases'];
         return [true, finalArray];
+    }
+    async analyzeAndGetSettlementRanges(req) {
+        const reqTemp = req;
+        const getDebtor = await this.debtorRepository.getOne({
+            userId: reqTemp.id,
+        });
+        console.log(getDebtor);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const caseTemp = await this.caseRepository.getOne({
+            debtor: getDebtor._id,
+            platform: true,
+        });
+        const getScoresSettlementRange = await this.caseService.getScoresSettlementRange('true', 'false', null, caseTemp._id);
+        const combineResult = {};
+        const plans = {};
+        const allCreditorsResult = [];
+        const token = await moneyThumb_util_1.default.authenticateUser();
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, getDebtor.businessInformation.companyName);
+        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
+        const metricData = scoreCard['metrics']['metricdata'];
+        if (metricData?.length) {
+            const revenueArray = metricData.find(row => row[0] === 'Revenue');
+            combineResult['avgMonthlySales'] = revenueArray[1];
+        }
+        const mcaCompanies = scoreCard['mcacompanies'];
+        const getTotalBudget = await moneyThumb_util_1.default.getTotalBudget(mcaCompanies);
+        const getProfitAndTrueRevenue = await moneyThumb_util_1.default.getAnuallyProfitAndTrueRevenue(metricData);
+        const netProfitMargin = (getTotalBudget + getProfitAndTrueRevenue.profit) /
+            getProfitAndTrueRevenue.trueRevenue;
+        const netProfitMargin100 = netProfitMargin * 100;
+        combineResult['netProfitMargin'] =
+            Math.round(netProfitMargin100 * 100) / 100;
+        if (getScoresSettlementRange[0]) {
+            const data = getScoresSettlementRange[1];
+            if (data.settlementRange) {
+                plans['weeklyPayment'] = data.settlementRange?.weekly_budget?.Summary
+                    ? data.settlementRange.weekly_budget.Summary
+                    : 0;
+                plans['maximum'] = data.creditors.reduce((sum, obj) => sum + obj.breakEven, 0);
+                plans['percentageShare'] = data.creditors.reduce((sum, obj) => sum + obj.percentageReceivable, 0);
+                for (const creditor of data.creditors) {
+                    const capture = {};
+                    capture['name'] = creditor.creditorAccountTitle;
+                    capture['payableAmount'] = creditor.totalDebt;
+                    capture['balance'] =
+                        creditor.totalDebt - creditor.remainingAmountPaid;
+                    capture['weeklyPayment'] = '';
+                    if (data.settlementRange?.weekly_budget &&
+                        data.settlementRange?.weekly_budget[creditor.creditorAccountTitle]) {
+                        capture['weeklyPayment'] =
+                            data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
+                    }
+                    capture['interestRate'] = '12';
+                    allCreditorsResult.push(capture);
+                }
+            }
+        }
+        return [true, 'ok'];
     }
 }
 exports.default = DebtorService;

@@ -71,7 +71,7 @@ class CaseService {
             if (!findCase?.getCaseIdPercentage &&
                 !findCase?.debtor?.strategy1MaxProfit &&
                 !findCase?.debtor?.strategy3MaxProfit) {
-                await moneyThumb_util_1.default.run(String(findCase.debtor._id), findCase.debtor.businessInformation.companyName);
+                await moneyThumb_util_1.default.run(findCase.debtor, findCase.debtor.businessInformation.companyName);
                 this.caseRepository.updateById(req.params.id, {
                     getCaseIdPercentage: true,
                 });
@@ -330,20 +330,17 @@ class CaseService {
             // if (!result[0]) return result;
             return result;
         };
-        this.getScoresSettlementRange = async (req) => {
-            if (!req.query.all) {
-                return [false, 'Query param missing'];
-            }
-            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+        this.getScoresSettlementRange = async (all, hardReload, body, caseId) => {
+            const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [{ path: 'debtor' }]);
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             let getScores = null, creditorNames = null;
             let creditors = null;
             let settlementRange = null;
-            let hardReload = 'false';
+            // let hardReload = 'false';
             let data = {};
-            if (req.query.hardReload && req.query.hardReload === 'true')
-                hardReload = 'true';
+            // if (req.query.hardReload && req.query.hardReload === 'true')
+            //   hardReload = 'true';
             if (hardReload === 'true') {
                 await this.caseRepository.updateById(caseTemp._id, {
                     strategyTwo: false,
@@ -355,7 +352,7 @@ class CaseService {
                 });
             }
             if (hardReload === 'true')
-                caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
+                caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, body);
             const debtor = caseTemp.debtor;
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
@@ -399,7 +396,7 @@ class CaseService {
                     return [true, data];
                 }
             }
-            if (req.query.all === 'true') {
+            if (all === 'true') {
                 if (hardReload !== 'true' &&
                     caseTemp.strategyOne_2 &&
                     result?.data?.getScoresAIForAllCreditors) {
@@ -417,8 +414,8 @@ class CaseService {
                 }
             }
             else {
-                if (req.body.creditorNames.length) {
-                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: req.body.creditorNames }, debtor: debtor }, undefined, undefined, { _id: -1 }, ['creditor']);
+                if (body.creditorNames.length) {
+                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: body.creditorNames }, debtor: debtor }, undefined, undefined, { _id: -1 }, ['creditor']);
                     getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
                     if (typeof getScores === 'string') {
