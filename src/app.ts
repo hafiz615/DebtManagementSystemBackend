@@ -94,6 +94,10 @@ class App {
     //   app['appid']
     // );
     // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
+    // console.log(
+    //   await debtorUtil.getYearlyResults(card['accountslist']['data'])
+    // );
+    // console.log(await debtorUtil.getYearlyProfitMargin(card));
     // const kk = await debtorUtil.getPaidAmountOfCreditors(
     //   '66f1221440020aa3522ec604'
     // );

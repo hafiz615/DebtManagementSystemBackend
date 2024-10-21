@@ -331,6 +331,7 @@ class CaseService {
             return result;
         };
         this.getScoresSettlementRange = async (all, hardReload, body, caseId) => {
+            console.log(caseId, 'llklklk');
             const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [{ path: 'debtor' }]);
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];

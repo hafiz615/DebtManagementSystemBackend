@@ -1183,7 +1183,7 @@ class DebtorService {
       debtor: getDebtor._id,
       platform: true,
     });
-
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
     const getScoresSettlementRange: any =
       await this.caseService.getScoresSettlementRange(
         'true',
@@ -1191,9 +1191,12 @@ class DebtorService {
         null,
         caseTemp._id
       );
+    console.log(getScoresSettlementRange, 'getScoresSettlementRange');
     const combineResult = {};
     const plans = {};
+    const commissionPlan = {};
     const allCreditorsResult = [];
+    const creditors = [];
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
@@ -1206,53 +1209,89 @@ class DebtorService {
     const metricData = scoreCard['metrics']['metricdata'];
     if (metricData?.length) {
       const revenueArray = metricData.find(row => row[0] === 'Revenue');
-      combineResult['avgMonthlySales'] = revenueArray[1];
+      console.log(revenueArray, 'revenueArray');
+      combineResult['avgMonthlySales'] = parseFloat(revenueArray[1]);
     }
     const mcaCompanies = scoreCard['mcacompanies'];
     const getTotalBudget = await moneyThumbUtil.getTotalBudget(mcaCompanies);
+    console.log(getTotalBudget, 'getTotalBudget');
     const getProfitAndTrueRevenue =
       await moneyThumbUtil.getAnuallyProfitAndTrueRevenue(metricData);
+    console.log(getProfitAndTrueRevenue, 'getProfitAndTrueRevenue');
     const netProfitMargin =
-      (getTotalBudget + getProfitAndTrueRevenue.profit) /
+      (Math.abs(getTotalBudget) + getProfitAndTrueRevenue.profit) /
       getProfitAndTrueRevenue.trueRevenue;
+
+    console.log(netProfitMargin, 'netProfitMargin');
     const netProfitMargin100 = netProfitMargin * 100;
     combineResult['netProfitMargin'] =
       Math.round(netProfitMargin100 * 100) / 100;
     if (getScoresSettlementRange[0]) {
       const data = getScoresSettlementRange[1];
-      if (data.settlementRange) {
-        plans['weeklyPayment'] = data.settlementRange?.weekly_budget?.Summary
-          ? data.settlementRange.weekly_budget.Summary
-          : 0;
-        plans['maximum'] = data.creditors.reduce(
-          (sum, obj) => sum + obj.breakEven,
-          0
-        );
-        plans['percentageShare'] = data.creditors.reduce(
-          (sum, obj) => sum + obj.percentageReceivable,
-          0
-        );
-        for (const creditor of data.creditors) {
-          const capture = {};
-          capture['name'] = creditor.creditorAccountTitle;
-          capture['payableAmount'] = creditor.totalDebt;
-          capture['balance'] =
-            creditor.totalDebt - creditor.remainingAmountPaid;
-          capture['weeklyPayment'] = '';
-          if (
-            data.settlementRange?.weekly_budget &&
-            data.settlementRange?.weekly_budget[creditor.creditorAccountTitle]
-          ) {
-            capture['weeklyPayment'] =
-              data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
-          }
-          capture['interestRate'] = '12';
-          allCreditorsResult.push(capture);
+      plans['weeklyPayment'] = data.settlementRange?.weekly_budget?.Summary
+        ? data.settlementRange.weekly_budget.Summary
+        : 0;
+      plans['maximum'] = data.creditors.reduce(
+        (sum, obj) => sum + obj.breakEven,
+        0
+      );
+      plans['percentageShare'] = data.creditors.reduce(
+        (sum, obj) => sum + obj.percentageReceivable,
+        0
+      );
+      const totalRemaining = data.creditors.reduce(
+        (sum, obj) => sum + obj.remaining,
+        0
+      );
+      console.log(totalRemaining, 'totalRemaining');
+      commissionPlan['lumpSum'] = Math.round(totalRemaining * 0.1 * 100) / 100;
+      commissionPlan['4Week'] = totalRemaining * 0.12;
+      commissionPlan['4month'] = totalRemaining * 0.19;
+      console.log(commissionPlan, 'commissionPlan');
+      console.log(plans, 'planssss');
+      combineResult['plans'] = plans;
+      combineResult['commissionPlan'] = commissionPlan;
+      for (const creditor of data.creditors) {
+        const capture = {};
+        const creditorObj = {};
+        capture['name'] = creditor.creditorAccountTitle;
+        capture['payableAmount'] = creditor.totalDebt;
+        capture['balance'] = creditor.totalDebt - creditor.remainingAmountPaid;
+        capture['weeklyPayment'] = '';
+        if (
+          data.settlementRange?.weekly_budget &&
+          data.settlementRange?.weekly_budget[creditor.creditorAccountTitle]
+        ) {
+          capture['weeklyPayment'] =
+            data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
+          creditorObj['weeklyPayment'] =
+            data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
+        } else {
+          capture['weeklyPayment'] = '-';
+          creditorObj['weeklyPayment'] = '-';
         }
+        capture['interestRate'] = '12';
+        creditorObj['name'] = creditor.creditorAccountTitle;
+        creditorObj['maximum'] = creditor.breakEven;
+        creditorObj['percentageShare'] = creditor.percentageReceivable;
+        creditors.push(creditorObj);
+        allCreditorsResult.push(capture);
       }
-    }
+      console.log(allCreditorsResult, 'allCreditorsResult');
+      console.log(creditors, 'creditors');
 
-    return [true, 'ok'];
+      combineResult['allCreditorsResult'] = allCreditorsResult;
+      combineResult['creditors'] = creditors;
+    }
+    const accounts = scoreCard['accountslist']['data'];
+    const yearlyResults = await debtorUtil.getYearlySales(accounts);
+    console.log(yearlyResults, 'yearlyResults');
+    combineResult['yearlySales'] = yearlyResults;
+    const yearlyProfitMargin =
+      await debtorUtil.getYearlyProfitMargin(scoreCard);
+    console.log(yearlyProfitMargin, 'yearlyProfitMargin');
+    combineResult['yearlyProfitMargin'] = yearlyProfitMargin;
+    return [true, combineResult];
   }
 }
 

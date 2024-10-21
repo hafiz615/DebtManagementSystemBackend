@@ -91,7 +91,7 @@ class CreditorUtil {
       const currentBalance = amount - paidBack;
       let breakEven = amount * 1.2 - paidBack;
       if (breakEven <= 0) breakEven = currentBalance * 0.3;
-      creditor['breakEven'] = breakEven;
+      creditor['breakEven'] = parseFloat(breakEven.toFixed(2));
     }
   }
 

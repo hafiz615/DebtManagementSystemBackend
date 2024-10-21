@@ -186,6 +186,58 @@ class DebtorUtil {
         }
         return { basicInformation, businessInformation, platform: true };
     }
+    async getYearlySales(accounts) {
+        const yearlyResults = {
+            January: 0,
+            February: 0,
+            March: 0,
+            April: 0,
+            May: 0,
+            June: 0,
+            July: 0,
+            August: 0,
+            September: 0,
+            October: 0,
+            November: 0,
+            December: 0,
+        };
+        for (const account of accounts) {
+            yearlyResults[account.statement_month] =
+                yearlyResults[account.statement_month] +
+                    parseFloat(account.true_credits);
+        }
+        return Object.values(yearlyResults);
+    }
+    async getYearlyProfitMargin(scoreCard) {
+        const mcaCompanies = scoreCard['mcacompanies']['data'];
+        const metricData = scoreCard['metrics']['metricdata'];
+        const result = await moneyThumb_util_1.default.getweeklyProfitAndTrueRevenue(metricData);
+        const yearlyResults = {
+            January: 0,
+            February: 0,
+            March: 0,
+            April: 0,
+            May: 0,
+            June: 0,
+            July: 0,
+            August: 0,
+            September: 0,
+            October: 0,
+            November: 0,
+            December: 0,
+        };
+        for (const mca of mcaCompanies) {
+            if (mca.month === 'Totals')
+                continue;
+            const month = mca.month.split(' ')[0];
+            const creditorProfitMargin = (Math.abs(parseFloat(mca.withdrawal_total)) + result.weeklyProfit) /
+                result.weeklyTrueRevenue;
+            const inPercentage = (Math.round(creditorProfitMargin * 100) / 100) * 100;
+            console.log(inPercentage, 'inPercentageeeeee');
+            yearlyResults[month] = yearlyResults[month] + inPercentage;
+        }
+        return Object.values(yearlyResults);
+    }
 }
 exports.default = new DebtorUtil();
 //# sourceMappingURL=debtor.util.js.map

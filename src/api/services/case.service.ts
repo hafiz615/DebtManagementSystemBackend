@@ -553,6 +553,7 @@ class CaseService {
     body: any,
     caseId: string
   ) => {
+    console.log(caseId, 'llklklk');
     const caseTemp: any = await this.caseRepository.getById<ICase>(
       caseId,
       undefined,

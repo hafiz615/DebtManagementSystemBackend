@@ -518,10 +518,15 @@ class UserService {
         req.body.email = req.body.email.toLowerCase();
         req.body.role = 'Debtor';
         const email = req.body.email;
+        console.log(email);
         let user = await this.userRepository.getOne({
             email: email,
             isDeleted: false,
         });
+        // if (user && !user.isPlatform) {
+        //   return [false, constants.alreadyExistsMessage('User')];
+        // }
+        console.log(user);
         if (!user) {
             req.body.phone = await common_util_1.default.cleanPhoneNumber(req.body.phone);
             req.body.isActive = true;

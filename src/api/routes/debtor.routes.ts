@@ -120,4 +120,10 @@ router.post(
   debtorController.getMcaAndFinancials
 );
 
+router.get(
+  '/analyzeAndGetSettlementRanges',
+  authorize.validateAuth,
+  debtorController.analyzeAndGetSettlementRanges
+);
+
 export default router;
