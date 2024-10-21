@@ -593,10 +593,9 @@ class UserService {
       email: email,
       isDeleted: false,
     });
-    // if (user && !user.isPlatform) {
-    //   return [false, constants.alreadyExistsMessage('User')];
-    // }
-    console.log(user);
+    if (user && !user.isPlatform) {
+      return [false, constants.alreadyExistsMessage('User')];
+    }
     if (!user) {
       req.body.phone = await commonUtil.cleanPhoneNumber(req.body.phone);
       req.body.isActive = true;
