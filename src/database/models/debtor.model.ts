@@ -180,6 +180,9 @@ const debtorSchema: Schema = new Schema({
   platform: {
     type: Boolean,
   },
+  trueProfit: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     required: true,

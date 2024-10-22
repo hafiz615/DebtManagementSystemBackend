@@ -194,16 +194,13 @@ class MoneyThumbUtil {
         //   const temp: any = lender;
         //   totalWithdrawl += temp.withdrawal_total;
         // }
-        if (
-          !debtor.basicInformation.weeklyBudget &&
-          !debtor.weeklyBudgetStrategy1
-        ) {
-          filter['basicInformation.weeklyBudget'] = totalWithdrawl;
+        if (!debtor.weeklyBudgetStrategy1) {
           filter['weeklyBudgetStrategy1'] = totalWithdrawl;
         }
         console.log(totalWithdrawl, 'totalWithdrawl');
         console.log(weeklyProfit, 'weeklyProfit');
         trueProfit = totalWithdrawl + weeklyProfit;
+        filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
         const trueProfitPer = trueProfit * 0.67;
         filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
       }
@@ -247,17 +244,20 @@ class MoneyThumbUtil {
         const withdrawal_total = parseFloat(data[i - 1].withdrawal_total);
         switch (withdrawal_frequency) {
           case 'Every Other Day':
-            weeklyBudget = (withdrawal_total / withdrawal_count) * 3;
+            if (withdrawal_count)
+              weeklyBudget = (withdrawal_total / withdrawal_count) * 3;
             break;
           case 'Daily':
-            weeklyBudget = (withdrawal_total / withdrawal_count) * 5;
+            if (withdrawal_count)
+              weeklyBudget = (withdrawal_total / withdrawal_count) * 5;
             break;
           case 'Monthly':
-            weeklyBudget = (withdrawal_total / withdrawal_count / 22) * 5;
+            if (withdrawal_count)
+              weeklyBudget = (withdrawal_total / withdrawal_count / 22) * 5;
             break;
           case 'Weekly':
           case '':
-            if (!withdrawal_count)
+            if (withdrawal_count)
               weeklyBudget = withdrawal_total / withdrawal_count;
             break;
         }
@@ -271,7 +271,7 @@ class MoneyThumbUtil {
     //   const temp: any = lender;
     //   totalWithdrawl += temp.withdrawal_total;
     // }
-    return Math.round(totalWithdrawl * 100) / 100;
+    return Math.abs(Math.round(totalWithdrawl * 100) / 100);
   }
 
   async getweeklyProfitAndTrueRevenue(metricData: any) {
@@ -315,7 +315,7 @@ class MoneyThumbUtil {
         totalWithdrawl += withdrawal_total;
       }
     }
-    return Math.round(totalWithdrawl * 100) / 100;
+    return Math.abs(Math.round(totalWithdrawl * 100) / 100);
   }
 }
 export default new MoneyThumbUtil();

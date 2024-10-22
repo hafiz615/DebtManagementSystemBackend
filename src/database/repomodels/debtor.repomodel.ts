@@ -64,6 +64,7 @@ export class Debtor {
   totalStatements = 0;
   userId = '';
   platform = false;
+  trueProfit = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

@@ -20,15 +20,25 @@ class DebtorUtil {
     const strategy1Key = body.strategy1Choosen;
     const strategy3Key = body.strategy3Choosen;
     const strategy1Budget = body[strategy1Key];
-    const strategy3Budget = body[strategy3Key];
-
+    let strategy3Budget = body[strategy3Key];
+    if (strategy3Key === 'strategy3Profit') {
+      strategy3Budget = strategy3Budget / 100;
+    } else {
+      strategy3Budget = strategy3Budget * 0.8;
+    }
     const filter = {
       weeklyBudgetKeyStrategy1: strategy1Key,
       weeklyBudgetKeyStrategy3: strategy3Key,
       weeklyBudgetStrategy1: strategy1Budget,
-      weeklyBudgetStrategy3: strategy3Budget / 100,
+      weeklyBudgetStrategy3: strategy3Budget,
       updatedAt: commonUtil.getCurrentDate(),
     };
+    if (strategy1Key === 'strategy1Profit') {
+      filter['weeklyCommission'] = caseTemp.debtor.trueProfit * 0.2;
+    } else {
+      filter['weeklyCommission'] = strategy1Budget * 0.2;
+    }
+
     if (strategy1Key === 'strategy1Custom') {
       filter['strategy1BudgetCustom'] = strategy1Budget;
       if (!caseTemp?.debtor?.basicInformation?.weeklyBudget)

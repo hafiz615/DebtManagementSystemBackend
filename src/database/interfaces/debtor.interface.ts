@@ -71,6 +71,7 @@ export interface IDebtor extends Document {
   totalStatements: number;
   userId: string;
   platform: boolean;
+  trueProfit: number;
   createdAt: string;
   updatedAt: string;
 }

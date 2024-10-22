@@ -2479,7 +2479,8 @@ class CaseUtil {
         if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
           body.paidAmount =
             creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
-          body.remaining = body.totalDebt - body.paidAmount;
+          body.remaining =
+            Math.round((body.totalDebt - body.paidAmoun) * 100) / 100;
           if (body.totalDebt - body.paidAmount < 0) body.remaining = 0;
         }
         newCase.remainingAmountPaid = body.paidAmount;
