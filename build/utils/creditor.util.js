@@ -114,11 +114,11 @@ class CreditorUtil {
             console.log(weeklyTrueCredit, 'weeklyTrueCredit');
         }
         let totalRemaining = creditors.reduce((sum, item) => sum + item.remaining, 0);
-        const debtorTotalCommission = debtor?.totalCommission
-            ? debtor.totalCommission
-            : 0;
-        console.log(debtorTotalCommission, 'debtorTotalCommission');
-        totalRemaining = totalRemaining + debtorTotalCommission;
+        // const debtorTotalCommission = debtor?.totalCommission
+        //   ? debtor.totalCommission
+        //   : 0;
+        // console.log(debtorTotalCommission, 'debtorTotalCommission');
+        // totalRemaining = totalRemaining + debtorTotalCommission;
         console.log(totalRemaining, 'totalRemaining');
         const weeklyBudgetStrategy3 = debtor?.weeklyBudgetStrategy3
             ? debtor.weeklyBudgetStrategy3
@@ -136,13 +136,20 @@ class CreditorUtil {
                     100;
             console.log(creditor.percentageReceivableAmount, 'creditor.percentageReceivableAmount');
         }
-        const percentageReceivableCommission = (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
-        const pRcRoundCommission = Math.round(percentageReceivableCommission * 100) / 100;
-        const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
-        console.log(percentageReceivableCommission, 'percentageReceivableCommission');
-        console.log(pRcRoundCommission, 'pRcRoundCommission');
-        console.log(pRCAmount, 'pRCAmount');
-        return [pRcRoundCommission, Math.round(pRCAmount * 100) / 100];
+        // const percentageReceivableCommission =
+        //   (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
+        // const pRcRoundCommission =
+        //   Math.round(percentageReceivableCommission * 100) / 100;
+        // const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
+        // console.log(
+        //   percentageReceivableCommission,
+        //   'percentageReceivableCommission'
+        // );
+        // console.log(pRcRoundCommission, 'pRcRoundCommission');
+        // console.log(pRCAmount, 'pRCAmount');
+        if (debtor.weeklyCommission)
+            return [20, debtor.weeklyCommission];
+        return [0, 0];
     }
     async addWeeklyTrueAmount(creditors, settlementRange) {
         if (settlementRange.percentage_settlement_over_weekly_true_revenue) {

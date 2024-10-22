@@ -131,9 +131,7 @@ class DebtorUtil {
     });
     let debt = 0;
     for (const caseTemp of cases) {
-      if (caseTemp.intervals.length) {
-        debt += caseTemp.remaining;
-      }
+      debt += caseTemp.remaining;
     }
     const amount = debt * (debtor.commissionPercentage / 100);
     console.log(amount, 'amountttt');

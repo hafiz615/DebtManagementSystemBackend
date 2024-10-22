@@ -114,7 +114,6 @@ const debtorSchema: Schema = new Schema({
   },
   weeklyCommission: {
     type: Number,
-    select: false,
   },
   weeklyCommissionPaid: {
     type: Boolean,
