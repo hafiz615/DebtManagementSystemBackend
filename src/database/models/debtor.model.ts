@@ -114,7 +114,6 @@ const debtorSchema: Schema = new Schema({
   },
   weeklyCommission: {
     type: Number,
-    select: false,
   },
   weeklyCommissionPaid: {
     type: Boolean,
@@ -172,6 +171,15 @@ const debtorSchema: Schema = new Schema({
     type: Number,
   },
   totalStatements: {
+    type: Number,
+  },
+  userId: {
+    type: String,
+  },
+  platform: {
+    type: Boolean,
+  },
+  trueProfit: {
     type: Number,
   },
   createdAt: {

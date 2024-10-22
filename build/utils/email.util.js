@@ -500,23 +500,25 @@ class EmailUtil {
     }
     async sendEmailIfDebtorGetsAdditionalDebt(cases, debtor, creditors) {
         const remaining = cases.reduce((sum, item) => sum + item.remaining, 0);
-        for (const creditor of creditors) {
-            const content = `Dear ${creditor.creditorName},
-
-      We hope this message finds you well.
-      
-      We are writing to inform you that the debtor, ${debtor.basicInformation.fullName}, has currently taken on debt from a total of ${cases.length} creditors. The total outstanding debt across these creditors amounts to ${remaining}.
-      
-      Please feel free to reach out if you require any further details or have any questions regarding this matter.
-      
-      Thank you for your attention.
-      
-      Best regards,
-      First Choice Debt Solutions`;
-            const to = creditor.creditorEmail;
-            const from = process.env.defaultEmail;
-            const subject = `Notification Regarding Debtor's Additional Debt`;
-            await this.sendEmail(to, from, subject, content);
+        if (remaining) {
+            for (const creditor of creditors) {
+                const content = `Dear ${creditor.creditorName},
+  
+        We hope this message finds you well.
+        
+        We are writing to inform you that the debtor, ${debtor.basicInformation.fullName}, has currently taken on debt from a total of ${cases.length} creditors. The total outstanding debt across these creditors amounts to ${remaining}.
+        
+        Please feel free to reach out if you require any further details or have any questions regarding this matter.
+        
+        Thank you for your attention.
+        
+        Best regards,
+        First Choice Debt Solutions`;
+                const to = creditor.creditorEmail;
+                const from = process.env.defaultEmail;
+                const subject = `Notification Regarding Debtor's Additional Debt`;
+                await this.sendEmail(to, from, subject, content);
+            }
         }
     }
     async sendEmailIfDebtorPaysDebt(caseTemp, debtor, creditors) {

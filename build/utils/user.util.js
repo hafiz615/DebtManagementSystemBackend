@@ -34,7 +34,7 @@ class UserUtil {
     }
     async getAllUserFilters(req) {
         const reqTemp = req;
-        const filters = { isDeleted: false };
+        const filters = { isDeleted: false, isPlatform: { $ne: true } };
         switch (reqTemp.role) {
             case 'Super User':
                 filters['role'] = { $ne: 'Super User' };

@@ -202,7 +202,7 @@ class BulkCronJob {
     return '';
   }
 
-  private async checkErrorAI(bulkUpload: IBulkUpload, checkError: any) {
+  async checkErrorAI(bulkUpload: IBulkUpload, checkError: any) {
     if (
       typeof checkError === 'string' &&
       bulkUpload.status === 'Pending' &&

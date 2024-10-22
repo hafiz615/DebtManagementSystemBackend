@@ -21,6 +21,8 @@ class User {
         this.address = '';
         this.isDeleted = false;
         this.sessionIds = Array();
+        this.platform = '';
+        this.isPlatform = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

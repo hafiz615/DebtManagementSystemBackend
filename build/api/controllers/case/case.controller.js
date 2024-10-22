@@ -331,7 +331,13 @@ class CaseController {
         };
         this.getScoresSettlementRange = async (req, res) => {
             try {
-                const response = await this.caseService.getScoresSettlementRange(req);
+                if (!req.query.all) {
+                    return [false, 'Query param missing'];
+                }
+                let hardReload = 'false';
+                if (req.query.hardReload && req.query.hardReload === 'true')
+                    hardReload = 'true';
+                const response = await this.caseService.getScoresSettlementRange(String(req.query.all), hardReload, req.body, req.params.id);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)

@@ -80,6 +80,12 @@ const userModel = new mongoose_1.Schema({
         type: String,
     },
     isDeleted: { type: Boolean },
+    platform: {
+        type: String,
+    },
+    isPlatform: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

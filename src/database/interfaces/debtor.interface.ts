@@ -69,6 +69,9 @@ export interface IDebtor extends Document {
   moneyThumbAppId: number;
   appid: number;
   totalStatements: number;
+  userId: string;
+  platform: boolean;
+  trueProfit: number;
   createdAt: string;
   updatedAt: string;
 }

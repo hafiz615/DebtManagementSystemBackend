@@ -42,6 +42,7 @@ import paynoteUtil from './paynote.util';
 import {nanoid} from 'nanoid';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
+import debtorUtil from './debtor.util';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -86,6 +87,7 @@ class CaseUtil {
   }
 
   async createDebtor(data: IDebtor, createdBy: string) {
+    console.log(createdBy, 'plplplpl');
     // let data = req.body as IDebtor;
     // const reqTemp: any = req;
     const newDebtor = new Debtor();
@@ -2089,6 +2091,7 @@ class CaseUtil {
   }
 
   async getExtractionMCA(debtor: IDebtor) {
+    console.log('hahahahahah');
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -2128,7 +2131,7 @@ class CaseUtil {
   }
 
   async getExtractionMCA_AI(documents: any, token: string) {
-    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
     try {
       const form = new FormData();
       for (let doc of documents) {
@@ -2163,7 +2166,7 @@ class CaseUtil {
   }
 
   async getExtractionMCA_AIBuffer(documents: any, token: string) {
-    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+    const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
     try {
       const form = new FormData();
       for (let doc of documents) {
@@ -2416,6 +2419,9 @@ class CaseUtil {
     if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
     const getCreditorsEmail: any =
       await creditorUtil.getCreditorsEmailForDebtor(debtorId);
+    const creditorsPaidAmount = await debtorUtil.getPaidAmountOfCreditors(
+      debtor.businessInformation.companyName
+    );
     for (const body of dataArray) {
       console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
@@ -2470,6 +2476,13 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
+        if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
+          body.paidAmount =
+            creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
+          body.remaining =
+            Math.round((body.totalDebt - body.paidAmount) * 100) / 100;
+          if (body.totalDebt - body.paidAmount < 0) body.remaining = 0;
+        }
         newCase.remainingAmountPaid = body.paidAmount;
         body.notes = body?.notes
           ? [
@@ -2518,9 +2531,9 @@ class CaseUtil {
             getCreditorsEmail
           );
         }
-        // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-        //   await this.createPayment(caseCreated);
-        // }
+        if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+          await this.createPayment(caseCreated);
+        }
       }
     }
     if (!createdCases.length) return [false, createdCases];
