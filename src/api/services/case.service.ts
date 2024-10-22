@@ -597,6 +597,7 @@ class CaseService {
     await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage[0];
     data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
+    data['totalCommission'] = debtor.totalCommission;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
