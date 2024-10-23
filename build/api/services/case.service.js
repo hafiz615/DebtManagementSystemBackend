@@ -173,6 +173,12 @@ class CaseService {
                     return checkCasePayment;
             }
             req.body.updatedAt = common_util_1.default.getCurrentDate();
+            if (req.body.paidAmount) {
+                req.body.remaining = req.body.totalDebt - req.body.paidAmount;
+                if (req.body.remaining < 0)
+                    req.body.remaining = 0;
+                req.body.remainingAmountPaid = req.body.paidAmount;
+            }
             let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
@@ -432,13 +438,19 @@ class CaseService {
                 result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
                 await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
-                data['settlementRange'] = settlementRange;
+                // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+                //   creditors,
+                //   settlementRange
+                // );
+                // data['settlementRange'] = settlementRange;
             }
             else {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
                 await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
-                data['settlementRange'] = settlementRange;
+                // data['settlementRange'] = settlementRange;
             }
+            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange);
+            data['settlementRange'] = settlementRange;
             return [true, data];
         };
         this.addNotes = async (req) => {
