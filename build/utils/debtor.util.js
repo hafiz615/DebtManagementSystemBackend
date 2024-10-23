@@ -23,7 +23,7 @@ class DebtorUtil {
             strategy3Budget = strategy3Budget / 100;
         }
         else {
-            strategy3Budget = strategy3Budget * 0.8;
+            strategy3Budget = (strategy3Budget * 0.8) / 100;
         }
         const filter = {
             weeklyBudgetKeyStrategy1: strategy1Key,

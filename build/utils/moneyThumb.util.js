@@ -7,6 +7,8 @@ const debtor_repository_1 = require("../api/repository/debtor/debtor.repository"
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const upload_util_1 = __importDefault(require("./upload.util"));
+const case_util_1 = __importDefault(require("./case.util"));
+const creditor_util_1 = __importDefault(require("./creditor.util"));
 dotenv_1.default.config();
 class MoneyThumbUtil {
     constructor() {
@@ -183,7 +185,7 @@ class MoneyThumbUtil {
                 //     };
                 //   }
                 // }
-                let totalWithdrawl = await this.getTotalWeeklyBudget(mcaCompanies);
+                let totalWithdrawl = await this.getTotalWeeklyBudget(mcaCompanies, debtor);
                 // for (let lender of Object.values(lastLenderOccurrences as any)) {
                 //   const temp: any = lender;
                 //   totalWithdrawl += temp.withdrawal_total;
@@ -200,7 +202,11 @@ class MoneyThumbUtil {
             }
             filter['strategy3MaxProfit'] = 0;
             if (trueProfit && weeklyTrueRevenue) {
-                const profitability = (trueProfit / weeklyTrueRevenue) * 0.67;
+                console.log(weeklyTrueRevenue, 'weeklyTrueRevenue)');
+                console.log(trueProfit, 'trueProfit)');
+                console.log(trueProfit / weeklyTrueRevenue, '(trueProfit / weeklyTrueRevenue)');
+                const profitability = (trueProfit / weeklyTrueRevenue) * 100 * 0.67;
+                console.log(profitability, 'profitability');
                 filter['strategy3MaxProfit'] = Math.round(profitability * 100) / 100;
                 if (!debtor.weeklyBudgetStrategy3)
                     filter['weeklyBudgetStrategy3'] =
@@ -222,16 +228,26 @@ class MoneyThumbUtil {
         const date = new Date(year, monthIndex + 1, 0);
         return date.getDate();
     }
-    async getTotalWeeklyBudget(mcaCompanies) {
+    async getTotalWeeklyBudget(mcaCompanies, debtor) {
         const data = mcaCompanies.data;
         const lastLenderOccurrences = {};
         let weeklyBudget = 0;
         let totalWithdrawl = 0;
+        let creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
+        creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
+        creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+        const creditorsAccTitleArray = creditors.map(creditor => {
+            return creditor.creditorAccountTitle;
+        });
+        console.log(creditorsAccTitleArray, 'creditorsAccTitleArray');
         for (let i = 0; i < data.length; i++) {
             if (data[i].month === 'Totals') {
+                if (!creditorsAccTitleArray.includes(data[i - 1].lender))
+                    continue;
                 const withdrawal_frequency = data[i - 1].withdrawal_frequency;
                 const withdrawal_count = Number(data[i - 1].withdrawal_count);
                 const withdrawal_total = parseFloat(data[i - 1].withdrawal_total);
+                console.log(data[i - 1].lender);
                 switch (withdrawal_frequency) {
                     case 'Every Other Day':
                         if (withdrawal_count)
@@ -254,6 +270,7 @@ class MoneyThumbUtil {
                 // lastLenderOccurrences[data[i - 1].lender] = {
                 //   withdrawal_total: Math.round(weeklyBudget * 100) / 100,
                 // };
+                console.log(weeklyBudget, 'uyiuyuyiui');
                 totalWithdrawl += weeklyBudget;
             }
         }

@@ -270,6 +270,10 @@ class CaseService {
       if (!checkCasePayment[0]) return checkCasePayment;
     }
     req.body.updatedAt = commonUtil.getCurrentDate();
+    if (req.body.paidAmount) {
+      req.body.remaining = req.body.totalDebt - req.body.paidAmount;
+      req.body.remainingAmountPaid = req.body.paidAmount;
+    }
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -694,12 +698,21 @@ class CaseService {
     ) {
       settlementRange = result.data.settlementRange;
       await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      data['settlementRange'] = settlementRange;
+      // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      //   creditors,
+      //   settlementRange
+      // );
+      // data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
       await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      data['settlementRange'] = settlementRange;
+      // data['settlementRange'] = settlementRange;
     }
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange
+    );
+    data['settlementRange'] = settlementRange;
     return [true, data];
   };
 
