@@ -62,6 +62,9 @@ export class Debtor {
   moneyThumbAppId = 0;
   appid = 0;
   totalStatements = 0;
+  userId = '';
+  platform = false;
+  trueProfit = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

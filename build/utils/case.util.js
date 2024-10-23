@@ -33,6 +33,7 @@ const justification_repository_1 = require("../api/repository/justification/just
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
+const debtor_util_1 = __importDefault(require("./debtor.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -62,6 +63,7 @@ class CaseUtil {
         });
     }
     async createDebtor(data, createdBy) {
+        console.log(createdBy, 'plplplpl');
         // let data = req.body as IDebtor;
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
@@ -1802,6 +1804,7 @@ class CaseUtil {
         return creditorNames;
     }
     async getExtractionMCA(debtor) {
+        console.log('hahahahahah');
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
@@ -1828,7 +1831,7 @@ class CaseUtil {
         return match ? true : false;
     }
     async getExtractionMCA_AI(documents, token) {
-        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
         try {
             const form = new form_data_1.default();
             for (let doc of documents) {
@@ -1864,7 +1867,7 @@ class CaseUtil {
         }
     }
     async getExtractionMCA_AIBuffer(documents, token) {
-        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
         try {
             const form = new form_data_1.default();
             for (let doc of documents) {
@@ -2066,6 +2069,7 @@ class CaseUtil {
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         const getCreditorsEmail = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
+        const creditorsPaidAmount = await debtor_util_1.default.getPaidAmountOfCreditors(debtor.businessInformation.companyName);
         for (const body of dataArray) {
             console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
@@ -2116,6 +2120,14 @@ class CaseUtil {
                 newCase.negotiatorId = id;
                 newCase.manager = name;
                 newCase.managerId = id;
+                if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
+                    body.paidAmount =
+                        creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
+                    body.remaining =
+                        Math.round((body.totalDebt - body.paidAmount) * 100) / 100;
+                    if (body.totalDebt - body.paidAmount < 0)
+                        body.remaining = 0;
+                }
                 newCase.remainingAmountPaid = body.paidAmount;
                 body.notes = body?.notes
                     ? [
@@ -2156,9 +2168,9 @@ class CaseUtil {
                 if (getCreditorsEmail.length && createdCases.length) {
                     email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
                 }
-                // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-                //   await this.createPayment(caseCreated);
-                // }
+                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+                    await this.createPayment(caseCreated);
+                }
             }
         }
         if (!createdCases.length)
@@ -2339,6 +2351,50 @@ class CaseUtil {
         if (justification.claude)
             arrayModels.push('claude');
         return arrayModels.length ? arrayModels : defaultModels;
+    }
+    async getCreditorsForDebtor(debtorId, creditorId = '') {
+        const match = {
+            debtor: new mongoose_1.default.Types.ObjectId(debtorId),
+        };
+        if (creditorId) {
+            match['creditor'] = { $ne: new mongoose_1.default.Types.ObjectId(creditorId) };
+        }
+        return await this.caseRepository.applyAggregate([
+            {
+                $match: match, // Filter for a specific debtor
+            },
+            {
+                $group: {
+                    _id: '$creditor', // Group by creditor to get unique creditors
+                    totalDebt: { $sum: '$totalDebt' }, // Sum totalDebt for each creditor
+                    remaining: { $sum: '$remaining' }, // Sum remaining for each creditor
+                    caseCodes: { $addToSet: '$caseCode' }, // Collect all caseCodes for unique list
+                    statuses: { $addToSet: '$status' }, // Collect all statuses for unique list
+                },
+            },
+            {
+                $lookup: {
+                    from: 'creditors', // Name of the creditors collection
+                    localField: '_id', // Field in the cases (creditor reference)
+                    foreignField: '_id', // Field in the creditors collection (creditor _id)
+                    as: 'creditorDetails', // Output field containing the matched creditor details
+                },
+            },
+            {
+                $unwind: '$creditorDetails', // Unwind the creditorDetails array to get individual creditor details
+            },
+            {
+                $project: {
+                    _id: 1, // Exclude the default _id field
+                    creditorEmail: '$creditorDetails.basicInformation.email', // Include creditor's email
+                    creditorName: '$creditorDetails.basicInformation.fullName',
+                    totalDebt: 1, // Total debt for the creditor from the group stage
+                    remaining: 1, // Remaining for the creditor from the group stage
+                    caseCode: 1, // Case codes collected from the group stage
+                    status: 1, // Statuses collected from the group stage
+                },
+            },
+        ]);
     }
 }
 exports.default = new CaseUtil();

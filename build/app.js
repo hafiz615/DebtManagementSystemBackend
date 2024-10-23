@@ -70,14 +70,26 @@ class App {
         // const token = await moneyThumbUtil.authenticateUser();
         // const app = await moneyThumbUtil.createNewApp(
         //   token,
-        //   '66f1221440020aa3522ec604'
+        //   'JTEK CONSTRUCTION INC'
         // );
         // await moneyThumbUtil.convertPdf(
         //   token,
         //   '66f1221440020aa3522ec604',
         //   app['appid']
         // );
+        // const debtor = await debtorRepo.getById<IDebtor>(
+        //   '6718fa3c0033bf2ed1e573a3'
+        // );
         // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
+        // await moneyThumbUtil.saveData(app['appid'], card, debtor);
+        // console.log(
+        //   await debtorUtil.getYearlyResults(card['accountslist']['data'])
+        // );
+        // console.log(await debtorUtil.getYearlyProfitMargin(card));
+        // const kk = await debtorUtil.getPaidAmountOfCreditors(
+        //   '66f1221440020aa3522ec604'
+        // );
+        // console.log(kk, 'ookoko');
         // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
         // const debtors = await debtorRepo.getAllWithoutPagination<IDebtor>();
         // for (let i = 23; i < debtors.length; i++) {

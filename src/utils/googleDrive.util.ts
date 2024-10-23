@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import {drive} from 'googleapis/build/src/apis/drive';
 import {auth} from 'googleapis/build/src/apis/oauth2';
 import caseUtil from './case.util';
+import commonUtil from './common.util';
 dotenv.config();
 
 class GoogleDriveUtil {
@@ -93,7 +94,7 @@ class GoogleDriveUtil {
       basicInformation['phone'] = extractedData.creditor_info[
         `creditor's Phone Number`
       ]
-        ? await this.cleanPhoneNumber(
+        ? await commonUtil.cleanPhoneNumber(
             extractedData.creditor_info[`creditor's Phone Number`]
           )
         : '';
@@ -139,14 +140,6 @@ class GoogleDriveUtil {
     }
     console.log(cases);
     return cases;
-  }
-
-  async cleanPhoneNumber(phoneNumber: string) {
-    let cleanedNumber = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
-    if (cleanedNumber.startsWith('1')) {
-      cleanedNumber = cleanedNumber.substring(1);
-    }
-    return cleanedNumber;
   }
 }
 

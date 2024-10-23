@@ -19,6 +19,7 @@ const email_util_1 = __importDefault(require("../../utils/email.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
 const bcryptjs_1 = require("bcryptjs");
 const dotenv_1 = __importDefault(require("dotenv"));
+const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 dotenv_1.default.config();
 class UserService {
     constructor() {
@@ -248,6 +249,7 @@ class UserService {
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
     async createUser(req) {
@@ -511,6 +513,37 @@ class UserService {
             return [false, constants_util_1.default.notFoundMessage('User')];
         }
         return [true, 'Password reset successfully'];
+    }
+    async thirdPartySignIn(req) {
+        req.body.email = req.body.email.toLowerCase();
+        req.body.role = 'Debtor';
+        const email = req.body.email;
+        console.log(email);
+        let user = await this.userRepository.getOne({
+            email: email,
+            isDeleted: false,
+        });
+        if (user && !user.isPlatform) {
+            return [false, constants_util_1.default.alreadyExistsMessage('User')];
+        }
+        if (!user) {
+            req.body.phone = await common_util_1.default.cleanPhoneNumber(req.body.phone);
+            req.body.isActive = true;
+            req.body.isPlatform = true;
+            const newUser = new user_repomodel_1.User();
+            const validatedUser = dataCopier_util_1.DataCopier.copy(newUser, req.body);
+            user = await this.userRepository.create(validatedUser);
+        }
+        if (user.isDeleted) {
+            return [false, constants_util_1.default.failureRegisterMessage('User')];
+        }
+        const uuid = (0, uuid_1.v4)();
+        const token = await this.tokenService.create(user._id, uuid);
+        await this.userRepository.updateById(user._id, {
+            $push: { sessionIds: uuid },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return [true, { user, token: token }];
     }
 }
 exports.default = UserService;

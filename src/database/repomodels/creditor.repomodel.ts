@@ -35,6 +35,7 @@ export class Creditor {
     zipCode: '';
   }>();
   aggression = 0;
+  platform = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

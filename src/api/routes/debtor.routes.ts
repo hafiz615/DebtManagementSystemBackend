@@ -103,11 +103,27 @@ router.post(
   debtorController.addDebtorAccount
 );
 
+router.get(
+  '/getDebtorSummery',
+  authorize.validateAuth,
+  debtorController.getDebtorSummery
+);
 router.post(
   '/saveWeeklyBudgetValues/:id',
   authorize.validateAuth,
   debtor.saveWeeklyBudgetValues,
   debtorController.saveWeeklyBudgetValues
+);
+router.post(
+  '/getMcaAndFinancials',
+  authorize.validateAuth,
+  debtorController.getMcaAndFinancials
+);
+
+router.get(
+  '/analyzeAndGetSettlementRanges',
+  authorize.validateAuth,
+  debtorController.analyzeAndGetSettlementRanges
 );
 
 export default router;

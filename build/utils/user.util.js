@@ -19,7 +19,7 @@ class UserUtil {
         return true;
     }
     async checkUserAndComparePassword(email, password) {
-        const userExist = await this.userRepository.getOne({ email }, '+password');
+        const userExist = await this.userRepository.getOne({ email: email, isDeleted: false }, '+password');
         if (!userExist)
             return false;
         if (!userExist.isActive ||
@@ -34,7 +34,7 @@ class UserUtil {
     }
     async getAllUserFilters(req) {
         const reqTemp = req;
-        const filters = { isDeleted: false };
+        const filters = { isDeleted: false, isPlatform: { $ne: true } };
         switch (reqTemp.role) {
             case 'Super User':
                 filters['role'] = { $ne: 'Super User' };

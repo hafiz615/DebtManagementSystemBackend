@@ -20,16 +20,21 @@ import client from '@sendgrid/client';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import {compare} from 'bcryptjs';
 import dotenv from 'dotenv';
+import caseUtil from '../../utils/case.util';
+import {IDebtor} from '../../database/interfaces/debtor.interface';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
 dotenv.config();
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
   private caseRepository: CaseRepository;
+  private debtorRepository: DebtorRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.caseRepository = new CaseRepository();
+    this.debtorRepository = new DebtorRepository();
     client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
@@ -577,6 +582,38 @@ class UserService {
       return [false, constants.notFoundMessage('User')];
     }
     return [true, 'Password reset successfully'];
+  }
+
+  async thirdPartySignIn(req: Request) {
+    req.body.email = req.body.email.toLowerCase();
+    req.body.role = 'Debtor';
+    const email = req.body.email;
+    console.log(email);
+    let user = await this.userRepository.getOne<IUser>({
+      email: email,
+      isDeleted: false,
+    });
+    if (user && !user.isPlatform) {
+      return [false, constants.alreadyExistsMessage('User')];
+    }
+    if (!user) {
+      req.body.phone = await commonUtil.cleanPhoneNumber(req.body.phone);
+      req.body.isActive = true;
+      req.body.isPlatform = true;
+      const newUser = new User();
+      const validatedUser = DataCopier.copy(newUser, req.body as IUser);
+      user = await this.userRepository.create(validatedUser);
+    }
+    if (user.isDeleted) {
+      return [false, constants.failureRegisterMessage('User')];
+    }
+    const uuid = uuidv4();
+    const token = await this.tokenService.create(user._id, uuid);
+    await this.userRepository.updateById<IUser>(user._id, {
+      $push: {sessionIds: uuid},
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+    return [true, {user, token: token}];
   }
 }
 

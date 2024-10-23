@@ -80,6 +80,23 @@ class UserRequests {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
+    async thirdPartySignIn(req, res, next) {
+        const schema = joi_1.default.object({
+            name: joi_1.default.string().required(),
+            email: joi_1.default.string().email().required(),
+            platform: joi_1.default.string(),
+            phone: joi_1.default.string().allow(''),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
 }
 exports.default = new UserRequests();
 //# sourceMappingURL=user.validate.js.map

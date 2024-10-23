@@ -88,10 +88,11 @@ class CreditorUtil {
       if (contractDetails?.funded_amount)
         amount = caseUtil.getCleanAmount(contractDetails?.funded_amount);
       const paidBack = creditor.remainingAmountPaid;
-      const currentBalance = amount - paidBack;
+      const currentBalance = creditor.totalDebt - paidBack;
       let breakEven = amount * 1.2 - paidBack;
       if (breakEven <= 0) breakEven = currentBalance * 0.3;
-      creditor['breakEven'] = breakEven;
+      if (breakEven < 0) breakEven = 0;
+      creditor['breakEven'] = parseFloat(breakEven.toFixed(2));
     }
   }
 
@@ -128,11 +129,11 @@ class CreditorUtil {
       (sum, item) => sum + item.remaining,
       0
     );
-    const debtorTotalCommission = debtor?.totalCommission
-      ? debtor.totalCommission
-      : 0;
-    console.log(debtorTotalCommission, 'debtorTotalCommission');
-    totalRemaining = totalRemaining + debtorTotalCommission;
+    // const debtorTotalCommission = debtor?.totalCommission
+    //   ? debtor.totalCommission
+    //   : 0;
+    // console.log(debtorTotalCommission, 'debtorTotalCommission');
+    // totalRemaining = totalRemaining + debtorTotalCommission;
     console.log(totalRemaining, 'totalRemaining');
 
     const weeklyBudgetStrategy3 = debtor?.weeklyBudgetStrategy3
@@ -160,18 +161,19 @@ class CreditorUtil {
       );
     }
 
-    const percentageReceivableCommission =
-      (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
-    const pRcRoundCommission =
-      Math.round(percentageReceivableCommission * 100) / 100;
-    const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
-    console.log(
-      percentageReceivableCommission,
-      'percentageReceivableCommission'
-    );
-    console.log(pRcRoundCommission, 'pRcRoundCommission');
-    console.log(pRCAmount, 'pRCAmount');
-    return [pRcRoundCommission, Math.round(pRCAmount * 100) / 100];
+    // const percentageReceivableCommission =
+    //   (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
+    // const pRcRoundCommission =
+    //   Math.round(percentageReceivableCommission * 100) / 100;
+    // const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
+    // console.log(
+    //   percentageReceivableCommission,
+    //   'percentageReceivableCommission'
+    // );
+    // console.log(pRcRoundCommission, 'pRcRoundCommission');
+    // console.log(pRCAmount, 'pRCAmount');
+    if (debtor.weeklyCommission) return [20, debtor.weeklyCommission];
+    return [0, 0];
   }
 
   async addWeeklyTrueAmount(creditors: any, settlementRange: any) {
@@ -196,6 +198,46 @@ class CreditorUtil {
           creditor.weeklyTrueRevenueAmount = 0;
         }
       }
+    }
+  }
+
+  async replaceSettlementRangeAndWeeksTillPaid(
+    creditors: any,
+    settlementRange: any
+  ) {
+    let newWeeks = [];
+    let newAmount = 0;
+    for (const creditor of creditors) {
+      if (
+        settlementRange.settlement_range &&
+        settlementRange.settlement_range[creditor.creditorAccountTitle]
+      ) {
+        settlementRange.settlement_range[creditor.creditorAccountTitle][
+          'recommendation 1'
+        ].max = creditor.percentageReceivableAmount;
+        newAmount += creditor.percentageReceivableAmount;
+      }
+      if (
+        settlementRange.weeks_till_paid &&
+        settlementRange.weeks_till_paid[creditor.creditorAccountTitle]
+      ) {
+        const weeks = Math.round(
+          creditor.remaining / creditor.percentageReceivableAmount
+        );
+        settlementRange.weeks_till_paid[creditor.creditorAccountTitle][
+          'Weeks remaining based on recommendation 1'
+        ].max = weeks;
+        newWeeks.push(weeks);
+      }
+    }
+    if (newAmount) {
+      settlementRange.settlement_range.Summary['recommendation 1'].max =
+        newAmount;
+    }
+    if (newWeeks) {
+      settlementRange.weeks_till_paid.Summary[
+        'Weeks remaining based on recommendation 1'
+      ].max = Math.max(...newWeeks);
     }
   }
 }

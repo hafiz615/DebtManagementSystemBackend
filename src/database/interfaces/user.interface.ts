@@ -15,6 +15,8 @@ export interface IUser extends Document {
   sessionIds: Array<string>;
   createdBy: string;
   isDeleted: boolean;
+  platform: string;
+  isPlatform: string;
   createdAt: string;
   updatedAt: string;
 }

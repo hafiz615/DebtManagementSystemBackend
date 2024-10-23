@@ -70,4 +70,10 @@ router.get(
   userController.getVerifySenders
 );
 
+router.post(
+  '/thirdPartySignIn',
+  userValidate.thirdPartySignIn,
+  userController.thirdPartySignIn
+);
+
 export default router;
