@@ -13,6 +13,8 @@ const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware"
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 const setEnv_1 = require("./database/repomodels/setEnv");
 const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
+const debtor_repository_1 = require("./api/repository/debtor/debtor.repository");
+const moneyThumb_util_1 = __importDefault(require("./utils/moneyThumb.util"));
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -60,28 +62,23 @@ class App {
         //   // });
         // }
         // await bulkUploadCronjob.testBulkCron();
-        // const debtorRepo = new DebtorRepository();
+        const debtorRepo = new debtor_repository_1.DebtorRepository();
         // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
         // for (const debtor of getAll) {
         //   await debtorRepo.updateById(debtor._id, {
         //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
         //   });
         // }
-        // const token = await moneyThumbUtil.authenticateUser();
-        // const app = await moneyThumbUtil.createNewApp(
-        //   token,
-        //   'Smoke Studio & Mart LLC'
-        // );
+        const token = await moneyThumb_util_1.default.authenticateUser();
+        const app = await moneyThumb_util_1.default.createNewApp(token, 'Smoke Studio & Mart LLC');
         // await moneyThumbUtil.convertPdf(
         //   token,
         //   '66f1221440020aa3522ec604',
         //   app['appid']
         // );
-        // const debtor = await debtorRepo.getById<IDebtor>(
-        //   '67179c6b9f1cc6c8f4839b84'
-        // );
-        // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
-        // await moneyThumbUtil.saveData(app['appid'], card, debtor);
+        const debtor = await debtorRepo.getById('67179c6b9f1cc6c8f4839b84');
+        const card = await moneyThumb_util_1.default.getScoreCard(token, app['appid']);
+        await moneyThumb_util_1.default.saveData(app['appid'], card, debtor);
         // console.log(
         //   await debtorUtil.getYearlyResults(card['accountslist']['data'])
         // );

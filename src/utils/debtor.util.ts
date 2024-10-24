@@ -22,9 +22,9 @@ class DebtorUtil {
     const strategy1Budget = body[strategy1Key];
     let strategy3Budget = body[strategy3Key];
     if (strategy3Key === 'strategy3Profit') {
-      strategy3Budget = strategy3Budget / 100;
+      strategy3Budget = strategy3Budget;
     } else {
-      strategy3Budget = (strategy3Budget * 0.8) / 100;
+      strategy3Budget = strategy3Budget * 0.8;
     }
     const filter = {
       weeklyBudgetKeyStrategy1: strategy1Key,

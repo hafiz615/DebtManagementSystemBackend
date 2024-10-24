@@ -210,14 +210,27 @@ class MoneyThumbUtil {
         filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
       }
       filter['strategy3MaxProfit'] = 0;
-      if (trueProfit && weeklyTrueRevenue) {
+      let weeklyTrueCredit = 0;
+      const accounts = scoreCard['accountslist'];
+      if (accounts.data.length) {
+        const len = accounts.data.length;
+        const trueCredit = parseFloat(accounts.data[len - 1]['true_credits']);
+        console.log(trueCredit, 'trueCredit');
+        const weekly = (trueCredit / 22) * 5;
+        console.log(weekly, 'weekly');
+
+        weeklyTrueCredit = Math.round(weekly * 100) / 100;
+        console.log(weeklyTrueCredit, 'weeklyTrueCredit');
+      }
+      if (weeklyTrueCredit && weeklyTrueRevenue) {
         console.log(weeklyTrueRevenue, 'weeklyTrueRevenue)');
         console.log(trueProfit, 'trueProfit)');
         console.log(
           trueProfit / weeklyTrueRevenue,
           '(trueProfit / weeklyTrueRevenue)'
         );
-        const profitability = (trueProfit / weeklyTrueRevenue) * 100 * 0.67;
+        const profitability =
+          (weeklyTrueCredit / weeklyTrueRevenue) * 100 * 0.67;
         console.log(profitability, 'profitability');
         filter['strategy3MaxProfit'] = Math.round(profitability * 100) / 100;
         if (!debtor.weeklyBudgetStrategy3)

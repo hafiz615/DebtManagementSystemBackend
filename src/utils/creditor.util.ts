@@ -196,7 +196,7 @@ class CreditorUtil {
     if (debtor.weeklyBudgetKeyStrategy3 === 'strategy3Profit') {
       receivableCommission = weeklyTrueCredit * 0.2;
     } else {
-      const factor = (((debtor.weeklyBudgetStrategy3 * 100) / 0.8) * 0.2) / 100;
+      const factor = ((debtor.weeklyBudgetStrategy3 / 0.8) * 0.2) / 100;
       receivableCommission = weeklyTrueCredit * factor;
     }
     return [20, maxProfitCommission, receivableCommission];
