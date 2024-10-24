@@ -358,16 +358,20 @@ class CaseService {
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
             }
-            if (hardReload === 'true')
+            const moneyThumb = await debtor_util_1.default.getScoreCard(caseTemp.debtor);
+            if (hardReload === 'true') {
+                await moneyThumb_util_1.default.saveData(moneyThumb.appid, moneyThumb.scoreCard, caseTemp.debtor);
                 caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, body);
+            }
             const debtor = caseTemp.debtor;
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
-            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor);
+            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor, moneyThumb.scoreCard);
             await creditor_util_1.default.addBreakEven(creditors);
             data['percentageReceivableCommission'] = commisionPercentage[0];
-            data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
+            data['maxProfitCommission'] = commisionPercentage[1];
+            data['percentageReceivableCommissionAmount'] = commisionPercentage[2];
             data['totalCommission'] = debtor.totalCommission;
             data['creditorsContractDetailsSum'] =
                 await this.calculateContractDetailsSum(creditors);
@@ -505,6 +509,8 @@ class CaseService {
             let data = {};
             caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
             let debtor = caseTemp.debtor;
+            const moneyThumb = await debtor_util_1.default.getScoreCard(debtor);
+            await moneyThumb_util_1.default.saveData(moneyThumb.appid, moneyThumb.scoreCard, debtor);
             await this.caseRepository.updateById(caseTemp._id, {
                 strategyTwo: false,
                 strategyThree: false,
@@ -516,7 +522,7 @@ class CaseService {
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
             creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
             creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
-            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor);
+            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor, moneyThumb.scoreCard);
             await creditor_util_1.default.addBreakEven(creditors);
             data['percentageReceivableCommission'] = commisionPercentage[0];
             data['percentageReceivableCommissionAmount'] = commisionPercentage[1];

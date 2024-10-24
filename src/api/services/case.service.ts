@@ -584,8 +584,15 @@ class CaseService {
         updatedAt: commonUtil.getCurrentDate(),
       });
     }
-    if (hardReload === 'true')
+    const moneyThumb = await debtorUtil.getScoreCard(caseTemp.debtor);
+    if (hardReload === 'true') {
+      await moneyThumbUtil.saveData(
+        moneyThumb.appid,
+        moneyThumb.scoreCard,
+        caseTemp.debtor
+      );
       caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
+    }
     const debtor: any = caseTemp.debtor;
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -597,11 +604,13 @@ class CaseService {
     const commisionPercentage =
       await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
         creditors,
-        debtor
+        debtor,
+        moneyThumb.scoreCard
       );
     await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage[0];
-    data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
+    data['maxProfitCommission'] = commisionPercentage[1];
+    data['percentageReceivableCommissionAmount'] = commisionPercentage[2];
     data['totalCommission'] = debtor.totalCommission;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
@@ -789,6 +798,12 @@ class CaseService {
     let data = {};
     caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
     let debtor: any = caseTemp.debtor;
+    const moneyThumb = await debtorUtil.getScoreCard(debtor);
+    await moneyThumbUtil.saveData(
+      moneyThumb.appid,
+      moneyThumb.scoreCard,
+      debtor
+    );
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       strategyTwo: false,
       strategyThree: false,
@@ -807,7 +822,8 @@ class CaseService {
     const commisionPercentage =
       await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
         creditors,
-        debtor
+        debtor,
+        moneyThumb.scoreCard
       );
     await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage[0];

@@ -32,12 +32,11 @@ class DebtorUtil {
             weeklyBudgetStrategy3: strategy3Budget,
             updatedAt: common_util_1.default.getCurrentDate(),
         };
-        if (strategy1Key === 'strategy1Profit') {
-            filter['weeklyCommission'] = caseTemp.debtor.trueProfit * 0.2;
-        }
-        else {
-            filter['weeklyCommission'] = strategy1Budget * 0.2;
-        }
+        // if (strategy1Key === 'strategy1Profit') {
+        //   filter['weeklyCommission'] = caseTemp.debtor.trueProfit * 0.2;
+        // } else {
+        //   filter['weeklyCommission'] = strategy1Budget * 0.2;
+        // }
         if (strategy1Key === 'strategy1Custom') {
             filter['strategy1BudgetCustom'] = strategy1Budget;
             if (!caseTemp?.debtor?.basicInformation?.weeklyBudget)
@@ -247,6 +246,18 @@ class DebtorUtil {
             yearlyResults[month] = yearlyResults[month] + inPercentage;
         }
         return Object.values(yearlyResults);
+    }
+    async getScoreCard(debtor) {
+        const token = await moneyThumb_util_1.default.authenticateUser();
+        let appid = 0;
+        if (debtor.appid)
+            appid = debtor.appid;
+        if (!debtor.appid) {
+            const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
+            appid = moneyThumbApp['appid'];
+        }
+        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, appid);
+        return { scoreCard, appid };
     }
 }
 exports.default = new DebtorUtil();
