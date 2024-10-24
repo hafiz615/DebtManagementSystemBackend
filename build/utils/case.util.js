@@ -1515,8 +1515,14 @@ class CaseUtil {
             caseId: String(caseTemp._id),
             name: 'strategy_one',
         });
+        const percentage_settlement_over_weekly_budget = result.data.settlementRange.percentage_settlement_over_weekly_budget;
+        delete percentage_settlement_over_weekly_budget.Summary;
+        console.log(percentage_settlement_over_weekly_budget, 'percentage_settlement_over_weekly_budget');
         const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
-        const data = { LLMs: models, settlements: result?.data?.settlementRange };
+        const data = {
+            LLMs: models,
+            settlements: percentage_settlement_over_weekly_budget,
+        };
         try {
             console.log('I am in get-settlement-justifications');
             console.log('URL: ', url);
