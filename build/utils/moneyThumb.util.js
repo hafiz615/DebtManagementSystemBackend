@@ -173,6 +173,7 @@ class MoneyThumbUtil {
                 weeklyProfit = weeklyProfitAndTrueRevenue.weeklyProfit;
                 weeklyTrueRevenue = weeklyProfitAndTrueRevenue.weeklyTrueRevenue;
             }
+            let trueProfitPer = 0;
             if (scoreCard['mcacompanies']) {
                 const mcaCompanies = scoreCard['mcacompanies'];
                 // const data = mcaCompanies.data;
@@ -197,7 +198,7 @@ class MoneyThumbUtil {
                 console.log(weeklyProfit, 'weeklyProfit');
                 trueProfit = totalWithdrawl + weeklyProfit;
                 filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
-                const trueProfitPer = trueProfit * 0.67;
+                trueProfitPer = trueProfit * 0.67;
                 filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
             }
             filter['strategy3MaxProfit'] = 0;
@@ -212,11 +213,11 @@ class MoneyThumbUtil {
                 weeklyTrueCredit = Math.round(weekly * 100) / 100;
                 console.log(weeklyTrueCredit, 'weeklyTrueCredit');
             }
-            if (weeklyTrueCredit && weeklyTrueRevenue) {
+            if (weeklyTrueCredit && trueProfitPer) {
                 console.log(weeklyTrueRevenue, 'weeklyTrueRevenue)');
                 console.log(trueProfit, 'trueProfit)');
                 console.log(trueProfit / weeklyTrueRevenue, '(trueProfit / weeklyTrueRevenue)');
-                const profitability = (weeklyTrueCredit / weeklyTrueRevenue) * 100 * 0.67;
+                const profitability = (trueProfitPer / weeklyTrueCredit) * 100 * 0.67;
                 console.log(profitability, 'profitability');
                 filter['strategy3MaxProfit'] = Math.round(profitability * 100) / 100;
                 if (!debtor.weeklyBudgetStrategy3)
