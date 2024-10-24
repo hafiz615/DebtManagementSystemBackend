@@ -43,6 +43,7 @@ import {nanoid} from 'nanoid';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
 import debtorUtil from './debtor.util';
+import {IStrategy} from '../database/interfaces/strategy.interface';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -1709,12 +1710,16 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    const result = await this.strategyRepository.getOne<IStrategy>({
+      caseId: String(caseTemp._id),
+      name: 'strategy_one',
+    });
     const url = `${
       process.env.baseUrlAI
     }get-settlement-justifications?debtor_id=${String(
       caseTemp.debtor
     )}&enable_cache=${true}`;
-    const data = {LLMs: models};
+    const data = {LLMs: models, settlements: result?.data?.settlementRange};
     try {
       console.log('I am in get-settlement-justifications');
       console.log('URL: ', url);

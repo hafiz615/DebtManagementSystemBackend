@@ -720,7 +720,8 @@ class CaseService {
     }
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
-      settlementRange
+      settlementRange,
+      caseId
     );
     data['settlementRange'] = settlementRange;
     return [true, data];

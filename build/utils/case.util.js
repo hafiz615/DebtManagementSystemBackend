@@ -1511,8 +1511,12 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
+        const result = await this.strategyRepository.getOne({
+            caseId: String(caseTemp._id),
+            name: 'strategy_one',
+        });
         const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
-        const data = { LLMs: models };
+        const data = { LLMs: models, settlements: result?.data?.settlementRange };
         try {
             console.log('I am in get-settlement-justifications');
             console.log('URL: ', url);

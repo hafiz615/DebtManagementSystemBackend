@@ -453,7 +453,7 @@ class CaseService {
                 await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
                 // data['settlementRange'] = settlementRange;
             }
-            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange);
+            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
             data['settlementRange'] = settlementRange;
             return [true, data];
         };

@@ -8,10 +8,12 @@ const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const common_util_1 = __importDefault(require("./common.util"));
 const case_util_1 = __importDefault(require("./case.util"));
+const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 class CreditorUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.strategyRepository = new strategy_repository_1.StrategyRepository();
     }
     async checkCreditorsMapping(creditorsArray) {
         for (const creditor of creditorsArray) {
@@ -198,7 +200,7 @@ class CreditorUtil {
             }
         }
     }
-    async replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange) {
+    async replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId) {
         let newWeeks = [];
         let newAmount = 0;
         for (const creditor of creditors) {
@@ -221,6 +223,10 @@ class CreditorUtil {
         if (newWeeks) {
             settlementRange.weeks_till_paid.Summary['Weeks remaining based on recommendation 1'].max = Math.max(...newWeeks);
         }
+        await this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, {
+            'data.settlementRange': settlementRange,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
     }
 }
 exports.default = new CreditorUtil();

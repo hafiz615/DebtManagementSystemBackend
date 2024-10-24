@@ -6,13 +6,16 @@ import commonUtil from './common.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import caseUtil from './case.util';
 import moneyThumbUtil from './moneyThumb.util';
+import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
   private caseRepository: CaseRepository;
+  private strategyRepository: StrategyRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.caseRepository = new CaseRepository();
+    this.strategyRepository = new StrategyRepository();
   }
   async checkCreditorsMapping(creditorsArray: any) {
     for (const creditor of creditorsArray) {
@@ -229,7 +232,8 @@ class CreditorUtil {
 
   async replaceSettlementRangeAndWeeksTillPaid(
     creditors: any,
-    settlementRange: any
+    settlementRange: any,
+    caseId: string
   ) {
     let newWeeks = [];
     let newAmount = 0;
@@ -263,6 +267,13 @@ class CreditorUtil {
         'Weeks remaining based on recommendation 1'
       ].max = Math.max(...newWeeks);
     }
+    await this.strategyRepository.upsert(
+      {caseId: caseId, name: 'strategy_one'},
+      {
+        'data.settlementRange': settlementRange,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
   }
 }
 export default new CreditorUtil();
