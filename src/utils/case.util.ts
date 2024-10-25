@@ -1727,8 +1727,8 @@ class CaseUtil {
       caseTemp.debtor
     )}&enable_cache=${true}`;
     const data = {
-      LLMs: models,
-      settlements: percentage_settlement_over_weekly_budget,
+      llm_options: {LLMs: models},
+      settlements: {creditors: percentage_settlement_over_weekly_budget},
     };
     try {
       console.log('I am in get-settlement-justifications');
@@ -1764,19 +1764,23 @@ class CaseUtil {
     }
   }
 
-  async lumpSumJustifications(caseTemp: ICase, models: string[]) {
+  async lumpSumJustifications(caseTemp: any, models: string[], lupmSum: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    console.log(lupmSum);
     const url = `${
       process.env.baseUrlAI
     }get-lump-sum-justifications?debtor_id=${String(
-      caseTemp.debtor
+      caseTemp.debtor._id
     )}&enable_cache=${true}`;
-    const data = {LLMs: models};
+    const data = {
+      llm_options: {LLMs: models},
+      lumpsum_settlement: {creditors: lupmSum},
+    };
     try {
       console.log('I am in get-lump-sum-justifications');
       console.log('URL: ', url);

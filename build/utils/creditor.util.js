@@ -8,6 +8,7 @@ const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const common_util_1 = __importDefault(require("./common.util"));
 const case_util_1 = __importDefault(require("./case.util"));
+const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 class CreditorUtil {
     constructor() {
@@ -110,13 +111,7 @@ class CreditorUtil {
         console.log(accounts.data.length, 'accounttttt');
         let weeklyTrueCredit = 0;
         if (accounts.data.length) {
-            const len = accounts.data.length;
-            const trueCredit = parseFloat(accounts.data[len - 1]['true_credits']);
-            console.log(trueCredit, 'trueCredit');
-            const weekly = (trueCredit / 22) * 5;
-            console.log(weekly, 'weekly');
-            weeklyTrueCredit = Math.round(weekly * 100) / 100;
-            console.log(weeklyTrueCredit, 'weeklyTrueCredit');
+            weeklyTrueCredit = await moneyThumb_util_1.default.getWeeklyTrueCredit(accounts);
         }
         let totalRemaining = creditors.reduce((sum, item) => sum + item.remaining, 0);
         // const debtorTotalCommission = debtor?.totalCommission
@@ -148,9 +143,7 @@ class CreditorUtil {
             const percentage = creditorPer * weeklyBudgetStrategy3;
             creditor.percentageReceivable = Math.round(percentage * 100) / 100;
             console.log(creditor.percentageReceivable, 'creditor.percentageReceivable');
-            creditor.percentageReceivableAmount =
-                Math.round(creditor.percentageReceivable * weeklyTrueCredit * 100) /
-                    100;
+            creditor.percentageReceivableAmount = parseFloat(((creditor.percentageReceivable / 100) * weeklyTrueCredit).toFixed(2));
             console.log(creditor.percentageReceivableAmount, 'creditor.percentageReceivableAmount');
         }
         // const percentageReceivableCommission =
@@ -173,13 +166,17 @@ class CreditorUtil {
         }
         let receivableCommission = 0;
         if (debtor.weeklyBudgetKeyStrategy3 === 'strategy3Profit') {
-            receivableCommission = weeklyTrueCredit * 0.2;
+            receivableCommission = debtor.trueProfit * 0.2;
         }
         else {
             const factor = ((debtor.weeklyBudgetStrategy3 / 0.8) * 0.2) / 100;
-            receivableCommission = weeklyTrueCredit * factor;
+            receivableCommission = debtor.trueProfit * factor;
         }
-        return [20, maxProfitCommission, receivableCommission];
+        return [
+            20,
+            parseFloat(maxProfitCommission.toFixed(2)),
+            parseFloat(receivableCommission.toFixed(2)),
+        ];
     }
     async addWeeklyTrueAmount(creditors, settlementRange) {
         if (settlementRange.percentage_settlement_over_weekly_true_revenue) {

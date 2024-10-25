@@ -868,7 +868,6 @@ class DebtorService {
       return [false, constantsUtil.notFoundMessage('case')];
     }
     if (caseTemp.strategyThree) {
-      console.log('i am here');
       const result = await this.strategyRepository.getOne<IStrategy>({
         caseId: String(caseTemp._id),
         name: 'strategy_three',
@@ -881,9 +880,44 @@ class DebtorService {
   };
 
   lumpSumJustifications = async (req: Request) => {
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
+    }
+    let creditors = null;
+    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    creditors = Array.from(
+      new Map(
+        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
+      ).values()
+    );
+    let lumpSum = {};
+    if (caseTemp.strategyTwo) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'strategy_two',
+      });
+      lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
+      console.log(lumpSum);
+      for (const creditor of creditors) {
+        console.log(
+          creditor.creditorAccountTitle,
+          'creditor.creditorAccountTitle'
+        );
+        const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
+        lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
+          parseFloat(
+            (
+              caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
+              repaidDebt
+            ).toFixed(2)
+          );
+      }
     }
     if (caseTemp.lumpSumJustifications) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -896,7 +930,8 @@ class DebtorService {
     const models = await caseUtil.getJustificationModels();
     const justifications = await caseUtil.lumpSumJustifications(
       caseTemp,
-      models
+      models,
+      lumpSum
     );
     return justifications;
   };
