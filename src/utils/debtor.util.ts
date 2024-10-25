@@ -22,9 +22,9 @@ class DebtorUtil {
     const strategy1Budget = body[strategy1Key];
     let strategy3Budget = body[strategy3Key];
     if (strategy3Key === 'strategy3Profit') {
-      strategy3Budget = strategy3Budget / 100;
+      strategy3Budget = strategy3Budget;
     } else {
-      strategy3Budget = (strategy3Budget * 0.8) / 100;
+      strategy3Budget = strategy3Budget * 0.8;
     }
     const filter = {
       weeklyBudgetKeyStrategy1: strategy1Key,
@@ -33,11 +33,11 @@ class DebtorUtil {
       weeklyBudgetStrategy3: strategy3Budget,
       updatedAt: commonUtil.getCurrentDate(),
     };
-    if (strategy1Key === 'strategy1Profit') {
-      filter['weeklyCommission'] = caseTemp.debtor.trueProfit * 0.2;
-    } else {
-      filter['weeklyCommission'] = strategy1Budget * 0.2;
-    }
+    // if (strategy1Key === 'strategy1Profit') {
+    //   filter['weeklyCommission'] = caseTemp.debtor.trueProfit * 0.2;
+    // } else {
+    //   filter['weeklyCommission'] = strategy1Budget * 0.2;
+    // }
 
     if (strategy1Key === 'strategy1Custom') {
       filter['strategy1BudgetCustom'] = strategy1Budget;
@@ -298,6 +298,21 @@ class DebtorUtil {
       yearlyResults[month] = yearlyResults[month] + inPercentage;
     }
     return Object.values(yearlyResults);
+  }
+
+  async getScoreCard(debtor: IDebtor) {
+    const token = await moneyThumbUtil.authenticateUser();
+    let appid = 0;
+    if (debtor.appid) appid = debtor.appid;
+    if (!debtor.appid) {
+      const moneyThumbApp = await moneyThumbUtil.createNewApp(
+        token,
+        debtor.businessInformation.companyName
+      );
+      appid = moneyThumbApp['appid'];
+    }
+    const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
+    return {scoreCard, appid};
   }
 }
 export default new DebtorUtil();

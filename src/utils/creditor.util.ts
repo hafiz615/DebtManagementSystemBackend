@@ -6,13 +6,16 @@ import commonUtil from './common.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import caseUtil from './case.util';
 import moneyThumbUtil from './moneyThumb.util';
+import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
   private caseRepository: CaseRepository;
+  private strategyRepository: StrategyRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.caseRepository = new CaseRepository();
+    this.strategyRepository = new StrategyRepository();
   }
   async checkCreditorsMapping(creditorsArray: any) {
     for (const creditor of creditorsArray) {
@@ -98,32 +101,26 @@ class CreditorUtil {
 
   async addCreditorPercentagesAndGetPercentageCommission(
     creditors: any,
-    debtor: IDebtor
+    debtor: IDebtor,
+    scoreCard: any
   ) {
-    const token = await moneyThumbUtil.authenticateUser();
-    let appid = 0;
-    console.log(debtor.appid, 'debtor.appid');
-    if (debtor.appid) appid = debtor.appid;
-    if (!debtor.appid) {
-      const moneyThumbApp = await moneyThumbUtil.createNewApp(
-        token,
-        String(debtor._id)
-      );
-      appid = moneyThumbApp['appid'];
-    }
-    const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
+    // const token = await moneyThumbUtil.authenticateUser();
+    // let appid = 0;
+    // console.log(debtor.appid, 'debtor.appid');
+    // if (debtor.appid) appid = debtor.appid;
+    // if (!debtor.appid) {
+    //   const moneyThumbApp = await moneyThumbUtil.createNewApp(
+    //     token,
+    //     debtor.businessInformation.companyName
+    //   );
+    //   appid = moneyThumbApp['appid'];
+    // }
+    // const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
     const accounts = scoreCard['accountslist'];
     console.log(accounts.data.length, 'accounttttt');
     let weeklyTrueCredit = 0;
     if (accounts.data.length) {
-      const len = accounts.data.length;
-      const trueCredit = parseFloat(accounts.data[len - 1]['true_credits']);
-      console.log(trueCredit, 'trueCredit');
-      const weekly = (trueCredit / 22) * 5;
-      console.log(weekly, 'weekly');
-
-      weeklyTrueCredit = Math.round(weekly * 100) / 100;
-      console.log(weeklyTrueCredit, 'weeklyTrueCredit');
+      weeklyTrueCredit = await moneyThumbUtil.getWeeklyTrueCredit(accounts);
     }
     let totalRemaining = creditors.reduce(
       (sum, item) => sum + item.remaining,
@@ -145,16 +142,29 @@ class CreditorUtil {
       console.log(debtor.weeklyBudgetStrategy3, 'debtor.weeklyBudgetStrategy3');
       console.log(totalRemaining, 'totalRemaining');
       console.log(creditor.remaining, 'creditor.remaining');
-      const percentage =
-        (creditor.remaining / totalRemaining) * weeklyBudgetStrategy3;
+      const creditorPer = creditor.remaining / totalRemaining;
+      console.log(creditorPer, 'creditorPer');
+      if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
+        console.log(
+          creditorPer * debtor.weeklyBudgetStrategy1,
+          'creditorPer * debtor.weeklyBudgetStrategy1'
+        );
+        creditor.maxProfitAmount =
+          Math.round(creditorPer * debtor.weeklyBudgetStrategy1 * 100) / 100;
+      } else {
+        const percent80 = debtor.weeklyBudgetStrategy1 * 0.8;
+        creditor.maxProfitAmount =
+          Math.round(creditorPer * percent80 * 100) / 100;
+      }
+      const percentage = creditorPer * weeklyBudgetStrategy3;
       creditor.percentageReceivable = Math.round(percentage * 100) / 100;
       console.log(
         creditor.percentageReceivable,
         'creditor.percentageReceivable'
       );
-      creditor.percentageReceivableAmount =
-        Math.round(creditor.percentageReceivable * weeklyTrueCredit * 100) /
-        100;
+      creditor.percentageReceivableAmount = parseFloat(
+        ((creditor.percentageReceivable / 100) * weeklyTrueCredit).toFixed(2)
+      );
       console.log(
         creditor.percentageReceivableAmount,
         'creditor.percentageReceivableAmount'
@@ -172,8 +182,24 @@ class CreditorUtil {
     // );
     // console.log(pRcRoundCommission, 'pRcRoundCommission');
     // console.log(pRCAmount, 'pRCAmount');
-    if (debtor.weeklyCommission) return [20, debtor.weeklyCommission];
-    return [0, 0];
+    let maxProfitCommission = 0;
+    if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
+      maxProfitCommission = debtor.trueProfit * 0.2;
+    } else {
+      maxProfitCommission = debtor.weeklyBudgetStrategy1 * 0.2;
+    }
+    let receivableCommission = 0;
+    if (debtor.weeklyBudgetKeyStrategy3 === 'strategy3Profit') {
+      receivableCommission = debtor.trueProfit * 0.2;
+    } else {
+      const factor = ((debtor.weeklyBudgetStrategy3 / 0.8) * 0.2) / 100;
+      receivableCommission = debtor.trueProfit * factor;
+    }
+    return [
+      20,
+      parseFloat(maxProfitCommission.toFixed(2)),
+      parseFloat(receivableCommission.toFixed(2)),
+    ];
   }
 
   async addWeeklyTrueAmount(creditors: any, settlementRange: any) {
@@ -203,7 +229,8 @@ class CreditorUtil {
 
   async replaceSettlementRangeAndWeeksTillPaid(
     creditors: any,
-    settlementRange: any
+    settlementRange: any,
+    caseId: string
   ) {
     let newWeeks = [];
     let newAmount = 0;
@@ -214,16 +241,14 @@ class CreditorUtil {
       ) {
         settlementRange.settlement_range[creditor.creditorAccountTitle][
           'recommendation 1'
-        ].max = creditor.percentageReceivableAmount;
-        newAmount += creditor.percentageReceivableAmount;
+        ].max = creditor.maxProfitAmount;
+        newAmount += creditor.maxProfitAmount;
       }
       if (
         settlementRange.weeks_till_paid &&
         settlementRange.weeks_till_paid[creditor.creditorAccountTitle]
       ) {
-        const weeks = Math.round(
-          creditor.remaining / creditor.percentageReceivableAmount
-        );
+        const weeks = Math.round(creditor.remaining / creditor.maxProfitAmount);
         settlementRange.weeks_till_paid[creditor.creditorAccountTitle][
           'Weeks remaining based on recommendation 1'
         ].max = weeks;
@@ -239,6 +264,13 @@ class CreditorUtil {
         'Weeks remaining based on recommendation 1'
       ].max = Math.max(...newWeeks);
     }
+    await this.strategyRepository.upsert(
+      {caseId: caseId, name: 'strategy_one'},
+      {
+        'data.settlementRange': settlementRange,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
   }
 }
 export default new CreditorUtil();

@@ -147,7 +147,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Response Data', response.data['mcacompanies']);
+      console.log('Response Data', response.data['accountslist']);
 
       return response.data;
     } catch (error) {
@@ -179,26 +179,13 @@ class MoneyThumbUtil {
         weeklyProfit = weeklyProfitAndTrueRevenue.weeklyProfit;
         weeklyTrueRevenue = weeklyProfitAndTrueRevenue.weeklyTrueRevenue;
       }
+      let trueProfitPer = 0;
       if (scoreCard['mcacompanies']) {
         const mcaCompanies = scoreCard['mcacompanies'];
-        // const data = mcaCompanies.data;
-        // const lastLenderOccurrences = {};
-        // for (let i = 0; i < data.length; i++) {
-        //   if (data[i].month === 'Totals') {
-        //     lastLenderOccurrences[data[i - 1].lender] = {
-        //       withdrawal_total:
-        //         (data[i - 1].withdrawal_total / data[i - 1].work_days) * 5,
-        //     };
-        //   }
-        // }
         let totalWithdrawl = await this.getTotalWeeklyBudget(
           mcaCompanies,
           debtor
         );
-        // for (let lender of Object.values(lastLenderOccurrences as any)) {
-        //   const temp: any = lender;
-        //   totalWithdrawl += temp.withdrawal_total;
-        // }
         if (!debtor.weeklyBudgetStrategy1) {
           filter['weeklyBudgetStrategy1'] = totalWithdrawl;
         }
@@ -206,18 +193,23 @@ class MoneyThumbUtil {
         console.log(weeklyProfit, 'weeklyProfit');
         trueProfit = totalWithdrawl + weeklyProfit;
         filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
-        const trueProfitPer = trueProfit * 0.67;
+        trueProfitPer = trueProfit * 0.67;
         filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
       }
       filter['strategy3MaxProfit'] = 0;
-      if (trueProfit && weeklyTrueRevenue) {
-        console.log(weeklyTrueRevenue, 'weeklyTrueRevenue)');
-        console.log(trueProfit, 'trueProfit)');
+      let weeklyTrueCredit = 0;
+      const accounts = scoreCard['accountslist'];
+      if (accounts.data.length) {
+        weeklyTrueCredit = await this.getWeeklyTrueCredit(accounts);
+      }
+      if (weeklyTrueCredit && trueProfitPer) {
+        console.log(weeklyTrueCredit, 'weeklyTrueCredit)');
+        console.log(trueProfitPer, 'trueProfitPer)');
         console.log(
-          trueProfit / weeklyTrueRevenue,
-          '(trueProfit / weeklyTrueRevenue)'
+          trueProfitPer / weeklyTrueCredit,
+          '(trueProfitPer / weeklyTrueCredit)'
         );
-        const profitability = (trueProfit / weeklyTrueRevenue) * 100 * 0.67;
+        const profitability = (trueProfitPer / weeklyTrueCredit) * 100;
         console.log(profitability, 'profitability');
         filter['strategy3MaxProfit'] = Math.round(profitability * 100) / 100;
         if (!debtor.weeklyBudgetStrategy3)
@@ -342,6 +334,23 @@ class MoneyThumbUtil {
       }
     }
     return Math.abs(Math.round(totalWithdrawl * 100) / 100);
+  }
+
+  async getWeeklyTrueCredit(accounts: any) {
+    const len = accounts.data.length;
+    const lastMonth = accounts.data[len - 1]['statement_month'];
+    let totalCreditMonth = 0;
+    for (const account of accounts.data) {
+      if (account['statement_month'] === lastMonth) {
+        totalCreditMonth += parseFloat(account['true_credits']);
+      }
+    }
+    // const trueCredit = parseFloat(accounts.data[len - 1]['true_credits']);
+    console.log(totalCreditMonth, 'totalCreditMonth');
+    const weekly = (totalCreditMonth / 22) * 5;
+    console.log(weekly, 'weekly');
+
+    return Math.round(weekly * 100) / 100;
   }
 }
 export default new MoneyThumbUtil();
