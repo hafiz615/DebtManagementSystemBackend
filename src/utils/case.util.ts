@@ -43,6 +43,7 @@ import {nanoid} from 'nanoid';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
 import debtorUtil from './debtor.util';
+import {IStrategy} from '../database/interfaces/strategy.interface';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -1709,12 +1710,26 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    const result = await this.strategyRepository.getOne<IStrategy>({
+      caseId: String(caseTemp._id),
+      name: 'strategy_one',
+    });
+    const percentage_settlement_over_weekly_budget =
+      result.data.settlementRange.percentage_settlement_over_weekly_budget;
+    delete percentage_settlement_over_weekly_budget.Summary;
+    console.log(
+      percentage_settlement_over_weekly_budget,
+      'percentage_settlement_over_weekly_budget'
+    );
     const url = `${
       process.env.baseUrlAI
     }get-settlement-justifications?debtor_id=${String(
       caseTemp.debtor
     )}&enable_cache=${true}`;
-    const data = {LLMs: models};
+    const data = {
+      llm_options: {LLMs: models},
+      settlements: {creditors: percentage_settlement_over_weekly_budget},
+    };
     try {
       console.log('I am in get-settlement-justifications');
       console.log('URL: ', url);
@@ -1749,19 +1764,23 @@ class CaseUtil {
     }
   }
 
-  async lumpSumJustifications(caseTemp: ICase, models: string[]) {
+  async lumpSumJustifications(caseTemp: any, models: string[], lupmSum: any) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    console.log(lupmSum);
     const url = `${
       process.env.baseUrlAI
     }get-lump-sum-justifications?debtor_id=${String(
-      caseTemp.debtor
+      caseTemp.debtor._id
     )}&enable_cache=${true}`;
-    const data = {LLMs: models};
+    const data = {
+      llm_options: {LLMs: models},
+      lumpsum_settlement: {creditors: lupmSum},
+    };
     try {
       console.log('I am in get-lump-sum-justifications');
       console.log('URL: ', url);

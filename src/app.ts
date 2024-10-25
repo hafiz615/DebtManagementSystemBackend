@@ -86,7 +86,7 @@ class App {
     // const token = await moneyThumbUtil.authenticateUser();
     // const app = await moneyThumbUtil.createNewApp(
     //   token,
-    //   'JTEK CONSTRUCTION INC'
+    //   'Smoke Studio & Mart LLC'
     // );
     // await moneyThumbUtil.convertPdf(
     //   token,
@@ -94,7 +94,7 @@ class App {
     //   app['appid']
     // );
     // const debtor = await debtorRepo.getById<IDebtor>(
-    //   '6718fa3c0033bf2ed1e573a3'
+    //   '67179c6b9f1cc6c8f4839b84'
     // );
     // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
     // await moneyThumbUtil.saveData(app['appid'], card, debtor);

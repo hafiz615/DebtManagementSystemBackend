@@ -58,7 +58,6 @@ class DebtorService {
                 return [false, constants_util_2.default.notFoundMessage('case')];
             }
             if (caseTemp.strategyThree) {
-                console.log('i am here');
                 const result = await this.strategyRepository.getOne({
                     caseId: String(caseTemp._id),
                     name: 'strategy_three',
@@ -70,9 +69,28 @@ class DebtorService {
             return fullProfitResult;
         };
         this.lumpSumJustifications = async (req) => {
-            const caseTemp = await this.caseRepository.getById(req.params.id);
+            const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             if (!caseTemp) {
                 return [false, constants_util_2.default.notFoundMessage('case')];
+            }
+            let creditors = null;
+            creditors = await case_util_1.default.getAllCreditorsOfDebtor(caseTemp.debtor);
+            creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            let lumpSum = {};
+            if (caseTemp.strategyTwo) {
+                const result = await this.strategyRepository.getOne({
+                    caseId: String(caseTemp._id),
+                    name: 'strategy_two',
+                });
+                lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
+                console.log(lumpSum);
+                for (const creditor of creditors) {
+                    console.log(creditor.creditorAccountTitle, 'creditor.creditorAccountTitle');
+                    const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
+                    lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
+                        parseFloat((case_util_1.default.getCleanAmount(creditor.contractDetails.funded_amount) -
+                            repaidDebt).toFixed(2));
+                }
             }
             if (caseTemp.lumpSumJustifications) {
                 const result = await this.strategyRepository.getOne({
@@ -83,7 +101,7 @@ class DebtorService {
                     return [true, result.data.justifications];
             }
             const models = await case_util_1.default.getJustificationModels();
-            const justifications = await case_util_1.default.lumpSumJustifications(caseTemp, models);
+            const justifications = await case_util_1.default.lumpSumJustifications(caseTemp, models, lumpSum);
             return justifications;
         };
         this.fullProfitJustifications = async (req) => {
