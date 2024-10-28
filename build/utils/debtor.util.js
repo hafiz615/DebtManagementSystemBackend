@@ -53,9 +53,9 @@ class DebtorUtil {
         });
         return await this.debtorRepository.updateById(String(caseTemp.debtor._id), filter);
     }
-    async percentageChangeEmail(debtorId, totalStatements, debtorName) {
+    async percentageChangeEmail(debtorCompanyName, debtorId, totalStatements, debtorName) {
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorId);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorCompanyName);
         if (moneyThumbApp['totalstatements'] > totalStatements) {
             const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
             const accounts = scoreCard['accountslist'];

@@ -162,7 +162,6 @@ class CaseService {
                 //   });
                 // }
                 await this.debtorRepository.updateById(findCase.debtor._id, {
-                    totalCommission: req.body.totalCommission,
                     weeklyCommission: req.body.commission,
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });

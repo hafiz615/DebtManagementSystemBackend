@@ -487,9 +487,9 @@ class UserService {
         console.log(result[0].body.results, 'result[0].body.results');
         let emails = [];
         if (result[0]?.body?.results?.length) {
-            emails = result[0].body.results.map(temp => {
-                return temp.from_email;
-            });
+            emails = result[0].body.results
+                .filter(item => item.verified)
+                .map(item => item.from_email);
         }
         return [true, emails];
     }

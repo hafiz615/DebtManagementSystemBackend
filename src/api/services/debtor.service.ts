@@ -161,9 +161,8 @@ class DebtorService {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      req.params.id
+      debtor.businessInformation.companyName
     );
-    console.log(debtor);
     if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
       await this.debtorRepository.updateById(debtor._id, {
         totalStatements: moneyThumbApp['totalStatements'],
@@ -542,7 +541,7 @@ class DebtorService {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['status'] = 'Pending';
+      // updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
       await emailUtil.sendEmailOrSmsByEvent(
@@ -622,7 +621,7 @@ class DebtorService {
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
-      // updateObjPayment['status'] = 'Success';
+      updateObjPayment['status'] = 'Pending';
       if (payment.caseId.debtor.paymentType === 'ck') {
         updateObjPayment['debtorTransId'] = transactionId;
       }
@@ -783,7 +782,8 @@ class DebtorService {
     const statements = caseTemp.debtor?.totalStatements;
     if (caseTemp.intervals) {
       debtorUtil.percentageChangeEmail(
-        req.params.id,
+        updatedDebtor.businessInformation.companyName,
+        String(updatedDebtor._id),
         statements ? statements : 0,
         caseTemp.debtor?.basicInformation?.fullName
       );
