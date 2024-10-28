@@ -94,7 +94,7 @@ class CaseUtil {
         for (const interval of data.intervals) {
             if (interval.frequency === 0) {
                 payment.dueDate = interval.startDate;
-                tempPayment = await this.populatePayment(data._id, payment, interval, 0);
+                tempPayment = await this.populatePayment(data._id, payment, interval, 0, String(data.debtor));
                 paymentsArray.push(tempPayment);
             }
             if (interval.frequency != 0) {
@@ -105,7 +105,7 @@ class CaseUtil {
                     else {
                         payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i - 1);
                     }
-                    tempPayment = await this.populatePayment(data._id, payment, interval, i);
+                    tempPayment = await this.populatePayment(data._id, payment, interval, i, String(data.debtor));
                     paymentsArray.push(tempPayment);
                 }
             }
@@ -167,7 +167,7 @@ class CaseUtil {
         }
         return currentDate.toString();
     }
-    async populatePayment(caseId, payment, interval, frequency) {
+    async populatePayment(caseId, payment, interval, frequency, debtor) {
         const uuid = (0, uuid_1.v4)();
         payment.amount = interval.amount;
         payment.frequency = frequency;
@@ -175,6 +175,7 @@ class CaseUtil {
         payment.intervalId = String(interval._id);
         payment.timePeriod = interval.timePeriod;
         payment.paymentReference = uuid;
+        payment.debtorId = debtor;
         return { ...payment };
     }
     async getCaseCode() {
