@@ -301,6 +301,7 @@ class PaymentService {
         failedCapture['captured'] = 'Failed';
         const successAuth = { ...filters };
         successAuth['authorized'] = 'Success';
+        console.log(successAuth, 'successAuth');
         const successCapture = { ...filters };
         successCapture['captured'] = 'Success';
         const upcoming = { ...filters };
@@ -509,7 +510,14 @@ class PaymentService {
             path: 'caseId',
             select: ['_id', 'caseCode', 'remaining'],
             populate: [
-                { path: 'creditor', select: ['paynoteSourceId', 'paynoteUserId'] },
+                {
+                    path: 'creditor',
+                    select: [
+                        'paynoteSourceId',
+                        'paynoteUserId',
+                        'basicInformation.fullName',
+                    ],
+                },
                 { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
             ],
         });

@@ -541,7 +541,7 @@ class DebtorService {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['status'] = 'Pending';
+      // updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
       await emailUtil.sendEmailOrSmsByEvent(
@@ -621,7 +621,7 @@ class DebtorService {
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
-      // updateObjPayment['status'] = 'Success';
+      updateObjPayment['status'] = 'Pending';
       if (payment.caseId.debtor.paymentType === 'ck') {
         updateObjPayment['debtorTransId'] = transactionId;
       }
