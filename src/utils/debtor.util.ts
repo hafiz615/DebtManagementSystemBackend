@@ -60,12 +60,16 @@ class DebtorUtil {
   }
 
   async percentageChangeEmail(
+    debtorCompanyName: string,
     debtorId: string,
     totalStatements: number,
     debtorName: string
   ) {
     const token = await moneyThumbUtil.authenticateUser();
-    const moneyThumbApp = await moneyThumbUtil.createNewApp(token, debtorId);
+    const moneyThumbApp = await moneyThumbUtil.createNewApp(
+      token,
+      debtorCompanyName
+    );
     if (moneyThumbApp['totalstatements'] > totalStatements) {
       const scoreCard = await moneyThumbUtil.getScoreCard(
         token,

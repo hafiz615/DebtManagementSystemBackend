@@ -126,7 +126,8 @@ class CaseUtil {
           data._id,
           payment,
           interval,
-          0
+          0,
+          String(data.debtor)
         );
         paymentsArray.push(tempPayment);
       }
@@ -145,7 +146,8 @@ class CaseUtil {
             data._id,
             payment,
             interval,
-            i
+            i,
+            String(data.debtor)
           );
           paymentsArray.push(tempPayment);
         }
@@ -224,7 +226,8 @@ class CaseUtil {
     caseId: string,
     payment: Payment,
     interval: any,
-    frequency: number
+    frequency: number,
+    debtor: string
   ) {
     const uuid = v4();
     payment.amount = interval.amount;
@@ -233,6 +236,7 @@ class CaseUtil {
     payment.intervalId = String(interval._id);
     payment.timePeriod = interval.timePeriod;
     payment.paymentReference = uuid;
+    payment.debtorId = debtor;
     return {...payment};
   }
 
