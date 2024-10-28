@@ -161,9 +161,8 @@ class DebtorService {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      req.params.id
+      debtor.businessInformation.companyName
     );
-    console.log(debtor);
     if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
       await this.debtorRepository.updateById(debtor._id, {
         totalStatements: moneyThumbApp['totalStatements'],
@@ -783,7 +782,8 @@ class DebtorService {
     const statements = caseTemp.debtor?.totalStatements;
     if (caseTemp.intervals) {
       debtorUtil.percentageChangeEmail(
-        req.params.id,
+        updatedDebtor.businessInformation.companyName,
+        String(updatedDebtor._id),
         statements ? statements : 0,
         caseTemp.debtor?.basicInformation?.fullName
       );

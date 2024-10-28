@@ -222,8 +222,7 @@ class DebtorService {
         }
         const debtor = findCase.debtor;
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, req.params.id);
-        console.log(debtor);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
         if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
             await this.debtorRepository.updateById(debtor._id, {
                 totalStatements: moneyThumbApp['totalStatements'],
@@ -710,7 +709,7 @@ class DebtorService {
         await moneyThumb_util_1.default.run(updatedDebtor, updatedDebtor.businessInformation.companyName);
         const statements = caseTemp.debtor?.totalStatements;
         if (caseTemp.intervals) {
-            debtor_util_1.default.percentageChangeEmail(req.params.id, statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
+            debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
         }
         // for (let doc of findCase.documents) {
         //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
