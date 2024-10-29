@@ -183,9 +183,15 @@ class MoneyThumbUtil {
                 console.log(totalWithdrawl, 'totalWithdrawl');
                 console.log(weeklyProfit, 'weeklyProfit');
                 trueProfit = totalWithdrawl + weeklyProfit;
-                filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
-                trueProfitPer = trueProfit * 0.67;
-                filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
+                if (trueProfit > 0) {
+                    filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
+                    trueProfitPer = trueProfit * 0.67;
+                    filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
+                }
+                else {
+                    filter['trueProfit'] = 0;
+                    filter['strategy1MaxProfit'] = 0;
+                }
             }
             filter['strategy3MaxProfit'] = 0;
             let weeklyTrueCredit = 0;
@@ -203,6 +209,9 @@ class MoneyThumbUtil {
                 if (!debtor.weeklyBudgetStrategy3)
                     filter['weeklyBudgetStrategy3'] =
                         Math.round(profitability * 100) / 100;
+            }
+            else {
+                filter['strategy3MaxProfit'] = 0;
             }
             console.log(filter);
             await this.debtorRepository.updateById(debtor._id, filter);
