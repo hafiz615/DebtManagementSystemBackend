@@ -506,6 +506,8 @@ class UserService {
   };
 
   async addSenderIdentity(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const data = {
       from_email: req.body.from_email,
       reply_to: req.body.from_email,
@@ -514,7 +516,7 @@ class UserService {
       city: req.body.city,
     };
     data['country'] = 'USA';
-    data['nickname'] = `debtor-${new Date().getTime()}`;
+    data['nickname'] = `debtor-${req.params.id}`;
     console.log(data);
     const request: ClientRequest = {
       url: `/v3/verified_senders`,
@@ -542,6 +544,7 @@ class UserService {
   }
 
   async getVerifySenders(req: Request) {
+    const reqTemp: any = req;
     const request: ClientRequest = {
       url: `/v3/verified_senders`,
       method: 'GET',
@@ -550,10 +553,18 @@ class UserService {
     const result: any = await client.request(request);
     console.log(result[0].body.results, 'result[0].body.results');
     let emails = [];
-    if (result[0]?.body?.results?.length) {
-      emails = result[0].body.results
-        .filter(item => item.verified)
+    for (const item of result[0].body.results) {
+      if (item.verified) {
+        if (item.nickname.includes(req.params.id)) emails.push(item.from_email);
+        if (item.nickname.includes(reqTemp.id)) emails.push(item.from_email);
+      }
+    }
+    if (!emails.includes(reqTemp.email)) {
+      const email = result[0].body.results
+        .filter(item => item.from_email === reqTemp.email)
         .map(item => item.from_email);
+      console.log(email, 'uhuhuhu');
+      if (email.length) emails.push(...email);
     }
     return [true, emails];
   }
@@ -614,6 +625,28 @@ class UserService {
       updatedAt: commonUtil.getCurrentDate(),
     });
     return [true, {user, token: token}];
+  }
+
+  async addUserSender(req: Request) {
+    const reqTemp: any = req;
+    const data = {
+      from_email: req.body.from_email,
+      reply_to: req.body.from_email,
+      from_name: req.body.from_name,
+      address: req.body.address,
+      city: req.body.city,
+    };
+    data['country'] = 'USA';
+    data['nickname'] = `user-${reqTemp.id}`;
+    console.log(data);
+    const request: ClientRequest = {
+      url: `/v3/verified_senders`,
+      method: 'POST',
+      body: data,
+    };
+
+    const result = await client.request(request);
+    return [true, []];
   }
 }
 
