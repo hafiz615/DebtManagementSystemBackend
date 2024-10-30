@@ -59,34 +59,34 @@ class App {
     this.app.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
-    const credR = new CreditorRepository();
-    const allCred = await credR.getAllWithoutPagination<ICreditor>();
-    for (const creditor of allCred) {
-      // if (creditor?.paynoteUserId) continue;
-      // if (!creditor.basicInformation?.fullName) continue;
-      // const result = await paynoteUtil.createCustomer(creditor);
-      // console.log(result);
-      // if (result?.success)
-      //   await credR.updateById(creditor._id, {
-      //     paynoteUserId: result.user.user_id,
-      //   });
-      await credR.updateById(creditor._id, {
-        paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
-        paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
-      });
-    }
+    // const credR = new CreditorRepository();
+    // const allCred = await credR.getAllWithoutPagination<ICreditor>();
+    // for (const creditor of allCred) {
+    // if (creditor?.paynoteUserId) continue;
+    // if (!creditor.basicInformation?.fullName) continue;
+    // const result = await paynoteUtil.createCustomer(creditor);
+    // console.log(result);
+    // if (result?.success)
+    //   await credR.updateById(creditor._id, {
+    //     paynoteUserId: result.user.user_id,
+    //   });
+    //   await credR.updateById(creditor._id, {
+    //     paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
+    //     paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
+    //   });
+    // }
     // await bulkUploadCronjob.testBulkCron();
-    // const debtorRepo = new DebtorRepository();
     // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
     // for (const debtor of getAll) {
     //   await debtorRepo.updateById(debtor._id, {
     //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
     //   });
     // }
+    // const debtorRepo = new DebtorRepository();
     // const token = await moneyThumbUtil.authenticateUser();
     // const app = await moneyThumbUtil.createNewApp(
     //   token,
-    //   'Smoke Studio & Mart LLC'
+    //   'CHOI LOGISTICS, INC.'
     // );
     // await moneyThumbUtil.convertPdf(
     //   token,
@@ -94,7 +94,7 @@ class App {
     //   app['appid']
     // );
     // const debtor = await debtorRepo.getById<IDebtor>(
-    //   '67179c6b9f1cc6c8f4839b84'
+    //   '6717b9b1739c7b15330b0b63'
     // );
     // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
     // await moneyThumbUtil.saveData(app['appid'], card, debtor);
