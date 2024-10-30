@@ -152,7 +152,7 @@ class EmailUtil {
         }
     }
     async sendEmailSmsToDebtorCreditor(caseId, userId, body, type) {
-        let { from, sendTo, subject, content } = body;
+        let { from, sendTo, subject, content, cc } = body;
         const allValues = await this.getValues(content);
         if (allValues.length) {
             let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, '', userId);
@@ -166,7 +166,7 @@ class EmailUtil {
         const time = new Date(common_util_1.default.getCurrentDate());
         switch (type) {
             case 'email':
-                const result = await this.sendEmail(sendTo, from, subject, content, [], null, caseId);
+                const result = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
                         From: from,
