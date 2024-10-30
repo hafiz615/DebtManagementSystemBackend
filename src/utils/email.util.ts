@@ -206,7 +206,7 @@ class EmailUtil {
     body: any,
     type: string
   ) {
-    let {from, sendTo, subject, content} = body;
+    let {from, sendTo, subject, content, cc} = body;
 
     const allValues = await this.getValues(content);
     if (allValues.length) {
@@ -236,7 +236,7 @@ class EmailUtil {
           from,
           subject,
           content,
-          [],
+          cc,
           null,
           caseId
         );
