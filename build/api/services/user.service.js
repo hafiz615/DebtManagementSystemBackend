@@ -570,7 +570,7 @@ class UserService {
             city: req.body.city,
         };
         data['country'] = 'USA';
-        data['nickname'] = `user-${reqTemp.id}`;
+        data['nickname'] = `user-${reqTemp.id}-${new Date().getSeconds()}`;
         console.log(data);
         const request = {
             url: `/v3/verified_senders`,
