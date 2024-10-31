@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const case_repository_1 = require("../api/repository/case/case.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
@@ -103,12 +104,14 @@ class DebtorUtil {
         const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
         if (scoreCard['mcacompanies']) {
             const mcaCompanies = scoreCard['mcacompanies'];
-            const data = mcaCompanies.data;
-            for (let i = 0; i < data.length; i++) {
-                if (data[i].month === 'Totals') {
-                    lastLenderOccurrences[data[i].lender] = {
-                        withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
-                    };
+            if (mcaCompanies.data && mcaCompanies.data.length) {
+                const data = mcaCompanies.data;
+                for (let i = 0; i < data.length; i++) {
+                    if (data[i].month === 'Totals') {
+                        lastLenderOccurrences[data[i].lender] = {
+                            withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
+                        };
+                    }
                 }
             }
         }
@@ -258,6 +261,11 @@ class DebtorUtil {
         }
         const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, appid);
         return { scoreCard, appid };
+    }
+    async getCreditorsMapping(debtor) {
+        let creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
+        creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+        return creditors;
     }
 }
 exports.default = new DebtorUtil();

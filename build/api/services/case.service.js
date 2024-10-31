@@ -227,7 +227,7 @@ class CaseService {
                 case_util_1.default.getScoresForAllCreditors(caseUpdated, creditors, getDebtor.commissionPercentage);
                 case_util_1.default.getSettlementRange(findCase);
                 case_util_1.default.getLumpSumAmount(caseUpdated);
-                case_util_1.default.getFullProfitSettlement(caseUpdated);
+                // caseUtil.getFullProfitSettlement(caseUpdated);
             }
             return [true, caseUpdated];
         };
@@ -403,7 +403,7 @@ class CaseService {
                 data['creditorNames'] = creditorNames;
                 if (typeof creditorNames === 'string') {
                     data['getScores'] = null;
-                    data['settlementRange'] = null;
+                    data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                     return [true, data];
                 }
             }
@@ -418,7 +418,7 @@ class CaseService {
                     getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
                     if (typeof getScores === 'string') {
-                        data['settlementRange'] = null;
+                        data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                         return [true, data];
                     }
                     data['debtor'] = await this.debtorRepository.getById(debtor._id);
@@ -430,7 +430,7 @@ class CaseService {
                     getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, debtor.commissionPercentage);
                     data['getScores'] = getScores;
                     if (typeof getScores === 'string') {
-                        data['settlementRange'] = null;
+                        data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                         return [true, data];
                     }
                     data['debtor'] = await this.debtorRepository.getById(debtor._id);
@@ -440,7 +440,7 @@ class CaseService {
                 caseTemp.strategyOne_3 &&
                 result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
-                await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
+                // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
                 // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
                 //   creditors,
                 //   settlementRange
@@ -449,9 +449,13 @@ class CaseService {
             }
             else {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
-                await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
+                if (typeof settlementRange === 'string') {
+                    settlementRange = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
+                }
+                // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
                 // data['settlementRange'] = settlementRange;
             }
+            await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
             await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
             data['settlementRange'] = settlementRange;
             return [true, data];
