@@ -3,6 +3,7 @@ import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {Debtor} from '../database/repomodels/debtor.repomodel';
+import caseUtil from './case.util';
 import commonUtil from './common.util';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
@@ -157,12 +158,14 @@ class DebtorUtil {
     );
     if (scoreCard['mcacompanies']) {
       const mcaCompanies = scoreCard['mcacompanies'];
-      const data = mcaCompanies.data;
-      for (let i = 0; i < data.length; i++) {
-        if (data[i].month === 'Totals') {
-          lastLenderOccurrences[data[i].lender] = {
-            withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
-          };
+      if (mcaCompanies.data && mcaCompanies.data.length) {
+        const data = mcaCompanies.data;
+        for (let i = 0; i < data.length; i++) {
+          if (data[i].month === 'Totals') {
+            lastLenderOccurrences[data[i].lender] = {
+              withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
+            };
+          }
         }
       }
     }
@@ -317,6 +320,16 @@ class DebtorUtil {
     }
     const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
     return {scoreCard, appid};
+  }
+
+  async getCreditorsMapping(debtor: IDebtor) {
+    let creditors = await caseUtil.getAllCreditorsOfDebtor(debtor);
+    creditors = Array.from(
+      new Map(
+        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
+      ).values()
+    );
+    return creditors;
   }
 }
 export default new DebtorUtil();

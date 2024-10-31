@@ -147,7 +147,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Response Data', response.data['accountslist']);
+      // console.log('Response Data', response.data['accountslist']);
 
       return response.data;
     } catch (error) {
@@ -358,6 +358,64 @@ class MoneyThumbUtil {
     console.log(weekly, 'weekly');
 
     return Math.round(weekly * 100) / 100;
+  }
+
+  async getSettlementValues(
+    debtor: IDebtor,
+    creditors: any,
+    scoreCard: any,
+    caseId: string
+  ) {
+    const metricData = scoreCard['metrics']['metricdata'];
+    const weeklyProfitAndTrueRevenue =
+      await this.getweeklyProfitAndTrueRevenue(metricData);
+    const true_profit =
+      debtor.weeklyBudgetStrategy1 + weeklyProfitAndTrueRevenue.weeklyProfit;
+    const profitability =
+      (true_profit / weeklyProfitAndTrueRevenue.weeklyTrueRevenue) * 100;
+    const profitability_without_creditor_payments =
+      (weeklyProfitAndTrueRevenue.weeklyProfit /
+        weeklyProfitAndTrueRevenue.weeklyTrueRevenue) *
+      100;
+    const settlement_range = {},
+      weeks_till_paid = {},
+      option_2_stats = null;
+    for (const creditor of creditors) {
+      settlement_range[creditor.creditorAccountTitle] = {
+        'recommendation 1': {max: 0, min: 0},
+      };
+      weeks_till_paid[creditor.creditorAccountTitle] = {
+        'Weeks remaining based on recommendation 1': {max: 0, min: 0},
+      };
+    }
+    settlement_range['Summary'] = {
+      'recommendation 1': {max: 0, min: 0},
+    };
+    weeks_till_paid['Summary'] = {
+      'Weeks remaining based on recommendation 1': {max: 0, min: 0},
+    };
+    const settlementRange = {
+      profitability: parseFloat(profitability.toFixed(2)),
+      true_profit: parseFloat(true_profit.toFixed(2)),
+      profitability_without_creditor_payments: parseFloat(
+        profitability_without_creditor_payments.toFixed(2)
+      ),
+      weekly_true_revenue: parseFloat(
+        weeklyProfitAndTrueRevenue.weeklyTrueRevenue.toFixed(2)
+      ),
+      weekly_profit: parseFloat(
+        weeklyProfitAndTrueRevenue.weeklyProfit.toFixed(2)
+      ),
+      settlement_range,
+      weeks_till_paid,
+      option_2_stats,
+    };
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange,
+      caseId
+    );
+    return settlementRange;
   }
 }
 export default new MoneyThumbUtil();

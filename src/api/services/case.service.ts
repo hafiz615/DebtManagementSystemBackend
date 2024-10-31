@@ -349,7 +349,7 @@ class CaseService {
       );
       caseUtil.getSettlementRange(findCase);
       caseUtil.getLumpSumAmount(caseUpdated);
-      caseUtil.getFullProfitSettlement(caseUpdated);
+      // caseUtil.getFullProfitSettlement(caseUpdated);
     }
     return [true, caseUpdated];
   };
@@ -648,7 +648,12 @@ class CaseService {
       data['creditorNames'] = creditorNames;
       if (typeof creditorNames === 'string') {
         data['getScores'] = null;
-        data['settlementRange'] = null;
+        data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
         return [true, data];
       }
     }
@@ -668,7 +673,12 @@ class CaseService {
         );
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -692,7 +702,12 @@ class CaseService {
         );
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -706,7 +721,7 @@ class CaseService {
       result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
-      await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
       // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       //   creditors,
       //   settlementRange
@@ -714,9 +729,18 @@ class CaseService {
       // data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
-      await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+      if (typeof settlementRange === 'string') {
+        settlementRange = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
+      }
+      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
       // data['settlementRange'] = settlementRange;
     }
+    await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
       settlementRange,
