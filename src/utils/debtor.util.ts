@@ -322,7 +322,7 @@ class DebtorUtil {
     return {scoreCard, appid};
   }
 
-  async getCreditorsMapping(debtor: IDebtor) {
+  async getCreditorsMapping(debtor: any) {
     let creditors = await caseUtil.getAllCreditorsOfDebtor(debtor);
     creditors = Array.from(
       new Map(

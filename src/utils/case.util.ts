@@ -1897,10 +1897,30 @@ class CaseUtil {
         });
         return [false, response.data.error];
       }
+      const creditors = await debtorUtil.getCreditorsMapping({
+        _id: String(caseTemp.debtor),
+      } as any);
+      let lumpSum = response.data;
+      const lumpsum_settlement = lumpSum.lumpsum_settlement;
+      for (const creditor of creditors) {
+        const repaidDebt =
+          lumpsum_settlement[creditor.creditorAccountTitle].repaid_debt;
+        console.log(
+          this.getCleanAmount(creditor.contractDetails.funded_amount)
+        );
+        lumpsum_settlement[
+          creditor.creditorAccountTitle
+        ].remaining_principle_amount = parseFloat(
+          (
+            this.getCleanAmount(creditor.contractDetails.funded_amount) -
+            repaidDebt
+          ).toFixed(2)
+        );
+      }
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_two'},
         {
-          'data.lumpSumAmount': response.data,
+          'data.lumpSumAmount': lumpSum,
           updatedAt: commonUtil.getCurrentDate(),
         }
       );

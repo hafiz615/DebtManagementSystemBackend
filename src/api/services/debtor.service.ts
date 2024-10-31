@@ -889,13 +889,13 @@ class DebtorService {
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-    let creditors = null;
-    creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
-    creditors = Array.from(
-      new Map(
-        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
-      ).values()
-    );
+    // let creditors = null;
+    // creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    // creditors = Array.from(
+    //   new Map(
+    //     creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
+    //   ).values()
+    // );
     let lumpSum = {};
     if (caseTemp.strategyTwo) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -903,21 +903,20 @@ class DebtorService {
         name: 'strategy_two',
       });
       lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
-      console.log(lumpSum);
-      for (const creditor of creditors) {
-        console.log(
-          creditor.creditorAccountTitle,
-          'creditor.creditorAccountTitle'
-        );
-        const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
-        lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
-          parseFloat(
-            (
-              caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
-              repaidDebt
-            ).toFixed(2)
-          );
-      }
+      // for (const creditor of creditors) {
+      //   console.log(
+      //     creditor.creditorAccountTitle,
+      //     'creditor.creditorAccountTitle'
+      //   );
+      //   const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
+      //   lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
+      //     parseFloat(
+      //       (
+      //         caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
+      //         repaidDebt
+      //       ).toFixed(2)
+      //     );
+      // }
     }
     if (caseTemp.lumpSumJustifications) {
       const result = await this.strategyRepository.getOne<IStrategy>({

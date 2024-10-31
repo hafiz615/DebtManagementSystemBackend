@@ -531,10 +531,10 @@ class EmailUtil {
     buffer?: Buffer,
     caseId?: string
   ) {
-    const checkIfDebtor = await this.getVerifySender(from);
-    console.log(checkIfDebtor);
+    const bin = await this.getVerifySender(from);
+    console.log(bin);
     let headers = {};
-    if (caseId && checkIfDebtor) {
+    if (caseId && bin === 'debtor') {
       const caseTemp: any = await this.caseRepository.getById<ICase>(
         caseId,
         '_id',
@@ -551,6 +551,15 @@ class EmailUtil {
         subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
       if (caseTemp.debtor?.businessInformation?.EIN)
         subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+      headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+    }
+    if (caseId && bin === 'user') {
+      const user = await this.userRepository.getOne<IUser>(
+        {email: from},
+        '_id name',
+        undefined
+      );
+      subject += ` First Choice-DMS ${user.name}`;
       headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
     }
     console.log(subject, 'subject');
@@ -667,7 +676,10 @@ class EmailUtil {
       });
     }
     console.log(email, 'kjhkjhkjhkj');
-    return email[0]?.nickname.includes('debtor') ? true : false;
+    let bin = '';
+    if (email[0]?.nickname.includes('debtor')) bin = 'debtor';
+    if (!email[0]?.nickname.includes('debtor')) bin = 'user';
+    return bin;
   }
 
   async sendEmailIfDebtorGetsAdditionalDebt(
