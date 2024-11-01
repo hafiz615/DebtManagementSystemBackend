@@ -6,7 +6,7 @@ import setup from './api/routes/base.route';
 import paymentCronjob from './cron-job/payment.cronjob';
 import logMiddleware from './middleware/logs.middleware'; // Import the logging middleware
 import asyncLocalStorage from './utils/localStorage.util';
-import {EnvSetup} from './database/repomodels/setEnv';
+import {EnvSetup} from './utils/setEnv';
 import emailUtil from './utils/email.util';
 import googleDriveUtil from './utils/googleDrive.util';
 import bulkUploadCronjob from './cron-job/bulkUpload.cronjob';
