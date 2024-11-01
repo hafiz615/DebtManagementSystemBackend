@@ -4,7 +4,7 @@ import {IUser} from '../database/interfaces/user.interface';
 import commonUtil from './common.util';
 import constantsUtil from './constants.util';
 import {Request} from 'express';
-import {EnvSetup} from '../database/repomodels/setEnv';
+import {EnvSetup} from './setEnv';
 
 class UserUtil {
   private userRepository: UserRepository;

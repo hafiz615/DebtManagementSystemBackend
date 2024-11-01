@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import {SettingsRepository} from '../api/repository/setting/settings.repository';
 import {Settings} from '../database/repomodels/settings.repomodel';
 import {ISettings} from '../database/interfaces/settings.interface';
-import {EnvSetup} from '../database/repomodels/setEnv';
+import {EnvSetup} from '../utils/setEnv';
 
 export class Database {
   protected dbUri: string;

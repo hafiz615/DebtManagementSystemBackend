@@ -7,7 +7,7 @@ exports.Database = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const settings_repository_1 = require("../api/repository/setting/settings.repository");
 const settings_repomodel_1 = require("../database/repomodels/settings.repomodel");
-const setEnv_1 = require("../database/repomodels/setEnv");
+const setEnv_1 = require("../utils/setEnv");
 class Database {
     constructor() {
         this.dbUri = setEnv_1.EnvSetup.dbURI;
