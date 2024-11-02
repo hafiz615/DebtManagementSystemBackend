@@ -58,6 +58,8 @@ class Debtor {
         this.moneyThumbAppId = 0;
         this.appid = 0;
         this.totalStatements = 0;
+        this.percentageChange = false;
+        this.percentageChangeDate = '';
         this.userId = '';
         this.platform = false;
         this.trueProfit = 0;

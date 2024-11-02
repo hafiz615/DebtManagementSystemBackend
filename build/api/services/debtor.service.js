@@ -200,20 +200,20 @@ class DebtorService {
             };
             const caseHistory = [];
             const debtorObj = {
-                SSN: debtor.basicInformation.SSID ? debtor.basicInformation.SSID : '',
-                fullName: debtor.basicInformation.fullName
+                SSN: debtor?.basicInformation?.SSID ? debtor.basicInformation.SSID : '',
+                fullName: debtor?.basicInformation?.fullName
                     ? debtor.basicInformation.fullName
                     : '',
-                companyName: debtor.businessInformation.companyName
+                companyName: debtor?.businessInformation?.companyName
                     ? debtor.businessInformation.companyName
                     : '',
-                email: debtor.basicInformation.email
+                email: debtor?.basicInformation?.email
                     ? debtor.basicInformation.email
                     : '',
-                status: debtor.basicInformation.status
+                status: debtor?.basicInformation?.status
                     ? debtor.basicInformation.status
                     : '',
-                address: debtor.basicInformation.address
+                address: debtor?.basicInformation?.address
                     ? debtor.basicInformation.address
                     : '',
                 outstandingDebt: 0,
@@ -233,11 +233,20 @@ class DebtorService {
         const debtor = findCase.debtor;
         const token = await moneyThumb_util_1.default.authenticateUser();
         const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
-        if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
-            await this.debtorRepository.updateById(debtor._id, {
-                totalStatements: moneyThumbApp['totalStatements'],
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
+        console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
+        console.log(moneyThumbApp['totalstatements'], 'moneyThumbApp[totalStatements]');
+        const filterDebtor = {};
+        if (!debtor?.totalStatements && moneyThumbApp['totalstatements']) {
+            filterDebtor['totalStatements'] = moneyThumbApp['totalstatements'];
+        }
+        const curr = new Date(common_util_1.default.getCurrentDate());
+        curr.setUTCHours(0, 0, 0, 0);
+        if (curr.setDate(1) > new Date(debtor.percentageChangeDate).getSeconds()) {
+            filterDebtor['percentageChange'] = false;
+        }
+        if (Object.keys(filterDebtor).length) {
+            filterDebtor['updatedAt'] = common_util_1.default.getCurrentDate();
+            await this.debtorRepository.updateById(debtor._id, filterDebtor);
         }
         let page = 1;
         let limit = 5;
@@ -718,7 +727,7 @@ class DebtorService {
         });
         await moneyThumb_util_1.default.run(updatedDebtor, updatedDebtor.businessInformation.companyName);
         const statements = caseTemp.debtor?.totalStatements;
-        if (caseTemp.intervals) {
+        if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
             debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
         }
         // for (let doc of findCase.documents) {

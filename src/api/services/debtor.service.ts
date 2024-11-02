@@ -127,20 +127,20 @@ class DebtorService {
       };
       const caseHistory = [];
       const debtorObj = {
-        SSN: debtor.basicInformation.SSID ? debtor.basicInformation.SSID : '',
-        fullName: debtor.basicInformation.fullName
+        SSN: debtor?.basicInformation?.SSID ? debtor.basicInformation.SSID : '',
+        fullName: debtor?.basicInformation?.fullName
           ? debtor.basicInformation.fullName
           : '',
-        companyName: debtor.businessInformation.companyName
+        companyName: debtor?.businessInformation?.companyName
           ? debtor.businessInformation.companyName
           : '',
-        email: debtor.basicInformation.email
+        email: debtor?.basicInformation?.email
           ? debtor.basicInformation.email
           : '',
-        status: debtor.basicInformation.status
+        status: debtor?.basicInformation?.status
           ? debtor.basicInformation.status
           : '',
-        address: debtor.basicInformation.address
+        address: debtor?.basicInformation?.address
           ? debtor.basicInformation.address
           : '',
         outstandingDebt: 0,
@@ -163,11 +163,23 @@ class DebtorService {
       token,
       debtor.businessInformation.companyName
     );
-    if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
-      await this.debtorRepository.updateById(debtor._id, {
-        totalStatements: moneyThumbApp['totalStatements'],
-        updatedAt: commonUtil.getCurrentDate(),
-      });
+    console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
+    console.log(
+      moneyThumbApp['totalstatements'],
+      'moneyThumbApp[totalStatements]'
+    );
+    const filterDebtor = {};
+    if (!debtor?.totalStatements && moneyThumbApp['totalstatements']) {
+      filterDebtor['totalStatements'] = moneyThumbApp['totalstatements'];
+    }
+    const curr = new Date(commonUtil.getCurrentDate());
+    curr.setUTCHours(0, 0, 0, 0);
+    if (curr.setDate(1) > new Date(debtor.percentageChangeDate).getSeconds()) {
+      filterDebtor['percentageChange'] = false;
+    }
+    if (Object.keys(filterDebtor).length) {
+      filterDebtor['updatedAt'] = commonUtil.getCurrentDate();
+      await this.debtorRepository.updateById(debtor._id, filterDebtor);
     }
     let page = 1;
     let limit = 5;
@@ -780,7 +792,7 @@ class DebtorService {
       updatedDebtor.businessInformation.companyName
     );
     const statements = caseTemp.debtor?.totalStatements;
-    if (caseTemp.intervals) {
+    if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
       debtorUtil.percentageChangeEmail(
         updatedDebtor.businessInformation.companyName,
         String(updatedDebtor._id),

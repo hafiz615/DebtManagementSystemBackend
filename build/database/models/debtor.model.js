@@ -196,6 +196,8 @@ const debtorSchema = new mongoose_1.Schema({
     totalStatements: {
         type: Number,
     },
+    percentageChange: Boolean,
+    percentageChangeDate: Date,
     userId: {
         type: String,
     },

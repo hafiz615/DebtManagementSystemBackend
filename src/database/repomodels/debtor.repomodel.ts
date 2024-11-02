@@ -62,6 +62,8 @@ export class Debtor {
   moneyThumbAppId = 0;
   appid = 0;
   totalStatements = 0;
+  percentageChange = false;
+  percentageChangeDate = '';
   userId = '';
   platform = false;
   trueProfit = 0;

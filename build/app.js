@@ -70,7 +70,7 @@ class App {
         // const token = await moneyThumbUtil.authenticateUser();
         // const app = await moneyThumbUtil.createNewApp(
         //   token,
-        //   'CHOI LOGISTICS, INC.'
+        //   'Smoke Studio & Mart LLC'
         // );
         // await moneyThumbUtil.convertPdf(
         //   token,
@@ -119,6 +119,11 @@ class App {
         //     lumpSumJustifications: false,
         //   });
         // }
+        // const date = new Date(commonUtil.getCurrentDate());
+        // console.log(new Date(date.getUTCFullYear(), date.getUTCMonth(), 1));
+        // console.log('3211596048 - Oct 31, 2023'.split('-')[1].trim());
+        // date.setUTCHours(0, 0, 0, 0);
+        // console.log(date);
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
         payment_cronjob_1.default.startCronJob();

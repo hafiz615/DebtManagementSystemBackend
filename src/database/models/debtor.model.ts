@@ -173,6 +173,8 @@ const debtorSchema: Schema = new Schema({
   totalStatements: {
     type: Number,
   },
+  percentageChange: Boolean,
+  percentageChangeDate: Date,
   userId: {
     type: String,
   },

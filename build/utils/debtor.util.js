@@ -62,23 +62,37 @@ class DebtorUtil {
             const accounts = scoreCard['accountslist'];
             if (accounts.data.length > 1) {
                 const len = accounts.data.length;
-                const percentageChange = await common_util_1.default.calculatePercentageChange(parseFloat(accounts.data[len - 2]['true_credits']), parseFloat(accounts.data[len - 1]['true_credits']));
-                let incDec = '', posNeg = '';
-                if (percentageChange > 1) {
-                    incDec = 'Increase';
-                    posNeg = 'positive';
+                const previous = new Date(`${totalStatements - 1}`.split('-')[1]);
+                const latest = new Date(`${len - 1}`.split('-')[1]);
+                const convertedPrevious = new Date(Date.UTC(previous.getUTCFullYear(), previous.getUTCMonth(), 1));
+                const convertedLatest = new Date(Date.UTC(latest.getUTCFullYear(), latest.getUTCMonth(), 1));
+                const curr = new Date(common_util_1.default.getCurrentDate());
+                curr.setUTCHours(0, 0, 0, 0);
+                if (convertedLatest.getSeconds() > convertedPrevious.getSeconds() &&
+                    convertedLatest.getSeconds() < curr.getSeconds()) {
+                    await this.debtorRepository.updateById(debtorId, {
+                        totalStatements: len,
+                        percentageChange: true,
+                        percentageChangeDate: curr.setDate(1),
+                    });
+                    const percentageChange = await common_util_1.default.calculatePercentageChange(parseFloat(accounts.data[len - 2]['true_credits']), parseFloat(accounts.data[len - 1]['true_credits']));
+                    let incDec = '', posNeg = '';
+                    if (percentageChange > 1) {
+                        incDec = 'Increase';
+                        posNeg = 'positive';
+                    }
+                    if (percentageChange > -1) {
+                        incDec = 'Decrease';
+                        posNeg = 'negative';
+                    }
+                    const previousMonth = accounts.data[len - 2]['statement_month'];
+                    const previousYear = accounts.data[len - 2]['statement_year'];
+                    const currentMonth = accounts.data[len - 1]['statement_month'];
+                    const currentYear = accounts.data[len - 1]['statement_year'];
+                    const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
+                    console.log(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
+                    email_util_1.default.percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
                 }
-                if (percentageChange > -1) {
-                    incDec = 'Decrease';
-                    posNeg = 'negative';
-                }
-                const previousMonth = accounts.data[len - 2]['statement_month'];
-                const previousYear = accounts.data[len - 2]['statement_year'];
-                const currentMonth = accounts.data[len - 1]['statement_month'];
-                const currentYear = accounts.data[len - 1]['statement_year'];
-                const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
-                console.log(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
-                email_util_1.default.percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
             }
         }
     }

@@ -147,7 +147,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      // console.log('Response Data', response.data['accountslist']);
+      console.log('Response Data', response.data['accountslist'].data.length);
 
       return response.data;
     } catch (error) {
