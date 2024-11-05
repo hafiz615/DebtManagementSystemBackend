@@ -249,8 +249,11 @@ class CaseUtil {
 
   async getAllCreditorsOfDebtor(debtor: IDebtor) {
     const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
-    const tempCases: any = cases;
-    return tempCases.map(obj => ({
+    return await this.getAllCreditorsMapping(cases);
+  }
+
+  async getAllCreditorsMapping(cases: any) {
+    return cases.map(obj => ({
       totalDebt: obj.totalDebt,
       caseCode: obj.caseCode,
       remaining: obj.remaining,
@@ -269,6 +272,24 @@ class CaseUtil {
         ? obj.remainingAmountPaid
         : 0,
     }));
+  }
+
+  async getAllCreditorsByCaseIds(caseIds: string[]) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {_id: caseIds, isDeleted: false},
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid',
+      undefined,
+      {_id: -1},
+      {
+        path: 'creditor',
+        select: [
+          'basicInformation.fullName',
+          'accountTitle',
+          'accountTitleMapping',
+        ],
+      }
+    );
+    return await this.getAllCreditorsMapping(cases);
   }
 
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
@@ -2567,13 +2588,13 @@ class CaseUtil {
             caseCreated._id
           );
         }
-        if (getCreditorsEmail.length && createdCases.length) {
-          emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
-            createdCases,
-            debtor,
-            getCreditorsEmail
-          );
-        }
+        // if (getCreditorsEmail.length && createdCases.length) {
+        //   emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
+        //     createdCases,
+        //     debtor,
+        //     getCreditorsEmail
+        //   );
+        // }
         if (caseCreated?.intervals && caseCreated?.intervals?.length) {
           await this.createPayment(caseCreated);
         }

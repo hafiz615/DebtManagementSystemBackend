@@ -81,7 +81,7 @@ class DebtorUtil {
                         incDec = 'Increase';
                         posNeg = 'positive';
                     }
-                    if (percentageChange > -1) {
+                    if (percentageChange < -1) {
                         incDec = 'Decrease';
                         posNeg = 'negative';
                     }

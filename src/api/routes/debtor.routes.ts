@@ -120,7 +120,7 @@ router.post(
   debtorController.getMcaAndFinancials
 );
 
-router.get(
+router.post(
   '/analyzeAndGetSettlementRanges',
   authorize.validateAuth,
   debtorController.analyzeAndGetSettlementRanges
