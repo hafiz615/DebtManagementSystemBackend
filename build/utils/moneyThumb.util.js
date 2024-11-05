@@ -187,10 +187,17 @@ class MoneyThumbUtil {
                     filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
                     trueProfitPer = trueProfit * 0.67;
                     filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
+                    if (!debtor.weeklyBudgetStrategy1) {
+                        filter['weeklyBudgetStrategy1'] =
+                            Math.round(trueProfitPer * 100) / 100;
+                    }
                 }
                 else {
                     filter['trueProfit'] = 0;
                     filter['strategy1MaxProfit'] = 0;
+                    if (debtor.weeklyBudgetStrategy1 <= 0) {
+                        filter['weeklyBudgetStrategy1'] = 0;
+                    }
                 }
             }
             filter['strategy3MaxProfit'] = 0;
@@ -212,6 +219,8 @@ class MoneyThumbUtil {
             }
             else {
                 filter['strategy3MaxProfit'] = 0;
+                if (debtor.weeklyBudgetStrategy3 <= 0)
+                    filter['weeklyBudgetStrategy3'] = 0;
             }
             console.log(filter);
             await this.debtorRepository.updateById(debtor._id, filter);

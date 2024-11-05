@@ -161,7 +161,9 @@ class DebtorService {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      debtor.businessInformation.companyName
+      await debtorUtil.normalizeCompanyName(
+        debtor.businessInformation.companyName
+      )
     );
     console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
     console.log(
@@ -745,7 +747,7 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    // moneyThumbUtil.run(debtor, debtor.businessInformation.companyName);
+    moneyThumbUtil.run(debtor, debtor.businessInformation.companyName);
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
       body.extractedFields
@@ -797,7 +799,8 @@ class DebtorService {
         updatedDebtor.businessInformation.companyName,
         String(updatedDebtor._id),
         statements ? statements : 0,
-        caseTemp.debtor?.basicInformation?.fullName
+        caseTemp.debtor?.basicInformation?.fullName,
+        req.params.id
       );
     }
 
@@ -1177,62 +1180,62 @@ class DebtorService {
     const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
     let finalObj = {};
     const finalArray = [];
-    if (createDebtor[0]) {
-      await this.debtorRepository.updateById<IDebtor>(
-        String(createDebtor[1]['debtor']._id),
-        {userId: reqTemp.id}
-      );
-      console.log(
-        createDebtor[1]['creditorNames'],
-        'createDebtor[1][creditorNames]'
-      );
-      const caseTemp = await googleDriveUtil.mapCreditorsCases(
-        extractedFields.extracted_fields,
-        createDebtor[1]['creditorNames']
-      );
-      for (const iterator of caseTemp) {
-        console.log(iterator, 'okokokok');
-      }
-      for (const bin of caseTemp) {
-        bin['platform'] = true;
-        bin.creditor.platform = true;
-      }
-      const copyCaseTemp = cloneDeep(caseTemp);
-      const result = await caseUtil.createCreditorsCases(
-        {data: caseTemp},
-        reqTemp.name,
-        reqTemp.id,
-        String(createDebtor[1]['debtor']._id)
-      );
-      if (result[0]) {
-        for (let i = 0; i < copyCaseTemp.length; i++) {
-          finalObj['creditorName'] =
-            copyCaseTemp[i].creditor?.businessInformation?.companyName;
-          finalObj['paybackAmount'] = result[1][i].totalDebt;
-          finalObj['balance'] = result[1][i].remaining;
-          finalObj['apr'] = await commonUtil.getValuePercenatge(
-            result[1][i].contractDetails.purchased_percentage
+    if (!createDebtor[0]) return [false, constants.failureAddMessage('debtor')];
+    await this.debtorRepository.updateById<IDebtor>(
+      String(createDebtor[1]['debtor']._id),
+      {userId: reqTemp.id}
+    );
+    console.log(
+      createDebtor[1]['creditorNames'],
+      'createDebtor[1][creditorNames]'
+    );
+    const caseTemp = await googleDriveUtil.mapCreditorsCases(
+      extractedFields.extracted_fields,
+      createDebtor[1]['creditorNames']
+    );
+    for (const iterator of caseTemp) {
+      console.log(iterator, 'okokokok');
+    }
+    for (const bin of caseTemp) {
+      bin['platform'] = true;
+      bin.creditor.platform = true;
+    }
+    const copyCaseTemp = cloneDeep(caseTemp);
+    const result = await caseUtil.createCreditorsCases(
+      {data: caseTemp},
+      reqTemp.name,
+      reqTemp.id,
+      String(createDebtor[1]['debtor']._id)
+    );
+    if (result[0]) {
+      for (let i = 0; i < copyCaseTemp.length; i++) {
+        finalObj['creditorName'] =
+          copyCaseTemp[i].creditor?.businessInformation?.companyName;
+        finalObj['paybackAmount'] = result[1][i].totalDebt;
+        finalObj['balance'] = result[1][i].remaining;
+        finalObj['apr'] = await commonUtil.getValuePercenatge(
+          result[1][i].contractDetails.purchased_percentage
+        );
+        finalObj['currentPayment'] =
+          await commonUtil.removeDashesAndRoundBrackets(
+            result[1][i].contractDetails.repayment_amount
           );
-          finalObj['currentPayment'] =
-            await commonUtil.removeDashesAndRoundBrackets(
-              result[1][i].contractDetails.repayment_amount
-            );
-          finalObj['caseId'] = String(result[1][i]._id);
-          finalArray.push(finalObj);
-          finalObj = {};
-        }
+        finalObj['caseId'] = String(result[1][i]._id);
+        finalArray.push(finalObj);
+        finalObj = {};
       }
     }
     if (!finalArray.length) return [false, 'Could not create cases'];
-    return [true, finalArray];
+    return [
+      true,
+      {creditors: finalArray, debtorId: createDebtor[1]['debtor']._id},
+    ];
   }
 
   async analyzeAndGetSettlementRanges(req: Request) {
-    const reqTemp: any = req;
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      userId: reqTemp.id,
-    });
-    console.log(getDebtor);
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
     if (!getDebtor) {
       return [false, constants.notFoundMessage('debtor')];
     }

@@ -64,12 +64,13 @@ class DebtorUtil {
     debtorCompanyName: string,
     debtorId: string,
     totalStatements: number,
-    debtorName: string
+    debtorName: string,
+    caseId: string
   ) {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      debtorCompanyName
+      await this.normalizeCompanyName(debtorCompanyName)
     );
     if (moneyThumbApp['totalstatements'] > totalStatements) {
       const scoreCard = await moneyThumbUtil.getScoreCard(
@@ -143,7 +144,8 @@ class DebtorUtil {
             debtorName,
             accounts.data[len - 2]['true_credits'],
             accounts.data[len - 1]['true_credits'],
-            percentageChange
+            percentageChange,
+            caseId
           );
         }
       }
@@ -166,17 +168,19 @@ class DebtorUtil {
     });
   }
 
-  async getPaidAmountOfCreditors(debtorCompanyName: string) {
+  async getPaidAmountOfCreditors(debtor: IDebtor) {
     const lastLenderOccurrences = {};
-    const token = await moneyThumbUtil.authenticateUser();
-    const moneyThumbApp = await moneyThumbUtil.createNewApp(
-      token,
-      debtorCompanyName
-    );
-    const scoreCard = await moneyThumbUtil.getScoreCard(
-      token,
-      moneyThumbApp['appid']
-    );
+    // const token = await moneyThumbUtil.authenticateUser();
+    // const moneyThumbApp = await moneyThumbUtil.createNewApp(
+    //   token,
+    //   debtorCompanyName
+    // );
+    // const scoreCard = await moneyThumbUtil.getScoreCard(
+    //   token,
+    //   moneyThumbApp['appid']
+    // );
+    const moneyThumb = await this.getScoreCard(debtor);
+    const scoreCard = moneyThumb.scoreCard;
     if (scoreCard['mcacompanies']) {
       const mcaCompanies = scoreCard['mcacompanies'];
       if (mcaCompanies.data && mcaCompanies.data.length) {
@@ -274,26 +278,25 @@ class DebtorUtil {
   }
 
   async getYearlySales(accounts: any) {
-    const yearlyResults = {
-      January: 0,
-      February: 0,
-      March: 0,
-      April: 0,
-      May: 0,
-      June: 0,
-      July: 0,
-      August: 0,
-      September: 0,
-      October: 0,
-      November: 0,
-      December: 0,
-    };
+    const yearlyResults = {};
+    const result = [];
     for (const account of accounts) {
-      yearlyResults[account.statement_month] =
-        yearlyResults[account.statement_month] +
+      if (
+        !yearlyResults[account.statement_month + ' ' + account.statement_year]
+      ) {
+        yearlyResults[account.statement_month + ' ' + account.statement_year] =
+          parseFloat(account.true_credits);
+        continue;
+      }
+      yearlyResults[account.statement_month + ' ' + account.statement_year] +=
         parseFloat(account.true_credits);
     }
-    return Object.values(yearlyResults);
+    for (const [key, value] of Object.entries(yearlyResults)) {
+      const obj = {};
+      obj[key] = value;
+      result.push(obj);
+    }
+    return result;
   }
 
   async getYearlyProfitMargin(scoreCard: any) {
@@ -335,7 +338,7 @@ class DebtorUtil {
     if (!debtor.appid) {
       const moneyThumbApp = await moneyThumbUtil.createNewApp(
         token,
-        debtor.businessInformation.companyName
+        await this.normalizeCompanyName(debtor.businessInformation.companyName)
       );
       appid = moneyThumbApp['appid'];
     }
@@ -351,6 +354,11 @@ class DebtorUtil {
       ).values()
     );
     return creditors;
+  }
+
+  async normalizeCompanyName(name: string) {
+    const words = name.split(' ');
+    return words.slice(0, 2).join(' ').toLowerCase().replace(/,$/, '');
   }
 }
 export default new DebtorUtil();

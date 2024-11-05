@@ -121,7 +121,7 @@ router.post(
 );
 
 router.post(
-  '/analyzeAndGetSettlementRanges',
+  '/analyzeAndGetSettlementRanges/:id',
   authorize.validateAuth,
   debtorController.analyzeAndGetSettlementRanges
 );

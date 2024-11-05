@@ -54,9 +54,9 @@ class DebtorUtil {
         });
         return await this.debtorRepository.updateById(String(caseTemp.debtor._id), filter);
     }
-    async percentageChangeEmail(debtorCompanyName, debtorId, totalStatements, debtorName) {
+    async percentageChangeEmail(debtorCompanyName, debtorId, totalStatements, debtorName, caseId) {
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorCompanyName);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await this.normalizeCompanyName(debtorCompanyName));
         if (moneyThumbApp['totalstatements'] > totalStatements) {
             const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
             const accounts = scoreCard['accountslist'];
@@ -91,7 +91,7 @@ class DebtorUtil {
                     const currentYear = accounts.data[len - 1]['statement_year'];
                     const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
                     console.log(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
-                    email_util_1.default.percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
+                    email_util_1.default.percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange, caseId);
                 }
             }
         }
@@ -111,11 +111,19 @@ class DebtorUtil {
             totalCommission: Math.round(amount * 100) / 100,
         });
     }
-    async getPaidAmountOfCreditors(debtorCompanyName) {
+    async getPaidAmountOfCreditors(debtor) {
         const lastLenderOccurrences = {};
-        const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorCompanyName);
-        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
+        // const token = await moneyThumbUtil.authenticateUser();
+        // const moneyThumbApp = await moneyThumbUtil.createNewApp(
+        //   token,
+        //   debtorCompanyName
+        // );
+        // const scoreCard = await moneyThumbUtil.getScoreCard(
+        //   token,
+        //   moneyThumbApp['appid']
+        // );
+        const moneyThumb = await this.getScoreCard(debtor);
+        const scoreCard = moneyThumb.scoreCard;
         if (scoreCard['mcacompanies']) {
             const mcaCompanies = scoreCard['mcacompanies'];
             if (mcaCompanies.data && mcaCompanies.data.length) {
@@ -213,26 +221,23 @@ class DebtorUtil {
         return { basicInformation, businessInformation, platform: true };
     }
     async getYearlySales(accounts) {
-        const yearlyResults = {
-            January: 0,
-            February: 0,
-            March: 0,
-            April: 0,
-            May: 0,
-            June: 0,
-            July: 0,
-            August: 0,
-            September: 0,
-            October: 0,
-            November: 0,
-            December: 0,
-        };
+        const yearlyResults = {};
+        const result = [];
         for (const account of accounts) {
-            yearlyResults[account.statement_month] =
-                yearlyResults[account.statement_month] +
+            if (!yearlyResults[account.statement_month + ' ' + account.statement_year]) {
+                yearlyResults[account.statement_month + ' ' + account.statement_year] =
                     parseFloat(account.true_credits);
+                continue;
+            }
+            yearlyResults[account.statement_month + ' ' + account.statement_year] +=
+                parseFloat(account.true_credits);
         }
-        return Object.values(yearlyResults);
+        for (const [key, value] of Object.entries(yearlyResults)) {
+            const obj = {};
+            obj[key] = value;
+            result.push(obj);
+        }
+        return result;
     }
     async getYearlyProfitMargin(scoreCard) {
         const mcaCompanies = scoreCard['mcacompanies']['data'];
@@ -270,7 +275,7 @@ class DebtorUtil {
         if (debtor.appid)
             appid = debtor.appid;
         if (!debtor.appid) {
-            const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
+            const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await this.normalizeCompanyName(debtor.businessInformation.companyName));
             appid = moneyThumbApp['appid'];
         }
         const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, appid);
@@ -280,6 +285,10 @@ class DebtorUtil {
         let creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
         creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
         return creditors;
+    }
+    async normalizeCompanyName(name) {
+        const words = name.split(' ');
+        return words.slice(0, 2).join(' ').toLowerCase().replace(/,$/, '');
     }
 }
 exports.default = new DebtorUtil();
