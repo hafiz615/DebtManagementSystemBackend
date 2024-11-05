@@ -222,7 +222,7 @@ class DebtorService {
         }
         const debtor = findCase.debtor;
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
         if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
             await this.debtorRepository.updateById(debtor._id, {
                 totalStatements: moneyThumbApp['totalStatements'],
@@ -982,7 +982,7 @@ class DebtorService {
         const allCreditorsResult = [];
         const creditors = [];
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, getDebtor.businessInformation.companyName);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await debtor_util_1.default.normalizeCompanyName(getDebtor.businessInformation.companyName));
         const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
         const metricData = scoreCard['metrics']['metricdata'];
         if (metricData?.length) {

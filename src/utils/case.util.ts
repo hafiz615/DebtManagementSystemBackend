@@ -2442,9 +2442,8 @@ class CaseUtil {
     if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
     const getCreditorsEmail: any =
       await creditorUtil.getCreditorsEmailForDebtor(debtorId);
-    const creditorsPaidAmount = await debtorUtil.getPaidAmountOfCreditors(
-      debtor.businessInformation.companyName
-    );
+    const creditorsPaidAmount =
+      await debtorUtil.getPaidAmountOfCreditors(debtor);
     for (const body of dataArray) {
       console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =

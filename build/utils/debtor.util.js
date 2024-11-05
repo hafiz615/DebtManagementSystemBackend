@@ -55,7 +55,7 @@ class DebtorUtil {
     }
     async percentageChangeEmail(debtorCompanyName, debtorId, totalStatements, debtorName) {
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorCompanyName);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await this.normalizeCompanyName(debtorCompanyName));
         if (moneyThumbApp['totalstatements'] > totalStatements) {
             const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
             const accounts = scoreCard['accountslist'];
@@ -96,11 +96,19 @@ class DebtorUtil {
             totalCommission: Math.round(amount * 100) / 100,
         });
     }
-    async getPaidAmountOfCreditors(debtorCompanyName) {
+    async getPaidAmountOfCreditors(debtor) {
         const lastLenderOccurrences = {};
-        const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtorCompanyName);
-        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
+        // const token = await moneyThumbUtil.authenticateUser();
+        // const moneyThumbApp = await moneyThumbUtil.createNewApp(
+        //   token,
+        //   debtorCompanyName
+        // );
+        // const scoreCard = await moneyThumbUtil.getScoreCard(
+        //   token,
+        //   moneyThumbApp['appid']
+        // );
+        const moneyThumb = await this.getScoreCard(debtor);
+        const scoreCard = moneyThumb.scoreCard;
         if (scoreCard['mcacompanies']) {
             const mcaCompanies = scoreCard['mcacompanies'];
             const data = mcaCompanies.data;
@@ -253,11 +261,15 @@ class DebtorUtil {
         if (debtor.appid)
             appid = debtor.appid;
         if (!debtor.appid) {
-            const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
+            const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await this.normalizeCompanyName(debtor.businessInformation.companyName));
             appid = moneyThumbApp['appid'];
         }
         const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, appid);
         return { scoreCard, appid };
+    }
+    async normalizeCompanyName(name) {
+        const words = name.split(' ');
+        return words.slice(0, 2).join(' ').toLowerCase().replace(/,$/, '');
     }
 }
 exports.default = new DebtorUtil();

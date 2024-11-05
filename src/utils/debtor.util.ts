@@ -68,7 +68,7 @@ class DebtorUtil {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      debtorCompanyName
+      await this.normalizeCompanyName(debtorCompanyName)
     );
     if (moneyThumbApp['totalstatements'] > totalStatements) {
       const scoreCard = await moneyThumbUtil.getScoreCard(
@@ -144,17 +144,19 @@ class DebtorUtil {
     });
   }
 
-  async getPaidAmountOfCreditors(debtorCompanyName: string) {
+  async getPaidAmountOfCreditors(debtor: IDebtor) {
     const lastLenderOccurrences = {};
-    const token = await moneyThumbUtil.authenticateUser();
-    const moneyThumbApp = await moneyThumbUtil.createNewApp(
-      token,
-      debtorCompanyName
-    );
-    const scoreCard = await moneyThumbUtil.getScoreCard(
-      token,
-      moneyThumbApp['appid']
-    );
+    // const token = await moneyThumbUtil.authenticateUser();
+    // const moneyThumbApp = await moneyThumbUtil.createNewApp(
+    //   token,
+    //   debtorCompanyName
+    // );
+    // const scoreCard = await moneyThumbUtil.getScoreCard(
+    //   token,
+    //   moneyThumbApp['appid']
+    // );
+    const moneyThumb = await this.getScoreCard(debtor);
+    const scoreCard = moneyThumb.scoreCard;
     if (scoreCard['mcacompanies']) {
       const mcaCompanies = scoreCard['mcacompanies'];
       const data = mcaCompanies.data;
@@ -311,12 +313,16 @@ class DebtorUtil {
     if (!debtor.appid) {
       const moneyThumbApp = await moneyThumbUtil.createNewApp(
         token,
-        debtor.businessInformation.companyName
+        await this.normalizeCompanyName(debtor.businessInformation.companyName)
       );
       appid = moneyThumbApp['appid'];
     }
     const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
     return {scoreCard, appid};
+  }
+  async normalizeCompanyName(name: string) {
+    const words = name.split(' ');
+    return words.slice(0, 2).join(' ').toLowerCase().replace(/,$/, '');
   }
 }
 export default new DebtorUtil();

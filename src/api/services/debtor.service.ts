@@ -161,7 +161,9 @@ class DebtorService {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      debtor.businessInformation.companyName
+      await debtorUtil.normalizeCompanyName(
+        debtor.businessInformation.companyName
+      )
     );
     if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
       await this.debtorRepository.updateById(debtor._id, {
@@ -1235,7 +1237,9 @@ class DebtorService {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      getDebtor.businessInformation.companyName
+      await debtorUtil.normalizeCompanyName(
+        getDebtor.businessInformation.companyName
+      )
     );
     const scoreCard = await moneyThumbUtil.getScoreCard(
       token,
