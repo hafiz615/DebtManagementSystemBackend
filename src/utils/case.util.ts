@@ -271,13 +271,14 @@ class CaseUtil {
       remainingAmountPaid: obj.remainingAmountPaid
         ? obj.remainingAmountPaid
         : 0,
+      previousAmountPaid: obj.paidAmount,
     }));
   }
 
   async getAllCreditorsByCaseIds(caseIds: string[]) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {_id: caseIds, isDeleted: false},
-      'totalDebt caseCode status remaining contractDetails remainingAmountPaid',
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount',
       undefined,
       {_id: -1},
       {
@@ -295,7 +296,7 @@ class CaseUtil {
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtorId, isDeleted: false},
-      'totalDebt caseCode status remaining contractDetails remainingAmountPaid',
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount',
       undefined,
       {_id: -1},
       {

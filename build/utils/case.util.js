@@ -208,10 +208,11 @@ class CaseUtil {
             remainingAmountPaid: obj.remainingAmountPaid
                 ? obj.remainingAmountPaid
                 : 0,
+            previousAmountPaid: obj.paidAmount,
         }));
     }
     async getAllCreditorsByCaseIds(caseIds) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ _id: caseIds, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid', undefined, { _id: -1 }, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ _id: caseIds, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',
@@ -222,7 +223,7 @@ class CaseUtil {
         return await this.getAllCreditorsMapping(cases);
     }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid', undefined, { _id: -1 }, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',

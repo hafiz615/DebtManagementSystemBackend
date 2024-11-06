@@ -92,7 +92,7 @@ class CreditorUtil {
       } else if (contractDetails?.loan_amount) {
         amount = caseUtil.getCleanAmount(contractDetails?.loan_amount);
       }
-      const paidBack = creditor.remainingAmountPaid;
+      const paidBack = creditor.previousAmountPaid;
       const currentBalance = creditor.totalDebt - paidBack;
       let breakEven = amount * 1.2 - paidBack;
       if (breakEven <= 0) breakEven = currentBalance * 0.3;

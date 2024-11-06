@@ -1250,34 +1250,11 @@ class DebtorService {
       moneyThumb.scoreCard
     );
     await creditorUtil.addBreakEven(debtorCreditors);
-    // const creditors=
-    // const caseTemp = await this.caseRepository.getOne<ICase>({
-    //   debtor: getDebtor._id,
-    //   platform: true,
-    // });
-    // if (!caseTemp) return [false, constants.notFoundMessage('case')];
-    // const getScoresSettlementRange: any =
-    //   await this.caseService.getScoresSettlementRange(
-    //     'true',
-    //     'false',
-    //     null,
-    //     caseTemp._id
-    //   );
-    // console.log(getScoresSettlementRange, 'getScoresSettlementRange');
     const combineResult = {};
     const plans = {};
     const commissionPlan = {};
     const allCreditorsResult = [];
     const creditors = [];
-    // const token = await moneyThumbUtil.authenticateUser();
-    // const moneyThumbApp = await moneyThumbUtil.createNewApp(
-    //   token,
-    //   getDebtor.businessInformation.companyName
-    // );
-    // const scoreCard = await moneyThumbUtil.getScoreCard(
-    //   token,
-    //   moneyThumbApp['appid']
-    // );
     const metricData = scoreCard['metrics']['metricdata'];
     if (metricData?.length) {
       const revenueArray = metricData.find(row => row[0] === 'Revenue');
@@ -1316,10 +1293,18 @@ class DebtorService {
         (sum, obj) => sum + obj.remaining,
         0
       );
+      const benefits = await debtorUtil.getBenefits(
+        plans,
+        scoreCard,
+        getDebtor,
+        debtorCreditors,
+        totalRemaining
+      );
+      combineResult['benefits'] = benefits;
       console.log(totalRemaining, 'totalRemaining');
-      commissionPlan['lumpSum'] = Math.round(totalRemaining * 0.1 * 100) / 100;
-      commissionPlan['4Week'] = totalRemaining * 0.12;
-      commissionPlan['4month'] = totalRemaining * 0.19;
+      commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
+      commissionPlan['4Week'] = parseFloat((totalRemaining * 0.12).toFixed(2));
+      commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
       console.log(commissionPlan, 'commissionPlan');
       console.log(plans, 'planssss');
       combineResult['plans'] = plans;
