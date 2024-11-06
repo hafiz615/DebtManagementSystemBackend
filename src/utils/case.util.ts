@@ -249,8 +249,11 @@ class CaseUtil {
 
   async getAllCreditorsOfDebtor(debtor: IDebtor) {
     const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
-    const tempCases: any = cases;
-    return tempCases.map(obj => ({
+    return await this.getAllCreditorsMapping(cases);
+  }
+
+  async getAllCreditorsMapping(cases: any) {
+    return cases.map(obj => ({
       totalDebt: obj.totalDebt,
       caseCode: obj.caseCode,
       remaining: obj.remaining,
@@ -268,13 +271,32 @@ class CaseUtil {
       remainingAmountPaid: obj.remainingAmountPaid
         ? obj.remainingAmountPaid
         : 0,
+      previousAmountPaid: obj.paidAmount,
     }));
+  }
+
+  async getAllCreditorsByCaseIds(caseIds: string[]) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {_id: caseIds, isDeleted: false},
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount',
+      undefined,
+      {_id: -1},
+      {
+        path: 'creditor',
+        select: [
+          'basicInformation.fullName',
+          'accountTitle',
+          'accountTitleMapping',
+        ],
+      }
+    );
+    return await this.getAllCreditorsMapping(cases);
   }
 
   async getAllCreditorsOfDebtorQuery(debtorId: string) {
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: debtorId, isDeleted: false},
-      'totalDebt caseCode status remaining contractDetails remainingAmountPaid',
+      'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount',
       undefined,
       {_id: -1},
       {
@@ -2462,9 +2484,8 @@ class CaseUtil {
     if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
     const getCreditorsEmail: any =
       await creditorUtil.getCreditorsEmailForDebtor(debtorId);
-    const creditorsPaidAmount = await debtorUtil.getPaidAmountOfCreditors(
-      debtor.businessInformation.companyName
-    );
+    const creditorsPaidAmount =
+      await debtorUtil.getPaidAmountOfCreditors(debtor);
     for (const body of dataArray) {
       console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =

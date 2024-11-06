@@ -7,8 +7,8 @@ const debtor_repository_1 = require("../api/repository/debtor/debtor.repository"
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const upload_util_1 = __importDefault(require("./upload.util"));
-const case_util_1 = __importDefault(require("./case.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
+const debtor_util_1 = __importDefault(require("./debtor.util"));
 dotenv_1.default.config();
 class MoneyThumbUtil {
     constructor() {
@@ -144,7 +144,7 @@ class MoneyThumbUtil {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            console.log('Response Data', response.data['accountslist'].data.length);
+            console.log('Response Data', response.data['mcacompanies'].data);
             return response.data;
         }
         catch (error) {
@@ -170,8 +170,8 @@ class MoneyThumbUtil {
                 //   }
                 // }
                 const weeklyProfitAndTrueRevenue = await this.getweeklyProfitAndTrueRevenue(metricData);
-                weeklyProfit = weeklyProfitAndTrueRevenue.weeklyProfit;
-                weeklyTrueRevenue = weeklyProfitAndTrueRevenue.weeklyTrueRevenue;
+                weeklyProfit = weeklyProfitAndTrueRevenue.profit;
+                weeklyTrueRevenue = weeklyProfitAndTrueRevenue.trueRevenue;
             }
             let trueProfitPer = 0;
             if (scoreCard['mcacompanies']) {
@@ -187,10 +187,17 @@ class MoneyThumbUtil {
                     filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
                     trueProfitPer = trueProfit * 0.67;
                     filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
+                    if (!debtor.weeklyBudgetStrategy1) {
+                        filter['weeklyBudgetStrategy1'] =
+                            Math.round(trueProfitPer * 100) / 100;
+                    }
                 }
                 else {
                     filter['trueProfit'] = 0;
                     filter['strategy1MaxProfit'] = 0;
+                    if (debtor.weeklyBudgetStrategy1 <= 0) {
+                        filter['weeklyBudgetStrategy1'] = 0;
+                    }
                 }
             }
             filter['strategy3MaxProfit'] = 0;
@@ -212,6 +219,8 @@ class MoneyThumbUtil {
             }
             else {
                 filter['strategy3MaxProfit'] = 0;
+                if (debtor.weeklyBudgetStrategy3 <= 0)
+                    filter['weeklyBudgetStrategy3'] = 0;
             }
             console.log(filter);
             await this.debtorRepository.updateById(debtor._id, filter);
@@ -234,9 +243,7 @@ class MoneyThumbUtil {
         const lastLenderOccurrences = {};
         let weeklyBudget = 0;
         let totalWithdrawl = 0;
-        let creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
-        creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
-        creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+        let creditors = await debtor_util_1.default.getCreditorsMapping(debtor);
         const creditorsAccTitleArray = creditors.map(creditor => {
             return creditor.creditorAccountTitle;
         });
@@ -282,16 +289,28 @@ class MoneyThumbUtil {
         return Math.abs(Math.round(totalWithdrawl * 100) / 100);
     }
     async getweeklyProfitAndTrueRevenue(metricData) {
-        let weeklyProfit = 0, weeklyTrueRevenue = 0;
+        let profit = 0, trueRevenue = 0;
         if (metricData?.length) {
             const profitArray = metricData.find(row => row[0] === 'Profit');
             const trueRevenueArray = metricData.find(row => row[0] === 'True Revenue');
             if (profitArray.length && trueRevenueArray.length) {
-                weeklyProfit = (parseFloat(profitArray[1]) / 22) * 5;
-                weeklyTrueRevenue = (parseFloat(trueRevenueArray[1]) / 22) * 5;
+                profit = (parseFloat(profitArray[1]) / 22) * 5;
+                trueRevenue = (parseFloat(trueRevenueArray[1]) / 22) * 5;
             }
         }
-        return { weeklyProfit, weeklyTrueRevenue };
+        return { profit, trueRevenue };
+    }
+    async getMonthlyProfitAndTrueRevenue(metricData) {
+        let profit = 0, trueRevenue = 0;
+        if (metricData?.length) {
+            const profitArray = metricData.find(row => row[0] === 'Profit');
+            const trueRevenueArray = metricData.find(row => row[0] === 'True Revenue');
+            if (profitArray.length && trueRevenueArray.length) {
+                profit = parseFloat(profitArray[1]);
+                trueRevenue = parseFloat(trueRevenueArray[1]);
+            }
+        }
+        return { profit, trueRevenue };
     }
     async getAnuallyProfitAndTrueRevenue(metricData) {
         let profit = 0, trueRevenue = 0;
@@ -334,10 +353,10 @@ class MoneyThumbUtil {
     async getSettlementValues(debtor, creditors, scoreCard, caseId) {
         const metricData = scoreCard['metrics']['metricdata'];
         const weeklyProfitAndTrueRevenue = await this.getweeklyProfitAndTrueRevenue(metricData);
-        const true_profit = debtor.weeklyBudgetStrategy1 + weeklyProfitAndTrueRevenue.weeklyProfit;
-        const profitability = (true_profit / weeklyProfitAndTrueRevenue.weeklyTrueRevenue) * 100;
-        const profitability_without_creditor_payments = (weeklyProfitAndTrueRevenue.weeklyProfit /
-            weeklyProfitAndTrueRevenue.weeklyTrueRevenue) *
+        const true_profit = debtor.weeklyBudgetStrategy1 + weeklyProfitAndTrueRevenue.profit;
+        const profitability = (true_profit / weeklyProfitAndTrueRevenue.trueRevenue) * 100;
+        const profitability_without_creditor_payments = (weeklyProfitAndTrueRevenue.profit /
+            weeklyProfitAndTrueRevenue.trueRevenue) *
             100;
         const settlement_range = {}, weeks_till_paid = {}, option_2_stats = null;
         for (const creditor of creditors) {
@@ -358,8 +377,8 @@ class MoneyThumbUtil {
             profitability: parseFloat(profitability.toFixed(2)),
             true_profit: parseFloat(true_profit.toFixed(2)),
             profitability_without_creditor_payments: parseFloat(profitability_without_creditor_payments.toFixed(2)),
-            weekly_true_revenue: parseFloat(weeklyProfitAndTrueRevenue.weeklyTrueRevenue.toFixed(2)),
-            weekly_profit: parseFloat(weeklyProfitAndTrueRevenue.weeklyProfit.toFixed(2)),
+            weekly_true_revenue: parseFloat(weeklyProfitAndTrueRevenue.trueRevenue.toFixed(2)),
+            weekly_profit: parseFloat(weeklyProfitAndTrueRevenue.profit.toFixed(2)),
             settlement_range,
             weeks_till_paid,
             option_2_stats,

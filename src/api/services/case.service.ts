@@ -573,6 +573,7 @@ class CaseService {
     let data = {};
     // if (req.query.hardReload && req.query.hardReload === 'true')
     //   hardReload = 'true';
+    const moneyThumb = await debtorUtil.getScoreCard(caseTemp.debtor);
     if (hardReload === 'true') {
       await this.caseRepository.updateById<ICase>(caseTemp._id, {
         strategyTwo: false,
@@ -582,9 +583,6 @@ class CaseService {
         fullProfitJustifications: false,
         updatedAt: commonUtil.getCurrentDate(),
       });
-    }
-    const moneyThumb = await debtorUtil.getScoreCard(caseTemp.debtor);
-    if (hardReload === 'true') {
       await moneyThumbUtil.saveData(
         moneyThumb.appid,
         moneyThumb.scoreCard,

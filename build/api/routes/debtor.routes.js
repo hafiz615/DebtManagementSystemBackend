@@ -33,6 +33,6 @@ router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth
 router.get('/getDebtorSummery', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorSummery);
 router.post('/saveWeeklyBudgetValues/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.saveWeeklyBudgetValues, debtor_controller_1.default.saveWeeklyBudgetValues);
 router.post('/getMcaAndFinancials', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getMcaAndFinancials);
-router.get('/analyzeAndGetSettlementRanges', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.analyzeAndGetSettlementRanges);
+router.post('/analyzeAndGetSettlementRanges/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.analyzeAndGetSettlementRanges);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

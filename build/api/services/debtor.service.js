@@ -19,6 +19,7 @@ const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.rep
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const payment_util_1 = __importDefault(require("../../utils/payment.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
+const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
 const lodash_1 = require("lodash");
@@ -232,7 +233,7 @@ class DebtorService {
         }
         const debtor = findCase.debtor;
         const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, debtor.businessInformation.companyName);
+        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
         console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
         console.log(moneyThumbApp['totalstatements'], 'moneyThumbApp[totalStatements]');
         const filterDebtor = {};
@@ -728,7 +729,7 @@ class DebtorService {
         await moneyThumb_util_1.default.run(updatedDebtor, updatedDebtor.businessInformation.companyName);
         const statements = caseTemp.debtor?.totalStatements;
         if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
-            debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
+            debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName, req.params.id);
         }
         // for (let doc of findCase.documents) {
         //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
@@ -948,61 +949,62 @@ class DebtorService {
             return [false, 'Could not extract data from documents'];
         const debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
         debtorBody['extractedFields'] = extractedFields.extracted_fields;
+        for (const iterator of extractedFields.extracted_fields) {
+            console.log(iterator, 'extractedFields.extracted_fields');
+        }
         const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
         let finalObj = {};
         const finalArray = [];
-        if (createDebtor[0]) {
-            await this.debtorRepository.updateById(String(createDebtor[1]['debtor']._id), { userId: reqTemp.id });
-            const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(extractedFields.extracted_fields, createDebtor[1]['creditorNames']);
-            for (const bin of caseTemp) {
-                bin['platform'] = true;
-                bin.creditor.platform = true;
-            }
-            const copyCaseTemp = (0, lodash_1.cloneDeep)(caseTemp);
-            const result = await case_util_1.default.createCreditorsCases({ data: caseTemp }, reqTemp.name, reqTemp.id, String(createDebtor[1]['debtor']._id));
-            if (result[0]) {
-                for (let i = 0; i < copyCaseTemp.length; i++) {
-                    finalObj['creditorName'] =
-                        copyCaseTemp[i].creditor?.basicInformation?.fullName;
-                    finalObj['paybackAmount'] = result[1][i].totalDebt;
-                    finalObj['balance'] = result[1][i].remaining;
-                    finalObj['apr'] = await common_util_1.default.getValuePercenatge(result[1][i].contractDetails.purchased_percentage);
-                    finalObj['currentPayment'] =
-                        await common_util_1.default.removeDashesAndRoundBrackets(result[1][i].contractDetails.repayment_amount);
-                    finalArray.push(finalObj);
-                    finalObj = {};
-                }
+        if (!createDebtor[0])
+            return [false, constants_util_1.default.failureAddMessage('debtor')];
+        await this.debtorRepository.updateById(String(createDebtor[1]['debtor']._id), { userId: reqTemp.id });
+        console.log(createDebtor[1]['creditorNames'], 'createDebtor[1][creditorNames]');
+        const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(extractedFields.extracted_fields, createDebtor[1]['creditorNames']);
+        for (const iterator of caseTemp) {
+            console.log(iterator, 'okokokok');
+        }
+        for (const bin of caseTemp) {
+            bin['platform'] = true;
+            bin.creditor.platform = true;
+        }
+        const copyCaseTemp = (0, lodash_1.cloneDeep)(caseTemp);
+        const result = await case_util_1.default.createCreditorsCases({ data: caseTemp }, reqTemp.name, reqTemp.id, String(createDebtor[1]['debtor']._id));
+        if (result[0]) {
+            for (let i = 0; i < copyCaseTemp.length; i++) {
+                finalObj['creditorName'] =
+                    copyCaseTemp[i].creditor?.businessInformation?.companyName;
+                finalObj['paybackAmount'] = result[1][i].totalDebt;
+                finalObj['balance'] = result[1][i].remaining;
+                finalObj['apr'] = await common_util_1.default.getValuePercenatge(result[1][i].contractDetails.purchased_percentage);
+                finalObj['currentPayment'] =
+                    await common_util_1.default.removeDashesAndRoundBrackets(result[1][i].contractDetails.repayment_amount);
+                finalObj['caseId'] = String(result[1][i]._id);
+                finalArray.push(finalObj);
+                finalObj = {};
             }
         }
         if (!finalArray.length)
             return [false, 'Could not create cases'];
-        return [true, finalArray];
+        return [
+            true,
+            { creditors: finalArray, debtorId: createDebtor[1]['debtor']._id },
+        ];
     }
     async analyzeAndGetSettlementRanges(req) {
-        const reqTemp = req;
-        const getDebtor = await this.debtorRepository.getOne({
-            userId: reqTemp.id,
-        });
-        console.log(getDebtor);
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
         if (!getDebtor) {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
-        const caseTemp = await this.caseRepository.getOne({
-            debtor: getDebtor._id,
-            platform: true,
-        });
-        if (!caseTemp)
-            return [false, constants_util_1.default.notFoundMessage('case')];
-        const getScoresSettlementRange = await this.caseService.getScoresSettlementRange('true', 'false', null, caseTemp._id);
-        console.log(getScoresSettlementRange, 'getScoresSettlementRange');
+        const debtorCreditors = await case_util_1.default.getAllCreditorsByCaseIds(req.body.caseIds);
+        const moneyThumb = await debtor_util_1.default.getScoreCard(getDebtor);
+        const scoreCard = moneyThumb.scoreCard;
+        await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(debtorCreditors, getDebtor, moneyThumb.scoreCard);
+        await creditor_util_1.default.addBreakEven(debtorCreditors);
         const combineResult = {};
         const plans = {};
         const commissionPlan = {};
         const allCreditorsResult = [];
         const creditors = [];
-        const token = await moneyThumb_util_1.default.authenticateUser();
-        const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, getDebtor.businessInformation.companyName);
-        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, moneyThumbApp['appid']);
         const metricData = scoreCard['metrics']['metricdata'];
         if (metricData?.length) {
             const revenueArray = metricData.find(row => row[0] === 'Revenue');
@@ -1020,40 +1022,31 @@ class DebtorService {
         const netProfitMargin100 = netProfitMargin * 100;
         combineResult['netProfitMargin'] =
             Math.round(netProfitMargin100 * 100) / 100;
-        if (getScoresSettlementRange[0]) {
-            const data = getScoresSettlementRange[1];
-            plans['weeklyPayment'] = data.settlementRange?.weekly_budget?.Summary
-                ? data.settlementRange.weekly_budget.Summary
-                : 0;
-            plans['maximum'] = data.creditors.reduce((sum, obj) => sum + obj.breakEven, 0);
-            plans['percentageShare'] = data.creditors.reduce((sum, obj) => sum + obj.percentageReceivable, 0);
-            const totalRemaining = data.creditors.reduce((sum, obj) => sum + obj.remaining, 0);
+        if (debtorCreditors.length) {
+            // const data = getScoresSettlementRange[1];
+            plans['weeklyPayment'] = debtorCreditors.reduce((sum, obj) => sum + obj.maxProfitAmount, 0);
+            plans['maximum'] = debtorCreditors.reduce((sum, obj) => sum + obj.breakEven, 0);
+            plans['percentageShare'] = debtorCreditors.reduce((sum, obj) => sum + obj.percentageReceivable, 0);
+            const totalRemaining = debtorCreditors.reduce((sum, obj) => sum + obj.remaining, 0);
+            const benefits = await debtor_util_1.default.getBenefits(plans, scoreCard, getDebtor, debtorCreditors, totalRemaining);
+            combineResult['benefits'] = benefits;
             console.log(totalRemaining, 'totalRemaining');
-            commissionPlan['lumpSum'] = Math.round(totalRemaining * 0.1 * 100) / 100;
-            commissionPlan['4Week'] = totalRemaining * 0.12;
-            commissionPlan['4month'] = totalRemaining * 0.19;
+            commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
+            commissionPlan['4Week'] = parseFloat((totalRemaining * 0.12).toFixed(2));
+            commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
             console.log(commissionPlan, 'commissionPlan');
             console.log(plans, 'planssss');
             combineResult['plans'] = plans;
             combineResult['commissionPlan'] = commissionPlan;
-            for (const creditor of data.creditors) {
+            for (const creditor of debtorCreditors) {
                 const capture = {};
                 const creditorObj = {};
                 capture['name'] = creditor.creditorAccountTitle;
                 capture['payableAmount'] = creditor.totalDebt;
-                capture['balance'] = creditor.totalDebt - creditor.remainingAmountPaid;
-                capture['weeklyPayment'] = '';
-                if (data.settlementRange?.weekly_budget &&
-                    data.settlementRange?.weekly_budget[creditor.creditorAccountTitle]) {
-                    capture['weeklyPayment'] =
-                        data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
-                    creditorObj['weeklyPayment'] =
-                        data.settlementRange.weekly_budget[creditor.creditorAccountTitle];
-                }
-                else {
-                    capture['weeklyPayment'] = '-';
-                    creditorObj['weeklyPayment'] = '-';
-                }
+                const balance = creditor.totalDebt - creditor.remainingAmountPaid;
+                capture['balance'] = balance < 0 ? 0 : balance;
+                capture['weeklyPayment'] = creditor.maxProfitAmount;
+                creditorObj['weeklyPayment'] = creditor.maxProfitAmount;
                 capture['interestRate'] = '12';
                 creditorObj['name'] = creditor.creditorAccountTitle;
                 creditorObj['maximum'] = creditor.breakEven;

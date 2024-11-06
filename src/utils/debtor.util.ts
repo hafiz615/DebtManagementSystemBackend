@@ -64,12 +64,13 @@ class DebtorUtil {
     debtorCompanyName: string,
     debtorId: string,
     totalStatements: number,
-    debtorName: string
+    debtorName: string,
+    caseId: string
   ) {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      debtorCompanyName
+      await this.normalizeCompanyName(debtorCompanyName)
     );
     if (moneyThumbApp['totalstatements'] > totalStatements) {
       const scoreCard = await moneyThumbUtil.getScoreCard(
@@ -109,7 +110,7 @@ class DebtorUtil {
             incDec = 'Increase';
             posNeg = 'positive';
           }
-          if (percentageChange > -1) {
+          if (percentageChange < -1) {
             incDec = 'Decrease';
             posNeg = 'negative';
           }
@@ -143,7 +144,8 @@ class DebtorUtil {
             debtorName,
             accounts.data[len - 2]['true_credits'],
             accounts.data[len - 1]['true_credits'],
-            percentageChange
+            percentageChange,
+            caseId
           );
         }
       }
@@ -166,17 +168,19 @@ class DebtorUtil {
     });
   }
 
-  async getPaidAmountOfCreditors(debtorCompanyName: string) {
+  async getPaidAmountOfCreditors(debtor: IDebtor) {
     const lastLenderOccurrences = {};
-    const token = await moneyThumbUtil.authenticateUser();
-    const moneyThumbApp = await moneyThumbUtil.createNewApp(
-      token,
-      debtorCompanyName
-    );
-    const scoreCard = await moneyThumbUtil.getScoreCard(
-      token,
-      moneyThumbApp['appid']
-    );
+    // const token = await moneyThumbUtil.authenticateUser();
+    // const moneyThumbApp = await moneyThumbUtil.createNewApp(
+    //   token,
+    //   debtorCompanyName
+    // );
+    // const scoreCard = await moneyThumbUtil.getScoreCard(
+    //   token,
+    //   moneyThumbApp['appid']
+    // );
+    const moneyThumb = await this.getScoreCard(debtor);
+    const scoreCard = moneyThumb.scoreCard;
     if (scoreCard['mcacompanies']) {
       const mcaCompanies = scoreCard['mcacompanies'];
       if (mcaCompanies.data && mcaCompanies.data.length) {
@@ -274,58 +278,59 @@ class DebtorUtil {
   }
 
   async getYearlySales(accounts: any) {
-    const yearlyResults = {
-      January: 0,
-      February: 0,
-      March: 0,
-      April: 0,
-      May: 0,
-      June: 0,
-      July: 0,
-      August: 0,
-      September: 0,
-      October: 0,
-      November: 0,
-      December: 0,
-    };
+    const yearlyResults = {};
+    const result = [];
     for (const account of accounts) {
-      yearlyResults[account.statement_month] =
-        yearlyResults[account.statement_month] +
+      if (
+        !yearlyResults[account.statement_month + ' ' + account.statement_year]
+      ) {
+        yearlyResults[account.statement_month + ' ' + account.statement_year] =
+          parseFloat(account.true_credits);
+        continue;
+      }
+      yearlyResults[account.statement_month + ' ' + account.statement_year] +=
         parseFloat(account.true_credits);
     }
-    return Object.values(yearlyResults);
+    for (const [key, value] of Object.entries(yearlyResults)) {
+      const obj = {};
+      obj[key] = value;
+      result.push(obj);
+    }
+    return result;
   }
 
   async getYearlyProfitMargin(scoreCard: any) {
     const mcaCompanies = scoreCard['mcacompanies']['data'];
     const metricData = scoreCard['metrics']['metricdata'];
     const result =
-      await moneyThumbUtil.getweeklyProfitAndTrueRevenue(metricData);
-    const yearlyResults = {
-      January: 0,
-      February: 0,
-      March: 0,
-      April: 0,
-      May: 0,
-      June: 0,
-      July: 0,
-      August: 0,
-      September: 0,
-      October: 0,
-      November: 0,
-      December: 0,
-    };
+      await moneyThumbUtil.getMonthlyProfitAndTrueRevenue(metricData);
+    const yearlyResults = {};
+    const profitArray = [];
     for (const mca of mcaCompanies) {
       if (mca.month === 'Totals') continue;
-      const month = mca.month.split(' ')[0];
+      const month = mca.month;
+      if (!yearlyResults[month]) {
+        const creditorProfitMargin =
+          (Math.abs(parseFloat(mca.withdrawal_total)) + result.profit) /
+          result.trueRevenue;
+        const inPercentage =
+          (Math.round(creditorProfitMargin * 100) / 100) * 100;
+        yearlyResults[month] = inPercentage;
+        continue;
+      }
       const creditorProfitMargin =
-        (Math.abs(parseFloat(mca.withdrawal_total)) + result.weeklyProfit) /
-        result.weeklyTrueRevenue;
+        (Math.abs(parseFloat(mca.withdrawal_total)) + result.profit) /
+        result.trueRevenue;
       const inPercentage = (Math.round(creditorProfitMargin * 100) / 100) * 100;
-      console.log(inPercentage, 'inPercentageeeeee');
       yearlyResults[month] = yearlyResults[month] + inPercentage;
     }
-    return Object.values(yearlyResults);
+
+    for (const [key, value] of Object.entries(yearlyResults)) {
+      const obj = {};
+      obj[key] = value;
+      profitArray.push(obj);
+    }
+    return Object.values(profitArray);
   }
 
   async getScoreCard(debtor: IDebtor) {
@@ -335,7 +340,7 @@ class DebtorUtil {
     if (!debtor.appid) {
       const moneyThumbApp = await moneyThumbUtil.createNewApp(
         token,
-        debtor.businessInformation.companyName
+        await this.normalizeCompanyName(debtor.businessInformation.companyName)
       );
       appid = moneyThumbApp['appid'];
     }
@@ -351,6 +356,103 @@ class DebtorUtil {
       ).values()
     );
     return creditors;
+  }
+
+  async normalizeCompanyName(name: string) {
+    const words = name.split(' ');
+    return words.slice(0, 2).join(' ').toLowerCase().replace(/,$/, '');
+  }
+
+  async getBenefits(
+    plans: any,
+    scoreCard: any,
+    debtor: IDebtor,
+    creditors: any,
+    totalRemaining: number
+  ) {
+    const weeklyBudget = await moneyThumbUtil.getTotalWeeklyBudget(
+      scoreCard['mcacompanies'],
+      debtor
+    );
+    const weeklyProfitAndTrueRevenue =
+      await moneyThumbUtil.getweeklyProfitAndTrueRevenue(
+        scoreCard['metrics']['metricdata']
+      );
+    const benefits = {};
+    const weeklyPayment = await this.helperBenefits(
+      weeklyBudget,
+      plans.weeklyPayment,
+      weeklyProfitAndTrueRevenue
+    );
+    let weeksToBeFree = 0;
+    for (const creditor of creditors) {
+      weeksToBeFree += Math.round(
+        creditor.remaining / creditor.maxProfitAmount
+      );
+    }
+    weeklyPayment['weeksToBeFree'] = weeksToBeFree;
+
+    const totalPercentageAmount = creditors.reduce(
+      (sum, obj) => sum + obj.percentageReceivableAmount,
+      0
+    );
+    const percentageShare = await this.helperBenefits(
+      weeklyBudget,
+      totalPercentageAmount,
+      weeklyProfitAndTrueRevenue
+    );
+    weeksToBeFree = 0;
+    for (const creditor of creditors) {
+      weeksToBeFree += Math.round(
+        creditor.remaining / creditor.percentageReceivableAmount
+      );
+    }
+    percentageShare['weeksToBeFree'] = weeksToBeFree;
+
+    const anuallyProfitAndTrueRevenue =
+      await moneyThumbUtil.getAnuallyProfitAndTrueRevenue(
+        scoreCard['metrics']['metricdata']
+      );
+    const maximum = await this.helperBenefits(
+      totalRemaining,
+      plans.maximum,
+      anuallyProfitAndTrueRevenue
+    );
+    maximum['weeksToBeFree'] = 1;
+
+    benefits['weeklyPayment'] = weeklyPayment;
+    benefits['percentageShare'] = percentageShare;
+    benefits['maximum'] = maximum;
+    return benefits;
+  }
+
+  async helperBenefits(
+    weeklyBudget: number,
+    payment: number,
+    weeklyProfitAndTrueRevenue: {
+      profit: number;
+      trueRevenue: number;
+    }
+  ) {
+    const benefit = {};
+    if (!weeklyBudget) {
+      benefit['cashFlow'] = 0;
+      benefit['savings'] = 0;
+      benefit['estimatedProfit'] = parseFloat(
+        (weeklyProfitAndTrueRevenue.profit + 0).toFixed(2)
+      );
+      return benefit;
+    }
+    const cashFlow = weeklyBudget - payment;
+    benefit['cashFlow'] = parseFloat(cashFlow.toFixed(2));
+    const savingsPercentage = parseFloat(
+      ((cashFlow / weeklyBudget) * 100).toFixed(2)
+    );
+    benefit['savings'] = savingsPercentage;
+    benefit['estimatedProfit'] = parseFloat(
+      (weeklyProfitAndTrueRevenue.profit + cashFlow).toFixed(2)
+    );
+    return benefit;
   }
 }
 export default new DebtorUtil();

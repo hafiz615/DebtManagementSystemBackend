@@ -546,10 +546,18 @@ class EmailUtil {
             const to = creditor.creditorEmail;
             const from = process.env.defaultEmail;
             const subject = `Notification Regarding Debtor's Paid Debt`;
+            await case_util_1.default.addInHistory({
+                From: from,
+                To: to,
+                Content: content,
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'EMAIL',
+                Subject: subject,
+            }, creditor.caseId);
             await this.sendEmail(to, from, subject, content);
         }
     }
-    async percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, previousSale, currentSale, percentage) {
+    async percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, previousSale, currentSale, percentage, caseId) {
         for (const creditor of creditors) {
             const content = `Dear ${creditor.creditorName},
 
@@ -571,6 +579,14 @@ class EmailUtil {
             const to = creditor.creditorEmail;
             const from = process.env.defaultEmail;
             const subject = `Notice of Sales Performance for ${currentMonth}, ${currentYear}`;
+            await case_util_1.default.addInHistory({
+                From: from,
+                To: to,
+                Content: content,
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'EMAIL',
+                Subject: subject,
+            }, caseId);
             await this.sendEmail(to, from, subject, content);
         }
     }

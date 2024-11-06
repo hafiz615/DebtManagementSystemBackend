@@ -347,6 +347,7 @@ class CaseService {
             let data = {};
             // if (req.query.hardReload && req.query.hardReload === 'true')
             //   hardReload = 'true';
+            const moneyThumb = await debtor_util_1.default.getScoreCard(caseTemp.debtor);
             if (hardReload === 'true') {
                 await this.caseRepository.updateById(caseTemp._id, {
                     strategyTwo: false,
@@ -356,9 +357,6 @@ class CaseService {
                     fullProfitJustifications: false,
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
-            }
-            const moneyThumb = await debtor_util_1.default.getScoreCard(caseTemp.debtor);
-            if (hardReload === 'true') {
                 await moneyThumb_util_1.default.saveData(moneyThumb.appid, moneyThumb.scoreCard, caseTemp.debtor);
                 caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, body);
             }

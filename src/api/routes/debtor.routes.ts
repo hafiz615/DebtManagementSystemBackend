@@ -120,8 +120,8 @@ router.post(
   debtorController.getMcaAndFinancials
 );
 
-router.get(
-  '/analyzeAndGetSettlementRanges',
+router.post(
+  '/analyzeAndGetSettlementRanges/:id',
   authorize.validateAuth,
   debtorController.analyzeAndGetSettlementRanges
 );
