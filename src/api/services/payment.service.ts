@@ -705,16 +705,16 @@ class PaymentService {
           rescheduled: retryDate,
           failedReasonPaynote: message,
         });
-        emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+        // emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
         return [false, message];
       }
 
-      emailUtil.sendEmailOrSmsByEvent(
-        'successful_payment',
-        '',
-        payment._id,
-        ''
-      );
+      // emailUtil.sendEmailOrSmsByEvent(
+      //   'successful_payment',
+      //   '',
+      //   payment._id,
+      //   ''
+      // );
       await this.paymentRepository.updateById<IPayment>(payment._id, {
         paynoteCheckId: paymentResult.check.check_id,
         sendViaPaynote: 'Success',
@@ -724,17 +724,17 @@ class PaymentService {
         payment.caseId._id,
         {$inc: {remainingAmountPaid: payment.amount}}
       );
-      if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
-        const creditors = await creditorUtil.getCreditorsEmailForDebtor(
-          String(payment.caseId.debtor._id),
-          String(payment.caseId.creditor._id)
-        );
-        emailUtil.sendEmailIfDebtorPaysDebt(
-          payment.caseId,
-          payment.caseId.debtor,
-          creditors
-        );
-      }
+      // if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+      //   const creditors = await creditorUtil.getCreditorsEmailForDebtor(
+      //     String(payment.caseId.debtor._id),
+      //     String(payment.caseId.creditor._id)
+      //   );
+      //   emailUtil.sendEmailIfDebtorPaysDebt(
+      //     payment.caseId,
+      //     payment.caseId.debtor,
+      //     creditors
+      //   );
+      // }
     }
     return [true, 'Payment Successfull'];
   }

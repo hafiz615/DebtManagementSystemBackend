@@ -14,7 +14,6 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
-const email_util_1 = __importDefault(require("../../utils/email.util"));
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const payment_util_1 = __importDefault(require("../../utils/payment.util"));
@@ -543,12 +542,22 @@ class DebtorService {
             // updateObjPayment['status'] = 'Pending';
             // paymentLogging.successReason = responseText;
             result = true;
-            await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
+            // await emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_authorization',
+            //   '',
+            //   paymentId,
+            //   ''
+            // );
         }
         else {
             updateObjPayment['failedReasonAuthorization'] = responseText;
             // paymentLogging.failReason = responseText;
-            await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
+            // await emailUtil.sendEmailOrSmsByEvent(
+            //   'failed_authorization',
+            //   '',
+            //   paymentId,
+            //   ''
+            // );
         }
         if (Object.keys(updateObjPayment).length) {
             // const newPayment = new PaymentLogging();
@@ -601,12 +610,22 @@ class DebtorService {
             }
             // paymentLogging.successReason = responseText;
             result = true;
-            await email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', paymentId, '');
+            // await emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_payment',
+            //   '',
+            //   paymentId,
+            //   ''
+            // );
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
             // paymentLogging.failReason = responseText;
-            await email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', paymentId, '');
+            // await emailUtil.sendEmailOrSmsByEvent(
+            //   'failed_payment',
+            //   '',
+            //   paymentId,
+            //   ''
+            // );
         }
         if (Object.keys(updateObjPayment).length) {
             // const newPayment = new PaymentLogging();
@@ -707,10 +726,15 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         await moneyThumb_util_1.default.run(updatedDebtor, updatedDebtor.businessInformation.companyName);
-        const statements = caseTemp.debtor?.totalStatements;
-        if (caseTemp.intervals) {
-            debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName);
-        }
+        // const statements = caseTemp.debtor?.totalStatements;
+        // if (caseTemp.intervals) {
+        //   debtorUtil.percentageChangeEmail(
+        //     updatedDebtor.businessInformation.companyName,
+        //     String(updatedDebtor._id),
+        //     statements ? statements : 0,
+        //     caseTemp.debtor?.basicInformation?.fullName
+        //   );
+        // }
         // for (let doc of findCase.documents) {
         //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
         //   doc.url = url;

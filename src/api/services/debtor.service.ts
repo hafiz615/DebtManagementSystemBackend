@@ -546,21 +546,21 @@ class DebtorService {
       // updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_authorization',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'successful_authorization',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
       // paymentLogging.failReason = responseText;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_authorization',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'failed_authorization',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     }
     if (Object.keys(updateObjPayment).length) {
       // const newPayment = new PaymentLogging();
@@ -629,22 +629,22 @@ class DebtorService {
       }
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_payment',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'successful_payment',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
       // paymentLogging.failReason = responseText;
 
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_payment',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'failed_payment',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     }
     if (Object.keys(updateObjPayment).length) {
       // const newPayment = new PaymentLogging();
@@ -781,15 +781,15 @@ class DebtorService {
       updatedDebtor,
       updatedDebtor.businessInformation.companyName
     );
-    const statements = caseTemp.debtor?.totalStatements;
-    if (caseTemp.intervals) {
-      debtorUtil.percentageChangeEmail(
-        updatedDebtor.businessInformation.companyName,
-        String(updatedDebtor._id),
-        statements ? statements : 0,
-        caseTemp.debtor?.basicInformation?.fullName
-      );
-    }
+    // const statements = caseTemp.debtor?.totalStatements;
+    // if (caseTemp.intervals) {
+    //   debtorUtil.percentageChangeEmail(
+    //     updatedDebtor.businessInformation.companyName,
+    //     String(updatedDebtor._id),
+    //     statements ? statements : 0,
+    //     caseTemp.debtor?.basicInformation?.fullName
+    //   );
+    // }
 
     // for (let doc of findCase.documents) {
     //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);

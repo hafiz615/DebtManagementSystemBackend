@@ -415,25 +415,31 @@ class CronJob {
             //   }
             // }
         });
-        node_cron_1.default.schedule('0 21 * * *', async () => {
-            const today = new Date(common_util_1.default.getCurrentDate());
-            const targetDate = new Date(common_util_1.default.getCurrentDate());
-            targetDate.setDate(today.getDate() + 2); // Add 2 days to the current date
-            // Set the targetDate to the start of the day (00:00:00) for comparison
-            const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-            const payments = await this.paymentRepository.getAllWithoutPagination({
-                status: 'Upcoming',
-                caseId: { $ne: null },
-                dueDate: {
-                    $gte: startOfDay,
-                    $lte: endOfDay,
-                },
-            });
-            for (const payment of payments) {
-                email_util_1.default.sendEmailOrSmsByEvent('upcoming_payment', '', payment._id, '');
-            }
-        });
+        // cron.schedule('0 21 * * *', async () => {
+        //   const today = new Date(commonUtil.getCurrentDate());
+        //   const targetDate = new Date(commonUtil.getCurrentDate());
+        //   targetDate.setDate(today.getDate() + 2); // Add 2 days to the current date
+        //   // Set the targetDate to the start of the day (00:00:00) for comparison
+        //   const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+        //   const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+        //   const payments: IPayment[] =
+        //     await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        //       status: 'Upcoming',
+        //       caseId: {$ne: null},
+        //       dueDate: {
+        //         $gte: startOfDay,
+        //         $lte: endOfDay,
+        //       },
+        //     });
+        //   for (const payment of payments) {
+        //     emailUtil.sendEmailOrSmsByEvent(
+        //       'upcoming_payment',
+        //       '',
+        //       payment._id,
+        //       ''
+        //     );
+        //   }
+        // });
     }
     async paynotePending(payments) {
         const retryPaynoteInterval = {
@@ -491,10 +497,20 @@ class CronJob {
                         retriesPaynote: retries,
                         failedReasonPaynote: message,
                     });
-                    email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+                    // emailUtil.sendEmailOrSmsByEvent(
+                    //   'failed_payment',
+                    //   '',
+                    //   payment._id,
+                    //   ''
+                    // );
                     continue;
                 }
-                email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+                // emailUtil.sendEmailOrSmsByEvent(
+                //   'successful_payment',
+                //   '',
+                //   payment._id,
+                //   ''
+                // );
                 await this.paymentRepository.updateById(payment._id, {
                     paynoteCheckId: paymentResult.check.check_id,
                     sendViaPaynote: 'Success',
@@ -565,7 +581,10 @@ class CronJob {
             updateObjPayment['status'] = 'Pending';
             // paymentLogging.successReason = responseText;
             successAuth = true;
-            email_util_1.default.sendEmailOrSmsByEventForCommission('successful_payment', payment);
+            // emailUtil.sendEmailOrSmsByEventForCommission(
+            //   'successful_payment',
+            //   payment
+            // );
         }
         else {
             updateObjPayment['authorized'] = 'Failed';
@@ -576,7 +595,7 @@ class CronJob {
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
+            // emailUtil.sendEmailOrSmsByEventForCommission('failed_payment', payment);
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
@@ -625,7 +644,10 @@ class CronJob {
                 weeklyCommissionPaid: true,
             });
             successCapture = true;
-            email_util_1.default.sendEmailOrSmsByEventForCommission('successful_payment', payment);
+            // emailUtil.sendEmailOrSmsByEventForCommission(
+            //   'successful_payment',
+            //   payment
+            // );
         }
         else {
             if (type === 'ck') {
@@ -639,7 +661,7 @@ class CronJob {
             const retryDate = this.getRetryDate(retryCommissionInterval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            email_util_1.default.sendEmailOrSmsByEventForCommission('failed_payment', payment);
+            // emailUtil.sendEmailOrSmsByEventForCommission('failed_payment', payment);
         }
         if (retryPlus)
             updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
@@ -846,7 +868,12 @@ class CronJob {
             updateObjPayment['authorized'] = 'Success';
             // updateObjPayment['status'] = 'Pending';
             result = true;
-            email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_authorization',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
             // paymentLogging.successReason = responseText;
         }
         else {
@@ -859,7 +886,12 @@ class CronJob {
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'failed_authorization',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
@@ -948,7 +980,12 @@ class CronJob {
             }
             // paymentLogging.successReason = responseText;
             result = true;
-            email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_payment',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
         }
         else {
             if (type === 'ck') {
@@ -963,7 +1000,7 @@ class CronJob {
             const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
             updateObjPayment['rescheduled'] = retryDate;
             // paymentLogging.failReason = responseText;
-            email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
         }
         if (retryPlus)
             updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;

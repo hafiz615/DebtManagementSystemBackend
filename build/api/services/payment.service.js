@@ -15,8 +15,6 @@ const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
-const email_util_1 = __importDefault(require("../../utils/email.util"));
-const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -559,20 +557,32 @@ class PaymentService {
                     rescheduled: retryDate,
                     failedReasonPaynote: message,
                 });
-                email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+                // emailUtil.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
                 return [false, message];
             }
-            email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_payment',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
             await this.paymentRepository.updateById(payment._id, {
                 paynoteCheckId: paymentResult.check.check_id,
                 sendViaPaynote: 'Success',
                 status: 'Success',
             });
             const updatedCase = await this.caseRepository.updateById(payment.caseId._id, { $inc: { remainingAmountPaid: payment.amount } });
-            if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
-                const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(String(payment.caseId.debtor._id), String(payment.caseId.creditor._id));
-                email_util_1.default.sendEmailIfDebtorPaysDebt(payment.caseId, payment.caseId.debtor, creditors);
-            }
+            // if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+            //   const creditors = await creditorUtil.getCreditorsEmailForDebtor(
+            //     String(payment.caseId.debtor._id),
+            //     String(payment.caseId.creditor._id)
+            //   );
+            //   emailUtil.sendEmailIfDebtorPaysDebt(
+            //     payment.caseId,
+            //     payment.caseId.debtor,
+            //     creditors
+            //   );
+            // }
         }
         return [true, 'Payment Successfull'];
     }

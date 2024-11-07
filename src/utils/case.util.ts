@@ -2546,13 +2546,13 @@ class CaseUtil {
             caseCreated._id
           );
         }
-        if (getCreditorsEmail.length && createdCases.length) {
-          emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
-            createdCases,
-            debtor,
-            getCreditorsEmail
-          );
-        }
+        // if (getCreditorsEmail.length && createdCases.length) {
+        //   emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
+        //     createdCases,
+        //     debtor,
+        //     getCreditorsEmail
+        //   );
+        // }
         if (caseCreated?.intervals && caseCreated?.intervals?.length) {
           await this.createPayment(caseCreated);
         }
