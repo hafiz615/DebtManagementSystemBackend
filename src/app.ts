@@ -6,7 +6,7 @@ import setup from './api/routes/base.route';
 import paymentCronjob from './cron-job/payment.cronjob';
 import logMiddleware from './middleware/logs.middleware'; // Import the logging middleware
 import asyncLocalStorage from './utils/localStorage.util';
-import {EnvSetup} from './database/repomodels/setEnv';
+import {EnvSetup} from './utils/setEnv';
 import emailUtil from './utils/email.util';
 import googleDriveUtil from './utils/googleDrive.util';
 import bulkUploadCronjob from './cron-job/bulkUpload.cronjob';
@@ -22,6 +22,8 @@ import {StrategyRepository} from './api/repository/strategy/strategy.repository'
 import {IStrategy} from './database/interfaces/strategy.interface';
 import {CaseRepository} from './api/repository/case/case.repository';
 import {ICase} from './database/interfaces/case.interface';
+import debtorUtil from './utils/debtor.util';
+import commonUtil from './utils/common.util';
 
 class App {
   protected app: Application;
@@ -61,40 +63,51 @@ class App {
     // const credR = new CreditorRepository();
     // const allCred = await credR.getAllWithoutPagination<ICreditor>();
     // for (const creditor of allCred) {
-    //   // if (creditor?.paynoteUserId) continue;
-    //   if (!creditor.basicInformation?.fullName) continue;
-    //   const result = await paynoteUtil.createCustomer(creditor);
-    //   console.log(result);
-    //   if (result?.success)
-    //     await credR.updateById(creditor._id, {
-    //       paynoteUserId: result.user.user_id,
-    //     });
-    //   // await credR.updateById(creditor._id, {
-    //   //   paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
-    //   //   paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
-    //   // });
+    // if (creditor?.paynoteUserId) continue;
+    // if (!creditor.basicInformation?.fullName) continue;
+    // const result = await paynoteUtil.createCustomer(creditor);
+    // console.log(result);
+    // if (result?.success)
+    //   await credR.updateById(creditor._id, {
+    //     paynoteUserId: result.user.user_id,
+    //   });
+    //   await credR.updateById(creditor._id, {
+    //     paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
+    //     paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
+    //   });
     // }
     // await bulkUploadCronjob.testBulkCron();
-    // const debtorRepo = new DebtorRepository();
     // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
     // for (const debtor of getAll) {
     //   await debtorRepo.updateById(debtor._id, {
     //     emailKey: `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`,
     //   });
     // }
+    // const debtorRepo = new DebtorRepository();
     // const token = await moneyThumbUtil.authenticateUser();
     // const app = await moneyThumbUtil.createNewApp(
     //   token,
-    //   '66f1221440020aa3522ec604'
+    //   'Smoke Studio & Mart LLC'
     // );
     // await moneyThumbUtil.convertPdf(
     //   token,
     //   '66f1221440020aa3522ec604',
     //   app['appid']
     // );
+    // const debtor = await debtorRepo.getById<IDebtor>(
+    //   '6717b9b1739c7b15330b0b63'
+    // );
     // const card = await moneyThumbUtil.getScoreCard(token, app['appid']);
+    // await moneyThumbUtil.saveData(app['appid'], card, debtor);
+    // console.log(
+    //   await debtorUtil.getYearlyResults(card['accountslist']['data'])
+    // );
+    // console.log(await debtorUtil.getYearlyProfitMargin(card));
+    // const kk = await debtorUtil.getPaidAmountOfCreditors(
+    //   '66f1221440020aa3522ec604'
+    // );
+    // console.log(kk, 'ookoko');
     // moneyThumbUtil.saveData(app['appid'], card, '66ae508b14a585538d6921a3');
-
     // const debtors = await debtorRepo.getAllWithoutPagination<IDebtor>();
     // for (let i = 23; i < debtors.length; i++) {
     //   await moneyThumbUtil.run(String(debtors[i]._id));
@@ -120,11 +133,15 @@ class App {
     // const caseRepo = new CaseRepository();
     // const cases = await caseRepo.getAllWithoutPagination<ICase>();
     // for (const temp of cases) {
-    //   console.log('ok');
     //   await caseRepo.updateById(temp._id, {
-    //     remainingAmountPaid: temp.remaining,
+    //     lumpSumJustifications: false,
     //   });
     // }
+    // const date = new Date(commonUtil.getCurrentDate());
+    // console.log(new Date(date.getUTCFullYear(), date.getUTCMonth(), 1));
+    // console.log('3211596048 - Oct 31, 2023'.split('-')[1].trim());
+    // date.setUTCHours(0, 0, 0, 0);
+    // console.log(date);
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     paymentCronjob.startCronJob();

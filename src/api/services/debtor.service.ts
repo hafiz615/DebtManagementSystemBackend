@@ -32,6 +32,10 @@ import debtorUtil from '../../utils/debtor.util';
 import {UserRepository} from '../repository/user/user.repository';
 import {IUser} from '../../database/interfaces/user.interface';
 import _ from 'lodash';
+import bulkUploadCronjob from '../../cron-job/bulkUpload.cronjob';
+import googleDriveUtil from '../../utils/googleDrive.util';
+import {cloneDeep} from 'lodash';
+import CaseService from './case.service';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -43,6 +47,7 @@ class DebtorService {
   private bulkUploadRepository: BulkUploadRepository;
   private userRepository: UserRepository;
 
+  private caseService: CaseService;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -52,6 +57,7 @@ class DebtorService {
     this.strategyRepository = new StrategyRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
     this.userRepository = new UserRepository();
+    this.caseService = new CaseService();
   }
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
@@ -127,20 +133,20 @@ class DebtorService {
       };
       const caseHistory = [];
       const debtorObj = {
-        SSN: debtor.basicInformation.SSID ? debtor.basicInformation.SSID : '',
-        fullName: debtor.basicInformation.fullName
+        SSN: debtor?.basicInformation?.SSID ? debtor.basicInformation.SSID : '',
+        fullName: debtor?.basicInformation?.fullName
           ? debtor.basicInformation.fullName
           : '',
-        companyName: debtor.businessInformation.companyName
+        companyName: debtor?.businessInformation?.companyName
           ? debtor.businessInformation.companyName
           : '',
-        email: debtor.basicInformation.email
+        email: debtor?.basicInformation?.email
           ? debtor.basicInformation.email
           : '',
-        status: debtor.basicInformation.status
+        status: debtor?.basicInformation?.status
           ? debtor.basicInformation.status
           : '',
-        address: debtor.basicInformation.address
+        address: debtor?.basicInformation?.address
           ? debtor.basicInformation.address
           : '',
         outstandingDebt: 0,
@@ -161,14 +167,27 @@ class DebtorService {
     const token = await moneyThumbUtil.authenticateUser();
     const moneyThumbApp = await moneyThumbUtil.createNewApp(
       token,
-      req.params.id
+      await debtorUtil.normalizeCompanyName(
+        debtor.businessInformation.companyName
+      )
     );
-    console.log(debtor);
-    if (!debtor?.totalStatements && moneyThumbApp['totalStatements']) {
-      await this.debtorRepository.updateById(debtor._id, {
-        totalStatements: moneyThumbApp['totalStatements'],
-        updatedAt: commonUtil.getCurrentDate(),
-      });
+    console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
+    console.log(
+      moneyThumbApp['totalstatements'],
+      'moneyThumbApp[totalStatements]'
+    );
+    const filterDebtor = {};
+    if (!debtor?.totalStatements && moneyThumbApp['totalstatements']) {
+      filterDebtor['totalStatements'] = moneyThumbApp['totalstatements'];
+    }
+    const curr = new Date(commonUtil.getCurrentDate());
+    curr.setUTCHours(0, 0, 0, 0);
+    if (curr.setDate(1) > new Date(debtor.percentageChangeDate).getSeconds()) {
+      filterDebtor['percentageChange'] = false;
+    }
+    if (Object.keys(filterDebtor).length) {
+      filterDebtor['updatedAt'] = commonUtil.getCurrentDate();
+      await this.debtorRepository.updateById(debtor._id, filterDebtor);
     }
     let page = 1;
     let limit = 5;
@@ -542,7 +561,7 @@ class DebtorService {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['status'] = 'Pending';
+      // updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
       await emailUtil.sendEmailOrSmsByEvent(
@@ -622,7 +641,7 @@ class DebtorService {
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
-      // updateObjPayment['status'] = 'Success';
+      updateObjPayment['status'] = 'Pending';
       if (payment.caseId.debtor.paymentType === 'ck') {
         updateObjPayment['debtorTransId'] = transactionId;
       }
@@ -686,54 +705,58 @@ class DebtorService {
     return [true, debtors];
   };
 
-  async createDebtor(req: Request) {
-    const reqTemp: any = req;
+  async createDebtor(body: any, id: string) {
+    // const reqTemp: any = req;
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
           'businessInformation.companyName':
-            req.body.businessInformation.companyName,
+            body.businessInformation.companyName,
         },
         {
-          'businessInformation.EIN': req.body.businessInformation.EIN,
+          'businessInformation.EIN': body.businessInformation.EIN,
         },
       ],
     });
     let debtor: IDebtor = null;
     let account = [];
-    if (req.body.paymentToken && req.body.paymentType) {
+    if (body.paymentToken && body.paymentType) {
       const customerVaultResponse = await caseUtil.createVault(
-        req.body.paymentToken
+        body.paymentToken
       );
       if (!customerVaultResponse[0]) return customerVaultResponse;
       // req.body.customerVaultId = customerVaultResponse[1];
       account.push({
-        paymentType: req.body.paymentType,
+        paymentType: body.paymentType,
         customerVaultId: customerVaultResponse[1],
       });
     }
     if (!getDebtor) {
-      if (account.length) req.body.accounts = account;
-      debtor = await caseUtil.createDebtor(req.body, reqTemp.id);
+      if (account.length) body.accounts = account;
+      if (body.basicInformation.weeklyBudget) {
+        body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
+      }
+      debtor = await caseUtil.createDebtor(body, id);
     }
     if (getDebtor) {
-      if (account.length)
-        req.body.accounts = getDebtor.accounts.concat(account);
+      if (account.length) body.accounts = getDebtor.accounts.concat(account);
       // if (!req.body.basicInformation?.weeklyBudget)
       //   req.body.basicInformation.weeklyBudget = 1;
-      req.body.updatedAt = commonUtil.getCurrentDate();
+      body.updatedAt = commonUtil.getCurrentDate();
+      // if (body?.documents && body?.documents?.length)
+      //   body.documents = getDebtor.documents.concat(body.documents);
       debtor = await this.debtorRepository.updateById<IDebtor>(
         getDebtor._id,
-        req.body
+        body
       );
     }
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    moneyThumbUtil.run(String(debtor._id));
+    moneyThumbUtil.run(debtor, debtor.businessInformation.companyName);
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
-      req.body.extractedFields
+      body.extractedFields
     );
     return [true, {debtor, creditorNames}];
   }
@@ -772,13 +795,18 @@ class DebtorService {
       settlementRange: false,
       updatedAt: commonUtil.getCurrentDate(),
     });
-    await moneyThumbUtil.run(req.params.id);
+    await moneyThumbUtil.run(
+      updatedDebtor,
+      updatedDebtor.businessInformation.companyName
+    );
     const statements = caseTemp.debtor?.totalStatements;
-    if (caseTemp.intervals) {
+    if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
       debtorUtil.percentageChangeEmail(
-        req.params.id,
+        updatedDebtor.businessInformation.companyName,
+        String(updatedDebtor._id),
         statements ? statements : 0,
-        caseTemp.debtor?.basicInformation?.fullName
+        caseTemp.debtor?.basicInformation?.fullName,
+        req.params.id
       );
     }
 
@@ -861,7 +889,6 @@ class DebtorService {
       return [false, constantsUtil.notFoundMessage('case')];
     }
     if (caseTemp.strategyThree) {
-      console.log('i am here');
       const result = await this.strategyRepository.getOne<IStrategy>({
         caseId: String(caseTemp._id),
         name: 'strategy_three',
@@ -874,9 +901,43 @@ class DebtorService {
   };
 
   lumpSumJustifications = async (req: Request) => {
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
+    }
+    // let creditors = null;
+    // creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
+    // creditors = Array.from(
+    //   new Map(
+    //     creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
+    //   ).values()
+    // );
+    let lumpSum = {};
+    if (caseTemp.strategyTwo) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'strategy_two',
+      });
+      lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
+      // for (const creditor of creditors) {
+      //   console.log(
+      //     creditor.creditorAccountTitle,
+      //     'creditor.creditorAccountTitle'
+      //   );
+      //   const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
+      //   lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
+      //     parseFloat(
+      //       (
+      //         caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
+      //         repaidDebt
+      //       ).toFixed(2)
+      //     );
+      // }
     }
     if (caseTemp.lumpSumJustifications) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -889,7 +950,8 @@ class DebtorService {
     const models = await caseUtil.getJustificationModels();
     const justifications = await caseUtil.lumpSumJustifications(
       caseTemp,
-      models
+      models,
+      lumpSum
     );
     return justifications;
   };
@@ -1050,27 +1112,29 @@ class DebtorService {
   }
 
   async getDebtorSummery(req: Request) {
-    let reqTemp: any;
-    const user = await this.userRepository.getById<IUser>(reqTemp.id);
-    if (!user) return [false, constants.notFoundMessage('User'), {}];
-
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>(user._id);
+    const reqTemp: any = req;
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      userId: reqTemp.id,
+    });
+    console.log(getDebtor);
     if (!getDebtor) {
-      return [false, constants.notFoundMessage('Debtor'), {}];
+      return [false, constants.notFoundMessage('debtor')];
     }
     let getAllCreditor: Array<ICreditor | any> | any =
-      await caseUtil.getCreditorsForDebtor(req.params.id);
+      await caseUtil.getCreditorsForDebtor(String(getDebtor._id));
 
     let payments = await paymentUtil.getPaymentsByStatusAndDebtor(
       'Upcoming',
-      req.params.id
+      String(getDebtor._id)
     );
     let pendingPayments: Array<IPayment | any> | any =
-      await paymentUtil.getPaymentsByStatusAndDebtor('Pending', req.params.id);
+      await paymentUtil.getPaymentsByStatusAndDebtor(
+        'Pending',
+        String(getDebtor._id)
+      );
 
     return [
       true,
-      constants.successFoundMessage('Debtor account details'),
       {
         creditorList: getAllCreditor,
         totalCreditor: getAllCreditor?.length ?? 0,
@@ -1104,23 +1168,216 @@ class DebtorService {
   }
 
   async generateVideoWithGenAi(req: Request) {
-    let reqTemp: any;
-    const user = await this.userRepository.getById<IUser>(reqTemp.id);
-    if (!user) return [false, constants.notFoundMessage('User'), {}];
+    // let reqTemp: any;
+    // const user = await this.userRepository.getById<IUser>(reqTemp.id);
+    // if (!user) return [false, constants.notFoundMessage('User'), {}];
 
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>(user._id);
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
 
     if (!getDebtor) return [false, constants.notFoundMessage('Debtor'), {}];
 
     let getVideo = await debtorUtil.generateVideoWithGenAi(getDebtor);
-    await emailUtil.sendEmailToDebtorForInitialOverView(
-      getDebtor,
-      getVideo[0]?.permalink
-    );
-
+    // await emailUtil.sendEmailToDebtorForInitialOverView(
+    //   getDebtor,
+    //   getVideo[0]?.permalink
+    // );
     return !_.isEmpty(getVideo[0]?.permalink)
-      ? [true, constants.successFoundMessage('Video'), getVideo]
-      : [false, constants.notFoundMessage('Video'), getVideo];
+      ? [true, []]
+      : [false, constants.notFoundMessage('Video')];
+  }
+  async getMcaAndFinancials(req: Request) {
+    const reqTemp: any = req;
+    const {mca, bankStatements} = req.body;
+    const documents = mca.concat(bankStatements);
+    const extractedFields = await caseUtil.getExtractionMCA({
+      documents: documents,
+    } as any);
+    if (!extractedFields)
+      return [false, 'Could not extract data from documents'];
+    const debtorBody = await debtorUtil.mapDebtor(
+      extractedFields.extracted_fields
+    );
+    debtorBody['extractedFields'] = extractedFields.extracted_fields;
+    for (const iterator of extractedFields.extracted_fields) {
+      console.log(iterator, 'extractedFields.extracted_fields');
+    }
+    const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
+    let finalObj = {};
+    const finalArray = [];
+    if (!createDebtor[0]) return [false, constants.failureAddMessage('debtor')];
+    await this.debtorRepository.updateById<IDebtor>(
+      String(createDebtor[1]['debtor']._id),
+      {userId: reqTemp.id}
+    );
+    console.log(
+      createDebtor[1]['creditorNames'],
+      'createDebtor[1][creditorNames]'
+    );
+    const caseTemp = await googleDriveUtil.mapCreditorsCases(
+      extractedFields.extracted_fields,
+      createDebtor[1]['creditorNames']
+    );
+    for (const iterator of caseTemp) {
+      console.log(iterator, 'okokokok');
+    }
+    for (const bin of caseTemp) {
+      bin['platform'] = true;
+      bin.creditor.platform = true;
+    }
+    const copyCaseTemp = cloneDeep(caseTemp);
+    const result = await caseUtil.createCreditorsCases(
+      {data: caseTemp},
+      reqTemp.name,
+      reqTemp.id,
+      String(createDebtor[1]['debtor']._id)
+    );
+    if (result[0]) {
+      for (let i = 0; i < copyCaseTemp.length; i++) {
+        finalObj['creditorName'] =
+          copyCaseTemp[i].creditor?.businessInformation?.companyName;
+        finalObj['paybackAmount'] = result[1][i].totalDebt;
+        finalObj['balance'] = result[1][i].remaining;
+        finalObj['apr'] = await commonUtil.getValuePercenatge(
+          result[1][i].contractDetails.purchased_percentage
+        );
+        finalObj['currentPayment'] =
+          await commonUtil.removeDashesAndRoundBrackets(
+            result[1][i].contractDetails.repayment_amount
+          );
+        finalObj['caseId'] = String(result[1][i]._id);
+        finalArray.push(finalObj);
+        finalObj = {};
+      }
+    }
+    if (!finalArray.length) return [false, 'Could not create cases'];
+    return [
+      true,
+      {creditors: finalArray, debtorId: createDebtor[1]['debtor']._id},
+    ];
+  }
+
+  async analyzeAndGetSettlementRanges(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    const combineResult = {};
+    if (getDebtor.videoUrl) combineResult['videoUrl'] = getDebtor.videoUrl;
+    if (!getDebtor.videoUrl) {
+      const response = await debtorUtil.generateVideoWithGenAi(getDebtor);
+      if (Array.isArray(response)) {
+        await this.debtorRepository.updateById(req.params.id, {
+          videoUrl: response[0].permalink,
+        });
+      }
+      combineResult['videoUrl'] = response[0].permalink;
+    }
+    const debtorCreditors = await caseUtil.getAllCreditorsByCaseIds(
+      req.body.caseIds
+    );
+    const moneyThumb = await debtorUtil.getScoreCard(getDebtor);
+    const scoreCard = moneyThumb.scoreCard;
+    // await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
+    //   debtorCreditors,
+    //   getDebtor,
+    //   moneyThumb.scoreCard
+    // );
+    // await creditorUtil.addBreakEven(debtorCreditors);
+    const plans = {};
+    const commissionPlan = {};
+    const allCreditorsResult = [];
+    const creditors = [];
+    const metricData = scoreCard['metrics']['metricdata'];
+    if (metricData?.length) {
+      const revenueArray = metricData.find(row => row[0] === 'Revenue');
+      console.log(revenueArray, 'revenueArray');
+      combineResult['avgMonthlySales'] = parseFloat(revenueArray[1]);
+    }
+    const mcaCompanies = scoreCard['mcacompanies'];
+    const getTotalBudget = await moneyThumbUtil.getTotalBudget(mcaCompanies);
+    console.log(getTotalBudget, 'getTotalBudget');
+    const getProfitAndTrueRevenue =
+      await moneyThumbUtil.getAnuallyProfitAndTrueRevenue(metricData);
+    console.log(getProfitAndTrueRevenue, 'getProfitAndTrueRevenue');
+    const netProfitMargin =
+      (Math.abs(getTotalBudget) + getProfitAndTrueRevenue.profit) /
+      getProfitAndTrueRevenue.trueRevenue;
+
+    console.log(netProfitMargin, 'netProfitMargin');
+    const netProfitMargin100 = netProfitMargin * 100;
+    combineResult['netProfitMargin'] =
+      Math.round(netProfitMargin100 * 100) / 100;
+    if (debtorCreditors.length) {
+      // const data = getScoresSettlementRange[1];
+      // plans['maximum'] = debtorCreditors.reduce(
+      //   (sum, obj) => sum + obj.breakEven,
+      //   0
+      // );
+      // plans['percentageShare'] = debtorCreditors.reduce(
+      //   (sum, obj) => sum + obj.percentageReceivable,
+      //   0
+      // );
+      const totalRemaining = debtorCreditors.reduce(
+        (sum, obj) => sum + obj.remaining,
+        0
+      );
+      plans['weeklyPayment'] = parseFloat(
+        ((totalRemaining / 12 / 22) * 5).toFixed(2)
+      );
+      // const benefits = await debtorUtil.getBenefits(
+      //   plans,
+      //   scoreCard,
+      //   getDebtor,
+      //   debtorCreditors,
+      //   totalRemaining
+      // );
+      // combineResult['benefits'] = benefits;
+      console.log(totalRemaining, 'totalRemaining');
+      // commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
+      commissionPlan['4Week'] = parseFloat((totalRemaining * 0.12).toFixed(2));
+      // commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
+      console.log(commissionPlan, 'commissionPlan');
+      console.log(plans, 'planssss');
+      combineResult['plans'] = plans;
+      combineResult['commissionPlan'] = commissionPlan;
+      for (const creditor of debtorCreditors) {
+        const capture = {};
+        const creditorObj = {};
+        capture['name'] = creditor.creditorAccountTitle;
+        capture['payableAmount'] = creditor.totalDebt;
+        const balance = creditor.totalDebt - creditor.remainingAmountPaid;
+        capture['balance'] = balance < 0 ? 0 : balance;
+        const weeklyPayment = parseFloat(
+          ((creditor.remaining / 12 / 22) * 5).toFixed(2)
+        );
+        capture['weeklyPayment'] = weeklyPayment;
+        creditorObj['weeklyPayment'] = weeklyPayment;
+        capture['interestRate'] = '12';
+        creditorObj['name'] = creditor.creditorAccountTitle;
+        // creditorObj['maximum'] = creditor.breakEven;
+        // creditorObj['percentageShare'] = creditor.percentageReceivable;
+        creditors.push(creditorObj);
+        allCreditorsResult.push(capture);
+      }
+      console.log(allCreditorsResult, 'allCreditorsResult');
+      console.log(creditors, 'creditors');
+
+      combineResult['allCreditorsResult'] = allCreditorsResult;
+      combineResult['creditors'] = creditors;
+    }
+    const accounts = scoreCard['accountslist']['data'];
+    const yearlyResults = await debtorUtil.getYearlySales(accounts);
+    console.log(yearlyResults, 'yearlyResults');
+    combineResult['yearlySales'] = yearlyResults;
+    const yearlyProfitMargin =
+      await debtorUtil.getYearlyProfitMargin(scoreCard);
+    console.log(yearlyProfitMargin, 'yearlyProfitMargin');
+    combineResult['yearlyProfitMargin'] = yearlyProfitMargin;
+    return [true, combineResult];
   }
 }
 

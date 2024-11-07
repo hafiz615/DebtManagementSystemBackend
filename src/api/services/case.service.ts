@@ -134,7 +134,10 @@ class CaseService {
       !findCase?.debtor?.strategy1MaxProfit &&
       !findCase?.debtor?.strategy3MaxProfit
     ) {
-      await moneyThumbUtil.run(String(findCase.debtor._id));
+      await moneyThumbUtil.run(
+        findCase.debtor,
+        findCase.debtor.businessInformation.companyName
+      );
       this.caseRepository.updateById<ICase>(req.params.id, {
         getCaseIdPercentage: true,
       });
@@ -257,7 +260,6 @@ class CaseService {
       //   });
       // }
       await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-        totalCommission: req.body.totalCommission,
         weeklyCommission: req.body.commission,
         updatedAt: commonUtil.getCurrentDate(),
       });
@@ -267,6 +269,11 @@ class CaseService {
       if (!checkCasePayment[0]) return checkCasePayment;
     }
     req.body.updatedAt = commonUtil.getCurrentDate();
+    if (req.body.paidAmount) {
+      req.body.remaining = req.body.totalDebt - req.body.paidAmount;
+      if (req.body.remaining < 0) req.body.remaining = 0;
+      req.body.remainingAmountPaid = req.body.paidAmount;
+    }
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
@@ -342,7 +349,7 @@ class CaseService {
       );
       caseUtil.getSettlementRange(findCase);
       caseUtil.getLumpSumAmount(caseUpdated);
-      caseUtil.getFullProfitSettlement(caseUpdated);
+      // caseUtil.getFullProfitSettlement(caseUpdated);
     }
     return [true, caseUpdated];
   };
@@ -544,12 +551,15 @@ class CaseService {
     return result;
   };
 
-  getScoresSettlementRange = async (req: Request) => {
-    if (!req.query.all) {
-      return [false, 'Query param missing'];
-    }
+  getScoresSettlementRange = async (
+    all: string,
+    hardReload: string,
+    body: any,
+    caseId: string
+  ) => {
+    console.log(caseId, 'llklklk');
     const caseTemp: any = await this.caseRepository.getById<ICase>(
-      req.params.id,
+      caseId,
       undefined,
       undefined,
       [{path: 'debtor'}]
@@ -559,10 +569,11 @@ class CaseService {
       creditorNames = null;
     let creditors = null;
     let settlementRange = null;
-    let hardReload = 'false';
+    // let hardReload = 'false';
     let data = {};
-    if (req.query.hardReload && req.query.hardReload === 'true')
-      hardReload = 'true';
+    // if (req.query.hardReload && req.query.hardReload === 'true')
+    //   hardReload = 'true';
+    const moneyThumb = await debtorUtil.getScoreCard(caseTemp.debtor);
     if (hardReload === 'true') {
       await this.caseRepository.updateById<ICase>(caseTemp._id, {
         strategyTwo: false,
@@ -572,9 +583,13 @@ class CaseService {
         fullProfitJustifications: false,
         updatedAt: commonUtil.getCurrentDate(),
       });
+      await moneyThumbUtil.saveData(
+        moneyThumb.appid,
+        moneyThumb.scoreCard,
+        caseTemp.debtor
+      );
+      caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
     }
-    if (hardReload === 'true')
-      caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
     const debtor: any = caseTemp.debtor;
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
     creditors = await creditorUtil.checkCreditorsMapping(creditors);
@@ -586,11 +601,14 @@ class CaseService {
     const commisionPercentage =
       await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
         creditors,
-        debtor
+        debtor,
+        moneyThumb.scoreCard
       );
     await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage[0];
-    data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
+    data['maxProfitCommission'] = commisionPercentage[1];
+    data['percentageReceivableCommissionAmount'] = commisionPercentage[2];
+    data['totalCommission'] = debtor.totalCommission;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     const result = await this.strategyRepository.getOne<IStrategy>({
@@ -628,11 +646,16 @@ class CaseService {
       data['creditorNames'] = creditorNames;
       if (typeof creditorNames === 'string') {
         data['getScores'] = null;
-        data['settlementRange'] = null;
+        data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
         return [true, data];
       }
     }
-    if (req.query.all === 'true') {
+    if (all === 'true') {
       if (
         hardReload !== 'true' &&
         caseTemp.strategyOne_2 &&
@@ -648,7 +671,12 @@ class CaseService {
         );
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -656,10 +684,10 @@ class CaseService {
         );
       }
     } else {
-      if (req.body.creditorNames.length) {
+      if (body.creditorNames.length) {
         const casesCreditors: any =
           await this.caseRepository.getAllWithoutPagination<ICase>(
-            {creditor: {$in: req.body.creditorNames}, debtor: debtor},
+            {creditor: {$in: body.creditorNames}, debtor: debtor},
             undefined,
             undefined,
             {_id: -1},
@@ -672,7 +700,12 @@ class CaseService {
         );
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -686,13 +719,32 @@ class CaseService {
       result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
-      await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      data['settlementRange'] = settlementRange;
+      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+      // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      //   creditors,
+      //   settlementRange
+      // );
+      // data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
-      await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      data['settlementRange'] = settlementRange;
+      if (typeof settlementRange === 'string') {
+        settlementRange = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
+      }
+      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+      // data['settlementRange'] = settlementRange;
     }
+    await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange,
+      caseId
+    );
+    data['settlementRange'] = settlementRange;
     return [true, data];
   };
 
@@ -768,6 +820,12 @@ class CaseService {
     let data = {};
     caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
     let debtor: any = caseTemp.debtor;
+    const moneyThumb = await debtorUtil.getScoreCard(debtor);
+    await moneyThumbUtil.saveData(
+      moneyThumb.appid,
+      moneyThumb.scoreCard,
+      debtor
+    );
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       strategyTwo: false,
       strategyThree: false,
@@ -786,7 +844,8 @@ class CaseService {
     const commisionPercentage =
       await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
         creditors,
-        debtor
+        debtor,
+        moneyThumb.scoreCard
       );
     await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage[0];

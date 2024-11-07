@@ -14,6 +14,8 @@ export class User {
   address = '';
   isDeleted = false;
   sessionIds = Array<string>();
+  platform = '';
+  isPlatform = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

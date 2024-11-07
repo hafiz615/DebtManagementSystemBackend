@@ -447,6 +447,9 @@ class UserService {
         return [true, updateUser];
     }
     async addSenderIdentity(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
         const data = {
             from_email: req.body.from_email,
             reply_to: req.body.from_email,
@@ -455,7 +458,7 @@ class UserService {
             city: req.body.city,
         };
         data['country'] = 'USA';
-        data['nickname'] = `debtor-${new Date().getTime()}`;
+        data['nickname'] = `debtor-${req.params.id}`;
         console.log(data);
         const request = {
             url: `/v3/verified_senders`,
@@ -479,6 +482,7 @@ class UserService {
         return [true, []];
     }
     async getVerifySenders(req) {
+        const reqTemp = req;
         const request = {
             url: `/v3/verified_senders`,
             method: 'GET',
@@ -486,10 +490,21 @@ class UserService {
         const result = await client_1.default.request(request);
         console.log(result[0].body.results, 'result[0].body.results');
         let emails = [];
-        if (result[0]?.body?.results?.length) {
-            emails = result[0].body.results.map(temp => {
-                return temp.from_email;
-            });
+        for (const item of result[0].body.results) {
+            if (item.verified) {
+                if (item.nickname.includes(req.params.id))
+                    emails.push(item.from_email);
+                if (item.nickname.includes(reqTemp.id))
+                    emails.push(item.from_email);
+            }
+        }
+        if (!emails.includes(reqTemp.email)) {
+            const email = result[0].body.results
+                .filter(item => item.from_email === reqTemp.email)
+                .map(item => item.from_email);
+            console.log(email, 'uhuhuhu');
+            if (email.length)
+                emails.push(...email);
         }
         return [true, emails];
     }
@@ -518,13 +533,18 @@ class UserService {
         req.body.email = req.body.email.toLowerCase();
         req.body.role = 'Debtor';
         const email = req.body.email;
+        console.log(email);
         let user = await this.userRepository.getOne({
             email: email,
             isDeleted: false,
         });
+        if (user && !user.isPlatform) {
+            return [false, constants_util_1.default.alreadyExistsMessage('User')];
+        }
         if (!user) {
             req.body.phone = await common_util_1.default.cleanPhoneNumber(req.body.phone);
             req.body.isActive = true;
+            req.body.isPlatform = true;
             const newUser = new user_repomodel_1.User();
             const validatedUser = dataCopier_util_1.DataCopier.copy(newUser, req.body);
             user = await this.userRepository.create(validatedUser);
@@ -534,7 +554,40 @@ class UserService {
         }
         const uuid = (0, uuid_1.v4)();
         const token = await this.tokenService.create(user._id, uuid);
+        await this.userRepository.updateById(user._id, {
+            $push: { sessionIds: uuid },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
         return [true, { user, token: token }];
+    }
+    async addUserSender(req) {
+        const findUser = await this.userRepository.getOne({
+            email: req.body.from_email,
+            isActive: true,
+        });
+        if (!findUser)
+            return [
+                false,
+                'This user is not registered on First Choice Debt Solutions',
+            ];
+        const reqTemp = req;
+        const data = {
+            from_email: req.body.from_email,
+            reply_to: req.body.from_email,
+            from_name: req.body.from_name,
+            address: req.body.address,
+            city: req.body.city,
+        };
+        data['country'] = 'USA';
+        data['nickname'] = `user-${reqTemp.id}-${new Date().getSeconds()}`;
+        console.log(data);
+        const request = {
+            url: `/v3/verified_senders`,
+            method: 'POST',
+            body: data,
+        };
+        const result = await client_1.default.request(request);
+        return [true, []];
     }
 }
 exports.default = UserService;

@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcryptjs_1 = require("bcryptjs");
 const user_repository_1 = require("../api/repository/user/user.repository");
 const common_util_1 = __importDefault(require("./common.util"));
-const setEnv_1 = require("../database/repomodels/setEnv");
+const setEnv_1 = require("./setEnv");
 class UserUtil {
     constructor() {
         this.userRepository = new user_repository_1.UserRepository();
@@ -34,7 +34,7 @@ class UserUtil {
     }
     async getAllUserFilters(req) {
         const reqTemp = req;
-        const filters = { isDeleted: false };
+        const filters = { isDeleted: false, isPlatform: { $ne: true } };
         switch (reqTemp.role) {
             case 'Super User':
                 filters['role'] = { $ne: 'Super User' };

@@ -53,6 +53,12 @@ const userModel: Schema = new Schema({
     type: String,
   },
   isDeleted: {type: Boolean},
+  platform: {
+    type: String,
+  },
+  isPlatform: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

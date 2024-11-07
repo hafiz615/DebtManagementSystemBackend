@@ -40,6 +40,7 @@ export interface ICreditor extends Document {
   // paymentType: string;
   // customerVaultId: string;
   aggression: number;
+  platform: boolean;
   createdAt: string;
   updatedAt: string;
 }

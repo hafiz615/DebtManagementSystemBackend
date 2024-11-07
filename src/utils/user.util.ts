@@ -4,7 +4,7 @@ import {IUser} from '../database/interfaces/user.interface';
 import commonUtil from './common.util';
 import constantsUtil from './constants.util';
 import {Request} from 'express';
-import {EnvSetup} from '../database/repomodels/setEnv';
+import {EnvSetup} from './setEnv';
 
 class UserUtil {
   private userRepository: UserRepository;
@@ -41,7 +41,7 @@ class UserUtil {
 
   async getAllUserFilters(req: Request) {
     const reqTemp: any = req;
-    const filters = {isDeleted: false};
+    const filters = {isDeleted: false, isPlatform: {$ne: true}};
     switch (reqTemp.role) {
       case 'Super User':
         filters['role'] = {$ne: 'Super User'};

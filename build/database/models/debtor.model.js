@@ -137,7 +137,6 @@ const debtorSchema = new mongoose_1.Schema({
     },
     weeklyCommission: {
         type: Number,
-        select: false,
     },
     weeklyCommissionPaid: {
         type: Boolean,
@@ -197,6 +196,18 @@ const debtorSchema = new mongoose_1.Schema({
     totalStatements: {
         type: Number,
     },
+    percentageChange: Boolean,
+    percentageChangeDate: Date,
+    userId: {
+        type: String,
+    },
+    platform: {
+        type: Boolean,
+    },
+    trueProfit: {
+        type: Number,
+    },
+    videoUrl: String,
     createdAt: {
         type: Date,
         required: true,

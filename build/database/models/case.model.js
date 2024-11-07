@@ -146,6 +146,9 @@ const caseModel = new mongoose_1.Schema({
     getCaseIdPercentage: {
         type: Boolean,
     },
+    platform: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

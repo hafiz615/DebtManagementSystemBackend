@@ -206,7 +206,7 @@ class EmailUtil {
     body: any,
     type: string
   ) {
-    let {from, sendTo, subject, content} = body;
+    let {from, sendTo, subject, content, cc} = body;
 
     const allValues = await this.getValues(content);
     if (allValues.length) {
@@ -236,7 +236,7 @@ class EmailUtil {
           from,
           subject,
           content,
-          [],
+          cc,
           null,
           caseId
         );
@@ -531,10 +531,10 @@ class EmailUtil {
     buffer?: Buffer,
     caseId?: string
   ) {
-    const checkIfDebtor = await this.getVerifySender(from);
-    console.log(checkIfDebtor);
+    const bin = await this.getVerifySender(from);
+    console.log(bin);
     let headers = {};
-    if (caseId && checkIfDebtor) {
+    if (caseId && bin === 'debtor') {
       const caseTemp: any = await this.caseRepository.getById<ICase>(
         caseId,
         '_id',
@@ -551,6 +551,15 @@ class EmailUtil {
         subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
       if (caseTemp.debtor?.businessInformation?.EIN)
         subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+      headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+    }
+    if (caseId && bin === 'user') {
+      const user = await this.userRepository.getOne<IUser>(
+        {email: from},
+        '_id name',
+        undefined
+      );
+      subject += ` First Choice-DMS ${user.name}`;
       headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
     }
     console.log(subject, 'subject');
@@ -667,7 +676,10 @@ class EmailUtil {
       });
     }
     console.log(email, 'kjhkjhkjhkj');
-    return email[0]?.nickname.includes('debtor') ? true : false;
+    let bin = '';
+    if (email[0]?.nickname.includes('debtor')) bin = 'debtor';
+    if (!email[0]?.nickname.includes('debtor')) bin = 'user';
+    return bin;
   }
 
   async sendEmailIfDebtorGetsAdditionalDebt(
@@ -676,23 +688,25 @@ class EmailUtil {
     creditors: any
   ) {
     const remaining = cases.reduce((sum, item) => sum + item.remaining, 0);
-    for (const creditor of creditors) {
-      const content = `Dear ${creditor.creditorName},
-
-      We hope this message finds you well.
-      
-      We are writing to inform you that the debtor, ${debtor.basicInformation.fullName}, has currently taken on debt from a total of ${cases.length} creditors. The total outstanding debt across these creditors amounts to ${remaining}.
-      
-      Please feel free to reach out if you require any further details or have any questions regarding this matter.
-      
-      Thank you for your attention.
-      
-      Best regards,
-      First Choice Debt Solutions`;
-      const to = creditor.creditorEmail;
-      const from = process.env.defaultEmail;
-      const subject = `Notification Regarding Debtor's Additional Debt`;
-      await this.sendEmail(to, from, subject, content);
+    if (remaining) {
+      for (const creditor of creditors) {
+        const content = `Dear ${creditor.creditorName},
+  
+        We hope this message finds you well.
+        
+        We are writing to inform you that the debtor, ${debtor.basicInformation.fullName}, has currently taken on debt from a total of ${cases.length} creditors. The total outstanding debt across these creditors amounts to ${remaining}.
+        
+        Please feel free to reach out if you require any further details or have any questions regarding this matter.
+        
+        Thank you for your attention.
+        
+        Best regards,
+        First Choice Debt Solutions`;
+        const to = creditor.creditorEmail;
+        const from = process.env.defaultEmail;
+        const subject = `Notification Regarding Debtor's Additional Debt`;
+        await this.sendEmail(to, from, subject, content);
+      }
     }
   }
 
@@ -716,6 +730,17 @@ class EmailUtil {
       const to = creditor.creditorEmail;
       const from = process.env.defaultEmail;
       const subject = `Notification Regarding Debtor's Paid Debt`;
+      await caseUtil.addInHistory(
+        {
+          From: from,
+          To: to,
+          Content: content,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'EMAIL',
+          Subject: subject,
+        },
+        creditor.caseId
+      );
       await this.sendEmail(to, from, subject, content);
     }
   }
@@ -731,7 +756,8 @@ class EmailUtil {
     debtorName: string,
     previousSale: string,
     currentSale: string,
-    percentage: number
+    percentage: number,
+    caseId: string
   ) {
     for (const creditor of creditors) {
       const content = `Dear ${creditor.creditorName},
@@ -755,6 +781,17 @@ class EmailUtil {
       const to = creditor.creditorEmail;
       const from = process.env.defaultEmail;
       const subject = `Notice of Sales Performance for ${currentMonth}, ${currentYear}`;
+      await caseUtil.addInHistory(
+        {
+          From: from,
+          To: to,
+          Content: content,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'EMAIL',
+          Subject: subject,
+        },
+        caseId
+      );
       await this.sendEmail(to, from, subject, content);
     }
   }

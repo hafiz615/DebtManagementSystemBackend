@@ -48,7 +48,7 @@ router.post('/getAllUsers', authorize.validateAuth, userController.getAllUsers);
 router.post('/logout', authorize.validateAuth, userController.signOut);
 router.post('/dashboard', authorize.validateAuth, userController.dashboard);
 router.post(
-  '/addSenderIdentity',
+  '/addSenderIdentity/:id',
   authorize.validateAuth,
   userValidate.addSenderIdentity,
   userController.addSenderIdentity
@@ -65,7 +65,7 @@ router.post('/forgotPassword', userController.forgotPasswordLink);
 router.put('/forgotPasswordUpdate', userController.forgotPasswordUpdate);
 
 router.get(
-  '/getVerifySenders',
+  '/getVerifySenders/:id',
   authorize.validateAuth,
   userController.getVerifySenders
 );
@@ -74,6 +74,13 @@ router.post(
   '/thirdPartySignIn',
   userValidate.thirdPartySignIn,
   userController.thirdPartySignIn
+);
+
+router.post(
+  '/addUserSender',
+  authorize.validateAuth,
+  userValidate.addSenderIdentity,
+  userController.addUserSender
 );
 
 export default router;

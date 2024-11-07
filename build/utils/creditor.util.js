@@ -9,10 +9,12 @@ const creditor_repository_1 = require("../api/repository/creditor/creditor.repos
 const common_util_1 = __importDefault(require("./common.util"));
 const case_util_1 = __importDefault(require("./case.util"));
 const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
+const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 class CreditorUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.strategyRepository = new strategy_repository_1.StrategyRepository();
     }
     async checkCreditorsMapping(creditorsArray) {
         for (const creditor of creditorsArray) {
@@ -75,50 +77,52 @@ class CreditorUtil {
         ]);
     }
     async addBreakEven(creditors) {
+        console.log(creditors, 'kjkjkjkjk');
         for (const creditor of creditors) {
             const contractDetails = creditor.contractDetails;
             let amount = 0;
-            if (contractDetails?.loan_amount)
-                amount = case_util_1.default.getCleanAmount(contractDetails?.loan_amount);
-            if (contractDetails?.funded_amount)
+            if (contractDetails?.funded_amount) {
                 amount = case_util_1.default.getCleanAmount(contractDetails?.funded_amount);
-            const paidBack = creditor.remainingAmountPaid;
-            const currentBalance = amount - paidBack;
+            }
+            else if (contractDetails?.loan_amount) {
+                amount = case_util_1.default.getCleanAmount(contractDetails?.loan_amount);
+            }
+            const paidBack = creditor.previousAmountPaid;
+            const currentBalance = creditor.totalDebt - paidBack;
             let breakEven = amount * 1.2 - paidBack;
             if (breakEven <= 0)
                 breakEven = currentBalance * 0.3;
-            creditor['breakEven'] = breakEven;
+            if (breakEven < 0)
+                breakEven = 0;
+            console.log(breakEven, 'popopo');
+            creditor['breakEven'] = parseFloat(breakEven.toFixed(2));
         }
     }
-    async addCreditorPercentagesAndGetPercentageCommission(creditors, debtor) {
-        const token = await moneyThumb_util_1.default.authenticateUser();
-        let appid = 0;
-        console.log(debtor.appid, 'debtor.appid');
-        if (debtor.appid)
-            appid = debtor.appid;
-        if (!debtor.appid) {
-            const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, String(debtor._id));
-            appid = moneyThumbApp['appid'];
-        }
-        const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, appid);
+    async addCreditorPercentagesAndGetPercentageCommission(creditors, debtor, scoreCard) {
+        // const token = await moneyThumbUtil.authenticateUser();
+        // let appid = 0;
+        // console.log(debtor.appid, 'debtor.appid');
+        // if (debtor.appid) appid = debtor.appid;
+        // if (!debtor.appid) {
+        //   const moneyThumbApp = await moneyThumbUtil.createNewApp(
+        //     token,
+        //     debtor.businessInformation.companyName
+        //   );
+        //   appid = moneyThumbApp['appid'];
+        // }
+        // const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
         const accounts = scoreCard['accountslist'];
         console.log(accounts.data.length, 'accounttttt');
         let weeklyTrueCredit = 0;
         if (accounts.data.length) {
-            const len = accounts.data.length;
-            const trueCredit = parseFloat(accounts.data[len - 1]['true_credits']);
-            console.log(trueCredit, 'trueCredit');
-            const weekly = (trueCredit / 22) * 5;
-            console.log(weekly, 'weekly');
-            weeklyTrueCredit = Math.round(weekly * 100) / 100;
-            console.log(weeklyTrueCredit, 'weeklyTrueCredit');
+            weeklyTrueCredit = await moneyThumb_util_1.default.getWeeklyTrueCredit(accounts);
         }
         let totalRemaining = creditors.reduce((sum, item) => sum + item.remaining, 0);
-        const debtorTotalCommission = debtor?.totalCommission
-            ? debtor.totalCommission
-            : 0;
-        console.log(debtorTotalCommission, 'debtorTotalCommission');
-        totalRemaining = totalRemaining + debtorTotalCommission;
+        // const debtorTotalCommission = debtor?.totalCommission
+        //   ? debtor.totalCommission
+        //   : 0;
+        // console.log(debtorTotalCommission, 'debtorTotalCommission');
+        // totalRemaining = totalRemaining + debtorTotalCommission;
         console.log(totalRemaining, 'totalRemaining');
         const weeklyBudgetStrategy3 = debtor?.weeklyBudgetStrategy3
             ? debtor.weeklyBudgetStrategy3
@@ -128,21 +132,55 @@ class CreditorUtil {
             console.log(debtor.weeklyBudgetStrategy3, 'debtor.weeklyBudgetStrategy3');
             console.log(totalRemaining, 'totalRemaining');
             console.log(creditor.remaining, 'creditor.remaining');
-            const percentage = (creditor.remaining / totalRemaining) * weeklyBudgetStrategy3;
+            const creditorPer = creditor.remaining / totalRemaining;
+            console.log(creditorPer, 'creditorPer');
+            if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
+                console.log(creditorPer * debtor.weeklyBudgetStrategy1, 'creditorPer * debtor.weeklyBudgetStrategy1');
+                creditor.maxProfitAmount =
+                    Math.round(creditorPer * debtor.weeklyBudgetStrategy1 * 100) / 100;
+            }
+            else {
+                const percent80 = debtor.weeklyBudgetStrategy1 * 0.8;
+                creditor.maxProfitAmount =
+                    Math.round(creditorPer * percent80 * 100) / 100;
+            }
+            const percentage = creditorPer * weeklyBudgetStrategy3;
             creditor.percentageReceivable = Math.round(percentage * 100) / 100;
             console.log(creditor.percentageReceivable, 'creditor.percentageReceivable');
-            creditor.percentageReceivableAmount =
-                Math.round(creditor.percentageReceivable * weeklyTrueCredit * 100) /
-                    100;
+            creditor.percentageReceivableAmount = parseFloat(((creditor.percentageReceivable / 100) * weeklyTrueCredit).toFixed(2));
             console.log(creditor.percentageReceivableAmount, 'creditor.percentageReceivableAmount');
         }
-        const percentageReceivableCommission = (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
-        const pRcRoundCommission = Math.round(percentageReceivableCommission * 100) / 100;
-        const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
-        console.log(percentageReceivableCommission, 'percentageReceivableCommission');
-        console.log(pRcRoundCommission, 'pRcRoundCommission');
-        console.log(pRCAmount, 'pRCAmount');
-        return [pRcRoundCommission, Math.round(pRCAmount * 100) / 100];
+        // const percentageReceivableCommission =
+        //   (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
+        // const pRcRoundCommission =
+        //   Math.round(percentageReceivableCommission * 100) / 100;
+        // const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
+        // console.log(
+        //   percentageReceivableCommission,
+        //   'percentageReceivableCommission'
+        // );
+        // console.log(pRcRoundCommission, 'pRcRoundCommission');
+        // console.log(pRCAmount, 'pRCAmount');
+        let maxProfitCommission = 0;
+        if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
+            maxProfitCommission = debtor.trueProfit * 0.2;
+        }
+        else {
+            maxProfitCommission = debtor.weeklyBudgetStrategy1 * 0.2;
+        }
+        let receivableCommission = 0;
+        if (debtor.weeklyBudgetKeyStrategy3 === 'strategy3Profit') {
+            receivableCommission = debtor.trueProfit * 0.2;
+        }
+        else {
+            const factor = ((debtor.weeklyBudgetStrategy3 / 0.8) * 0.2) / 100;
+            receivableCommission = debtor.trueProfit * factor;
+        }
+        return [
+            20,
+            parseFloat(maxProfitCommission.toFixed(2)),
+            parseFloat(receivableCommission.toFixed(2)),
+        ];
     }
     async addWeeklyTrueAmount(creditors, settlementRange) {
         if (settlementRange.percentage_settlement_over_weekly_true_revenue) {
@@ -162,6 +200,34 @@ class CreditorUtil {
                 }
             }
         }
+    }
+    async replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId) {
+        let newWeeks = [];
+        let newAmount = 0;
+        for (const creditor of creditors) {
+            if (settlementRange.settlement_range &&
+                settlementRange.settlement_range[creditor.creditorAccountTitle]) {
+                settlementRange.settlement_range[creditor.creditorAccountTitle]['recommendation 1'].max = creditor.maxProfitAmount;
+                newAmount += creditor.maxProfitAmount;
+            }
+            if (settlementRange.weeks_till_paid &&
+                settlementRange.weeks_till_paid[creditor.creditorAccountTitle]) {
+                const weeks = Math.round(creditor.remaining / creditor.maxProfitAmount);
+                settlementRange.weeks_till_paid[creditor.creditorAccountTitle]['Weeks remaining based on recommendation 1'].max = weeks;
+                newWeeks.push(weeks);
+            }
+        }
+        if (newAmount) {
+            settlementRange.settlement_range.Summary['recommendation 1'].max =
+                newAmount;
+        }
+        if (newWeeks) {
+            settlementRange.weeks_till_paid.Summary['Weeks remaining based on recommendation 1'].max = Math.max(...newWeeks);
+        }
+        await this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, {
+            'data.settlementRange': settlementRange,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
     }
 }
 exports.default = new CreditorUtil();

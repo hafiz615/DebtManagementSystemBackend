@@ -33,6 +33,7 @@ const justification_repository_1 = require("../api/repository/justification/just
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
+const debtor_util_1 = __importDefault(require("./debtor.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -62,6 +63,7 @@ class CaseUtil {
         });
     }
     async createDebtor(data, createdBy) {
+        console.log(createdBy, 'plplplpl');
         // let data = req.body as IDebtor;
         // const reqTemp: any = req;
         const newDebtor = new debtor_repomodel_1.Debtor();
@@ -92,7 +94,7 @@ class CaseUtil {
         for (const interval of data.intervals) {
             if (interval.frequency === 0) {
                 payment.dueDate = interval.startDate;
-                tempPayment = await this.populatePayment(data._id, payment, interval, 0);
+                tempPayment = await this.populatePayment(data._id, payment, interval, 0, String(data.debtor));
                 paymentsArray.push(tempPayment);
             }
             if (interval.frequency != 0) {
@@ -103,7 +105,7 @@ class CaseUtil {
                     else {
                         payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i - 1);
                     }
-                    tempPayment = await this.populatePayment(data._id, payment, interval, i);
+                    tempPayment = await this.populatePayment(data._id, payment, interval, i, String(data.debtor));
                     paymentsArray.push(tempPayment);
                 }
             }
@@ -165,7 +167,7 @@ class CaseUtil {
         }
         return currentDate.toString();
     }
-    async populatePayment(caseId, payment, interval, frequency) {
+    async populatePayment(caseId, payment, interval, frequency, debtor) {
         const uuid = (0, uuid_1.v4)();
         payment.amount = interval.amount;
         payment.frequency = frequency;
@@ -173,6 +175,7 @@ class CaseUtil {
         payment.intervalId = String(interval._id);
         payment.timePeriod = interval.timePeriod;
         payment.paymentReference = uuid;
+        payment.debtorId = debtor;
         return { ...payment };
     }
     async getCaseCode() {
@@ -184,8 +187,10 @@ class CaseUtil {
     }
     async getAllCreditorsOfDebtor(debtor) {
         const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
-        const tempCases = cases;
-        return tempCases.map(obj => ({
+        return await this.getAllCreditorsMapping(cases);
+    }
+    async getAllCreditorsMapping(cases) {
+        return cases.map(obj => ({
             totalDebt: obj.totalDebt,
             caseCode: obj.caseCode,
             remaining: obj.remaining,
@@ -203,10 +208,22 @@ class CaseUtil {
             remainingAmountPaid: obj.remainingAmountPaid
                 ? obj.remainingAmountPaid
                 : 0,
+            previousAmountPaid: obj.paidAmount,
         }));
     }
+    async getAllCreditorsByCaseIds(caseIds) {
+        const cases = await this.caseRepository.getAllWithoutPagination({ _id: caseIds, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount', undefined, { _id: -1 }, {
+            path: 'creditor',
+            select: [
+                'basicInformation.fullName',
+                'accountTitle',
+                'accountTitleMapping',
+            ],
+        });
+        return await this.getAllCreditorsMapping(cases);
+    }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid', undefined, { _id: -1 }, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',
@@ -1509,8 +1526,18 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
+        const result = await this.strategyRepository.getOne({
+            caseId: String(caseTemp._id),
+            name: 'strategy_one',
+        });
+        const percentage_settlement_over_weekly_budget = result.data.settlementRange.percentage_settlement_over_weekly_budget;
+        delete percentage_settlement_over_weekly_budget.Summary;
+        console.log(percentage_settlement_over_weekly_budget, 'percentage_settlement_over_weekly_budget');
         const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
-        const data = { LLMs: models };
+        const data = {
+            llm_options: { LLMs: models },
+            settlements: { creditors: percentage_settlement_over_weekly_budget },
+        };
         try {
             console.log('I am in get-settlement-justifications');
             console.log('URL: ', url);
@@ -1542,13 +1569,17 @@ class CaseUtil {
             return [false, error.message];
         }
     }
-    async lumpSumJustifications(caseTemp, models) {
+    async lumpSumJustifications(caseTemp, models, lupmSum) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const url = `${process.env.baseUrlAI}get-lump-sum-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
-        const data = { LLMs: models };
+        console.log(lupmSum);
+        const url = `${process.env.baseUrlAI}get-lump-sum-justifications?debtor_id=${String(caseTemp.debtor._id)}&enable_cache=${true}`;
+        const data = {
+            llm_options: { LLMs: models },
+            lumpsum_settlement: { creditors: lupmSum },
+        };
         try {
             console.log('I am in get-lump-sum-justifications');
             console.log('URL: ', url);
@@ -1641,8 +1672,19 @@ class CaseUtil {
                 });
                 return [false, response.data.error];
             }
+            const creditors = await debtor_util_1.default.getCreditorsMapping({
+                _id: String(caseTemp.debtor),
+            });
+            let lumpSum = response.data;
+            const lumpsum_settlement = lumpSum.lumpsum_settlement;
+            for (const creditor of creditors) {
+                const repaidDebt = lumpsum_settlement[creditor.creditorAccountTitle].repaid_debt;
+                console.log(this.getCleanAmount(creditor.contractDetails.funded_amount));
+                lumpsum_settlement[creditor.creditorAccountTitle].remaining_principle_amount = parseFloat((this.getCleanAmount(creditor.contractDetails.funded_amount) -
+                    repaidDebt).toFixed(2));
+            }
             this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_two' }, {
-                'data.lumpSumAmount': response.data,
+                'data.lumpSumAmount': lumpSum,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
             this.caseRepository.updateById(caseTemp._id, {
@@ -1802,6 +1844,7 @@ class CaseUtil {
         return creditorNames;
     }
     async getExtractionMCA(debtor) {
+        console.log('hahahahahah');
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
@@ -1828,7 +1871,7 @@ class CaseUtil {
         return match ? true : false;
     }
     async getExtractionMCA_AI(documents, token) {
-        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
         try {
             const form = new form_data_1.default();
             for (let doc of documents) {
@@ -1864,7 +1907,7 @@ class CaseUtil {
         }
     }
     async getExtractionMCA_AIBuffer(documents, token) {
-        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=true`;
+        const url = `${process.env.baseUrlAI}extract-fields-multiple-files?enable_cache=false`;
         try {
             const form = new form_data_1.default();
             for (let doc of documents) {
@@ -2066,6 +2109,7 @@ class CaseUtil {
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         const getCreditorsEmail = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
+        const creditorsPaidAmount = await debtor_util_1.default.getPaidAmountOfCreditors(debtor);
         for (const body of dataArray) {
             console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
@@ -2116,6 +2160,14 @@ class CaseUtil {
                 newCase.negotiatorId = id;
                 newCase.manager = name;
                 newCase.managerId = id;
+                if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
+                    body.paidAmount =
+                        creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
+                    body.remaining =
+                        Math.round((body.totalDebt - body.paidAmount) * 100) / 100;
+                    if (body.totalDebt - body.paidAmount < 0)
+                        body.remaining = 0;
+                }
                 newCase.remainingAmountPaid = body.paidAmount;
                 body.notes = body?.notes
                     ? [
@@ -2156,9 +2208,9 @@ class CaseUtil {
                 if (getCreditorsEmail.length && createdCases.length) {
                     email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
                 }
-                // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-                //   await this.createPayment(caseCreated);
-                // }
+                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+                    await this.createPayment(caseCreated);
+                }
             }
         }
         if (!createdCases.length)

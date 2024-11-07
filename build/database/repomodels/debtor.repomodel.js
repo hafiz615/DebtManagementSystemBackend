@@ -58,6 +58,12 @@ class Debtor {
         this.moneyThumbAppId = 0;
         this.appid = 0;
         this.totalStatements = 0;
+        this.percentageChange = false;
+        this.percentageChangeDate = '';
+        this.userId = '';
+        this.platform = false;
+        this.trueProfit = 0;
+        this.videoUrl = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

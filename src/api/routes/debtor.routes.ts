@@ -104,7 +104,7 @@ router.post(
 );
 
 router.get(
-  '/getDebtorSummery/:id',
+  '/getDebtorSummery',
   authorize.validateAuth,
   debtorController.getDebtorSummery
 );
@@ -113,6 +113,17 @@ router.post(
   authorize.validateAuth,
   debtor.saveWeeklyBudgetValues,
   debtorController.saveWeeklyBudgetValues
+);
+router.post(
+  '/getMcaAndFinancials',
+  authorize.validateAuth,
+  debtorController.getMcaAndFinancials
+);
+
+router.post(
+  '/analyzeAndGetSettlementRanges/:id',
+  authorize.validateAuth,
+  debtorController.analyzeAndGetSettlementRanges
 );
 
 router.get(

@@ -270,7 +270,11 @@ class DebtorController {
 
   createDebtor = async (req: Request, res: Response) => {
     try {
-      const response = await this.debtorService.createDebtor(req);
+      const reqTemp: any = req;
+      const response = await this.debtorService.createDebtor(
+        req.body,
+        reqTemp.id
+      );
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -284,6 +288,7 @@ class DebtorController {
         })
       );
     } catch (error) {
+      // console.log(error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -373,6 +378,7 @@ class DebtorController {
         })
       );
     } catch (error) {
+      console.log(error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -478,8 +484,8 @@ class DebtorController {
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
-          data: response[2],
-          message: response[1],
+          data: response[1],
+          message: constants.successFoundMessage('Debtor account details'),
         })
       );
     } catch (error) {
@@ -513,6 +519,53 @@ class DebtorController {
     }
   };
 
+  getMcaAndFinancials = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.getMcaAndFinancials(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successAddMessage('Cases'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  analyzeAndGetSettlementRanges = async (req: Request, res: Response) => {
+    try {
+      const response =
+        await this.debtorService.analyzeAndGetSettlementRanges(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: 'Settlement ranges analyzed successfully',
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   generateVideoWithGenAi = async (req: Request, res: Response) => {
     try {
       const response = await this.debtorService.generateVideoWithGenAi(req);
@@ -525,7 +578,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: [],
-          message: response[1],
+          message: 'Video generated successfully!',
         })
       );
     } catch (error) {

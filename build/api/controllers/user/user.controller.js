@@ -444,6 +444,37 @@ class UserController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.addUserSender = async (req, res) => {
+            try {
+                const response = await this.userService.addUserSender(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successRegisterMessage('User sender identity'),
+                }));
+            }
+            catch (error) {
+                console.log(error.response.body);
+                let message = '';
+                if (error.response.body?.errors[0]?.field) {
+                    message =
+                        error.response.body.errors[0].field +
+                            ' ' +
+                            error.response.body.errors[0].message;
+                }
+                else {
+                    message = error.response.body.errors[0].message;
+                }
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(message));
+            }
+        };
         this.userService = new user_service_1.default();
     }
 }
