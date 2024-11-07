@@ -359,11 +359,13 @@ class DebtorUtil {
       yearlyResults[account.statement_month + ' ' + account.statement_year] +=
         parseFloat(account.true_credits);
     }
-    for (const [key, value] of Object.entries(yearlyResults)) {
+    const sortedResult = await this.sortByMonthAndYear(yearlyResults);
+    for (const [key, value] of Object.entries(sortedResult)) {
       const obj = {};
       obj[key] = value;
       result.push(obj);
     }
+
     return result;
   }
 
@@ -392,8 +394,8 @@ class DebtorUtil {
       const inPercentage = (Math.round(creditorProfitMargin * 100) / 100) * 100;
       yearlyResults[month] = yearlyResults[month] + inPercentage;
     }
-
-    for (const [key, value] of Object.entries(yearlyResults)) {
+    const sortedResult = await this.sortByMonthAndYear(yearlyResults);
+    for (const [key, value] of Object.entries(sortedResult)) {
       const obj = {};
       obj[key] = value;
       profitArray.push(obj);
@@ -521,6 +523,39 @@ class DebtorUtil {
       (weeklyProfitAndTrueRevenue.profit + cashFlow).toFixed(2)
     );
     return benefit;
+  }
+
+  async sortByMonthAndYear(obj: any) {
+    const monthOrder = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    // Convert object entries to an array and sort it
+    const sortedEntries = Object.entries(obj).sort(([aKey], [bKey]) => {
+      const [aMonth, aYear] = aKey.split(' ');
+      const [bMonth, bYear] = bKey.split(' ');
+
+      // Sort by year first
+      const yearDifference = parseInt(aYear) - parseInt(bYear);
+      if (yearDifference !== 0) return yearDifference;
+
+      // If years are the same, sort by month
+      return monthOrder.indexOf(aMonth) - monthOrder.indexOf(bMonth);
+    });
+
+    // Convert sorted array back into an object
+    return Object.fromEntries(sortedEntries);
   }
 }
 export default new DebtorUtil();
