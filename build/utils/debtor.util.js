@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const case_repository_1 = require("../api/repository/case/case.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
+const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
@@ -53,7 +55,7 @@ class DebtorUtil {
         });
         return await this.debtorRepository.updateById(String(caseTemp.debtor._id), filter);
     }
-    async percentageChangeEmail(debtorCompanyName, debtorId, totalStatements, debtorName) {
+    async percentageChangeEmail(debtorCompanyName, debtorId, totalStatements, debtorName, caseId) {
         const token = await moneyThumb_util_1.default.authenticateUser();
         const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await this.normalizeCompanyName(debtorCompanyName));
         if (moneyThumbApp['totalstatements'] > totalStatements) {
@@ -61,23 +63,37 @@ class DebtorUtil {
             const accounts = scoreCard['accountslist'];
             if (accounts.data.length > 1) {
                 const len = accounts.data.length;
-                const percentageChange = await common_util_1.default.calculatePercentageChange(parseFloat(accounts.data[len - 2]['true_credits']), parseFloat(accounts.data[len - 1]['true_credits']));
-                let incDec = '', posNeg = '';
-                if (percentageChange > 1) {
-                    incDec = 'Increase';
-                    posNeg = 'positive';
+                const previous = new Date(`${totalStatements - 1}`.split('-')[1]);
+                const latest = new Date(`${len - 1}`.split('-')[1]);
+                const convertedPrevious = new Date(Date.UTC(previous.getUTCFullYear(), previous.getUTCMonth(), 1));
+                const convertedLatest = new Date(Date.UTC(latest.getUTCFullYear(), latest.getUTCMonth(), 1));
+                const curr = new Date(common_util_1.default.getCurrentDate());
+                curr.setUTCHours(0, 0, 0, 0);
+                if (convertedLatest.getSeconds() > convertedPrevious.getSeconds() &&
+                    convertedLatest.getSeconds() < curr.getSeconds()) {
+                    await this.debtorRepository.updateById(debtorId, {
+                        totalStatements: len,
+                        percentageChange: true,
+                        percentageChangeDate: curr.setDate(1),
+                    });
+                    const percentageChange = await common_util_1.default.calculatePercentageChange(parseFloat(accounts.data[len - 2]['true_credits']), parseFloat(accounts.data[len - 1]['true_credits']));
+                    let incDec = '', posNeg = '';
+                    if (percentageChange > 1) {
+                        incDec = 'Increase';
+                        posNeg = 'positive';
+                    }
+                    if (percentageChange < -1) {
+                        incDec = 'Decrease';
+                        posNeg = 'negative';
+                    }
+                    const previousMonth = accounts.data[len - 2]['statement_month'];
+                    const previousYear = accounts.data[len - 2]['statement_year'];
+                    const currentMonth = accounts.data[len - 1]['statement_month'];
+                    const currentYear = accounts.data[len - 1]['statement_year'];
+                    const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
+                    console.log(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
+                    email_util_1.default.percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange, caseId);
                 }
-                if (percentageChange > -1) {
-                    incDec = 'Decrease';
-                    posNeg = 'negative';
-                }
-                const previousMonth = accounts.data[len - 2]['statement_month'];
-                const previousYear = accounts.data[len - 2]['statement_year'];
-                const currentMonth = accounts.data[len - 1]['statement_month'];
-                const currentYear = accounts.data[len - 1]['statement_year'];
-                const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
-                console.log(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
-                email_util_1.default.percentageChangeEmail(incDec, posNeg, previousMonth, previousYear, currentMonth, currentYear, creditors, debtorName, accounts.data[len - 2]['true_credits'], accounts.data[len - 1]['true_credits'], percentageChange);
             }
         }
     }
@@ -96,6 +112,60 @@ class DebtorUtil {
             totalCommission: Math.round(amount * 100) / 100,
         });
     }
+    async generateVideoWithGenAi(debtor) {
+        try {
+            //login : This endpoint can be used for login. The response contains an access token and a refresh token which need to be used in the Authorization header in the future API calls.
+            let getAccessKeys = await axiosInstanceInterceptor_1.default.post(process.env.ganAiLoginUrl, {
+                email: process.env.ganAiEmail,
+                password: process.env.ganAiPassword,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            // const getDynamicToken = await axiosInstance.post(
+            //   process.env.generateTokenUrl,
+            //   {
+            //     expiry_time: {days: 1, hours: 24, minutes: 1440},
+            //     token_name: `${debtor?._id?.toString()} - ${
+            //       debtor.basicInformation.fullName
+            //     }`,
+            //   },
+            //   {
+            //     headers: {
+            //       Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+            //       'Content-Type': 'application/json',
+            //     },
+            //   }
+            // );
+            const getProject = await axiosInstanceInterceptor_1.default.get(process.env.getGanAiProjectEndpoint, {
+                headers: {
+                    Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            const response = await axiosInstanceInterceptor_1.default.post(process.env.createDynamicVideoUrl, [
+                {
+                    name: debtor.basicInformation.fullName,
+                    unique_id: debtor._id.toString(),
+                },
+            ], {
+                headers: {
+                    Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+                params: {
+                    project_id: getProject?.data?.data[0]?.project_id,
+                },
+            });
+            console.log(response.data);
+            return response.data;
+        }
+        catch (error) {
+            console.log(error);
+            return error.message;
+        }
+    }
     async getPaidAmountOfCreditors(debtor) {
         const lastLenderOccurrences = {};
         // const token = await moneyThumbUtil.authenticateUser();
@@ -111,12 +181,14 @@ class DebtorUtil {
         const scoreCard = moneyThumb.scoreCard;
         if (scoreCard['mcacompanies']) {
             const mcaCompanies = scoreCard['mcacompanies'];
-            const data = mcaCompanies.data;
-            for (let i = 0; i < data.length; i++) {
-                if (data[i].month === 'Totals') {
-                    lastLenderOccurrences[data[i].lender] = {
-                        withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
-                    };
+            if (mcaCompanies.data && mcaCompanies.data.length) {
+                const data = mcaCompanies.data;
+                for (let i = 0; i < data.length; i++) {
+                    if (data[i].month === 'Totals') {
+                        lastLenderOccurrences[data[i].lender] = {
+                            withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
+                        };
+                    }
                 }
             }
         }
@@ -204,56 +276,54 @@ class DebtorUtil {
         return { basicInformation, businessInformation, platform: true };
     }
     async getYearlySales(accounts) {
-        const yearlyResults = {
-            January: 0,
-            February: 0,
-            March: 0,
-            April: 0,
-            May: 0,
-            June: 0,
-            July: 0,
-            August: 0,
-            September: 0,
-            October: 0,
-            November: 0,
-            December: 0,
-        };
+        const yearlyResults = {};
+        const result = [];
         for (const account of accounts) {
-            yearlyResults[account.statement_month] =
-                yearlyResults[account.statement_month] +
+            if (!yearlyResults[account.statement_month + ' ' + account.statement_year]) {
+                yearlyResults[account.statement_month + ' ' + account.statement_year] =
                     parseFloat(account.true_credits);
+                continue;
+            }
+            yearlyResults[account.statement_month + ' ' + account.statement_year] +=
+                parseFloat(account.true_credits);
         }
-        return Object.values(yearlyResults);
+        const sortedResult = await this.sortByMonthAndYear(yearlyResults);
+        for (const [key, value] of Object.entries(sortedResult)) {
+            const obj = {};
+            obj[key] = value;
+            result.push(obj);
+        }
+        return result;
     }
     async getYearlyProfitMargin(scoreCard) {
         const mcaCompanies = scoreCard['mcacompanies']['data'];
         const metricData = scoreCard['metrics']['metricdata'];
-        const result = await moneyThumb_util_1.default.getweeklyProfitAndTrueRevenue(metricData);
-        const yearlyResults = {
-            January: 0,
-            February: 0,
-            March: 0,
-            April: 0,
-            May: 0,
-            June: 0,
-            July: 0,
-            August: 0,
-            September: 0,
-            October: 0,
-            November: 0,
-            December: 0,
-        };
+        const result = await moneyThumb_util_1.default.getMonthlyProfitAndTrueRevenue(metricData);
+        const yearlyResults = {};
+        const profitArray = [];
         for (const mca of mcaCompanies) {
             if (mca.month === 'Totals')
                 continue;
-            const month = mca.month.split(' ')[0];
-            const creditorProfitMargin = (Math.abs(parseFloat(mca.withdrawal_total)) + result.weeklyProfit) /
-                result.weeklyTrueRevenue;
+            const month = mca.month;
+            if (!yearlyResults[month]) {
+                const creditorProfitMargin = (Math.abs(parseFloat(mca.withdrawal_total)) + result.profit) /
+                    result.trueRevenue;
+                const inPercentage = (Math.round(creditorProfitMargin * 100) / 100) * 100;
+                yearlyResults[month] = inPercentage;
+                continue;
+            }
+            const creditorProfitMargin = (Math.abs(parseFloat(mca.withdrawal_total)) + result.profit) /
+                result.trueRevenue;
             const inPercentage = (Math.round(creditorProfitMargin * 100) / 100) * 100;
-            console.log(inPercentage, 'inPercentageeeeee');
             yearlyResults[month] = yearlyResults[month] + inPercentage;
         }
-        return Object.values(yearlyResults);
+        const sortedResult = await this.sortByMonthAndYear(yearlyResults);
+        for (const [key, value] of Object.entries(sortedResult)) {
+            const obj = {};
+            obj[key] = value;
+            profitArray.push(obj);
+        }
+        return Object.values(profitArray);
     }
     async getScoreCard(debtor) {
         const token = await moneyThumb_util_1.default.authenticateUser();
@@ -267,9 +337,83 @@ class DebtorUtil {
         const scoreCard = await moneyThumb_util_1.default.getScoreCard(token, appid);
         return { scoreCard, appid };
     }
+    async getCreditorsMapping(debtor) {
+        let creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
+        creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+        return creditors;
+    }
     async normalizeCompanyName(name) {
         const words = name.split(' ');
         return words.slice(0, 2).join(' ').toLowerCase().replace(/,$/, '');
+    }
+    async getBenefits(plans, scoreCard, debtor, creditors, totalRemaining) {
+        const weeklyBudget = await moneyThumb_util_1.default.getTotalWeeklyBudget(scoreCard['mcacompanies'], debtor);
+        const weeklyProfitAndTrueRevenue = await moneyThumb_util_1.default.getweeklyProfitAndTrueRevenue(scoreCard['metrics']['metricdata']);
+        const benefits = {};
+        const weeklyPayment = await this.helperBenefits(weeklyBudget, plans.weeklyPayment, weeklyProfitAndTrueRevenue);
+        let weeksToBeFree = 0;
+        for (const creditor of creditors) {
+            weeksToBeFree += Math.round(creditor.remaining / creditor.maxProfitAmount);
+        }
+        weeklyPayment['weeksToBeFree'] = weeksToBeFree;
+        const totalPercentageAmount = creditors.reduce((sum, obj) => sum + obj.percentageReceivableAmount, 0);
+        const percentageShare = await this.helperBenefits(weeklyBudget, totalPercentageAmount, weeklyProfitAndTrueRevenue);
+        weeksToBeFree = 0;
+        for (const creditor of creditors) {
+            weeksToBeFree += Math.round(creditor.remaining / creditor.percentageReceivableAmount);
+        }
+        percentageShare['weeksToBeFree'] = weeksToBeFree;
+        const anuallyProfitAndTrueRevenue = await moneyThumb_util_1.default.getAnuallyProfitAndTrueRevenue(scoreCard['metrics']['metricdata']);
+        const maximum = await this.helperBenefits(totalRemaining, plans.maximum, anuallyProfitAndTrueRevenue);
+        maximum['weeksToBeFree'] = 1;
+        benefits['weeklyPayment'] = weeklyPayment;
+        benefits['percentageShare'] = percentageShare;
+        benefits['maximum'] = maximum;
+        return benefits;
+    }
+    async helperBenefits(weeklyBudget, payment, weeklyProfitAndTrueRevenue) {
+        const benefit = {};
+        if (!weeklyBudget) {
+            benefit['cashFlow'] = 0;
+            benefit['savings'] = 0;
+            benefit['estimatedProfit'] = parseFloat((weeklyProfitAndTrueRevenue.profit + 0).toFixed(2));
+            return benefit;
+        }
+        const cashFlow = weeklyBudget - payment;
+        benefit['cashFlow'] = parseFloat(cashFlow.toFixed(2));
+        const savingsPercentage = parseFloat(((cashFlow / weeklyBudget) * 100).toFixed(2));
+        benefit['savings'] = savingsPercentage;
+        benefit['estimatedProfit'] = parseFloat((weeklyProfitAndTrueRevenue.profit + cashFlow).toFixed(2));
+        return benefit;
+    }
+    async sortByMonthAndYear(obj) {
+        const monthOrder = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+        ];
+        // Convert object entries to an array and sort it
+        const sortedEntries = Object.entries(obj).sort(([aKey], [bKey]) => {
+            const [aMonth, aYear] = aKey.split(' ');
+            const [bMonth, bYear] = bKey.split(' ');
+            // Sort by year first
+            const yearDifference = parseInt(aYear) - parseInt(bYear);
+            if (yearDifference !== 0)
+                return yearDifference;
+            // If years are the same, sort by month
+            return monthOrder.indexOf(aMonth) - monthOrder.indexOf(bMonth);
+        });
+        // Convert sorted array back into an object
+        return Object.fromEntries(sortedEntries);
     }
 }
 exports.default = new DebtorUtil();

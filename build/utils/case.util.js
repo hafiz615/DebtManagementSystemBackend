@@ -186,8 +186,10 @@ class CaseUtil {
     }
     async getAllCreditorsOfDebtor(debtor) {
         const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
-        const tempCases = cases;
-        return tempCases.map(obj => ({
+        return await this.getAllCreditorsMapping(cases);
+    }
+    async getAllCreditorsMapping(cases) {
+        return cases.map(obj => ({
             totalDebt: obj.totalDebt,
             caseCode: obj.caseCode,
             remaining: obj.remaining,
@@ -205,10 +207,22 @@ class CaseUtil {
             remainingAmountPaid: obj.remainingAmountPaid
                 ? obj.remainingAmountPaid
                 : 0,
+            previousAmountPaid: obj.paidAmount,
         }));
     }
+    async getAllCreditorsByCaseIds(caseIds) {
+        const cases = await this.caseRepository.getAllWithoutPagination({ _id: caseIds, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount', undefined, { _id: -1 }, {
+            path: 'creditor',
+            select: [
+                'basicInformation.fullName',
+                'accountTitle',
+                'accountTitleMapping',
+            ],
+        });
+        return await this.getAllCreditorsMapping(cases);
+    }
     async getAllCreditorsOfDebtorQuery(debtorId) {
-        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid', undefined, { _id: -1 }, {
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: debtorId, isDeleted: false }, 'totalDebt caseCode status remaining contractDetails remainingAmountPaid paidAmount', undefined, { _id: -1 }, {
             path: 'creditor',
             select: [
                 'basicInformation.fullName',
@@ -1657,8 +1671,19 @@ class CaseUtil {
                 });
                 return [false, response.data.error];
             }
+            const creditors = await debtor_util_1.default.getCreditorsMapping({
+                _id: String(caseTemp.debtor),
+            });
+            let lumpSum = response.data;
+            const lumpsum_settlement = lumpSum.lumpsum_settlement;
+            for (const creditor of creditors) {
+                const repaidDebt = lumpsum_settlement[creditor.creditorAccountTitle].repaid_debt;
+                console.log(this.getCleanAmount(creditor.contractDetails.funded_amount));
+                lumpsum_settlement[creditor.creditorAccountTitle].remaining_principle_amount = parseFloat((this.getCleanAmount(creditor.contractDetails.funded_amount) -
+                    repaidDebt).toFixed(2));
+            }
             this.strategyRepository.upsert({ caseId: caseTemp._id, name: 'strategy_two' }, {
-                'data.lumpSumAmount': response.data,
+                'data.lumpSumAmount': lumpSum,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
             this.caseRepository.updateById(caseTemp._id, {

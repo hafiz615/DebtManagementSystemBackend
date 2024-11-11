@@ -120,10 +120,16 @@ router.post(
   debtorController.getMcaAndFinancials
 );
 
-router.get(
-  '/analyzeAndGetSettlementRanges',
+router.post(
+  '/analyzeAndGetSettlementRanges/:id',
   authorize.validateAuth,
   debtorController.analyzeAndGetSettlementRanges
+);
+
+router.get(
+  '/getSummeryVideo/:id',
+  authorize.validateAuth,
+  debtorController.generateVideoWithGenAi
 );
 
 export default router;

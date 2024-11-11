@@ -173,6 +173,8 @@ const debtorSchema: Schema = new Schema({
   totalStatements: {
     type: Number,
   },
+  percentageChange: Boolean,
+  percentageChangeDate: Date,
   userId: {
     type: String,
   },
@@ -182,6 +184,7 @@ const debtorSchema: Schema = new Schema({
   trueProfit: {
     type: Number,
   },
+  videoUrl: String,
   createdAt: {
     type: Date,
     required: true,

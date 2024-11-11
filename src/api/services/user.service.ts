@@ -628,6 +628,15 @@ class UserService {
   }
 
   async addUserSender(req: Request) {
+    const findUser = await this.userRepository.getOne<IUser>({
+      email: req.body.from_email,
+      isActive: true,
+    });
+    if (!findUser)
+      return [
+        false,
+        'This user is not registered on First Choice Debt Solutions',
+      ];
     const reqTemp: any = req;
     const data = {
       from_email: req.body.from_email,

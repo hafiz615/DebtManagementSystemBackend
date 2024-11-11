@@ -83,18 +83,21 @@ class CreditorUtil {
   }
 
   async addBreakEven(creditors: any) {
+    console.log(creditors, 'kjkjkjkjk');
     for (const creditor of creditors) {
       const contractDetails = creditor.contractDetails;
       let amount = 0;
-      if (contractDetails?.loan_amount)
-        amount = caseUtil.getCleanAmount(contractDetails?.loan_amount);
-      if (contractDetails?.funded_amount)
+      if (contractDetails?.funded_amount) {
         amount = caseUtil.getCleanAmount(contractDetails?.funded_amount);
-      const paidBack = creditor.remainingAmountPaid;
+      } else if (contractDetails?.loan_amount) {
+        amount = caseUtil.getCleanAmount(contractDetails?.loan_amount);
+      }
+      const paidBack = creditor.previousAmountPaid;
       const currentBalance = creditor.totalDebt - paidBack;
       let breakEven = amount * 1.2 - paidBack;
       if (breakEven <= 0) breakEven = currentBalance * 0.3;
       if (breakEven < 0) breakEven = 0;
+      console.log(breakEven, 'popopo');
       creditor['breakEven'] = parseFloat(breakEven.toFixed(2));
     }
   }

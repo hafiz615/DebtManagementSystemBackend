@@ -531,10 +531,10 @@ class EmailUtil {
     buffer?: Buffer,
     caseId?: string
   ) {
-    const checkIfDebtor = await this.getVerifySender(from);
-    console.log(checkIfDebtor);
+    const bin = await this.getVerifySender(from);
+    console.log(bin);
     let headers = {};
-    if (caseId && checkIfDebtor) {
+    if (caseId && bin === 'debtor') {
       const caseTemp: any = await this.caseRepository.getById<ICase>(
         caseId,
         '_id',
@@ -551,6 +551,15 @@ class EmailUtil {
         subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
       if (caseTemp.debtor?.businessInformation?.EIN)
         subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+      headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+    }
+    if (caseId && bin === 'user') {
+      const user = await this.userRepository.getOne<IUser>(
+        {email: from},
+        '_id name',
+        undefined
+      );
+      subject += ` First Choice-DMS ${user.name}`;
       headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
     }
     console.log(subject, 'subject');
@@ -667,7 +676,10 @@ class EmailUtil {
       });
     }
     console.log(email, 'kjhkjhkjhkj');
-    return email[0]?.nickname.includes('debtor') ? true : false;
+    let bin = '';
+    if (email[0]?.nickname.includes('debtor')) bin = 'debtor';
+    if (!email[0]?.nickname.includes('debtor')) bin = 'user';
+    return bin;
   }
 
   async sendEmailIfDebtorGetsAdditionalDebt(
@@ -718,6 +730,17 @@ class EmailUtil {
       const to = creditor.creditorEmail;
       const from = process.env.defaultEmail;
       const subject = `Notification Regarding Debtor's Paid Debt`;
+      await caseUtil.addInHistory(
+        {
+          From: from,
+          To: to,
+          Content: content,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'EMAIL',
+          Subject: subject,
+        },
+        creditor.caseId
+      );
       await this.sendEmail(to, from, subject, content);
     }
   }
@@ -733,7 +756,8 @@ class EmailUtil {
     debtorName: string,
     previousSale: string,
     currentSale: string,
-    percentage: number
+    percentage: number,
+    caseId: string
   ) {
     for (const creditor of creditors) {
       const content = `Dear ${creditor.creditorName},
@@ -757,8 +781,41 @@ class EmailUtil {
       const to = creditor.creditorEmail;
       const from = process.env.defaultEmail;
       const subject = `Notice of Sales Performance for ${currentMonth}, ${currentYear}`;
+      await caseUtil.addInHistory(
+        {
+          From: from,
+          To: to,
+          Content: content,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'EMAIL',
+          Subject: subject,
+        },
+        caseId
+      );
       await this.sendEmail(to, from, subject, content);
     }
+  }
+
+  async sendEmailToDebtorForInitialOverView(debtor: IDebtor, videoLink: any) {
+    const content = `\t\t Dear ${debtor.basicInformation.fullName},
+
+      We hope this message finds you well!
+
+      We are excited to share a video that highlights the exclusive benefits tailored just for you. This video provides insights into how you can maximize your experience with us and take full advantage of what we offer.
+
+       \nYou can watch the video here: ${videoLink}.\n\n
+
+      \n If you have any questions or would like to discuss these benefits further, please do not hesitate to reach out. We are here to help! \n
+
+           \nThank you for being a valued member of our community.\n 
+
+      \tBest regards,\n 
+      \tFirst Choice Debt Solutions`;
+
+    const to = debtor.basicInformation?.email;
+    const from = process.env.defaultEmail;
+    const subject = `Discover Your Exclusive Benefits with DMS`;
+    await this.sendEmail(to, from, subject, content);
   }
 }
 

@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnvSetup = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
-const constants_util_1 = __importDefault(require("../utils/constants.util"));
+const constants_util_1 = __importDefault(require("./constants.util"));
 dotenv_1.default.config();
 class EnvSetup {
     static setEnvVariables() {

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import UploadUtil from './upload.util';
 import caseUtil from './case.util';
 import creditorUtil from './creditor.util';
+import debtorUtil from './debtor.util';
 dotenv.config();
 class MoneyThumbUtil {
   private debtorRepository: DebtorRepository;
@@ -147,7 +148,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Response Data', response.data['accountslist']);
+      console.log('Response Data', response.data['mcacompanies'].data);
 
       return response.data;
     } catch (error) {
@@ -176,8 +177,8 @@ class MoneyThumbUtil {
         // }
         const weeklyProfitAndTrueRevenue =
           await this.getweeklyProfitAndTrueRevenue(metricData);
-        weeklyProfit = weeklyProfitAndTrueRevenue.weeklyProfit;
-        weeklyTrueRevenue = weeklyProfitAndTrueRevenue.weeklyTrueRevenue;
+        weeklyProfit = weeklyProfitAndTrueRevenue.profit;
+        weeklyTrueRevenue = weeklyProfitAndTrueRevenue.trueRevenue;
       }
       let trueProfitPer = 0;
       if (scoreCard['mcacompanies']) {
@@ -196,9 +197,16 @@ class MoneyThumbUtil {
           filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
           trueProfitPer = trueProfit * 0.67;
           filter['strategy1MaxProfit'] = Math.round(trueProfitPer * 100) / 100;
+          if (!debtor.weeklyBudgetStrategy1) {
+            filter['weeklyBudgetStrategy1'] =
+              Math.round(trueProfitPer * 100) / 100;
+          }
         } else {
           filter['trueProfit'] = 0;
           filter['strategy1MaxProfit'] = 0;
+          if (debtor.weeklyBudgetStrategy1 <= 0) {
+            filter['weeklyBudgetStrategy1'] = 0;
+          }
         }
       }
       filter['strategy3MaxProfit'] = 0;
@@ -222,6 +230,8 @@ class MoneyThumbUtil {
             Math.round(profitability * 100) / 100;
       } else {
         filter['strategy3MaxProfit'] = 0;
+        if (debtor.weeklyBudgetStrategy3 <= 0)
+          filter['weeklyBudgetStrategy3'] = 0;
       }
       console.log(filter);
       await this.debtorRepository.updateById<IDebtor>(debtor._id, filter);
@@ -248,13 +258,7 @@ class MoneyThumbUtil {
     const lastLenderOccurrences = {};
     let weeklyBudget = 0;
     let totalWithdrawl = 0;
-    let creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);
-    creditors = await creditorUtil.checkCreditorsMapping(creditors);
-    creditors = Array.from(
-      new Map(
-        creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
-      ).values()
-    );
+    let creditors = await debtorUtil.getCreditorsMapping(debtor);
     const creditorsAccTitleArray = creditors.map(creditor => {
       return creditor.creditorAccountTitle;
     });
@@ -300,19 +304,35 @@ class MoneyThumbUtil {
   }
 
   async getweeklyProfitAndTrueRevenue(metricData: any) {
-    let weeklyProfit = 0,
-      weeklyTrueRevenue = 0;
+    let profit = 0,
+      trueRevenue = 0;
     if (metricData?.length) {
       const profitArray = metricData.find(row => row[0] === 'Profit');
       const trueRevenueArray = metricData.find(
         row => row[0] === 'True Revenue'
       );
       if (profitArray.length && trueRevenueArray.length) {
-        weeklyProfit = (parseFloat(profitArray[1]) / 22) * 5;
-        weeklyTrueRevenue = (parseFloat(trueRevenueArray[1]) / 22) * 5;
+        profit = (parseFloat(profitArray[1]) / 22) * 5;
+        trueRevenue = (parseFloat(trueRevenueArray[1]) / 22) * 5;
       }
     }
-    return {weeklyProfit, weeklyTrueRevenue};
+    return {profit, trueRevenue};
+  }
+
+  async getMonthlyProfitAndTrueRevenue(metricData: any) {
+    let profit = 0,
+      trueRevenue = 0;
+    if (metricData?.length) {
+      const profitArray = metricData.find(row => row[0] === 'Profit');
+      const trueRevenueArray = metricData.find(
+        row => row[0] === 'True Revenue'
+      );
+      if (profitArray.length && trueRevenueArray.length) {
+        profit = parseFloat(profitArray[1]);
+        trueRevenue = parseFloat(trueRevenueArray[1]);
+      }
+    }
+    return {profit, trueRevenue};
   }
 
   async getAnuallyProfitAndTrueRevenue(metricData: any) {
@@ -358,6 +378,62 @@ class MoneyThumbUtil {
     console.log(weekly, 'weekly');
 
     return Math.round(weekly * 100) / 100;
+  }
+
+  async getSettlementValues(
+    debtor: IDebtor,
+    creditors: any,
+    scoreCard: any,
+    caseId: string
+  ) {
+    const metricData = scoreCard['metrics']['metricdata'];
+    const weeklyProfitAndTrueRevenue =
+      await this.getweeklyProfitAndTrueRevenue(metricData);
+    const true_profit =
+      debtor.weeklyBudgetStrategy1 + weeklyProfitAndTrueRevenue.profit;
+    const profitability =
+      (true_profit / weeklyProfitAndTrueRevenue.trueRevenue) * 100;
+    const profitability_without_creditor_payments =
+      (weeklyProfitAndTrueRevenue.profit /
+        weeklyProfitAndTrueRevenue.trueRevenue) *
+      100;
+    const settlement_range = {},
+      weeks_till_paid = {},
+      option_2_stats = null;
+    for (const creditor of creditors) {
+      settlement_range[creditor.creditorAccountTitle] = {
+        'recommendation 1': {max: 0, min: 0},
+      };
+      weeks_till_paid[creditor.creditorAccountTitle] = {
+        'Weeks remaining based on recommendation 1': {max: 0, min: 0},
+      };
+    }
+    settlement_range['Summary'] = {
+      'recommendation 1': {max: 0, min: 0},
+    };
+    weeks_till_paid['Summary'] = {
+      'Weeks remaining based on recommendation 1': {max: 0, min: 0},
+    };
+    const settlementRange = {
+      profitability: parseFloat(profitability.toFixed(2)),
+      true_profit: parseFloat(true_profit.toFixed(2)),
+      profitability_without_creditor_payments: parseFloat(
+        profitability_without_creditor_payments.toFixed(2)
+      ),
+      weekly_true_revenue: parseFloat(
+        weeklyProfitAndTrueRevenue.trueRevenue.toFixed(2)
+      ),
+      weekly_profit: parseFloat(weeklyProfitAndTrueRevenue.profit.toFixed(2)),
+      settlement_range,
+      weeks_till_paid,
+      option_2_stats,
+    };
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange,
+      caseId
+    );
+    return settlementRange;
   }
 }
 export default new MoneyThumbUtil();
