@@ -11,7 +11,7 @@ const base_route_1 = __importDefault(require("./api/routes/base.route"));
 const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
 const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware")); // Import the logging middleware
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
-const setEnv_1 = require("./database/repomodels/setEnv");
+const setEnv_1 = require("./utils/setEnv");
 const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
 class App {
     constructor() {

@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import constantsUtil from '../../utils/constants.util';
+import constantsUtil from '../utils/constants.util';
 dotenv.config();
 export class EnvSetup {
   static dbURI: string;
