@@ -436,7 +436,7 @@ class CaseUtil {
                 throw new Error('Invalid time period');
         }
     }
-    async checkCasePayment(body) {
+    async checkCasePayment(body, commission = 0) {
         let isExempt = body?.isExempt ?? true;
         if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
@@ -455,7 +455,8 @@ class CaseUtil {
                     amount += multipliedAmount;
                 }
             }
-            if (amount !== body.remaining) {
+            const amountEqual = commission ? commission : body.remaining;
+            if (amount !== amountEqual) {
                 return [
                     false,
                     constants_util_1.default.Messages.INTERVALS_PAYMENT_CALCULATION_ERROR,
@@ -683,6 +684,7 @@ class CaseUtil {
                         totalDebt: {
                             $sum: '$caseHistory.totalDebt',
                         },
+                        totalCommission: '$debtorDetails.totalCommission',
                     },
                     paymentCounts: {
                         failedCaptures: '$failedCaptures',

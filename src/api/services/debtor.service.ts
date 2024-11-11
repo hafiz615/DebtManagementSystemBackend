@@ -1379,6 +1379,28 @@ class DebtorService {
     combineResult['yearlyProfitMargin'] = yearlyProfitMargin;
     return [true, combineResult];
   }
+
+  async addPaymentPlan(req: Request) {
+    let debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    req.body.isExempt = false;
+    const checkCasePayment = await caseUtil.checkCasePayment(
+      req.body,
+      debtor.totalCommission
+    );
+    if (!checkCasePayment[0]) return checkCasePayment;
+    req.body._id = null;
+    req.body.debtor = req.params.id;
+    debtor = await this.debtorRepository.updateById<IDebtor>(req.params.id, {
+      intervals: req.body.intervals,
+    });
+    req.body.intervals = debtor.intervals;
+    await caseUtil.createPayment(req.body);
+
+    return [true, constants.successAddMessage('Payment plan')];
+  }
 }
 
 export default DebtorService;

@@ -263,7 +263,7 @@ class CaseService {
         weeklyCommission: req.body.commission,
         updatedAt: commonUtil.getCurrentDate(),
       });
-      findCase.intervals = req.body?.intervals?.length;
+      findCase.intervals = req.body?.intervals;
       findCase.isExempt = req.body.isExempt;
       const checkCasePayment = await caseUtil.checkCasePayment(findCase);
       if (!checkCasePayment[0]) return checkCasePayment;

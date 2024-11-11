@@ -185,6 +185,16 @@ const debtorSchema: Schema = new Schema({
     type: Number,
   },
   videoUrl: String,
+  intervals: {
+    type: [
+      {
+        amount: {type: Number, required: true},
+        startDate: {type: Date, required: true},
+        frequency: {type: Number, default: 0},
+        timePeriod: {type: String, required: true},
+      },
+    ],
+  },
   createdAt: {
     type: Date,
     required: true,
