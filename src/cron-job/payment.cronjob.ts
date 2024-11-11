@@ -584,9 +584,20 @@ class CronJob {
     });
 
     cron.schedule('15 * * * *', async () => {
+      const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+        {creditorPaymentsProceed: true},
+        '_id'
+      );
+      const caseIds = cases.map(caseTemp => {
+        return String(caseTemp._id);
+      });
       const pendingPayments =
         await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {captured: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+          {
+            caseId: {$in: caseIds},
+            captured: 'Success',
+            sendViaPaynote: 'Pending',
+          },
           undefined,
           undefined,
           undefined,

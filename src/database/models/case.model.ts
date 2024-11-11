@@ -126,6 +126,9 @@ const caseModel: Schema = new Schema({
   platform: {
     type: Boolean,
   },
+  creditorPaymentsProceed: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

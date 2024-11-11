@@ -341,7 +341,15 @@ class CronJob {
             }
         });
         node_cron_1.default.schedule('15 * * * *', async () => {
-            const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
+            const cases = await this.caseRepository.getAllWithoutPagination({ creditorPaymentsProceed: true }, '_id');
+            const caseIds = cases.map(caseTemp => {
+                return String(caseTemp._id);
+            });
+            const pendingPayments = await this.paymentRepository.getAllWithoutPagination({
+                caseId: { $in: caseIds },
+                captured: 'Success',
+                sendViaPaynote: 'Pending',
+            }, undefined, undefined, undefined, {
                 path: 'caseId',
                 select: ['_id', 'caseCode', 'remaining'],
                 populate: [

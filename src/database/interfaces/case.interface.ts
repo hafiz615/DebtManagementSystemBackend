@@ -54,6 +54,7 @@ export interface ICase extends Document {
   settlementRange: boolean;
   getCaseIdPercentage: boolean;
   platform: boolean;
+  creditorPaymentsProceed: boolean;
   createdAt: string;
   updatedAt: string;
 }

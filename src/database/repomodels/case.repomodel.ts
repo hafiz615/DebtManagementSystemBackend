@@ -45,6 +45,7 @@ export class Case {
   settlementRange = false;
   getCaseIdPercentage = false;
   platform = false;
+  creditorPaymentsProceed = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

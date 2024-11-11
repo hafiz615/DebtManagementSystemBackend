@@ -42,4 +42,10 @@ router.post(
   creditorController.createPaynoteCustomer
 );
 
+router.post(
+  '/pausePayments/:id',
+  authorize.validateAuth,
+  creditorController.pausePayments
+);
+
 export default router;

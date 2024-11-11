@@ -149,6 +149,9 @@ const caseModel = new mongoose_1.Schema({
     platform: {
         type: Boolean,
     },
+    creditorPaymentsProceed: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,

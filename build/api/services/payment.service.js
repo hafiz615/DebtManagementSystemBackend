@@ -506,7 +506,7 @@ class PaymentService {
         const paymentId = req.params.id;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, {
             path: 'caseId',
-            select: ['_id', 'caseCode', 'remaining'],
+            select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
             populate: [
                 {
                     path: 'creditor',
@@ -529,6 +529,9 @@ class PaymentService {
         }
         if (!payment.caseId?.creditor?.paynoteSourceId) {
             return [false, 'Account not added for user'];
+        }
+        if (!payment.caseId?.creditorPaymentsProceed) {
+            return [false, 'Funds transfer for this creditor is paused'];
         }
         if (payment.status === 'Success') {
             return [false, 'Payment already send'];
