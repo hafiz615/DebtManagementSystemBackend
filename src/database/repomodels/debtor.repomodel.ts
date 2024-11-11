@@ -67,6 +67,7 @@ export class Debtor {
   userId = '';
   platform = false;
   trueProfit = 0;
+  videoUrl = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

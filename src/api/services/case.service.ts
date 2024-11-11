@@ -292,7 +292,7 @@ class CaseService {
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }
-    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     // if (req.body.intervals) {
     //   await caseUtil.createPayment(caseUpdated);
     // }
@@ -368,7 +368,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
     await caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
@@ -780,12 +780,12 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
-    await emailUtil.sendEmailOrSmsByEvent(
-      'case_details_update',
-      result._id,
-      '',
-      reqTemp.id
-    );
+    // await emailUtil.sendEmailOrSmsByEvent(
+    //   'case_details_update',
+    //   result._id,
+    //   '',
+    //   reqTemp.id
+    // );
     await caseUtil.addInHistory(
       {
         Action,

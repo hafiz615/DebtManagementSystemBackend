@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const case_repository_1 = require("../api/repository/case/case.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
@@ -110,6 +111,60 @@ class DebtorUtil {
         await this.debtorRepository.updateById(debtor._id, {
             totalCommission: Math.round(amount * 100) / 100,
         });
+    }
+    async generateVideoWithGenAi(debtor) {
+        try {
+            //login : This endpoint can be used for login. The response contains an access token and a refresh token which need to be used in the Authorization header in the future API calls.
+            let getAccessKeys = await axiosInstanceInterceptor_1.default.post(process.env.ganAiLoginUrl, {
+                email: process.env.ganAiEmail,
+                password: process.env.ganAiPassword,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            // const getDynamicToken = await axiosInstance.post(
+            //   process.env.generateTokenUrl,
+            //   {
+            //     expiry_time: {days: 1, hours: 24, minutes: 1440},
+            //     token_name: `${debtor?._id?.toString()} - ${
+            //       debtor.basicInformation.fullName
+            //     }`,
+            //   },
+            //   {
+            //     headers: {
+            //       Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+            //       'Content-Type': 'application/json',
+            //     },
+            //   }
+            // );
+            const getProject = await axiosInstanceInterceptor_1.default.get(process.env.getGanAiProjectEndpoint, {
+                headers: {
+                    Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            const response = await axiosInstanceInterceptor_1.default.post(process.env.createDynamicVideoUrl, [
+                {
+                    name: debtor.basicInformation.fullName,
+                    unique_id: debtor._id.toString(),
+                },
+            ], {
+                headers: {
+                    Authorization: `Bearer ${getAccessKeys?.data?.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+                params: {
+                    project_id: getProject?.data?.data[0]?.project_id,
+                },
+            });
+            console.log(response.data);
+            return response.data;
+        }
+        catch (error) {
+            console.log(error);
+            return error.message;
+        }
     }
     async getPaidAmountOfCreditors(debtor) {
         const lastLenderOccurrences = {};
@@ -232,7 +287,8 @@ class DebtorUtil {
             yearlyResults[account.statement_month + ' ' + account.statement_year] +=
                 parseFloat(account.true_credits);
         }
-        for (const [key, value] of Object.entries(yearlyResults)) {
+        const sortedResult = await this.sortByMonthAndYear(yearlyResults);
+        for (const [key, value] of Object.entries(sortedResult)) {
             const obj = {};
             obj[key] = value;
             result.push(obj);
@@ -261,7 +317,8 @@ class DebtorUtil {
             const inPercentage = (Math.round(creditorProfitMargin * 100) / 100) * 100;
             yearlyResults[month] = yearlyResults[month] + inPercentage;
         }
-        for (const [key, value] of Object.entries(yearlyResults)) {
+        const sortedResult = await this.sortByMonthAndYear(yearlyResults);
+        for (const [key, value] of Object.entries(sortedResult)) {
             const obj = {};
             obj[key] = value;
             profitArray.push(obj);
@@ -328,6 +385,35 @@ class DebtorUtil {
         benefit['savings'] = savingsPercentage;
         benefit['estimatedProfit'] = parseFloat((weeklyProfitAndTrueRevenue.profit + cashFlow).toFixed(2));
         return benefit;
+    }
+    async sortByMonthAndYear(obj) {
+        const monthOrder = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+        ];
+        // Convert object entries to an array and sort it
+        const sortedEntries = Object.entries(obj).sort(([aKey], [bKey]) => {
+            const [aMonth, aYear] = aKey.split(' ');
+            const [bMonth, bYear] = bKey.split(' ');
+            // Sort by year first
+            const yearDifference = parseInt(aYear) - parseInt(bYear);
+            if (yearDifference !== 0)
+                return yearDifference;
+            // If years are the same, sort by month
+            return monthOrder.indexOf(aMonth) - monthOrder.indexOf(bMonth);
+        });
+        // Convert sorted array back into an object
+        return Object.fromEntries(sortedEntries);
     }
 }
 exports.default = new DebtorUtil();

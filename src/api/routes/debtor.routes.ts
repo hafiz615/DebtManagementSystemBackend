@@ -126,4 +126,10 @@ router.post(
   debtorController.analyzeAndGetSettlementRanges
 );
 
+router.get(
+  '/getSummeryVideo/:id',
+  authorize.validateAuth,
+  debtorController.generateVideoWithGenAi
+);
+
 export default router;

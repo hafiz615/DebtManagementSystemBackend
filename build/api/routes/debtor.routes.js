@@ -34,5 +34,6 @@ router.get('/getDebtorSummery', authorize_middleware_1.default.validateAuth, deb
 router.post('/saveWeeklyBudgetValues/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.saveWeeklyBudgetValues, debtor_controller_1.default.saveWeeklyBudgetValues);
 router.post('/getMcaAndFinancials', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getMcaAndFinancials);
 router.post('/analyzeAndGetSettlementRanges/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.analyzeAndGetSettlementRanges);
+router.get('/getSummeryVideo/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.generateVideoWithGenAi);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

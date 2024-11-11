@@ -29,6 +29,9 @@ import paymentUtil from '../../utils/payment.util';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
 import creditorUtil from '../../utils/creditor.util';
 import debtorUtil from '../../utils/debtor.util';
+import {UserRepository} from '../repository/user/user.repository';
+import {IUser} from '../../database/interfaces/user.interface';
+import _ from 'lodash';
 import bulkUploadCronjob from '../../cron-job/bulkUpload.cronjob';
 import googleDriveUtil from '../../utils/googleDrive.util';
 import {cloneDeep} from 'lodash';
@@ -42,6 +45,8 @@ class DebtorService {
   private paymentLoggingRepository: PaymentLoggingRepository;
   private strategyRepository: StrategyRepository;
   private bulkUploadRepository: BulkUploadRepository;
+  private userRepository: UserRepository;
+
   private caseService: CaseService;
   constructor() {
     this.debtorRepository = new DebtorRepository();
@@ -51,6 +56,7 @@ class DebtorService {
     this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.strategyRepository = new StrategyRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
+    this.userRepository = new UserRepository();
     this.caseService = new CaseService();
   }
 
@@ -558,21 +564,21 @@ class DebtorService {
       // updateObjPayment['status'] = 'Pending';
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_authorization',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'successful_authorization',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
       // paymentLogging.failReason = responseText;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_authorization',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'failed_authorization',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     }
     if (Object.keys(updateObjPayment).length) {
       // const newPayment = new PaymentLogging();
@@ -641,22 +647,22 @@ class DebtorService {
       }
       // paymentLogging.successReason = responseText;
       result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_payment',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'successful_payment',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
       // paymentLogging.failReason = responseText;
 
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_payment',
-        '',
-        paymentId,
-        ''
-      );
+      // await emailUtil.sendEmailOrSmsByEvent(
+      //   'failed_payment',
+      //   '',
+      //   paymentId,
+      //   ''
+      // );
     }
     if (Object.keys(updateObjPayment).length) {
       // const newPayment = new PaymentLogging();
@@ -793,16 +799,16 @@ class DebtorService {
       updatedDebtor,
       updatedDebtor.businessInformation.companyName
     );
-    const statements = caseTemp.debtor?.totalStatements;
-    if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
-      debtorUtil.percentageChangeEmail(
-        updatedDebtor.businessInformation.companyName,
-        String(updatedDebtor._id),
-        statements ? statements : 0,
-        caseTemp.debtor?.basicInformation?.fullName,
-        req.params.id
-      );
-    }
+    // const statements = caseTemp.debtor?.totalStatements;
+    // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
+    //   debtorUtil.percentageChangeEmail(
+    //     updatedDebtor.businessInformation.companyName,
+    //     String(updatedDebtor._id),
+    //     statements ? statements : 0,
+    //     caseTemp.debtor?.basicInformation?.fullName,
+    //     req.params.id
+    //   );
+    // }
 
     // for (let doc of findCase.documents) {
     //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
@@ -1161,6 +1167,26 @@ class DebtorService {
     return [true, constants.successUpdateMessage('Weekly budget info')];
   }
 
+  async generateVideoWithGenAi(req: Request) {
+    // let reqTemp: any;
+    // const user = await this.userRepository.getById<IUser>(reqTemp.id);
+    // if (!user) return [false, constants.notFoundMessage('User'), {}];
+
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+
+    if (!getDebtor) return [false, constants.notFoundMessage('Debtor'), {}];
+
+    let getVideo = await debtorUtil.generateVideoWithGenAi(getDebtor);
+    // await emailUtil.sendEmailToDebtorForInitialOverView(
+    //   getDebtor,
+    //   getVideo[0]?.permalink
+    // );
+    return !_.isEmpty(getVideo[0]?.permalink)
+      ? [true, []]
+      : [false, constants.notFoundMessage('Video')];
+  }
   async getMcaAndFinancials(req: Request) {
     const reqTemp: any = req;
     const {mca, bankStatements} = req.body;
@@ -1239,18 +1265,28 @@ class DebtorService {
     if (!getDebtor) {
       return [false, constants.notFoundMessage('debtor')];
     }
+    const combineResult = {};
+    if (getDebtor.videoUrl) combineResult['videoUrl'] = getDebtor.videoUrl;
+    if (!getDebtor.videoUrl) {
+      const response = await debtorUtil.generateVideoWithGenAi(getDebtor);
+      if (Array.isArray(response)) {
+        await this.debtorRepository.updateById(req.params.id, {
+          videoUrl: response[0].permalink,
+        });
+      }
+      combineResult['videoUrl'] = response[0].permalink;
+    }
     const debtorCreditors = await caseUtil.getAllCreditorsByCaseIds(
       req.body.caseIds
     );
     const moneyThumb = await debtorUtil.getScoreCard(getDebtor);
     const scoreCard = moneyThumb.scoreCard;
-    await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
-      debtorCreditors,
-      getDebtor,
-      moneyThumb.scoreCard
-    );
-    await creditorUtil.addBreakEven(debtorCreditors);
-    const combineResult = {};
+    // await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
+    //   debtorCreditors,
+    //   getDebtor,
+    //   moneyThumb.scoreCard
+    // );
+    // await creditorUtil.addBreakEven(debtorCreditors);
     const plans = {};
     const commissionPlan = {};
     const allCreditorsResult = [];
@@ -1277,34 +1313,33 @@ class DebtorService {
       Math.round(netProfitMargin100 * 100) / 100;
     if (debtorCreditors.length) {
       // const data = getScoresSettlementRange[1];
-      plans['weeklyPayment'] = debtorCreditors.reduce(
-        (sum, obj) => sum + obj.maxProfitAmount,
-        0
-      );
-      plans['maximum'] = debtorCreditors.reduce(
-        (sum, obj) => sum + obj.breakEven,
-        0
-      );
-      plans['percentageShare'] = debtorCreditors.reduce(
-        (sum, obj) => sum + obj.percentageReceivable,
-        0
-      );
+      // plans['maximum'] = debtorCreditors.reduce(
+      //   (sum, obj) => sum + obj.breakEven,
+      //   0
+      // );
+      // plans['percentageShare'] = debtorCreditors.reduce(
+      //   (sum, obj) => sum + obj.percentageReceivable,
+      //   0
+      // );
       const totalRemaining = debtorCreditors.reduce(
         (sum, obj) => sum + obj.remaining,
         0
       );
-      const benefits = await debtorUtil.getBenefits(
-        plans,
-        scoreCard,
-        getDebtor,
-        debtorCreditors,
-        totalRemaining
+      plans['weeklyPayment'] = parseFloat(
+        ((totalRemaining / 12 / 22) * 5).toFixed(2)
       );
-      combineResult['benefits'] = benefits;
+      // const benefits = await debtorUtil.getBenefits(
+      //   plans,
+      //   scoreCard,
+      //   getDebtor,
+      //   debtorCreditors,
+      //   totalRemaining
+      // );
+      // combineResult['benefits'] = benefits;
       console.log(totalRemaining, 'totalRemaining');
-      commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
+      // commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
       commissionPlan['4Week'] = parseFloat((totalRemaining * 0.12).toFixed(2));
-      commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
+      // commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
       console.log(commissionPlan, 'commissionPlan');
       console.log(plans, 'planssss');
       combineResult['plans'] = plans;
@@ -1316,12 +1351,15 @@ class DebtorService {
         capture['payableAmount'] = creditor.totalDebt;
         const balance = creditor.totalDebt - creditor.remainingAmountPaid;
         capture['balance'] = balance < 0 ? 0 : balance;
-        capture['weeklyPayment'] = creditor.maxProfitAmount;
-        creditorObj['weeklyPayment'] = creditor.maxProfitAmount;
+        const weeklyPayment = parseFloat(
+          ((creditor.remaining / 12 / 22) * 5).toFixed(2)
+        );
+        capture['weeklyPayment'] = weeklyPayment;
+        creditorObj['weeklyPayment'] = weeklyPayment;
         capture['interestRate'] = '12';
         creditorObj['name'] = creditor.creditorAccountTitle;
-        creditorObj['maximum'] = creditor.breakEven;
-        creditorObj['percentageShare'] = creditor.percentageReceivable;
+        // creditorObj['maximum'] = creditor.breakEven;
+        // creditorObj['percentageShare'] = creditor.percentageReceivable;
         creditors.push(creditorObj);
         allCreditorsResult.push(capture);
       }

@@ -184,6 +184,7 @@ const debtorSchema: Schema = new Schema({
   trueProfit: {
     type: Number,
   },
+  videoUrl: String,
   createdAt: {
     type: Date,
     required: true,

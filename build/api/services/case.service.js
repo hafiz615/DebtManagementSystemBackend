@@ -190,7 +190,7 @@ class CaseService {
             if (req.body.intervals && req.body.intervals.length) {
                 case_util_1.default.createPayment(caseUpdated);
             }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             // if (req.body.intervals) {
             //   await caseUtil.createPayment(caseUpdated);
             // }
@@ -241,7 +241,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
@@ -486,7 +486,12 @@ class CaseService {
                 result = await case_util_1.default.addNotes(req, reqTemp.id);
             if (!result)
                 return [false, result];
-            await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', result._id, '', reqTemp.id);
+            // await emailUtil.sendEmailOrSmsByEvent(
+            //   'case_details_update',
+            //   result._id,
+            //   '',
+            //   reqTemp.id
+            // );
             await case_util_1.default.addInHistory({
                 Action,
                 Username: reqTemp.name,

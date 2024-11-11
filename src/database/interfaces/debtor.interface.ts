@@ -74,6 +74,7 @@ export interface IDebtor extends Document {
   userId: string;
   platform: boolean;
   trueProfit: number;
+  videoUrl: string;
   createdAt: string;
   updatedAt: string;
 }
