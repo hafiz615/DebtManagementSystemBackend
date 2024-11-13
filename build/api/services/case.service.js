@@ -71,11 +71,13 @@ class CaseService {
             if (!findCase?.getCaseIdPercentage &&
                 !findCase?.debtor?.strategy1MaxProfit &&
                 !findCase?.debtor?.strategy3MaxProfit) {
-                await moneyThumb_util_1.default.run(findCase.debtor, findCase.debtor.businessInformation.companyName);
+                await moneyThumb_util_1.default.run(findCase.debtor, await debtor_util_1.default.normalizeCompanyName(findCase.debtor.businessInformation.companyName));
                 this.caseRepository.updateById(req.params.id, {
                     getCaseIdPercentage: true,
                 });
             }
+            const amountNotDelivered = await this.getAmountNotDeliveredToCreditor(req.params.id);
+            const amountDelivered = await this.getAmountNotDeliveredToCreditor(req.params.id);
             for (let doc of findCase.debtor.documents) {
                 const url = await this.uploadUtil.getS3FileSignedUrl(doc.key
                 //'application/pdf'
@@ -104,6 +106,8 @@ class CaseService {
             findCase['creditors'] = uniqueResult;
             findCase['customFields'] = temp ? temp.customFields : [];
             findCase['notes'] = updateNotesForm ?? [];
+            findCase['amountDeliveredToCreditor'] = amountDelivered;
+            findCase['amountNotDeliveredToCreditor'] = amountNotDelivered;
             return [true, findCase];
         };
         this.updateCase = async (req) => {
@@ -111,6 +115,7 @@ class CaseService {
             let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
+            const getDebtor = findCase.debtor;
             if (req.body.creditor) {
                 const getCreditor = await this.creditorRepository.getById(req.body.creditor._id);
                 if (!getCreditor) {
@@ -161,10 +166,12 @@ class CaseService {
                 //     weeklyCommission: weeklyBudgetObj.commission,
                 //   });
                 // }
-                await this.debtorRepository.updateById(findCase.debtor._id, {
-                    weeklyCommission: req.body.commission,
-                    updatedAt: common_util_1.default.getCurrentDate(),
-                });
+                if (!getDebtor.intervals.length) {
+                    await this.debtorRepository.updateById(findCase.debtor._id, {
+                        weeklyCommission: req.body.commission,
+                        updatedAt: common_util_1.default.getCurrentDate(),
+                    });
+                }
                 findCase.intervals = req.body?.intervals;
                 findCase.isExempt = req.body.isExempt;
                 const checkCasePayment = await case_util_1.default.checkCasePayment(findCase);
@@ -194,7 +201,6 @@ class CaseService {
             // if (req.body.intervals) {
             //   await caseUtil.createPayment(caseUpdated);
             // }
-            const getDebtor = findCase.debtor;
             caseUpdated = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {
                 strategyOne_1: false,
@@ -613,6 +619,24 @@ class CaseService {
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
         this.justificationRepository = new justification_repository_1.JustificationRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
+    }
+    async getAmountDeliveredToCreditor(caseId) {
+        const getPayments = await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Success',
+            sendViaPaynote: 'Success',
+            caseId: caseId,
+        });
+        return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
+    }
+    async getAmountNotDeliveredToCreditor(caseId) {
+        const getPayments = await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Success',
+            sendViaPaynote: 'Pending',
+            caseId: caseId,
+        });
+        return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
     }
     async deleteCase(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id);

@@ -167,13 +167,13 @@ class CaseUtil {
         return currentDate.toString();
     }
     async populatePayment(caseId, payment, interval, frequency, debtor) {
-        const uuid = (0, uuid_1.v4)();
+        // const uuid = v4();
         payment.amount = interval.amount;
         payment.frequency = frequency;
         payment.caseId = caseId;
         payment.intervalId = String(interval._id);
         payment.timePeriod = interval.timePeriod;
-        payment.paymentReference = uuid;
+        // payment.paymentReference = uuid;
         payment.debtorId = debtor;
         return { ...payment };
     }
@@ -2161,6 +2161,9 @@ class CaseUtil {
                 newCase.negotiatorId = id;
                 newCase.manager = name;
                 newCase.managerId = id;
+                if (creditorsPaidAmount[creditor.accountTitle])
+                    newCase.lastPaymentDate =
+                        creditorsPaidAmount[creditor.accountTitle].last_withdrawal_date;
                 if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
                     body.paidAmount =
                         creditorsPaidAmount[creditor.accountTitle].withdrawal_total;

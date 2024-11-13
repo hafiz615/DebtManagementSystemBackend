@@ -753,7 +753,12 @@ class DebtorService {
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    moneyThumbUtil.run(debtor, debtor.businessInformation.companyName);
+    moneyThumbUtil.run(
+      debtor,
+      await debtorUtil.normalizeCompanyName(
+        debtor.businessInformation.companyName
+      )
+    );
     const creditorNames = await caseUtil.getCreditorNames(
       debtor,
       body.extractedFields
@@ -797,7 +802,9 @@ class DebtorService {
     });
     await moneyThumbUtil.run(
       updatedDebtor,
-      updatedDebtor.businessInformation.companyName
+      await debtorUtil.normalizeCompanyName(
+        updatedDebtor.businessInformation.companyName
+      )
     );
     // const statements = caseTemp.debtor?.totalStatements;
     // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
@@ -1385,6 +1392,14 @@ class DebtorService {
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
+    if (debtor.intervals.length)
+      return [false, constants.alreadyExistsMessage('Debtor payment plan')];
+
+    if (debtor.weeklyCommission)
+      return [
+        false,
+        constants.alreadyExistsMessage('Weekly commission already settled'),
+      ];
     req.body.isExempt = false;
     const checkCasePayment = await caseUtil.checkCasePayment(
       req.body,
@@ -1397,7 +1412,7 @@ class DebtorService {
       intervals: req.body.intervals,
     });
     req.body.intervals = debtor.intervals;
-    await caseUtil.createPayment(req.body);
+    caseUtil.createPayment(req.body);
 
     return [true, constants.successAddMessage('Payment plan')];
   }

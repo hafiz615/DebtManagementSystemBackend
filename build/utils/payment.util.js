@@ -106,6 +106,13 @@ class PaymentUtil {
             caseId: { $ne: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
+    async getPendingCommissionAuthorized() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
     async getPendingCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Success',
@@ -114,11 +121,27 @@ class PaymentUtil {
             caseId: { $ne: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
+    async getPendingCommissionCaptured() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
     async getFailedAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getFailedCommissionAuthorized() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Failed',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
     async getFailedCaptured() {
@@ -127,6 +150,15 @@ class PaymentUtil {
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getFailedCommissionCaptured() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Failed',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
     // async getAllCronJobPayments() {

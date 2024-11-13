@@ -139,6 +139,20 @@ class PaymentUtil {
     );
   }
 
+  async getPendingCommissionAuthorized() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Pending',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
   async getPendingCaptured() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
@@ -154,12 +168,42 @@ class PaymentUtil {
     );
   }
 
+  async getPendingCommissionCaptured() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Success',
+        captured: 'Pending',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
   async getFailedAuthorized() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         authorized: 'Failed',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
+        paymentReferenceBool: {$ne: true},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
+  async getFailedCommissionAuthorized() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Failed',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
       },
       undefined,
       undefined,
@@ -175,6 +219,22 @@ class PaymentUtil {
         captured: 'Failed',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
+        paymentReferenceBool: {$ne: true},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
+  async getFailedCommissionCaptured() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Success',
+        captured: 'Failed',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
       },
       undefined,
       undefined,

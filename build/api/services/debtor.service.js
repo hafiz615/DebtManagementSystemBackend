@@ -717,7 +717,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        moneyThumb_util_1.default.run(debtor, debtor.businessInformation.companyName);
+        moneyThumb_util_1.default.run(debtor, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, body.extractedFields);
         return [true, { debtor, creditorNames }];
     }
@@ -747,7 +747,7 @@ class DebtorService {
             settlementRange: false,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        await moneyThumb_util_1.default.run(updatedDebtor, updatedDebtor.businessInformation.companyName);
+        await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
         // const statements = caseTemp.debtor?.totalStatements;
         // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
         //   debtorUtil.percentageChangeEmail(
@@ -1144,6 +1144,13 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
+        if (debtor.intervals.length)
+            return [false, constants_util_1.default.alreadyExistsMessage('Debtor payment plan')];
+        if (debtor.weeklyCommission)
+            return [
+                false,
+                constants_util_1.default.alreadyExistsMessage('Weekly commission already settled'),
+            ];
         req.body.isExempt = false;
         const checkCasePayment = await case_util_1.default.checkCasePayment(req.body, debtor.totalCommission);
         if (!checkCasePayment[0])
@@ -1154,7 +1161,7 @@ class DebtorService {
             intervals: req.body.intervals,
         });
         req.body.intervals = debtor.intervals;
-        await case_util_1.default.createPayment(req.body);
+        case_util_1.default.createPayment(req.body);
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
 }

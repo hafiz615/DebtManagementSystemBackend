@@ -29,6 +29,8 @@ class Payment {
         this.timePeriod = '';
         this.paymentReference = '';
         this.isDeleted = false;
+        this.paymentReferenceBool = false;
+        this.commission = 0;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

@@ -148,7 +148,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Response Data', response.data['mcacompanies'].data);
+      console.log('Response Data', response.data['mcacompanies']);
 
       return response.data;
     } catch (error) {
@@ -386,11 +386,44 @@ class MoneyThumbUtil {
     scoreCard: any,
     caseId: string
   ) {
+    const bankStatementWeeklyBudget = await this.getTotalWeeklyBudget(
+      scoreCard['mcacompanies'],
+      debtor
+    );
+    console.log(bankStatementWeeklyBudget, 'bankStatementWeeklyBudget');
+    const negotiatorWeeklyBudget = debtor.weeklyBudgetStrategy1;
+    const settlementRangeBank = await this.getSettlementValuesHelper(
+      creditors,
+      scoreCard,
+      caseId,
+      bankStatementWeeklyBudget
+    );
+    const settlementRangeNegotiator = await this.getSettlementValuesHelper(
+      creditors,
+      scoreCard,
+      caseId,
+      negotiatorWeeklyBudget
+    );
+    return {
+      ...settlementRangeNegotiator,
+      option_2_stats: settlementRangeBank,
+    };
+  }
+
+  async getSettlementValuesHelper(
+    creditors: any,
+    scoreCard: any,
+    caseId: string,
+    budget: number
+  ) {
     const metricData = scoreCard['metrics']['metricdata'];
     const weeklyProfitAndTrueRevenue =
       await this.getweeklyProfitAndTrueRevenue(metricData);
-    const true_profit =
-      debtor.weeklyBudgetStrategy1 + weeklyProfitAndTrueRevenue.profit;
+    console.log(
+      weeklyProfitAndTrueRevenue.profit,
+      'weeklyProfitAndTrueRevenue.profit'
+    );
+    const true_profit = budget + weeklyProfitAndTrueRevenue.profit;
     const profitability =
       (true_profit / weeklyProfitAndTrueRevenue.trueRevenue) * 100;
     const profitability_without_creditor_payments =
@@ -398,8 +431,7 @@ class MoneyThumbUtil {
         weeklyProfitAndTrueRevenue.trueRevenue) *
       100;
     const settlement_range = {},
-      weeks_till_paid = {},
-      option_2_stats = null;
+      weeks_till_paid = {};
     for (const creditor of creditors) {
       settlement_range[creditor.creditorAccountTitle] = {
         'recommendation 1': {max: 0, min: 0},
@@ -426,7 +458,6 @@ class MoneyThumbUtil {
       weekly_profit: parseFloat(weeklyProfitAndTrueRevenue.profit.toFixed(2)),
       settlement_range,
       weeks_till_paid,
-      option_2_stats,
     };
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
