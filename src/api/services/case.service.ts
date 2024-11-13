@@ -136,7 +136,9 @@ class CaseService {
     ) {
       await moneyThumbUtil.run(
         findCase.debtor,
-        findCase.debtor.businessInformation.companyName
+        await debtorUtil.normalizeCompanyName(
+          findCase.debtor.businessInformation.companyName
+        )
       );
       this.caseRepository.updateById<ICase>(req.params.id, {
         getCaseIdPercentage: true,
