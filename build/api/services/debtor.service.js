@@ -549,20 +549,24 @@ class DebtorService {
         if (payment.authorized === 'Success') {
             return [false, 'Payment already authorized'];
         }
+        // if (payment.paymentReference) {
+        //   const referencePayments =
+        //     await paymentUtil.getAllPaymentReferenceDocuments(
+        //       payment.paymentReference
+        //     );
+        // }
         let response;
         if (payment.caseId.debtor.paymentType === 'cc') {
             response = await this.paymentService.authorizeCreditCard(payment.amount, payment.caseId.debtor.customerVaultId);
         }
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
-        // const paymentLogging = new PaymentLogging();
         const updateObjPayment = {};
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             // updateObjPayment['status'] = 'Pending';
-            // paymentLogging.successReason = responseText;
             result = true;
             // await emailUtil.sendEmailOrSmsByEvent(
             //   'successful_authorization',
@@ -573,7 +577,6 @@ class DebtorService {
         }
         else {
             updateObjPayment['failedReasonAuthorization'] = responseText;
-            // paymentLogging.failReason = responseText;
             // await emailUtil.sendEmailOrSmsByEvent(
             //   'failed_authorization',
             //   '',
@@ -582,23 +585,8 @@ class DebtorService {
             // );
         }
         if (Object.keys(updateObjPayment).length) {
-            // const newPayment = new PaymentLogging();
-            // const populatedPayment = DataCopier.copy(newPayment, payment);
-            // const verifiedPayment = DataCopier.copy(
-            //   populatedPayment,
-            //   updateObjPayment
-            // );
             await this.paymentRepository.updateById(payment._id, updateObjPayment);
-            // await this.paymentLoggingRepository.create<IPaymentLogging>(
-            //   verifiedPayment
-            // );
         }
-        // paymentLogging.caseId = String(payment.caseId);
-        // paymentLogging.createdAt = commonUtil.getCurrentDate();
-        // paymentLogging.paymentId = String(payment._id);
-        // paymentLogging.paymentType = 'Credit Auth';
-        // paymentLogging.debtor = String(payment.caseId.debtor._id);
-        // paymentLogging.creditor = String(payment.caseId.creditor._id);
         if (result)
             return [true, 'Payment authorized successfully!'];
         return [false, 'Unable to authorize payment!'];
@@ -1144,7 +1132,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        if (debtor.intervals.length)
+        if (debtor.intervals && debtor.intervals.length)
             return [false, constants_util_1.default.alreadyExistsMessage('Debtor payment plan')];
         if (debtor.weeklyCommission)
             return [
@@ -1152,9 +1140,11 @@ class DebtorService {
                 constants_util_1.default.alreadyExistsMessage('Weekly commission already settled'),
             ];
         req.body.isExempt = false;
-        const checkCasePayment = await case_util_1.default.checkCasePayment(req.body, debtor.totalCommission);
-        if (!checkCasePayment[0])
-            return checkCasePayment;
+        // const checkCasePayment = await caseUtil.checkCasePayment(
+        //   req.body,
+        //   debtor.totalCommission
+        // );
+        // if (!checkCasePayment[0]) return checkCasePayment;
         req.body._id = null;
         req.body.debtor = req.params.id;
         debtor = await this.debtorRepository.updateById(req.params.id, {

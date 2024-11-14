@@ -2112,7 +2112,6 @@ class CaseUtil {
         const getCreditorsEmail = await creditor_util_1.default.getCreditorsEmailForDebtor(debtorId);
         const creditorsPaidAmount = await debtor_util_1.default.getPaidAmountOfCreditors(debtor);
         for (const body of dataArray) {
-            console.log(body.creditor, 'body.creditor');
             body.creditor.basicInformation.email =
                 body.creditor.basicInformation.email.toLowerCase();
             const getCreditor = await this.creditorRepository.getOne({
@@ -2162,7 +2161,7 @@ class CaseUtil {
                 newCase.manager = name;
                 newCase.managerId = id;
                 if (creditorsPaidAmount[creditor.accountTitle])
-                    newCase.lastPaymentDate =
+                    body.lastPaymentDate =
                         creditorsPaidAmount[creditor.accountTitle].last_withdrawal_date;
                 if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
                     body.paidAmount =

@@ -498,6 +498,49 @@ class PaymentUtil {
             throw error; // Rethrow the error for further handling
         }
     }
+    async getPaymentReferenceDocuments(referenceId) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            paymentReference: referenceId,
+            paymentReferenceBool: true,
+            caseId: { $ne: null },
+        });
+    }
+    async getAllPaymentReferenceDocuments(referenceId) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            paymentReference: referenceId,
+            paymentReferenceBool: true,
+        });
+    }
+    async getOtherPayments(payment) {
+        const debtorId = payment.debtorId;
+        const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        const payments = await this.paymentRepository.getAllWithoutPagination({
+            debtorId: debtorId,
+            caseId: { $ne: null },
+            authorized: { $ne: 'Success' },
+            dueDate: {
+                $gte: new Date(payment.dueDate),
+                $lt: nextDate,
+            },
+        });
+        return payments;
+    }
+    async addDaysBasedOnPeriod(date, timePeriod) {
+        const timePeriods = {
+            daily: 1,
+            weekly: 7,
+            fortnightly: 14,
+            monthly: 30,
+            custom: 0,
+        };
+        let daysToAdd = timePeriods[timePeriod.toLowerCase()];
+        if (!daysToAdd) {
+            daysToAdd = 7;
+        }
+        const resultDate = new Date(date);
+        resultDate.setDate(resultDate.getDate() + daysToAdd);
+        return resultDate;
+    }
 }
 exports.default = new PaymentUtil();
 //# sourceMappingURL=payment.util.js.map

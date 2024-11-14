@@ -920,7 +920,8 @@ class CronJob {
       true,
       settings
     );
-    const paymentsFailedCaptured = await paymentUtil.getFailedCaptured();
+    const paymentsFailedCaptured =
+      await paymentUtil.getFailedCommissionCaptured();
     const pendingFailedCaptureDocs = await this.failedCaptured(
       paymentsFailedCaptured,
       cronId,
@@ -1302,13 +1303,17 @@ class CronJob {
     settings: ISettings[]
   ) {
     for (const payment of payments) {
-      const otherPayments: IPayment[] = await this.getOtherPayments(payment);
+      const otherPayments: IPayment[] =
+        await paymentUtil.getOtherPayments(payment);
       const totalAmount = otherPayments.reduce(
         (sum, obj) => sum + obj.amount,
         0
       );
       const concatedPayments = otherPayments.concat(payment);
-      const accounts = payment.caseId.debtor.accounts;
+      const debtor = await this.debtorRepository.getById<IDebtor>(
+        payment.debtorId
+      );
+      const accounts = debtor.accounts;
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
@@ -1347,44 +1352,6 @@ class CronJob {
     }
   }
 
-  async getOtherPayments(payment: IPayment) {
-    const debtorId = payment.debtorId;
-    const nextDate = await this.addDaysBasedOnPeriod(
-      payment.dueDate,
-      payment.timePeriod
-    );
-    const payments =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>({
-        debtorId: debtorId,
-        caseId: {$ne: null},
-        dueDate: {
-          $gte: new Date(payment.dueDate),
-          $lt: nextDate,
-        },
-      });
-    return payments;
-  }
-
-  async addDaysBasedOnPeriod(date: string, timePeriod: string) {
-    const timePeriods = {
-      daily: 1,
-      weekly: 7,
-      fortnightly: 14,
-      monthly: 30,
-      custom: 0,
-    };
-
-    let daysToAdd = timePeriods[timePeriod.toLowerCase()];
-
-    if (!daysToAdd) {
-      daysToAdd = 7;
-    }
-
-    const resultDate = new Date(date);
-    resultDate.setDate(resultDate.getDate() + daysToAdd);
-
-    return resultDate;
-  }
   async processAuthorizedResponse(
     payment: any,
     response: any,
@@ -1589,15 +1556,20 @@ class CronJob {
     settings: ISettings[]
   ) {
     for (const payment of payments) {
-      const otherPayments: IPayment[] = await this.getPaymentReferenceDocuments(
-        payment.paymentReference
-      );
+      const otherPayments: IPayment[] =
+        await paymentUtil.getPaymentReferenceDocuments(
+          payment.paymentReference
+        );
       const totalAmount = otherPayments.reduce(
         (sum, obj) => sum + obj.amount,
         0
       );
       const concatedPayments = otherPayments.concat(payment);
-      const accounts = payment.caseId.debtor.accounts;
+      const debtor = await this.debtorRepository.getById<IDebtor>(
+        payment.debtorId
+      );
+      console.log(concatedPayments, 'concatedPayments');
+      const accounts = debtor.accounts;
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.captureCreditCard(
@@ -1637,14 +1609,6 @@ class CronJob {
         }
       }
     }
-  }
-
-  async getPaymentReferenceDocuments(referenceId: string) {
-    return await this.paymentRepository.getAllWithoutPagination<IPayment>({
-      paymentReference: referenceId,
-      paymentReferenceBool: true,
-      caseId: {$ne: null},
-    });
   }
 
   async processCaptureResponse(

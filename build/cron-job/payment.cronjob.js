@@ -679,7 +679,7 @@ class CronJob {
         const paymentsFailedAuthorized = await payment_util_1.default.getFailedCommissionAuthorized();
         const pendingFailedAuthDocs = await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
         await this.processCommissionAuthorized(pendingFailedAuthDocs, cronId, true, settings);
-        const paymentsFailedCaptured = await payment_util_1.default.getFailedCaptured();
+        const paymentsFailedCaptured = await payment_util_1.default.getFailedCommissionCaptured();
         const pendingFailedCaptureDocs = await this.failedCaptured(paymentsFailedCaptured, cronId, settings);
         await this.processCommissionCapture(pendingFailedCaptureDocs, cronId, true, settings);
     }
@@ -968,10 +968,11 @@ class CronJob {
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
-            const otherPayments = await this.getOtherPayments(payment);
+            const otherPayments = await payment_util_1.default.getOtherPayments(payment);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
             const concatedPayments = otherPayments.concat(payment);
-            const accounts = payment.caseId.debtor.accounts;
+            const debtor = await this.debtorRepository.getById(payment.debtorId);
+            const accounts = debtor.accounts;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId);
@@ -987,35 +988,6 @@ class CronJob {
                 }
             }
         }
-    }
-    async getOtherPayments(payment) {
-        const debtorId = payment.debtorId;
-        const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
-        const payments = await this.paymentRepository.getAllWithoutPagination({
-            debtorId: debtorId,
-            caseId: { $ne: null },
-            dueDate: {
-                $gte: new Date(payment.dueDate),
-                $lt: nextDate,
-            },
-        });
-        return payments;
-    }
-    async addDaysBasedOnPeriod(date, timePeriod) {
-        const timePeriods = {
-            daily: 1,
-            weekly: 7,
-            fortnightly: 14,
-            monthly: 30,
-            custom: 0,
-        };
-        let daysToAdd = timePeriods[timePeriod.toLowerCase()];
-        if (!daysToAdd) {
-            daysToAdd = 7;
-        }
-        const resultDate = new Date(date);
-        resultDate.setDate(resultDate.getDate() + daysToAdd);
-        return resultDate;
     }
     async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, commission) {
         let result = false;
@@ -1155,10 +1127,12 @@ class CronJob {
     }
     async processCommissionCapture(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
-            const otherPayments = await this.getPaymentReferenceDocuments(payment.paymentReference);
+            const otherPayments = await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
             const concatedPayments = otherPayments.concat(payment);
-            const accounts = payment.caseId.debtor.accounts;
+            const debtor = await this.debtorRepository.getById(payment.debtorId);
+            console.log(concatedPayments, 'concatedPayments');
+            const accounts = debtor.accounts;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, '');
@@ -1174,13 +1148,6 @@ class CronJob {
                 }
             }
         }
-    }
-    async getPaymentReferenceDocuments(referenceId) {
-        return await this.paymentRepository.getAllWithoutPagination({
-            paymentReference: referenceId,
-            paymentReferenceBool: true,
-            caseId: { $ne: null },
-        });
     }
     async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, commision) {
         let result = false;
