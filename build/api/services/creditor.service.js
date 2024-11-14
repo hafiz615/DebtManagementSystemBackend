@@ -285,7 +285,7 @@ class CreditorService {
         });
         if (!updateCase)
             return [false, constants_util_1.default.failureUpdateMessage('payments')];
-        const word = req.query.pause === 'true' ? 'paused' : 'resumed';
+        const word = req.query.pause === 'true' ? 'resumed' : 'paused';
         return [true, `Funds transfer ${word} successfully`];
     }
 }
