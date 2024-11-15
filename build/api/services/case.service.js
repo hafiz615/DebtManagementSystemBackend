@@ -626,6 +626,7 @@ class CaseService {
             captured: 'Success',
             sendViaPaynote: 'Success',
             caseId: caseId,
+            isDeleted: false,
         });
         return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
     }
@@ -635,6 +636,7 @@ class CaseService {
             captured: 'Success',
             sendViaPaynote: 'Pending',
             caseId: caseId,
+            isDeleted: false,
         });
         return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
     }

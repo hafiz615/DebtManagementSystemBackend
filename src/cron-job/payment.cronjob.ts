@@ -280,7 +280,12 @@ class CronJob {
   async testPaynote() {
     const pendingPayments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {captured: 'Success', sendViaPaynote: 'Pending', caseId: {$ne: null}},
+        {
+          captured: 'Success',
+          sendViaPaynote: 'Pending',
+          caseId: {$ne: null},
+          isDeleted: false,
+        },
         undefined,
         undefined,
         undefined,
@@ -294,7 +299,12 @@ class CronJob {
 
     const failedPayments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {captured: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
+        {
+          captured: 'Success',
+          sendViaPaynote: 'Failed',
+          caseId: {$ne: null},
+          isDeleted: false,
+        },
         undefined,
         undefined,
         undefined,
@@ -604,6 +614,7 @@ class CronJob {
             caseId: {$in: caseIds},
             captured: 'Success',
             sendViaPaynote: 'Pending',
+            isDeleted: false,
           },
           undefined,
           undefined,
@@ -628,7 +639,12 @@ class CronJob {
 
       const failedPayments =
         await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {captured: 'Success', sendViaPaynote: 'Failed', caseId: {$ne: null}},
+          {
+            captured: 'Success',
+            sendViaPaynote: 'Failed',
+            caseId: {$ne: null},
+            isDeleted: false,
+          },
           undefined,
           undefined,
           undefined,

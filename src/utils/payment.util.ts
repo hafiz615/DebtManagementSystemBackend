@@ -597,6 +597,7 @@ class PaymentUtil {
       paymentReference: referenceId,
       paymentReferenceBool: true,
       caseId: {$ne: null},
+      isDeleted: false,
     });
   }
 
@@ -604,6 +605,7 @@ class PaymentUtil {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>({
       paymentReference: referenceId,
       paymentReferenceBool: true,
+      isDeleted: false,
     });
   }
 
@@ -618,6 +620,7 @@ class PaymentUtil {
         debtorId: debtorId,
         caseId: {$ne: null},
         authorized: {$ne: 'Success'},
+        isDeleted: false,
         dueDate: {
           $gte: new Date(payment.dueDate),
           $lt: nextDate,

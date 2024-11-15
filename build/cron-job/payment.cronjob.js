@@ -165,13 +165,23 @@ class CronJob {
         }
     }
     async testPaynote() {
-        const pendingPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Pending', caseId: { $ne: null } }, undefined, undefined, undefined, {
+        const pendingPayments = await this.paymentRepository.getAllWithoutPagination({
+            captured: 'Success',
+            sendViaPaynote: 'Pending',
+            caseId: { $ne: null },
+            isDeleted: false,
+        }, undefined, undefined, undefined, {
             path: 'caseId',
             select: ['_id', 'caseCode'],
             populate: ['creditor'],
         });
         await this.paynotePending(pendingPayments);
-        const failedPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
+        const failedPayments = await this.paymentRepository.getAllWithoutPagination({
+            captured: 'Success',
+            sendViaPaynote: 'Failed',
+            caseId: { $ne: null },
+            isDeleted: false,
+        }, undefined, undefined, undefined, {
             path: 'caseId',
             select: ['_id', 'caseCode'],
             populate: ['creditor'],
@@ -466,6 +476,7 @@ class CronJob {
                 caseId: { $in: caseIds },
                 captured: 'Success',
                 sendViaPaynote: 'Pending',
+                isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
                 select: ['_id', 'caseCode', 'remaining'],
@@ -482,7 +493,12 @@ class CronJob {
                 ],
             });
             await this.paynotePending(pendingPayments);
-            const failedPayments = await this.paymentRepository.getAllWithoutPagination({ captured: 'Success', sendViaPaynote: 'Failed', caseId: { $ne: null } }, undefined, undefined, undefined, {
+            const failedPayments = await this.paymentRepository.getAllWithoutPagination({
+                captured: 'Success',
+                sendViaPaynote: 'Failed',
+                caseId: { $ne: null },
+                isDeleted: false,
+            }, undefined, undefined, undefined, {
                 path: 'caseId',
                 select: ['_id', 'caseCode', 'remaining'],
                 populate: [
