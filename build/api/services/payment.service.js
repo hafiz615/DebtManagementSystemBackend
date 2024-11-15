@@ -619,7 +619,7 @@ class PaymentService {
         const updateDebtor = await this.debtorReposiotry.updateById(String(caseTemp.debtor), {
             weeklyCommission: 0,
         });
-        if (!updateCase || !updatePayments || updateDebtor)
+        if (!updateCase || !updatePayments || !updateDebtor)
             return [false, 'Failed to cancel payment plan'];
         return [true, 'Payment plan canceled successfully'];
     }
