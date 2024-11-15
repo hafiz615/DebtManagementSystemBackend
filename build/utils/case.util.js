@@ -1531,13 +1531,20 @@ class CaseUtil {
             caseId: String(caseTemp._id),
             name: 'strategy_one',
         });
-        const percentage_settlement_over_weekly_budget = result.data.settlementRange.percentage_settlement_over_weekly_budget;
-        delete percentage_settlement_over_weekly_budget.Summary;
+        console.log(result);
+        let percentage_settlement_over_weekly_budget = result.data.settlementRange.percentage_settlement_over_weekly_budget;
+        if (percentage_settlement_over_weekly_budget &&
+            Object.keys(percentage_settlement_over_weekly_budget).length) {
+            delete percentage_settlement_over_weekly_budget.Summary;
+        }
+        else {
+            percentage_settlement_over_weekly_budget = {};
+        }
         console.log(percentage_settlement_over_weekly_budget, 'percentage_settlement_over_weekly_budget');
-        const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${true}`;
+        const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${false}`;
         const data = {
             llm_options: { LLMs: models },
-            settlements: { creditors: percentage_settlement_over_weekly_budget },
+            settlements: { creditors: {} },
         };
         try {
             console.log('I am in get-settlement-justifications');

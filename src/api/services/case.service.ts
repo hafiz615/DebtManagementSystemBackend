@@ -310,6 +310,7 @@ class CaseService {
       if (req.body.remaining < 0) req.body.remaining = 0;
       req.body.remainingAmountPaid = req.body.paidAmount;
     }
+    if (!req.body.paidAmount) req.body.remainingAmountPaid = 0;
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body

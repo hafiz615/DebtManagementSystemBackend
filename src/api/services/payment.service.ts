@@ -17,6 +17,7 @@ import constantsUtil from '../../utils/constants.util';
 import emailUtil from '../../utils/email.util';
 import creditorUtil from '../../utils/creditor.util';
 import {DebtorRepository} from '../repository/debtor/debtor.repository';
+import {IDebtor} from '../../database/interfaces/debtor.interface';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -762,9 +763,7 @@ class PaymentService {
   }
 
   async cancelCasePaymentPlan(req: Request) {
-    const caseTemp = await this.caseRepository.getById<ICreditor>(
-      req.params.id
-    );
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) return [false, constants.notFoundMessage('case')];
     const updateCase = await this.caseRepository.updateById<ICase>(
       req.params.id,
@@ -778,15 +777,19 @@ class PaymentService {
         isDeleted: true,
       }
     );
-    if (!updateCase || !updatePayments)
+    const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
+      String(caseTemp.debtor),
+      {
+        weeklyCommission: 0,
+      }
+    );
+    if (!updateCase || !updatePayments || updateDebtor)
       return [false, 'Failed to cancel payment plan'];
     return [true, 'Payment plan canceled successfully'];
   }
 
   async cancelDebtorPaymentPlan(req: Request) {
-    const debtor = await this.debtorReposiotry.getById<ICreditor>(
-      req.params.id
-    );
+    const debtor = await this.debtorReposiotry.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const updateDebtor = await this.debtorReposiotry.updateById<ICase>(
       req.params.id,

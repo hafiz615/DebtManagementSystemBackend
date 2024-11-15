@@ -1384,10 +1384,7 @@ class DebtorService {
       return [false, constants.alreadyExistsMessage('Debtor payment plan')];
 
     if (debtor.weeklyCommission)
-      return [
-        false,
-        constants.alreadyExistsMessage('Weekly commission already settled'),
-      ];
+      return [false, 'Weekly commission already settled'];
     req.body.isExempt = false;
     // const checkCasePayment = await caseUtil.checkCasePayment(
     //   req.body,
