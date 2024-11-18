@@ -380,6 +380,49 @@ class PaymentService {
             },
         ];
     }
+    async getCommissionPayments() {
+        const payments = await this.getAllCommissionPayments();
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(payments);
+        const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
+            ...obj,
+            type: 'authorization',
+        }));
+        // Adding type to each object in successCapture array
+        const failedCapture = paymentsObj.failedCaptures.map((obj) => ({
+            ...obj,
+            type: 'payment',
+        }));
+        const successAuth = paymentsObj.successAuthorizations.map((obj) => ({
+            ...obj,
+            type: 'authorization',
+        }));
+        // Adding type to each object in successCapture array
+        const successCapture = paymentsObj.successCaptures.map((obj) => ({
+            ...obj,
+            type: 'payment',
+        }));
+        // Merging the arrays
+        const mergedArray = [
+            ...successAuth,
+            ...failedAuth,
+            ...successCapture,
+            ...failedCapture,
+        ];
+        mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        return [
+            true,
+            {
+                transactions: {
+                    previous: mergedArray,
+                    upcomingPayments: paymentsObj.upcomingPayments,
+                },
+            },
+        ];
+    }
     async getAllPaymentsByCaseId(id) {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
@@ -392,6 +435,12 @@ class PaymentService {
                 select: ['basicInformation.fullName', 'basicInformation.SSID'],
             },
         });
+    }
+    async getAllCommissionPayments() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            caseId: null,
+            isDeleted: false,
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 });
     }
     async authorizeCreditCard(amount, customer_vault_id) {
         const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
