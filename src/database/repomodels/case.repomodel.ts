@@ -29,7 +29,7 @@ export class Case {
   >();
   isDeleted = false;
   contractDetails = null;
-  isExempt = '';
+  isExempt = false;
   confidence = 0;
   closeDate = '';
   strategyOne_1 = false;
@@ -45,6 +45,7 @@ export class Case {
   settlementRange = false;
   getCaseIdPercentage = false;
   platform = false;
+  creditorPaymentsProceed = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

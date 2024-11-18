@@ -68,6 +68,12 @@ export class Debtor {
   platform = false;
   trueProfit = 0;
   videoUrl = '';
+  intervals = Array<{
+    amount: 0;
+    startDate: '';
+    frequency: 0;
+    timePeriod: '';
+  }>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

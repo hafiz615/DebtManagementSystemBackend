@@ -15,5 +15,7 @@ router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
 router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceCommission);
 router.get('/sendPaymentPaynote/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.sendPaymentPaynote);
+router.get('/cancelCasePaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelCasePaymentPlan);
+router.get('/cancelDebtorPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelDebtorPaymentPlan);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

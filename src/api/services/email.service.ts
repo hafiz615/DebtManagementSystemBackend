@@ -94,9 +94,14 @@ class EmailService {
 
   async getAllLinks() {
     const links =
-      await this.domainVerifyRepository.getAllWithoutPagination<IDomainVerify>({
-        isVerified: false,
-      });
+      await this.domainVerifyRepository.getAllWithoutPagination<IDomainVerify>(
+        {
+          isVerified: false,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
     if (!links.length) {
       return [false, constantsUtil.notFoundMessage('links')];
     }

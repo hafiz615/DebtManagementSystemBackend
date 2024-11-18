@@ -15,12 +15,14 @@ const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
+const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.creditorReposiotry = new creditor_repository_1.CreditorRepository();
+        this.debtorReposiotry = new debtor_repository_1.DebtorRepository();
     }
     async getHomePayments(req) {
         let arrayName = String(req.query.arrayName);
@@ -506,7 +508,7 @@ class PaymentService {
         const paymentId = req.params.id;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, {
             path: 'caseId',
-            select: ['_id', 'caseCode', 'remaining'],
+            select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
             populate: [
                 {
                     path: 'creditor',
@@ -529,6 +531,9 @@ class PaymentService {
         }
         if (!payment.caseId?.creditor?.paynoteSourceId) {
             return [false, 'Account not added for user'];
+        }
+        if (!payment.caseId?.creditorPaymentsProceed) {
+            return [false, 'Funds transfer for this creditor is paused'];
         }
         if (payment.status === 'Success') {
             return [false, 'Payment already send'];
@@ -600,6 +605,37 @@ class PaymentService {
                 throw new Error(`Unsupported unit: ${unit}`);
         }
         return thresholdDate.toUTCString();
+    }
+    async cancelCasePaymentPlan(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp)
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        const updateCase = await this.caseRepository.updateById(req.params.id, {
+            intervals: [],
+        });
+        const updatePayments = await this.paymentRepository.updateMany({ caseId: req.params.id, authorized: 'Pending' }, {
+            isDeleted: true,
+        });
+        const updateDebtor = await this.debtorReposiotry.updateById(String(caseTemp.debtor), {
+            weeklyCommission: 0,
+        });
+        if (!updateCase || !updatePayments || !updateDebtor)
+            return [false, 'Failed to cancel payment plan'];
+        return [true, 'Payment plan canceled successfully'];
+    }
+    async cancelDebtorPaymentPlan(req) {
+        const debtor = await this.debtorReposiotry.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const updateDebtor = await this.debtorReposiotry.updateById(req.params.id, {
+            intervals: [],
+        });
+        const updatePayments = await this.paymentRepository.updateMany({ debtorId: req.params.id, authorized: 'Pending', caseId: { $eq: null } }, {
+            isDeleted: true,
+        });
+        if (!updateDebtor || !updatePayments)
+            return [false, 'Failed to cancel payment plan'];
+        return [true, 'Payment plan canceled successfully'];
     }
 }
 exports.default = PaymentService;

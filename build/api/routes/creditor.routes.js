@@ -15,5 +15,6 @@ router.post('/listing', authorize_middleware_1.default.validateAuth, creditor_co
 router.post('/updateCreditorAccountTitle/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.updateCreditorAccountTitle);
 router.put('/updateMultipleCreditors/:id', creditor_validate_1.default.validateMultipleCreditors, authorize_middleware_1.default.validateAuth, creditor_controller_1.default.updateMultipleCreditors);
 router.post('/createPaynoteCustomer/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.createPaynoteCustomer);
+router.post('/pausePayments/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.pausePayments);
 exports.default = router;
 //# sourceMappingURL=creditor.routes.js.map

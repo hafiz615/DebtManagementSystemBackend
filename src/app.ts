@@ -24,6 +24,8 @@ import {CaseRepository} from './api/repository/case/case.repository';
 import {ICase} from './database/interfaces/case.interface';
 import debtorUtil from './utils/debtor.util';
 import commonUtil from './utils/common.util';
+import {PaymentRepository} from './api/repository/payment/payment.repository';
+import {IPayment} from './database/interfaces/payment.interface';
 
 class App {
   protected app: Application;
@@ -144,6 +146,7 @@ class App {
     // console.log(date);
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
+    // paymentCronjob.processCommissionPayments();
     paymentCronjob.startCronJob();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
