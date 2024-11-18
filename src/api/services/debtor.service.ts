@@ -561,7 +561,7 @@ class DebtorService {
       });
     }
     if (!payment.paymentReference) {
-      payments.concat(payment);
+      payments.push(payment);
     }
     let response: any;
     const accounts = debtor.accounts;
@@ -647,7 +647,7 @@ class DebtorService {
       }
     }
     if (!payment.paymentReference) {
-      payments.concat(payment);
+      payments.push(payment);
     }
     let response: any;
     let responseNum = '';
