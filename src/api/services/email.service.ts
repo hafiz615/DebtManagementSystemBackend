@@ -10,12 +10,20 @@ import {IDomainVerify} from '../../database/interfaces/domainVerify.interface';
 import {DomainVerify} from '../../database/repomodels/domainVerify.repomodel';
 import commonUtil from '../../utils/common.util';
 import caseUtil from '../../utils/case.util';
+import {Case} from '../../database/models/case.model';
+import {Inbox} from '../../database/repomodels/inbox.repomodel';
+import {DataCopier} from '../../utils/dataCopier.util';
+import {InboxRepository} from '../repository/inbox/inbox.repository';
+import {IInbox} from '../../database/interfaces/inbox.interface';
 
 class EmailService {
   private caseRepository: CaseRepository;
   private domainVerifyRepository: DomainVerifyRepository;
+  private inboxRepository: InboxRepository;
+
   constructor() {
     this.caseRepository = new CaseRepository();
+    this.inboxRepository = new InboxRepository();
     this.domainVerifyRepository = new DomainVerifyRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
@@ -38,14 +46,16 @@ class EmailService {
 
   async sendGridEmail(req: Request) {
     const parseData = await simpleParser(req.body.email);
-    console.log('i have been hit');
-    const subject = parseData.subject;
-    const text = parseData.text;
-    const from = parseData.from?.value[0].address;
+    const subject = req.body.subject;
+    const text = req.body.text;
+    const from = req.body.from;
+    // ?.value[0].address;
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
     const referencesHeader = parseData.headers.get('references');
+    this.extractCaseId(referencesHeader.toString());
+
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
       if (caseId) {
@@ -60,6 +70,11 @@ class EmailService {
           },
           caseId
         );
+        const caseData = await Case.findById(caseId);
+        req.body.caseCode = caseData.caseCode;
+        req.body.type = 'recieved';
+
+        await emailUtil.createInbox(req.body);
         return true;
       }
     }

@@ -25,6 +25,10 @@ import commonUtil from './common.util';
 import UserService from '../api/services/user.service';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import clientSendgrid from '@sendgrid/client';
+import {Inbox} from '../database/models/inbox.model';
+import {DataCopier} from './dataCopier.util';
+import {IInbox} from '../database/interfaces/inbox.interface';
+import {InboxRepository} from '../api/repository/inbox/inbox.repository';
 
 dotenv.config();
 class EmailUtil {
@@ -34,6 +38,7 @@ class EmailUtil {
   private paymentRepository: PaymentRepository;
   private userRepository: UserRepository;
   private debtorRepository: DebtorRepository;
+  private inboxRepository: InboxRepository;
   private client: Twilio;
   constructor() {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
@@ -44,6 +49,7 @@ class EmailUtil {
     this.paymentRepository = new PaymentRepository();
     this.userRepository = new UserRepository();
     this.debtorRepository = new DebtorRepository();
+    this.inboxRepository = new InboxRepository();
     this.client = twilio(
       process.env.twilioAccountSid,
       process.env.twilioAuthToken
@@ -252,6 +258,15 @@ class EmailUtil {
             },
             caseId
           );
+          const caseData = await this.caseRepository.getById<ICase>(
+            caseId,
+            undefined,
+            undefined,
+            [undefined, undefined]
+          );
+          body.caseCode = caseData.caseCode;
+          body.type = 'sent';
+          this.createInbox(body);
         }
         return result;
       case 'sms':
@@ -272,6 +287,12 @@ class EmailUtil {
         return smsResult;
     }
     return [true, `Your ${type} is delivered successfully`];
+  }
+
+  async createInbox(inbox: any) {
+    const newMessage = new Inbox();
+    const vaildatedMessage = DataCopier.copy(newMessage, inbox);
+    const message = await this.inboxRepository.create<IInbox>(vaildatedMessage);
   }
 
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {

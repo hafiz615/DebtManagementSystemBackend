@@ -23,6 +23,7 @@ const justification_repository_1 = require("../repository/justification/justific
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
+const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -613,6 +614,7 @@ class CaseService {
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
         this.justificationRepository = new justification_repository_1.JustificationRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
+        this.inboxRepository = new inbox_repository_1.InboxRepository();
     }
     async deleteCase(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id);
@@ -698,6 +700,10 @@ class CaseService {
             Action: 'EMAIL',
             Subject: subject,
         }, caseId);
+        // const caseData = await this.caseRepository.getById<ICase>(caseId, undefined, undefined, [undefined, undefined])
+        req.body.caseCode = caseTemp.caseCode;
+        req.body.type = 'sent';
+        await email_util_1.default.createInbox(req.body);
         return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId);
     }
     async caseHistory(req) {

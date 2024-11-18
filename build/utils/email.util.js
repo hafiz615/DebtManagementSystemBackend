@@ -19,6 +19,9 @@ const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
+const inbox_model_1 = require("../database/models/inbox.model");
+const dataCopier_util_1 = require("./dataCopier.util");
+const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -30,6 +33,7 @@ class EmailUtil {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.userRepository = new user_repository_1.UserRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
@@ -176,6 +180,10 @@ class EmailUtil {
                         Action: 'EMAIL',
                         Subject: subject,
                     }, caseId);
+                    const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [undefined, undefined]);
+                    body.caseCode = caseData.caseCode;
+                    body.type = 'sent';
+                    this.createInbox(body);
                 }
                 return result;
             case 'sms':
@@ -193,6 +201,11 @@ class EmailUtil {
                 return smsResult;
         }
         return [true, `Your ${type} is delivered successfully`];
+    }
+    async createInbox(inbox) {
+        const newMessage = new inbox_model_1.Inbox();
+        const vaildatedMessage = dataCopier_util_1.DataCopier.copy(newMessage, inbox);
+        const message = await this.inboxRepository.create(vaildatedMessage);
     }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });

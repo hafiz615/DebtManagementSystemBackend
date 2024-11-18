@@ -11,6 +11,8 @@ const domainVerify_repository_1 = require("../repository/domainVerify/domainVeri
 const domainVerify_repomodel_1 = require("../../database/repomodels/domainVerify.repomodel");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const case_util_1 = __importDefault(require("../../utils/case.util"));
+const case_model_1 = require("../../database/models/case.model");
+const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 class EmailService {
     constructor() {
         this.extractCaseId = (header) => {
@@ -18,6 +20,7 @@ class EmailService {
             return match ? match[1] : null;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
     }
     async sendSmsEmailDebtorCreditor(req) {
@@ -34,14 +37,15 @@ class EmailService {
     }
     async sendGridEmail(req) {
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
-        console.log('i have been hit');
-        const subject = parseData.subject;
-        const text = parseData.text;
-        const from = parseData.from?.value[0].address;
+        const subject = req.body.subject;
+        const text = req.body.text;
+        const from = req.body.from;
+        // ?.value[0].address;
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
         const referencesHeader = parseData.headers.get('references');
+        this.extractCaseId(referencesHeader.toString());
         if (referencesHeader) {
             const caseId = this.extractCaseId(referencesHeader.toString());
             if (caseId) {
@@ -53,6 +57,10 @@ class EmailService {
                     Action: 'EMAIL',
                     Subject: subject,
                 }, caseId);
+                const caseData = await case_model_1.Case.findById(caseId);
+                req.body.caseCode = caseData.caseCode;
+                req.body.type = 'recieved';
+                await email_util_1.default.createInbox(req.body);
                 return true;
             }
         }

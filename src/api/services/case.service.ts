@@ -38,6 +38,9 @@ import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.reposito
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import debtorUtil from '../../utils/debtor.util';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
+import {Inbox} from '../../database/repomodels/inbox.repomodel';
+import {IInbox} from '../../database/interfaces/inbox.interface';
+import {InboxRepository} from '../repository/inbox/inbox.repository';
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
@@ -51,6 +54,7 @@ class CaseService {
   private caseHistoryRepository: CaseHistoryRepository;
   private justificationRepository: JustificationRepository;
   private bulkUploadRepository: BulkUploadRepository;
+  private inboxRepository: InboxRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -64,6 +68,7 @@ class CaseService {
     this.caseHistoryRepository = new CaseHistoryRepository();
     this.justificationRepository = new JustificationRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
+    this.inboxRepository = new InboxRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -1031,6 +1036,11 @@ class CaseService {
       },
       caseId
     );
+    // const caseData = await this.caseRepository.getById<ICase>(caseId, undefined, undefined, [undefined, undefined])
+    req.body.caseCode = caseTemp.caseCode;
+    req.body.type = 'sent';
+    await emailUtil.createInbox(req.body);
+
     return await emailUtil.sendEmail(
       sendTo,
       from,
