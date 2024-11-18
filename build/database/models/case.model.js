@@ -111,7 +111,7 @@ const caseModel = new mongoose_1.Schema({
         type: String,
     },
     isExempt: {
-        type: String,
+        type: Boolean,
     },
     strategyOne_1: {
         type: Boolean,

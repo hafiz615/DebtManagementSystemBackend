@@ -27,7 +27,7 @@ class Case {
         this.intervals = Array();
         this.isDeleted = false;
         this.contractDetails = null;
-        this.isExempt = '';
+        this.isExempt = false;
         this.confidence = 0;
         this.closeDate = '';
         this.strategyOne_1 = false;

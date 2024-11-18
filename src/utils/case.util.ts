@@ -2614,6 +2614,7 @@ class CaseUtil {
         }
       }
     }
+    await debtorUtil.updateDebtorTotalCommission(debtor);
     if (!createdCases.length) return [false, createdCases];
 
     return [true, createdCases];

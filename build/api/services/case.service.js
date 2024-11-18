@@ -93,7 +93,7 @@ class CaseService {
                 target: 'case',
                 caseId: req.params.id,
             });
-            await debtor_util_1.default.updateDebtorTotalCommission(findCase.debtor);
+            // await debtorUtil.updateDebtorTotalCommission(findCase.debtor);
             const updateNotesForm = findCase.notes.length !== 0
                 ? await Promise.all(findCase.notes.map(async (note) => {
                     const userName = await this.userRepository.getById(note.userId);
@@ -521,7 +521,7 @@ class CaseService {
             let creditors = null;
             let settlementRange = null;
             let data = {};
-            caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, req.body);
+            // caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
             let debtor = caseTemp.debtor;
             const moneyThumb = await debtor_util_1.default.getScoreCard(debtor);
             await moneyThumb_util_1.default.saveData(moneyThumb.appid, moneyThumb.scoreCard, debtor);
@@ -547,6 +547,7 @@ class CaseService {
                 commissionPercentage: comm,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
+            await debtor_util_1.default.updateDebtorTotalCommission(debtor);
             data['debtor'] = debtor;
             let extractedFieldsTemp = null;
             if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {

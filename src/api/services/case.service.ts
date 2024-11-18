@@ -173,7 +173,7 @@ class CaseService {
       target: 'case',
       caseId: req.params.id,
     });
-    await debtorUtil.updateDebtorTotalCommission(findCase.debtor);
+    // await debtorUtil.updateDebtorTotalCommission(findCase.debtor);
     const updateNotesForm =
       findCase.notes.length !== 0
         ? await Promise.all(
@@ -854,7 +854,7 @@ class CaseService {
     let creditors = null;
     let settlementRange = null;
     let data = {};
-    caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
+    // caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, req.body);
     let debtor: any = caseTemp.debtor;
     const moneyThumb = await debtorUtil.getScoreCard(debtor);
     await moneyThumbUtil.saveData(
@@ -893,6 +893,7 @@ class CaseService {
       commissionPercentage: comm,
       updatedAt: commonUtil.getCurrentDate(),
     });
+    await debtorUtil.updateDebtorTotalCommission(debtor);
     data['debtor'] = debtor;
     let extractedFieldsTemp = null;
     if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {

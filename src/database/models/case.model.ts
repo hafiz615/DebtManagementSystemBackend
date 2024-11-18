@@ -88,7 +88,7 @@ const caseModel: Schema = new Schema({
     type: String,
   },
   isExempt: {
-    type: String,
+    type: Boolean,
   },
   strategyOne_1: {
     type: Boolean,

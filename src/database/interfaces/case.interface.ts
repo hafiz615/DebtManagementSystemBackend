@@ -36,7 +36,7 @@ export interface ICase extends Document {
   remainingAmountPaid: number;
   // documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
-  isExempt: string;
+  isExempt: boolean;
   contractDetails: {};
   isDeleted: boolean;
   confidence: number;

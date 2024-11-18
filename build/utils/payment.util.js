@@ -511,7 +511,7 @@ class PaymentUtil {
             paymentReference: referenceId,
             paymentReferenceBool: true,
             isDeleted: false,
-        });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
     }
     async getOtherPayments(payment) {
         const debtorId = payment.debtorId;

@@ -602,11 +602,17 @@ class PaymentUtil {
   }
 
   async getAllPaymentReferenceDocuments(referenceId: string) {
-    return await this.paymentRepository.getAllWithoutPagination<IPayment>({
-      paymentReference: referenceId,
-      paymentReferenceBool: true,
-      isDeleted: false,
-    });
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        paymentReference: referenceId,
+        paymentReferenceBool: true,
+        isDeleted: false,
+      },
+      undefined,
+      undefined,
+      undefined,
+      {path: 'caseId', populate: [{path: 'debtor'}]}
+    );
   }
 
   async getOtherPayments(payment: IPayment) {

@@ -1243,6 +1243,11 @@ class CronJob {
                     $inc: { commissionPaid: commissionAmount },
                 });
             }
+            if (!amount) {
+                await this.debtorRepository.updateById(payment.debtorId, {
+                    $inc: { commissionPaid: payment.amount },
+                });
+            }
         }
         else {
             if (type === 'ck') {
