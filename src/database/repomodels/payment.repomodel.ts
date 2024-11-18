@@ -23,6 +23,8 @@ export class Payment {
   timePeriod = '';
   paymentReference = '';
   isDeleted = false;
+  paymentReferenceBool = false;
+  commission = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

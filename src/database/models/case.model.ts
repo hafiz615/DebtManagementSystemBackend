@@ -88,7 +88,7 @@ const caseModel: Schema = new Schema({
     type: String,
   },
   isExempt: {
-    type: String,
+    type: Boolean,
   },
   strategyOne_1: {
     type: Boolean,
@@ -124,6 +124,9 @@ const caseModel: Schema = new Schema({
     type: Boolean,
   },
   platform: {
+    type: Boolean,
+  },
+  creditorPaymentsProceed: {
     type: Boolean,
   },
   createdAt: {

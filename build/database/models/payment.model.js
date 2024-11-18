@@ -108,6 +108,12 @@ const PaymentModel = new mongoose_1.Schema({
     logTrackingId: {
         type: String,
     },
+    paymentReferenceBool: {
+        type: Boolean,
+    },
+    commission: {
+        type: Number,
+    },
     createdAt: {
         type: Date,
         required: true,

@@ -81,6 +81,12 @@ const PaymentModel: Schema = new Schema({
   logTrackingId: {
     type: String,
   },
+  paymentReferenceBool: {
+    type: Boolean,
+  },
+  commission: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     required: true,

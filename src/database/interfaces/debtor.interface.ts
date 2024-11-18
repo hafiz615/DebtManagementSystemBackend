@@ -1,4 +1,5 @@
 import mongoose, {Document} from 'mongoose';
+import {IInterval} from './case.interface';
 
 export interface IKeyFile {
   key: string;
@@ -75,6 +76,7 @@ export interface IDebtor extends Document {
   platform: boolean;
   trueProfit: number;
   videoUrl: string;
+  intervals: Array<IInterval>;
   createdAt: string;
   updatedAt: string;
 }

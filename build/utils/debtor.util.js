@@ -187,6 +187,7 @@ class DebtorUtil {
                     if (data[i].month === 'Totals') {
                         lastLenderOccurrences[data[i].lender] = {
                             withdrawal_total: Math.abs(parseFloat(data[i].withdrawal_total)),
+                            last_withdrawal_date: data[i].last_withdrawal_date,
                         };
                     }
                 }
@@ -414,6 +415,21 @@ class DebtorUtil {
         });
         // Convert sorted array back into an object
         return Object.fromEntries(sortedEntries);
+    }
+    async getCommissionAmount(payment) {
+        if (!payment.caseId.debtor.weeklyCommission)
+            return 0;
+        if (payment.caseId.debtor.totalCommision ===
+            payment.caseId.debtor.commissionPaid)
+            return 0;
+        const commissionPaid = payment.caseId.debtor.commissionPaid;
+        const weeklyCommission = payment.caseId.debtor.weeklyCommission;
+        const totalCommision = payment.caseId.debtor.totalCommision;
+        let sumTotalPaidWeekly = commissionPaid + weeklyCommission;
+        if (sumTotalPaidWeekly <= totalCommision)
+            return weeklyCommission;
+        let amountUp = sumTotalPaidWeekly - totalCommision;
+        return weeklyCommission - amountUp;
     }
 }
 exports.default = new DebtorUtil();

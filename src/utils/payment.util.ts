@@ -139,6 +139,20 @@ class PaymentUtil {
     );
   }
 
+  async getPendingCommissionAuthorized() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Pending',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
   async getPendingCaptured() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
@@ -154,12 +168,42 @@ class PaymentUtil {
     );
   }
 
+  async getPendingCommissionCaptured() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Success',
+        captured: 'Pending',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
   async getFailedAuthorized() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         authorized: 'Failed',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
+        paymentReferenceBool: {$ne: true},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
+  async getFailedCommissionAuthorized() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Failed',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
       },
       undefined,
       undefined,
@@ -175,6 +219,22 @@ class PaymentUtil {
         captured: 'Failed',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
+        paymentReferenceBool: {$ne: true},
+      },
+      undefined,
+      undefined,
+      undefined,
+      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+    );
+  }
+
+  async getFailedCommissionCaptured() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        authorized: 'Success',
+        captured: 'Failed',
+        isDeleted: {$ne: true},
+        caseId: {$eq: null},
       },
       undefined,
       undefined,
@@ -530,6 +590,70 @@ class PaymentUtil {
       console.error('Error fetching payments:', error);
       throw error; // Rethrow the error for further handling
     }
+  }
+
+  async getPaymentReferenceDocuments(referenceId: string) {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>({
+      paymentReference: referenceId,
+      paymentReferenceBool: true,
+      caseId: {$ne: null},
+      isDeleted: false,
+    });
+  }
+
+  async getAllPaymentReferenceDocuments(referenceId: string) {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        paymentReference: referenceId,
+        paymentReferenceBool: true,
+        isDeleted: false,
+      },
+      undefined,
+      undefined,
+      undefined,
+      {path: 'caseId', populate: [{path: 'debtor'}]}
+    );
+  }
+
+  async getOtherPayments(payment: IPayment) {
+    const debtorId = payment.debtorId;
+    const nextDate = await this.addDaysBasedOnPeriod(
+      payment.dueDate,
+      payment.timePeriod
+    );
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: debtorId,
+        caseId: {$ne: null},
+        authorized: {$ne: 'Success'},
+        isDeleted: false,
+        dueDate: {
+          $gte: new Date(payment.dueDate),
+          $lt: nextDate,
+        },
+      });
+    return payments;
+  }
+
+  async addDaysBasedOnPeriod(date: string, timePeriod: string) {
+    const timePeriods = {
+      daily: 1,
+      weekly: 7,
+      fortnightly: 14,
+      monthly: 30,
+      custom: 0,
+    };
+
+    let daysToAdd = timePeriods[timePeriod.toLowerCase()];
+
+    if (!daysToAdd) {
+      daysToAdd = 7;
+    }
+
+    const resultDate = new Date(date);
+    resultDate.setDate(resultDate.getDate() + daysToAdd);
+
+    return resultDate;
   }
 }
 export default new PaymentUtil();

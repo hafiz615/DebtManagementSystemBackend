@@ -23,6 +23,8 @@ export interface IPayment extends Document {
   timePeriod: string;
   paymentReference: string;
   isDeleted: boolean;
+  paymentReferenceBool: boolean;
+  commission: number;
   createdAt: string;
   updatedAt: string;
 }

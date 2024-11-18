@@ -36,7 +36,7 @@ export interface ICase extends Document {
   remainingAmountPaid: number;
   // documents: Array<IKeyFile>;
   intervals: Array<IInterval>;
-  isExempt: string;
+  isExempt: boolean;
   contractDetails: {};
   isDeleted: boolean;
   confidence: number;
@@ -54,6 +54,7 @@ export interface ICase extends Document {
   settlementRange: boolean;
   getCaseIdPercentage: boolean;
   platform: boolean;
+  creditorPaymentsProceed: boolean;
   createdAt: string;
   updatedAt: string;
 }

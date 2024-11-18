@@ -126,6 +126,7 @@ class App {
         // console.log(date);
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
+        // paymentCronjob.processCommissionPayments();
         payment_cronjob_1.default.startCronJob();
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
