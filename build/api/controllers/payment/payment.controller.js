@@ -116,7 +116,7 @@ class PaymentController {
         };
         this.firstChoiceCommission = async (req, res) => {
             try {
-                await payment_cronjob_1.default.testDebtor();
+                await payment_cronjob_1.default.processCommissionPayments();
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],

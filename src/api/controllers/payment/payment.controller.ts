@@ -142,7 +142,7 @@ class PaymentController {
 
   firstChoiceCommission = async (req: Request, res: Response) => {
     try {
-      await paymentCronjob.testDebtor();
+      await paymentCronjob.processCommissionPayments();
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
