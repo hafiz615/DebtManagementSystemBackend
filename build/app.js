@@ -8,7 +8,6 @@ const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const database_config_1 = require("./config/database.config");
 const base_route_1 = __importDefault(require("./api/routes/base.route"));
-const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
 const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware")); // Import the logging middleware
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 const setEnv_1 = require("./utils/setEnv");
@@ -127,7 +126,7 @@ class App {
         bulkUpload_cronjob_1.default.startCronJob();
         // paymentCronjob.processPayments();
         // paymentCronjob.processCommissionPayments();
-        payment_cronjob_1.default.startCronJob();
+        // paymentCronjob.startCronJob();
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
         // paymentCronjob.testPaynote();
