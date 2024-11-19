@@ -562,24 +562,21 @@ class DebtorService {
             payment = payments.find(payment => {
                 return payment.caseId === null;
             });
-            console.log(payment, 'okokoko');
         }
         if (!payment.paymentReference) {
-            payments.concat(payment);
+            payments.push(payment);
         }
         let response;
-        console.log(debtor, 'plplplp');
         const accounts = debtor.accounts;
         let responseNum = '';
         for (const account of accounts) {
-            if (debtor.paymentType === 'cc') {
+            if (account.paymentType === 'cc') {
                 response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId);
                 responseNum = new url_1.URLSearchParams(response).get('response');
                 if (responseNum === '1')
                     break;
             }
         }
-        console.log(response);
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
         const updateObjPayment = {};
         if (responseNum === '1') {
@@ -604,6 +601,7 @@ class DebtorService {
             //   ''
             // );
         }
+        console.log(payments, 'paymentssssss');
         if (Object.keys(updateObjPayment).length) {
             for (const payment of payments) {
                 await this.paymentRepository.updateById(payment._id, updateObjPayment);
@@ -633,7 +631,7 @@ class DebtorService {
         if (payment.paymentReference) {
             payments = await payment_util_1.default.getAllPaymentReferenceDocuments(payment.paymentReference);
             payment = payments.find(payment => {
-                payment.caseId === null;
+                return payment.caseId === null;
             });
             if (payments.length > 1) {
                 const total = payments.reduce((sum, obj) => sum + obj.amount, 0);
@@ -641,16 +639,22 @@ class DebtorService {
             }
         }
         if (!payment.paymentReference) {
-            payments.concat(payment);
+            payments.push(payment);
         }
         let response;
-        if (debtor.paymentType === 'cc') {
-            response = await this.paymentService.captureCreditCard(debtor.customerVaultId, payment.debtorTransId, '');
+        let responseNum = '';
+        const accounts = debtor.accounts;
+        for (const account of accounts) {
+            if (account.paymentType === 'cc') {
+                response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, '');
+            }
+            if (account.paymentType === 'ck') {
+                response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, '');
+            }
+            responseNum = new url_1.URLSearchParams(response).get('response');
+            if (responseNum === '1')
+                break;
         }
-        if (payment.caseId.debtor.paymentType === 'ck') {
-            response = await this.paymentService.achCredit(debtor.customerVaultId, payment.amount, '');
-        }
-        const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
         // const paymentLogging = new PaymentLogging();
         const updateObjPayment = {};
@@ -658,7 +662,7 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            if (payment.caseId.debtor.paymentType === 'ck') {
+            if (!payment.debtorTransId) {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
             result = true;
@@ -668,6 +672,7 @@ class DebtorService {
             //   paymentId,
             //   ''
             // );
+            console.log(amount, 'amounttttt');
             if (amount) {
                 const commissionAmount = payment.amount - amount;
                 await this.paymentRepository.updateById(payment._id, {

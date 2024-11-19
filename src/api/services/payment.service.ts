@@ -498,6 +498,60 @@ class PaymentService {
     ];
   }
 
+  async getCommissionPayments(): Promise<[boolean, {} | string]> {
+    const payments: IPayment[] = await this.getAllCommissionPayments();
+    if (!payments.length) {
+      return [false, constants.notFoundMessage('Payments')];
+    }
+    const paymentsObj =
+      await paymentUtil.getFilteredCommissionPayments(payments);
+    const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const failedCapture = paymentsObj.failedCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'payment',
+    }));
+
+    const successAuth = paymentsObj.successAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const successCapture = paymentsObj.successCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'payment',
+    }));
+
+    // Merging the arrays
+    const mergedArray = [
+      ...successAuth,
+      ...failedAuth,
+      ...successCapture,
+      ...failedCapture,
+    ];
+    mergedArray.sort(
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+    );
+    paymentsObj.upcomingPayments.sort(
+      (a: any, b: any) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+    return [
+      true,
+      {
+        transactions: {
+          previous: mergedArray,
+          upcomingPayments: paymentsObj.upcomingPayments,
+        },
+      },
+    ];
+  }
+
   private async getAllPaymentsByCaseId(id: string) {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
@@ -515,6 +569,18 @@ class PaymentService {
           select: ['basicInformation.fullName', 'basicInformation.SSID'],
         },
       }
+    );
+  }
+
+  private async getAllCommissionPayments() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        caseId: null,
+        isDeleted: false,
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      undefined,
+      {createdAt: -1}
     );
   }
 

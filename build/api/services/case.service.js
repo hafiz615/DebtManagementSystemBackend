@@ -336,9 +336,12 @@ class CaseService {
         };
         this.createCreditorsCases = async (req) => {
             const reqTemp = req;
-            const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
-            if (!checkCasePayment[0])
-                return checkCasePayment;
+            let dataArray = req.body.data;
+            for (const body of dataArray) {
+                const checkCasePayment = await case_util_1.default.checkCasePayment(body);
+                if (!checkCasePayment[0])
+                    return checkCasePayment;
+            }
             const result = await case_util_1.default.createCreditorsCases(req.body, reqTemp.name, reqTemp.id, req.params.id);
             // if (!result[0]) return result;
             return result;

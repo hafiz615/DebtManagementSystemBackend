@@ -544,7 +544,7 @@ class CaseUtil {
     body: any,
     commission = 0
   ): Promise<[boolean, string]> {
-    let isExempt = body?.isExempt ?? true;
+    let isExempt = body?.isExempt ? body?.isExempt : true;
     if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }

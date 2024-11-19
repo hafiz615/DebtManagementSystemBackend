@@ -142,7 +142,7 @@ class PaymentController {
 
   firstChoiceCommission = async (req: Request, res: Response) => {
     try {
-      await paymentCronjob.testDebtor();
+      await paymentCronjob.processCommissionPayments();
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
@@ -217,6 +217,29 @@ class PaymentController {
           statusCode: constants.CODE.OK,
           data: [],
           message: response[1],
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getCommissionPayments = async (req: Request, res: Response) => {
+    try {
+      const response = await this.paymentService.getCommissionPayments();
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.OK)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Commission payments'),
         })
       );
     } catch (error: any) {

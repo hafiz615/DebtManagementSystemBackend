@@ -59,4 +59,10 @@ router.get(
   authorize.validateAuth,
   paymentController.cancelDebtorPaymentPlan
 );
+
+router.get(
+  '/getCommissionPayments',
+  authorize.validateAuth,
+  paymentController.getCommissionPayments
+);
 export default router;

@@ -125,6 +125,67 @@ class PaymentUtil {
     };
   }
 
+  async getFilteredCommissionPayments(payments: any) {
+    const transformedArray = payments.map(obj => ({
+      id: String(obj._id),
+      status: obj.status,
+      authorized: obj.authorized,
+      captured: obj.captured,
+      amount: obj.amount,
+      dueDate: obj.dueDate,
+      failedReasonAuthorization: obj.failedReasonAuthorization,
+      failedReasonCaptured: obj.failedReasonCaptured,
+      tryDate: obj.rescheduled,
+    }));
+
+    return this.getFilteredCommissionPaymentsObj(transformedArray);
+  }
+
+  async getFilteredCommissionPaymentsObj(transformedArray: any) {
+    let failedCaptures = [],
+      successCaptures = [],
+      successPayments = [],
+      failedAuthorizations = [],
+      successAuthorizations = [],
+      upcomingPayments = [];
+    for (const payment of transformedArray) {
+      switch (payment.captured) {
+        case 'Failed':
+          failedCaptures.push(payment);
+          break;
+        case 'Success':
+          successCaptures.push(payment);
+          break;
+      }
+
+      switch (payment.authorized) {
+        case 'Failed':
+          failedAuthorizations.push(payment);
+          break;
+        case 'Success':
+          successAuthorizations.push(payment);
+          break;
+      }
+      switch (payment.status) {
+        case 'Upcoming':
+          upcomingPayments.push(payment);
+          break;
+        case 'Success':
+          successPayments.push(payment);
+          break;
+      }
+    }
+
+    return {
+      failedCaptures: failedCaptures,
+      successPayments: successPayments,
+      failedAuthorizations: failedAuthorizations,
+      successAuthorizations: successAuthorizations,
+      upcomingPayments: upcomingPayments,
+      successCaptures: successCaptures,
+    };
+  }
+
   async getPendingAuthorized() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
