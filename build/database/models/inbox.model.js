@@ -38,13 +38,10 @@ const inbox = new mongoose_1.Schema({
     to: {
         type: String,
     },
-    cC: {
-        type: String,
+    cc: {
+        type: mongoose_1.Schema.Types.Mixed,
     },
     subject: {
-        type: String,
-    },
-    name: {
         type: String,
     },
     text: {
@@ -58,11 +55,12 @@ const inbox = new mongoose_1.Schema({
     },
     isRead: {
         type: Boolean,
+        default: false,
     },
     type: {
         type: String,
     },
-    debitorCompanyName: {
+    debtorCompanyName: {
         type: String,
     },
     creditorCompanyName: {

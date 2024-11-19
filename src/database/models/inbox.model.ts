@@ -11,13 +11,10 @@ const inbox: Schema = new Schema({
   to: {
     type: String,
   },
-  cC: {
-    type: String,
+  cc: {
+    type: Schema.Types.Mixed,
   },
   subject: {
-    type: String,
-  },
-  name: {
     type: String,
   },
   text: {
@@ -31,11 +28,12 @@ const inbox: Schema = new Schema({
   },
   isRead: {
     type: Boolean,
+    default: false,
   },
   type: {
     type: String,
   },
-  debitorCompanyName: {
+  debtorCompanyName: {
     type: String,
   },
   creditorCompanyName: {

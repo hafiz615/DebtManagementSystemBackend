@@ -333,6 +333,25 @@ class CreditorService {
       });
     return [true, 'Customer added successfully'];
   }
+
+  async pausePayments(req: Request) {
+    if (req.query.pause !== 'true' && req.query.pause !== 'false') {
+      return [false, 'Query param missing!'];
+    }
+    const caseTemp = await this.caseRepository.getById<ICreditor>(
+      req.params.id
+    );
+    if (!caseTemp) return [false, constants.notFoundMessage('creditor')];
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {
+        creditorPaymentsProceed: req.query.pause,
+      }
+    );
+    if (!updateCase) return [false, constants.failureUpdateMessage('payments')];
+    const word = req.query.pause === 'true' ? 'resumed' : 'paused';
+    return [true, `Funds transfer ${word} successfully`];
+  }
 }
 
 export default CreditorService;

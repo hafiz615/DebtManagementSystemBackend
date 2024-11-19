@@ -11,7 +11,6 @@ const domainVerify_repository_1 = require("../repository/domainVerify/domainVeri
 const domainVerify_repomodel_1 = require("../../database/repomodels/domainVerify.repomodel");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const case_util_1 = __importDefault(require("../../utils/case.util"));
-const case_model_1 = require("../../database/models/case.model");
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 class EmailService {
     constructor() {
@@ -57,10 +56,19 @@ class EmailService {
                     Action: 'EMAIL',
                     Subject: subject,
                 }, caseId);
-                const caseData = await case_model_1.Case.findById(caseId);
-                req.body.caseCode = caseData.caseCode;
-                req.body.type = 'recieved';
-                await email_util_1.default.createInbox(req.body);
+                const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                    { path: 'debtor', select: ['businessInformation.companyName'] },
+                    { path: 'creditor', select: ['businessInformation.companyName'] },
+                ]);
+                const emailData = {
+                    from,
+                    to,
+                    subject,
+                    text,
+                    textAsHtml: parseData.textAsHtml,
+                    cc: parseData.cc,
+                };
+                email_util_1.default.createInbox(caseData, 'received', emailData);
                 return true;
             }
         }
@@ -84,7 +92,7 @@ class EmailService {
     async getAllLinks() {
         const links = await this.domainVerifyRepository.getAllWithoutPagination({
             isVerified: false,
-        });
+        }, undefined, undefined, { _id: -1 });
         if (!links.length) {
             return [false, constants_util_1.default.notFoundMessage('links')];
         }

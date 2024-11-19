@@ -16,16 +16,20 @@ import dotenv from 'dotenv';
 import constantsUtil from '../../utils/constants.util';
 import emailUtil from '../../utils/email.util';
 import creditorUtil from '../../utils/creditor.util';
+import {DebtorRepository} from '../repository/debtor/debtor.repository';
+import {IDebtor} from '../../database/interfaces/debtor.interface';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
   private creditorReposiotry: CreditorRepository;
+  private debtorReposiotry: DebtorRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.caseRepository = new CaseRepository();
     this.creditorReposiotry = new CreditorRepository();
+    this.debtorReposiotry = new DebtorRepository();
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
@@ -494,6 +498,60 @@ class PaymentService {
     ];
   }
 
+  async getCommissionPayments(): Promise<[boolean, {} | string]> {
+    const payments: IPayment[] = await this.getAllCommissionPayments();
+    if (!payments.length) {
+      return [false, constants.notFoundMessage('Payments')];
+    }
+    const paymentsObj =
+      await paymentUtil.getFilteredCommissionPayments(payments);
+    const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const failedCapture = paymentsObj.failedCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'payment',
+    }));
+
+    const successAuth = paymentsObj.successAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const successCapture = paymentsObj.successCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'payment',
+    }));
+
+    // Merging the arrays
+    const mergedArray = [
+      ...successAuth,
+      ...failedAuth,
+      ...successCapture,
+      ...failedCapture,
+    ];
+    mergedArray.sort(
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+    );
+    paymentsObj.upcomingPayments.sort(
+      (a: any, b: any) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+    return [
+      true,
+      {
+        transactions: {
+          previous: mergedArray,
+          upcomingPayments: paymentsObj.upcomingPayments,
+        },
+      },
+    ];
+  }
+
   private async getAllPaymentsByCaseId(id: string) {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
@@ -511,6 +569,18 @@ class PaymentService {
           select: ['basicInformation.fullName', 'basicInformation.SSID'],
         },
       }
+    );
+  }
+
+  private async getAllCommissionPayments() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        caseId: null,
+        isDeleted: false,
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      undefined,
+      {createdAt: -1}
     );
   }
 
@@ -648,7 +718,7 @@ class PaymentService {
       undefined,
       {
         path: 'caseId',
-        select: ['_id', 'caseCode', 'remaining'],
+        select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
         populate: [
           {
             path: 'creditor',
@@ -672,6 +742,9 @@ class PaymentService {
     }
     if (!payment.caseId?.creditor?.paynoteSourceId) {
       return [false, 'Account not added for user'];
+    }
+    if (!payment.caseId?.creditorPaymentsProceed) {
+      return [false, 'Funds transfer for this creditor is paused'];
     }
     if (payment.status === 'Success') {
       return [false, 'Payment already send'];
@@ -753,6 +826,52 @@ class PaymentService {
         throw new Error(`Unsupported unit: ${unit}`);
     }
     return thresholdDate.toUTCString();
+  }
+
+  async cancelCasePaymentPlan(req: Request) {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {
+        intervals: [],
+      }
+    );
+    const updatePayments = await this.paymentRepository.updateMany<IPayment>(
+      {caseId: req.params.id, authorized: 'Pending'},
+      {
+        isDeleted: true,
+      }
+    );
+    const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
+      String(caseTemp.debtor),
+      {
+        weeklyCommission: 0,
+      }
+    );
+    if (!updateCase || !updatePayments || !updateDebtor)
+      return [false, 'Failed to cancel payment plan'];
+    return [true, 'Payment plan canceled successfully'];
+  }
+
+  async cancelDebtorPaymentPlan(req: Request) {
+    const debtor = await this.debtorReposiotry.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
+    const updateDebtor = await this.debtorReposiotry.updateById<ICase>(
+      req.params.id,
+      {
+        intervals: [],
+      }
+    );
+    const updatePayments = await this.paymentRepository.updateMany<IPayment>(
+      {debtorId: req.params.id, authorized: 'Pending', caseId: {$eq: null}},
+      {
+        isDeleted: true,
+      }
+    );
+    if (!updateDebtor || !updatePayments)
+      return [false, 'Failed to cancel payment plan'];
+    return [true, 'Payment plan canceled successfully'];
   }
 }
 

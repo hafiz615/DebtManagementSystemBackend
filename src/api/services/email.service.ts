@@ -70,11 +70,24 @@ class EmailService {
           },
           caseId
         );
-        const caseData = await Case.findById(caseId);
-        req.body.caseCode = caseData.caseCode;
-        req.body.type = 'recieved';
-
-        await emailUtil.createInbox(req.body);
+        const caseData = await this.caseRepository.getById<ICase>(
+          caseId,
+          undefined,
+          undefined,
+          [
+            {path: 'debtor', select: ['businessInformation.companyName']},
+            {path: 'creditor', select: ['businessInformation.companyName']},
+          ]
+        );
+        const emailData = {
+          from,
+          to,
+          subject,
+          text,
+          textAsHtml: parseData.textAsHtml,
+          cc: parseData.cc,
+        };
+        emailUtil.createInbox(caseData, 'received', emailData);
         return true;
       }
     }
@@ -109,9 +122,14 @@ class EmailService {
 
   async getAllLinks() {
     const links =
-      await this.domainVerifyRepository.getAllWithoutPagination<IDomainVerify>({
-        isVerified: false,
-      });
+      await this.domainVerifyRepository.getAllWithoutPagination<IDomainVerify>(
+        {
+          isVerified: false,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
     if (!links.length) {
       return [false, constantsUtil.notFoundMessage('links')];
     }

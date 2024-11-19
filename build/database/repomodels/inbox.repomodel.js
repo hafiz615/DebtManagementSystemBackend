@@ -9,15 +9,14 @@ class Inbox {
     constructor() {
         this.from = '';
         this.to = '';
-        this.cC = '';
+        this.cc = null;
         this.subject = '';
-        this.name = '';
         this.text = '';
         this.textAsHtml = '';
         this.caseCode = '';
         this.isRead = false;
         this.type = '';
-        this.debitorCompanyName = '';
+        this.debtorCompanyName = '';
         this.creditorCompanyName = '';
         this.negotiatorName = '';
         this.createdAt = common_util_1.default.getCurrentDate();

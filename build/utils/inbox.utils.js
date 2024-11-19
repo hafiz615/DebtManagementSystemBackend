@@ -6,21 +6,17 @@ class InboxUtil {
         this.inboxRepository = new inbox_repository_1.InboxRepository();
     }
     async getAllInboxFilters(req) {
-        const reqTemp = req;
         const filters = {};
         if (req.query.search === 'true') {
             const text = req.body.text;
             if (text) {
                 filters['$or'] = [
-                    { name: { $regex: text, $options: 'i' } },
                     { subject: { $regex: text, $options: 'i' } },
                     { caseCode: { $regex: text, $options: 'i' } },
-                    { text: { $regex: text, $options: 'i' } },
-                    { textAsHtml: { $regex: text, $options: 'i' } },
                     { from: { $regex: text, $options: 'i' } },
                     { to: { $regex: text, $options: 'i' } },
                     { creditorCompanyName: { $regex: text, $options: 'i' } },
-                    { debitorCompanyName: { $regex: text, $options: 'i' } },
+                    { debtorCompanyName: { $regex: text, $options: 'i' } },
                     { negotiatorName: { $regex: text, $options: 'i' } },
                 ];
             }
@@ -31,7 +27,7 @@ class InboxUtil {
                 filters['caseCode'] = filter.caseCode;
             }
             if (filter && filter.debitorCompanyName) {
-                filters['debitorCompanyName'] = filter.debitorCompanyName;
+                filters['debtorCompanyName'] = filter.debtorCompanyName;
             }
             if (filter && filter.creditorCompanyName) {
                 filters['creditorCompanyName'] = filter.creditorCompanyName;

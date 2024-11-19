@@ -25,10 +25,10 @@ import commonUtil from './common.util';
 import UserService from '../api/services/user.service';
 import {ClientRequest} from '@sendgrid/client/src/request';
 import clientSendgrid from '@sendgrid/client';
-import {Inbox} from '../database/models/inbox.model';
 import {DataCopier} from './dataCopier.util';
 import {IInbox} from '../database/interfaces/inbox.interface';
 import {InboxRepository} from '../api/repository/inbox/inbox.repository';
+import {Inbox} from '../database/repomodels/inbox.repomodel';
 
 dotenv.config();
 class EmailUtil {
@@ -262,11 +262,20 @@ class EmailUtil {
             caseId,
             undefined,
             undefined,
-            [undefined, undefined]
+            [
+              {path: 'debtor', select: ['businessInformation.companyName']},
+              {path: 'creditor', select: ['businessInformation.companyName']},
+            ]
           );
-          body.caseCode = caseData.caseCode;
-          body.type = 'sent';
-          this.createInbox(body);
+          const emailData = {
+            from,
+            to: sendTo,
+            subject,
+            text: content,
+            textAsHtml: content,
+            cc: cc,
+          };
+          this.createInbox(caseData, 'sent', emailData);
         }
         return result;
       case 'sms':
@@ -289,10 +298,22 @@ class EmailUtil {
     return [true, `Your ${type} is delivered successfully`];
   }
 
-  async createInbox(inbox: any) {
+  async createInbox(caseTemp: any, type: string, emailData: any) {
     const newMessage = new Inbox();
-    const vaildatedMessage = DataCopier.copy(newMessage, inbox);
-    const message = await this.inboxRepository.create<IInbox>(vaildatedMessage);
+    newMessage.cc = emailData.cc;
+    newMessage.caseCode = caseTemp.caseCode;
+    newMessage.creditorCompanyName =
+      caseTemp.creditor.businessInformation.companyName;
+    newMessage.debtorCompanyName =
+      caseTemp.debtor.businessInformation.companyName;
+    newMessage.from = emailData.from;
+    newMessage.negotiatorName = caseTemp.negotiator;
+    newMessage.subject = emailData.subject;
+    newMessage.text = emailData.text;
+    newMessage.textAsHtml = emailData.textAsHtml;
+    newMessage.to = emailData.to;
+    newMessage.type = type;
+    await this.inboxRepository.create<IInbox>(newMessage as any);
   }
 
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {
@@ -580,7 +601,9 @@ class EmailUtil {
         '_id name',
         undefined
       );
-      subject += ` First Choice-DMS ${user.name}`;
+      user
+        ? (subject += ` First Choice-DMS ${user.name}`)
+        : (subject += ` First Choice-DMS`);
       headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
     }
     console.log(subject, 'subject');

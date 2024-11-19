@@ -3,15 +3,14 @@ import commonUtil from '../../utils/common.util';
 export class Inbox {
   from = '';
   to = '';
-  cC = '';
+  cc = null;
   subject = '';
-  name = '';
   text = '';
   textAsHtml = '';
   caseCode = '';
   isRead = false;
   type = '';
-  debitorCompanyName = '';
+  debtorCompanyName = '';
   creditorCompanyName = '';
   negotiatorName = '';
   createdAt = commonUtil.getCurrentDate();

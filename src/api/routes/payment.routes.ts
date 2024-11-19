@@ -47,4 +47,22 @@ router.get(
   authorize.validateAuth,
   paymentController.sendPaymentPaynote
 );
+
+router.get(
+  '/cancelCasePaymentPlan/:id',
+  authorize.validateAuth,
+  paymentController.cancelCasePaymentPlan
+);
+
+router.get(
+  '/cancelDebtorPaymentPlan/:id',
+  authorize.validateAuth,
+  paymentController.cancelDebtorPaymentPlan
+);
+
+router.get(
+  '/getCommissionPayments',
+  authorize.validateAuth,
+  paymentController.getCommissionPayments
+);
 export default router;

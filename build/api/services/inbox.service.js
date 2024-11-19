@@ -25,11 +25,14 @@ class InboxService {
         return [true, { inbox, totalCount }];
     }
     async markAsRead(id) {
+        const inboxMessage = await this.inboxRepository.getById(id);
+        if (!inboxMessage)
+            return [false, constants_util_1.default.notFoundMessage('email')];
         const inboxTemp = await this.inboxRepository.updateById(id, {
             isRead: true,
         });
         if (!inboxTemp) {
-            return [false, constants_util_1.default.failureUpdateMessage('message')];
+            return [false, constants_util_1.default.failureUpdateMessage('email')];
         }
         return [true, inboxTemp];
     }

@@ -27,7 +27,7 @@ class Case {
         this.intervals = Array();
         this.isDeleted = false;
         this.contractDetails = null;
-        this.isExempt = '';
+        this.isExempt = false;
         this.confidence = 0;
         this.closeDate = '';
         this.strategyOne_1 = false;
@@ -43,6 +43,7 @@ class Case {
         this.settlementRange = false;
         this.getCaseIdPercentage = false;
         this.platform = false;
+        this.creditorPaymentsProceed = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

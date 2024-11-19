@@ -229,13 +229,13 @@ class CaseUtil {
     frequency: number,
     debtor: string
   ) {
-    const uuid = v4();
+    // const uuid = v4();
     payment.amount = interval.amount;
     payment.frequency = frequency;
     payment.caseId = caseId;
     payment.intervalId = String(interval._id);
     payment.timePeriod = interval.timePeriod;
-    payment.paymentReference = uuid;
+    // payment.paymentReference = uuid;
     payment.debtorId = debtor;
     return {...payment};
   }
@@ -540,8 +540,11 @@ class CaseUtil {
         throw new Error('Invalid time period');
     }
   }
-  async checkCasePayment(body: any): Promise<[boolean, string]> {
-    let isExempt = body?.isExempt ?? true;
+  async checkCasePayment(
+    body: any,
+    commission = 0
+  ): Promise<[boolean, string]> {
+    let isExempt = body?.isExempt ? body?.isExempt : true;
     if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
@@ -559,8 +562,8 @@ class CaseUtil {
           amount += multipliedAmount;
         }
       }
-
-      if (amount !== body.remaining) {
+      const amountEqual = commission ? commission : body.remaining;
+      if (amount !== amountEqual) {
         return [
           false,
           constantsUtil.Messages.INTERVALS_PAYMENT_CALCULATION_ERROR,
@@ -789,6 +792,7 @@ class CaseUtil {
             totalDebt: {
               $sum: '$caseHistory.totalDebt',
             },
+            totalCommission: '$debtorDetails.totalCommission',
           },
           paymentCounts: {
             failedCaptures: '$failedCaptures',
@@ -1740,9 +1744,17 @@ class CaseUtil {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
-    const percentage_settlement_over_weekly_budget =
+    console.log(result);
+    let percentage_settlement_over_weekly_budget =
       result.data.settlementRange.percentage_settlement_over_weekly_budget;
-    delete percentage_settlement_over_weekly_budget.Summary;
+    if (
+      percentage_settlement_over_weekly_budget &&
+      Object.keys(percentage_settlement_over_weekly_budget).length
+    ) {
+      delete percentage_settlement_over_weekly_budget.Summary;
+    } else {
+      percentage_settlement_over_weekly_budget = {};
+    }
     console.log(
       percentage_settlement_over_weekly_budget,
       'percentage_settlement_over_weekly_budget'
@@ -1751,10 +1763,10 @@ class CaseUtil {
       process.env.baseUrlAI
     }get-settlement-justifications?debtor_id=${String(
       caseTemp.debtor
-    )}&enable_cache=${true}`;
+    )}&enable_cache=${false}`;
     const data = {
       llm_options: {LLMs: models},
-      settlements: {creditors: percentage_settlement_over_weekly_budget},
+      settlements: {creditors: {}},
     };
     try {
       console.log('I am in get-settlement-justifications');
@@ -2487,7 +2499,6 @@ class CaseUtil {
     const creditorsPaidAmount =
       await debtorUtil.getPaidAmountOfCreditors(debtor);
     for (const body of dataArray) {
-      console.log(body.creditor, 'body.creditor');
       body.creditor.basicInformation.email =
         body.creditor.basicInformation.email.toLowerCase();
       const getCreditor = await this.creditorRepository.getOne<ICreditor>({
@@ -2540,6 +2551,9 @@ class CaseUtil {
         newCase.negotiatorId = id;
         newCase.manager = name;
         newCase.managerId = id;
+        if (creditorsPaidAmount[creditor.accountTitle])
+          body.lastPaymentDate =
+            creditorsPaidAmount[creditor.accountTitle].last_withdrawal_date;
         if (!body.paidAmount && creditorsPaidAmount[creditor.accountTitle]) {
           body.paidAmount =
             creditorsPaidAmount[creditor.accountTitle].withdrawal_total;
@@ -2600,6 +2614,7 @@ class CaseUtil {
         }
       }
     }
+    await debtorUtil.updateDebtorTotalCommission(debtor);
     if (!createdCases.length) return [false, createdCases];
 
     return [true, createdCases];

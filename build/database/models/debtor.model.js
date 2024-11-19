@@ -133,7 +133,6 @@ const debtorSchema = new mongoose_1.Schema({
     },
     commissionPaid: {
         type: Number,
-        select: false,
     },
     weeklyCommission: {
         type: Number,
@@ -208,6 +207,16 @@ const debtorSchema = new mongoose_1.Schema({
         type: Number,
     },
     videoUrl: String,
+    intervals: {
+        type: [
+            {
+                amount: { type: Number, required: true },
+                startDate: { type: Date, required: true },
+                frequency: { type: Number, default: 0 },
+                timePeriod: { type: String, required: true },
+            },
+        ],
+    },
     createdAt: {
         type: Date,
         required: true,

@@ -111,7 +111,9 @@ class PaynoteUtil {
       recipient: payment.caseId?.creditor?.paynoteUserId,
       name: creditor.basicInformation?.fullName,
       amount: payment.amount,
-      description: `Sending payment to creditor for ${payment.caseId.caseCode}`,
+      description: `Payment: ${String(
+        payment._id
+      )} Sending payment to creditor for ${payment.caseId.caseCode}`,
     };
     console.log('I am in sendPayment');
     console.log('URL: ', apiUrl);

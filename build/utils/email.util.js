@@ -19,9 +19,8 @@ const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
-const inbox_model_1 = require("../database/models/inbox.model");
-const dataCopier_util_1 = require("./dataCopier.util");
 const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
+const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -180,10 +179,19 @@ class EmailUtil {
                         Action: 'EMAIL',
                         Subject: subject,
                     }, caseId);
-                    const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [undefined, undefined]);
-                    body.caseCode = caseData.caseCode;
-                    body.type = 'sent';
-                    this.createInbox(body);
+                    const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                        { path: 'debtor', select: ['businessInformation.companyName'] },
+                        { path: 'creditor', select: ['businessInformation.companyName'] },
+                    ]);
+                    const emailData = {
+                        from,
+                        to: sendTo,
+                        subject,
+                        text: content,
+                        textAsHtml: content,
+                        cc: cc,
+                    };
+                    this.createInbox(caseData, 'sent', emailData);
                 }
                 return result;
             case 'sms':
@@ -202,10 +210,22 @@ class EmailUtil {
         }
         return [true, `Your ${type} is delivered successfully`];
     }
-    async createInbox(inbox) {
-        const newMessage = new inbox_model_1.Inbox();
-        const vaildatedMessage = dataCopier_util_1.DataCopier.copy(newMessage, inbox);
-        const message = await this.inboxRepository.create(vaildatedMessage);
+    async createInbox(caseTemp, type, emailData) {
+        const newMessage = new inbox_repomodel_1.Inbox();
+        newMessage.cc = emailData.cc;
+        newMessage.caseCode = caseTemp.caseCode;
+        newMessage.creditorCompanyName =
+            caseTemp.creditor.businessInformation.companyName;
+        newMessage.debtorCompanyName =
+            caseTemp.debtor.businessInformation.companyName;
+        newMessage.from = emailData.from;
+        newMessage.negotiatorName = caseTemp.negotiator;
+        newMessage.subject = emailData.subject;
+        newMessage.text = emailData.text;
+        newMessage.textAsHtml = emailData.textAsHtml;
+        newMessage.to = emailData.to;
+        newMessage.type = type;
+        await this.inboxRepository.create(newMessage);
     }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
@@ -409,7 +429,9 @@ class EmailUtil {
         }
         if (caseId && bin === 'user') {
             const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
-            subject += ` First Choice-DMS ${user.name}`;
+            user
+                ? (subject += ` First Choice-DMS ${user.name}`)
+                : (subject += ` First Choice-DMS`);
             headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
         }
         console.log(subject, 'subject');

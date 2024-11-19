@@ -42,12 +42,14 @@ class InboxService {
   }
 
   async markAsRead(id: string): Promise<[boolean, IInbox | string]> {
+    const inboxMessage = await this.inboxRepository.getById<IInbox>(id);
+    if (!inboxMessage) return [false, constants.notFoundMessage('email')];
     const inboxTemp = await this.inboxRepository.updateById<IInbox>(id, {
       isRead: true,
     });
 
     if (!inboxTemp) {
-      return [false, constants.failureUpdateMessage('message')];
+      return [false, constants.failureUpdateMessage('email')];
     }
 
     return [true, inboxTemp];

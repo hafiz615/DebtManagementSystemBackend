@@ -132,4 +132,9 @@ router.get(
   debtorController.generateVideoWithGenAi
 );
 
+router.post(
+  '/addPaymentPlan/:id',
+  authorize.validateAuth,
+  debtorController.addPaymentPlan
+);
 export default router;

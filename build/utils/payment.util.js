@@ -99,11 +99,69 @@ class PaymentUtil {
             successCaptures: successCaptures,
         };
     }
+    async getFilteredCommissionPayments(payments) {
+        const transformedArray = payments.map(obj => ({
+            id: String(obj._id),
+            status: obj.status,
+            authorized: obj.authorized,
+            captured: obj.captured,
+            amount: obj.amount,
+            dueDate: obj.dueDate,
+            failedReasonAuthorization: obj.failedReasonAuthorization,
+            failedReasonCaptured: obj.failedReasonCaptured,
+            tryDate: obj.rescheduled,
+        }));
+        return this.getFilteredCommissionPaymentsObj(transformedArray);
+    }
+    async getFilteredCommissionPaymentsObj(transformedArray) {
+        let failedCaptures = [], successCaptures = [], successPayments = [], failedAuthorizations = [], successAuthorizations = [], upcomingPayments = [];
+        for (const payment of transformedArray) {
+            switch (payment.captured) {
+                case 'Failed':
+                    failedCaptures.push(payment);
+                    break;
+                case 'Success':
+                    successCaptures.push(payment);
+                    break;
+            }
+            switch (payment.authorized) {
+                case 'Failed':
+                    failedAuthorizations.push(payment);
+                    break;
+                case 'Success':
+                    successAuthorizations.push(payment);
+                    break;
+            }
+            switch (payment.status) {
+                case 'Upcoming':
+                    upcomingPayments.push(payment);
+                    break;
+                case 'Success':
+                    successPayments.push(payment);
+                    break;
+            }
+        }
+        return {
+            failedCaptures: failedCaptures,
+            successPayments: successPayments,
+            failedAuthorizations: failedAuthorizations,
+            successAuthorizations: successAuthorizations,
+            upcomingPayments: upcomingPayments,
+            successCaptures: successCaptures,
+        };
+    }
     async getPendingAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getPendingCommissionAuthorized() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
     async getPendingCaptured() {
@@ -114,11 +172,27 @@ class PaymentUtil {
             caseId: { $ne: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
+    async getPendingCommissionCaptured() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
     async getFailedAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getFailedCommissionAuthorized() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Failed',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
     async getFailedCaptured() {
@@ -127,6 +201,15 @@ class PaymentUtil {
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
+        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+    }
+    async getFailedCommissionCaptured() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Failed',
+            isDeleted: { $ne: true },
+            caseId: { $eq: null },
         }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
     }
     // async getAllCronJobPayments() {
@@ -465,6 +548,52 @@ class PaymentUtil {
             console.error('Error fetching payments:', error);
             throw error; // Rethrow the error for further handling
         }
+    }
+    async getPaymentReferenceDocuments(referenceId) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            paymentReference: referenceId,
+            paymentReferenceBool: true,
+            caseId: { $ne: null },
+            isDeleted: false,
+        });
+    }
+    async getAllPaymentReferenceDocuments(referenceId) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            paymentReference: referenceId,
+            paymentReferenceBool: true,
+            isDeleted: false,
+        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+    }
+    async getOtherPayments(payment) {
+        const debtorId = payment.debtorId;
+        const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        const payments = await this.paymentRepository.getAllWithoutPagination({
+            debtorId: debtorId,
+            caseId: { $ne: null },
+            authorized: { $ne: 'Success' },
+            isDeleted: false,
+            dueDate: {
+                $gte: new Date(payment.dueDate),
+                $lt: nextDate,
+            },
+        });
+        return payments;
+    }
+    async addDaysBasedOnPeriod(date, timePeriod) {
+        const timePeriods = {
+            daily: 1,
+            weekly: 7,
+            fortnightly: 14,
+            monthly: 30,
+            custom: 0,
+        };
+        let daysToAdd = timePeriods[timePeriod.toLowerCase()];
+        if (!daysToAdd) {
+            daysToAdd = 7;
+        }
+        const resultDate = new Date(date);
+        resultDate.setDate(resultDate.getDate() + daysToAdd);
+        return resultDate;
     }
 }
 exports.default = new PaymentUtil();
