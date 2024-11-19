@@ -17,12 +17,14 @@ class InboxService {
     }
     async getAllInboxes(req) {
         const filters = await inbox_utils_1.default.getAllInboxFilters(req);
-        let inbox = await this.inboxRepository.getAll(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined, Number(req.query.page), Number(req.query.limit));
-        const totalCount = await this.inboxRepository.getCount(filters);
+        let inbox = await this.inboxRepository.getAll(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined);
+        const formattedData = inbox_utils_1.default.formatInboxData(inbox);
+        // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
         if (!inbox.length) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
-        return [true, { inbox, totalCount }];
+        return [true, formattedData];
+        // return [true, {inbox, totalCount}];
     }
     async markAsRead(id) {
         const inboxMessage = await this.inboxRepository.getById(id);

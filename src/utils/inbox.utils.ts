@@ -42,5 +42,28 @@ class InboxUtil {
     }
     return filters;
   }
+  formatInboxData(inbox: any){
+    const fromArray: string[] = [];
+
+    for (let message of inbox) {
+        if (message.from && fromArray.indexOf(message.from) === -1) {
+            fromArray.push(message.from);
+        }
+    }
+
+    let fromObj: { [key: string]: any[] } = {};
+
+    for (let message of inbox) {
+        if (message.from) {
+            if (!fromObj[message.from]) {
+                fromObj[message.from] = [];
+            }
+            fromObj[message.from].push(message);
+        }
+    }
+
+    return fromObj;
+
+  }
 }
 export default new InboxUtil();

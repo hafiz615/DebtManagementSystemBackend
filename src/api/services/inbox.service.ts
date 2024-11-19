@@ -19,7 +19,7 @@ class InboxService {
 
   async getAllInboxes(
     req: Request
-  ): Promise<[boolean, {inbox: IInbox[]; totalCount: number} | string]> {
+  ) {
     const filters = await inboxUtils.getAllInboxFilters(req);
     let inbox = await this.inboxRepository.getAll<IInbox>(
       filters,
@@ -28,17 +28,17 @@ class InboxService {
       {createdAt: -1},
       undefined,
       undefined,
-      Number(req.query.page),
-      Number(req.query.limit)
+      // Number(req.query.page),
+      // Number(req.query.limit)
     );
-
-    const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
+    const formattedData =  inboxUtils.formatInboxData(inbox)
+    // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
 
     if (!inbox.length) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
-
-    return [true, {inbox, totalCount}];
+      return [true, formattedData]
+    // return [true, {inbox, totalCount}];
   }
 
   async markAsRead(id: string): Promise<[boolean, IInbox | string]> {

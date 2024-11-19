@@ -38,6 +38,24 @@ class InboxUtil {
         }
         return filters;
     }
+    formatInboxData(inbox) {
+        const fromArray = [];
+        for (let message of inbox) {
+            if (message.from && fromArray.indexOf(message.from) === -1) {
+                fromArray.push(message.from);
+            }
+        }
+        let fromObj = {};
+        for (let message of inbox) {
+            if (message.from) {
+                if (!fromObj[message.from]) {
+                    fromObj[message.from] = [];
+                }
+                fromObj[message.from].push(message);
+            }
+        }
+        return fromObj;
+    }
 }
 exports.default = new InboxUtil();
 //# sourceMappingURL=inbox.utils.js.map
