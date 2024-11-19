@@ -5,7 +5,7 @@ import authorize from '../../middleware/authorize.middleware';
 
 const router = Router();
 
-router.get(
+router.post(
   '/getAllMessages',
   authorize.validateAuth,
   inboxController.getAllMessages
