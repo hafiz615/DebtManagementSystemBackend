@@ -46,10 +46,9 @@ class EmailService {
 
   async sendGridEmail(req: Request) {
     const parseData = await simpleParser(req.body.email);
-    const subject = req.body.subject;
-    const text = req.body.text;
-    const from = req.body.from;
-    // ?.value[0].address;
+    const subject = parseData.subject;
+    const text = parseData.text;
+    const from = parseData.from?.value[0].address;
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
