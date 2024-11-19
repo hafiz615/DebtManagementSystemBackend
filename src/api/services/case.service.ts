@@ -575,8 +575,11 @@ class CaseService {
   createCreditorsCases = async (req: Request) => {
     const reqTemp: any = req;
 
-    const checkCasePayment = await caseUtil.checkCasePayment(req.body);
-    if (!checkCasePayment[0]) return checkCasePayment;
+    let dataArray = req.body.data;
+    for (const body of dataArray) {
+      const checkCasePayment = await caseUtil.checkCasePayment(body);
+      if (!checkCasePayment[0]) return checkCasePayment;
+    }
     const result = await caseUtil.createCreditorsCases(
       req.body,
       reqTemp.name,

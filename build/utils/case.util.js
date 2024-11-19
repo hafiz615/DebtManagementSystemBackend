@@ -437,7 +437,7 @@ class CaseUtil {
         }
     }
     async checkCasePayment(body, commission = 0) {
-        let isExempt = body?.isExempt ?? true;
+        let isExempt = body?.isExempt ? body?.isExempt : true;
         if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
             return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
         }
