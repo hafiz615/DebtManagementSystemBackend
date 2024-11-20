@@ -77,6 +77,7 @@ export interface IDebtor extends Document {
   trueProfit: number;
   videoUrl: string;
   intervals: Array<IInterval>;
+  isExempt: boolean;
   createdAt: string;
   updatedAt: string;
 }

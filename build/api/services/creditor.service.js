@@ -12,6 +12,8 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -186,10 +188,10 @@ class CreditorService {
         return [true, creditor];
     }
     async createVault(paymentToken, id, paymentType) {
-        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const url = process.env.seamlesschexUrl;
         const params = {
             customer_vault: 'add_customer',
-            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            security_key: process.env.seamlesschexSecurityKey,
             payment_token: paymentToken,
         };
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });

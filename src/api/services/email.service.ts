@@ -10,26 +10,37 @@ import {IDomainVerify} from '../../database/interfaces/domainVerify.interface';
 import {DomainVerify} from '../../database/repomodels/domainVerify.repomodel';
 import commonUtil from '../../utils/common.util';
 import caseUtil from '../../utils/case.util';
+import {Case} from '../../database/models/case.model';
+import {Inbox} from '../../database/repomodels/inbox.repomodel';
+import {DataCopier} from '../../utils/dataCopier.util';
+import {InboxRepository} from '../repository/inbox/inbox.repository';
+import {IInbox} from '../../database/interfaces/inbox.interface';
 
 class EmailService {
   private caseRepository: CaseRepository;
   private domainVerifyRepository: DomainVerifyRepository;
+  private inboxRepository: InboxRepository;
+
   constructor() {
     this.caseRepository = new CaseRepository();
+    this.inboxRepository = new InboxRepository();
     this.domainVerifyRepository = new DomainVerifyRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
-    if (!caseTemp) {
-      return [false, constantsUtil.notFoundMessage('case')];
-    }
     const type = String(req.query.type);
-    if (type !== 'email' && type !== 'sms') {
+    if (type !== 'email' && type !== 'sms' && type !== 'compose') {
       return [false, 'Type is missing!'];
     }
+    let caseTemp = null;
+    if (type !== 'compose') {
+      caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+      if (!caseTemp) {
+        return [false, constantsUtil.notFoundMessage('case')];
+      }
+    }
     return await emailUtil.sendEmailSmsToDebtorCreditor(
-      caseTemp._id,
+      caseTemp ? String(caseTemp._id) : null,
       reqTemp.id,
       req.body,
       type
@@ -38,7 +49,6 @@ class EmailService {
 
   async sendGridEmail(req: Request) {
     const parseData = await simpleParser(req.body.email);
-    console.log('i have been hit');
     const subject = parseData.subject;
     const text = parseData.text;
     const from = parseData.from?.value[0].address;
@@ -60,6 +70,24 @@ class EmailService {
           },
           caseId
         );
+        const caseData = await this.caseRepository.getById<ICase>(
+          caseId,
+          undefined,
+          undefined,
+          [
+            {path: 'debtor', select: ['businessInformation.companyName']},
+            {path: 'creditor', select: ['businessInformation.companyName']},
+          ]
+        );
+        const emailData = {
+          from,
+          to,
+          subject,
+          text,
+          textAsHtml: parseData.textAsHtml,
+          cc: parseData.cc,
+        };
+        emailUtil.createInbox(caseData, 'received', emailData);
         return true;
       }
     }

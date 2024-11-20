@@ -19,6 +19,8 @@ const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
+const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
+const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -30,6 +32,7 @@ class EmailUtil {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.userRepository = new user_repository_1.UserRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
@@ -176,6 +179,19 @@ class EmailUtil {
                         Action: 'EMAIL',
                         Subject: subject,
                     }, caseId);
+                    const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                        { path: 'debtor', select: ['businessInformation.companyName'] },
+                        { path: 'creditor', select: ['businessInformation.companyName'] },
+                    ]);
+                    const emailData = {
+                        from,
+                        to: sendTo,
+                        subject,
+                        text: content,
+                        textAsHtml: content,
+                        cc: cc,
+                    };
+                    this.createInbox(caseData, 'sent', emailData);
                 }
                 return result;
             case 'sms':
@@ -191,8 +207,28 @@ class EmailUtil {
                     }, caseId);
                 }
                 return smsResult;
+            case 'compose':
+                const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId);
+                return resultCompose;
         }
-        return [true, `Your ${type} is delivered successfully`];
+        return [true, ''];
+    }
+    async createInbox(caseTemp, type, emailData) {
+        const newMessage = new inbox_repomodel_1.Inbox();
+        newMessage.cc = emailData.cc;
+        newMessage.caseCode = caseTemp.caseCode;
+        newMessage.creditorCompanyName =
+            caseTemp.creditor.businessInformation.companyName;
+        newMessage.debtorCompanyName =
+            caseTemp.debtor.businessInformation.companyName;
+        newMessage.from = emailData.from;
+        newMessage.negotiatorName = caseTemp.negotiator;
+        newMessage.subject = emailData.subject;
+        newMessage.text = emailData.text;
+        newMessage.textAsHtml = emailData.textAsHtml;
+        newMessage.to = emailData.to;
+        newMessage.type = type;
+        await this.inboxRepository.create(newMessage);
     }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
@@ -377,27 +413,31 @@ class EmailUtil {
         return populatedObj;
     }
     async sendEmail(to, from, subject, content, cc, buffer, caseId) {
-        const bin = await this.getVerifySender(from);
-        console.log(bin);
         let headers = {};
-        if (caseId && bin === 'debtor') {
-            const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
-                path: 'debtor',
-                select: [
-                    'businessInformation.companyName',
-                    'businessInformation.EIN',
-                ],
-            });
-            if (caseTemp.debtor?.businessInformation?.companyName)
-                subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
-            if (caseTemp.debtor?.businessInformation?.EIN)
-                subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-            headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
-        }
-        if (caseId && bin === 'user') {
-            const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
-            subject += ` First Choice-DMS ${user.name}`;
-            headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+        if (caseId) {
+            const bin = await this.getVerifySender(from);
+            console.log(bin);
+            if (bin === 'debtor') {
+                const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
+                    path: 'debtor',
+                    select: [
+                        'businessInformation.companyName',
+                        'businessInformation.EIN',
+                    ],
+                });
+                if (caseTemp.debtor?.businessInformation?.companyName)
+                    subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+                if (caseTemp.debtor?.businessInformation?.EIN)
+                    subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+            }
+            if (bin === 'user') {
+                const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
+                user
+                    ? (subject += ` First Choice-DMS ${user.name}`)
+                    : (subject += ` First Choice-DMS`);
+                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+            }
         }
         console.log(subject, 'subject');
         const msg = {

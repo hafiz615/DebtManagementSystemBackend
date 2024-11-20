@@ -38,6 +38,9 @@ import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.reposito
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import debtorUtil from '../../utils/debtor.util';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
+import {Inbox} from '../../database/repomodels/inbox.repomodel';
+import {IInbox} from '../../database/interfaces/inbox.interface';
+import {InboxRepository} from '../repository/inbox/inbox.repository';
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
@@ -51,6 +54,7 @@ class CaseService {
   private caseHistoryRepository: CaseHistoryRepository;
   private justificationRepository: JustificationRepository;
   private bulkUploadRepository: BulkUploadRepository;
+  private inboxRepository: InboxRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
@@ -64,6 +68,7 @@ class CaseService {
     this.caseHistoryRepository = new CaseHistoryRepository();
     this.justificationRepository = new JustificationRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
+    this.inboxRepository = new InboxRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -1057,7 +1062,15 @@ class CaseService {
     const {from, sendTo, subject, content, cc} = req.body;
     const buffer = await emailUtil.generatePdfFromHtml(content);
     const caseId = req.params.id;
-    const caseTemp = await this.caseRepository.getById<ICase>(caseId);
+    const caseTemp = await this.caseRepository.getById<ICase>(
+      caseId,
+      undefined,
+      undefined,
+      [
+        {path: 'debtor', select: ['businessInformation.companyName']},
+        {path: 'creditor', select: ['businessInformation.companyName']},
+      ]
+    );
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     const time = new Date(commonUtil.getCurrentDate());
     await caseUtil.addInHistory(
@@ -1071,6 +1084,16 @@ class CaseService {
       },
       caseId
     );
+    const emailData = {
+      from,
+      to: sendTo,
+      subject,
+      text: content,
+      textAsHtml: content,
+      cc: cc,
+    };
+    emailUtil.createInbox(caseTemp, 'sent', emailData);
+
     return await emailUtil.sendEmail(
       sendTo,
       from,
