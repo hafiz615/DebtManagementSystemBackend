@@ -544,8 +544,12 @@ class CaseUtil {
     body: any,
     commission = 0
   ): Promise<[boolean, string]> {
-    let isExempt = body?.isExempt ?? true;
-    if (body.remaining && body.remaining !== body.totalDebt - body.paidAmount) {
+    let isExempt = body?.isExempt ? body?.isExempt : true;
+    if (
+      !isExempt &&
+      body.remaining &&
+      body.remaining !== body.totalDebt - body.paidAmount
+    ) {
       return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
     }
     if (body && body.intervals && body.intervals.length && !isExempt) {
@@ -1937,19 +1941,21 @@ class CaseUtil {
       let lumpSum = response.data;
       const lumpsum_settlement = lumpSum.lumpsum_settlement;
       for (const creditor of creditors) {
-        const repaidDebt =
-          lumpsum_settlement[creditor.creditorAccountTitle].repaid_debt;
-        console.log(
-          this.getCleanAmount(creditor.contractDetails.funded_amount)
-        );
-        lumpsum_settlement[
-          creditor.creditorAccountTitle
-        ].remaining_principle_amount = parseFloat(
-          (
-            this.getCleanAmount(creditor.contractDetails.funded_amount) -
-            repaidDebt
-          ).toFixed(2)
-        );
+        if (lumpsum_settlement[creditor.creditorAccountTitle]) {
+          const repaidDebt =
+            lumpsum_settlement[creditor.creditorAccountTitle].repaid_debt;
+          console.log(
+            this.getCleanAmount(creditor.contractDetails.funded_amount)
+          );
+          lumpsum_settlement[
+            creditor.creditorAccountTitle
+          ].remaining_principle_amount = parseFloat(
+            (
+              this.getCleanAmount(creditor.contractDetails.funded_amount) -
+              repaidDebt
+            ).toFixed(2)
+          );
+        }
       }
       this.strategyRepository.upsert(
         {caseId: caseTemp._id, name: 'strategy_two'},
@@ -2693,10 +2699,10 @@ class CaseUtil {
   }
 
   async createVault(paymentToken: string): Promise<[boolean, string]> {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const url = process.env.seamlesschexUrl;
     const params = {
       customer_vault: 'add_customer',
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      security_key: process.env.seamlesschexSecurityKey,
       payment_token: paymentToken,
     };
     const response = await axiosInstance.get(url, {params});

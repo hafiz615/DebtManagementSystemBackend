@@ -11,6 +11,7 @@ const domainVerify_repository_1 = require("../repository/domainVerify/domainVeri
 const domainVerify_repomodel_1 = require("../../database/repomodels/domainVerify.repomodel");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const case_util_1 = __importDefault(require("../../utils/case.util"));
+const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 class EmailService {
     constructor() {
         this.extractCaseId = (header) => {
@@ -18,23 +19,26 @@ class EmailService {
             return match ? match[1] : null;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
     }
     async sendSmsEmailDebtorCreditor(req) {
         const reqTemp = req;
-        const caseTemp = await this.caseRepository.getById(req.params.id);
-        if (!caseTemp) {
-            return [false, constants_util_1.default.notFoundMessage('case')];
-        }
         const type = String(req.query.type);
-        if (type !== 'email' && type !== 'sms') {
+        if (type !== 'email' && type !== 'sms' && type !== 'compose') {
             return [false, 'Type is missing!'];
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp._id, reqTemp.id, req.body, type);
+        let caseTemp = null;
+        if (type !== 'compose') {
+            caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+        }
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type);
     }
     async sendGridEmail(req) {
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
-        console.log('i have been hit');
         const subject = parseData.subject;
         const text = parseData.text;
         const from = parseData.from?.value[0].address;
@@ -53,6 +57,19 @@ class EmailService {
                     Action: 'EMAIL',
                     Subject: subject,
                 }, caseId);
+                const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                    { path: 'debtor', select: ['businessInformation.companyName'] },
+                    { path: 'creditor', select: ['businessInformation.companyName'] },
+                ]);
+                const emailData = {
+                    from,
+                    to,
+                    subject,
+                    text,
+                    textAsHtml: parseData.textAsHtml,
+                    cc: parseData.cc,
+                };
+                email_util_1.default.createInbox(caseData, 'received', emailData);
                 return true;
             }
         }

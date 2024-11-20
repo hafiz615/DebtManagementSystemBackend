@@ -498,6 +498,60 @@ class PaymentService {
     ];
   }
 
+  async getCommissionPayments(): Promise<[boolean, {} | string]> {
+    const payments: IPayment[] = await this.getAllCommissionPayments();
+    if (!payments.length) {
+      return [false, constants.notFoundMessage('Payments')];
+    }
+    const paymentsObj =
+      await paymentUtil.getFilteredCommissionPayments(payments);
+    const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const failedCapture = paymentsObj.failedCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'payment',
+    }));
+
+    const successAuth = paymentsObj.successAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const successCapture = paymentsObj.successCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'payment',
+    }));
+
+    // Merging the arrays
+    const mergedArray = [
+      ...successAuth,
+      ...failedAuth,
+      ...successCapture,
+      ...failedCapture,
+    ];
+    mergedArray.sort(
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+    );
+    paymentsObj.upcomingPayments.sort(
+      (a: any, b: any) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+    return [
+      true,
+      {
+        transactions: {
+          previous: mergedArray,
+          upcomingPayments: paymentsObj.upcomingPayments,
+        },
+      },
+    ];
+  }
+
   private async getAllPaymentsByCaseId(id: string) {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
@@ -518,10 +572,22 @@ class PaymentService {
     );
   }
 
+  private async getAllCommissionPayments() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        caseId: null,
+        isDeleted: false,
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      undefined,
+      {createdAt: -1}
+    );
+  }
+
   async authorizeCreditCard(amount: number, customer_vault_id: string) {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const url = process.env.seamlesschexUrl;
     const params = {
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      security_key: process.env.seamlesschexSecurityKey,
       customer_vault_id: customer_vault_id,
       type: 'auth',
       amount: amount,
@@ -549,9 +615,9 @@ class PaymentService {
     transactionId: string,
     creditorSecurityKey: string
   ) {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const url = process.env.seamlesschexUrl;
     const params = {
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      security_key: process.env.seamlesschexSecurityKey,
       customer_vault_id: customer_vault_id,
       transaction_id: transactionId,
       stored_credential_indicator: 'used',
@@ -581,9 +647,9 @@ class PaymentService {
     amount: number,
     creditorSecurityKey: string
   ) {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const url = process.env.seamlesschexUrl;
     const params = {
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      security_key: process.env.seamlesschexSecurityKey,
       customer_vault_id: customer_vault_id,
       stored_credential_indicator: 'used',
       type: 'credit',
@@ -769,6 +835,7 @@ class PaymentService {
       req.params.id,
       {
         intervals: [],
+        isExempt: false,
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(
@@ -795,6 +862,7 @@ class PaymentService {
       req.params.id,
       {
         intervals: [],
+        isExempt: false,
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(

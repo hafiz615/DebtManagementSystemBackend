@@ -23,6 +23,7 @@ const justification_repository_1 = require("../repository/justification/justific
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
+const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -336,9 +337,12 @@ class CaseService {
         };
         this.createCreditorsCases = async (req) => {
             const reqTemp = req;
-            const checkCasePayment = await case_util_1.default.checkCasePayment(req.body);
-            if (!checkCasePayment[0])
-                return checkCasePayment;
+            let dataArray = req.body.data;
+            for (const body of dataArray) {
+                const checkCasePayment = await case_util_1.default.checkCasePayment(body);
+                if (!checkCasePayment[0])
+                    return checkCasePayment;
+            }
             const result = await case_util_1.default.createCreditorsCases(req.body, reqTemp.name, reqTemp.id, req.params.id);
             // if (!result[0]) return result;
             return result;
@@ -622,6 +626,7 @@ class CaseService {
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
         this.justificationRepository = new justification_repository_1.JustificationRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
+        this.inboxRepository = new inbox_repository_1.InboxRepository();
     }
     async getAmountDeliveredToCreditor(caseId) {
         const getPayments = await this.paymentRepository.getAllWithoutPagination({
@@ -715,7 +720,10 @@ class CaseService {
         const { from, sendTo, subject, content, cc } = req.body;
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
         const caseId = req.params.id;
-        const caseTemp = await this.caseRepository.getById(caseId);
+        const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [
+            { path: 'debtor', select: ['businessInformation.companyName'] },
+            { path: 'creditor', select: ['businessInformation.companyName'] },
+        ]);
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
         const time = new Date(common_util_1.default.getCurrentDate());
@@ -727,6 +735,15 @@ class CaseService {
             Action: 'EMAIL',
             Subject: subject,
         }, caseId);
+        const emailData = {
+            from,
+            to: sendTo,
+            subject,
+            text: content,
+            textAsHtml: content,
+            cc: cc,
+        };
+        email_util_1.default.createInbox(caseTemp, 'sent', emailData);
         return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId);
     }
     async caseHistory(req) {

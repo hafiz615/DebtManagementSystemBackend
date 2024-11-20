@@ -29,7 +29,7 @@ class PaynoteUtil {
     } else {
       lastName = creditorNames.slice(1).join(' ');
     }
-    const apiUrl = `${process.env.paynoteSandboxUrl}/user`;
+    const apiUrl = `${process.env.paynoteUrl}/user`;
     var data = {
       firstName: creditorNames[0],
       lastName: lastName,
@@ -57,7 +57,7 @@ class PaynoteUtil {
   }
 
   async getCustomer(creditor: ICreditor) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/user/:${creditor.paynoteUserId}`;
+    const apiUrl = `${process.env.paynoteUrl}/user/:${creditor.paynoteUserId}`;
     console.log('I am in getCustomer');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
@@ -86,7 +86,7 @@ class PaynoteUtil {
       lastName: lastName,
     };
 
-    const apiUrl = `${process.env.paynoteSandboxUrl}/user/${creditor.paynoteUserId}/update`;
+    const apiUrl = `${process.env.paynoteUrl}/user/${creditor.paynoteUserId}/update`;
     console.log('I am in updateCustomer');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', data);
@@ -104,14 +104,16 @@ class PaynoteUtil {
   }
 
   async sendPayment(payment: any) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/check/send`;
+    const apiUrl = `${process.env.paynoteUrl}/check/send`;
     const creditor = payment.caseId.creditor;
     console.log(payment.caseId.creditor.paynoteUserId);
     var data = {
       recipient: payment.caseId?.creditor?.paynoteUserId,
       name: creditor.basicInformation?.fullName,
       amount: payment.amount,
-      description: `Sending payment to creditor for ${payment.caseId.caseCode}`,
+      description: `Payment: ${String(
+        payment._id
+      )} Sending payment to creditor for ${payment.caseId.caseCode}`,
     };
     console.log('I am in sendPayment');
     console.log('URL: ', apiUrl);
@@ -130,7 +132,7 @@ class PaynoteUtil {
   }
 
   async getPayment(payment: any) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/check/:${payment.checkId}`;
+    const apiUrl = `${process.env.paynoteUrl}/check/:${payment.checkId}`;
     console.log('I am in getCustomer');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
@@ -148,7 +150,7 @@ class PaynoteUtil {
   }
 
   async addFundingSource(data: any, userId: string) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/on-demand/funding-source`;
+    const apiUrl = `${process.env.paynoteUrl}/on-demand/funding-source`;
     data['user_id'] = userId;
     console.log('I am in addFundingSource');
     console.log('URL: ', apiUrl);
@@ -169,7 +171,7 @@ class PaynoteUtil {
   }
 
   async initiateFundingSourceVerifcation(sourceId: string, userId: string) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/initiate/verification`;
+    const apiUrl = `${process.env.paynoteUrl}/funding-source/initiate/verification`;
     const data = {
       user_id: userId,
       source_id: sourceId,
@@ -192,7 +194,7 @@ class PaynoteUtil {
   }
 
   async verifyFundingSource(sourceId: string) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/verify`;
+    const apiUrl = `${process.env.paynoteUrl}/funding-source/verify`;
     const data = {
       source_id: sourceId,
       amount1: 0.01,
@@ -215,7 +217,7 @@ class PaynoteUtil {
   }
 
   async updateFundingSource(data: any, userId: string) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/update`;
+    const apiUrl = `${process.env.paynoteUrl}/funding-source/update`;
     data['user_id'] = userId;
     console.log('I am in updateFundingSource');
     console.log('URL: ', apiUrl);
@@ -234,7 +236,7 @@ class PaynoteUtil {
   }
 
   async removeFundingSource(sourceId: string, userId: string) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/remove`;
+    const apiUrl = `${process.env.paynoteUrl}/funding-source/remove`;
     const data = {
       user_id: userId,
       source_id: sourceId,
@@ -256,7 +258,7 @@ class PaynoteUtil {
   }
 
   async getFundingSource(sourceId: any) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/:${sourceId}`;
+    const apiUrl = `${process.env.paynoteUrl}/funding-source/:${sourceId}`;
     console.log('I am in getFundingSource');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
@@ -278,7 +280,7 @@ class PaynoteUtil {
   }
 
   async getCustomerFundingSources(userId: any) {
-    const apiUrl = `${process.env.paynoteSandboxUrl}/funding-source/user/:${userId}`;
+    const apiUrl = `${process.env.paynoteUrl}/funding-source/user/:${userId}`;
     console.log('I am in getCustomerFundingSources');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});

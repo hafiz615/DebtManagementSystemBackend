@@ -380,6 +380,49 @@ class PaymentService {
             },
         ];
     }
+    async getCommissionPayments() {
+        const payments = await this.getAllCommissionPayments();
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(payments);
+        const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
+            ...obj,
+            type: 'authorization',
+        }));
+        // Adding type to each object in successCapture array
+        const failedCapture = paymentsObj.failedCaptures.map((obj) => ({
+            ...obj,
+            type: 'payment',
+        }));
+        const successAuth = paymentsObj.successAuthorizations.map((obj) => ({
+            ...obj,
+            type: 'authorization',
+        }));
+        // Adding type to each object in successCapture array
+        const successCapture = paymentsObj.successCaptures.map((obj) => ({
+            ...obj,
+            type: 'payment',
+        }));
+        // Merging the arrays
+        const mergedArray = [
+            ...successAuth,
+            ...failedAuth,
+            ...successCapture,
+            ...failedCapture,
+        ];
+        mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        return [
+            true,
+            {
+                transactions: {
+                    previous: mergedArray,
+                    upcomingPayments: paymentsObj.upcomingPayments,
+                },
+            },
+        ];
+    }
     async getAllPaymentsByCaseId(id) {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
@@ -393,10 +436,16 @@ class PaymentService {
             },
         });
     }
+    async getAllCommissionPayments() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            caseId: null,
+            isDeleted: false,
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 });
+    }
     async authorizeCreditCard(amount, customer_vault_id) {
-        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const url = process.env.seamlesschexUrl;
         const params = {
-            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            security_key: process.env.seamlesschexSecurityKey,
             customer_vault_id: customer_vault_id,
             type: 'auth',
             amount: amount,
@@ -421,9 +470,9 @@ class PaymentService {
         }
     }
     async captureCreditCard(customer_vault_id, transactionId, creditorSecurityKey) {
-        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const url = process.env.seamlesschexUrl;
         const params = {
-            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            security_key: process.env.seamlesschexSecurityKey,
             customer_vault_id: customer_vault_id,
             transaction_id: transactionId,
             stored_credential_indicator: 'used',
@@ -449,9 +498,9 @@ class PaymentService {
         }
     }
     async achCredit(customer_vault_id, amount, creditorSecurityKey) {
-        const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+        const url = process.env.seamlesschexUrl;
         const params = {
-            security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+            security_key: process.env.seamlesschexSecurityKey,
             customer_vault_id: customer_vault_id,
             stored_credential_indicator: 'used',
             type: 'credit',
@@ -612,6 +661,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const updateCase = await this.caseRepository.updateById(req.params.id, {
             intervals: [],
+            isExempt: false,
         });
         const updatePayments = await this.paymentRepository.updateMany({ caseId: req.params.id, authorized: 'Pending' }, {
             isDeleted: true,
@@ -629,6 +679,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         const updateDebtor = await this.debtorReposiotry.updateById(req.params.id, {
             intervals: [],
+            isExempt: false,
         });
         const updatePayments = await this.paymentRepository.updateMany({ debtorId: req.params.id, authorized: 'Pending', caseId: { $eq: null } }, {
             isDeleted: true,

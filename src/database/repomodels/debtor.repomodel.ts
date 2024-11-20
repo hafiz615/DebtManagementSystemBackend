@@ -74,6 +74,7 @@ export class Debtor {
     frequency: 0;
     timePeriod: '';
   }>();
+  isExempt = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

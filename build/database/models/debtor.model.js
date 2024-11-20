@@ -217,6 +217,7 @@ const debtorSchema = new mongoose_1.Schema({
             },
         ],
     },
+    isExempt: Boolean,
     createdAt: {
         type: Date,
         required: true,

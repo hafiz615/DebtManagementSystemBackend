@@ -12,6 +12,8 @@ import {BulkUploadRepository} from '../repository/bulkUpload/bulkUpload.reposito
 import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 import paynoteUtil from '../../utils/paynote.util';
+import dotenv from 'dotenv';
+dotenv.config();
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
@@ -228,10 +230,10 @@ class CreditorService {
   }
 
   async createVault(paymentToken: string, id: string, paymentType: string) {
-    const url = 'https://seamlesschex.transactiongateway.com/api/transact.php';
+    const url = process.env.seamlesschexUrl;
     const params = {
       customer_vault: 'add_customer',
-      security_key: '6457Thfj624V5r7WUwc5v6a68Zsd6YEm',
+      security_key: process.env.seamlesschexSecurityKey,
       payment_token: paymentToken,
     };
     const response = await axiosInstance.get(url, {params});
