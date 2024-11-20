@@ -28,16 +28,19 @@ class EmailService {
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
-    if (!caseTemp) {
-      return [false, constantsUtil.notFoundMessage('case')];
-    }
     const type = String(req.query.type);
-    if (type !== 'email' && type !== 'sms') {
+    if (type !== 'email' && type !== 'sms' && type !== 'compose') {
       return [false, 'Type is missing!'];
     }
+    let caseTemp = null;
+    if (type !== 'compose') {
+      caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+      if (!caseTemp) {
+        return [false, constantsUtil.notFoundMessage('case')];
+      }
+    }
     return await emailUtil.sendEmailSmsToDebtorCreditor(
-      caseTemp._id,
+      caseTemp ? String(caseTemp._id) : null,
       reqTemp.id,
       req.body,
       type

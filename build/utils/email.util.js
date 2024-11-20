@@ -207,8 +207,11 @@ class EmailUtil {
                     }, caseId);
                 }
                 return smsResult;
+            case 'compose':
+                const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId);
+                return resultCompose;
         }
-        return [true, `Your ${type} is delivered successfully`];
+        return [true, ''];
     }
     async createInbox(caseTemp, type, emailData) {
         const newMessage = new inbox_repomodel_1.Inbox();
@@ -410,29 +413,31 @@ class EmailUtil {
         return populatedObj;
     }
     async sendEmail(to, from, subject, content, cc, buffer, caseId) {
-        const bin = await this.getVerifySender(from);
-        console.log(bin);
         let headers = {};
-        if (caseId && bin === 'debtor') {
-            const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
-                path: 'debtor',
-                select: [
-                    'businessInformation.companyName',
-                    'businessInformation.EIN',
-                ],
-            });
-            if (caseTemp.debtor?.businessInformation?.companyName)
-                subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
-            if (caseTemp.debtor?.businessInformation?.EIN)
-                subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-            headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
-        }
-        if (caseId && bin === 'user') {
-            const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
-            user
-                ? (subject += ` First Choice-DMS ${user.name}`)
-                : (subject += ` First Choice-DMS`);
-            headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+        if (caseId) {
+            const bin = await this.getVerifySender(from);
+            console.log(bin);
+            if (bin === 'debtor') {
+                const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
+                    path: 'debtor',
+                    select: [
+                        'businessInformation.companyName',
+                        'businessInformation.EIN',
+                    ],
+                });
+                if (caseTemp.debtor?.businessInformation?.companyName)
+                    subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+                if (caseTemp.debtor?.businessInformation?.EIN)
+                    subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+            }
+            if (bin === 'user') {
+                const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
+                user
+                    ? (subject += ` First Choice-DMS ${user.name}`)
+                    : (subject += ` First Choice-DMS`);
+                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+            }
         }
         console.log(subject, 'subject');
         const msg = {

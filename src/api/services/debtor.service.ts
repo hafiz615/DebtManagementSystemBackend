@@ -1431,16 +1431,17 @@ class DebtorService {
 
     if (debtor.weeklyCommission)
       return [false, 'Weekly commission already settled'];
-    req.body.isExempt = false;
-    // const checkCasePayment = await caseUtil.checkCasePayment(
-    //   req.body,
-    //   debtor.totalCommission
-    // );
-    // if (!checkCasePayment[0]) return checkCasePayment;
+    // req.body.isExempt = false;
+    const checkCasePayment = await caseUtil.checkCasePayment(
+      req.body,
+      debtor.totalCommission
+    );
+    if (!checkCasePayment[0]) return checkCasePayment;
     req.body._id = null;
     req.body.debtor = req.params.id;
     debtor = await this.debtorRepository.updateById<IDebtor>(req.params.id, {
       intervals: req.body.intervals,
+      isExempt: req.body.isExempt,
     });
     req.body.intervals = debtor.intervals;
     caseUtil.createPayment(req.body);

@@ -24,15 +24,18 @@ class EmailService {
     }
     async sendSmsEmailDebtorCreditor(req) {
         const reqTemp = req;
-        const caseTemp = await this.caseRepository.getById(req.params.id);
-        if (!caseTemp) {
-            return [false, constants_util_1.default.notFoundMessage('case')];
-        }
         const type = String(req.query.type);
-        if (type !== 'email' && type !== 'sms') {
+        if (type !== 'email' && type !== 'sms' && type !== 'compose') {
             return [false, 'Type is missing!'];
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp._id, reqTemp.id, req.body, type);
+        let caseTemp = null;
+        if (type !== 'compose') {
+            caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+        }
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type);
     }
     async sendGridEmail(req) {
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
