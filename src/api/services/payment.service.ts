@@ -835,6 +835,7 @@ class PaymentService {
       req.params.id,
       {
         intervals: [],
+        isExempt: false,
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(
@@ -861,6 +862,7 @@ class PaymentService {
       req.params.id,
       {
         intervals: [],
+        isExempt: false,
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(

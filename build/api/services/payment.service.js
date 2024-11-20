@@ -661,6 +661,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const updateCase = await this.caseRepository.updateById(req.params.id, {
             intervals: [],
+            isExempt: false,
         });
         const updatePayments = await this.paymentRepository.updateMany({ caseId: req.params.id, authorized: 'Pending' }, {
             isDeleted: true,
@@ -678,6 +679,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         const updateDebtor = await this.debtorReposiotry.updateById(req.params.id, {
             intervals: [],
+            isExempt: false,
         });
         const updatePayments = await this.paymentRepository.updateMany({ debtorId: req.params.id, authorized: 'Pending', caseId: { $eq: null } }, {
             isDeleted: true,

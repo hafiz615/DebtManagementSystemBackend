@@ -26,7 +26,7 @@ class InboxUtil {
             if (filter && filter.caseCode) {
                 filters['caseCode'] = filter.caseCode;
             }
-            if (filter && filter.debitorCompanyName) {
+            if (filter && filter.debtorCompanyName) {
                 filters['debtorCompanyName'] = filter.debtorCompanyName;
             }
             if (filter && filter.creditorCompanyName) {
