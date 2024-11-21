@@ -5,16 +5,19 @@ import constantsUtil from '../../utils/constants.util';
 import dotenv from 'dotenv';
 import {NotificationRepository} from '../repository/notification/notification.repository';
 import {INotification} from '../../database/interfaces/notification.interface';
+import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
+import {INotificationCount} from '../../database/interfaces/notificationCount.interface';
 // import notificationUtils from '../../utils/notification.utils';
 dotenv.config();
 
 class InboxService {
   protected notificationRepository: NotificationRepository;
   protected userRepository: UserRepository;
-
+  protected notificationCountRepository: NotificationCountRepository;
   constructor() {
     this.notificationRepository = new NotificationRepository();
     this.userRepository = new UserRepository();
+    this.notificationCountRepository = new NotificationCountRepository();
   }
 
   async getAllNotifications(req: Request) {
@@ -35,6 +38,10 @@ class InboxService {
     if (!notifications.length) {
       return [false, constantsUtil.notFoundMessage('Notification')];
     }
+    await this.notificationCountRepository.updateMany<INotificationCount>(
+      {},
+      {count: 0}
+    );
     return [true, notifications];
     // return [true, {inbox, totalCount}];
   }
