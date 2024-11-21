@@ -18,6 +18,7 @@ const logging_routes_1 = __importDefault(require("./logging.routes"));
 const email_routes_1 = __importDefault(require("./email.routes"));
 const bulkUpload_route_1 = __importDefault(require("./bulkUpload.route"));
 const inbox_routes_1 = __importDefault(require("./inbox.routes"));
+const notification_routes_1 = __importDefault(require("./notification.routes"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
     app.use('/api/v1/case', case_routes_1.default);
@@ -34,6 +35,7 @@ function setup(app) {
     app.use('/api/v1/email', email_routes_1.default);
     app.use('/api/v1/bulk', bulkUpload_route_1.default);
     app.use('/api/v1/inbox', inbox_routes_1.default);
+    app.use('/api/v1/notification', notification_routes_1.default);
 }
 exports.default = setup;
 //# sourceMappingURL=base.route.js.map

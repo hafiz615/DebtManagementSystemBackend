@@ -29,6 +29,13 @@ import {DataCopier} from './dataCopier.util';
 import {IInbox} from '../database/interfaces/inbox.interface';
 import {InboxRepository} from '../api/repository/inbox/inbox.repository';
 import {Inbox} from '../database/repomodels/inbox.repomodel';
+import {NotificationRepository} from '../api/repository/notification/notification.repository';
+import {INotification} from '../database/interfaces/notification.interface';
+import {Notification} from '../database/repomodels/notification.repomodel';
+import asyncLocalStorage from './localStorage.util';
+import {NotificationCount} from '../database/repomodels/notificationCount.repomodel';
+import {NotificationCountRepository} from '../api/repository/notificationCount/notificationCount.repository';
+import {INotificationCount} from '../database/interfaces/notificationCount.interface';
 
 dotenv.config();
 class EmailUtil {
@@ -39,6 +46,8 @@ class EmailUtil {
   private userRepository: UserRepository;
   private debtorRepository: DebtorRepository;
   private inboxRepository: InboxRepository;
+  private notificationRepository: NotificationRepository;
+  private notificationCountRepository: NotificationCountRepository;
   private client: Twilio;
   constructor() {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
@@ -50,6 +59,8 @@ class EmailUtil {
     this.userRepository = new UserRepository();
     this.debtorRepository = new DebtorRepository();
     this.inboxRepository = new InboxRepository();
+    this.notificationRepository = new NotificationRepository();
+    this.notificationCountRepository = new NotificationCountRepository();
     this.client = twilio(
       process.env.twilioAccountSid,
       process.env.twilioAuthToken
@@ -311,6 +322,8 @@ class EmailUtil {
 
   async createInbox(caseTemp: any, type: string, emailData: any) {
     const newMessage = new Inbox();
+    const newNotification = new Notification();
+    const newNotificationCount = new NotificationCount();
     newMessage.cc = emailData.cc;
     newMessage.caseCode = caseTemp.caseCode;
     newMessage.creditorCompanyName =
@@ -324,7 +337,34 @@ class EmailUtil {
     newMessage.textAsHtml = emailData.textAsHtml;
     newMessage.to = emailData.to;
     newMessage.type = type;
+    newNotification.caseId = caseTemp._id;
+    newNotification.text = emailData.text;
+    newNotification.type = 'EMAIL';
     await this.inboxRepository.create<IInbox>(newMessage as any);
+    await this.notificationRepository.create<INotification>(
+      newNotification as any
+    );
+    const currentCount: NotificationCount[] =
+      await this.notificationCountRepository.getAll(
+        {},
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      );
+    if (currentCount.length < 1) {
+      newNotificationCount.count = 1;
+    } else {
+      newNotificationCount.count = currentCount[0].count + 1;
+      await this.notificationCountRepository.delete<INotificationCount>({
+        count: currentCount[0].count,
+      });
+    }
+
+    await this.notificationCountRepository.create<INotificationCount>(
+      newNotificationCount as any
+    );
+    return newNotification;
   }
 
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {
