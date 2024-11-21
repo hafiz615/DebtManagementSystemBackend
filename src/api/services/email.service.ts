@@ -107,10 +107,7 @@ class EmailService {
             undefined,
             undefined
           );
-        app.socketInstance.emit('notify', {
-          notification,
-          notificationCount: notificationCount[0],
-        });
+        app.socketInstance.emit('notify', notificationCount[0].count);
         return true;
       }
     }
