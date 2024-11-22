@@ -7,6 +7,7 @@ import {NotificationRepository} from '../repository/notification/notification.re
 import {INotification} from '../../database/interfaces/notification.interface';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import {INotificationCount} from '../../database/interfaces/notificationCount.interface';
+import { NotificationCount } from '../../database/repomodels/notificationCount.repomodel';
 // import notificationUtils from '../../utils/notification.utils';
 dotenv.config();
 
@@ -64,11 +65,18 @@ class InboxService {
   }
 
   async getNotificationCount() {
-    const notificationCount = this.notificationCountRepository.getCount();
+    const notificationCount: NotificationCount[] =
+    await this.notificationCountRepository.getAll(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
     if (!notificationCount){
       return [false, constants.notFoundMessage('notification')];
     }
-    return [true, notificationCount];
+    return [true, notificationCount[0].count];
   }
 }
 

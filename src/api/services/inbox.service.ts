@@ -17,9 +17,7 @@ class InboxService {
     this.userRepository = new UserRepository();
   }
 
-  async getAllInboxes(
-    req: Request
-  ) {
+  async getAllInboxes(req: Request) {
     const filters = await inboxUtils.getAllInboxFilters(req);
     let inbox = await this.inboxRepository.getAll<IInbox>(
       filters,
@@ -27,22 +25,21 @@ class InboxService {
       undefined,
       {createdAt: -1},
       undefined,
-      undefined,
+      undefined
       // Number(req.query.page),
       // Number(req.query.limit)
     );
-    const formattedData =  inboxUtils.formatInboxData(inbox)
+    const formattedData = inboxUtils.formatInboxData(inbox);
     // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
 
     if (!inbox.length) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
-      return [true, formattedData]
+    return [true, formattedData];
     // return [true, {inbox, totalCount}];
   }
 
   async markAsRead(id: string): Promise<[boolean, IInbox | string]> {
-    console.log('id:', id)
     const inboxMessage = await this.inboxRepository.getById<IInbox>(id);
     if (!inboxMessage) return [false, constants.notFoundMessage('email')];
     const inboxTemp = await this.inboxRepository.updateById<IInbox>(id, {
