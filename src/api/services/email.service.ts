@@ -15,16 +15,22 @@ import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {DataCopier} from '../../utils/dataCopier.util';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {IInbox} from '../../database/interfaces/inbox.interface';
+import app from '../../app';
+import asyncLocalStorage from '../../utils/localStorage.util';
+import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
+import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
 
 class EmailService {
   private caseRepository: CaseRepository;
   private domainVerifyRepository: DomainVerifyRepository;
   private inboxRepository: InboxRepository;
+  private notificationCountRepository: NotificationCountRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.inboxRepository = new InboxRepository();
     this.domainVerifyRepository = new DomainVerifyRepository();
+    this.notificationCountRepository = new NotificationCountRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -55,6 +61,7 @@ class EmailService {
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
+
     const referencesHeader = parseData.headers.get('references');
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
@@ -87,7 +94,20 @@ class EmailService {
           textAsHtml: parseData.textAsHtml,
           cc: parseData.cc,
         };
-        emailUtil.createInbox(caseData, 'received', emailData);
+        const notification = await emailUtil.createInbox(
+          caseData,
+          'received',
+          emailData
+        );
+        const notificationCount: NotificationCount[] =
+          await this.notificationCountRepository.getAll(
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          );
+        app.socketInstance.emit('notify', notificationCount[0].count);
         return true;
       }
     }

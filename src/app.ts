@@ -26,13 +26,24 @@ import debtorUtil from './utils/debtor.util';
 import commonUtil from './utils/common.util';
 import {PaymentRepository} from './api/repository/payment/payment.repository';
 import {IPayment} from './database/interfaces/payment.interface';
+import {Server, Socket} from 'socket.io';
+import {createServer} from 'http';
 
 class App {
   protected app: Application;
   protected database: Database;
-
+  protected io: any;
+  public socketInstance: any;
+  protected httpServer: any;
+  // protected socket: any;
   constructor() {
     this.app = express();
+    this.httpServer = createServer(this.app);
+    this.io = new Server(this.httpServer, {
+      cors: {
+        origin: `*`,
+      },
+    });
     this.config();
     this.database = new Database();
   }
@@ -54,14 +65,22 @@ class App {
         next();
       });
     });
+
     setup(this.app);
   }
 
   public async start(): Promise<void> {
     const appPort = process.env.PORT || 3000;
-    this.app.listen(appPort, () => {
+
+    this.io.on('connection', (socket: Socket) => {
+      console.log('a user connected');
+      this.socketInstance = socket;
+    });
+
+    this.httpServer.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
+
     // const credR = new CreditorRepository();
     // const allCred = await credR.getAllWithoutPagination<ICreditor>();
     // for (const creditor of allCred) {
@@ -156,3 +175,5 @@ class App {
 
 const app = new App();
 app.start();
+
+export default app;
