@@ -255,7 +255,7 @@ class EmailUtil {
         return newNotification;
     }
     formatText(text) {
-        return `EMAIL recieved for ${text}`;
+        return `EMAIL received for ${text}`;
     }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });

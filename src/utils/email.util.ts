@@ -367,10 +367,8 @@ class EmailUtil {
     return newNotification;
   }
 
-
-  formatText(text: String){
-    return `EMAIL recieved for ${text}`; 
-
+  formatText(text: String) {
+    return `EMAIL received for ${text}`;
   }
 
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {

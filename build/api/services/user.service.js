@@ -500,7 +500,7 @@ class UserService {
         }
         if (!emails.includes(reqTemp.email)) {
             const email = result[0].body.results
-                .filter(item => item.from_email === reqTemp.email)
+                .filter(item => item.from_email === reqTemp.email && item.verified === true)
                 .map(item => item.from_email);
             console.log(email, 'uhuhuhu');
             if (email.length)
