@@ -329,6 +329,7 @@ class EmailUtil {
     emailData: any,
     threadId: any
   ) {
+    console.log('In create Inbox : ', caseTemp, threadId)
     const newMessage = new Inbox();
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
@@ -338,6 +339,7 @@ class EmailUtil {
         threadId,
         type,
       });
+      console.log('existing Inbox : ', existingInbox)
       if (!existingInbox) {
         await this.createNewInbox(emailData, caseTemp, type, threadId);
       } else {

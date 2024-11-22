@@ -223,6 +223,7 @@ class EmailUtil {
         return [true, ''];
     }
     async createInbox(caseTemp, type, emailData, threadId) {
+        console.log('In create Inbox : ', caseTemp, threadId);
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -231,6 +232,7 @@ class EmailUtil {
                 threadId,
                 type,
             });
+            console.log('existing Inbox : ', existingInbox);
             if (!existingInbox) {
                 await this.createNewInbox(emailData, caseTemp, type, threadId);
             }
