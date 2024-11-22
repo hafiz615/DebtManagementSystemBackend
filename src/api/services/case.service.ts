@@ -298,7 +298,7 @@ class CaseService {
       //     weeklyCommission: weeklyBudgetObj.commission,
       //   });
       // }
-      if (!getDebtor.intervals.length) {
+      if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
         await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
           weeklyCommission: req.body.commission,
           updatedAt: commonUtil.getCurrentDate(),
@@ -310,12 +310,13 @@ class CaseService {
       if (!checkCasePayment[0]) return checkCasePayment;
     }
     req.body.updatedAt = commonUtil.getCurrentDate();
-    if (req.body.paidAmount) {
+    if (req.body.paidAmount && req.body.paidAmount > 0) {
       req.body.remaining = req.body.totalDebt - req.body.paidAmount;
       if (req.body.remaining < 0) req.body.remaining = 0;
       req.body.remainingAmountPaid = req.body.paidAmount;
     }
-    if (!req.body.paidAmount) req.body.remainingAmountPaid = 0;
+    if (req.body?.paidAmount && req.body.paidAmount === 0)
+      req.body.remainingAmountPaid = 0;
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       req.body
