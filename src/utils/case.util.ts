@@ -272,6 +272,7 @@ class CaseUtil {
         ? obj.remainingAmountPaid
         : 0,
       previousAmountPaid: obj.paidAmount,
+      aggression: obj.creditor.aggression,
     }));
   }
 
@@ -305,6 +306,7 @@ class CaseUtil {
           'basicInformation.fullName',
           'accountTitle',
           'accountTitleMapping',
+          'aggression',
         ],
       }
     );

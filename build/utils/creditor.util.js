@@ -117,6 +117,7 @@ class CreditorUtil {
         if (accounts.data.length) {
             weeklyTrueCredit = await moneyThumb_util_1.default.getWeeklyTrueCredit(accounts);
         }
+        console.log(weeklyTrueCredit, 'weeklyTrueCredit');
         let totalRemaining = creditors.reduce((sum, item) => sum + item.remaining, 0);
         // const debtorTotalCommission = debtor?.totalCommission
         //   ? debtor.totalCommission
@@ -128,27 +129,33 @@ class CreditorUtil {
             ? debtor.weeklyBudgetStrategy3
             : 0;
         console.log(weeklyBudgetStrategy3, 'weeklyBudgetStrategy3');
+        let popup1Value = 0;
+        if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
+            popup1Value = debtor.weeklyBudgetStrategy1;
+        }
+        else {
+            const percent80 = debtor.weeklyBudgetStrategy1 * 0.8;
+            popup1Value = percent80;
+        }
+        console.log(popup1Value, 'popppp');
+        const aggressionData = await this.getCreditorWithAggression(creditors);
+        console.log(aggressionData, 'aggressionData');
         for (const creditor of creditors) {
             console.log(debtor.weeklyBudgetStrategy3, 'debtor.weeklyBudgetStrategy3');
             console.log(totalRemaining, 'totalRemaining');
             console.log(creditor.remaining, 'creditor.remaining');
             const creditorPer = creditor.remaining / totalRemaining;
             console.log(creditorPer, 'creditorPer');
-            if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
-                console.log(creditorPer * debtor.weeklyBudgetStrategy1, 'creditorPer * debtor.weeklyBudgetStrategy1');
-                creditor.maxProfitAmount =
-                    Math.round(creditorPer * debtor.weeklyBudgetStrategy1 * 100) / 100;
-            }
-            else {
-                const percent80 = debtor.weeklyBudgetStrategy1 * 0.8;
-                creditor.maxProfitAmount =
-                    Math.round(creditorPer * percent80 * 100) / 100;
-            }
+            creditor.maxProfitAmount =
+                Math.round(creditorPer * popup1Value * 100) / 100;
             const percentage = creditorPer * weeklyBudgetStrategy3;
             creditor.percentageReceivable = Math.round(percentage * 100) / 100;
             console.log(creditor.percentageReceivable, 'creditor.percentageReceivable');
             creditor.percentageReceivableAmount = parseFloat(((creditor.percentageReceivable / 100) * weeklyTrueCredit).toFixed(2));
             console.log(creditor.percentageReceivableAmount, 'creditor.percentageReceivableAmount');
+        }
+        if (Object.keys(aggressionData).length) {
+            await this.aggressionAdjustment(creditors, aggressionData, popup1Value);
         }
         // const percentageReceivableCommission =
         //   (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
@@ -181,6 +188,49 @@ class CreditorUtil {
             parseFloat(maxProfitCommission.toFixed(2)),
             parseFloat(receivableCommission.toFixed(2)),
         ];
+    }
+    async getCreditorWithAggression(creditors) {
+        let data = {};
+        if (creditors.length > 1) {
+            for (const creditor of creditors) {
+                if (creditor.aggression > 5)
+                    switch (creditor.aggression) {
+                        case 6:
+                            data['creditorAccountTitle'] = creditor.creditorAccountTitle;
+                            data['value'] = 0.05;
+                            break;
+                        case 7:
+                            data['creditorAccountTitle'] = creditor.creditorAccountTitle;
+                            data['value'] = 0.1;
+                            break;
+                        case 8:
+                            data['creditorAccountTitle'] = creditor.creditorAccountTitle;
+                            data['value'] = 0.15;
+                            break;
+                        case 9:
+                            data['creditorAccountTitle'] = creditor.creditorAccountTitle;
+                            data['value'] = 0.2;
+                            break;
+                        case 10:
+                            data['creditorAccountTitle'] = creditor.creditorAccountTitle;
+                            data['value'] = 0.25;
+                            break;
+                    }
+            }
+        }
+        return data;
+    }
+    async aggressionAdjustment(creditors, data, value) {
+        const amountToBeAdded = parseFloat((value * data.value).toFixed(2));
+        const amountToBeSubtracted = parseFloat((amountToBeAdded / (creditors.length - 1)).toFixed(2));
+        for (const creditor of creditors) {
+            if (creditor.creditorAccountTitle === data.creditorAccountTitle) {
+                creditor.maxProfitAmount += amountToBeAdded;
+            }
+            else {
+                creditor.maxProfitAmount -= amountToBeSubtracted;
+            }
+        }
     }
     async addWeeklyTrueAmount(creditors, settlementRange) {
         if (settlementRange.percentage_settlement_over_weekly_true_revenue) {
