@@ -74,7 +74,10 @@ class EmailService {
                 };
                 const notification = await email_util_1.default.createInbox(caseData, 'received', emailData);
                 const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
-                app_1.default.socketInstance.emit('notify', notificationCount[0].count);
+                app_1.default.socketInstance.emit('notify', {
+                    notificationCount: notificationCount[0].count,
+                    notification: notification,
+                });
                 return true;
             }
         }

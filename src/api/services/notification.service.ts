@@ -62,6 +62,14 @@ class InboxService {
 
     return [true, notification];
   }
+
+  async getNotificationCount() {
+    const notificationCount = this.notificationCountRepository.getCount();
+    if (!notificationCount){
+      return [false, constants.notFoundMessage('notification')];
+    }
+    return [true, notificationCount];
+  }
 }
 
 export default InboxService;

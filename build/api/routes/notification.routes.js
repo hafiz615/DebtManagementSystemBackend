@@ -9,5 +9,6 @@ const authorize_middleware_1 = __importDefault(require("../../middleware/authori
 const router = (0, express_1.Router)();
 router.post('/getAllNotifications', authorize_middleware_1.default.validateAuth, notification_controller_1.default.getAllNotifications);
 router.put('/markAsRead/:id', authorize_middleware_1.default.validateAuth, notification_controller_1.default.markAsRead);
+router.get('/count', authorize_middleware_1.default.validateAuth, notification_controller_1.default.getCount);
 exports.default = router;
 //# sourceMappingURL=notification.routes.js.map

@@ -44,6 +44,13 @@ class InboxService {
         }
         return [true, notification];
     }
+    async getNotificationCount() {
+        const notificationCount = this.notificationCountRepository.getCount();
+        if (!notificationCount) {
+            return [false, constants_util_1.default.notFoundMessage('notification')];
+        }
+        return [true, notificationCount];
+    }
 }
 exports.default = InboxService;
 //# sourceMappingURL=notification.service.js.map

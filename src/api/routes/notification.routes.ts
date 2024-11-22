@@ -16,4 +16,6 @@ router.put(
   notificationController.markAsRead
 );
 
+router.get('/count', authorize.validateAuth, notificationController.getCount);
+
 export default router;

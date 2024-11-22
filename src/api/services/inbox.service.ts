@@ -42,6 +42,7 @@ class InboxService {
   }
 
   async markAsRead(id: string): Promise<[boolean, IInbox | string]> {
+    console.log('id:', id)
     const inboxMessage = await this.inboxRepository.getById<IInbox>(id);
     if (!inboxMessage) return [false, constants.notFoundMessage('email')];
     const inboxTemp = await this.inboxRepository.updateById<IInbox>(id, {

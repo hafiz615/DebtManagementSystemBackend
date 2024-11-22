@@ -237,7 +237,7 @@ class EmailUtil {
         newMessage.to = emailData.to;
         newMessage.type = type;
         newNotification.caseId = caseTemp._id;
-        newNotification.text = emailData.text;
+        newNotification.text = this.formatText(caseTemp.caseCode);
         newNotification.type = 'EMAIL';
         await this.inboxRepository.create(newMessage);
         await this.notificationRepository.create(newNotification);
@@ -253,6 +253,9 @@ class EmailUtil {
         }
         await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;
+    }
+    formatText(text) {
+        return `EMAIL recieved for ${text}`;
     }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });

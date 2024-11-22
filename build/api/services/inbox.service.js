@@ -27,6 +27,7 @@ class InboxService {
         // return [true, {inbox, totalCount}];
     }
     async markAsRead(id) {
+        console.log('id:', id);
         const inboxMessage = await this.inboxRepository.getById(id);
         if (!inboxMessage)
             return [false, constants_util_1.default.notFoundMessage('email')];
