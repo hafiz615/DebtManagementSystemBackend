@@ -65,6 +65,7 @@ class EmailService {
     const referencesHeader = parseData.headers.get('references');
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
+      const threadId = this.extractThreadId(referencesHeader.toString());
       if (caseId) {
         await caseUtil.addInHistory(
           {
@@ -94,23 +95,26 @@ class EmailService {
           textAsHtml: parseData.textAsHtml,
           cc: parseData.cc,
         };
-        const notification = await emailUtil.createInbox(
-          caseData,
-          'received',
-          emailData
-        );
-        const notificationCount: NotificationCount[] =
-          await this.notificationCountRepository.getAll(
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined
+        if (threadId) {
+          const notification = await emailUtil.createInbox(
+            caseData,
+            'received',
+            emailData,
+            threadId
           );
-        app.socketInstance.emit('notify', {
-          notificationCount: notificationCount[0].count,
-          notification: notification,
-        });
+          const notificationCount: NotificationCount[] =
+            await this.notificationCountRepository.getAll(
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined
+            );
+          app.socketInstance.emit('notify', {
+            notificationCount: notificationCount[0].count,
+            notification: notification,
+          });
+        }
         return true;
       }
     }
@@ -140,6 +144,11 @@ class EmailService {
 
   extractCaseId = (header: string) => {
     const match = header && header.match(/caseId-([^@>]+)/);
+    return match ? match[1] : null;
+  };
+
+  extractThreadId = (header: string) => {
+    const match = header && header.match(/threadId-([^@>]+)/);
     return match ? match[1] : null;
   };
 

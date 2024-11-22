@@ -20,6 +20,10 @@ class EmailService {
             const match = header && header.match(/caseId-([^@>]+)/);
             return match ? match[1] : null;
         };
+        this.extractThreadId = (header) => {
+            const match = header && header.match(/threadId-([^@>]+)/);
+            return match ? match[1] : null;
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
@@ -51,6 +55,7 @@ class EmailService {
         const referencesHeader = parseData.headers.get('references');
         if (referencesHeader) {
             const caseId = this.extractCaseId(referencesHeader.toString());
+            const threadId = this.extractThreadId(referencesHeader.toString());
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     From: from,
@@ -72,12 +77,14 @@ class EmailService {
                     textAsHtml: parseData.textAsHtml,
                     cc: parseData.cc,
                 };
-                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData);
-                const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
-                app_1.default.socketInstance.emit('notify', {
-                    notificationCount: notificationCount[0].count,
-                    notification: notification,
-                });
+                if (threadId) {
+                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId);
+                    const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+                    app_1.default.socketInstance.emit('notify', {
+                        notificationCount: notificationCount[0].count,
+                        notification: notification,
+                    });
+                }
                 return true;
             }
         }

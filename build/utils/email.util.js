@@ -25,6 +25,8 @@ const notification_repository_1 = require("../api/repository/notification/notifi
 const notification_repomodel_1 = require("../database/repomodels/notification.repomodel");
 const notificationCount_repomodel_1 = require("../database/repomodels/notificationCount.repomodel");
 const notificationCount_repository_1 = require("../api/repository/notificationCount/notificationCount.repository");
+const uuid_1 = require("uuid");
+// import {threadId} from 'worker_threads';
 dotenv_1.default.config();
 class EmailUtil {
     constructor() {
@@ -162,6 +164,7 @@ class EmailUtil {
     }
     async sendEmailSmsToDebtorCreditor(caseId, userId, body, type) {
         let { from, sendTo, subject, content, cc } = body;
+        const threadId = (0, uuid_1.v4)();
         const allValues = await this.getValues(content);
         if (allValues.length) {
             let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, '', userId);
@@ -175,7 +178,7 @@ class EmailUtil {
         const time = new Date(common_util_1.default.getCurrentDate());
         switch (type) {
             case 'email':
-                const result = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId);
+                const result = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId, threadId);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
                         From: from,
@@ -197,7 +200,7 @@ class EmailUtil {
                         textAsHtml: content,
                         cc: cc,
                     };
-                    this.createInbox(caseData, 'sent', emailData);
+                    this.createInbox(caseData, 'sent', emailData, threadId);
                 }
                 return result;
             case 'sms':
@@ -219,7 +222,61 @@ class EmailUtil {
         }
         return [true, ''];
     }
-    async createInbox(caseTemp, type, emailData) {
+    async createInbox(caseTemp, type, emailData, threadId) {
+        const newMessage = new inbox_repomodel_1.Inbox();
+        const newNotification = new notification_repomodel_1.Notification();
+        const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
+        if (type == 'received') {
+            const existingInbox = await this.inboxRepository.getOne({
+                threadId,
+                type,
+            });
+            if (!existingInbox) {
+                await this.createNewInbox(emailData, caseTemp, type, threadId);
+            }
+            else {
+                console.log('existing Inbox :', existingInbox);
+                await this.inboxRepository.updateById(existingInbox._id, {
+                    text: existingInbox.text + emailData.text,
+                });
+            }
+        }
+        else {
+            await this.createNewInbox(emailData, caseTemp, type, threadId);
+            // newMessage.cc = emailData.cc;
+            // newMessage.caseCode = caseTemp.caseCode;
+            // newMessage.creditorCompanyName =
+            //   caseTemp.creditor.businessInformation.companyName;
+            // newMessage.debtorCompanyName =
+            //   caseTemp.debtor.businessInformation.companyName;
+            // newMessage.from = emailData.from;
+            // newMessage.negotiatorName = caseTemp.negotiator;
+            // newMessage.subject = emailData.subject;
+            // newMessage.text = emailData.text;
+            // newMessage.textAsHtml = emailData.textAsHtml;
+            // newMessage.to = emailData.to;
+            // newMessage.type = type;
+            // newNotification.caseId = caseTemp._id;
+            // newNotification.text = this.formatText(caseTemp.caseCode);
+            // newNotification.type = 'EMAIL';
+            // newMessage.threadId = threadId;
+            // await this.inboxRepository.create<IInbox>(newMessage as any);
+        }
+        await this.notificationRepository.create(newNotification);
+        const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
+        if (currentCount.length < 1) {
+            newNotificationCount.count = 1;
+        }
+        else {
+            newNotificationCount.count = currentCount[0].count + 1;
+            await this.notificationCountRepository.delete({
+                count: currentCount[0].count,
+            });
+        }
+        await this.notificationCountRepository.create(newNotificationCount);
+        return newNotification;
+    }
+    async createNewInbox(emailData, caseTemp, type, threadId) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -239,20 +296,8 @@ class EmailUtil {
         newNotification.caseId = caseTemp._id;
         newNotification.text = this.formatText(caseTemp.caseCode);
         newNotification.type = 'EMAIL';
+        newMessage.threadId = threadId;
         await this.inboxRepository.create(newMessage);
-        await this.notificationRepository.create(newNotification);
-        const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
-        if (currentCount.length < 1) {
-            newNotificationCount.count = 1;
-        }
-        else {
-            newNotificationCount.count = currentCount[0].count + 1;
-            await this.notificationCountRepository.delete({
-                count: currentCount[0].count,
-            });
-        }
-        await this.notificationCountRepository.create(newNotificationCount);
-        return newNotification;
     }
     formatText(text) {
         return `EMAIL received for ${text}`;
@@ -439,7 +484,7 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, content, cc, buffer, caseId) {
+    async sendEmail(to, from, subject, content, cc, buffer, caseId, threadId) {
         let headers = {};
         if (caseId) {
             const bin = await this.getVerifySender(from);
@@ -457,6 +502,7 @@ class EmailUtil {
                 if (caseTemp.debtor?.businessInformation?.EIN)
                     subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
                 headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+                headers['References'] = `<threadId-${threadId}@yourdomain.com>`;
             }
             if (bin === 'user') {
                 const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
