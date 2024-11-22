@@ -52,7 +52,9 @@ class EmailService {
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
+        console.log('I have been hit');
         const referencesHeader = parseData.headers.get('references');
+        console.log(referencesHeader, 'referencesHeader');
         if (referencesHeader) {
             const caseId = this.extractCaseId(referencesHeader.toString());
             const threadId = this.extractThreadId(referencesHeader.toString());
