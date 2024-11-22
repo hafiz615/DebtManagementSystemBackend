@@ -716,6 +716,8 @@ class EmailUtil {
           ? (subject += ` First Choice-DMS ${user.name}`)
           : (subject += ` First Choice-DMS`);
         headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+        headers['References'] = `<threadId-${threadId}@yourdomain.com>`;
+
       }
     }
     console.log(subject, 'subject');
