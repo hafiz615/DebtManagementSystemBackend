@@ -503,16 +503,16 @@ class EmailUtil {
                     subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
                 if (caseTemp.debtor?.businessInformation?.EIN)
                     subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
-                headers['References'] = `<threadId-${threadId}@yourdomain.com>`;
+                headers['references'] = `<caseId-${caseId}@yourdomain.com>`;
+                headers['tReferences'] = `<threadId-${threadId}@yourdomain.com>`;
             }
             if (bin === 'user') {
                 const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
                 user
                     ? (subject += ` First Choice-DMS ${user.name}`)
                     : (subject += ` First Choice-DMS`);
-                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
-                headers['References'] = `<threadId-${threadId}@yourdomain.com>`;
+                headers['references'] = `<caseId-${caseId}@yourdomain.com>`;
+                headers['tReferences'] = `<threadId-${threadId}@yourdomain.com>`;
             }
         }
         console.log(subject, 'subject');
