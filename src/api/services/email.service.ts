@@ -62,6 +62,7 @@ class EmailService {
       ? parseData.to[0].text
       : parseData.to?.text;
       const referencesHeader = parseData.headers.get('references');
+      console.log(referencesHeader)
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
       const threadId = this.extractThreadId(referencesHeader.toString());
