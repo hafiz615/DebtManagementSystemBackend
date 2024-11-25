@@ -82,6 +82,7 @@ class EmailService {
                 if (threadId) {
                     const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId);
                     const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+                    console.log(notificationCount[0].count, notification);
                     app_1.default.socketInstance.emit('notify', {
                         notificationCount: notificationCount[0].count,
                         notification: notification,

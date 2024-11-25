@@ -111,6 +111,7 @@ class EmailService {
               undefined,
               undefined
             );
+            console.log(notificationCount[0].count, notification)
           app.socketInstance.emit('notify', {
             notificationCount: notificationCount[0].count,
             notification: notification,
