@@ -61,12 +61,10 @@ class EmailService {
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
-      const referencesHeader = parseData.headers.get('references');
-      console.log('header : ', referencesHeader, 'req.body : ', req.body)
+    const referencesHeader = parseData.headers.get('references');
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
       const threadId = this.extractThreadId(subject);
-      console.log('caseId : ', caseId, 'thread Id : ', threadId)
       if (caseId) {
         await caseUtil.addInHistory(
           {
@@ -111,7 +109,6 @@ class EmailService {
               undefined,
               undefined
             );
-            console.log(notificationCount[0].count, notification)
           app.socketInstance.emit('notify', {
             notificationCount: notificationCount[0].count,
             notification: notification,

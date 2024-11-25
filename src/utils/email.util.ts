@@ -329,7 +329,6 @@ class EmailUtil {
     emailData: any,
     threadId: any
   ) {
-    console.log('In create Inbox : ', caseTemp, threadId);
     const newMessage = new Inbox();
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
@@ -339,36 +338,16 @@ class EmailUtil {
         threadId,
         type,
       });
-      console.log('existing Inbox : ', existingInbox);
       if (!existingInbox) {
         await this.createNewInbox(emailData, caseTemp, type, threadId);
       } else {
-        console.log('existing Inbox :', existingInbox);
-
         await this.inboxRepository.updateById(existingInbox._id, {
           text: existingInbox.text + emailData.text,
+          textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
         });
       }
     } else {
       await this.createNewInbox(emailData, caseTemp, type, threadId);
-      // newMessage.cc = emailData.cc;
-      // newMessage.caseCode = caseTemp.caseCode;
-      // newMessage.creditorCompanyName =
-      //   caseTemp.creditor.businessInformation.companyName;
-      // newMessage.debtorCompanyName =
-      //   caseTemp.debtor.businessInformation.companyName;
-      // newMessage.from = emailData.from;
-      // newMessage.negotiatorName = caseTemp.negotiator;
-      // newMessage.subject = emailData.subject;
-      // newMessage.text = emailData.text;
-      // newMessage.textAsHtml = emailData.textAsHtml;
-      // newMessage.to = emailData.to;
-      // newMessage.type = type;
-      // newNotification.caseId = caseTemp._id;
-      // newNotification.text = this.formatText(caseTemp.caseCode);
-      // newNotification.type = 'EMAIL';
-      // newMessage.threadId = threadId;
-      // await this.inboxRepository.create<IInbox>(newMessage as any);
     }
     newNotification.caseId = caseTemp._id;
     newNotification.text = this.formatText(caseTemp.caseCode);
