@@ -705,8 +705,7 @@ class EmailUtil {
           subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
         if (caseTemp.debtor?.businessInformation?.EIN)
           subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-        headers['References'] =
-          `<caseId-${caseId}@yourdomain.com>,<threadId-${threadId}@yourdomain.com>`;
+          headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
       }
       if (bin === 'user') {
         const user = await this.userRepository.getOne<IUser>(
@@ -718,15 +717,18 @@ class EmailUtil {
           ? (subject += ` First Choice-DMS ${user.name}`)
           : (subject += ` First Choice-DMS`);
         headers['References'] =
-          `<caseId-${caseId}@yourdomain.com>,<threadId-${threadId}@yourdomain.com>`;
+          `<caseId-${caseId}@yourdomain.com>`;
       }
     }
+    subject += `<threadId-${threadId}@yourdomain.com>`
+    const thread= `<threadId-${threadId}@yourdomain.com>`
     console.log(subject, 'subject');
     const msg = {
       to: to,
       from: from, // Use the email address or domain you verified above
       subject: subject,
       html: content,
+      thread
     };
     console.log(headers, 'heardersssss');
     if (Object.keys(headers).length) msg['headers'] = headers;
