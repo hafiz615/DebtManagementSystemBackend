@@ -56,7 +56,7 @@ class EmailService {
         console.log('header : ', referencesHeader, 'req.body : ', req.body);
         if (referencesHeader) {
             const caseId = this.extractCaseId(referencesHeader.toString());
-            const threadId = this.extractThreadId(referencesHeader.toString());
+            const threadId = this.extractThreadId(subject);
             console.log('caseId : ', caseId, 'thread Id : ', threadId);
             if (caseId) {
                 await case_util_1.default.addInHistory({
