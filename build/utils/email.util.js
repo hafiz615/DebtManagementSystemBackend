@@ -264,6 +264,9 @@ class EmailUtil {
             // newMessage.threadId = threadId;
             // await this.inboxRepository.create<IInbox>(newMessage as any);
         }
+        newNotification.caseId = caseTemp._id;
+        newNotification.text = this.formatText(caseTemp.caseCode);
+        newNotification.type = 'EMAIL';
         await this.notificationRepository.create(newNotification);
         const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
         if (currentCount.length < 1) {
@@ -510,8 +513,7 @@ class EmailUtil {
                 user
                     ? (subject += ` First Choice-DMS ${user.name}`)
                     : (subject += ` First Choice-DMS`);
-                headers['References'] =
-                    `<caseId-${caseId}@yourdomain.com>`;
+                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
             }
         }
         subject += `<threadId-${threadId}@yourdomain.com>`;
@@ -522,7 +524,7 @@ class EmailUtil {
             from: from, // Use the email address or domain you verified above
             subject: subject,
             html: content,
-            thread
+            thread,
         };
         console.log(headers, 'heardersssss');
         if (Object.keys(headers).length)
