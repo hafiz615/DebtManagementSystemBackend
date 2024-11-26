@@ -24,6 +24,7 @@ const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.rep
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
+const uuid_1 = require("uuid");
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -145,29 +146,7 @@ class CaseService {
                 return [false, 'Payment plan already exist!'];
             }
             if (req.body?.intervals?.length && req.body?.commission) {
-                // let weeklyBudgetObj: {
-                //   status: boolean;
-                //   commission: number;
-                //   totalCommission: number;
-                // };
-                // if (req.body.feePayment && req.body.feePayment === 'toPay') {
-                //   weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
-                //     req.body,
-                //     true,
-                //     findCase.debtor
-                //   );
-                // if (!weeklyBudgetObj.status) {
-                //   return [
-                //     false,
-                //     'Weekly budget is not fulfiling the payment plan of debtor',
-                //   ];
-                // }
-                //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-                //     totalCommission: weeklyBudgetObj.totalCommission,
-                //     weeklyCommission: weeklyBudgetObj.commission,
-                //   });
-                // }
-                if (!getDebtor.intervals.length) {
+                if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
                     await this.debtorRepository.updateById(findCase.debtor._id, {
                         weeklyCommission: req.body.commission,
                         updatedAt: common_util_1.default.getCurrentDate(),
@@ -180,13 +159,13 @@ class CaseService {
                     return checkCasePayment;
             }
             req.body.updatedAt = common_util_1.default.getCurrentDate();
-            if (req.body.paidAmount) {
+            if (req.body.paidAmount && req.body.paidAmount > 0) {
                 req.body.remaining = req.body.totalDebt - req.body.paidAmount;
                 if (req.body.remaining < 0)
                     req.body.remaining = 0;
                 req.body.remainingAmountPaid = req.body.paidAmount;
             }
-            if (!req.body.paidAmount)
+            if (req.body?.paidAmount && req.body.paidAmount === 0)
                 req.body.remainingAmountPaid = 0;
             let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
@@ -718,6 +697,7 @@ class CaseService {
     }
     async sendSettlementEmail(req) {
         const { from, sendTo, subject, content, cc } = req.body;
+        const threadId = (0, uuid_1.v4)();
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
         const caseId = req.params.id;
         const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [
@@ -743,8 +723,8 @@ class CaseService {
             textAsHtml: content,
             cc: cc,
         };
-        email_util_1.default.createInbox(caseTemp, 'sent', emailData);
-        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId);
+        email_util_1.default.createInbox(caseTemp, 'sent', emailData, threadId);
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId, threadId);
     }
     async caseHistory(req) {
         const findCase = await this.caseRepository.getById(req.params.id);

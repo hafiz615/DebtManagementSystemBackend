@@ -8,6 +8,8 @@ export interface IInbox extends Document {
   text: string;
   textAsHtml: string;
   caseCode: string;
+  caseId: string;
+  threadId: string;
   isRead: boolean;
   type: string;
   debtorCompanyName: string;

@@ -17,7 +17,10 @@ class InboxService {
     }
     async getAllInboxes(req) {
         const filters = await inbox_utils_1.default.getAllInboxFilters(req);
-        let inbox = await this.inboxRepository.getAll(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined);
+        let inbox = await this.inboxRepository.getAll(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined
+        // Number(req.query.page),
+        // Number(req.query.limit)
+        );
         const formattedData = inbox_utils_1.default.formatInboxData(inbox);
         // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
         if (!inbox.length) {

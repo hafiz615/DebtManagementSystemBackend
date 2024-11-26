@@ -1,4 +1,5 @@
 import commonUtil from '../../utils/common.util';
+// import {v4} from 'uuid';
 
 export class Inbox {
   from = '';
@@ -8,11 +9,13 @@ export class Inbox {
   text = '';
   textAsHtml = '';
   caseCode = '';
+  caseId = '';
   isRead = false;
   type = '';
   debtorCompanyName = '';
   creditorCompanyName = '';
   negotiatorName = '';
+  threadId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

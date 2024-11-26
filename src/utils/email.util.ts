@@ -36,6 +36,8 @@ import asyncLocalStorage from './localStorage.util';
 import {NotificationCount} from '../database/repomodels/notificationCount.repomodel';
 import {NotificationCountRepository} from '../api/repository/notificationCount/notificationCount.repository';
 import {INotificationCount} from '../database/interfaces/notificationCount.interface';
+import {v4} from 'uuid';
+// import {threadId} from 'worker_threads';
 
 dotenv.config();
 class EmailUtil {
@@ -224,7 +226,7 @@ class EmailUtil {
     type: string
   ) {
     let {from, sendTo, subject, content, cc} = body;
-
+    const threadId = v4();
     const allValues = await this.getValues(content);
     if (allValues.length) {
       let [user, debtor, creditor, caseTemp, payment] =
@@ -255,7 +257,8 @@ class EmailUtil {
           content,
           cc,
           null,
-          caseId
+          caseId,
+          threadId
         );
         if (result[0]) {
           await caseUtil.addInHistory(
@@ -286,7 +289,7 @@ class EmailUtil {
             textAsHtml: content,
             cc: cc,
           };
-          this.createInbox(caseData, 'sent', emailData);
+          this.createInbox(caseData, 'sent', emailData, threadId);
         }
         return result;
       case 'sms':
@@ -320,27 +323,35 @@ class EmailUtil {
     return [true, ''];
   }
 
-  async createInbox(caseTemp: any, type: string, emailData: any) {
+  async createInbox(
+    caseTemp: any,
+    type: string,
+    emailData: any,
+    threadId: any
+  ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
-    newMessage.cc = emailData.cc;
-    newMessage.caseCode = caseTemp.caseCode;
-    newMessage.creditorCompanyName =
-      caseTemp.creditor.businessInformation.companyName;
-    newMessage.debtorCompanyName =
-      caseTemp.debtor.businessInformation.companyName;
-    newMessage.from = emailData.from;
-    newMessage.negotiatorName = caseTemp.negotiator;
-    newMessage.subject = emailData.subject;
-    newMessage.text = emailData.text;
-    newMessage.textAsHtml = emailData.textAsHtml;
-    newMessage.to = emailData.to;
-    newMessage.type = type;
+
+    if (type == 'received') {
+      const existingInbox = await this.inboxRepository.getOne<IInbox>({
+        threadId,
+        type,
+      });
+      if (!existingInbox) {
+        await this.createNewInbox(emailData, caseTemp, type, threadId);
+      } else {
+        await this.inboxRepository.updateById(existingInbox._id, {
+          text: existingInbox.text + emailData.text,
+          textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
+        });
+      }
+    } else {
+      await this.createNewInbox(emailData, caseTemp, type, threadId);
+    }
     newNotification.caseId = caseTemp._id;
-    newNotification.text = emailData.text;
+    newNotification.text = this.formatText(caseTemp.caseCode);
     newNotification.type = 'EMAIL';
-    await this.inboxRepository.create<IInbox>(newMessage as any);
     await this.notificationRepository.create<INotification>(
       newNotification as any
     );
@@ -365,6 +376,36 @@ class EmailUtil {
       newNotificationCount as any
     );
     return newNotification;
+  }
+
+  async createNewInbox(emailData, caseTemp, type, threadId) {
+    const newMessage = new Inbox();
+    const newNotification = new Notification();
+    const newNotificationCount = new NotificationCount();
+
+    newMessage.cc = emailData.cc;
+    newMessage.caseCode = caseTemp.caseCode;
+    newMessage.creditorCompanyName =
+      caseTemp.creditor.businessInformation.companyName;
+    newMessage.debtorCompanyName =
+      caseTemp.debtor.businessInformation.companyName;
+    newMessage.from = emailData.from;
+    newMessage.negotiatorName = caseTemp.negotiator;
+    newMessage.subject = emailData.subject;
+    newMessage.text = emailData.text;
+    newMessage.textAsHtml = emailData.textAsHtml;
+    newMessage.to = emailData.to;
+    newMessage.type = type;
+    newNotification.caseId = caseTemp._id;
+    newNotification.text = this.formatText(caseTemp.caseCode);
+    newNotification.type = 'EMAIL';
+    newMessage.threadId = threadId;
+
+    await this.inboxRepository.create<IInbox>(newMessage as any);
+  }
+
+  formatText(text: String) {
+    return `EMAIL received for ${text}`;
   }
 
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {
@@ -622,7 +663,8 @@ class EmailUtil {
     content: any,
     cc?: Array<string>,
     buffer?: Buffer,
-    caseId?: string
+    caseId?: string,
+    threadId?: string
   ) {
     let headers = {};
     if (caseId) {
@@ -659,12 +701,15 @@ class EmailUtil {
         headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
       }
     }
+    subject += `<threadId-${threadId}@yourdomain.com>`;
+    const thread = `<threadId-${threadId}@yourdomain.com>`;
     console.log(subject, 'subject');
     const msg = {
       to: to,
       from: from, // Use the email address or domain you verified above
       subject: subject,
       html: content,
+      thread,
     };
     console.log(headers, 'heardersssss');
     if (Object.keys(headers).length) msg['headers'] = headers;

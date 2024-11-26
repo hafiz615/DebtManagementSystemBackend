@@ -53,6 +53,12 @@ const inbox = new mongoose_1.Schema({
     caseCode: {
         type: String,
     },
+    caseId: {
+        type: String,
+    },
+    threadId: {
+        type: String,
+    },
     isRead: {
         type: Boolean,
         default: false,
