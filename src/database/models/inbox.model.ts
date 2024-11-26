@@ -26,6 +26,12 @@ const inbox: Schema = new Schema({
   caseCode: {
     type: String,
   },
+  caseId: {
+    type: String,
+  },
+  threadId: {
+    type: String,
+  },
   isRead: {
     type: Boolean,
     default: false,

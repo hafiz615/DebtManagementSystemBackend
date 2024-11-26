@@ -15,16 +15,22 @@ import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {DataCopier} from '../../utils/dataCopier.util';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {IInbox} from '../../database/interfaces/inbox.interface';
+import app from '../../app';
+import asyncLocalStorage from '../../utils/localStorage.util';
+import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
+import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
 
 class EmailService {
   private caseRepository: CaseRepository;
   private domainVerifyRepository: DomainVerifyRepository;
   private inboxRepository: InboxRepository;
+  private notificationCountRepository: NotificationCountRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.inboxRepository = new InboxRepository();
     this.domainVerifyRepository = new DomainVerifyRepository();
+    this.notificationCountRepository = new NotificationCountRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -58,6 +64,7 @@ class EmailService {
     const referencesHeader = parseData.headers.get('references');
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
+      const threadId = this.extractThreadId(subject);
       if (caseId) {
         await caseUtil.addInHistory(
           {
@@ -87,7 +94,26 @@ class EmailService {
           textAsHtml: parseData.textAsHtml,
           cc: parseData.cc,
         };
-        emailUtil.createInbox(caseData, 'received', emailData);
+        if (threadId) {
+          const notification = await emailUtil.createInbox(
+            caseData,
+            'received',
+            emailData,
+            threadId
+          );
+          const notificationCount: NotificationCount[] =
+            await this.notificationCountRepository.getAll(
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined
+            );
+          app.socketInstance.emit('notify', {
+            notificationCount: notificationCount[0].count,
+            notification: notification,
+          });
+        }
         return true;
       }
     }
@@ -117,6 +143,11 @@ class EmailService {
 
   extractCaseId = (header: string) => {
     const match = header && header.match(/caseId-([^@>]+)/);
+    return match ? match[1] : null;
+  };
+
+  extractThreadId = (header: string) => {
+    const match = header && header.match(/threadId-([^@>]+)/);
     return match ? match[1] : null;
   };
 

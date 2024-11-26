@@ -41,6 +41,8 @@ import moneyThumbUtil from '../../utils/moneyThumb.util';
 import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {IInbox} from '../../database/interfaces/inbox.interface';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
+import {v4} from 'uuid';
+
 class CaseService {
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
@@ -1061,6 +1063,7 @@ class CaseService {
 
   async sendSettlementEmail(req: Request) {
     const {from, sendTo, subject, content, cc} = req.body;
+    const threadId = v4();
     const buffer = await emailUtil.generatePdfFromHtml(content);
     const caseId = req.params.id;
     const caseTemp = await this.caseRepository.getById<ICase>(
@@ -1093,7 +1096,7 @@ class CaseService {
       textAsHtml: content,
       cc: cc,
     };
-    emailUtil.createInbox(caseTemp, 'sent', emailData);
+    emailUtil.createInbox(caseTemp, 'sent', emailData, threadId);
 
     return await emailUtil.sendEmail(
       sendTo,
@@ -1102,7 +1105,8 @@ class CaseService {
       content,
       cc,
       buffer,
-      caseId
+      caseId,
+      threadId
     );
   }
 

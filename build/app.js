@@ -13,9 +13,18 @@ const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware"
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 const setEnv_1 = require("./utils/setEnv");
 const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
+const socket_io_1 = require("socket.io");
+const http_1 = require("http");
 class App {
+    // protected socket: any;
     constructor() {
         this.app = (0, express_1.default)();
+        this.httpServer = (0, http_1.createServer)(this.app);
+        this.io = new socket_io_1.Server(this.httpServer, {
+            cors: {
+                origin: `*`,
+            },
+        });
         this.config();
         this.database = new database_config_1.Database();
     }
@@ -40,7 +49,11 @@ class App {
     }
     async start() {
         const appPort = process.env.PORT || 3000;
-        this.app.listen(appPort, () => {
+        this.io.on('connection', (socket) => {
+            console.log('a user connected');
+            this.socketInstance = socket;
+        });
+        this.httpServer.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
         // const credR = new CreditorRepository();
@@ -135,4 +148,5 @@ class App {
 }
 const app = new App();
 app.start();
+exports.default = app;
 //# sourceMappingURL=app.js.map
