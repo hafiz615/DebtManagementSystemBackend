@@ -278,6 +278,28 @@ class CaseService {
     }
 
     if (req.body?.intervals?.length && req.body?.commission) {
+      // let weeklyBudgetObj: {
+      //   status: boolean;
+      //   commission: number;
+      //   totalCommission: number;
+      // };
+      // if (req.body.feePayment && req.body.feePayment === 'toPay') {
+      //   weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
+      //     req.body,
+      //     true,
+      //     findCase.debtor
+      //   );
+      // if (!weeklyBudgetObj.status) {
+      //   return [
+      //     false,
+      //     'Weekly budget is not fulfiling the payment plan of debtor',
+      //   ];
+      // }
+      //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+      //     totalCommission: weeklyBudgetObj.totalCommission,
+      //     weeklyCommission: weeklyBudgetObj.commission,
+      //   });
+      // }
       if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
         await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
           weeklyCommission: req.body.commission,
