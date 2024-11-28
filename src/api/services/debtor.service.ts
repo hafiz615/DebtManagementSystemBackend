@@ -61,27 +61,17 @@ class DebtorService {
     this.caseService = new CaseService();
   }
   
-
   getStatementsSummary = async (req: Request) => {
-
     const debtor = await this.debtorRepository.getById<IDebtor>(
       req.params.id
     );
-
     const token = await moneyThumbUtil.authenticateUser();
     const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
-    const accountDetails = card['accountslist'].data.reduce((acc, curr) => {
-    if (!acc[curr.account]) {
-        acc[curr.account] = [];
-    }
-    acc[curr.account].push({ startingBalance: curr.starting_balance, endingBalance: curr.ending_balance, statement_month: curr.statement_month, trueCredits: curr.true_credits, mcaWithholdPercent: curr.mca_withhold_percent, mcaNumber: curr["#_mca's"] });
-    return acc; 
-    }, {});
-    
-
-    return accountDetails;
+    const accountDetails = debtorUtil.getAccountDetails(card['accountslist'].data);
+    const withDrawalTotalForMonth = debtorUtil.getWithDrawalTotalForMonth(card['monthlymca'].data)
+    const updatedAccountDetails = debtorUtil.getUpdatedAccountDetails(accountDetails, withDrawalTotalForMonth);
+    return updatedAccountDetails;
   }
-
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
     const debtor = await this.debtorRepository.getAll<IDebtor>(

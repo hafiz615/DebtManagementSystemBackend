@@ -30,14 +30,10 @@ class DebtorService {
             const debtor = await this.debtorRepository.getById(req.params.id);
             const token = await moneyThumb_util_1.default.authenticateUser();
             const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
-            const accountDetails = card['accountslist'].data.reduce((acc, curr) => {
-                if (!acc[curr.account]) {
-                    acc[curr.account] = [];
-                }
-                acc[curr.account].push({ startingBalance: curr.starting_balance, endingBalance: curr.ending_balance, statement_month: curr.statement_month, trueCredits: curr.true_credits, mcaWithholdPercent: curr.mca_withhold_percent, mcaNumber: curr["#_mca's"] });
-                return acc;
-            }, {});
-            return accountDetails;
+            const accountDetails = debtor_util_1.default.getAccountDetails(card['accountslist'].data);
+            const withDrawalTotalForMonth = debtor_util_1.default.getWithDrawalTotalForMonth(card['monthlymca'].data);
+            const updatedAccountDetails = debtor_util_1.default.getUpdatedAccountDetails(accountDetails, withDrawalTotalForMonth);
+            return updatedAccountDetails;
         };
         this.getAllDebtors = async (req) => {
             let debtors = await this.debtorRepository.getAllWithoutPagination({}, undefined, undefined, { _id: -1 });
