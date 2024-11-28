@@ -26,6 +26,19 @@ const lodash_2 = require("lodash");
 const case_service_1 = __importDefault(require("./case.service"));
 class DebtorService {
     constructor() {
+        this.getStatementsSummary = async (req) => {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            const token = await moneyThumb_util_1.default.authenticateUser();
+            const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
+            const accountDetails = card['accountslist'].data.reduce((acc, curr) => {
+                if (!acc[curr.account]) {
+                    acc[curr.account] = [];
+                }
+                acc[curr.account].push({ startingBalance: curr.starting_balance, endingBalance: curr.ending_balance, statement_month: curr.statement_month, trueCredits: curr.true_credits, mcaWithholdPercent: curr.mca_withhold_percent, mcaNumber: curr["#_mca's"] });
+                return acc;
+            }, {});
+            return accountDetails;
+        };
         this.getAllDebtors = async (req) => {
             let debtors = await this.debtorRepository.getAllWithoutPagination({}, undefined, undefined, { _id: -1 });
             if (!debtors.length) {

@@ -307,6 +307,27 @@ class DebtorController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.getStatementsSummary = async (req, res) => {
+            try {
+                const response = await this.debtorService.getStatementsSummary(req);
+                if (!response) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response,
+                    message: constants_util_1.default.successFoundMessage('Statements Summary'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.getLumpSumJustifications = async (req, res) => {
             try {
                 const response = await this.debtorService.lumpSumJustifications(req);

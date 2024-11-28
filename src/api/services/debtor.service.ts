@@ -36,6 +36,7 @@ import bulkUploadCronjob from '../../cron-job/bulkUpload.cronjob';
 import googleDriveUtil from '../../utils/googleDrive.util';
 import {cloneDeep} from 'lodash';
 import CaseService from './case.service';
+import { any } from 'joi';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -59,6 +60,28 @@ class DebtorService {
     this.userRepository = new UserRepository();
     this.caseService = new CaseService();
   }
+  
+
+  getStatementsSummary = async (req: Request) => {
+
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+
+    const token = await moneyThumbUtil.authenticateUser();
+    const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
+    const accountDetails = card['accountslist'].data.reduce((acc, curr) => {
+    if (!acc[curr.account]) {
+        acc[curr.account] = [];
+    }
+    acc[curr.account].push({ startingBalance: curr.starting_balance, endingBalance: curr.ending_balance, statement_month: curr.statement_month, trueCredits: curr.true_credits, mcaWithholdPercent: curr.mca_withhold_percent, mcaNumber: curr["#_mca's"] });
+    return acc; 
+    }, {});
+    
+
+    return accountDetails;
+  }
+
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
     const debtor = await this.debtorRepository.getAll<IDebtor>(
@@ -996,7 +1019,7 @@ class DebtorService {
     );
     return justifications;
   };
-
+   
   fullProfitJustifications = async (req: Request) => {
     const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) {
