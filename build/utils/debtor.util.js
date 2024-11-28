@@ -13,6 +13,40 @@ const email_util_1 = __importDefault(require("./email.util"));
 const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
 class DebtorUtil {
     constructor() {
+        this.getAccountDetails = (accountList) => {
+            return accountList.reduce((acc, curr) => {
+                if (!acc[curr.account]) {
+                    acc[curr.account] = [];
+                }
+                acc[curr.account].push({ startingBalance: curr.starting_balance, endingBalance: curr.ending_balance, statement_month: curr.statement_month, trueCredits: curr.true_credits, mcaWithholdPercent: curr.mca_withhold_percent, mcaNumber: curr["#_mca's"] });
+                return acc;
+            }, {});
+        };
+        this.getWithDrawalTotalForMonth = (withDrawals) => {
+            const withDrawalTotalForMonth = {};
+            withDrawals.forEach(({ account, month, withdrawal_total }) => {
+                const cleanMonth = month.split(' ')[0];
+                const withdrawalAmount = parseFloat(withdrawal_total) || 0;
+                if (!withDrawalTotalForMonth[account]) {
+                    withDrawalTotalForMonth[account] = {};
+                }
+                if (!withDrawalTotalForMonth[account][cleanMonth]) {
+                    withDrawalTotalForMonth[account][cleanMonth] = 0;
+                }
+                withDrawalTotalForMonth[account][cleanMonth] += withdrawalAmount;
+            });
+            return withDrawalTotalForMonth;
+        };
+        this.getUpdatedAccountDetails = (accountDetails, withDrawalTotalForMonth) => {
+            Object.keys(accountDetails).forEach((account) => {
+                accountDetails[account].forEach((statement) => {
+                    const month = statement.statement_month;
+                    const withdrawalTotal = withDrawalTotalForMonth[account]?.[month] || 0;
+                    statement.withdrawalTotal = Math.abs(withdrawalTotal).toFixed(2); // Add as a positive value
+                });
+            });
+            return accountDetails;
+        };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
     }
