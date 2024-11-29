@@ -385,6 +385,29 @@ class DebtorController {
     }
   };
 
+  getDailyCashFlows = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.getDailyCashFlows(req);
+      if (!response) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response,
+          message: constants.successFoundMessage('Daily Cash Flows'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   getLumpSumJustifications = async (req: Request, res: Response) => {
     try {
       const response = await this.debtorService.lumpSumJustifications(req);

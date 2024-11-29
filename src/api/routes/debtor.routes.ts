@@ -94,6 +94,11 @@ router.get('/getStatementsSummary/:id',
   debtorController.getStatementsSummary 
 );
 
+router.get('/getDailyCashFlows/:id', 
+  authorize.validateAuth,
+  debtorController.getDailyCashFlows 
+);
+
 router.put(
   '/updateDebtorBulk/:id',
   authorize.validateAuth,

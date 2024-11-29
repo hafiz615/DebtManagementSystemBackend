@@ -73,6 +73,24 @@ class DebtorService {
     return updatedAccountDetails;
   }
 
+  getDailyCashFlows = async (req: Request) => {
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    const token = await moneyThumbUtil.authenticateUser();
+    const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
+    const getDailyCashFlowsLastDate = debtorUtil.getDailyCashFlowsLastDate(card['dailycashflow'].data);
+    const secondLastMonth = new Date(getDailyCashFlowsLastDate.getFullYear(), getDailyCashFlowsLastDate.getMonth() - 1, 1);
+    const trueCashFlows = debtorUtil.getTrueCashFlows(card['dailycashflow'].data, secondLastMonth)
+    const flowsDaysWeightage = debtorUtil.getFlowsDaysWeightage(trueCashFlows);
+    const flowsDaysPercentage = debtorUtil.getFlowsDaysPercentage(flowsDaysWeightage, trueCashFlows.length)
+    flowsDaysPercentage.sort((a, b) => b.percentage - a.percentage);
+    const highestPercentage = flowsDaysPercentage[0].percentage;
+    const highest = flowsDaysPercentage.filter(item => item.percentage === highestPercentage).map(item => ({ [item.day]: item.percentage }));
+    const others = flowsDaysPercentage.filter(item => item.percentage !== highestPercentage).map(item => ({ [item.day]: item.percentage }));
+    return {highest: highest, others: others};
+  }
+
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
     const debtor = await this.debtorRepository.getAll<IDebtor>(
       {
