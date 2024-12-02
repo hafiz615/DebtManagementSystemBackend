@@ -43,7 +43,7 @@ class Debtor {
         this.weeklyCommissionPaid = false;
         this.weeklyCommissionDate = '';
         this.commissionPaymentId = '';
-        this.commissionPercentage = 20;
+        this.commissionPercentage = 19;
         this.bulkUpload = false;
         this.weeklyBudgetUpdated = false;
         this.strategy1MaxProfit = 0;
