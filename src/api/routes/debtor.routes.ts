@@ -89,6 +89,16 @@ router.post(
   debtorController.createMultipleDebtors
 );
 
+router.get('/getStatementsSummary/:id', 
+  authorize.validateAuth,
+  debtorController.getStatementsSummary 
+);
+
+router.get('/getDailyCashFlows/:id', 
+  authorize.validateAuth,
+  debtorController.getDailyCashFlows 
+);
+
 router.put(
   '/updateDebtorBulk/:id',
   authorize.validateAuth,

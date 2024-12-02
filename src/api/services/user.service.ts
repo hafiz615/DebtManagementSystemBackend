@@ -516,8 +516,7 @@ class UserService {
       city: req.body.city,
     };
     data['country'] = 'USA';
-    data['nickname'] = `debtor-${req.params.id}`;
-    console.log(data);
+    data['nickname'] = `debtor-${req.params.id}-${new Date().getSeconds()}`;
     const request: ClientRequest = {
       url: `/v3/verified_senders`,
       method: 'POST',

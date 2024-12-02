@@ -26,6 +26,30 @@ const lodash_2 = require("lodash");
 const case_service_1 = __importDefault(require("./case.service"));
 class DebtorService {
     constructor() {
+        this.getStatementsSummary = async (req) => {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            const token = await moneyThumb_util_1.default.authenticateUser();
+            const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
+            const accountDetails = debtor_util_1.default.getAccountDetails(card['accountslist'].data);
+            const withDrawalTotalForMonth = debtor_util_1.default.getWithDrawalTotalForMonth(card['monthlymca'].data);
+            const updatedAccountDetails = debtor_util_1.default.getUpdatedAccountDetails(accountDetails, withDrawalTotalForMonth);
+            return updatedAccountDetails;
+        };
+        this.getDailyCashFlows = async (req) => {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            const token = await moneyThumb_util_1.default.authenticateUser();
+            const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
+            const getDailyCashFlowsLastDate = debtor_util_1.default.getDailyCashFlowsLastDate(card['dailycashflow'].data);
+            const secondLastMonth = new Date(getDailyCashFlowsLastDate.getFullYear(), getDailyCashFlowsLastDate.getMonth() - 1, 1);
+            const trueCashFlows = debtor_util_1.default.getTrueCashFlows(card['dailycashflow'].data, secondLastMonth);
+            const flowsDaysWeightage = debtor_util_1.default.getFlowsDaysWeightage(trueCashFlows);
+            const flowsDaysPercentage = debtor_util_1.default.getFlowsDaysPercentage(flowsDaysWeightage, trueCashFlows.length);
+            flowsDaysPercentage.sort((a, b) => b.percentage - a.percentage);
+            const highestPercentage = flowsDaysPercentage[0].percentage;
+            const highest = flowsDaysPercentage.filter(item => item.percentage === highestPercentage).map(item => ({ [item.day]: item.percentage }));
+            const others = flowsDaysPercentage.filter(item => item.percentage !== highestPercentage).map(item => ({ [item.day]: item.percentage }));
+            return { highest: highest, others: others };
+        };
         this.getAllDebtors = async (req) => {
             let debtors = await this.debtorRepository.getAllWithoutPagination({}, undefined, undefined, { _id: -1 });
             if (!debtors.length) {

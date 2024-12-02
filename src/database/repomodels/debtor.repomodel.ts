@@ -47,7 +47,7 @@ export class Debtor {
   weeklyCommissionPaid = false;
   weeklyCommissionDate = '';
   commissionPaymentId = '';
-  commissionPercentage = 20;
+  commissionPercentage = 19;
   bulkUpload = false;
   weeklyBudgetUpdated = false;
   strategy1MaxProfit = 0;

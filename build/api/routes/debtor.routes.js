@@ -28,6 +28,8 @@ router.get('/getLumpSumJustifications/:id', authorize_middleware_1.default.valid
 router.get('/getFullProfitJustifications/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getFullProfitJustifications);
 router.post('/getExtractedFields/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getExtractedFields);
 router.post('/createMultipleDebtors', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createMultipleDebtors, debtor_controller_1.default.createMultipleDebtors);
+router.get('/getStatementsSummary/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getStatementsSummary);
+router.get('/getDailyCashFlows/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDailyCashFlows);
 router.put('/updateDebtorBulk/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorBulk, debtor_controller_1.default.updateDebtorBulk);
 router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
 router.get('/getDebtorSummery', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorSummery);
