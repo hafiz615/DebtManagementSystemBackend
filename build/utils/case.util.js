@@ -2296,12 +2296,14 @@ class CaseUtil {
             return [false, createdCases];
         return [true, createdCases];
     }
-    async createVault(paymentToken) {
+    async createVault(paymentToken, debtorName) {
         const url = process.env.seamlesschexUrl;
         const params = {
             customer_vault: 'add_customer',
             security_key: process.env.seamlesschexSecurityKey,
             payment_token: paymentToken,
+            first_name: debtorName,
+            last_name: debtorName
         };
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
         const responseNum = new URLSearchParams(response.data).get('response');

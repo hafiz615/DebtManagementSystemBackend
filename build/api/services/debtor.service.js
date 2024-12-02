@@ -454,7 +454,7 @@ class DebtorService {
             });
         }
         if (req.body.paymentToken && req.body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
+            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtor?.basicInformation?.fullName);
             if (!customerVaultResponse[0])
                 return customerVaultResponse;
             debtor = await this.debtorRepository.updateById(getDebtor._id, {
@@ -745,7 +745,7 @@ class DebtorService {
         let debtor = null;
         let account = [];
         if (body.paymentToken && body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(body.paymentToken);
+            const customerVaultResponse = await case_util_1.default.createVault(body.paymentToken, debtor?.basicInformation?.fullName);
             if (!customerVaultResponse[0])
                 return customerVaultResponse;
             // req.body.customerVaultId = customerVaultResponse[1];
@@ -970,7 +970,9 @@ class DebtorService {
         if (!getDebtor) {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
-        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken);
+        const debtorName = getDebtor?.basicInformation?.fullName;
+        console.log("🚀 ~ addDebtorAccount ~ getDebtor:", getDebtor);
+        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtorName);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
         await this.debtorRepository.updateById(getDebtor._id, {
