@@ -297,7 +297,7 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         clientDetails.caseHistory = clientDetails?.caseHistory?.slice((page - 1) * limit, page * limit);
-        return [true, { ...clientDetails, debtorTotalCases: casesCount }];
+        return [true, { ...clientDetails, debtorTotalCases: casesCount, pipelineStatus: findCase.status }];
     }
     async searchListing(req, keyword) {
         let debtorsCount = 0;
