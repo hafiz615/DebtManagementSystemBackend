@@ -612,6 +612,7 @@ class CaseUtil {
                             outstandingDebt: {
                                 $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
+                            pipeLineStatus: '$status',
                         },
                     },
                     debtorDetails: { $first: '$debtorDetails' },

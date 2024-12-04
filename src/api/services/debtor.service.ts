@@ -247,7 +247,7 @@ class DebtorService {
       (page - 1) * limit,
       page * limit
     );
-    return [true, {...clientDetails, debtorTotalCases: casesCount, pipelineStatus: findCase.status}];
+    return [true, {...clientDetails, debtorTotalCases: casesCount}];
   }
 
   async searchListing(req: Request, keyword: string) {
