@@ -1753,10 +1753,22 @@ class CaseUtil {
     });
     let percentage_settlement_over_weekly_budget =
       result.data.settlementRange.percentage_settlement_over_weekly_budget;
-    // Extracting the first dynamic key inside settlement_range
-    const settlementRange = result.data.settlementRange.settlement_range;
-    // Get the first dynamic key
-    const dynamicKey = Object.keys(settlementRange)[0];
+    // // Extracting the first dynamic key inside settlement_range
+    // const settlementRange = result.data.settlementRange.settlement_range;
+    // console.log('settlementRange: ', settlementRange);
+    // // Get the first dynamic key
+    // const dynamicKey = Object.keys(settlementRange)[0];
+    // console.log('dynamicKey: ', dynamicKey);
+
+    const settlementRange = result.data?.settlementRange?.settlement_range;
+    console.log('settlementRange: ', settlementRange);
+    // Get all keys of settlementRange
+    const keys = Object.keys(settlementRange);
+
+    // Find the first key that is not 'Summary'
+    const dynamicKey = keys.find(key => key !== 'Summary');
+
+    console.log('dynamicKey: ', dynamicKey);
     // Dynamically extract the data for that key
     const creditorKey = settlementRange[dynamicKey];
 

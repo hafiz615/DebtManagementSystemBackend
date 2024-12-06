@@ -603,14 +603,15 @@ class CaseService {
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
-            if (caseTemp.justifications) {
-                const result = await this.strategyRepository.getOne({
-                    caseId: String(caseTemp._id),
-                    name: 'justifications',
-                });
-                if (result?.data?.justifications)
-                    return [true, result.data.justifications];
-            }
+            // Commenting this Code, so everytime, it will pass this to Ai to get the justification.
+            // if (caseTemp.justifications) {
+            //   const result = await this.strategyRepository.getOne<IStrategy>({
+            //     caseId: String(caseTemp._id),
+            //     name: 'justifications',
+            //   });
+            //   if (result?.data?.justifications)
+            //     return [true, result.data.justifications];
+            // }
             const models = await case_util_1.default.getJustificationModels();
             const justifications = await case_util_1.default.getSettlementJustifications(caseTemp, models);
             return justifications;
