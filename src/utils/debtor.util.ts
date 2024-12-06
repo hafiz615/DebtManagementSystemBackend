@@ -562,19 +562,26 @@ class DebtorUtil {
   getAccountDetails = (accountList: any) => {
     return accountList.reduce((acc, curr) => {
       if (!acc[curr.account]) {
-          acc[curr.account] = [];
+        acc[curr.account] = [];
       }
-      acc[curr.account].push({ startingBalance: curr.starting_balance, endingBalance: curr.ending_balance, statement_month: curr.statement_month, trueCredits: curr.true_credits, mcaWithholdPercent: curr.mca_withhold_percent, mcaNumber: curr["#_mca's"] });
-      return acc; 
-      }, {});
-  }
+      acc[curr.account].push({
+        startingBalance: curr.starting_balance,
+        endingBalance: curr.ending_balance,
+        statement_month: curr.statement_month,
+        trueCredits: curr.true_credits,
+        mcaWithholdPercent: curr.mca_withhold_percent,
+        mcaNumber: curr["#_mca's"],
+      });
+      return acc;
+    }, {});
+  };
 
-  getWithDrawalTotalForMonth = (withDrawals: any ) => {
-    const withDrawalTotalForMonth = {}
-    withDrawals.forEach(({ account, month, withdrawal_total }) => {
+  getWithDrawalTotalForMonth = (withDrawals: any) => {
+    const withDrawalTotalForMonth = {};
+    withDrawals.forEach(({account, month, withdrawal_total}) => {
       const cleanMonth = month.split(' ')[0];
       const withdrawalAmount = parseFloat(withdrawal_total) || 0;
-  
+
       if (!withDrawalTotalForMonth[account]) {
         withDrawalTotalForMonth[account] = {};
       }
@@ -586,20 +593,23 @@ class DebtorUtil {
       withDrawalTotalForMonth[account][cleanMonth] += withdrawalAmount;
     });
     return withDrawalTotalForMonth;
-  }
+  };
 
-  getUpdatedAccountDetails = (accountDetails: any, withDrawalTotalForMonth: any) => {
-    Object.keys(accountDetails).forEach((account) => {
-      accountDetails[account].forEach((statement) => {
-          const month = statement.statement_month;
-          const withdrawalTotal = withDrawalTotalForMonth[account]?.[month] || 0;
-          statement.withdrawalTotal = Math.abs(withdrawalTotal).toFixed(2); // Add as a positive value
+  getUpdatedAccountDetails = (
+    accountDetails: any,
+    withDrawalTotalForMonth: any
+  ) => {
+    Object.keys(accountDetails).forEach(account => {
+      accountDetails[account].forEach(statement => {
+        const month = statement.statement_month;
+        const withdrawalTotal = withDrawalTotalForMonth[account]?.[month] || 0;
+        statement.withdrawalTotal = Math.abs(withdrawalTotal).toFixed(2); // Add as a positive value
       });
     });
 
     return accountDetails;
-  }
-  
+  };
+
   async getCommissionAmount(payment: any) {
     if (!payment.caseId.debtor.weeklyCommission) return 0;
     if (
@@ -616,37 +626,61 @@ class DebtorUtil {
     return weeklyCommission - amountUp;
   }
 
-  getDailyCashFlowsLastDate = (data) => {
+  getDailyCashFlowsLastDate = data => {
     return data.reduce((latest, item) => {
       const current = new Date(item.date);
       return current > latest ? current : latest;
     }, new Date(data[0].date));
-  }
+  };
 
   getTrueCashFlows = (data, secondLastMonth) => {
     return data.filter(entry => {
       const entryDate = new Date(entry.date);
-      const isInLastTwoMonths =  entryDate > secondLastMonth;
-      const hasTrueCashFlow = Object.keys(entry).some(key => key.includes("true_cash_flow") && entry[key] !== "" && entry[key] !== ".00");
+      const isInLastTwoMonths = entryDate > secondLastMonth;
+      const hasTrueCashFlow = Object.keys(entry).some(
+        key =>
+          key.includes('true_cash_flow') &&
+          entry[key] !== '' &&
+          entry[key] !== '.00'
+      );
       return isInLastTwoMonths && hasTrueCashFlow;
-    })
-  }
-  
-  getFlowsDaysWeightage = (data) => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return data.reduce((acc, curr) => {
-      const dayOfWeek = new Date(curr.date).getDay();
-      acc[days[dayOfWeek]] += 1;
-      return acc;
-    }, {Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0})
-  }
+    });
+  };
 
-  getFlowsDaysPercentage = (data, total)=> {
+  getFlowsDaysWeightage = data => {
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    return data.reduce(
+      (acc, curr) => {
+        const dayOfWeek = new Date(curr.date).getDay();
+        acc[days[dayOfWeek]] += 1;
+        return acc;
+      },
+      {
+        Sunday: 0,
+        Monday: 0,
+        Tuesday: 0,
+        Wednesday: 0,
+        Thursday: 0,
+        Friday: 0,
+        Saturday: 0,
+      }
+    );
+  };
+
+  getFlowsDaysPercentage = (data, total) => {
     return Object.entries(data).map(([day, value]) => {
       const percentage = parseFloat(((Number(value) / total) * 100).toFixed(2));
-      return { day, percentage };
+      return {day, percentage};
     });
-  }
+  };
 }
 
 export default new DebtorUtil();
