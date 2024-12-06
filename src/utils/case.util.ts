@@ -1751,9 +1751,14 @@ class CaseUtil {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
-    console.log(result);
     let percentage_settlement_over_weekly_budget =
       result.data.settlementRange.percentage_settlement_over_weekly_budget;
+    // Extracting the first dynamic key inside settlement_range
+    const settlementRange = result.data.settlementRange.settlement_range;
+    // Get the first dynamic key
+    const dynamicKey = Object.keys(settlementRange)[0];
+    // Dynamically extract the data for that key
+    const creditorKey = settlementRange[dynamicKey];
     if (
       percentage_settlement_over_weekly_budget &&
       Object.keys(percentage_settlement_over_weekly_budget).length
@@ -1762,18 +1767,20 @@ class CaseUtil {
     } else {
       percentage_settlement_over_weekly_budget = {};
     }
-    console.log(
-      percentage_settlement_over_weekly_budget,
-      'percentage_settlement_over_weekly_budget'
-    );
+
     const url = `${
       process.env.baseUrlAI
     }get-settlement-justifications?debtor_id=${String(
       caseTemp.debtor
-    )}&enable_cache=${false}`;
+    )}&enable_cache=${false}&ucc_score=${
+      result.data.getScoresAIForAllCreditors.Scores['UCC Score']
+    }&default_risk_score=${
+      result.data.getScoresAIForAllCreditors.Scores['Default Risk Score']
+    }`;
+
     const data = {
       llm_options: {LLMs: models},
-      settlements: {creditors: {}},
+      settlements: {creditors: {[dynamicKey]: creditorKey}},
     };
     try {
       console.log('I am in get-settlement-justifications');
@@ -1785,6 +1792,7 @@ class CaseUtil {
           token: AIAuth.auth_token,
         },
       });
+      console.log('response:------------------- ', response.data);
       if (response.data && response.data.error) {
         this.caseRepository.updateById(caseTemp._id, {
           justifications: false,
@@ -2701,14 +2709,17 @@ class CaseUtil {
     return [true, createdCases];
   }
 
-  async createVault(paymentToken: string, debtorName: string): Promise<[boolean, string]> {
+  async createVault(
+    paymentToken: string,
+    debtorName: string
+  ): Promise<[boolean, string]> {
     const url = process.env.seamlesschexUrl;
     const params = {
       customer_vault: 'add_customer',
       security_key: process.env.seamlesschexSecurityKey,
       payment_token: paymentToken,
       first_name: debtorName,
-      last_name: debtorName
+      last_name: debtorName,
     };
     const response = await axiosInstance.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
@@ -2728,6 +2739,7 @@ class CaseUtil {
   async getSettlementRangeSummery(
     data: Record<string, Record<string, number[]>>
   ) {
+    console.log(' getSettlementRangeSummery ---- data: ', data);
     const result: Record<string, any> = {Summary: {}};
     if (data) {
       for (const key of Object.keys(data)) {
@@ -2750,6 +2762,15 @@ class CaseUtil {
             // Accumulate the values for summary
             result.Summary[recKey].min += min;
             result.Summary[recKey].max += max;
+            console.log('max: ', max);
+            console.log(
+              ' result.Summary[recKey].max += max: ',
+              (result.Summary[recKey].max += max)
+            );
+            console.log(
+              'result.Summary[recKey].max: ',
+              result.Summary[recKey].max
+            );
           }
         }
       }
