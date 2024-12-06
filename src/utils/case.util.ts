@@ -1759,6 +1759,16 @@ class CaseUtil {
     const dynamicKey = Object.keys(settlementRange)[0];
     // Dynamically extract the data for that key
     const creditorKey = settlementRange[dynamicKey];
+
+    const adjustedMin =
+      creditorKey['recommendation 1'].max < 0
+        ? -creditorKey['recommendation 1'].max -
+          creditorKey['recommendation 1'].max * 0.2
+        : creditorKey['recommendation 1'].max -
+          creditorKey['recommendation 1'].max * 0.2;
+
+    creditorKey['recommendation 1'].min = adjustedMin;
+
     if (
       percentage_settlement_over_weekly_budget &&
       Object.keys(percentage_settlement_over_weekly_budget).length
@@ -1875,11 +1885,19 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    const result = await this.strategyRepository.getOne<IStrategy>({
+      caseId: String(caseTemp._id),
+      name: 'strategy_one',
+    });
     const url = `${
       process.env.baseUrlAI
     }get-full-profit-justifications?debtor_id=${String(
       caseTemp.debtor
-    )}&enable_cache=${true}`;
+    )}&enable_cache=${true}&ucc_score=${
+      result.data.getScoresAIForAllCreditors.Scores['UCC Score']
+    }&default_risk_score=${Math.round(
+      result.data.getScoresAIForAllCreditors.Scores['Default Risk Score']
+    )}`;
     const data = {LLMs: models};
     try {
       console.log('I am in get-full-profit-justifications');

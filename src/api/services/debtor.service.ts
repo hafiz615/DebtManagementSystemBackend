@@ -36,7 +36,7 @@ import bulkUploadCronjob from '../../cron-job/bulkUpload.cronjob';
 import googleDriveUtil from '../../utils/googleDrive.util';
 import {cloneDeep} from 'lodash';
 import CaseService from './case.service';
-import { any } from 'joi';
+import {any} from 'joi';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -60,36 +60,55 @@ class DebtorService {
     this.userRepository = new UserRepository();
     this.caseService = new CaseService();
   }
-  
+
   getStatementsSummary = async (req: Request) => {
-    const debtor = await this.debtorRepository.getById<IDebtor>(
-      req.params.id
-    );
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     const token = await moneyThumbUtil.authenticateUser();
     const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
-    const accountDetails = debtorUtil.getAccountDetails(card['accountslist'].data);
-    const withDrawalTotalForMonth = debtorUtil.getWithDrawalTotalForMonth(card['monthlymca'].data)
-    const updatedAccountDetails = debtorUtil.getUpdatedAccountDetails(accountDetails, withDrawalTotalForMonth);
+    const accountDetails = debtorUtil.getAccountDetails(
+      card['accountslist'].data
+    );
+    const withDrawalTotalForMonth = debtorUtil.getWithDrawalTotalForMonth(
+      card['monthlymca'].data
+    );
+    const updatedAccountDetails = debtorUtil.getUpdatedAccountDetails(
+      accountDetails,
+      withDrawalTotalForMonth
+    );
     return updatedAccountDetails;
-  }
+  };
 
   getDailyCashFlows = async (req: Request) => {
-    const debtor = await this.debtorRepository.getById<IDebtor>(
-      req.params.id
-    );
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     const token = await moneyThumbUtil.authenticateUser();
     const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
-    const getDailyCashFlowsLastDate = debtorUtil.getDailyCashFlowsLastDate(card['dailycashflow'].data);
-    const secondLastMonth = new Date(getDailyCashFlowsLastDate.getFullYear(), getDailyCashFlowsLastDate.getMonth() - 1, 1);
-    const trueCashFlows = debtorUtil.getTrueCashFlows(card['dailycashflow'].data, secondLastMonth)
+    const getDailyCashFlowsLastDate = debtorUtil.getDailyCashFlowsLastDate(
+      card['dailycashflow'].data
+    );
+    const secondLastMonth = new Date(
+      getDailyCashFlowsLastDate.getFullYear(),
+      getDailyCashFlowsLastDate.getMonth() - 1,
+      1
+    );
+    const trueCashFlows = debtorUtil.getTrueCashFlows(
+      card['dailycashflow'].data,
+      secondLastMonth
+    );
     const flowsDaysWeightage = debtorUtil.getFlowsDaysWeightage(trueCashFlows);
-    const flowsDaysPercentage = debtorUtil.getFlowsDaysPercentage(flowsDaysWeightage, trueCashFlows.length)
+    const flowsDaysPercentage = debtorUtil.getFlowsDaysPercentage(
+      flowsDaysWeightage,
+      trueCashFlows.length
+    );
     flowsDaysPercentage.sort((a, b) => b.percentage - a.percentage);
     const highestPercentage = flowsDaysPercentage[0].percentage;
-    const highest = flowsDaysPercentage.filter(item => item.percentage === highestPercentage).map(item => ({ [item.day]: item.percentage }));
-    const others = flowsDaysPercentage.filter(item => item.percentage !== highestPercentage).map(item => ({ [item.day]: item.percentage }));
+    const highest = flowsDaysPercentage
+      .filter(item => item.percentage === highestPercentage)
+      .map(item => ({[item.day]: item.percentage}));
+    const others = flowsDaysPercentage
+      .filter(item => item.percentage !== highestPercentage)
+      .map(item => ({[item.day]: item.percentage}));
     return {highest: highest, others: others};
-  }
+  };
 
   async getDebtor(text: string): Promise<[boolean, IDebtor[] | string]> {
     const debtor = await this.debtorRepository.getAll<IDebtor>(
@@ -1029,7 +1048,7 @@ class DebtorService {
     );
     return justifications;
   };
-   
+
   fullProfitJustifications = async (req: Request) => {
     const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) {
@@ -1164,8 +1183,7 @@ class DebtorService {
     if (!getDebtor) {
       return [false, constants.notFoundMessage('debtor')];
     }
-    const debtorName = getDebtor?.basicInformation?.fullName
-    console.log("🚀 ~ addDebtorAccount ~ getDebtor:", getDebtor)
+    const debtorName = getDebtor?.basicInformation?.fullName;
     const customerVaultResponse = await caseUtil.createVault(
       req.body.paymentToken,
       debtorName
