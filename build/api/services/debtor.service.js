@@ -46,8 +46,12 @@ class DebtorService {
             const flowsDaysPercentage = debtor_util_1.default.getFlowsDaysPercentage(flowsDaysWeightage, trueCashFlows.length);
             flowsDaysPercentage.sort((a, b) => b.percentage - a.percentage);
             const highestPercentage = flowsDaysPercentage[0].percentage;
-            const highest = flowsDaysPercentage.filter(item => item.percentage === highestPercentage).map(item => ({ [item.day]: item.percentage }));
-            const others = flowsDaysPercentage.filter(item => item.percentage !== highestPercentage).map(item => ({ [item.day]: item.percentage }));
+            const highest = flowsDaysPercentage
+                .filter(item => item.percentage === highestPercentage)
+                .map(item => ({ [item.day]: item.percentage }));
+            const others = flowsDaysPercentage
+                .filter(item => item.percentage !== highestPercentage)
+                .map(item => ({ [item.day]: item.percentage }));
             return { highest: highest, others: others };
         };
         this.getAllDebtors = async (req) => {
@@ -971,7 +975,6 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
         const debtorName = getDebtor?.basicInformation?.fullName;
-        console.log("🚀 ~ addDebtorAccount ~ getDebtor:", getDebtor);
         const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtorName);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
