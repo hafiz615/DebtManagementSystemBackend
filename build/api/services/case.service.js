@@ -617,6 +617,7 @@ class CaseService {
             return justifications;
         };
         this.deleteFile = async (req) => {
+            // Fetch the case and populate debtor field
             let caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
@@ -624,24 +625,15 @@ class CaseService {
             // Extract the key from the request body
             const { key } = req.body;
             if (!key) {
-                return [false, "Key is not Found"];
+                return [false, "Key is required in the request body."];
             }
-            const getDebtor = await this.debtorRepository.getOne({
-                _id: caseTemp.debtor,
+            // Update the debtor's documents by removing the document with the matching key
+            const response = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+                $pull: { documents: { key } },
             });
-            if (!getDebtor) {
-                return [false, constants_util_1.default.notFoundMessage('debtor')];
-            }
-            // Filter the documents array to remove the document with the matching key
-            const updatedDocuments = getDebtor.documents.filter((doc) => doc.key !== key);
-            // If no document was removed, return a failure response
-            if (updatedDocuments.length === getDebtor.documents.length) {
+            if (response.documents.length === caseTemp.debtor.documents.length) {
                 return [false, `No document found with key: ${key}`];
             }
-            // Update the debtor's documents with the filtered array
-            getDebtor.documents = updatedDocuments;
-            // Update the debtor in the database
-            const response = await this.debtorRepository.updateById(getDebtor._id, { documents: updatedDocuments });
             return [true, `${key} is deleted successfully`];
         };
         this.caseRepository = new case_repository_1.CaseRepository();

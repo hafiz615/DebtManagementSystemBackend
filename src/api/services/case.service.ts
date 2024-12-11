@@ -1179,50 +1179,36 @@ class CaseService {
   };
 
   deleteFile = async (req: Request) => {
-   
+    // Fetch the case and populate debtor field
     let caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
       [{ path: 'debtor' }]
     );
-  
+    
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-
+  
     // Extract the key from the request body
     const { key } = req.body;
     if (!key) {
-      return [false, "Key is not Found"];
+      return [false, "Key is required in the request body."];
     }
-  
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      _id: caseTemp.debtor,
+
+    // Update the debtor's documents by removing the document with the matching key
+    const response : any = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+      $pull: { documents: { key } }, 
     });
-  
-    if (!getDebtor) {
-      return [false, constantsUtil.notFoundMessage('debtor')];
-    }
-    // Filter the documents array to remove the document with the matching key
-    const updatedDocuments = getDebtor.documents.filter(
-      (doc: any) => doc.key !== key
-    );
-  
-    // If no document was removed, return a failure response
-    if (updatedDocuments.length === getDebtor.documents.length) {
+
+    if (response.documents.length === caseTemp.debtor.documents.length) {
       return [false, `No document found with key: ${key}`];
     }
-  
-    // Update the debtor's documents with the filtered array
-    getDebtor.documents = updatedDocuments;
 
-    // Update the debtor in the database
-    const response = await this.debtorRepository.updateById(getDebtor._id, { documents: updatedDocuments });
-  
     return [true, `${key} is deleted successfully`];
   };
-  
+
 }
 
 export default CaseService;
