@@ -6,7 +6,7 @@ const router = Router();
 
 router.get('/getTasks', authorize.validateAuth, tasksController.getTasks);
 
-router.get('/getAllTasks', tasksController.getAllTasks);
+router.get('/getAllTasks', authorize.validateAuth, tasksController.getAllTasks);
 
 router.post(
   '/addTask',
