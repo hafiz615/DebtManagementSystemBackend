@@ -155,4 +155,9 @@ export abstract class BaseRepository<D> implements IBaseRepository<D> {
     const response = await this.model.aggregate(aggregate, options).exec();
     return response as T;
   }
+  async findAll<T>(
+    filter?: FilterQuery<T>,
+  ): Promise<T[] | []> {
+    return await this.model.find(filter).exec() as T[];
+  }
 }

@@ -63,4 +63,6 @@ export default {
   alreadyExistsMessage: (name: string): string => `${name} already exists!`,
   successFoundMessage: (name: string): string =>
     `${name} returned successfully!`,
+  failureFetchMessage: (entity: string) => `Failed to fetch ${entity}.`,
+  unexpectedErrorMessage: (action: string) => `An unexpected error occurred while ${action}.`,
 };
