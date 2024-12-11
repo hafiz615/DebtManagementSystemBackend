@@ -134,7 +134,7 @@ router.get(
   caseController.getSettlementJustifications
 );
 
-router.get(
+router.delete(
   '/getCaseById/:id/deleteFile',
   authorize.validateAuth,
   caseController.deleteFile
