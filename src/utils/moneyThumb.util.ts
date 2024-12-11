@@ -158,31 +158,28 @@ class MoneyThumbUtil {
 
   async saveData(appid: number, scoreCard: any, debtor: IDebtor) {
     try {
-      let weeklyProfit = 0;
+      let profit = 0;
       let trueProfit = 0,
-        weeklyTrueRevenue = 0;
+        trueRevenue = 0;
       const filter = {appid: appid};
       if (scoreCard['metrics']['metricdata']) {
         const metricData = scoreCard['metrics']['metricdata'];
-        // if (metricData?.length) {
-        //   const profitArray = metricData.find(row => row[0] === 'Profit');
-        //   const trueRevenueArray = metricData.find(
-        //     row => row[0] === 'True Revenue'
-        //   );
-        //   if (profitArray.length && trueRevenueArray.length) {
-        //     weeklyProfit = (parseFloat(profitArray[1]) / 22) * 5;
-        //     weeklyTrueRevenue = (parseFloat(trueRevenueArray[1]) / 22) * 5;
-        //   }
-        // }
-        const weeklyProfitAndTrueRevenue =
-          await this.getweeklyProfitAndTrueRevenue(metricData);
-        weeklyProfit = weeklyProfitAndTrueRevenue.profit;
-        weeklyTrueRevenue = weeklyProfitAndTrueRevenue.trueRevenue;
+        // # calculation weekly
+        // const weeklyProfitAndTrueRevenue =
+        //   await this.getweeklyProfitAndTrueRevenue(metricData);
+        // weeklyProfit = weeklyProfitAndTrueRevenue.profit;
+        // weeklyTrueRevenue = weeklyProfitAndTrueRevenue.trueRevenue;
+
+        // # calculation monthly
+        const monthlyProfitAndTrueRevenue =
+          await this.getMonthlyProfitAndTrueRevenue(metricData);
+        profit = monthlyProfitAndTrueRevenue.profit;
+        trueRevenue = monthlyProfitAndTrueRevenue.trueRevenue;
       }
       let trueProfitPer = 0;
       if (scoreCard['mcacompanies']) {
         const mcaCompanies = scoreCard['mcacompanies'];
-        let totalWithdrawl = await this.getTotalWeeklyBudget(
+        let totalWithdrawl = await this.getTotalMonthlyBudget(
           mcaCompanies,
           debtor
         );
@@ -190,8 +187,8 @@ class MoneyThumbUtil {
           filter['weeklyBudgetStrategy1'] = totalWithdrawl;
         }
         console.log(totalWithdrawl, 'totalWithdrawl');
-        console.log(weeklyProfit, 'weeklyProfit');
-        trueProfit = totalWithdrawl + weeklyProfit;
+        console.log(profit, 'monthly profit');
+        trueProfit = totalWithdrawl + profit;
         if (trueProfit > 0) {
           filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
           trueProfitPer = trueProfit * 0.67;
@@ -209,19 +206,19 @@ class MoneyThumbUtil {
         }
       }
       filter['strategy3MaxProfit'] = 0;
-      let weeklyTrueCredit = 0;
+      let trueCredit = 0;
       const accounts = scoreCard['accountslist'];
       if (accounts.data.length) {
-        weeklyTrueCredit = await this.getWeeklyTrueCredit(accounts);
+        trueCredit = await this.getMonthlyTrueCredit(accounts);
       }
-      if (weeklyTrueCredit && trueProfitPer) {
-        console.log(weeklyTrueCredit, 'weeklyTrueCredit)');
+      if (trueCredit && trueProfitPer) {
+        console.log(trueCredit, 'weeklyTrueCredit)');
         console.log(trueProfitPer, 'trueProfitPer)');
         console.log(
-          trueProfitPer / weeklyTrueCredit,
+          trueProfitPer / trueCredit,
           '(trueProfitPer / weeklyTrueCredit)'
         );
-        const profitability = (trueProfitPer / weeklyTrueCredit) * 100;
+        const profitability = (trueProfitPer / trueCredit) * 100;
         console.log(profitability, 'profitability');
         filter['strategy3MaxProfit'] = Math.round(profitability * 100) / 100;
         if (!debtor.weeklyBudgetStrategy3)
@@ -254,7 +251,6 @@ class MoneyThumbUtil {
 
   async getTotalWeeklyBudget(mcaCompanies: any, debtor: IDebtor) {
     const data = mcaCompanies.data;
-    const lastLenderOccurrences = {};
     let weeklyBudget = 0;
     let totalWithdrawl = 0;
     let creditors = await debtorUtil.getCreditorsMapping(debtor);
@@ -288,17 +284,29 @@ class MoneyThumbUtil {
               weeklyBudget = withdrawal_total / withdrawal_count;
             break;
         }
-        // lastLenderOccurrences[data[i - 1].lender] = {
-        //   withdrawal_total: Math.round(weeklyBudget * 100) / 100,
-        // };
         console.log(weeklyBudget, 'uyiuyuyiui');
         totalWithdrawl += weeklyBudget;
       }
     }
-    // for (let lender of Object.values(lastLenderOccurrences as any)) {
-    //   const temp: any = lender;
-    //   totalWithdrawl += temp.withdrawal_total;
-    // }
+    return Math.abs(Math.round(totalWithdrawl * 100) / 100);
+  }
+
+  async getTotalMonthlyBudget(mcaCompanies: any, debtor: IDebtor) {
+    const data = mcaCompanies.data;
+    let totalWithdrawl = 0;
+    let creditors = await debtorUtil.getCreditorsMapping(debtor);
+    const creditorsAccTitleArray = creditors.map(creditor => {
+      return creditor.creditorAccountTitle;
+    });
+    console.log(creditorsAccTitleArray, 'creditorsAccTitleArray');
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].month === 'Totals') {
+        if (!creditorsAccTitleArray.includes(data[i - 1].lender)) continue;
+        const withdrawal_total = parseFloat(data[i - 1].withdrawal_total);
+        totalWithdrawl += withdrawal_total;
+      }
+    }
+    console.log(totalWithdrawl, 'totalWithdrawl  oko');
     return Math.abs(Math.round(totalWithdrawl * 100) / 100);
   }
 
@@ -379,23 +387,37 @@ class MoneyThumbUtil {
     return Math.round(weekly * 100) / 100;
   }
 
+  async getMonthlyTrueCredit(accounts: any) {
+    const len = accounts.data.length;
+    const lastMonth = accounts.data[len - 1]['statement_month'];
+    let totalCreditMonth = 0;
+    for (const account of accounts.data) {
+      if (account['statement_month'] === lastMonth) {
+        totalCreditMonth += parseFloat(account['true_credits']);
+      }
+    }
+    console.log(totalCreditMonth, 'totalCreditMonth');
+
+    return Math.round(totalCreditMonth * 100) / 100;
+  }
+
   async getSettlementValues(
     debtor: IDebtor,
     creditors: any,
     scoreCard: any,
     caseId: string
   ) {
-    const bankStatementWeeklyBudget = await this.getTotalWeeklyBudget(
+    const bankStatementBudget = await this.getTotalMonthlyBudget(
       scoreCard['mcacompanies'],
       debtor
     );
-    console.log(bankStatementWeeklyBudget, 'bankStatementWeeklyBudget');
+    console.log(bankStatementBudget, 'bankStatementWeeklyBudget');
     const negotiatorWeeklyBudget = debtor.weeklyBudgetStrategy1;
     const settlementRangeBank = await this.getSettlementValuesHelper(
       creditors,
       scoreCard,
       caseId,
-      bankStatementWeeklyBudget
+      bankStatementBudget
     );
     const settlementRangeNegotiator = await this.getSettlementValuesHelper(
       creditors,
