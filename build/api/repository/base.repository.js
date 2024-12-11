@@ -90,6 +90,9 @@ class BaseRepository {
         const response = await this.model.aggregate(aggregate, options).exec();
         return response;
     }
+    async findAll(filter) {
+        return await this.model.find(filter).exec();
+    }
 }
 exports.BaseRepository = BaseRepository;
 //# sourceMappingURL=base.repository.js.map

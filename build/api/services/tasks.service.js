@@ -102,6 +102,19 @@ class TasksService {
         await case_util_1.default.addInHistory(history, task.caseId);
         return [true, task];
     }
+    async getAllTasks() {
+        try {
+            const tasks = await this.tasksRepository.findAll({ isDeleted: false });
+            if (!tasks || tasks.length === 0) {
+                return [false, constants_util_1.default.failureFetchMessage('tasks')];
+            }
+            return [true, tasks];
+        }
+        catch (error) {
+            console.error('Error fetching tasks:', error);
+            return [false, constants_util_1.default.unexpectedErrorMessage('fetching tasks')];
+        }
+    }
 }
 exports.default = TasksService;
 //# sourceMappingURL=tasks.service.js.map

@@ -55,5 +55,7 @@ exports.default = {
     notFoundMessage: (name) => `Unable to find ${name}!`,
     alreadyExistsMessage: (name) => `${name} already exists!`,
     successFoundMessage: (name) => `${name} returned successfully!`,
+    failureFetchMessage: (entity) => `Failed to fetch ${entity}.`,
+    unexpectedErrorMessage: (action) => `An unexpected error occurred while ${action}.`,
 };
 //# sourceMappingURL=constants.util.js.map
