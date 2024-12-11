@@ -114,6 +114,22 @@ class TasksService {
     await caseUtil.addInHistory(history, task.caseId);
     return [true, task];
   }
+
+  async getAllTasks(): Promise<[boolean, ITasks[] | string]> {
+    try {
+      const tasks = await this.tasksRepository.findAll<ITasks>({ isDeleted: false });
+  
+      if (!tasks || tasks.length === 0) {
+        return [false, constantsUtil.failureFetchMessage('tasks')];
+      }
+
+      return [true, tasks];
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      return [false, constantsUtil.unexpectedErrorMessage('fetching tasks')];
+    }
+  }
+  
 }
 
 export default TasksService;

@@ -6,6 +6,8 @@ const router = Router();
 
 router.get('/getTasks', authorize.validateAuth, tasksController.getTasks);
 
+router.get('/getAllTasks', tasksController.getAllTasks);
+
 router.post(
   '/addTask',
   authorize.validateAuth,
