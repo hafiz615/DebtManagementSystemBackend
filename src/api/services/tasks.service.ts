@@ -117,20 +117,34 @@ class TasksService {
     return [true, task];
   }
 
-  async getAllTasks(): Promise<[boolean, ITasks[] | string]> {
-    try {
+  async getAllTasks(): Promise<[boolean, Record<string, ITasks[]> | string]> {    try {
       const tasks = await this.tasksRepository.findAll<ITasks>({ isDeleted: false });
   
       if (!tasks || tasks.length === 0) {
         return [false, constantsUtil.failureFetchMessage('tasks')];
       }
 
-      return [true, tasks];
+      const tasksMap = new Map<string, ITasks[]>();
+
+      for (const task of tasks) {
+        const assignee = task.assignee || 'Unassigned';
+        if (!tasksMap.has(assignee)) {
+          tasksMap.set(assignee, []);
+        }
+        tasksMap.get(assignee)?.push(task);
+      }
+  
+      // Convert Map to Record<string, ITasks[]>
+      const tasksByAssignee = Object.fromEntries(tasksMap);
+  
+      return [true, tasksByAssignee];
+
     } catch (error) {
-      console.error('Error fetching tasks:', error);
-      return [false, constantsUtil.unexpectedErrorMessage('fetching tasks')];
+      console.error(error);
+      return [false, constantsUtil.failureFetchMessage('tasks')];
     }
   }
+    
   
 }
 
