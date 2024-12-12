@@ -1523,7 +1523,8 @@ class DebtorService {
       dueDate: req.body.transactionDate, 
       amount: req.body.amount,
       debtorTransId: req.body.referenceId,
-      transactionType: req.body.transactionType
+      transactionType: req.body.transactionType,
+      updatedAt:commonUtil.getCurrentDate()
 
     })
     if(updatedPayment){

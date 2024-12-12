@@ -1243,7 +1243,8 @@ class DebtorService {
             dueDate: req.body.transactionDate,
             amount: req.body.amount,
             debtorTransId: req.body.referenceId,
-            transactionType: req.body.transactionType
+            transactionType: req.body.transactionType,
+            updatedAt: common_util_1.default.getCurrentDate()
         });
         if (updatedPayment) {
             return [true, constants_util_1.default.successAddMessage('Manual Payment')];

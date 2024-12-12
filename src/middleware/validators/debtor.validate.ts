@@ -339,7 +339,7 @@ class DebtorRequests {
       caseId: Joi.string().required(),
       transactionId: Joi.string().required(),
       amount: Joi.number().required(),
-      transactionDate: Joi.string().required(),
+      transactionDate: Joi.date().required(),
       transactionType: Joi.string().required(),
       referenceId: Joi.string().required(),
     });
