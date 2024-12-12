@@ -1177,6 +1177,38 @@ class CaseService {
     );
     return justifications;
   };
+
+  deleteFile = async (req: Request) => {
+    // Fetch the case and populate debtor field
+    let caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      [{ path: 'debtor' }]
+    );
+    
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+  
+    // Extract the key from the request body
+    const { key } = req.body;
+    if (!key) {
+      return [false, "Key is required in the request body."];
+    }
+
+    // Update the debtor's documents by removing the document with the matching key
+    const response : any = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+      $pull: { documents: { key } }, 
+    });
+
+    if (response.documents.length === caseTemp.debtor.documents.length) {
+      return [false, `No document found with key: ${key}`];
+    }
+
+    return [true, `${key} is deleted successfully`];
+  };
+
 }
 
 export default CaseService;

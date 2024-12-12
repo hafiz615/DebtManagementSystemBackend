@@ -59,4 +59,5 @@ export interface IBaseRepository<D> {
     aggregate?: PipelineStage[],
     options?: AggregateOptions
   ): Promise<T>;
+  findAll<T>(filter?: FilterQuery<T>): Promise<T[] | []>;
 }

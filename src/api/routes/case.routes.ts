@@ -133,4 +133,11 @@ router.get(
   authorize.validateAuth,
   caseController.getSettlementJustifications
 );
+
+router.delete(
+  '/getCaseById/:id/deleteFile',
+  authorize.validateAuth,
+  caseController.deleteFile
+);
+
 export default router;
