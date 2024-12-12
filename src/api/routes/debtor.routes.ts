@@ -147,4 +147,10 @@ router.post(
   authorize.validateAuth,
   debtorController.addPaymentPlan
 );
+router.post(
+  '/addManualPayment',
+  authorize.validateAuth,
+  debtor.validateManualPayment,
+  debtorController.addManualPayment
+);
 export default router;
