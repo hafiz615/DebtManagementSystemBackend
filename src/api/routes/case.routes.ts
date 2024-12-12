@@ -140,4 +140,11 @@ router.delete(
   caseController.deleteFile
 );
 
+router.post(
+  '/updateContractDetails/:id',
+  authorize.validateAuth,
+  caseValidate.updateContractDetails,
+  caseController.updateContractDetails
+);
+
 export default router;

@@ -626,7 +626,7 @@ class CaseService {
             // Extract the key from the request body
             const { key } = req.body;
             if (!key) {
-                return [false, "Key is required in the request body."];
+                return [false, 'Key is required in the request body.'];
             }
             // Update the debtor's documents by removing the document with the matching key
             const response = await this.debtorRepository.updateById(caseTemp.debtor._id, {
@@ -808,6 +808,17 @@ class CaseService {
             }
         }
         return [true, amount];
+    }
+    async updateContractDetails(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updateCase = await this.caseRepository.updateById(req.params.id, { $set: { [`contractDetails.${req.body.label}`]: req.body.value } });
+        if (!updateCase) {
+            return [false, constants_util_1.default.failureUpdateMessage('contract details')];
+        }
+        return [true, updateCase];
     }
 }
 exports.default = CaseService;

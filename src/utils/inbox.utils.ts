@@ -46,19 +46,22 @@ class InboxUtil {
     const fromArray: string[] = [];
 
     for (let message of inbox) {
-      if (message.from && fromArray.indexOf(message.from) === -1) {
-        fromArray.push(message.from);
+      if (
+        message.creditorCompanyName &&
+        fromArray.indexOf(message.creditorCompanyName) === -1
+      ) {
+        fromArray.push(message.creditorCompanyName);
       }
     }
 
     let fromObj: {[key: string]: any[]} = {};
 
     for (let message of inbox) {
-      if (message.from) {
-        if (!fromObj[message.from]) {
-          fromObj[message.from] = [];
+      if (message.creditorCompanyName) {
+        if (!fromObj[message.creditorCompanyName]) {
+          fromObj[message.creditorCompanyName] = [];
         }
-        fromObj[message.from].push(message);
+        fromObj[message.creditorCompanyName].push(message);
       }
     }
 

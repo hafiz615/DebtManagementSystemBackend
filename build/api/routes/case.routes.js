@@ -38,5 +38,6 @@ router.post('/saveJustification', authorize_middleware_1.default.validateAuth, c
 router.get('/calculateIntervalsAmount/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.calculateIntervalsAmount);
 router.get('/getSettlementJustifications/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getSettlementJustifications);
 router.delete('/deleteFile/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteFile);
+router.post('/updateContractDetails/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateContractDetails, case_controller_1.default.updateContractDetails);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map
