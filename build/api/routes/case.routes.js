@@ -37,6 +37,7 @@ router.get('/caseHistory/:id', authorize_middleware_1.default.validateAuth, case
 router.post('/saveJustification', authorize_middleware_1.default.validateAuth, case_validate_1.default.saveJustification, case_controller_1.default.saveJustification);
 router.get('/calculateIntervalsAmount/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.calculateIntervalsAmount);
 router.get('/getSettlementJustifications/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getSettlementJustifications);
-router.delete('/getCaseById/:id/deleteFile', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteFile);
+router.delete('/deleteFile/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteFile);
+router.delete('/deleteCreditor/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteCreditor);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map
