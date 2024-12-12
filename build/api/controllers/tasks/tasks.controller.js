@@ -111,6 +111,22 @@ class SettingsController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.getAllTasks = async (req, res) => {
+            try {
+                const tasks = await this.tasksService.getAllTasks();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: tasks[1],
+                    message: constants_util_1.default.successDeleteMessage('Task'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.tasksService = new tasks_service_1.default();
     }
 }

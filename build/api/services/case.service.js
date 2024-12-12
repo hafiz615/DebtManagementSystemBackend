@@ -616,6 +616,26 @@ class CaseService {
             const justifications = await case_util_1.default.getSettlementJustifications(caseTemp, models);
             return justifications;
         };
+        this.deleteFile = async (req) => {
+            // Fetch the case and populate debtor field
+            let caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            // Extract the key from the request body
+            const { key } = req.body;
+            if (!key) {
+                return [false, "Key is required in the request body."];
+            }
+            // Update the debtor's documents by removing the document with the matching key
+            const response = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+                $pull: { documents: { key } },
+            });
+            if (response.documents.length === caseTemp.debtor.documents.length) {
+                return [false, `No document found with key: ${key}`];
+            }
+            return [true, `${key} is deleted successfully`];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
