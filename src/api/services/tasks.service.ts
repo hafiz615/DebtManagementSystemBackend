@@ -8,6 +8,7 @@ import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
 import {CaseRepository} from '../repository/case/case.repository';
 import commonUtil from '../../utils/common.util';
+import emailUtil from '../../utils/email.util';
 
 class TasksService {
   private tasksRepository: TasksRepository;
@@ -66,6 +67,7 @@ class TasksService {
     };
     if (vaildatedTask.notes) history['Notes'] = vaildatedTask.notes;
     await caseUtil.addInHistory(history, caseId);
+    emailUtil.sendEmailOrSmsByEvent('case_task_added', caseId, null, reqTemp.id)
     return [true, task];
   }
 
