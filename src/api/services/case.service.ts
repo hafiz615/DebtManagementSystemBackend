@@ -1209,6 +1209,29 @@ class CaseService {
     return [true, `${key} is deleted successfully`];
   };
 
+  deleteCreditor = async (req: Request) => {
+
+    let caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id 
+    );
+    
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      { isDeleted: true }
+    );
+
+    if(caseTemp.isDeleted === updateCase.isDeleted){
+      return[false, constantsUtil.failureDeleteMessage('Creditor')];
+    }
+
+    return[true, constantsUtil.successDeleteMessage('Creditor')];
+
+  };
+
 }
 
 export default CaseService;
