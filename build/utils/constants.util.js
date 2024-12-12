@@ -27,6 +27,8 @@ exports.default = {
         EXCEPTION: 'We ran into an error. Please try again later',
         UPLOAD_FILES_FAILURE: 'Unable to upload files',
         UPLOAD_FILES_SUCCESS: 'Files uploaded successfully',
+        DELETE_FILES_FAILURE: 'Unable to delete files',
+        DELETE_FILES_SUCCESS: 'Files Delete successfully',
         ATTATCH_FILE_ERROR: 'Please attatch atleast one file to upload',
         INVALID_LINK: 'Invitation link may be expired or is invalid',
         VALID_LINK: 'Invitation link verified successfully',
