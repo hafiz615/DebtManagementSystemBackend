@@ -625,7 +625,7 @@ class CaseService {
             // Extract the key from the request body
             const { key } = req.body;
             if (!key) {
-                return [false, "Key is required in the request body."];
+                return [false, 'Key is required in the request body.'];
             }
             // Update the debtor's documents by removing the document with the matching key
             const response = await this.debtorRepository.updateById(caseTemp.debtor._id, {
@@ -642,7 +642,7 @@ class CaseService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
             const updateCase = await this.caseRepository.updateById(req.params.id, { isDeleted: true });
-            if (caseTemp.isDeleted === updateCase.isDeleted) {
+            if (!updateCase.isDeleted) {
                 return [false, constants_util_1.default.failureDeleteMessage('Creditor')];
             }
             return [true, constants_util_1.default.successDeleteMessage('Creditor')];
