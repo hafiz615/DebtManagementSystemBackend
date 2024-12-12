@@ -135,9 +135,15 @@ router.get(
 );
 
 router.delete(
-  '/getCaseById/:id/deleteFile',
+  '/deleteFile/:id',
   authorize.validateAuth,
   caseController.deleteFile
+);
+
+router.delete(
+  '/deleteCreditor/:id',
+  authorize.validateAuth,
+  caseController.deleteCreditor
 );
 
 export default router;

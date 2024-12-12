@@ -1184,23 +1184,26 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      [{ path: 'debtor' }]
+      [{path: 'debtor'}]
     );
-    
+
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-  
+
     // Extract the key from the request body
-    const { key } = req.body;
+    const {key} = req.body;
     if (!key) {
-      return [false, "Key is required in the request body."];
+      return [false, 'Key is required in the request body.'];
     }
 
     // Update the debtor's documents by removing the document with the matching key
-    const response : any = await this.debtorRepository.updateById(caseTemp.debtor._id, {
-      $pull: { documents: { key } }, 
-    });
+    const response: any = await this.debtorRepository.updateById(
+      caseTemp.debtor._id,
+      {
+        $pull: {documents: {key}},
+      }
+    );
 
     if (response.documents.length === caseTemp.debtor.documents.length) {
       return [false, `No document found with key: ${key}`];
@@ -1209,6 +1212,24 @@ class CaseService {
     return [true, `${key} is deleted successfully`];
   };
 
+  deleteCreditor = async (req: Request) => {
+    let caseTemp: any = await this.caseRepository.getById<ICase>(req.params.id);
+
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {isDeleted: true}
+    );
+
+    if (!updateCase.isDeleted) {
+      return [false, constantsUtil.failureDeleteMessage('Creditor')];
+    }
+
+    return [true, constantsUtil.successDeleteMessage('Creditor')];
+  };
 }
 
 export default CaseService;
