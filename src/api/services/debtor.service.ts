@@ -37,7 +37,7 @@ import googleDriveUtil from '../../utils/googleDrive.util';
 import {cloneDeep} from 'lodash';
 import CaseService from './case.service';
 import {any} from 'joi';
-import { Payment } from '../../database/repomodels/payment.repomodel';
+import {Payment} from '../../database/repomodels/payment.repomodel';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -1505,34 +1505,36 @@ class DebtorService {
   }
 
   async addManualPayment(req: Request) {
-    let debtorCase = await this.caseRepository.getById(req.body.caseId)
+    let debtorCase = await this.caseRepository.getById(req.body.caseId);
     if (!debtorCase) {
       return [false, constants.notFoundMessage('Case')];
     }
-    let payment:Payment = await this.paymentRepository.getById(req.body.transactionId)
+    let payment: Payment = await this.paymentRepository.getById(
+      req.body.transactionId
+    );
     if (!payment) {
       return [false, constants.notFoundMessage('Payment')];
     }
-    if (payment?.authorized === "success" && payment.captured === "success") {
+    if (payment?.authorized === 'Success' && payment.captured === 'Success') {
       return [false, constants.alreadyExistsMessage('Payment')];
     }
 
-    let updatedPayment = await this.paymentRepository.updateById(req.body.transactionId, {
-      authorized: "success", // Make is success so it can be picked up by CRON Job
-      captured: "success", // Make is success so it can be picked up by CRON Job
-      dueDate: req.body.transactionDate, 
-      amount: req.body.amount,
-      debtorTransId: req.body.referenceId,
-      transactionType: req.body.transactionType,
-      updatedAt:commonUtil.getCurrentDate()
-
-    })
-    if(updatedPayment){
-      return [true, constants.successAddMessage('Manual Payment')];
-    }
-    else{
+    let updatedPayment = await this.paymentRepository.updateById(
+      req.body.transactionId,
+      {
+        authorized: 'Success', // Make is success so it can be picked up by CRON Job
+        captured: 'Success', // Make is success so it can be picked up by CRON Job
+        dueDate: req.body.transactionDate,
+        amount: req.body.amount,
+        debtorTransId: req.body.referenceId,
+        transactionType: req.body.transactionType,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    if (!updatedPayment) {
       return [false, constants.failureAddMessage('Manual Payment')];
     }
+    return [true, constants.successAddMessage('Manual Payment')];
   }
 }
 
