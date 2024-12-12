@@ -106,7 +106,9 @@ class TasksService {
     }
     async getAllTasks() {
         try {
-            const tasks = await this.tasksRepository.findAll({ isDeleted: false });
+            const tasks = await this.tasksRepository.findAll({
+                isDeleted: false,
+            });
             if (!tasks || tasks.length === 0) {
                 return [false, constants_util_1.default.failureFetchMessage('tasks')];
             }
@@ -118,7 +120,6 @@ class TasksService {
                 }
                 tasksMap.get(assignee)?.push(task);
             }
-            // Convert Map to Record<string, ITasks[]>
             const tasksByAssignee = Object.fromEntries(tasksMap);
             return [true, tasksByAssignee];
         }
