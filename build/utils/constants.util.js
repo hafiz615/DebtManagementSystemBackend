@@ -59,5 +59,6 @@ exports.default = {
     successFoundMessage: (name) => `${name} returned successfully!`,
     failureFetchMessage: (entity) => `Failed to fetch ${entity}.`,
     unexpectedErrorMessage: (action) => `An unexpected error occurred while ${action}.`,
+    paymentAlreadyExistsMessage: (name) => `payment is already captured for this transaction`,
 };
 //# sourceMappingURL=constants.util.js.map
