@@ -1225,6 +1225,32 @@ class DebtorService {
         case_util_1.default.createPayment(req.body);
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
+    async addManualPayment(req) {
+        let debtorCase = await this.caseRepository.getById(req.body.caseId);
+        if (!debtorCase) {
+            return [false, constants_util_1.default.notFoundMessage('Case')];
+        }
+        let payment = await this.paymentRepository.getById(req.body.transactionId);
+        if (!payment) {
+            return [false, constants_util_1.default.notFoundMessage('Payment')];
+        }
+        if (payment?.authorized === 'Success' && payment.captured === 'Success') {
+            return [false, constants_util_1.default.alreadyExistsMessage('Payment')];
+        }
+        let updatedPayment = await this.paymentRepository.updateById(req.body.transactionId, {
+            authorized: 'Success', // Make is success so it can be picked up by CRON Job
+            captured: 'Success', // Make is success so it can be picked up by CRON Job
+            dueDate: req.body.transactionDate,
+            amount: req.body.amount,
+            debtorTransId: req.body.referenceId,
+            transactionType: req.body.transactionType,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        if (!updatedPayment) {
+            return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
+        }
+        return [true, constants_util_1.default.successAddMessage('Manual Payment')];
+    }
 }
 exports.default = DebtorService;
 //# sourceMappingURL=debtor.service.js.map

@@ -95,6 +95,9 @@ const PaymentModel: Schema = new Schema({
     type: Date,
     required: true,
   },
+  transactionType: {
+    type: String,
+  }
 });
 
 PaymentModel.pre('save', async function (next) {

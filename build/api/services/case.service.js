@@ -637,6 +637,17 @@ class CaseService {
             }
             return [true, `${key} is deleted successfully`];
         };
+        this.deleteCreditor = async (req) => {
+            let caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            const updateCase = await this.caseRepository.updateById(req.params.id, { isDeleted: true });
+            if (!updateCase.isDeleted) {
+                return [false, constants_util_1.default.failureDeleteMessage('Creditor')];
+            }
+            return [true, constants_util_1.default.successDeleteMessage('Creditor')];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();

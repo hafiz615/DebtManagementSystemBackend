@@ -146,5 +146,10 @@ router.post(
   caseValidate.updateContractDetails,
   caseController.updateContractDetails
 );
+router.delete(
+  '/deleteCreditor/:id',
+  authorize.validateAuth,
+  caseController.deleteCreditor
+);
 
 export default router;
