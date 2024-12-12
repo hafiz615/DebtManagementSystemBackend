@@ -766,12 +766,6 @@ class CaseService {
       result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
-      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
-      //   creditors,
-      //   settlementRange
-      // );
-      // data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
       if (typeof settlementRange === 'string') {
@@ -782,8 +776,6 @@ class CaseService {
           caseId
         );
       }
-      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      // data['settlementRange'] = settlementRange;
     }
     await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
@@ -792,6 +784,18 @@ class CaseService {
       caseId
     );
     data['settlementRange'] = settlementRange;
+    const values = await moneyThumbUtil.getMonthlyProfitValues(
+      moneyThumb.scoreCard,
+      debtor
+    );
+    data['averageMonthlyProfitExcludingPayments'] =
+      values.averageMonthlyProfitExcludingPayments;
+    data['averageMonthlyProfitIncludingPayments'] =
+      values.averageMonthlyProfitIncludingPayments;
+    data['currentMonthlyProfitExcludingPayments'] =
+      values.currentMonthlyProfitExcludingPayments;
+    data['currentMonthlyProfitIncludingPayments'] =
+      values.currentMonthlyProfitIncludingPayments;
     return [true, data];
   };
 
@@ -1212,6 +1216,20 @@ class CaseService {
     return [true, `${key} is deleted successfully`];
   };
 
+  async updateContractDetails(req: Request) {
+    const caseTemp = await this.caseRepository.getById(req.params.id);
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {$set: {[`contractDetails.${req.body.label}`]: req.body.value}}
+    );
+    if (!updateCase) {
+      return [false, constantsUtil.failureUpdateMessage('contract details')];
+    }
+    return [true, updateCase];
+  }
   deleteCreditor = async (req: Request) => {
     let caseTemp: any = await this.caseRepository.getById<ICase>(req.params.id);
 

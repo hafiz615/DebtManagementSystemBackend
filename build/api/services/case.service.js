@@ -451,24 +451,25 @@ class CaseService {
                 caseTemp.strategyOne_3 &&
                 result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
-                // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-                // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
-                //   creditors,
-                //   settlementRange
-                // );
-                // data['settlementRange'] = settlementRange;
             }
             else {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
                 if (typeof settlementRange === 'string') {
                     settlementRange = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                 }
-                // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-                // data['settlementRange'] = settlementRange;
             }
             await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
             await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
             data['settlementRange'] = settlementRange;
+            const values = await moneyThumb_util_1.default.getMonthlyProfitValues(moneyThumb.scoreCard, debtor);
+            data['averageMonthlyProfitExcludingPayments'] =
+                values.averageMonthlyProfitExcludingPayments;
+            data['averageMonthlyProfitIncludingPayments'] =
+                values.averageMonthlyProfitIncludingPayments;
+            data['currentMonthlyProfitExcludingPayments'] =
+                values.currentMonthlyProfitExcludingPayments;
+            data['currentMonthlyProfitIncludingPayments'] =
+                values.currentMonthlyProfitIncludingPayments;
             return [true, data];
         };
         this.addNotes = async (req) => {
@@ -818,6 +819,17 @@ class CaseService {
             }
         }
         return [true, amount];
+    }
+    async updateContractDetails(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updateCase = await this.caseRepository.updateById(req.params.id, { $set: { [`contractDetails.${req.body.label}`]: req.body.value } });
+        if (!updateCase) {
+            return [false, constants_util_1.default.failureUpdateMessage('contract details')];
+        }
+        return [true, updateCase];
     }
 }
 exports.default = CaseService;

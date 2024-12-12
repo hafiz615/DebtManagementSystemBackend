@@ -140,6 +140,12 @@ router.delete(
   caseController.deleteFile
 );
 
+router.post(
+  '/updateContractDetails/:id',
+  authorize.validateAuth,
+  caseValidate.updateContractDetails,
+  caseController.updateContractDetails
+);
 router.delete(
   '/deleteCreditor/:id',
   authorize.validateAuth,

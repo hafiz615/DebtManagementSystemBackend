@@ -67,7 +67,12 @@ class TasksService {
     };
     if (vaildatedTask.notes) history['Notes'] = vaildatedTask.notes;
     await caseUtil.addInHistory(history, caseId);
-    emailUtil.sendEmailOrSmsByEvent('case_task_added', caseId, null, reqTemp.id)
+    emailUtil.sendEmailOrSmsByEvent(
+      'case_task_added',
+      caseId,
+      null,
+      reqTemp.id
+    );
     return [true, task];
   }
 
@@ -117,9 +122,12 @@ class TasksService {
     return [true, task];
   }
 
-  async getAllTasks(): Promise<[boolean, Record<string, ITasks[]> | string]> {    try {
-      const tasks = await this.tasksRepository.findAll<ITasks>({ isDeleted: false });
-  
+  async getAllTasks(): Promise<[boolean, Record<string, ITasks[]> | string]> {
+    try {
+      const tasks = await this.tasksRepository.findAll<ITasks>({
+        isDeleted: false,
+      });
+
       if (!tasks || tasks.length === 0) {
         return [false, constantsUtil.failureFetchMessage('tasks')];
       }
@@ -133,19 +141,15 @@ class TasksService {
         }
         tasksMap.get(assignee)?.push(task);
       }
-  
-      // Convert Map to Record<string, ITasks[]>
-      const tasksByAssignee = Object.fromEntries(tasksMap);
-  
-      return [true, tasksByAssignee];
 
+      const tasksByAssignee = Object.fromEntries(tasksMap);
+
+      return [true, tasksByAssignee];
     } catch (error) {
       console.error(error);
       return [false, constantsUtil.failureFetchMessage('tasks')];
     }
   }
-    
-  
 }
 
 export default TasksService;

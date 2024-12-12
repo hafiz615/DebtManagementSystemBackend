@@ -105,7 +105,7 @@ class App {
     //   });
     // }
     // const debtorRepo = new DebtorRepository();
-    //const token = await moneyThumbUtil.authenticateUser();
+    // const token = await moneyThumbUtil.authenticateUser();
     // const app = await moneyThumbUtil.createNewApp(
     //   token,
     //   'Smoke Studio & Mart LLC'
@@ -118,8 +118,9 @@ class App {
     // const debtor = await debtorRepo.getById<IDebtor>(
     //   '6717b9b1739c7b15330b0b63'
     // );
-     //const card = await moneyThumbUtil.getScoreCard(token, 2816776);
+    // const card = await moneyThumbUtil.getScoreCard(token, app.appid);
     // await moneyThumbUtil.saveData(app['appid'], card, debtor);
+    // await moneyThumbUtil.getMonthlyProfitValues(card);
     // console.log(
     //   await debtorUtil.getYearlyResults(card['accountslist']['data'])
     // );

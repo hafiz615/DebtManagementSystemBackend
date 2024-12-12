@@ -19,7 +19,7 @@ class InboxService {
 
   async getAllInboxes(req: Request) {
     const filters = await inboxUtils.getAllInboxFilters(req);
-    let inbox = await this.inboxRepository.getAll<IInbox>(
+    let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
       filters,
       undefined,
       undefined,
