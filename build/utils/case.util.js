@@ -185,7 +185,9 @@ class CaseUtil {
         return 'CASE-' + (count + 1).toString().padStart(3, '0');
     }
     async getAllCreditorsOfDebtor(debtor) {
+        console.log(debtor, 'debtorrrrs');
         const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
+        console.log(cases);
         return await this.getAllCreditorsMapping(cases);
     }
     async getAllCreditorsMapping(cases) {

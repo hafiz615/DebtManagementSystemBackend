@@ -135,7 +135,7 @@ router.get(
 );
 
 router.delete(
-  '/getCaseById/:id/deleteFile',
+  '/deleteFile/:id',
   authorize.validateAuth,
   caseController.deleteFile
 );

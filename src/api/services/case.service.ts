@@ -766,12 +766,6 @@ class CaseService {
       result?.data?.settlementRange
     ) {
       settlementRange = result.data.settlementRange;
-      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
-      //   creditors,
-      //   settlementRange
-      // );
-      // data['settlementRange'] = settlementRange;
     } else {
       settlementRange = await caseUtil.getSettlementRange(caseTemp);
       if (typeof settlementRange === 'string') {
@@ -782,8 +776,6 @@ class CaseService {
           caseId
         );
       }
-      // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-      // data['settlementRange'] = settlementRange;
     }
     await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
@@ -792,6 +784,18 @@ class CaseService {
       caseId
     );
     data['settlementRange'] = settlementRange;
+    const values = await moneyThumbUtil.getMonthlyProfitValues(
+      moneyThumb.scoreCard,
+      debtor
+    );
+    data['averageMonthlyProfitExcludingPayments'] =
+      values.averageMonthlyProfitExcludingPayments;
+    data['averageMonthlyProfitIncludingPayments'] =
+      values.averageMonthlyProfitIncludingPayments;
+    data['currentMonthlyProfitExcludingPayments'] =
+      values.currentMonthlyProfitExcludingPayments;
+    data['currentMonthlyProfitIncludingPayments'] =
+      values.currentMonthlyProfitIncludingPayments;
     return [true, data];
   };
 

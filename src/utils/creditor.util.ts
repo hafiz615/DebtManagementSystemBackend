@@ -108,22 +108,18 @@ class CreditorUtil {
     scoreCard: any
   ) {
     const accounts = scoreCard['accountslist'];
-    console.log(accounts.data.length, 'accounttttt');
     let trueCredit = 0;
     if (accounts.data.length) {
-      trueCredit = await moneyThumbUtil.getMonthlyTrueCredit(accounts);
+      trueCredit = await moneyThumbUtil.getWeeklyTrueCredit(accounts);
     }
-    console.log(trueCredit, 'trueCredit');
     let totalRemaining = creditors.reduce(
       (sum, item) => sum + item.remaining,
       0
     );
-    console.log(totalRemaining, 'totalRemaining');
 
     const weeklyBudgetStrategy3 = debtor?.weeklyBudgetStrategy3
       ? debtor.weeklyBudgetStrategy3
       : 0;
-    console.log(weeklyBudgetStrategy3, 'weeklyBudgetStrategy3');
     let popup1Value = 0;
     if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
       popup1Value = debtor.weeklyBudgetStrategy1;
@@ -131,29 +127,15 @@ class CreditorUtil {
       const percent80 = debtor.weeklyBudgetStrategy1 * 0.8;
       popup1Value = percent80;
     }
-    console.log(popup1Value, 'popppp');
     const aggressionData = await this.getCreditorWithAggression(creditors);
-    console.log(aggressionData, 'aggressionData');
     for (const creditor of creditors) {
-      console.log(debtor.weeklyBudgetStrategy3, 'debtor.weeklyBudgetStrategy3');
-      console.log(totalRemaining, 'totalRemaining');
-      console.log(creditor.remaining, 'creditor.remaining');
       const creditorPer = creditor.remaining / totalRemaining;
-      console.log(creditorPer, 'creditorPer');
       creditor.maxProfitAmount =
         Math.round(creditorPer * popup1Value * 100) / 100;
       const percentage = creditorPer * weeklyBudgetStrategy3;
       creditor.percentageReceivable = Math.round(percentage * 100) / 100;
-      console.log(
-        creditor.percentageReceivable,
-        'creditor.percentageReceivable'
-      );
       creditor.percentageReceivableAmount = parseFloat(
         ((creditor.percentageReceivable / 100) * trueCredit).toFixed(2)
-      );
-      console.log(
-        creditor.percentageReceivableAmount,
-        'creditor.percentageReceivableAmount'
       );
     }
     if (Object.keys(aggressionData).length) {
