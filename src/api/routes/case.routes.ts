@@ -133,7 +133,6 @@ router.get(
   caseController.getSettlementJustifications
 );
 
-<<<<<<< Updated upstream
 router.delete(
   '/deleteFile/:id',
   authorize.validateAuth,
@@ -151,13 +150,11 @@ router.delete(
   authorize.validateAuth,
   caseController.deleteCreditor
 );
-=======
 router.post('/createCall/:id', authorize.validateAuth, caseController.createCall);
 router.get('/getCalls/:id', authorize.validateAuth, caseController.getCalls);
 router.post('/twilio/voice', caseController.callTwiml);
 router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
 router.post('/twilio/recording-status', caseController.callRecordingStatus);
 router.post('/twilio/call-hangup/:callSid', caseController.callHangUp)
->>>>>>> Stashed changes
 
 export default router;

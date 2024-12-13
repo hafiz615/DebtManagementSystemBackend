@@ -3,6 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const twilio_1 = require("twilio");
+const user_repository_1 = require("../repository/user/user.repository");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
@@ -13,7 +15,6 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const chatSummary_repomodel_1 = require("../../database/repomodels/chatSummary.repomodel");
 const chatSummary_repository_1 = require("../repository/chatSummary/chatSummary.repository");
-const user_repository_1 = require("../repository/user/user.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
@@ -514,6 +515,129 @@ class CaseService {
             }, findCase._id);
             return [true, result];
         };
+        this.createCall = async (req) => {
+            const reqTemp = req;
+            const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            const callData = {
+                from: '+17756307412',
+                to: reqTemp.body.toNumber || '+923289551347',
+                url: '/twilio/voice',
+                record: true,
+                statusCallback: '/twilio/recording-status',
+                statusCallbackEvent: ['completed'],
+            };
+            try {
+                const call = await this.twilioClient.calls.create(callData);
+                const result = await this.caseRepository.updateById(req.params.id, {
+                    $push: {
+                        calls: {
+                            callSid: call.sid,
+                            callerName: reqTemp.name,
+                            accountSid: call.accountSid,
+                            callTo: call.to,
+                            callFrom: call.from,
+                            callStartDate: call.startTime,
+                            callDuration: null, // Placeholder for later update
+                            callStatus: 'initiated', // Initial status
+                            callRecordingSid: '',
+                            callTranscription: '',
+                        },
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!result)
+                    return [false, 'Failed to update case with call SID'];
+                return [true, call.sid];
+            }
+            catch (err) {
+                return [false, 'Error creating call.'];
+            }
+        };
+        this.getCalls = async (req) => {
+            const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            if (!findCase) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
+                return [true, []];
+            }
+            return [true, findCase.calls];
+        };
+        this.callTwiml = async (req) => {
+            try {
+                const { VoiceResponse } = this.twilioClient.twiml;
+                const response = new VoiceResponse();
+                response.record({
+                    transcribe: true,
+                    transcribeCallback: '/twilio/transcription-status',
+                });
+                return [true, response.toString()];
+            }
+            catch (err) {
+                return [false, 'Error generating TwiML.'];
+            }
+        };
+        this.callTranscriptionStatus = async (req) => {
+            try {
+                const callSid = req.body.CallSid;
+                const transcriptionText = req.body.TranscriptionText;
+                const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
+                    $set: {
+                        'calls.$.callTranscription': transcriptionText
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!result) {
+                    return [false, 'Failed to update case with recording details.'];
+                }
+                return [true, 'Recording status received and updated successfully.'];
+            }
+            catch (err) {
+                return [false, 'Error handling recording status.'];
+            }
+        };
+        this.callHangUp = async (req) => {
+            try {
+                const callSid = req.params.callSid;
+                if (!callSid) {
+                    return [false, 'Call SID is required.'];
+                }
+                await this.twilioClient.calls(callSid).update({ status: 'completed' });
+                return [true, 'Call hung up successfully.'];
+            }
+            catch (err) {
+                console.error('Error hanging up the call:', err);
+                return [false, 'Error hanging up the call.'];
+            }
+        };
+        this.callRecordingStatus = async (req) => {
+            try {
+                const callSid = req.body.CallSid;
+                const recordingSid = req.body.RecordingSid;
+                const status = req.body.CallStatus;
+                const callDuration = req.body.RecordingDuration;
+                const callStartTime = req.body.Timestamp;
+                const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
+                    $set: {
+                        'calls.$.callRecordingSid': recordingSid,
+                        'calls.$.callDuration': callDuration,
+                        'calls.$.callStatus': status,
+                        'calls.$.callStartDate': callStartTime
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!result) {
+                    return [false, 'Failed to update case with recording details.'];
+                }
+                return [true, 'Recording status received and updated successfully.'];
+            }
+            catch (err) {
+                return [false, 'Error handling recording status.'];
+            }
+        };
         this.getScoresSettlementByCommPercentage = async (req) => {
             if (!req.body.commissionPercentage ||
                 isNaN(req.body.commissionPercentage)) {
@@ -648,6 +772,7 @@ class CaseService {
             }
             return [true, constants_util_1.default.successDeleteMessage('Creditor')];
         };
+        this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
