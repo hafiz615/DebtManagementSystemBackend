@@ -524,9 +524,9 @@ class CaseService {
             const callData = {
                 from: '+17756307412',
                 to: reqTemp.body.toNumber || '+923289551347',
-                url: '/twilio/voice',
+                url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
                 record: true,
-                statusCallback: '/twilio/recording-status',
+                statusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
                 statusCallbackEvent: ['completed'],
             };
             try {
@@ -580,7 +580,7 @@ class CaseService {
                 // Configure recording and transcription
                 response.record({
                     transcribe: true,
-                    transcribeCallback: '/twilio/transcription-status',
+                    transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
                 });
                 // Return successful response
                 return [true, response.toString()];
