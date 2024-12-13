@@ -2184,7 +2184,8 @@ class CaseUtil {
             // }
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
-                await paynote_util_1.default.createCustomer(creditor);
+                if (process.env.environment === 'prod')
+                    await paynote_util_1.default.createCustomer(creditor);
             }
             if (getCreditor) {
                 body.updatedAt = common_util_1.default.getCurrentDate();

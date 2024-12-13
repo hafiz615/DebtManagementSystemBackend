@@ -301,9 +301,7 @@ class PaynoteUtil {
     }
   }
 
-  async getAllCustomerDetails() {
-    const page = 1;
-    const limit = 100;
+  async getAllCustomerDetails(page: number, limit: number) {
     const apiUrl = `${process.env.paynoteUrl}/user?page=${page}&limit=${limit}`;
     console.log('I am in getAllCustomerDetails');
     console.log('URL: ', apiUrl);
@@ -311,7 +309,7 @@ class PaynoteUtil {
     try {
       const response: any = await axiosInstance.get(apiUrl, {
         headers: {
-          Authorization: 'process.env.paynoteSecretKey',
+          Authorization: process.env.paynoteSecretKey,
           'Content-Type': 'application/json',
         },
       });
@@ -322,32 +320,57 @@ class PaynoteUtil {
     }
   }
 
-  async syncProdUsers() {
+  async syncUsersPaynote() {
+    console.log('i am going to run syncUsersPaynote');
+    let page = 1;
+    let limit = 100;
     const allCreditors: ICreditor[] =
       await this.creditorRepository.getAllWithoutPagination<ICreditor>();
     const creditorEmails = allCreditors
       .filter(creditor => creditor.basicInformation.email) // Filter creditors with an email
       .map(creditor => creditor.basicInformation.email);
-    console.log(creditorEmails, 'kokoko');
-    const result = await this.getAllCustomerDetails();
+    const result = await this.getAllCustomerDetails(page, limit);
     if (result?.error) {
-      let message = '';
-      if (result?.messages) {
-        message = result.messages[0];
-      } else {
-        message = result.message;
+      return;
+    }
+    await this.processAllUsersResult(result.list.data, creditorEmails);
+    const lastPage = result.list.last_page;
+    if (lastPage > page) {
+      for (let i = page + 1; i <= lastPage; i++) {
+        const result = await this.getAllCustomerDetails(i, limit);
+        if (result?.error) {
+          break;
+        }
+        await this.processAllUsersResult(result.list.data, creditorEmails);
       }
     }
-    const users = result.list.data;
+  }
+
+  async processAllUsersResult(users: any, creditorEmails: string[]) {
+    let update = {};
     for (const user of users) {
       if (creditorEmails.includes(user.email)) {
-        let sourceVerifiedMessage = false;
+        update['paynoteUserFound'] = true;
+        update['paynoteUserId'] = user.user_id;
+        let sourceVerified = false;
         for (const source of user.sources) {
-          if (source.is_primary) {
-            if (source.status === 'verified') sourceVerifiedMessage = true;
+          if (source.status === 'verified') {
+            sourceVerified = true;
+            update['paynoteSourceId'] = source.source_id;
+            break;
           }
         }
+        update['paynoteSourceVerified'] = sourceVerified;
       }
+      if (!creditorEmails.includes(user.email)) {
+        update['paynoteUserFound'] = false;
+        update['paynoteSourceVerified'] = false;
+      }
+      this.creditorRepository.updateByOne(
+        {'basicInformation.email': user.email},
+        update
+      );
+      update = {};
     }
   }
 }

@@ -28,6 +28,8 @@ import {PaymentRepository} from './api/repository/payment/payment.repository';
 import {IPayment} from './database/interfaces/payment.interface';
 import {Server, Socket} from 'socket.io';
 import {createServer} from 'http';
+import dotenv from 'dotenv';
+dotenv.config();
 
 class App {
   protected app: Application;
@@ -82,6 +84,15 @@ class App {
     });
 
     // const credR = new CreditorRepository();
+    // await credR.updateMany(
+    //   {},
+    //   {
+    //     paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
+    //     paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
+    //     paynoteSourceVerified: true,
+    //     paynoteUserFound: true,
+    //   }
+    // );
     // const allCred = await credR.getAllWithoutPagination<ICreditor>();
     // for (const creditor of allCred) {
     // if (creditor?.paynoteUserId) continue;
@@ -92,10 +103,10 @@ class App {
     //   await credR.updateById(creditor._id, {
     //     paynoteUserId: result.user.user_id,
     //   });
-    //   await credR.updateById(creditor._id, {
-    //     paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
-    //     paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
-    //   });
+    // await credR.updateById(creditor._id, {
+    //   paynoteUserId: 'd3e73330-6f93-11ef-b474-4b26e6be0816',
+    //   paynoteSourceId: 'fea18ac6-aa50-40cd-82ba-fe99789ba466',
+    // });
     // }
     // await bulkUploadCronjob.testBulkCron();
     // const getAll = await debtorRepo.getAllWithoutPagination<IDebtor>();
@@ -164,6 +175,11 @@ class App {
     // console.log('3211596048 - Oct 31, 2023'.split('-')[1].trim());
     // date.setUTCHours(0, 0, 0, 0);
     // console.log(date);
+    if (
+      process.env.environment === 'prod' &&
+      process.env.runPaynoteScript === 'true'
+    )
+      await paynoteUtil.syncUsersPaynote();
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
