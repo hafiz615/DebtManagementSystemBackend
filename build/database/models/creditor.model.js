@@ -117,6 +117,12 @@ const creditorModel = new mongoose_1.Schema({
     aggression: {
         type: Number,
     },
+    paynoteSourceVerified: {
+        type: Boolean,
+    },
+    paynoteUserFound: {
+        type: Boolean,
+    },
 });
 creditorModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

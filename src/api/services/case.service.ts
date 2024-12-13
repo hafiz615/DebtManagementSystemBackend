@@ -672,6 +672,18 @@ class CaseService {
     data['creditors'] = creditors;
     data['debtor'] = debtor;
     // return [true, data];
+    const values = await moneyThumbUtil.getMonthlyProfitValues(
+      moneyThumb.scoreCard,
+      debtor
+    );
+    data['averageMonthlyProfitExcludingPayments'] =
+      values.averageMonthlyProfitExcludingPayments;
+    data['averageMonthlyProfitIncludingPayments'] =
+      values.averageMonthlyProfitIncludingPayments;
+    data['currentMonthlyProfitExcludingPayments'] =
+      values.currentMonthlyProfitExcludingPayments;
+    data['currentMonthlyProfitIncludingPayments'] =
+      values.currentMonthlyProfitIncludingPayments;
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_1 &&
@@ -791,18 +803,6 @@ class CaseService {
       caseId
     );
     data['settlementRange'] = settlementRange;
-    const values = await moneyThumbUtil.getMonthlyProfitValues(
-      moneyThumb.scoreCard,
-      debtor
-    );
-    data['averageMonthlyProfitExcludingPayments'] =
-      values.averageMonthlyProfitExcludingPayments;
-    data['averageMonthlyProfitIncludingPayments'] =
-      values.averageMonthlyProfitIncludingPayments;
-    data['currentMonthlyProfitExcludingPayments'] =
-      values.currentMonthlyProfitExcludingPayments;
-    data['currentMonthlyProfitIncludingPayments'] =
-      values.currentMonthlyProfitIncludingPayments;
     return [true, data];
   };
 

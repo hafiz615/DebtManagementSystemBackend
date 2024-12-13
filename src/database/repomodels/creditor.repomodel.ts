@@ -36,6 +36,8 @@ export class Creditor {
   }>();
   aggression = 0;
   platform = false;
+  paynoteSourceVerified = false;
+  paynoteUserFound = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

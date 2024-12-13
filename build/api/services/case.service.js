@@ -393,6 +393,15 @@ class CaseService {
             data['creditors'] = creditors;
             data['debtor'] = debtor;
             // return [true, data];
+            const values = await moneyThumb_util_1.default.getMonthlyProfitValues(moneyThumb.scoreCard, debtor);
+            data['averageMonthlyProfitExcludingPayments'] =
+                values.averageMonthlyProfitExcludingPayments;
+            data['averageMonthlyProfitIncludingPayments'] =
+                values.averageMonthlyProfitIncludingPayments;
+            data['currentMonthlyProfitExcludingPayments'] =
+                values.currentMonthlyProfitExcludingPayments;
+            data['currentMonthlyProfitIncludingPayments'] =
+                values.currentMonthlyProfitIncludingPayments;
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
                 result?.data?.creditorNames) {
@@ -462,15 +471,6 @@ class CaseService {
             await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
             await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
             data['settlementRange'] = settlementRange;
-            const values = await moneyThumb_util_1.default.getMonthlyProfitValues(moneyThumb.scoreCard, debtor);
-            data['averageMonthlyProfitExcludingPayments'] =
-                values.averageMonthlyProfitExcludingPayments;
-            data['averageMonthlyProfitIncludingPayments'] =
-                values.averageMonthlyProfitIncludingPayments;
-            data['currentMonthlyProfitExcludingPayments'] =
-                values.currentMonthlyProfitExcludingPayments;
-            data['currentMonthlyProfitIncludingPayments'] =
-                values.currentMonthlyProfitIncludingPayments;
             return [true, data];
         };
         this.addNotes = async (req) => {
