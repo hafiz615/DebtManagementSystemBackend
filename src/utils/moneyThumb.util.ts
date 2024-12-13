@@ -148,7 +148,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Response Data', response.data['monthlymca']);
+      console.log('Response Data', response.data['mcacompanies']);
       return response.data;
     } catch (error) {
       console.log(error);
@@ -419,6 +419,7 @@ class MoneyThumbUtil {
     scoreCard: any,
     caseId: string
   ) {
+    console.log('i am in get settlement');
     const bankStatementBudget = await this.getTotalMonthlyBudget(
       scoreCard['mcacompanies'],
       debtor
@@ -531,6 +532,7 @@ class MoneyThumbUtil {
         greatestMonthYear = `${item.statement_month} ${item.statement_year}`;
       }
     });
+    console.log(greatestMonthYear, 'greatestMonthYear');
     let true_credit = 0,
       total_debit = 0;
     for (const account of accounts.data) {
@@ -542,11 +544,21 @@ class MoneyThumbUtil {
         total_debit += parseFloat(account.total_debits);
       }
     }
+    const uniqueMonths = new Set(
+      accounts.data.map(
+        item => `${item.statement_month}-${item.statement_year}`
+      )
+    );
 
+    const totalUniqueMonths = uniqueMonths.size;
+    console.log(totalUniqueMonths, 'totalUniqueMonths');
+    console.log(true_credit, 'true_credit');
+    console.log(total_debit, 'total_debit');
     const creditors = await debtorUtil.getCreditorsMapping(debtor);
     const creditorAccTitles = creditors.map(creditor => {
       return creditor.creditorAccountTitle;
     });
+    console.log(creditorAccTitles, 'creditorAccTitles');
     const monthlyMca = scoreCard['monthlymca'];
     let mcaPayments = 0;
     for (const mca of monthlyMca.data) {
@@ -555,45 +567,64 @@ class MoneyThumbUtil {
         mca.month === greatestMonthYear &&
         creditorAccTitles.includes(mca.lender)
       ) {
-        mcaPayments += parseFloat(mca.withdrawal_total);
+        mcaPayments += Math.abs(parseFloat(mca.withdrawal_total));
       }
     }
+    console.log(mcaPayments, 'mcaPayments');
     const currentMonthlyProfitExcludingPayments = parseFloat(
-      (true_credit - (total_debit + mcaPayments)).toFixed(2)
+      (true_credit - total_debit + mcaPayments).toFixed(2)
     );
     const currentMonthlyProfitIncludingPayments = parseFloat(
       (true_credit - total_debit).toFixed(2)
     );
+    console.log(
+      currentMonthlyProfitExcludingPayments,
+      'currentMonthlyProfitExcludingPayments'
+    );
+    console.log(
+      currentMonthlyProfitIncludingPayments,
+      'currentMonthlyProfitIncludingPayments'
+    );
+
+    // Starting average calculations
+
     const averageTrueRevenue = await this.getMonthlyProfitAndTrueRevenue(
       scoreCard['metrics']['metricdata']
     );
     const averageExpenses = await this.getMonthlyExpenses(
       scoreCard['metrics']['metricdata']
     );
+    console.log(averageTrueRevenue, 'averageTrueRevenue');
+    console.log(averageExpenses, 'averageExpenses');
     const mcacompanies = scoreCard['mcacompanies'];
     let count = 0,
       amount = 0,
       averageMcaPayments = 0;
     for (const mca of mcacompanies.data) {
-      if (creditorAccTitles.includes(mca.lender) && mca.month !== 'Totals') {
-        count += 1;
-        amount += parseFloat(mca.withdrawal_total);
-        continue;
-      }
       if (creditorAccTitles.includes(mca.lender) && mca.month === 'Totals') {
-        if (count) averageMcaPayments += amount / count;
-        count = 0;
-        amount = 0;
+        amount += Math.abs(parseFloat(mca.withdrawal_total));
       }
     }
+    averageMcaPayments = amount / totalUniqueMonths;
+    console.log(amount, 'amount');
+    console.log(averageMcaPayments, 'averageMcaPayments');
     const averageMonthlyProfitExcludingPayments = parseFloat(
       (
         averageTrueRevenue.trueRevenue -
-        (averageExpenses.expenses + averageMcaPayments)
+        averageExpenses.expenses +
+        averageMcaPayments
       ).toFixed(2)
     );
     const averageMonthlyProfitIncludingPayments = parseFloat(
       (averageTrueRevenue.trueRevenue - averageExpenses.expenses).toFixed(2)
+    );
+    console.log(
+      averageMonthlyProfitExcludingPayments,
+      'averageMonthlyProfitExcludingPayments'
+    );
+    console.log(
+      averageMonthlyProfitIncludingPayments,
+      'averageMonthlyProfitIncludingPayments'
     );
     return {
       currentMonthlyProfitExcludingPayments,

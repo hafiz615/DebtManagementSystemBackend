@@ -291,6 +291,56 @@ class PaynoteUtil {
             return error.message;
         }
     }
+    async getAllCustomerDetails() {
+        const page = 1;
+        const limit = 100;
+        const apiUrl = `${process.env.paynoteUrl}/user?page=${page}&limit=${limit}`;
+        console.log('I am in getAllCustomerDetails');
+        console.log('URL: ', apiUrl);
+        console.log('Payload: ', {});
+        try {
+            const response = await axiosInstanceInterceptor_1.default.get(apiUrl, {
+                headers: {
+                    Authorization: 'process.env.paynoteSecretKey',
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.log(error, 'erorr');
+            return error.response.data;
+        }
+    }
+    async syncProdUsers() {
+        const allCreditors = await this.creditorRepository.getAllWithoutPagination();
+        const creditorEmails = allCreditors
+            .filter(creditor => creditor.basicInformation.email) // Filter creditors with an email
+            .map(creditor => creditor.basicInformation.email);
+        console.log(creditorEmails, 'kokoko');
+        const result = await this.getAllCustomerDetails();
+        if (result?.error) {
+            let message = '';
+            if (result?.messages) {
+                message = result.messages[0];
+            }
+            else {
+                message = result.message;
+            }
+        }
+        const users = result.list.data;
+        for (const user of users) {
+            if (creditorEmails.includes(user.email)) {
+                let sourceVerifiedMessage = false;
+                for (const source of user.sources) {
+                    if (source.is_primary) {
+                        if (source.status === 'verified')
+                            sourceVerifiedMessage = true;
+                    }
+                }
+            }
+        }
+    }
 }
 exports.default = new PaynoteUtil();
 //# sourceMappingURL=paynote.util.js.map

@@ -91,11 +91,11 @@ class App {
         //   app['appid']
         // );
         // const debtor = await debtorRepo.getById<IDebtor>(
-        //   '6717b9b1739c7b15330b0b63'
+        //   '67179c6b9f1cc6c8f4839b84'
         // );
         // const card = await moneyThumbUtil.getScoreCard(token, app.appid);
         // await moneyThumbUtil.saveData(app['appid'], card, debtor);
-        // await moneyThumbUtil.getMonthlyProfitValues(card);
+        // await moneyThumbUtil.getMonthlyProfitValues(card, debtor);
         // console.log(
         //   await debtorUtil.getYearlyResults(card['accountslist']['data'])
         // );
