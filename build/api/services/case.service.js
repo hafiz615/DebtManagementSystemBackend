@@ -531,6 +531,7 @@ class CaseService {
             };
             try {
                 const call = await this.twilioClient.calls.create(callData);
+                console.log("Call", call);
                 const result = await this.caseRepository.updateById(req.params.id, {
                     $push: {
                         calls: {
@@ -553,6 +554,7 @@ class CaseService {
                 return [true, call.sid];
             }
             catch (err) {
+                console.log("Error Creating Call", err);
                 return [false, 'Error creating call.'];
             }
         };
@@ -569,10 +571,12 @@ class CaseService {
         this.callTwiml = async (req) => {
             try {
                 const VoiceResponse = require('twilio').twiml.VoiceResponse;
+                console.log("VoiceResponse", VoiceResponse);
                 if (!VoiceResponse) {
                     throw new Error('Twilio VoiceResponse is not available.');
                 }
                 const response = new VoiceResponse();
+                console.log("Response", response);
                 // Configure recording and transcription
                 response.record({
                     transcribe: true,
