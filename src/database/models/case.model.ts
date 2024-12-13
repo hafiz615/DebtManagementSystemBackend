@@ -84,6 +84,12 @@ const caseModel: Schema = new Schema({
       createdAt: {type: Date};
     }>,
   },
+  calls: {
+    type: Array<{
+      callSid: {type: String};
+      callerName: {type: String};
+    }>,
+  },
   chatId: {
     type: String,
   },
