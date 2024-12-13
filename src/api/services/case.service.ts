@@ -922,7 +922,7 @@ class CaseService {
 
   callTwiml = async (req: Request) => {
     try {
-      const { VoiceResponse } = this.twilioClient.twiml;
+      const VoiceResponse  = require('twilio').twiml.VoiceResponse;
       if (!VoiceResponse) {
         throw new Error('Twilio VoiceResponse is not available.');
       }
