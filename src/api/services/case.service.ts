@@ -923,18 +923,24 @@ class CaseService {
   callTwiml = async (req: Request) => {
     try {
       const { VoiceResponse } = this.twilioClient.twiml;
+      if (!VoiceResponse) {
+        throw new Error('Twilio VoiceResponse is not available.');
+      }
       const response = new VoiceResponse();
+  
+      // Configure recording and transcription
       response.record({
         transcribe: true,
         transcribeCallback: '/twilio/transcription-status',
       });
   
-      return [true, response.toString()]
+      // Return successful response
+      return [true, response.toString()];
     } catch (err) {
+      console.error('Error generating TwiML:', err);
       return [false, 'Error generating TwiML.'];
     }
-  };
-  
+  };    
   
   callTranscriptionStatus = async (req: Request) => {
     try {
