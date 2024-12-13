@@ -3,7 +3,6 @@ import authorize from '../../middleware/authorize.middleware';
 import caseController from '../controllers/case/case.controller';
 import caseValidate from '../../middleware/validators/case.validate';
 const router = Router();
-
 router.post(
   '/createCase',
   authorize.validateAuth,
@@ -151,5 +150,11 @@ router.delete(
   authorize.validateAuth,
   caseController.deleteCreditor
 );
+router.post('/createCall/:id', authorize.validateAuth, caseController.createCall);
+router.get('/getCalls/:id', authorize.validateAuth, caseController.getCalls);
+router.post('/twilio/voice', caseController.callTwiml);
+router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
+router.post('/twilio/recording-status', caseController.callRecordingStatus);
+router.post('/twilio/call-hangup/:callSid', caseController.callHangUp)
 
 export default router;
