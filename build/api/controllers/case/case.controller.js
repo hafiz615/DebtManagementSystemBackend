@@ -485,7 +485,7 @@ class CaseController {
                 return res.status(constants_util_1.default.CODE.CREATED).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.CREATED,
                     data: response[1],
-                    message: constants_util_1.default.successUpdateMessage('Cases'),
+                    message: constants_util_1.default.callMadesuccessMessage('Call'),
                 }));
             }
             catch (error) {

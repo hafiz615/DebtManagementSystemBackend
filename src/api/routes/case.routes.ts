@@ -150,7 +150,7 @@ router.delete(
   authorize.validateAuth,
   caseController.deleteCreditor
 );
-router.post('/createCall/:id', authorize.validateAuth, caseController.createCall);
+router.post('/createCall/:id', caseController.createCall);
 router.get('/getCalls/:id', authorize.validateAuth, caseController.getCalls);
 router.post('/twilio/voice', caseController.callTwiml);
 router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
