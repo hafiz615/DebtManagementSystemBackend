@@ -40,7 +40,7 @@ router.get('/getSettlementJustifications/:id', authorize_middleware_1.default.va
 router.delete('/deleteFile/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteFile);
 router.post('/updateContractDetails/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateContractDetails, case_controller_1.default.updateContractDetails);
 router.delete('/deleteCreditor/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteCreditor);
-router.post('/createCall/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.createCall);
+router.post('/createCall/:id', case_controller_1.default.createCall);
 router.get('/getCalls/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCalls);
 router.post('/twilio/voice', case_controller_1.default.callTwiml);
 router.post('/twilio/transcription-status', case_controller_1.default.callTranscriptionStatus);
