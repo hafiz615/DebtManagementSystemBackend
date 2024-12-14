@@ -938,7 +938,7 @@ class CaseService {
         transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
       });
   
-      // Return successful response
+                // Return successful response
       return [true, response.toString()];
     } catch (err) {
       console.error('Error generating TwiML:', err);
