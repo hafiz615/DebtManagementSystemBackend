@@ -498,6 +498,27 @@ class PaymentService {
     ];
   }
 
+  async getAllUpcomingPayments(id: string): Promise<[boolean, {} | string]> {
+  
+    const payments: IPayment[] = await this.getAllPaymentsByDebtor(id);
+    if (!payments.length) {
+      return [false, constants.notFoundMessage('Payments')];
+    }
+    const paymentsObj = await paymentUtil.getFilteredPayments(
+      payments,
+      'default'
+    );  
+    return [
+      true,
+      {
+        transactions: {
+          upcomingPayments: paymentsObj.upcomingPayments,
+        },
+  
+      },
+    ];
+  }
+
   async getCommissionPayments(): Promise<[boolean, {} | string]> {
     const payments: IPayment[] = await this.getAllCommissionPayments();
     if (!payments.length) {
@@ -550,6 +571,26 @@ class PaymentService {
         },
       },
     ];
+  }
+
+  private async getAllPaymentsByDebtor(id: string) {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        debtorId: id,
+        isDeleted: false,
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      undefined,
+      {createdAt: -1},
+      {
+        path: 'caseId',
+        select: ['_id', 'caseOwner', 'totalDebt'],
+        populate: {
+          path: 'debtor',
+          select: ['basicInformation.fullName', 'basicInformation.SSID'],
+        },
+      }
+    );
   }
 
   private async getAllPaymentsByCaseId(id: string) {
