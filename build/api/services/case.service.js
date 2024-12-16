@@ -579,11 +579,19 @@ class CaseService {
                 }
                 const response = new VoiceResponse();
                 console.log("Response", response);
+                // Create a Dial to connect the two devices
+                const dial = response.dial();
+                dial.client('+923354537279'); // Assuming you're connecting to a client device with a specific identity
                 // Configure recording and transcription
                 response.record({
                     transcribe: true,
                     transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
                 });
+                // // Configure recording and transcription
+                // response.record({
+                //   transcribe: true,
+                //   transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
+                // });
                 // Return successful response
                 return [true, response.toString()];
             }
