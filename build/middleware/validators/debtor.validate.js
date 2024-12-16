@@ -288,6 +288,26 @@ class DebtorRequests {
             }
         };
     }
+    async validateManualPayment(req, res, next) {
+        const schema = joi_1.default.object({
+            debtorId: joi_1.default.string().required(),
+            transactionIds: joi_1.default.array().required(),
+            amount: joi_1.default.number().required(),
+            commission: joi_1.default.number().required(),
+            transactionDate: joi_1.default.date().required(),
+            transactionType: joi_1.default.string().required(),
+            referenceId: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new DebtorRequests();
 //# sourceMappingURL=debtor.validate.js.map

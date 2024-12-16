@@ -1225,6 +1225,30 @@ class DebtorService {
         case_util_1.default.createPayment(req.body);
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
+    async addManualPayment(req) {
+        let debtor = await this.debtorRepository.getById(req.body.debtorId);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        //TODO: Add validation check here
+        req.body.transactionIds.forEach(async (transaction) => {
+            let updatedPayment = await this.paymentRepository.updateById(transaction, {
+                authorized: 'Success', // Make is success so it can be picked up by CRON Job
+                captured: 'Success', // Make is success so it can be picked up by CRON Job
+                dueDate: req.body.transactionDate,
+                debtorTransId: req.body.referenceId,
+                transactionType: req.body.transactionType,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+        });
+        let updatedDebtor = await this.debtorRepository.updateById(req.body.debtorId, {
+            $inc: { commissionPaid: req.body.commission },
+        });
+        if (!updatedDebtor) {
+            return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
+        }
+        return [true, constants_util_1.default.successAddMessage('Manual Payment')];
+    }
 }
 exports.default = DebtorService;
 //# sourceMappingURL=debtor.service.js.map
