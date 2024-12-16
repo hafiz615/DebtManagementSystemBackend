@@ -44,6 +44,10 @@ import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {IInbox} from '../../database/interfaces/inbox.interface';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {v4} from 'uuid';
+const {
+  jwt: {AccessToken},
+} = require('twilio');
+const VoiceGrant = AccessToken.VoiceGrant;
 
 class CaseService {
   private twilioClient: any;
@@ -1411,6 +1415,49 @@ class CaseService {
     }
 
     return [true, constantsUtil.successDeleteMessage('Creditor')];
+  };
+
+  tokenGenerate = async (req: Request) => {
+    try {
+       // Log the request body to debug
+    console.log('Request body:', req.body);
+
+    // Extract identity from the request body
+    const identity = req.body?.identity || 'default-user'; // Fallback to default identity
+    console.log('Extracted identity:', identity);
+
+      if (!identity) {
+        return [false, 'Identity is required to generate a token.'];
+      }
+
+      // Create a VoiceGrant
+    console.log('Creating VoiceGrant...');
+    const voiceGrant = new VoiceGrant({
+      outgoingApplicationSid: process.env.twimloutgoingAppSid,
+      incomingAllow: true, // Allow incoming calls
+    });
+    console.log('VoiceGrant created:', voiceGrant);
+
+    // Create an AccessToken
+    console.log('Creating AccessToken...');
+
+    const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, {
+      identity,
+    });
+    token.addGrant(
+      new VoiceGrant({
+        outgoingApplicationSid: process.env.twimloutgoingAppSid,
+        incomingAllow: true,
+      })
+    );
+
+    console.log('AccessToken created:', token);
+    
+      return [true,token.toJwt()];
+    } catch (err) {
+      console.error('Error hanging up the call:', err);
+      return [false, 'Error hanging up the call.'];
+    }
   };
 }
 

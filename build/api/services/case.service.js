@@ -26,6 +26,8 @@ const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const uuid_1 = require("uuid");
+const { jwt: { AccessToken }, } = require('twilio');
+const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -781,6 +783,40 @@ class CaseService {
                 return [false, constants_util_1.default.failureDeleteMessage('Creditor')];
             }
             return [true, constants_util_1.default.successDeleteMessage('Creditor')];
+        };
+        this.tokenGenerate = async (req) => {
+            try {
+                // Log the request body to debug
+                console.log('Request body:', req.body);
+                // Extract identity from the request body
+                const identity = req.body?.identity || 'default-user'; // Fallback to default identity
+                console.log('Extracted identity:', identity);
+                if (!identity) {
+                    return [false, 'Identity is required to generate a token.'];
+                }
+                // Create a VoiceGrant
+                console.log('Creating VoiceGrant...');
+                const voiceGrant = new VoiceGrant({
+                    outgoingApplicationSid: process.env.twimloutgoingAppSid,
+                    incomingAllow: true, // Allow incoming calls
+                });
+                console.log('VoiceGrant created:', voiceGrant);
+                // Create an AccessToken
+                console.log('Creating AccessToken...');
+                const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, {
+                    identity,
+                });
+                token.addGrant(new VoiceGrant({
+                    outgoingApplicationSid: process.env.twimloutgoingAppSid,
+                    incomingAllow: true,
+                }));
+                console.log('AccessToken created:', token);
+                return [true, token.toJwt()];
+            }
+            catch (err) {
+                console.error('Error hanging up the call:', err);
+                return [false, 'Error hanging up the call.'];
+            }
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
