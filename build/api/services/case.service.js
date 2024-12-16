@@ -842,7 +842,7 @@ class CaseService {
             accessToken.addGrant(grant);
             // Include identity and token in a JSON response
             return [true, {
-                    identity: identity,
+                    identity: "user",
                     token: accessToken.toJwt(),
                 }];
         };
