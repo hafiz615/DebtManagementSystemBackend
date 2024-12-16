@@ -13,12 +13,14 @@ const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.rep
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const syncCreditor_repository_1 = require("../repository/syncCreditor/syncCreditor.repository");
 dotenv_1.default.config();
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
+        this.syncCreditorRepository = new syncCreditor_repository_1.SyncCreditorRepository();
     }
     async getCreditor(text) {
         const creditor = await this.creditorRepository.getAll({
@@ -289,6 +291,62 @@ class CreditorService {
             return [false, constants_util_1.default.failureUpdateMessage('payments')];
         const word = req.query.pause === 'true' ? 'resumed' : 'paused';
         return [true, `Funds transfer ${word} successfully`];
+    }
+    async syncPaynoteCreditor(req) {
+        const creditor = await this.creditorRepository.getById(req.params.id);
+        if (!creditor)
+            return [false, constants_util_1.default.notFoundMessage('creditor')];
+        const email = req.body.email.toLowerCase();
+        let page = 1;
+        let limit = 100;
+        const result = await paynote_util_1.default.getAllCustomerDetails(page, limit);
+        if (result?.error) {
+            let message = await paynote_util_1.default.getPaynoteErrorMessage(result);
+            return [false, message];
+        }
+        const resultSync = await paynote_util_1.default.processSyncCreditorPaynote(result.list.data, email);
+        if (resultSync[0]) {
+            await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
+            await paynote_util_1.default.upsertCreditorPaynoteEmail(req.params.id, email);
+            return resultSync;
+        }
+        const lastPage = result.list.last_page;
+        if (lastPage === page) {
+            await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
+            return resultSync;
+        }
+        let returnValue = null;
+        if (lastPage > page) {
+            for (let i = page + 1; i <= lastPage; i++) {
+                const result = await paynote_util_1.default.getAllCustomerDetails(i, limit);
+                if (result?.error) {
+                    let message = await paynote_util_1.default.getPaynoteErrorMessage(result);
+                    return [false, message];
+                }
+                const resultSync = await paynote_util_1.default.processSyncCreditorPaynote(result.list.data, email);
+                if (resultSync[0]) {
+                    await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
+                    await paynote_util_1.default.upsertCreditorPaynoteEmail(req.params.id, email);
+                    return resultSync;
+                }
+                if (!resultSync[0] && i === lastPage) {
+                    await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
+                    returnValue = resultSync;
+                }
+            }
+            return returnValue;
+        }
+    }
+    async getCreditorSyncEmail(req) {
+        const creditor = await this.creditorRepository.getById(req.params.id);
+        if (!creditor)
+            return [false, constants_util_1.default.notFoundMessage('creditor')];
+        const result = await this.syncCreditorRepository.getOne({
+            creditorId: req.params.id,
+        });
+        if (!result)
+            return [true, creditor.basicInformation.email];
+        return [true, result.email];
     }
 }
 exports.default = CreditorService;

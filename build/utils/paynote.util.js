@@ -7,10 +7,13 @@ const creditor_repository_1 = require("../api/repository/creditor/creditor.repos
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_1 = __importDefault(require("./constants.util"));
+const syncCreditor_repository_1 = require("../api/repository/syncCreditor/syncCreditor.repository");
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.syncCreditorRepository = new syncCreditor_repository_1.SyncCreditorRepository();
     }
     async createCustomer(creditor) {
         if (!creditor.basicInformation?.fullName)
@@ -357,6 +360,49 @@ class PaynoteUtil {
             this.creditorRepository.updateByOne({ 'basicInformation.email': user.email }, update);
             update = {};
         }
+    }
+    async getPaynoteErrorMessage(result) {
+        let message = '';
+        if (result?.messages) {
+            message = result.messages[0];
+        }
+        else {
+            message = result.message;
+        }
+        return message;
+    }
+    async processSyncCreditorPaynote(users, creditorEmail) {
+        let update = {};
+        const paynoteEmails = users.map(user => {
+            return user.email;
+        });
+        const index = paynoteEmails.indexOf(creditorEmail);
+        if (index === -1) {
+            update['paynoteUserFound'] = false;
+            update['paynoteSourceVerified'] = false;
+            return [false, 'Could not found user in paynote'];
+        }
+        update['paynoteUserFound'] = true;
+        update['paynoteUserId'] = users[index].user_id;
+        let sourceVerified = false;
+        for (const source of users[index].sources) {
+            if (source.status === 'verified') {
+                sourceVerified = true;
+                update['paynoteSourceId'] = source.source_id;
+                break;
+            }
+        }
+        update['paynoteSourceVerified'] = sourceVerified;
+        return [true, update];
+    }
+    async updateSyncCreditorObject(data, creditorId) {
+        await this.creditorRepository.updateById(creditorId, data);
+    }
+    async upsertCreditorPaynoteEmail(creditorId, email) {
+        await this.syncCreditorRepository.upsert({ creditorId: creditorId }, {
+            email: email,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
     }
 }
 exports.default = new PaynoteUtil();

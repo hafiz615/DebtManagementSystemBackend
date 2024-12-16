@@ -4,12 +4,16 @@ import {IPayment} from '../database/interfaces/payment.interface';
 import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
 import constantsUtil from './constants.util';
+import {SyncCreditorRepository} from '../api/repository/syncCreditor/syncCreditor.repository';
+import commonUtil from './common.util';
 dotenv.config();
 
 class PaynoteUtil {
   private creditorRepository: CreditorRepository;
+  private syncCreditorRepository: SyncCreditorRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
+    this.syncCreditorRepository = new SyncCreditorRepository();
   }
   async createCustomer(creditor: ICreditor) {
     if (!creditor.basicInformation?.fullName)
@@ -372,6 +376,55 @@ class PaynoteUtil {
       );
       update = {};
     }
+  }
+
+  async getPaynoteErrorMessage(result: any) {
+    let message = '';
+    if (result?.messages) {
+      message = result.messages[0];
+    } else {
+      message = result.message;
+    }
+    return message;
+  }
+
+  async processSyncCreditorPaynote(users: any, creditorEmail: string) {
+    let update = {};
+    const paynoteEmails = users.map(user => {
+      return user.email;
+    });
+    const index = paynoteEmails.indexOf(creditorEmail);
+    if (index === -1) {
+      update['paynoteUserFound'] = false;
+      update['paynoteSourceVerified'] = false;
+      return [false, 'Could not found user in paynote'];
+    }
+    update['paynoteUserFound'] = true;
+    update['paynoteUserId'] = users[index].user_id;
+    let sourceVerified = false;
+    for (const source of users[index].sources) {
+      if (source.status === 'verified') {
+        sourceVerified = true;
+        update['paynoteSourceId'] = source.source_id;
+        break;
+      }
+    }
+    update['paynoteSourceVerified'] = sourceVerified;
+    return [true, update];
+  }
+
+  async updateSyncCreditorObject(data: any, creditorId: string) {
+    await this.creditorRepository.updateById(creditorId, data);
+  }
+
+  async upsertCreditorPaynoteEmail(creditorId: string, email: string) {
+    await this.syncCreditorRepository.upsert(
+      {creditorId: creditorId},
+      {
+        email: email,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
   }
 }
 
