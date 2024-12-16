@@ -1244,6 +1244,7 @@ class DebtorService {
             let updatedPayment = await this.paymentRepository.updateById(transaction, {
                 authorized: 'Success', // Make is success so it can be picked up by CRON Job
                 captured: 'Success', // Make is success so it can be picked up by CRON Job
+                status: 'Pending',
                 dueDate: req.body.transactionDate,
                 debtorTransId: req.body.referenceId,
                 transactionType: req.body.transactionType,
