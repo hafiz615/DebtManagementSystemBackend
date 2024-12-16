@@ -599,6 +599,7 @@ class DebtorService {
     }
     let payments: IPayment[] = [];
     let debtor = null;
+    let amount = 0;
     if (payment.caseId) debtor = payment.caseId.debtor;
     if (!payment.caseId) {
       debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
@@ -611,8 +612,10 @@ class DebtorService {
       payment = payments.find(payment => {
         return payment.caseId === null;
       });
+      amount = payment.amount;
     }
     if (!payment.paymentReference) {
+      if (payment.commision) amount = payment.amount + payment.commision;
       payments.push(payment);
     }
     let response: any;
@@ -621,7 +624,7 @@ class DebtorService {
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.authorizeCreditCard(
-          payment.amount,
+          amount,
           account.customerVaultId
         );
         responseNum = new URLSearchParams(response).get('response');
@@ -750,9 +753,14 @@ class DebtorService {
           $inc: {commissionPaid: commissionAmount},
         });
       }
-      if (!amount) {
+      if (!amount && payment.caseId === null) {
         await this.debtorRepository.updateById(payment.debtorId, {
           $inc: {commissionPaid: payment.amount},
+        });
+      }
+      if (!amount && payment.caseId !== null && payment.commision) {
+        await this.debtorRepository.updateById(payment.debtorId, {
+          $inc: {commissionPaid: payment.commision},
         });
       }
     } else {
@@ -1505,7 +1513,12 @@ class DebtorService {
   }
 
   async addManualPayment(req: Request) {
-    let debtorCase = await this.caseRepository.getById(req.body.caseId);
+    let debtorCase = await this.caseRepository.getById(
+      req.body.caseId,
+      undefined,
+      undefined,
+      ['debtor']
+    );
     if (!debtorCase) {
       return [false, constants.notFoundMessage('Case')];
     }
