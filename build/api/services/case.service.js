@@ -662,7 +662,7 @@ class CaseService {
             const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
             let identity = randomGenerator();
             const toNumberOrClientName = req.body.To;
-            const callerId = req.body.From;
+            const callerId = process.env.TWILIO_CALLER_ID;
             const VoiceResponse = require("twilio").twiml.VoiceResponse;
             let twiml = new VoiceResponse();
             // If the request to the /voice endpoint is TO your Twilio Number, 
@@ -742,93 +742,6 @@ class CaseService {
             }
         };
         this.getToken = async (req) => {
-            const ADJECTIVES = [
-                "Awesome",
-                "Bold",
-                "Creative",
-                "Dapper",
-                "Eccentric",
-                "Fiesty",
-                "Golden",
-                "Holy",
-                "Ignominious",
-                "Jolly",
-                "Kindly",
-                "Lucky",
-                "Mushy",
-                "Natural",
-                "Oaken",
-                "Precise",
-                "Quiet",
-                "Rowdy",
-                "Sunny",
-                "Tall",
-                "Unique",
-                "Vivid",
-                "Wonderful",
-                "Xtra",
-                "Yawning",
-                "Zesty",
-            ];
-            const FIRST_NAMES = [
-                "Anna",
-                "Bobby",
-                "Cameron",
-                "Danny",
-                "Emmett",
-                "Frida",
-                "Gracie",
-                "Hannah",
-                "Isaac",
-                "Jenova",
-                "Kendra",
-                "Lando",
-                "Mufasa",
-                "Nate",
-                "Owen",
-                "Penny",
-                "Quincy",
-                "Roddy",
-                "Samantha",
-                "Tammy",
-                "Ulysses",
-                "Victoria",
-                "Wendy",
-                "Xander",
-                "Yolanda",
-                "Zelda",
-            ];
-            const LAST_NAMES = [
-                "Anchorage",
-                "Berlin",
-                "Cucamonga",
-                "Davenport",
-                "Essex",
-                "Fresno",
-                "Gunsight",
-                "Hanover",
-                "Indianapolis",
-                "Jamestown",
-                "Kane",
-                "Liberty",
-                "Minneapolis",
-                "Nevis",
-                "Oakland",
-                "Portland",
-                "Quantico",
-                "Raleigh",
-                "SaintPaul",
-                "Tulsa",
-                "Utica",
-                "Vail",
-                "Warsaw",
-                "XiaoJin",
-                "Yale",
-                "Zimmerman",
-            ];
-            const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-            const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
-            let identity = randomGenerator();
             const AccessToken = require("twilio").jwt.AccessToken;
             const VoiceGrant = AccessToken.VoiceGrant;
             const accessToken = new AccessToken(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_API_KEY, process.env.TWILIO_API_SECRET);
