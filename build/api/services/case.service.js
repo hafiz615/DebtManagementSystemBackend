@@ -533,7 +533,7 @@ class CaseService {
             };
             try {
                 const call = await this.twilioClient.calls.create(callData);
-                console.log("Call", call);
+                console.log('Call', call);
                 const result = await this.caseRepository.updateById(req.params.id, {
                     $push: {
                         calls: {
@@ -556,7 +556,7 @@ class CaseService {
                 return [true, call.sid];
             }
             catch (err) {
-                console.log("Error Creating Call", err);
+                console.log('Error Creating Call', err);
                 return [false, 'Error creating call.'];
             }
         };
@@ -572,104 +572,104 @@ class CaseService {
         };
         this.callTwiml = async (req) => {
             const ADJECTIVES = [
-                "Awesome",
-                "Bold",
-                "Creative",
-                "Dapper",
-                "Eccentric",
-                "Fiesty",
-                "Golden",
-                "Holy",
-                "Ignominious",
-                "Jolly",
-                "Kindly",
-                "Lucky",
-                "Mushy",
-                "Natural",
-                "Oaken",
-                "Precise",
-                "Quiet",
-                "Rowdy",
-                "Sunny",
-                "Tall",
-                "Unique",
-                "Vivid",
-                "Wonderful",
-                "Xtra",
-                "Yawning",
-                "Zesty",
+                'Awesome',
+                'Bold',
+                'Creative',
+                'Dapper',
+                'Eccentric',
+                'Fiesty',
+                'Golden',
+                'Holy',
+                'Ignominious',
+                'Jolly',
+                'Kindly',
+                'Lucky',
+                'Mushy',
+                'Natural',
+                'Oaken',
+                'Precise',
+                'Quiet',
+                'Rowdy',
+                'Sunny',
+                'Tall',
+                'Unique',
+                'Vivid',
+                'Wonderful',
+                'Xtra',
+                'Yawning',
+                'Zesty',
             ];
             const FIRST_NAMES = [
-                "Anna",
-                "Bobby",
-                "Cameron",
-                "Danny",
-                "Emmett",
-                "Frida",
-                "Gracie",
-                "Hannah",
-                "Isaac",
-                "Jenova",
-                "Kendra",
-                "Lando",
-                "Mufasa",
-                "Nate",
-                "Owen",
-                "Penny",
-                "Quincy",
-                "Roddy",
-                "Samantha",
-                "Tammy",
-                "Ulysses",
-                "Victoria",
-                "Wendy",
-                "Xander",
-                "Yolanda",
-                "Zelda",
+                'Anna',
+                'Bobby',
+                'Cameron',
+                'Danny',
+                'Emmett',
+                'Frida',
+                'Gracie',
+                'Hannah',
+                'Isaac',
+                'Jenova',
+                'Kendra',
+                'Lando',
+                'Mufasa',
+                'Nate',
+                'Owen',
+                'Penny',
+                'Quincy',
+                'Roddy',
+                'Samantha',
+                'Tammy',
+                'Ulysses',
+                'Victoria',
+                'Wendy',
+                'Xander',
+                'Yolanda',
+                'Zelda',
             ];
             const LAST_NAMES = [
-                "Anchorage",
-                "Berlin",
-                "Cucamonga",
-                "Davenport",
-                "Essex",
-                "Fresno",
-                "Gunsight",
-                "Hanover",
-                "Indianapolis",
-                "Jamestown",
-                "Kane",
-                "Liberty",
-                "Minneapolis",
-                "Nevis",
-                "Oakland",
-                "Portland",
-                "Quantico",
-                "Raleigh",
-                "SaintPaul",
-                "Tulsa",
-                "Utica",
-                "Vail",
-                "Warsaw",
-                "XiaoJin",
-                "Yale",
-                "Zimmerman",
+                'Anchorage',
+                'Berlin',
+                'Cucamonga',
+                'Davenport',
+                'Essex',
+                'Fresno',
+                'Gunsight',
+                'Hanover',
+                'Indianapolis',
+                'Jamestown',
+                'Kane',
+                'Liberty',
+                'Minneapolis',
+                'Nevis',
+                'Oakland',
+                'Portland',
+                'Quantico',
+                'Raleigh',
+                'SaintPaul',
+                'Tulsa',
+                'Utica',
+                'Vail',
+                'Warsaw',
+                'XiaoJin',
+                'Yale',
+                'Zimmerman',
             ];
-            const isAValidPhoneNumber = (number) => {
+            const isAValidPhoneNumber = number => {
                 return /^[\d\+\-\(\) ]+$/.test(number);
             };
-            const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const rand = arr => arr[Math.floor(Math.random() * arr.length)];
             const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
-            let identity = randomGenerator();
+            let identity = 'user';
             const toNumberOrClientName = req.body.To;
             const callerId = req.body.From;
-            const VoiceResponse = require("twilio").twiml.VoiceResponse;
+            const VoiceResponse = require('twilio').twiml.VoiceResponse;
             let twiml = new VoiceResponse();
-            // If the request to the /voice endpoint is TO your Twilio Number, 
+            // If the request to the /voice endpoint is TO your Twilio Number,
             // then it is an incoming call towards your Twilio.Device.
             if (toNumberOrClientName == callerId) {
                 let dial = twiml.dial();
-                // This will connect the caller with your Twilio.Device/client 
+                // This will connect the caller with your Twilio.Device/client
                 dial.client(identity);
             }
             else if (req.body.To) {
@@ -677,14 +677,14 @@ class CaseService {
                 // set the callerId
                 let dial = twiml.dial({ callerId });
                 // Check if the 'To' parameter is a Phone Number or Client Name
-                // in order to use the appropriate TwiML noun 
+                // in order to use the appropriate TwiML noun
                 const attr = isAValidPhoneNumber(toNumberOrClientName)
-                    ? "number"
-                    : "client";
+                    ? 'number'
+                    : 'client';
                 dial[attr]({}, toNumberOrClientName);
             }
             else {
-                twiml.say("Thanks for calling!");
+                twiml.say('Thanks for calling!');
             }
             return [true, twiml.toString()];
             // try {
@@ -714,7 +714,7 @@ class CaseService {
                 const transcriptionText = req.body.TranscriptionText;
                 const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
                     $set: {
-                        'calls.$.callTranscription': transcriptionText
+                        'calls.$.callTranscription': transcriptionText,
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
@@ -743,97 +743,97 @@ class CaseService {
         };
         this.getToken = async (req) => {
             const ADJECTIVES = [
-                "Awesome",
-                "Bold",
-                "Creative",
-                "Dapper",
-                "Eccentric",
-                "Fiesty",
-                "Golden",
-                "Holy",
-                "Ignominious",
-                "Jolly",
-                "Kindly",
-                "Lucky",
-                "Mushy",
-                "Natural",
-                "Oaken",
-                "Precise",
-                "Quiet",
-                "Rowdy",
-                "Sunny",
-                "Tall",
-                "Unique",
-                "Vivid",
-                "Wonderful",
-                "Xtra",
-                "Yawning",
-                "Zesty",
+                'Awesome',
+                'Bold',
+                'Creative',
+                'Dapper',
+                'Eccentric',
+                'Fiesty',
+                'Golden',
+                'Holy',
+                'Ignominious',
+                'Jolly',
+                'Kindly',
+                'Lucky',
+                'Mushy',
+                'Natural',
+                'Oaken',
+                'Precise',
+                'Quiet',
+                'Rowdy',
+                'Sunny',
+                'Tall',
+                'Unique',
+                'Vivid',
+                'Wonderful',
+                'Xtra',
+                'Yawning',
+                'Zesty',
             ];
             const FIRST_NAMES = [
-                "Anna",
-                "Bobby",
-                "Cameron",
-                "Danny",
-                "Emmett",
-                "Frida",
-                "Gracie",
-                "Hannah",
-                "Isaac",
-                "Jenova",
-                "Kendra",
-                "Lando",
-                "Mufasa",
-                "Nate",
-                "Owen",
-                "Penny",
-                "Quincy",
-                "Roddy",
-                "Samantha",
-                "Tammy",
-                "Ulysses",
-                "Victoria",
-                "Wendy",
-                "Xander",
-                "Yolanda",
-                "Zelda",
+                'Anna',
+                'Bobby',
+                'Cameron',
+                'Danny',
+                'Emmett',
+                'Frida',
+                'Gracie',
+                'Hannah',
+                'Isaac',
+                'Jenova',
+                'Kendra',
+                'Lando',
+                'Mufasa',
+                'Nate',
+                'Owen',
+                'Penny',
+                'Quincy',
+                'Roddy',
+                'Samantha',
+                'Tammy',
+                'Ulysses',
+                'Victoria',
+                'Wendy',
+                'Xander',
+                'Yolanda',
+                'Zelda',
             ];
             const LAST_NAMES = [
-                "Anchorage",
-                "Berlin",
-                "Cucamonga",
-                "Davenport",
-                "Essex",
-                "Fresno",
-                "Gunsight",
-                "Hanover",
-                "Indianapolis",
-                "Jamestown",
-                "Kane",
-                "Liberty",
-                "Minneapolis",
-                "Nevis",
-                "Oakland",
-                "Portland",
-                "Quantico",
-                "Raleigh",
-                "SaintPaul",
-                "Tulsa",
-                "Utica",
-                "Vail",
-                "Warsaw",
-                "XiaoJin",
-                "Yale",
-                "Zimmerman",
+                'Anchorage',
+                'Berlin',
+                'Cucamonga',
+                'Davenport',
+                'Essex',
+                'Fresno',
+                'Gunsight',
+                'Hanover',
+                'Indianapolis',
+                'Jamestown',
+                'Kane',
+                'Liberty',
+                'Minneapolis',
+                'Nevis',
+                'Oakland',
+                'Portland',
+                'Quantico',
+                'Raleigh',
+                'SaintPaul',
+                'Tulsa',
+                'Utica',
+                'Vail',
+                'Warsaw',
+                'XiaoJin',
+                'Yale',
+                'Zimmerman',
             ];
-            const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const rand = arr => arr[Math.floor(Math.random() * arr.length)];
             const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
-            let identity = randomGenerator();
-            const AccessToken = require("twilio").jwt.AccessToken;
+            let identity = 'user';
+            const AccessToken = require('twilio').jwt.AccessToken;
             const VoiceGrant = AccessToken.VoiceGrant;
-            const accessToken = new AccessToken(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_API_KEY, process.env.TWILIO_API_SECRET);
+            const accessToken = new AccessToken(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_API_KEY, process.env.TWILIO_API_SECRET, { identity });
             console.log(accessToken, 'accessToken1');
-            accessToken.identity = "user";
+            accessToken.identity = 'user';
             console.log(accessToken, 'accessToken2');
             const grant = new VoiceGrant({
                 outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
@@ -841,10 +841,13 @@ class CaseService {
             });
             accessToken.addGrant(grant);
             // Include identity and token in a JSON response
-            return [true, {
-                    identity: "user",
+            return [
+                true,
+                {
+                    identity: 'user',
                     token: accessToken.toJwt(),
-                }];
+                },
+            ];
         };
         this.callRecordingStatus = async (req) => {
             try {
@@ -858,7 +861,7 @@ class CaseService {
                         'calls.$.callRecordingSid': recordingSid,
                         'calls.$.callDuration': callDuration,
                         'calls.$.callStatus': status,
-                        'calls.$.callStartDate': callStartTime
+                        'calls.$.callStartDate': callStartTime,
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
