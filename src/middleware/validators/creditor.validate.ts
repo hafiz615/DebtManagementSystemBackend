@@ -146,6 +146,24 @@ class CreditorRequests {
         );
     }
   };
+
+  async syncCreditorEmail(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      email: Joi.string().email().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
 }
 
 export default new CreditorRequests();

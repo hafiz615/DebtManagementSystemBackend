@@ -48,4 +48,17 @@ router.post(
   creditorController.pausePayments
 );
 
+router.post(
+  '/syncPaynoteCreditor/:id',
+  authorize.validateAuth,
+  creditorValidate.syncCreditorEmail,
+  creditorController.syncPaynoteCreditor
+);
+
+router.get(
+  '/getCreditorSyncEmail/:id',
+  authorize.validateAuth,
+  creditorController.getCreditorSyncEmail
+);
+
 export default router;
