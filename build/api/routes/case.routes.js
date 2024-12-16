@@ -46,6 +46,6 @@ router.post('/twilio/voice', case_controller_1.default.callTwiml);
 router.post('/twilio/transcription-status', case_controller_1.default.callTranscriptionStatus);
 router.post('/twilio/recording-status', case_controller_1.default.callRecordingStatus);
 router.post('/twilio/call-hangup/:callSid', case_controller_1.default.callHangUp);
-router.post('/twilio/generate-token/', case_controller_1.default.twiliotoken);
+router.get('/token', case_controller_1.default.getToken);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

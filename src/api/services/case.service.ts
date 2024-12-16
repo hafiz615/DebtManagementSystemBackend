@@ -874,10 +874,10 @@ class CaseService {
     }
     const callData = {
       from: '+17756307412',
-      to: reqTemp.body.toNumber || '+923354537279', // For testing Purposes Added My Number
+      to: reqTemp.body.toNumber, // For testing Purposes Added My Number
       url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
       record: true,
-      statusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+      statusCallback: 'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/recording-status',
       statusCallbackEvent: ['completed'],
     };
     try {
@@ -927,27 +927,152 @@ class CaseService {
   };
 
   callTwiml = async (req: Request) => {
-    try {
-      const VoiceResponse  = require('twilio').twiml.VoiceResponse;
-      console.log("VoiceResponse", VoiceResponse)
-      if (!VoiceResponse) {
-        throw new Error('Twilio VoiceResponse is not available.');
-      }
-      const response = new VoiceResponse();
-      console.log("Response", response)
-  
-      // Configure recording and transcription
-      response.record({
-        transcribe: true,
-        transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
-      });
-  
-                // Return successful response
-      return [true, response.toString()];
-    } catch (err) {
-      console.error('Error generating TwiML:', err);
-      return [false, 'Error generating TwiML.'];
+    const ADJECTIVES = [
+      "Awesome",
+      "Bold",
+      "Creative",
+      "Dapper",
+      "Eccentric",
+      "Fiesty",
+      "Golden",
+      "Holy",
+      "Ignominious",
+      "Jolly",
+      "Kindly",
+      "Lucky",
+      "Mushy",
+      "Natural",
+      "Oaken",
+      "Precise",
+      "Quiet",
+      "Rowdy",
+      "Sunny",
+      "Tall",
+      "Unique",
+      "Vivid",
+      "Wonderful",
+      "Xtra",
+      "Yawning",
+      "Zesty",
+    ];
+
+    const FIRST_NAMES = [
+      "Anna",
+      "Bobby",
+      "Cameron",
+      "Danny",
+      "Emmett",
+      "Frida",
+      "Gracie",
+      "Hannah",
+      "Isaac",
+      "Jenova",
+      "Kendra",
+      "Lando",
+      "Mufasa",
+      "Nate",
+      "Owen",
+      "Penny",
+      "Quincy",
+      "Roddy",
+      "Samantha",
+      "Tammy",
+      "Ulysses",
+      "Victoria",
+      "Wendy",
+      "Xander",
+      "Yolanda",
+      "Zelda",
+    ];
+    
+    const LAST_NAMES = [
+      "Anchorage",
+      "Berlin",
+      "Cucamonga",
+      "Davenport",
+      "Essex",
+      "Fresno",
+      "Gunsight",
+      "Hanover",
+      "Indianapolis",
+      "Jamestown",
+      "Kane",
+      "Liberty",
+      "Minneapolis",
+      "Nevis",
+      "Oakland",
+      "Portland",
+      "Quantico",
+      "Raleigh",
+      "SaintPaul",
+      "Tulsa",
+      "Utica",
+      "Vail",
+      "Warsaw",
+      "XiaoJin",
+      "Yale",
+      "Zimmerman",
+    ];
+    const isAValidPhoneNumber = (number) => {
+      return /^[\d\+\-\(\) ]+$/.test(number);
     }
+    
+  const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
+  let identity = randomGenerator();
+  const toNumberOrClientName = req.body.To;
+  const callerId = req.body.From;
+  const VoiceResponse = require("twilio").twiml.VoiceResponse;
+  let twiml = new VoiceResponse();
+
+  // If the request to the /voice endpoint is TO your Twilio Number, 
+  // then it is an incoming call towards your Twilio.Device.
+  if (toNumberOrClientName == callerId) {
+    let dial = twiml.dial();
+
+    // This will connect the caller with your Twilio.Device/client 
+    dial.client(identity);
+
+  } else if (req.body.To) {
+    // This is an outgoing call
+
+    // set the callerId
+    let dial = twiml.dial({ callerId });
+
+    // Check if the 'To' parameter is a Phone Number or Client Name
+    // in order to use the appropriate TwiML noun 
+    const attr = isAValidPhoneNumber(toNumberOrClientName)
+      ? "number"
+      : "client";
+    dial[attr]({}, toNumberOrClientName);
+  } else {
+    twiml.say("Thanks for calling!");
+  }
+
+  return [true, twiml.toString()];
+
+    // try {
+    //   console.log(req, 'hello request')
+    //   const VoiceResponse  = require('twilio').twiml.VoiceResponse;
+    //   console.log("VoiceResponse", VoiceResponse)
+    //   if (!VoiceResponse) {
+    //     throw new Error('Twilio VoiceResponse is not available.');
+    //   }
+    //   const response = new VoiceResponse();
+    //   console.log("Response", response)
+  
+    //   // Configure recording and transcription
+    //   response.record({
+    //     transcribe: true,
+    //     transcribeCallback: 'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/transcription-status',
+    //   });
+  
+    //   // Return successful response
+    //   return [true, response.toString()];
+    // } catch (err) {
+    //   console.error('Error generating TwiML:', err);
+    //   return [false, 'Error generating TwiML.'];
+    // }
   };    
   
   callTranscriptionStatus = async (req: Request) => {
@@ -987,6 +1112,119 @@ class CaseService {
       return [false, 'Error hanging up the call.'];
     }
   };
+
+  getToken = async (req: Request) => {
+    const ADJECTIVES = [
+      "Awesome",
+      "Bold",
+      "Creative",
+      "Dapper",
+      "Eccentric",
+      "Fiesty",
+      "Golden",
+      "Holy",
+      "Ignominious",
+      "Jolly",
+      "Kindly",
+      "Lucky",
+      "Mushy",
+      "Natural",
+      "Oaken",
+      "Precise",
+      "Quiet",
+      "Rowdy",
+      "Sunny",
+      "Tall",
+      "Unique",
+      "Vivid",
+      "Wonderful",
+      "Xtra",
+      "Yawning",
+      "Zesty",
+    ];
+
+    const FIRST_NAMES = [
+      "Anna",
+      "Bobby",
+      "Cameron",
+      "Danny",
+      "Emmett",
+      "Frida",
+      "Gracie",
+      "Hannah",
+      "Isaac",
+      "Jenova",
+      "Kendra",
+      "Lando",
+      "Mufasa",
+      "Nate",
+      "Owen",
+      "Penny",
+      "Quincy",
+      "Roddy",
+      "Samantha",
+      "Tammy",
+      "Ulysses",
+      "Victoria",
+      "Wendy",
+      "Xander",
+      "Yolanda",
+      "Zelda",
+    ];
+    
+    const LAST_NAMES = [
+      "Anchorage",
+      "Berlin",
+      "Cucamonga",
+      "Davenport",
+      "Essex",
+      "Fresno",
+      "Gunsight",
+      "Hanover",
+      "Indianapolis",
+      "Jamestown",
+      "Kane",
+      "Liberty",
+      "Minneapolis",
+      "Nevis",
+      "Oakland",
+      "Portland",
+      "Quantico",
+      "Raleigh",
+      "SaintPaul",
+      "Tulsa",
+      "Utica",
+      "Vail",
+      "Warsaw",
+      "XiaoJin",
+      "Yale",
+      "Zimmerman",
+    ];
+    const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
+    let identity = randomGenerator();
+    const AccessToken = require("twilio").jwt.AccessToken;
+    const VoiceGrant = AccessToken.VoiceGrant;
+  const accessToken = new AccessToken(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_API_KEY,
+    process.env.TWILIO_API_SECRET
+  );
+  console.log(accessToken, 'accessToken1')
+  accessToken.identity = identity;
+  console.log(accessToken, 'accessToken2')
+  const grant = new VoiceGrant({
+    outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
+    incomingAllow: true,
+  });
+  accessToken.addGrant(grant);
+
+  // Include identity and token in a JSON response
+   return [true, {
+    identity: identity,
+    token: accessToken.toJwt(),
+  }];
+  }
 
 
   callRecordingStatus = async (req: Request) => {
@@ -1415,49 +1653,6 @@ class CaseService {
     }
 
     return [true, constantsUtil.successDeleteMessage('Creditor')];
-  };
-
-  tokenGenerate = async (req: Request) => {
-    try {
-       // Log the request body to debug
-    console.log('Request body:', req.body);
-
-    // Extract identity from the request body
-    const identity = req.body?.identity || 'default-user'; // Fallback to default identity
-    console.log('Extracted identity:', identity);
-
-      if (!identity) {
-        return [false, 'Identity is required to generate a token.'];
-      }
-
-      // Create a VoiceGrant
-    console.log('Creating VoiceGrant...');
-    const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: process.env.twimloutgoingAppSid,
-      incomingAllow: true, // Allow incoming calls
-    });
-    console.log('VoiceGrant created:', voiceGrant);
-
-    // Create an AccessToken
-    console.log('Creating AccessToken...');
-
-    const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, {
-      identity,
-    });
-    token.addGrant(
-      new VoiceGrant({
-        outgoingApplicationSid: process.env.twimloutgoingAppSid,
-        incomingAllow: true,
-      })
-    );
-
-    console.log('AccessToken created:', token);
-    
-      return [true,token.toJwt()];
-    } catch (err) {
-      console.error('Error hanging up the call:', err);
-      return [false, 'Error hanging up the call.'];
-    }
   };
 }
 

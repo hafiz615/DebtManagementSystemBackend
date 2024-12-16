@@ -386,6 +386,7 @@ class CaseController {
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 res.type('text/xml');
+                console.log(response[1], ' hello hello');
                 return res.status(constants_util_1.default.CODE.OK).send(response[1]);
             }
             catch (error) {
@@ -641,6 +642,27 @@ class CaseController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.getToken = async (req, res) => {
+            try {
+                const response = await this.caseService.getToken(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Token'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.deleteFile = async (req, res) => {
             try {
                 const response = await this.caseService.deleteFile(req);
@@ -693,26 +715,6 @@ class CaseController {
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
                     message: response[1],
-                }));
-            }
-            catch (error) {
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
-            }
-        };
-        this.twiliotoken = async (req, res) => {
-            try {
-                const response = await this.caseService.tokenGenerate(req);
-                if (!response[0]) {
-                    return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
-                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
-                }
-                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                    statusCode: constants_util_1.default.CODE.OK,
-                    data: response[1],
-                    message: constants_util_1.default.successFoundMessage('Twilio Token'),
                 }));
             }
             catch (error) {
