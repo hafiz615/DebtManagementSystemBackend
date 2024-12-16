@@ -1221,7 +1221,7 @@ class CaseService {
 
   // Include identity and token in a JSON response
    return [true, {
-    identity: identity,
+    identity: "user",
     token: accessToken.toJwt(),
   }];
   }
