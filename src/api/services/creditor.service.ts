@@ -13,17 +13,21 @@ import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 import paynoteUtil from '../../utils/paynote.util';
 import dotenv from 'dotenv';
+import {SyncCreditorRepository} from '../repository/syncCreditor/syncCreditor.repository';
+import {ISyncCreditor} from '../../database/interfaces/syncCreditor.interface';
 dotenv.config();
 
 class CreditorService {
   private creditorRepository: CreditorRepository;
   private caseRepository: CaseRepository;
   private bulkUploadRepository: BulkUploadRepository;
+  private syncCreditorRepository: SyncCreditorRepository;
 
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.caseRepository = new CaseRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
+    this.syncCreditorRepository = new SyncCreditorRepository();
   }
 
   async getCreditor(text: string): Promise<[boolean, ICreditor[] | string]> {
@@ -340,9 +344,7 @@ class CreditorService {
     if (req.query.pause !== 'true' && req.query.pause !== 'false') {
       return [false, 'Query param missing!'];
     }
-    const caseTemp = await this.caseRepository.getById<ICreditor>(
-      req.params.id
-    );
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) return [false, constants.notFoundMessage('creditor')];
     const updateCase = await this.caseRepository.updateById<ICase>(
       req.params.id,
@@ -353,6 +355,78 @@ class CreditorService {
     if (!updateCase) return [false, constants.failureUpdateMessage('payments')];
     const word = req.query.pause === 'true' ? 'resumed' : 'paused';
     return [true, `Funds transfer ${word} successfully`];
+  }
+
+  async syncPaynoteCreditor(req: Request) {
+    const creditor = await this.creditorRepository.getById<ICreditor>(
+      req.params.id
+    );
+    if (!creditor) return [false, constants.notFoundMessage('creditor')];
+    const email = req.body.email.toLowerCase();
+    let page = 1;
+    let limit = 100;
+    const result = await paynoteUtil.getAllCustomerDetails(page, limit);
+    if (result?.error) {
+      let message = await paynoteUtil.getPaynoteErrorMessage(result);
+      return [false, message];
+    }
+    const resultSync = await paynoteUtil.processSyncCreditorPaynote(
+      result.list.data,
+      email
+    );
+    if (resultSync[0]) {
+      await paynoteUtil.updateSyncCreditorObject(resultSync[1], req.params.id);
+      await paynoteUtil.upsertCreditorPaynoteEmail(req.params.id, email);
+      return resultSync;
+    }
+
+    const lastPage = result.list.last_page;
+    if (lastPage === page) {
+      await paynoteUtil.updateSyncCreditorObject(resultSync[1], req.params.id);
+      return resultSync;
+    }
+    let returnValue = null;
+    if (lastPage > page) {
+      for (let i = page + 1; i <= lastPage; i++) {
+        const result = await paynoteUtil.getAllCustomerDetails(i, limit);
+        if (result?.error) {
+          let message = await paynoteUtil.getPaynoteErrorMessage(result);
+          return [false, message];
+        }
+        const resultSync = await paynoteUtil.processSyncCreditorPaynote(
+          result.list.data,
+          email
+        );
+        if (resultSync[0]) {
+          await paynoteUtil.updateSyncCreditorObject(
+            resultSync[1],
+            req.params.id
+          );
+          await paynoteUtil.upsertCreditorPaynoteEmail(req.params.id, email);
+          return resultSync;
+        }
+        if (!resultSync[0] && i === lastPage) {
+          await paynoteUtil.updateSyncCreditorObject(
+            resultSync[1],
+            req.params.id
+          );
+          returnValue = resultSync;
+        }
+      }
+      return returnValue;
+    }
+  }
+
+  async getCreditorSyncEmail(req: Request) {
+    const creditor = await this.creditorRepository.getById<ICreditor>(
+      req.params.id
+    );
+    if (!creditor) return [false, constants.notFoundMessage('creditor')];
+    const result = await this.syncCreditorRepository.getOne<ISyncCreditor>({
+      creditorId: req.params.id,
+    });
+    if (!result) return [true, creditor.basicInformation.email];
+    return [true, result.email];
   }
 }
 
