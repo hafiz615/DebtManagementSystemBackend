@@ -584,9 +584,8 @@ class CaseService {
                     transcribe: true,
                     transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
                 });
-                //Sending Response in XML format
                 // Return successful response
-                return [true, response.type('text/xml')];
+                return [true, response.toString()];
             }
             catch (err) {
                 console.error('Error generating TwiML:', err);
@@ -785,69 +784,38 @@ class CaseService {
             }
             return [true, constants_util_1.default.successDeleteMessage('Creditor')];
         };
-        // tokenGenerate = async (req: Request) => {
-        //   try {
-        //      // Log the request body to debug
-        //   console.log('Request body:', req.body);
-        //   // Extract identity from the request body
-        //   const identity = req.body?.identity || 'default-user'; // Fallback to default identity
-        //   console.log('Extracted identity:', identity);
-        //     if (!identity) {
-        //       return [false, 'Identity is required to generate a token.'];
-        //     }
-        //     // Create a VoiceGrant
-        //   console.log('Creating VoiceGrant...');
-        //   const voiceGrant = new VoiceGrant({
-        //     outgoingApplicationSid: process.env.twimloutgoingAppSid,
-        //     incomingAllow: true, // Allow incoming calls
-        //   });
-        //   console.log('VoiceGrant created:', voiceGrant);
-        //   // Create an AccessToken
-        //   console.log('Creating AccessToken...');
-        //   const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, {
-        //     identity,
-        //   });
-        //   token.addGrant(
-        //     new VoiceGrant({
-        //       outgoingApplicationSid: process.env.twimloutgoingAppSid,
-        //       incomingAllow: true,
-        //     })
-        //   );
-        //   console.log('AccessToken created:', token);
-        //     return [true,token.toJwt()];
-        //   } catch (err) {
-        //     console.error('Error hanging up the call:', err);
-        //     return [false, 'Error hanging up the call.'];
-        //   }
-        // };
         this.tokenGenerate = async (req) => {
             try {
-                // Log the request body for debugging
+                // Log the request body to debug
                 console.log('Request body:', req.body);
-                // Extract and validate identity
-                const identity = req.body?.identity;
+                // Extract identity from the request body
+                const identity = req.body?.identity || 'default-user'; // Fallback to default identity
+                console.log('Extracted identity:', identity);
                 if (!identity) {
-                    console.error('Identity is required to generate a token.');
                     return [false, 'Identity is required to generate a token.'];
                 }
-                console.log('Extracted identity:', identity);
                 // Create a VoiceGrant
+                console.log('Creating VoiceGrant...');
                 const voiceGrant = new VoiceGrant({
                     outgoingApplicationSid: process.env.twimloutgoingAppSid,
                     incomingAllow: true, // Allow incoming calls
                 });
                 console.log('VoiceGrant created:', voiceGrant);
                 // Create an AccessToken
-                const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, { identity });
-                // Attach the VoiceGrant to the AccessToken
-                token.addGrant(voiceGrant);
-                console.log('AccessToken created successfully:', token);
-                // Return the generated token as a JWT
+                console.log('Creating AccessToken...');
+                const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, {
+                    identity,
+                });
+                token.addGrant(new VoiceGrant({
+                    outgoingApplicationSid: process.env.twimloutgoingAppSid,
+                    incomingAllow: true,
+                }));
+                console.log('AccessToken created:', token);
                 return [true, token.toJwt()];
             }
             catch (err) {
-                console.error('Error generating the token:', err);
-                return [false, 'Error generating the token.'];
+                console.error('Error hanging up the call:', err);
+                return [false, 'Error hanging up the call.'];
             }
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
