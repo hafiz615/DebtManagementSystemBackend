@@ -155,7 +155,7 @@ router.get('/getCalls/:id', authorize.validateAuth, caseController.getCalls);
 router.post('/twilio/voice', caseController.callTwiml);
 router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
 router.post('/twilio/recording-status', caseController.callRecordingStatus);
-router.post('/twilio/call-hangup/:callSid', caseController.callHangUp)
-router.post('/twilio/generate-token/', caseController.twiliotoken)
+router.post('/twilio/call-hangup/:callSid', caseController.callHangUp);
+router.get('/token', caseController.getToken);
 
 export default router;
