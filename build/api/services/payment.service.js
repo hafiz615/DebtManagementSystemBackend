@@ -380,6 +380,21 @@ class PaymentService {
             },
         ];
     }
+    async getAllUpcomingPayments(id) {
+        const payments = await this.getAllPaymentsByDebtor(id);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments, 'default');
+        return [
+            true,
+            {
+                transactions: {
+                    upcomingPayments: paymentsObj.upcomingPayments,
+                },
+            },
+        ];
+    }
     async getCommissionPayments() {
         const payments = await this.getAllCommissionPayments();
         if (!payments.length) {
@@ -422,6 +437,19 @@ class PaymentService {
                 },
             },
         ];
+    }
+    async getAllPaymentsByDebtor(id) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            debtorId: id,
+            isDeleted: false,
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
+            path: 'caseId',
+            select: ['_id', 'caseOwner', 'totalDebt'],
+            populate: {
+                path: 'debtor',
+                select: ['basicInformation.fullName', 'basicInformation.SSID'],
+            },
+        });
     }
     async getAllPaymentsByCaseId(id) {
         return await this.paymentRepository.getAllWithoutPagination({

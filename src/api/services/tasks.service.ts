@@ -8,6 +8,7 @@ import caseUtil from '../../utils/case.util';
 import {ICase} from '../../database/interfaces/case.interface';
 import {CaseRepository} from '../repository/case/case.repository';
 import commonUtil from '../../utils/common.util';
+import emailUtil from '../../utils/email.util';
 
 class TasksService {
   private tasksRepository: TasksRepository;
@@ -66,6 +67,12 @@ class TasksService {
     };
     if (vaildatedTask.notes) history['Notes'] = vaildatedTask.notes;
     await caseUtil.addInHistory(history, caseId);
+    emailUtil.sendEmailOrSmsByEvent(
+      'case_task_added',
+      caseId,
+      null,
+      reqTemp.id
+    );
     return [true, task];
   }
 
@@ -113,6 +120,35 @@ class TasksService {
     };
     await caseUtil.addInHistory(history, task.caseId);
     return [true, task];
+  }
+
+  async getAllTasks(): Promise<[boolean, Record<string, ITasks[]> | string]> {
+    try {
+      const tasks = await this.tasksRepository.findAll<ITasks>({
+        isDeleted: false,
+      });
+
+      if (!tasks || tasks.length === 0) {
+        return [false, constantsUtil.failureFetchMessage('tasks')];
+      }
+
+      const tasksMap = new Map<string, ITasks[]>();
+
+      for (const task of tasks) {
+        const assignee = task.assignee || 'Unassigned';
+        if (!tasksMap.has(assignee)) {
+          tasksMap.set(assignee, []);
+        }
+        tasksMap.get(assignee)?.push(task);
+      }
+
+      const tasksByAssignee = Object.fromEntries(tasksMap);
+
+      return [true, tasksByAssignee];
+    } catch (error) {
+      console.error(error);
+      return [false, constantsUtil.failureFetchMessage('tasks')];
+    }
   }
 }
 

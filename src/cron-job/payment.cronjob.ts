@@ -837,17 +837,17 @@ class CronJob {
           payment.caseId._id,
           {$inc: {remainingAmountPaid: payment.amount}}
         );
-        if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
-          const creditors = await creditorUtil.getCreditorsEmailForDebtor(
-            String(payment.caseId.debtor._id),
-            String(payment.caseId.creditor._id)
-          );
-          emailUtil.sendEmailIfDebtorPaysDebt(
-            payment.caseId,
-            payment.caseId.debtor,
-            creditors
-          );
-        }
+        // if (updatedCase.remaining === updatedCase.remainingAmountPaid) {
+        //   const creditors = await creditorUtil.getCreditorsEmailForDebtor(
+        //     String(payment.caseId.debtor._id),
+        //     String(payment.caseId.creditor._id)
+        //   );
+        //   emailUtil.sendEmailIfDebtorPaysDebt(
+        //     payment.caseId,
+        //     payment.caseId.debtor,
+        //     creditors
+        //   );
+        // }
       }
     }
   }

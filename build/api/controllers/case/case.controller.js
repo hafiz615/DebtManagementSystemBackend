@@ -377,6 +377,123 @@ class CaseController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.callTwiml = async (req, res) => {
+            try {
+                const response = await this.caseService.callTwiml(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                res.type('text/xml');
+                return res.status(constants_util_1.default.CODE.OK).send(response[1]);
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.callHangUp = async (req, res) => {
+            try {
+                const response = await this.caseService.callHangUp(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Twilio'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.callTranscriptionStatus = async (req, res) => {
+            try {
+                const response = await this.caseService.callTranscriptionStatus(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response));
+                }
+                return res.status(constants_util_1.default.CODE.CREATED).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.CREATED,
+                    data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Cases'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.callRecordingStatus = async (req, res) => {
+            try {
+                const response = await this.caseService.callRecordingStatus(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response));
+                }
+                return res.status(constants_util_1.default.CODE.CREATED).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.CREATED,
+                    data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Cases'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.getCalls = async (req, res) => {
+            try {
+                const response = await this.caseService.getCalls(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('All Calls for this Case'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.createCall = async (req, res) => {
+            try {
+                const response = await this.caseService.createCall(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response));
+                }
+                return res.status(constants_util_1.default.CODE.CREATED).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.CREATED,
+                    data: response[1],
+                    message: constants_util_1.default.callMadesuccessMessage('Call'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.getScoresSettlementByCommPercentage = async (req, res) => {
             try {
                 const response = await this.caseService.getScoresSettlementByCommPercentage(req);
@@ -519,6 +636,86 @@ class CaseController {
             }
             catch (error) {
                 console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.deleteFile = async (req, res) => {
+            try {
+                const response = await this.caseService.deleteFile(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.Messages.DELETE_FILES_SUCCESS,
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.updateContractDetails = async (req, res) => {
+            try {
+                const response = await this.caseService.updateContractDetails(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Contract details'),
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.deleteCreditor = async (req, res) => {
+            try {
+                const response = await this.caseService.deleteCreditor(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: response[1],
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.twiliotoken = async (req, res) => {
+            try {
+                const response = await this.caseService.tokenGenerate(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Twilio Token'),
+                }));
+            }
+            catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));

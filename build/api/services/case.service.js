@@ -3,6 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const twilio_1 = require("twilio");
+const user_repository_1 = require("../repository/user/user.repository");
 const case_repository_1 = require("../repository/case/case.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
@@ -13,7 +15,6 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const chatSummary_repomodel_1 = require("../../database/repomodels/chatSummary.repomodel");
 const chatSummary_repository_1 = require("../repository/chatSummary/chatSummary.repository");
-const user_repository_1 = require("../repository/user/user.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
@@ -25,6 +26,8 @@ const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const uuid_1 = require("uuid");
+const { jwt: { AccessToken }, } = require('twilio');
+const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
     constructor() {
         this.createCase = async (req) => {
@@ -392,6 +395,15 @@ class CaseService {
             data['creditors'] = creditors;
             data['debtor'] = debtor;
             // return [true, data];
+            const values = await moneyThumb_util_1.default.getMonthlyProfitValues(moneyThumb.scoreCard, debtor);
+            data['averageMonthlyProfitExcludingPayments'] =
+                values.averageMonthlyProfitExcludingPayments;
+            data['averageMonthlyProfitIncludingPayments'] =
+                values.averageMonthlyProfitIncludingPayments;
+            data['currentMonthlyProfitExcludingPayments'] =
+                values.currentMonthlyProfitExcludingPayments;
+            data['currentMonthlyProfitIncludingPayments'] =
+                values.currentMonthlyProfitIncludingPayments;
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
                 result?.data?.creditorNames) {
@@ -451,20 +463,12 @@ class CaseService {
                 caseTemp.strategyOne_3 &&
                 result?.data?.settlementRange) {
                 settlementRange = result.data.settlementRange;
-                // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-                // await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
-                //   creditors,
-                //   settlementRange
-                // );
-                // data['settlementRange'] = settlementRange;
             }
             else {
                 settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
                 if (typeof settlementRange === 'string') {
                     settlementRange = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                 }
-                // await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
-                // data['settlementRange'] = settlementRange;
             }
             await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
             await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
@@ -512,6 +516,140 @@ class CaseService {
                 Time: new Date(common_util_1.default.getCurrentDate()),
             }, findCase._id);
             return [true, result];
+        };
+        this.createCall = async (req) => {
+            const reqTemp = req;
+            const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            const callData = {
+                from: '+17756307412',
+                to: reqTemp.body.toNumber || '+923354537279', // For testing Purposes Added My Number
+                url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
+                record: true,
+                statusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+                statusCallbackEvent: ['completed'],
+            };
+            try {
+                const call = await this.twilioClient.calls.create(callData);
+                console.log("Call", call);
+                const result = await this.caseRepository.updateById(req.params.id, {
+                    $push: {
+                        calls: {
+                            callSid: call.sid,
+                            callerName: reqTemp.name,
+                            accountSid: call.accountSid,
+                            callTo: call.to,
+                            callFrom: call.from,
+                            callStartDate: call.startTime,
+                            callDuration: null, // Placeholder for later update
+                            callStatus: 'initiated', // Initial status
+                            callRecordingSid: '',
+                            callTranscription: '',
+                        },
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!result)
+                    return [false, 'Failed to update case with call SID'];
+                return [true, call.sid];
+            }
+            catch (err) {
+                console.log("Error Creating Call", err);
+                return [false, 'Error creating call.'];
+            }
+        };
+        this.getCalls = async (req) => {
+            const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            if (!findCase) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
+                return [true, []];
+            }
+            return [true, findCase.calls];
+        };
+        this.callTwiml = async (req) => {
+            try {
+                const VoiceResponse = require('twilio').twiml.VoiceResponse;
+                console.log("VoiceResponse", VoiceResponse);
+                if (!VoiceResponse) {
+                    throw new Error('Twilio VoiceResponse is not available.');
+                }
+                const response = new VoiceResponse();
+                console.log("Response", response);
+                // Configure recording and transcription
+                response.record({
+                    transcribe: true,
+                    transcribeCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/transcription-status',
+                });
+                //Sending Response in XML format
+                // Return successful response
+                return [true, response.type('text/xml')];
+            }
+            catch (err) {
+                console.error('Error generating TwiML:', err);
+                return [false, 'Error generating TwiML.'];
+            }
+        };
+        this.callTranscriptionStatus = async (req) => {
+            try {
+                const callSid = req.body.CallSid;
+                const transcriptionText = req.body.TranscriptionText;
+                const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
+                    $set: {
+                        'calls.$.callTranscription': transcriptionText
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!result) {
+                    return [false, 'Failed to update case with recording details.'];
+                }
+                return [true, 'Recording status received and updated successfully.'];
+            }
+            catch (err) {
+                return [false, 'Error handling recording status.'];
+            }
+        };
+        this.callHangUp = async (req) => {
+            try {
+                const callSid = req.params.callSid;
+                if (!callSid) {
+                    return [false, 'Call SID is required.'];
+                }
+                await this.twilioClient.calls(callSid).update({ status: 'completed' });
+                return [true, 'Call hung up successfully.'];
+            }
+            catch (err) {
+                console.error('Error hanging up the call:', err);
+                return [false, 'Error hanging up the call.'];
+            }
+        };
+        this.callRecordingStatus = async (req) => {
+            try {
+                const callSid = req.body.CallSid;
+                const recordingSid = req.body.RecordingSid;
+                const status = req.body.CallStatus;
+                const callDuration = req.body.RecordingDuration;
+                const callStartTime = req.body.Timestamp;
+                const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
+                    $set: {
+                        'calls.$.callRecordingSid': recordingSid,
+                        'calls.$.callDuration': callDuration,
+                        'calls.$.callStatus': status,
+                        'calls.$.callStartDate': callStartTime
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!result) {
+                    return [false, 'Failed to update case with recording details.'];
+                }
+                return [true, 'Recording status received and updated successfully.'];
+            }
+            catch (err) {
+                return [false, 'Error handling recording status.'];
+            }
         };
         this.getScoresSettlementByCommPercentage = async (req) => {
             if (!req.body.commissionPercentage ||
@@ -616,6 +754,103 @@ class CaseService {
             const justifications = await case_util_1.default.getSettlementJustifications(caseTemp, models);
             return justifications;
         };
+        this.deleteFile = async (req) => {
+            // Fetch the case and populate debtor field
+            let caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            // Extract the key from the request body
+            const { key } = req.body;
+            if (!key) {
+                return [false, 'Key is required in the request body.'];
+            }
+            // Update the debtor's documents by removing the document with the matching key
+            const response = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+                $pull: { documents: { key } },
+            });
+            if (response.documents.length === caseTemp.debtor.documents.length) {
+                return [false, `No document found with key: ${key}`];
+            }
+            return [true, `${key} is deleted successfully`];
+        };
+        this.deleteCreditor = async (req) => {
+            let caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            const updateCase = await this.caseRepository.updateById(req.params.id, { isDeleted: true });
+            if (!updateCase.isDeleted) {
+                return [false, constants_util_1.default.failureDeleteMessage('Creditor')];
+            }
+            return [true, constants_util_1.default.successDeleteMessage('Creditor')];
+        };
+        // tokenGenerate = async (req: Request) => {
+        //   try {
+        //      // Log the request body to debug
+        //   console.log('Request body:', req.body);
+        //   // Extract identity from the request body
+        //   const identity = req.body?.identity || 'default-user'; // Fallback to default identity
+        //   console.log('Extracted identity:', identity);
+        //     if (!identity) {
+        //       return [false, 'Identity is required to generate a token.'];
+        //     }
+        //     // Create a VoiceGrant
+        //   console.log('Creating VoiceGrant...');
+        //   const voiceGrant = new VoiceGrant({
+        //     outgoingApplicationSid: process.env.twimloutgoingAppSid,
+        //     incomingAllow: true, // Allow incoming calls
+        //   });
+        //   console.log('VoiceGrant created:', voiceGrant);
+        //   // Create an AccessToken
+        //   console.log('Creating AccessToken...');
+        //   const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, {
+        //     identity,
+        //   });
+        //   token.addGrant(
+        //     new VoiceGrant({
+        //       outgoingApplicationSid: process.env.twimloutgoingAppSid,
+        //       incomingAllow: true,
+        //     })
+        //   );
+        //   console.log('AccessToken created:', token);
+        //     return [true,token.toJwt()];
+        //   } catch (err) {
+        //     console.error('Error hanging up the call:', err);
+        //     return [false, 'Error hanging up the call.'];
+        //   }
+        // };
+        this.tokenGenerate = async (req) => {
+            try {
+                // Log the request body for debugging
+                console.log('Request body:', req.body);
+                // Extract and validate identity
+                const identity = req.body?.identity;
+                if (!identity) {
+                    console.error('Identity is required to generate a token.');
+                    return [false, 'Identity is required to generate a token.'];
+                }
+                console.log('Extracted identity:', identity);
+                // Create a VoiceGrant
+                const voiceGrant = new VoiceGrant({
+                    outgoingApplicationSid: process.env.twimloutgoingAppSid,
+                    incomingAllow: true, // Allow incoming calls
+                });
+                console.log('VoiceGrant created:', voiceGrant);
+                // Create an AccessToken
+                const token = new AccessToken(process.env.twimlaccountSid, process.env.twimlapiKey, process.env.twimlapiSecret, { identity });
+                // Attach the VoiceGrant to the AccessToken
+                token.addGrant(voiceGrant);
+                console.log('AccessToken created successfully:', token);
+                // Return the generated token as a JWT
+                return [true, token.toJwt()];
+            }
+            catch (err) {
+                console.error('Error generating the token:', err);
+                return [false, 'Error generating the token.'];
+            }
+        };
+        this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
@@ -787,6 +1022,17 @@ class CaseService {
             }
         }
         return [true, amount];
+    }
+    async updateContractDetails(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updateCase = await this.caseRepository.updateById(req.params.id, { $set: { [`contractDetails.${req.body.label}`]: req.body.value } });
+        if (!updateCase) {
+            return [false, constants_util_1.default.failureUpdateMessage('contract details')];
+        }
+        return [true, updateCase];
     }
 }
 exports.default = CaseService;

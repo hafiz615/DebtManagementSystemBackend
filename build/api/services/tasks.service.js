@@ -10,6 +10,7 @@ const tasks_repomodel_1 = require("../../database/repomodels/tasks.repomodel");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
+const email_util_1 = __importDefault(require("../../utils/email.util"));
 class TasksService {
     constructor() {
         this.tasksRepository = new tasks_repository_1.TasksRepository();
@@ -62,6 +63,7 @@ class TasksService {
         if (vaildatedTask.notes)
             history['Notes'] = vaildatedTask.notes;
         await case_util_1.default.addInHistory(history, caseId);
+        email_util_1.default.sendEmailOrSmsByEvent('case_task_added', caseId, null, reqTemp.id);
         return [true, task];
     }
     async updateTask(req) {
@@ -101,6 +103,30 @@ class TasksService {
         };
         await case_util_1.default.addInHistory(history, task.caseId);
         return [true, task];
+    }
+    async getAllTasks() {
+        try {
+            const tasks = await this.tasksRepository.findAll({
+                isDeleted: false,
+            });
+            if (!tasks || tasks.length === 0) {
+                return [false, constants_util_1.default.failureFetchMessage('tasks')];
+            }
+            const tasksMap = new Map();
+            for (const task of tasks) {
+                const assignee = task.assignee || 'Unassigned';
+                if (!tasksMap.has(assignee)) {
+                    tasksMap.set(assignee, []);
+                }
+                tasksMap.get(assignee)?.push(task);
+            }
+            const tasksByAssignee = Object.fromEntries(tasksMap);
+            return [true, tasksByAssignee];
+        }
+        catch (error) {
+            console.error(error);
+            return [false, constants_util_1.default.failureFetchMessage('tasks')];
+        }
     }
 }
 exports.default = TasksService;

@@ -579,6 +579,7 @@ class DebtorService {
         }
         let payments = [];
         let debtor = null;
+        let amount = 0;
         if (payment.caseId)
             debtor = payment.caseId.debtor;
         if (!payment.caseId) {
@@ -590,8 +591,11 @@ class DebtorService {
             payment = payments.find(payment => {
                 return payment.caseId === null;
             });
+            amount = payment.amount;
         }
         if (!payment.paymentReference) {
+            if (payment.commision)
+                amount = payment.amount + payment.commision;
             payments.push(payment);
         }
         let response;
@@ -599,7 +603,7 @@ class DebtorService {
         let responseNum = '';
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId);
+                response = await this.paymentService.authorizeCreditCard(amount, account.customerVaultId);
                 responseNum = new url_1.URLSearchParams(response).get('response');
                 if (responseNum === '1')
                     break;
@@ -710,9 +714,14 @@ class DebtorService {
                     $inc: { commissionPaid: commissionAmount },
                 });
             }
-            if (!amount) {
+            if (!amount && payment.caseId === null) {
                 await this.debtorRepository.updateById(payment.debtorId, {
                     $inc: { commissionPaid: payment.amount },
+                });
+            }
+            if (!amount && payment.caseId !== null && payment.commision) {
+                await this.debtorRepository.updateById(payment.debtorId, {
+                    $inc: { commissionPaid: payment.commision },
                 });
             }
         }

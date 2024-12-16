@@ -41,6 +41,8 @@ export interface ICreditor extends Document {
   // customerVaultId: string;
   aggression: number;
   platform: boolean;
+  paynoteSourceVerified: boolean;
+  paynoteUserFound: boolean;
   createdAt: string;
   updatedAt: string;
 }

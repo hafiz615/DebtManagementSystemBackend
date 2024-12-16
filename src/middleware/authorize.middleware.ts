@@ -58,6 +58,7 @@ class Authorize {
           const store = asyncLocalStorage.getStore();
           if (store) {
             store.set('ip', req.ip);
+            store.set('name', req.name);
             store.set('userId', req.id);
             store.set('url', req.originalUrl);
             store.set('method', req.method);

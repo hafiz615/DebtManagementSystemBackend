@@ -32,6 +32,8 @@ class Creditor {
         this.contacts = Array();
         this.aggression = 0;
         this.platform = false;
+        this.paynoteSourceVerified = false;
+        this.paynoteUserFound = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
