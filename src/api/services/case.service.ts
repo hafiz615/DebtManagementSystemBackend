@@ -1211,7 +1211,7 @@ class CaseService {
     process.env.TWILIO_API_SECRET
   );
   console.log(accessToken, 'accessToken1')
-  accessToken.identity = identity;
+  accessToken.identity = "user";
   console.log(accessToken, 'accessToken2')
   const grant = new VoiceGrant({
     outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
