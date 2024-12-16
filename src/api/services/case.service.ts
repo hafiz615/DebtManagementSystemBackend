@@ -1024,7 +1024,7 @@ class CaseService {
       rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
     let identity = 'user';
     const toNumberOrClientName = req.body.To;
-    const callerId = req.body.From;
+    const callerId = process.env.TWILIO_CALLER_ID;
     const VoiceResponse = require('twilio').twiml.VoiceResponse;
     let twiml = new VoiceResponse();
 
