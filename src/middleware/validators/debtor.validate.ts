@@ -336,9 +336,10 @@ class DebtorRequests {
   };
   async validateManualPayment(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
-      caseId: Joi.string().required(),
-      transactionId: Joi.string().required(),
+      debtorId: Joi.string().required(),
+      transactionIds: Joi.array().required(),
       amount: Joi.number().required(),
+      commission: Joi.number().required(),
       transactionDate: Joi.date().required(),
       transactionType: Joi.string().required(),
       referenceId: Joi.string().required(),
