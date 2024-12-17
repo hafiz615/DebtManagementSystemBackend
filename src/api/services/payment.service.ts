@@ -580,6 +580,7 @@ class PaymentService {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         debtorId: id,
+        caseId: {$ne:null},
         isDeleted: false,
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
@@ -588,10 +589,15 @@ class PaymentService {
       {
         path: 'caseId',
         select: ['_id', 'caseOwner', 'totalDebt'],
-        populate: {
+        populate: [{
           path: 'debtor',
           select: ['basicInformation.fullName', 'basicInformation.SSID'],
         },
+        {
+          path: 'creditor',
+          select: ['basicInformation.fullName'],
+        }
+      ],
       }
     );
   }

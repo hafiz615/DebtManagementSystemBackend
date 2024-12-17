@@ -18,6 +18,9 @@ class PaymentUtil {
       fullName: obj.caseId?.debtor
         ? obj.caseId.debtor.basicInformation.fullName
         : '',
+      creditorName: obj.caseId?.creditor
+      ? obj.caseId.creditor.basicInformation.fullName
+      : '',
       SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
       authorized: obj.authorized,
       captured: obj.captured,
