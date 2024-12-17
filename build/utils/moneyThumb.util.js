@@ -511,10 +511,30 @@ class MoneyThumbUtil {
         console.log(averageMonthlyProfitExcludingPayments, 'averageMonthlyProfitExcludingPayments');
         console.log(averageMonthlyProfitIncludingPayments, 'averageMonthlyProfitIncludingPayments');
         return {
-            currentMonthlyProfitExcludingPayments,
-            currentMonthlyProfitIncludingPayments,
-            averageMonthlyProfitExcludingPayments,
-            averageMonthlyProfitIncludingPayments,
+            currentMonthlyProfitExcludingPayments: {
+                value: currentMonthlyProfitExcludingPayments,
+                percentage: parseFloat(((currentMonthlyProfitExcludingPayments /
+                    averageTrueRevenue.trueRevenue) *
+                    100).toFixed(2)),
+            },
+            currentMonthlyProfitIncludingPayments: {
+                value: currentMonthlyProfitIncludingPayments,
+                percentage: parseFloat(((currentMonthlyProfitIncludingPayments /
+                    averageTrueRevenue.trueRevenue) *
+                    100).toFixed(2)),
+            },
+            averageMonthlyProfitExcludingPayments: {
+                value: averageMonthlyProfitExcludingPayments,
+                percentage: parseFloat(((averageMonthlyProfitExcludingPayments /
+                    averageTrueRevenue.trueRevenue) *
+                    100).toFixed(2)),
+            },
+            averageMonthlyProfitIncludingPayments: {
+                value: averageMonthlyProfitIncludingPayments,
+                percentage: parseFloat(((averageMonthlyProfitIncludingPayments /
+                    averageTrueRevenue.trueRevenue) *
+                    100).toFixed(2)),
+            },
         };
     }
 }
