@@ -44,6 +44,7 @@ import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
 import debtorUtil from './debtor.util';
 import {IStrategy} from '../database/interfaces/strategy.interface';
+import {paymentPlatform} from '../enums';
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -2744,15 +2745,18 @@ class CaseUtil {
 
   async createVault(
     paymentToken: string,
-    debtorName: string
+    debtorName: string,
+    platform: string
   ): Promise<[boolean, string]> {
-    const url = process.env.seamlesschexUrl;
+    const names = await commonUtil.getFirstAndLastNameByFullName(debtorName);
+    const urlSecurityKey = await this.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
     const params = {
       customer_vault: 'add_customer',
-      security_key: process.env.seamlesschexSecurityKey,
+      security_key: urlSecurityKey.securityKey,
       payment_token: paymentToken,
-      first_name: debtorName,
-      last_name: debtorName,
+      first_name: names.firstName,
+      last_name: names.lastName,
     };
     const response = await axiosInstance.get(url, {params});
     const responseNum = new URLSearchParams(response.data).get('response');
@@ -2760,13 +2764,25 @@ class CaseUtil {
       const customerVault = new URLSearchParams(response.data).get(
         'customer_vault_id'
       );
-      // const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
-      //   customerVaultId: customerVault,
-      //   paymentType: paymentType,
-      // });
       return [true, customerVault];
     }
     return [false, 'Unable to create customer vault'];
+  }
+
+  async getUrlAndSecurityKeyPlatform(platform: string) {
+    let securityKey = '';
+    let url = '';
+    switch (platform) {
+      case paymentPlatform.easypay:
+        securityKey = process.env.easypaySecurityKey;
+        url = process.env.easypayUrl;
+        break;
+      case paymentPlatform.seamlesschex:
+        securityKey = process.env.seamlesschexSecurityKey;
+        url = process.env.seamlesschexUrl;
+        break;
+    }
+    return {securityKey, url};
   }
 
   async getSettlementRangeSummery(

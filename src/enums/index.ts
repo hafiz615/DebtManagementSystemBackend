@@ -4,6 +4,11 @@ export enum responseName {
   failure = 'Failure',
 }
 
+export enum paymentPlatform {
+  easypay = 'easypay',
+  seamlesschex = 'seamlesschex',
+}
+
 export enum permissions {
   createNewCase = 'createNewCase',
   importBulkCases = 'importBulkCases',

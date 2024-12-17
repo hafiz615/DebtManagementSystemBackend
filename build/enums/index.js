@@ -1,12 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = exports.Events = exports.permissions = exports.responseName = void 0;
+exports.User = exports.Events = exports.permissions = exports.paymentPlatform = exports.responseName = void 0;
 var responseName;
 (function (responseName) {
     responseName["ok"] = "OK";
     responseName["created"] = "Created";
     responseName["failure"] = "Failure";
 })(responseName || (exports.responseName = responseName = {}));
+var paymentPlatform;
+(function (paymentPlatform) {
+    paymentPlatform["easypay"] = "easypay";
+    paymentPlatform["seamlesschex"] = "seamlesschex";
+})(paymentPlatform || (exports.paymentPlatform = paymentPlatform = {}));
 var permissions;
 (function (permissions) {
     permissions["createNewCase"] = "createNewCase";

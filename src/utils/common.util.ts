@@ -65,5 +65,19 @@ class CommonUtil {
       return data;
     }
   }
+
+  async getFirstAndLastNameByFullName(fullName: string) {
+    const creditorNames = fullName.split(' ');
+    let lastName = '';
+    if (!creditorNames[1]) {
+      lastName = creditorNames[0];
+    }
+
+    var data = {
+      firstName: creditorNames[0],
+      lastName: lastName,
+    };
+    return data;
+  }
 }
 export default new CommonUtil();

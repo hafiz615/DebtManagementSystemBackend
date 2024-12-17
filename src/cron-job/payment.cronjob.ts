@@ -123,7 +123,8 @@ class CronJob {
             if (account.paymentType === 'cc') {
               const response = await this.paymentService.authorizeCreditCard(
                 commisionToPay,
-                account.customerVaultId
+                account.customerVaultId,
+                account.platform
               );
               const result = await this.processCommissionAuthResponse(
                 payment,
@@ -142,7 +143,7 @@ class CronJob {
               const response = await this.paymentService.achCredit(
                 account.customerVaultId,
                 commisionToPay,
-                ''
+                account.platform
               );
               const result = await this.processCommissionCaptureResponse(
                 payment,
@@ -164,7 +165,8 @@ class CronJob {
               if (account.paymentType === 'cc') {
                 const response = await this.paymentService.authorizeCreditCard(
                   commisionToPay,
-                  account.customerVaultId
+                  account.customerVaultId,
+                  account.platform
                 );
                 const result = await this.processCommissionAuthResponse(
                   payment,
@@ -187,7 +189,7 @@ class CronJob {
                 const response = await this.paymentService.captureCreditCard(
                   account.customerVaultId,
                   payment.debtorTransId,
-                  ''
+                  account.platform
                 );
                 const result = await this.processCommissionCaptureResponse(
                   payment,
@@ -205,7 +207,7 @@ class CronJob {
                 const response = await this.paymentService.achCredit(
                   account.customerVaultId,
                   commisionToPay,
-                  ''
+                  account.platform
                 );
                 const result = await this.processCommissionCaptureResponse(
                   payment,
@@ -231,7 +233,7 @@ class CronJob {
                   const response = await this.paymentService.captureCreditCard(
                     account.customerVaultId,
                     payment.debtorTransId,
-                    ''
+                    account.platform
                   );
                   const result = await this.processCommissionCaptureResponse(
                     payment,
@@ -252,7 +254,7 @@ class CronJob {
                   const response = await this.paymentService.achCredit(
                     account.customerVaultId,
                     commisionToPay,
-                    ''
+                    account.platform
                   );
                   const result = await this.processCommissionCaptureResponse(
                     payment,
@@ -788,6 +790,7 @@ class CronJob {
         // if (paynoteCustomer.error) continue;
         // if (paynoteCustomer.user.status === 'unverified') continue;
         const paymentResult = await paynoteUtil.sendPayment(payment);
+        if (paymentResult?.message === 'Server Error') break;
         console.log(paymentResult);
         if (paymentResult.error) {
           console.log('Send Email');
@@ -1279,7 +1282,8 @@ class CronJob {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
             sum,
-            account.customerVaultId
+            account.customerVaultId,
+            account.platform
           );
           const result = await this.processAuthorizedResponse(
             payment,
@@ -1295,7 +1299,7 @@ class CronJob {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
             sum,
-            ''
+            account.platform
           );
           const result = await this.processCaptureResponse(
             payment,
@@ -1334,7 +1338,8 @@ class CronJob {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
             payment.amount,
-            account.customerVaultId
+            account.customerVaultId,
+            account.platform
           );
           const result = await this.processCommissionAuthorizedResponse(
             payment,
@@ -1350,7 +1355,7 @@ class CronJob {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
             totalAmount,
-            ''
+            account.platform
           );
           const result = await this.processCaptureCommissionResponse(
             payment,
@@ -1533,7 +1538,7 @@ class CronJob {
           const response = await this.paymentService.captureCreditCard(
             account.customerVaultId,
             payment.debtorTransId,
-            ''
+            account.platform
           );
           const result = await this.processCaptureResponse(
             payment,
@@ -1549,7 +1554,7 @@ class CronJob {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
             payment.amount,
-            ''
+            account.platform
           );
           const result = await this.processCaptureResponse(
             payment,
@@ -1591,7 +1596,7 @@ class CronJob {
           const response = await this.paymentService.captureCreditCard(
             account.customerVaultId,
             payment.debtorTransId,
-            ''
+            account.platform
           );
           const result = await this.processCaptureCommissionResponse(
             payment,
@@ -1609,7 +1614,7 @@ class CronJob {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
             payment.amount,
-            ''
+            account.platform
           );
           const result = await this.processCaptureCommissionResponse(
             payment,

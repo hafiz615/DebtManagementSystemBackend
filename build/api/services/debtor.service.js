@@ -371,12 +371,6 @@ class DebtorService {
     }
     async updateDebtor(req) {
         let debtor = null;
-        // const getDebtor = await this.debtorRepository.getById<IDebtor>(
-        //   req.params.id
-        // );
-        // if (!getDebtor) {
-        //   return [false, constants.notFoundMessage('Debtor')];
-        // }
         const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
         if (!caseTemp) {
             return [false, constants_util_1.default.notFoundMessage('case')];
@@ -410,27 +404,6 @@ class DebtorService {
                     ];
                 }
             }
-            // if (
-            //   getDebtor &&
-            //   req.body.basicInformation &&
-            //   req.body.basicInformation.weeklyBudget !==
-            //     getDebtor.basicInformation.weeklyBudget
-            // ) {
-            //   const response = await caseUtil.checkWeeklyBudget(
-            //     {debtor: req.body},
-            //     true,
-            //     getDebtor
-            //   );
-            //   if (!response.status) {
-            //     return [
-            //       false,
-            //       'Weekly budget is not fulfiling the payment plan of debtor',
-            //     ];
-            //   }
-            //   req.body.weeklyCommission = response.commission;
-            // }
-            // if (!req.body.basicInformation.weeklyBudget)
-            //   req.body.basicInformation.weeklyBudget = 1;
             req.body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, req.body);
             if (getDebtor.basicInformation.weeklyBudget !==
@@ -457,72 +430,6 @@ class DebtorService {
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
         }
-        if (req.body.paymentToken && req.body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtor?.basicInformation?.fullName);
-            if (!customerVaultResponse[0])
-                return customerVaultResponse;
-            debtor = await this.debtorRepository.updateById(getDebtor._id, {
-                $push: {
-                    accounts: {
-                        $each: [
-                            {
-                                paymentType: req.body.paymentType,
-                                customerVaultId: customerVaultResponse[1],
-                            },
-                        ],
-                    },
-                },
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
-        }
-        // const allStrategyFalse = await this.caseRepository.updateById<ICase>(
-        //   req.params.id,
-        //   {
-        //     strategyOne_1: false,
-        // strategyOne_2: false,
-        // strategyOne_3: false,
-        // strategyTwo: false,
-        // strategyThree: false,
-        // justifications: false,
-        // lumpSumJustifications: false,
-        // fullProfitJustifications: false,
-        //     updatedAt: commonUtil.getCurrentDate(),
-        //   }
-        // );
-        // if (allStrategyFalse) {
-        //   const response = await caseUtil.getAllCreditorsOfDebtor(getDebtor);
-        //   const creditors = Array.from(
-        //     new Map(
-        //       response.map(creditor => [creditor.creditorId, creditor])
-        //     ).values()
-        //   );
-        //   let extractedFieldsTemp = null;
-        //   if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
-        //     const extractedFields = await caseUtil.getExtractionMCA(debtor);
-        //     if (extractedFields) {
-        //       this.debtorRepository.updateById(getDebtor._id, {
-        //         extractedFields: extractedFields.extracted_fields,
-        //         updatedAt: commonUtil.getCurrentDate(),
-        //       });
-        //       extractedFieldsTemp = extractedFields.extracted_fields;
-        //     }
-        //   }
-        //   caseUtil.getCreditorNames(
-        //     getDebtor,
-        //     getDebtor.extractedFields
-        //       ? getDebtor.extractedFields
-        //       : extractedFieldsTemp,
-        //     String(caseTemp._id)
-        //   );
-        //   caseUtil.getScoresForAllCreditors(
-        //     caseTemp,
-        //     creditors,
-        //     getDebtor.commissionPercentage
-        //   );
-        //   caseUtil.getSettlementRange(caseTemp);
-        //   caseUtil.getLumpSumAmount(caseTemp);
-        //   caseUtil.getFullProfitSettlement(caseTemp);
-        // }
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -603,7 +510,7 @@ class DebtorService {
         let responseNum = '';
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.authorizeCreditCard(amount, account.customerVaultId);
+                response = await this.paymentService.authorizeCreditCard(amount, account.customerVaultId, account.platform);
                 responseNum = new url_1.URLSearchParams(response).get('response');
                 if (responseNum === '1')
                     break;
@@ -678,10 +585,10 @@ class DebtorService {
         const accounts = debtor.accounts;
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, '');
+                response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
             }
             if (account.paymentType === 'ck') {
-                response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, '');
+                response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
             }
             responseNum = new url_1.URLSearchParams(response).get('response');
             if (responseNum === '1')
@@ -757,16 +664,18 @@ class DebtorService {
         });
         let debtor = null;
         let account = [];
-        if (body.paymentToken && body.paymentType) {
-            const customerVaultResponse = await case_util_1.default.createVault(body.paymentToken, debtor?.basicInformation?.fullName);
-            if (!customerVaultResponse[0])
-                return customerVaultResponse;
-            // req.body.customerVaultId = customerVaultResponse[1];
-            account.push({
-                paymentType: body.paymentType,
-                customerVaultId: customerVaultResponse[1],
-            });
-        }
+        // if (body.paymentToken && body.paymentType) {
+        //   const customerVaultResponse = await caseUtil.createVault(
+        //     body.paymentToken,
+        //     debtor?.basicInformation?.fullName
+        //   );
+        //   if (!customerVaultResponse[0]) return customerVaultResponse;
+        //   // req.body.customerVaultId = customerVaultResponse[1];
+        //   account.push({
+        //     paymentType: body.paymentType,
+        //     customerVaultId: customerVaultResponse[1],
+        //   });
+        // }
         if (!getDebtor) {
             if (account.length)
                 body.accounts = account;
@@ -819,65 +728,6 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
-        // const statements = caseTemp.debtor?.totalStatements;
-        // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
-        //   debtorUtil.percentageChangeEmail(
-        //     updatedDebtor.businessInformation.companyName,
-        //     String(updatedDebtor._id),
-        //     statements ? statements : 0,
-        //     caseTemp.debtor?.basicInformation?.fullName,
-        //     req.params.id
-        //   );
-        // }
-        // for (let doc of findCase.documents) {
-        //   const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-        //   doc.url = url;
-        // }
-        // const allStrategyFalse = await this.caseRepository.updateById<ICase>(
-        //   caseTemp._id,
-        //   {
-        //     strategyOne_1: false,
-        //     strategyOne_2: false,
-        //     strategyOne_3: false,
-        //     strategyTwo: false,
-        //     strategyThree: false,
-        //     justifications: false,
-        //     lumpSumJustifications: false,
-        //     fullProfitJustifications: false,
-        //     updatedAt: commonUtil.getCurrentDate(),
-        //   }
-        // );
-        // if (allStrategyFalse) {
-        //   const response = await caseUtil.getAllCreditorsOfDebtor(updatedDebtor);
-        //   const creditors = Array.from(
-        //     new Map(
-        //       response.map(creditor => [creditor.creditorId, creditor])
-        //     ).values()
-        //   );
-        //   const extractedFields = await caseUtil.getExtractionMCA(updatedDebtor);
-        //   if (extractedFields) {
-        //     this.debtorRepository.updateById(caseTemp.debtor._id, {
-        //       extractedFields: extractedFields.extracted_fields,
-        //       updatedAt: commonUtil.getCurrentDate(),
-        //     });
-        //   }
-        //   if (extractedFields)
-        //     caseUtil.getCreditorNames(
-        //       updatedDebtor,
-        //       extractedFields
-        //         ? extractedFields.extracted_fields
-        //         : updatedDebtor.extractedFields,
-        //       String(caseTemp._id)
-        //     );
-        //   caseUtil.getScoresForAllCreditors(
-        //     caseTemp,
-        //     creditors,
-        //     updatedDebtor.commissionPercentage
-        //   );
-        //   caseUtil.getSettlementRange(caseTemp);
-        //   caseUtil.getLumpSumAmount(caseTemp);
-        //   caseUtil.getFullProfitSettlement(caseTemp);
-        // }
         return [true, updatedDebtor];
     }
     async getExtractedFields(req) {
@@ -983,8 +833,11 @@ class DebtorService {
         if (!getDebtor) {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
+        if (!getDebtor?.basicInformation?.fullName) {
+            return [false, 'Could not find debtor name'];
+        }
         const debtorName = getDebtor?.basicInformation?.fullName;
-        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtorName);
+        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtorName, req.body.platform);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
         await this.debtorRepository.updateById(getDebtor._id, {
@@ -994,6 +847,7 @@ class DebtorService {
                         {
                             paymentType: req.body.paymentType,
                             customerVaultId: customerVaultResponse[1],
+                            platform: req.body.platform,
                         },
                     ],
                 },

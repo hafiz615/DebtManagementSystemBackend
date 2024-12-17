@@ -40,6 +40,7 @@ exports.default = {
         STATUS_PIPELINE_EXIST: 'The status already exist in pipeline',
         STATUS_CASE_EXIST: 'This status already exist',
         PIPELINE_DELETE_STATUS_ERROR: 'All statuses must be deleted to delete pipeline',
+        PAYNOTE_SERVER_ERROR: 'There is some issue in paynote server. Please try again later.',
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
     FORGOT_PASSWORD_SUBJECT: 'Reset Your Password',
