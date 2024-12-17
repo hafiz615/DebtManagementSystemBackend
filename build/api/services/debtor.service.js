@@ -288,6 +288,9 @@ class DebtorService {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
         let clientDetails = await case_util_1.default.getClientDetails(req);
+        if (clientDetails)
+            clientDetails = await case_util_1.default.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
+        // console.log("Updated clientDetails: ", clientDetails);
         // if (req.query.filter === 'true' || req.query.search === 'true') {
         //   casesCount = clientDetails.caseHistory.length;
         // } else {
