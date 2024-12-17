@@ -445,14 +445,20 @@ class PaymentService {
     async getAllPaymentsByDebtor(id) {
         return await this.paymentRepository.getAllWithoutPagination({
             debtorId: id,
+            caseId: { $ne: null },
             isDeleted: false,
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: {
-                path: 'debtor',
-                select: ['basicInformation.fullName', 'basicInformation.SSID'],
-            },
+            populate: [{
+                    path: 'debtor',
+                    select: ['basicInformation.fullName', 'basicInformation.SSID'],
+                },
+                {
+                    path: 'creditor',
+                    select: ['basicInformation.fullName'],
+                }
+            ],
         });
     }
     async getAllPaymentsByCaseId(id) {
