@@ -615,10 +615,12 @@ class CaseUtil {
                             outstandingDebt: {
                                 $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
+                            remaining: '$remaining',
                             pipeLineStatus: '$status',
                         },
                     },
                     debtorDetails: { $first: '$debtorDetails' },
+                    totalRemaining: { $sum: { $ifNull: ['$remaining', 0] } }, // Handle null cases for 'remaining'
                     failedCaptures: {
                         $sum: {
                             $size: {
@@ -686,6 +688,7 @@ class CaseUtil {
                         email: '$debtorDetails.basicInformation.email',
                         status: '$debtorDetails.basicInformation.status',
                         address: '$debtorDetails.basicInformation.address',
+                        weeklyBudget: '$debtorDetails.basicInformation.weeklyBudget',
                         outstandingDebt: {
                             $sum: '$caseHistory.outstandingDebt',
                         },
@@ -693,6 +696,7 @@ class CaseUtil {
                             $sum: '$caseHistory.totalDebt',
                         },
                         totalCommission: '$debtorDetails.totalCommission',
+                        totalRemaining: '$totalRemaining', // Include the calculated totalRemaining here
                     },
                     paymentCounts: {
                         failedCaptures: '$failedCaptures',
@@ -2504,6 +2508,42 @@ class CaseUtil {
                 },
             },
         ]);
+    }
+    async addWeekRemainingToCases(clientDetails) {
+        if (!clientDetails || !Array.isArray(clientDetails.caseHistory) || !clientDetails.debtor) {
+            console.error("Invalid clientDetails structure. Ensure caseHistory is an array and debtor details are present.");
+            return clientDetails;
+        }
+        const totalRemaining = clientDetails.debtor.totalRemaining || 0;
+        const weeklyBudget = clientDetails.debtor.weeklyBudget || 0;
+        if (totalRemaining <= 0 || weeklyBudget <= 0) {
+            console.warn("Invalid totalRemaining or weeklyBudget; skipping weekRemaining calculation.");
+            return clientDetails;
+        }
+        let maxWeekRemaining = 0;
+        const updatedCaseHistory = clientDetails.caseHistory.map(caseHistory => {
+            const remaining = caseHistory.remaining || 0;
+            // Calculate weekRemaining
+            const proportionOfTotal = remaining / totalRemaining;
+            const weeklyAmount = proportionOfTotal * weeklyBudget;
+            const weekRemaining = weeklyAmount > 0 ? Math.ceil(remaining / weeklyAmount) : null;
+            // Update maxWeekRemaining if the current weekRemaining is greater
+            if (weekRemaining !== null && weekRemaining > maxWeekRemaining) {
+                maxWeekRemaining = weekRemaining;
+            }
+            console.log(`Case Remaining: ${remaining}, Proportion: ${proportionOfTotal}, Weekly Amount: ${weeklyAmount}, Week Remaining: ${weekRemaining}`);
+            // Return updated case object with weekRemaining
+            return {
+                ...caseHistory,
+                weekRemaining
+            };
+        });
+        console.log("Max Week Remaining:", maxWeekRemaining);
+        return {
+            ...clientDetails,
+            caseHistory: updatedCaseHistory,
+            maxWeekRemaining
+        };
     }
 }
 exports.default = new CaseUtil();
