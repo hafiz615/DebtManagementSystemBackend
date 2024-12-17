@@ -729,8 +729,8 @@ class CaseUtil {
               pipeLineStatus: '$status',
             },
           },
-          debtorDetails: { $first: '$debtorDetails' },
-          totalRemaining: { $sum: { $ifNull: ['$remaining', 0] } }, // Handle null cases for 'remaining'
+          debtorDetails: {$first: '$debtorDetails'},
+          totalRemaining: {$sum: {$ifNull: ['$remaining', 0]}}, // Handle null cases for 'remaining'
           failedCaptures: {
             $sum: {
               $size: {
@@ -2762,7 +2762,10 @@ class CaseUtil {
       first_name: names.firstName,
       last_name: names.lastName,
     };
+    console.log(params, 'kjkjk');
+    console.log(url, 'urlll');
     const response = await axiosInstance.get(url, {params});
+    console.log(response.data, 'okoko');
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(
@@ -2956,52 +2959,60 @@ class CaseUtil {
   }
 
   async addWeekRemainingToCases(clientDetails) {
-
-    if (!clientDetails || !Array.isArray(clientDetails.caseHistory) || !clientDetails.debtor) {
-        console.error("Invalid clientDetails structure. Ensure caseHistory is an array and debtor details are present.");
-        return clientDetails;
+    if (
+      !clientDetails ||
+      !Array.isArray(clientDetails.caseHistory) ||
+      !clientDetails.debtor
+    ) {
+      console.error(
+        'Invalid clientDetails structure. Ensure caseHistory is an array and debtor details are present.'
+      );
+      return clientDetails;
     }
 
     const totalRemaining = clientDetails.debtor.totalRemaining || 0;
     const weeklyBudget = clientDetails.debtor.weeklyBudget || 0;
 
     if (totalRemaining <= 0 || weeklyBudget <= 0) {
-        console.warn("Invalid totalRemaining or weeklyBudget; skipping weekRemaining calculation.");
-        return clientDetails;
+      console.warn(
+        'Invalid totalRemaining or weeklyBudget; skipping weekRemaining calculation.'
+      );
+      return clientDetails;
     }
 
     let maxWeekRemaining = 0;
 
     const updatedCaseHistory = clientDetails.caseHistory.map(caseHistory => {
-        const remaining = caseHistory.remaining || 0;
+      const remaining = caseHistory.remaining || 0;
 
-        // Calculate weekRemaining
-        const proportionOfTotal = remaining / totalRemaining;
-        const weeklyAmount = proportionOfTotal * weeklyBudget;
-        const weekRemaining = weeklyAmount > 0 ? Math.ceil(remaining / weeklyAmount) : null;
+      // Calculate weekRemaining
+      const proportionOfTotal = remaining / totalRemaining;
+      const weeklyAmount = proportionOfTotal * weeklyBudget;
+      const weekRemaining =
+        weeklyAmount > 0 ? Math.ceil(remaining / weeklyAmount) : null;
 
-        // Update maxWeekRemaining if the current weekRemaining is greater
-        if (weekRemaining !== null && weekRemaining > maxWeekRemaining) {
-          maxWeekRemaining = weekRemaining;
-        }
+      // Update maxWeekRemaining if the current weekRemaining is greater
+      if (weekRemaining !== null && weekRemaining > maxWeekRemaining) {
+        maxWeekRemaining = weekRemaining;
+      }
 
-        console.log(
-            `Case Remaining: ${remaining}, Proportion: ${proportionOfTotal}, Weekly Amount: ${weeklyAmount}, Week Remaining: ${weekRemaining}`
-        );
+      console.log(
+        `Case Remaining: ${remaining}, Proportion: ${proportionOfTotal}, Weekly Amount: ${weeklyAmount}, Week Remaining: ${weekRemaining}`
+      );
 
-        // Return updated case object with weekRemaining
-        return {
-            ...caseHistory,
-            weekRemaining
-        };
+      // Return updated case object with weekRemaining
+      return {
+        ...caseHistory,
+        weekRemaining,
+      };
     });
 
-    console.log("Max Week Remaining:", maxWeekRemaining);
+    console.log('Max Week Remaining:', maxWeekRemaining);
 
     return {
-        ...clientDetails,
-        caseHistory: updatedCaseHistory,
-        maxWeekRemaining
+      ...clientDetails,
+      caseHistory: updatedCaseHistory,
+      maxWeekRemaining,
     };
   }
 }

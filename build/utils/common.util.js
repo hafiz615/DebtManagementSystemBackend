@@ -71,6 +71,9 @@ class CommonUtil {
         if (!creditorNames[1]) {
             lastName = creditorNames[0];
         }
+        else {
+            lastName = creditorNames.slice(1).join(' ');
+        }
         var data = {
             firstName: creditorNames[0],
             lastName: lastName,
