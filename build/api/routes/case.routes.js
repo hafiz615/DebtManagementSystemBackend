@@ -40,12 +40,14 @@ router.get('/getSettlementJustifications/:id', authorize_middleware_1.default.va
 router.delete('/deleteFile/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteFile);
 router.post('/updateContractDetails/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateContractDetails, case_controller_1.default.updateContractDetails);
 router.delete('/deleteCreditor/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteCreditor);
-router.post('/createCall/:id', case_controller_1.default.createCall);
+//router.post('/createCall/:id', caseController.createCall);
 router.get('/getCalls/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getCalls);
-router.post('/twilio/voice', case_controller_1.default.callTwiml);
-router.post('/twilio/transcription-status', case_controller_1.default.callTranscriptionStatus);
+router.post('/voice', authorize_middleware_1.default.validateAuth, case_controller_1.default.callTwiml);
+//router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
 router.post('/twilio/recording-status', case_controller_1.default.callRecordingStatus);
-router.post('/twilio/call-hangup/:callSid', case_controller_1.default.callHangUp);
-router.get('/token', case_controller_1.default.getToken);
+//router.post('/twilio/call-hangup/:callSid', caseController.callHangUp);
+router.get('/twilio/token', case_controller_1.default.getToken);
+router.post('/twilio/fallback', case_controller_1.default.callFallBack);
+router.post('/twilio/call-status', case_controller_1.default.callStatus);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map
