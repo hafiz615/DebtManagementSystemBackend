@@ -353,6 +353,22 @@ class CaseValidate {
               })
             )
             .optional(),
+             // lawsuit fields
+            paymentFrequency: Joi.string().optional().allow(''),
+            impliedInterestRate: Joi.number().strict().optional(),
+            averageInterestRate: Joi.number().strict().optional(),
+            lawsuitFile: Joi.array()
+              .items(
+                Joi.object({
+                  key: Joi.string().required(),
+                  originalFileName: Joi.string().required(),
+                  url: Joi.string().optional().allow(''),
+                })
+              )
+              .optional(),
+            hasLawsuits: Joi.boolean().optional(),
+            lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
+            dateServed: Joi.date().optional(),
         })
       ),
     });
