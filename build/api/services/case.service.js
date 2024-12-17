@@ -517,49 +517,56 @@ class CaseService {
             }, findCase._id);
             return [true, result];
         };
-        this.createCall = async (req) => {
-            const reqTemp = req;
-            const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
-            if (!findCase) {
-                return [false, constants_util_1.default.notFoundMessage('Case')];
-            }
-            const callData = {
-                from: '+17756307412',
-                to: reqTemp.body.toNumber, // For testing Purposes Added My Number
-                url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
-                record: true,
-                statusCallback: 'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/recording-status',
-                statusCallbackEvent: ['completed'],
-            };
-            try {
-                const call = await this.twilioClient.calls.create(callData);
-                console.log('Call', call);
-                const result = await this.caseRepository.updateById(req.params.id, {
-                    $push: {
-                        calls: {
-                            callSid: call.sid,
-                            callerName: reqTemp.name,
-                            accountSid: call.accountSid,
-                            callTo: call.to,
-                            callFrom: call.from,
-                            callStartDate: call.startTime,
-                            callDuration: null, // Placeholder for later update
-                            callStatus: 'initiated', // Initial status
-                            callRecordingSid: '',
-                            callTranscription: '',
-                        },
-                    },
-                    updatedAt: common_util_1.default.getCurrentDate(),
-                });
-                if (!result)
-                    return [false, 'Failed to update case with call SID'];
-                return [true, call.sid];
-            }
-            catch (err) {
-                console.log('Error Creating Call', err);
-                return [false, 'Error creating call.'];
-            }
-        };
+        // createCall = async (req: Request): Promise<[boolean, ICase | string]> => {
+        //   const reqTemp: any = req;
+        //   const findCase: any = await this.caseRepository.getById<ICase>(
+        //     req.params.id,
+        //     undefined,
+        //     undefined,
+        //     ['debtor']
+        //   );
+        //   if (!findCase) {
+        //     return [false, constantsUtil.notFoundMessage('Case')];
+        //   }
+        //   const callData = {
+        //     from: '+17756307412',
+        //     to: reqTemp.body.toNumber, // For testing Purposes Added My Number
+        //     url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
+        //     record: true,
+        //     statusCallback:
+        //       'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/recording-status',
+        //     statusCallbackEvent: ['completed'],
+        //   };
+        //   try {
+        //     const call = await this.twilioClient.calls.create(callData);
+        //     console.log('Call', call);
+        //     const result = await this.caseRepository.updateById<ICase>(
+        //       req.params.id,
+        //       {
+        //         $push: {
+        //           calls: {
+        //             callSid: call.sid,
+        //             callerName: reqTemp.name,
+        //             accountSid: call.accountSid,
+        //             callTo: call.to,
+        //             callFrom: call.from,
+        //             callStartDate: call.startTime,
+        //             callDuration: null, // Placeholder for later update
+        //             callStatus: 'initiated', // Initial status
+        //             callRecordingSid: '',
+        //             callTranscription: '',
+        //           },
+        //         },
+        //         updatedAt: commonUtil.getCurrentDate(),
+        //       }
+        //     );
+        //     if (!result) return [false, 'Failed to update case with call SID'];
+        //     return [true, call.sid];
+        //   } catch (err) {
+        //     console.log('Error Creating Call', err);
+        //     return [false, 'Error creating call.'];
+        //   }
+        // };
         this.getCalls = async (req) => {
             const findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             if (!findCase) {
@@ -570,114 +577,62 @@ class CaseService {
             }
             return [true, findCase.calls];
         };
+        this.callFallback = async (req) => {
+            const VoiceResponse = require('twilio').twiml.VoiceResponse;
+            const twiml = new VoiceResponse();
+            twiml.say("We are experiencing technical difficulties. Please try again later.");
+            return [true, twiml.toString()];
+        };
         this.callTwiml = async (req) => {
-            const ADJECTIVES = [
-                'Awesome',
-                'Bold',
-                'Creative',
-                'Dapper',
-                'Eccentric',
-                'Fiesty',
-                'Golden',
-                'Holy',
-                'Ignominious',
-                'Jolly',
-                'Kindly',
-                'Lucky',
-                'Mushy',
-                'Natural',
-                'Oaken',
-                'Precise',
-                'Quiet',
-                'Rowdy',
-                'Sunny',
-                'Tall',
-                'Unique',
-                'Vivid',
-                'Wonderful',
-                'Xtra',
-                'Yawning',
-                'Zesty',
-            ];
-            const FIRST_NAMES = [
-                'Anna',
-                'Bobby',
-                'Cameron',
-                'Danny',
-                'Emmett',
-                'Frida',
-                'Gracie',
-                'Hannah',
-                'Isaac',
-                'Jenova',
-                'Kendra',
-                'Lando',
-                'Mufasa',
-                'Nate',
-                'Owen',
-                'Penny',
-                'Quincy',
-                'Roddy',
-                'Samantha',
-                'Tammy',
-                'Ulysses',
-                'Victoria',
-                'Wendy',
-                'Xander',
-                'Yolanda',
-                'Zelda',
-            ];
-            const LAST_NAMES = [
-                'Anchorage',
-                'Berlin',
-                'Cucamonga',
-                'Davenport',
-                'Essex',
-                'Fresno',
-                'Gunsight',
-                'Hanover',
-                'Indianapolis',
-                'Jamestown',
-                'Kane',
-                'Liberty',
-                'Minneapolis',
-                'Nevis',
-                'Oakland',
-                'Portland',
-                'Quantico',
-                'Raleigh',
-                'SaintPaul',
-                'Tulsa',
-                'Utica',
-                'Vail',
-                'Warsaw',
-                'XiaoJin',
-                'Yale',
-                'Zimmerman',
-            ];
+            //const reqTemp: any = req;
+            const callerId = process.env.TWILIO_CALLER_ID;
+            const { AccountSid, CallSid, To, CallStatus, CaseId } = req.body;
+            //console.log(reqTemp.name, CaseId, 'case id .................');
+            const findCase = await this.caseRepository.getById(CaseId, undefined, undefined, ['debtor']);
+            if (!findCase) {
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            }
+            // console.log(findCase, 'find case')
+            const result = await this.caseRepository.updateById(CaseId, {
+                $push: {
+                    calls: {
+                        callSid: CallSid,
+                        callerName: 'Hafiz Irshad',
+                        accountSid: AccountSid,
+                        callTo: To,
+                        callFrom: callerId,
+                        callStartDate: '',
+                        callDuration: null, // Placeholder for later update
+                        callStatus: CallStatus, // Initial status
+                        callRecordingSid: '',
+                    },
+                },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            //console.log(result, 'hello1');
+            if (!result)
+                return [false, 'Failed to update case with call SID'];
             const isAValidPhoneNumber = number => {
                 return /^[\d\+\-\(\) ]+$/.test(number);
             };
-            const rand = arr => arr[Math.floor(Math.random() * arr.length)];
-            const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
             let identity = 'user';
             const toNumberOrClientName = req.body.To;
-            const callerId = process.env.TWILIO_CALLER_ID;
             const VoiceResponse = require('twilio').twiml.VoiceResponse;
             let twiml = new VoiceResponse();
-            // If the request to the /voice endpoint is TO your Twilio Number,
-            // then it is an incoming call towards your Twilio.Device.
             if (toNumberOrClientName == callerId) {
-                let dial = twiml.dial();
-                // This will connect the caller with your Twilio.Device/client
+                const dial = twiml.dial({
+                    record: "record-from-answer",
+                    transcribe: true,
+                    recordingStatusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+                });
                 dial.client(identity);
             }
             else if (req.body.To) {
-                // This is an outgoing call
-                // set the callerId
-                let dial = twiml.dial({ callerId });
-                // Check if the 'To' parameter is a Phone Number or Client Name
-                // in order to use the appropriate TwiML noun
+                const dial = twiml.dial({
+                    callerId,
+                    record: "record-from-answer",
+                    recordingStatusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+                });
                 const attr = isAValidPhoneNumber(toNumberOrClientName)
                     ? 'number'
                     : 'client';
@@ -687,147 +642,48 @@ class CaseService {
                 twiml.say('Thanks for calling!');
             }
             return [true, twiml.toString()];
-            // try {
-            //   console.log(req, 'hello request')
-            //   const VoiceResponse  = require('twilio').twiml.VoiceResponse;
-            //   console.log("VoiceResponse", VoiceResponse)
-            //   if (!VoiceResponse) {
-            //     throw new Error('Twilio VoiceResponse is not available.');
-            //   }
-            //   const response = new VoiceResponse();
-            //   console.log("Response", response)
-            //   // Configure recording and transcription
-            //   response.record({
-            //     transcribe: true,
-            //     transcribeCallback: 'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/transcription-status',
-            //   });
-            //   // Return successful response
-            //   return [true, response.toString()];
-            // } catch (err) {
-            //   console.error('Error generating TwiML:', err);
-            //   return [false, 'Error generating TwiML.'];
-            // }
         };
-        this.callTranscriptionStatus = async (req) => {
-            try {
-                const callSid = req.body.CallSid;
-                const transcriptionText = req.body.TranscriptionText;
-                const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
-                    $set: {
-                        'calls.$.callTranscription': transcriptionText,
-                    },
-                    updatedAt: common_util_1.default.getCurrentDate(),
-                });
-                if (!result) {
-                    return [false, 'Failed to update case with recording details.'];
-                }
-                return [true, 'Recording status received and updated successfully.'];
-            }
-            catch (err) {
-                return [false, 'Error handling recording status.'];
-            }
+        this.callStatus = async (req) => {
+            const { CallSid, CallStatus } = req.body;
+            console.log(`Call SID: ${CallSid}, Status: ${CallStatus}`);
+            // res.status(200).send("Call status received");
+            return [true, '"Call status received"'];
         };
-        this.callHangUp = async (req) => {
-            try {
-                const callSid = req.params.callSid;
-                if (!callSid) {
-                    return [false, 'Call SID is required.'];
-                }
-                await this.twilioClient.calls(callSid).update({ status: 'completed' });
-                return [true, 'Call hung up successfully.'];
-            }
-            catch (err) {
-                console.error('Error hanging up the call:', err);
-                return [false, 'Error hanging up the call.'];
-            }
-        };
+        // callTranscriptionStatus = async (req: Request) => {
+        //   try {
+        //     const callSid = req.body.CallSid;
+        //     const transcriptionText = req.body.TranscriptionText;
+        //     const result = await this.caseRepository.updateByOne(
+        //       {'calls.callSid': callSid},
+        //       {
+        //         $set: {
+        //           'calls.$.callTranscription': transcriptionText,
+        //         },
+        //         updatedAt: commonUtil.getCurrentDate(),
+        //       }
+        //     );
+        //     if (!result) {
+        //       return [false, 'Failed to update case with recording details.'];
+        //     }
+        //     return [true, 'Recording status received and updated successfully.'];
+        //   } catch (err) {
+        //     return [false, 'Error handling recording status.'];
+        //   }
+        // };
+        // callHangUp = async (req: Request) => {
+        //   try {
+        //     const callSid = req.params.callSid;
+        //     if (!callSid) {
+        //       return [false, 'Call SID is required.'];
+        //     }
+        //     await this.twilioClient.calls(callSid).update({status: 'completed'});
+        //     return [true, 'Call hung up successfully.'];
+        //   } catch (err) {
+        //     console.error('Error hanging up the call:', err);
+        //     return [false, 'Error hanging up the call.'];
+        //   }
+        // };
         this.getToken = async (req) => {
-            const ADJECTIVES = [
-                'Awesome',
-                'Bold',
-                'Creative',
-                'Dapper',
-                'Eccentric',
-                'Fiesty',
-                'Golden',
-                'Holy',
-                'Ignominious',
-                'Jolly',
-                'Kindly',
-                'Lucky',
-                'Mushy',
-                'Natural',
-                'Oaken',
-                'Precise',
-                'Quiet',
-                'Rowdy',
-                'Sunny',
-                'Tall',
-                'Unique',
-                'Vivid',
-                'Wonderful',
-                'Xtra',
-                'Yawning',
-                'Zesty',
-            ];
-            const FIRST_NAMES = [
-                'Anna',
-                'Bobby',
-                'Cameron',
-                'Danny',
-                'Emmett',
-                'Frida',
-                'Gracie',
-                'Hannah',
-                'Isaac',
-                'Jenova',
-                'Kendra',
-                'Lando',
-                'Mufasa',
-                'Nate',
-                'Owen',
-                'Penny',
-                'Quincy',
-                'Roddy',
-                'Samantha',
-                'Tammy',
-                'Ulysses',
-                'Victoria',
-                'Wendy',
-                'Xander',
-                'Yolanda',
-                'Zelda',
-            ];
-            const LAST_NAMES = [
-                'Anchorage',
-                'Berlin',
-                'Cucamonga',
-                'Davenport',
-                'Essex',
-                'Fresno',
-                'Gunsight',
-                'Hanover',
-                'Indianapolis',
-                'Jamestown',
-                'Kane',
-                'Liberty',
-                'Minneapolis',
-                'Nevis',
-                'Oakland',
-                'Portland',
-                'Quantico',
-                'Raleigh',
-                'SaintPaul',
-                'Tulsa',
-                'Utica',
-                'Vail',
-                'Warsaw',
-                'XiaoJin',
-                'Yale',
-                'Zimmerman',
-            ];
-            const rand = arr => arr[Math.floor(Math.random() * arr.length)];
-            const randomGenerator = () => rand(ADJECTIVES) + rand(FIRST_NAMES) + rand(LAST_NAMES);
             let identity = 'user';
             const AccessToken = require('twilio').jwt.AccessToken;
             const VoiceGrant = AccessToken.VoiceGrant;
@@ -840,7 +696,6 @@ class CaseService {
                 incomingAllow: true,
             });
             accessToken.addGrant(grant);
-            // Include identity and token in a JSON response
             return [
                 true,
                 {
@@ -851,6 +706,9 @@ class CaseService {
         };
         this.callRecordingStatus = async (req) => {
             try {
+                const { RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime, TranscriptionText, TranscriptionStatus } = req.body;
+                console.log("TranscriptionText", TranscriptionText);
+                console.log("TranscriptionStatus", TranscriptionStatus);
                 const callSid = req.body.CallSid;
                 const recordingSid = req.body.RecordingSid;
                 const status = req.body.CallStatus;
@@ -858,15 +716,15 @@ class CaseService {
                 const callStartTime = req.body.Timestamp;
                 const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
                     $set: {
-                        'calls.$.callRecordingSid': recordingSid,
-                        'calls.$.callDuration': callDuration,
-                        'calls.$.callStatus': status,
-                        'calls.$.callStartDate': callStartTime,
+                        'calls.$.callRecordingSid': RecordingSid,
+                        'calls.$.callDuration': RecordingDuration,
+                        'calls.$.callStatus': RecordingStatus,
+                        'calls.$.callStartDate': RecordingStartTime,
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
                 if (!result) {
-                    return [false, 'Failed to update case with recording details.'];
+                    return [false, 'Failed to update call with recording details.'];
                 }
                 return [true, 'Recording status received and updated successfully.'];
             }
