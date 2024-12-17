@@ -75,21 +75,6 @@ class PaymentUtil {
                     }
                 }
         }
-        // const failedPayments = transformedArray.filter(
-        //   payment => payment.captured === 'Failed'
-        // );
-        // const successPayments = transformedArray.filter(
-        //   payment => payment.captured === 'Success'
-        // );
-        // const failedAuthorizations = transformedArray.filter(
-        //   payment => payment.authorized === 'Failed'
-        // );
-        // const successAuthorizations = transformedArray.filter(
-        //   payment => payment.authorized === 'Success'
-        // );
-        // const upcomingPayments = transformedArray.filter(
-        //   payment => payment.status === 'Upcoming'
-        // );
         return {
             failedCaptures: failedCaptures,
             successPayments: successPayments,

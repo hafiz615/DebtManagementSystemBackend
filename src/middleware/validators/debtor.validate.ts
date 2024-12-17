@@ -291,6 +291,7 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentType: Joi.string().required(),
       paymentToken: Joi.string().required(),
+      platform: Joi.string().valid('easypay', 'seamlesschex').required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

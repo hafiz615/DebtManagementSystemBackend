@@ -45,7 +45,11 @@ export interface IDebtor extends Document {
   }>;
   documents: Array<IKeyFile>;
   createdBy: string;
-  accounts: Array<{paymentType: string; customerVaultId: string}>;
+  accounts: Array<{
+    paymentType: string;
+    customerVaultId: string;
+    platform: string;
+  }>;
   // paymentType: string;
   extractedFields: any;
   // customerVaultId: string;

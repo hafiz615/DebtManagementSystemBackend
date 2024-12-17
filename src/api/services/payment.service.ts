@@ -18,6 +18,7 @@ import emailUtil from '../../utils/email.util';
 import creditorUtil from '../../utils/creditor.util';
 import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {IDebtor} from '../../database/interfaces/debtor.interface';
+import caseUtil from '../../utils/case.util';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -500,7 +501,6 @@ class PaymentService {
   }
 
   async getAllUpcomingPayments(id: string): Promise<[boolean, {} | string]> {
-  
     const payments: IPayment[] = await this.getAllPaymentsByDebtor(id);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
@@ -508,14 +508,13 @@ class PaymentService {
     const paymentsObj = await paymentUtil.getFilteredPayments(
       payments,
       'default'
-    );  
+    );
     return [
       true,
       {
         transactions: {
           upcomingPayments: paymentsObj.upcomingPayments,
         },
-  
       },
     ];
   }
@@ -525,8 +524,11 @@ class PaymentService {
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
+    const successCommissionPaymentsForCase: IPayment[] =
+      await this.getSuccessCommissionPaymentsWithCaseId();
+    const newPaymentsArray = payments.concat(successCommissionPaymentsForCase);
     const paymentsObj =
-      await paymentUtil.getFilteredCommissionPayments(payments);
+      await paymentUtil.getFilteredCommissionPayments(newPaymentsArray);
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
       ...obj,
       type: 'authorization',
@@ -626,10 +628,30 @@ class PaymentService {
     );
   }
 
-  async authorizeCreditCard(amount: number, customer_vault_id: string) {
-    const url = process.env.seamlesschexUrl;
+  private async getSuccessCommissionPaymentsWithCaseId() {
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        caseId: {$ne: null},
+        isDeleted: false,
+        captured: 'Success',
+        commission: {$gt: 0},
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      undefined,
+      {createdAt: -1}
+    );
+  }
+
+  async authorizeCreditCard(
+    amount: number,
+    customer_vault_id: string,
+    platform: string
+  ) {
+    const urlSecurityKey =
+      await caseUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
     const params = {
-      security_key: process.env.seamlesschexSecurityKey,
+      security_key: urlSecurityKey.securityKey,
       customer_vault_id: customer_vault_id,
       type: 'auth',
       amount: amount,
@@ -655,11 +677,13 @@ class PaymentService {
   async captureCreditCard(
     customer_vault_id: string,
     transactionId: string,
-    creditorSecurityKey: string
+    platform: string
   ) {
-    const url = process.env.seamlesschexUrl;
+    const urlSecurityKey =
+      await caseUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
     const params = {
-      security_key: process.env.seamlesschexSecurityKey,
+      security_key: urlSecurityKey.securityKey,
       customer_vault_id: customer_vault_id,
       transaction_id: transactionId,
       stored_credential_indicator: 'used',
@@ -684,14 +708,12 @@ class PaymentService {
     }
   }
 
-  async achCredit(
-    customer_vault_id: string,
-    amount: number,
-    creditorSecurityKey: string
-  ) {
-    const url = process.env.seamlesschexUrl;
+  async achCredit(customer_vault_id: string, amount: number, platform: string) {
+    const urlSecurityKey =
+      await caseUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
     const params = {
-      security_key: process.env.seamlesschexSecurityKey,
+      security_key: urlSecurityKey.securityKey,
       customer_vault_id: customer_vault_id,
       stored_credential_indicator: 'used',
       type: 'credit',
@@ -801,6 +823,9 @@ class PaymentService {
       // if (paynoteCustomer.user.status === 'unverified')
       //   return [false, 'User is unverified for payments'];
       const paymentResult = await paynoteUtil.sendPayment(payment);
+      if (paymentResult?.message === 'Server Error')
+        return [false, constants.Messages.PAYNOTE_SERVER_ERROR];
+      console.log(paymentResult, 'jhkjhi');
       if (paymentResult.error) {
         let message = '';
         if (paymentResult?.messages) {

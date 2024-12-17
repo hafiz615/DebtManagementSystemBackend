@@ -33,6 +33,7 @@ const justification_repository_1 = require("../api/repository/justification/just
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
+const enums_1 = require("../enums");
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -2328,26 +2329,39 @@ class CaseUtil {
             return [false, createdCases];
         return [true, createdCases];
     }
-    async createVault(paymentToken, debtorName) {
-        const url = process.env.seamlesschexUrl;
+    async createVault(paymentToken, debtorName, platform) {
+        const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+        const urlSecurityKey = await this.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
         const params = {
             customer_vault: 'add_customer',
-            security_key: process.env.seamlesschexSecurityKey,
+            security_key: urlSecurityKey.securityKey,
             payment_token: paymentToken,
-            first_name: debtorName,
-            last_name: debtorName,
+            first_name: names.firstName,
+            last_name: names.lastName,
         };
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
-            // const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
-            //   customerVaultId: customerVault,
-            //   paymentType: paymentType,
-            // });
             return [true, customerVault];
         }
         return [false, 'Unable to create customer vault'];
+    }
+    async getUrlAndSecurityKeyPlatform(platform) {
+        let securityKey = '';
+        let url = '';
+        switch (platform) {
+            case enums_1.paymentPlatform.easypay:
+                securityKey = process.env.easypaySecurityKey;
+                url = process.env.easypayUrl;
+                break;
+            case enums_1.paymentPlatform.seamlesschex:
+                securityKey = process.env.seamlesschexSecurityKey;
+                url = process.env.seamlesschexUrl;
+                break;
+        }
+        return { securityKey, url };
     }
     async getSettlementRangeSummery(data) {
         console.log(' getSettlementRangeSummery ---- data: ', data);
