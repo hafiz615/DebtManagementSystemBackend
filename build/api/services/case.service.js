@@ -149,28 +149,6 @@ class CaseService {
                 return [false, 'Payment plan already exist!'];
             }
             if (req.body?.intervals?.length && req.body?.commission) {
-                // let weeklyBudgetObj: {
-                //   status: boolean;
-                //   commission: number;
-                //   totalCommission: number;
-                // };
-                // if (req.body.feePayment && req.body.feePayment === 'toPay') {
-                //   weeklyBudgetObj = await caseUtil.checkWeeklyBudget(
-                //     req.body,
-                //     true,
-                //     findCase.debtor
-                //   );
-                // if (!weeklyBudgetObj.status) {
-                //   return [
-                //     false,
-                //     'Weekly budget is not fulfiling the payment plan of debtor',
-                //   ];
-                // }
-                //   await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-                //     totalCommission: weeklyBudgetObj.totalCommission,
-                //     weeklyCommission: weeklyBudgetObj.commission,
-                //   });
-                // }
                 if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
                     await this.debtorRepository.updateById(findCase.debtor._id, {
                         weeklyCommission: req.body.commission,
@@ -194,7 +172,7 @@ class CaseService {
                 req.body.remainingAmountPaid = 0;
             let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
             if (!caseUpdated) {
-                return [false, constants_util_1.default.notFoundMessage('Case')];
+                return [false, constants_util_1.default.failureUpdateMessage('case')];
             }
             await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
@@ -205,9 +183,6 @@ class CaseService {
                 case_util_1.default.createPayment(caseUpdated);
             }
             // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
-            // if (req.body.intervals) {
-            //   await caseUtil.createPayment(caseUpdated);
-            // }
             caseUpdated = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {
                 strategyOne_1: false,
@@ -580,7 +555,7 @@ class CaseService {
         this.callFallback = async (req) => {
             const VoiceResponse = require('twilio').twiml.VoiceResponse;
             const twiml = new VoiceResponse();
-            twiml.say("We are experiencing technical difficulties. Please try again later.");
+            twiml.say('We are experiencing technical difficulties. Please try again later.');
             return [true, twiml.toString()];
         };
         this.callTwiml = async (req) => {
@@ -621,7 +596,7 @@ class CaseService {
             let twiml = new VoiceResponse();
             if (toNumberOrClientName == callerId) {
                 const dial = twiml.dial({
-                    record: "record-from-answer",
+                    record: 'record-from-answer',
                     transcribe: true,
                     recordingStatusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
                 });
@@ -630,7 +605,7 @@ class CaseService {
             else if (req.body.To) {
                 const dial = twiml.dial({
                     callerId,
-                    record: "record-from-answer",
+                    record: 'record-from-answer',
                     recordingStatusCallback: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
                 });
                 const attr = isAValidPhoneNumber(toNumberOrClientName)
@@ -706,9 +681,9 @@ class CaseService {
         };
         this.callRecordingStatus = async (req) => {
             try {
-                const { RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime, TranscriptionText, TranscriptionStatus } = req.body;
-                console.log("TranscriptionText", TranscriptionText);
-                console.log("TranscriptionStatus", TranscriptionStatus);
+                const { RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime, TranscriptionText, TranscriptionStatus, } = req.body;
+                console.log('TranscriptionText', TranscriptionText);
+                console.log('TranscriptionStatus', TranscriptionStatus);
                 const callSid = req.body.CallSid;
                 const recordingSid = req.body.RecordingSid;
                 const status = req.body.CallStatus;
@@ -865,6 +840,48 @@ class CaseService {
                 return [false, constants_util_1.default.failureDeleteMessage('Creditor')];
             }
             return [true, constants_util_1.default.successDeleteMessage('Creditor')];
+        };
+        this.updateCasePlan = async (req) => {
+            let reqTemp = req;
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase)
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            const getDebtor = findCase.debtor;
+            if (req.body?.intervals &&
+                req.body?.intervals.length &&
+                findCase.intervals.length) {
+                return [false, 'Payment plan already exist!'];
+            }
+            if (req.body?.commission) {
+                if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+                    await this.debtorRepository.updateById(findCase.debtor._id, {
+                        weeklyCommission: req.body.commission,
+                        updatedAt: common_util_1.default.getCurrentDate(),
+                    });
+                }
+            }
+            if (req.body.intervals && req.body?.intervals?.length) {
+                findCase.intervals = req.body?.intervals;
+                findCase.isExempt = req.body.isExempt;
+                const checkCasePayment = await case_util_1.default.checkCasePayment(findCase);
+                if (!checkCasePayment[0])
+                    return checkCasePayment;
+            }
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
+            let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.failureUpdateMessage('case plan')];
+            }
+            if (req.body.intervals && req.body.intervals.length) {
+                case_util_1.default.createPayment(caseUpdated);
+            }
+            await case_util_1.default.addInHistory({
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case Updated',
+                'Updated By': reqTemp.name,
+            }, caseUpdated._id);
+            //this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            return [true, caseUpdated];
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
