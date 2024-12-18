@@ -900,7 +900,7 @@ class CaseService {
     if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
       return [true, []];
     }
-    return [true, findCase.calls];
+    return [true, findCase.calls.reverse()];
   };
 
   callFallback = async (req: Request) => {

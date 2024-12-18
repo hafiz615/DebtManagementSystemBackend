@@ -41,6 +41,17 @@ export class Case {
   lumpSumJustifications = false;
   fullProfitJustifications = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
+  calls = Array<{
+    callSid: '' | null;
+    callerName: '';
+    accountSid: '' | null;
+    callTo: '';
+    callFrom: '';
+    callStartDate: '';
+    callDuration: '' | null;
+    callStatus: '' | null;
+    callRecordingSid: '';
+  }>();
   chatId = '';
   settlementRange = false;
   getCaseIdPercentage = false;
