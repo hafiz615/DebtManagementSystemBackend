@@ -246,6 +246,20 @@ class CaseValidate {
                     .required(),
             }))
                 .optional(),
+            // lawsuit fields
+            paymentFrequency: joi_1.default.string().optional().allow(''),
+            impliedInterestRate: joi_1.default.number().strict().optional(),
+            averageInterestRate: joi_1.default.number().strict().optional(),
+            lawsuitFile: joi_1.default.array()
+                .items(joi_1.default.object({
+                key: joi_1.default.string().required(),
+                originalFileName: joi_1.default.string().required(),
+                url: joi_1.default.string().optional().allow(''),
+            }))
+                .optional(),
+            hasLawsuits: joi_1.default.boolean().optional(),
+            lawsuitCreditorTags: joi_1.default.array().items(joi_1.default.string()).optional(),
+            dateServed: joi_1.default.date().optional(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
