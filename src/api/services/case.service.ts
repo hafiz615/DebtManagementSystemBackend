@@ -849,10 +849,10 @@ class CaseService {
   //   const callData = {
   //     from: '+17756307412',
   //     to: reqTemp.body.toNumber, // For testing Purposes Added My Number
-  //     url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
+  //     url: `${process.env.webHookURl}/api/v1/case/twilio/voice`,
   //     record: true,
   //     statusCallback:
-  //       'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/recording-status',
+  //       `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
   //     statusCallbackEvent: ['completed'],
   //   };
   //   try {
@@ -959,7 +959,7 @@ class CaseService {
         record: 'record-from-answer',
         transcribe: true,
         recordingStatusCallback:
-          'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+          `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
 
       dial.client(identity);
@@ -968,7 +968,7 @@ class CaseService {
         callerId,
         record: 'record-from-answer',
         recordingStatusCallback:
-          'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+          `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
       const attr = isAValidPhoneNumber(toNumberOrClientName)
         ? 'number'
