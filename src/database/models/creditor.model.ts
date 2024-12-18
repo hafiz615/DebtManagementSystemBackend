@@ -93,6 +93,12 @@ const creditorModel: Schema = new Schema({
   aggression: {
     type: Number,
   },
+  paynoteSourceVerified: {
+    type: Boolean,
+  },
+  paynoteUserFound: {
+    type: Boolean,
+  },
 });
 
 creditorModel.pre('save', async function (next) {

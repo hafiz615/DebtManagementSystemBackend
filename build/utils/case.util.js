@@ -33,6 +33,7 @@ const justification_repository_1 = require("../api/repository/justification/just
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
+const enums_1 = require("../enums");
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -185,7 +186,9 @@ class CaseUtil {
         return 'CASE-' + (count + 1).toString().padStart(3, '0');
     }
     async getAllCreditorsOfDebtor(debtor) {
+        console.log(debtor, 'debtorrrrs');
         const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
+        console.log(cases);
         return await this.getAllCreditorsMapping(cases);
     }
     async getAllCreditorsMapping(cases) {
@@ -612,10 +615,12 @@ class CaseUtil {
                             outstandingDebt: {
                                 $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
+                            remaining: '$remaining',
                             pipeLineStatus: '$status',
                         },
                     },
                     debtorDetails: { $first: '$debtorDetails' },
+                    totalRemaining: { $sum: { $ifNull: ['$remaining', 0] } }, // Handle null cases for 'remaining'
                     failedCaptures: {
                         $sum: {
                             $size: {
@@ -683,6 +688,7 @@ class CaseUtil {
                         email: '$debtorDetails.basicInformation.email',
                         status: '$debtorDetails.basicInformation.status',
                         address: '$debtorDetails.basicInformation.address',
+                        weeklyBudget: '$debtorDetails.basicInformation.weeklyBudget',
                         outstandingDebt: {
                             $sum: '$caseHistory.outstandingDebt',
                         },
@@ -690,6 +696,7 @@ class CaseUtil {
                             $sum: '$caseHistory.totalDebt',
                         },
                         totalCommission: '$debtorDetails.totalCommission',
+                        totalRemaining: '$totalRemaining', // Include the calculated totalRemaining here
                     },
                     paymentCounts: {
                         failedCaptures: '$failedCaptures',
@@ -1608,7 +1615,11 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         console.log(lupmSum);
-        const url = `${process.env.baseUrlAI}get-lump-sum-justifications?debtor_id=${String(caseTemp.debtor._id)}&enable_cache=${true}`;
+        const result = await this.strategyRepository.getOne({
+            caseId: String(caseTemp._id),
+            name: 'strategy_one',
+        });
+        const url = `${process.env.baseUrlAI}get-lump-sum-justifications?debtor_id=${String(caseTemp.debtor._id)}&enable_cache=${true}&ucc_score=${result.data.getScoresAIForAllCreditors.Scores['UCC Score']}&default_risk_score=${result.data.getScoresAIForAllCreditors.Scores['Default Risk Score']}`;
         const data = {
             llm_options: { LLMs: models },
             lumpsum_settlement: { creditors: lupmSum },
@@ -2155,31 +2166,6 @@ class CaseUtil {
             const getCreditor = await this.creditorRepository.getOne({
                 'businessInformation.companyName': body.creditor.businessInformation.companyName,
             });
-            // if (body?.intervals) {
-            //   let weeklyBudgetObj: {
-            //     status: boolean;
-            //     commission: number;
-            //     totalCommission: number;
-            //   };
-            //   if (body.feePayment && body.feePayment === 'toPay') {
-            //     weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-            //     if (!weeklyBudgetObj.status) {
-            //       return [
-            //         false,
-            //         'Weekly budget is not fulfiling the payment plan of debtor',
-            //       ];
-            //     }
-            //     await this.debtRepository.updateById<IDebtor>(debtor._id, {
-            //       totalCommission: weeklyBudgetObj.totalCommission,
-            //       weeklyCommission: weeklyBudgetObj.commission,
-            //     });
-            //   }
-            // }
-            // if (body.creditor.paymentToken && body.creditor.paymentType) {
-            //   const customerVaultResponse = await this.createVault(body.paymentToken);
-            //   if (!customerVaultResponse[0]) return customerVaultResponse;
-            //   body.creditor.customerVaultId = customerVaultResponse[1];
-            // }
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
                 await paynote_util_1.default.createCustomer(creditor);
@@ -2321,26 +2307,42 @@ class CaseUtil {
             return [false, createdCases];
         return [true, createdCases];
     }
-    async createVault(paymentToken, debtorName) {
-        const url = process.env.seamlesschexUrl;
+    async createVault(paymentToken, debtorName, platform) {
+        const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+        const urlSecurityKey = await this.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
         const params = {
             customer_vault: 'add_customer',
-            security_key: process.env.seamlesschexSecurityKey,
+            security_key: urlSecurityKey.securityKey,
             payment_token: paymentToken,
-            first_name: debtorName,
-            last_name: debtorName,
+            first_name: names.firstName,
+            last_name: names.lastName,
         };
+        console.log(params, 'kjkjk');
+        console.log(url, 'urlll');
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+        console.log(response.data, 'okoko');
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
-            // const debtor = await this.debtorRepository.updateById<IDebtor>(id, {
-            //   customerVaultId: customerVault,
-            //   paymentType: paymentType,
-            // });
             return [true, customerVault];
         }
         return [false, 'Unable to create customer vault'];
+    }
+    async getUrlAndSecurityKeyPlatform(platform) {
+        let securityKey = '';
+        let url = '';
+        switch (platform) {
+            case enums_1.paymentPlatform.easypay:
+                securityKey = process.env.easypaySecurityKey;
+                url = process.env.easypayUrl;
+                break;
+            case enums_1.paymentPlatform.seamlesschex:
+                securityKey = process.env.seamlesschexSecurityKey;
+                url = process.env.seamlesschexUrl;
+                break;
+        }
+        return { securityKey, url };
     }
     async getSettlementRangeSummery(data) {
         console.log(' getSettlementRangeSummery ---- data: ', data);
@@ -2487,6 +2489,44 @@ class CaseUtil {
                 },
             },
         ]);
+    }
+    async addWeekRemainingToCases(clientDetails) {
+        if (!clientDetails ||
+            !Array.isArray(clientDetails.caseHistory) ||
+            !clientDetails.debtor) {
+            console.error('Invalid clientDetails structure. Ensure caseHistory is an array and debtor details are present.');
+            return clientDetails;
+        }
+        const totalRemaining = clientDetails.debtor.totalRemaining || 0;
+        const weeklyBudget = clientDetails.debtor.weeklyBudget || 0;
+        if (totalRemaining <= 0 || weeklyBudget <= 0) {
+            console.warn('Invalid totalRemaining or weeklyBudget; skipping weekRemaining calculation.');
+            return clientDetails;
+        }
+        let maxWeekRemaining = 0;
+        const updatedCaseHistory = clientDetails.caseHistory.map(caseHistory => {
+            const remaining = caseHistory.remaining || 0;
+            // Calculate weekRemaining
+            const proportionOfTotal = remaining / totalRemaining;
+            const weeklyAmount = proportionOfTotal * weeklyBudget;
+            const weekRemaining = weeklyAmount > 0 ? Math.ceil(remaining / weeklyAmount) : null;
+            // Update maxWeekRemaining if the current weekRemaining is greater
+            if (weekRemaining !== null && weekRemaining > maxWeekRemaining) {
+                maxWeekRemaining = weekRemaining;
+            }
+            console.log(`Case Remaining: ${remaining}, Proportion: ${proportionOfTotal}, Weekly Amount: ${weeklyAmount}, Week Remaining: ${weekRemaining}`);
+            // Return updated case object with weekRemaining
+            return {
+                ...caseHistory,
+                weekRemaining,
+            };
+        });
+        console.log('Max Week Remaining:', maxWeekRemaining);
+        return {
+            ...clientDetails,
+            caseHistory: updatedCaseHistory,
+            maxWeekRemaining,
+        };
     }
 }
 exports.default = new CaseUtil();

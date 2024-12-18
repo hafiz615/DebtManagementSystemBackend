@@ -41,6 +41,17 @@ export class Case {
   lumpSumJustifications = false;
   fullProfitJustifications = false;
   notes = Array<{userId: ''; value: ''; createdAt: ''}>();
+  calls = Array<{
+    callSid: '' | null;
+    callerName: '';
+    accountSid: '' | null;
+    callTo: '';
+    callFrom: '';
+    callStartDate: '';
+    callDuration: '' | null;
+    callStatus: '' | null;
+    callRecordingSid: '';
+  }>();
   chatId = '';
   settlementRange = false;
   getCaseIdPercentage = false;
@@ -48,4 +59,11 @@ export class Case {
   creditorPaymentsProceed = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
+  paymentFrequency = ''; // Payment frequency (text field)
+  impliedInterestRate = 0; // Implied interest rate per creditor
+  averageInterestRate = 0; // Average interest rate
+  lawsuitFile = Array<{ key: ''; originalFileName: ''; url: '' }>(); // Array of lawsuit file objects
+  hasLawsuits = false; // Do you have lawsuits?
+  lawsuitCreditorTags = Array<string>(); // Creditor dropdown tags
+  dateServed = ''; // Date served
 }

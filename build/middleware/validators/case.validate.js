@@ -246,6 +246,20 @@ class CaseValidate {
                     .required(),
             }))
                 .optional(),
+            // lawsuit fields
+            paymentFrequency: joi_1.default.string().optional().allow(''),
+            impliedInterestRate: joi_1.default.number().strict().optional(),
+            averageInterestRate: joi_1.default.number().strict().optional(),
+            lawsuitFile: joi_1.default.array()
+                .items(joi_1.default.object({
+                key: joi_1.default.string().required(),
+                originalFileName: joi_1.default.string().required(),
+                url: joi_1.default.string().optional().allow(''),
+            }))
+                .optional(),
+            hasLawsuits: joi_1.default.boolean().optional(),
+            lawsuitCreditorTags: joi_1.default.array().items(joi_1.default.string()).optional(),
+            dateServed: joi_1.default.date().optional(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -324,6 +338,20 @@ class CaseValidate {
                         .required(),
                 }))
                     .optional(),
+                // lawsuit fields
+                paymentFrequency: joi_1.default.string().optional().allow(''),
+                impliedInterestRate: joi_1.default.number().strict().optional(),
+                averageInterestRate: joi_1.default.number().strict().optional(),
+                lawsuitFile: joi_1.default.array()
+                    .items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                    url: joi_1.default.string().optional().allow(''),
+                }))
+                    .optional(),
+                hasLawsuits: joi_1.default.boolean().optional(),
+                lawsuitCreditorTags: joi_1.default.array().items(joi_1.default.string()).optional(),
+                dateServed: joi_1.default.date().optional(),
             })),
         });
         const { error } = schema.validate(req.body);
@@ -403,6 +431,50 @@ class CaseValidate {
             llama: joi_1.default.boolean().required(),
             chatgpt: joi_1.default.boolean().required(),
             claude: joi_1.default.boolean().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async updateContractDetails(req, res, next) {
+        const schema = joi_1.default.object({
+            label: joi_1.default.string().required(),
+            value: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async updateCasePlan(req, res, next) {
+        const schema = joi_1.default.object({
+            commission: joi_1.default.number().strict().allow(0).optional(),
+            isExempt: joi_1.default.boolean().optional(),
+            feePayment: joi_1.default.string()
+                .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+                .optional()
+                .allow(''),
+            intervals: joi_1.default.array()
+                .items(joi_1.default.object({
+                amount: joi_1.default.number().strict().required(),
+                startDate: joi_1.default.date().required(),
+                frequency: joi_1.default.number().optional(),
+                timePeriod: joi_1.default.string()
+                    .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+                    .required(),
+            }))
+                .optional(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

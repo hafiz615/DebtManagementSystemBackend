@@ -65,6 +65,21 @@ class CommonUtil {
             return data;
         }
     }
+    async getFirstAndLastNameByFullName(fullName) {
+        const creditorNames = fullName.split(' ');
+        let lastName = '';
+        if (!creditorNames[1]) {
+            lastName = creditorNames[0];
+        }
+        else {
+            lastName = creditorNames.slice(1).join(' ');
+        }
+        var data = {
+            firstName: creditorNames[0],
+            lastName: lastName,
+        };
+        return data;
+    }
 }
 exports.default = new CommonUtil();
 //# sourceMappingURL=common.util.js.map

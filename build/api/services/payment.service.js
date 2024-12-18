@@ -16,6 +16,7 @@ const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
+const case_util_1 = __importDefault(require("../../utils/case.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -341,7 +342,7 @@ class PaymentService {
         // Adding type to each object in successCapture array
         const failedCapture = paymentsObj.failedCaptures.map((obj) => ({
             ...obj,
-            type: 'payment',
+            type: 'capture',
         }));
         const successAuth = paymentsObj.successAuthorizations.map((obj) => ({
             ...obj,
@@ -350,7 +351,7 @@ class PaymentService {
         // Adding type to each object in successCapture array
         const successCapture = paymentsObj.successCaptures.map((obj) => ({
             ...obj,
-            type: 'payment',
+            type: 'capture',
         }));
         // Merging the arrays
         const mergedArray = [
@@ -360,10 +361,11 @@ class PaymentService {
             ...failedCapture,
         ];
         const paymentCounts = {
-            failedPayments: paymentsObj.failedCaptures.length,
-            successPayments: paymentsObj.successCaptures.length,
+            failedCaptures: paymentsObj.failedCaptures.length,
+            successCaptures: paymentsObj.successCaptures.length,
             failedAuthorizations: paymentsObj.failedAuthorizations.length,
             successAuthorizations: paymentsObj.successAuthorizations.length,
+            successPayments: paymentsObj.successPayments.length,
             paidAmount: paidAmount,
             remainingAmount: upcomingAmount + failedAmount,
         };
@@ -380,12 +382,29 @@ class PaymentService {
             },
         ];
     }
+    async getAllUpcomingPayments(id) {
+        const payments = await this.getAllPaymentsByDebtor(id);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments, 'default');
+        return [
+            true,
+            {
+                transactions: {
+                    upcomingPayments: paymentsObj.upcomingPayments,
+                },
+            },
+        ];
+    }
     async getCommissionPayments() {
         const payments = await this.getAllCommissionPayments();
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
-        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(payments);
+        const successCommissionPaymentsForCase = await this.getSuccessCommissionPaymentsWithCaseId();
+        const newPaymentsArray = payments.concat(successCommissionPaymentsForCase);
+        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(newPaymentsArray);
         const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
             ...obj,
             type: 'authorization',
@@ -423,6 +442,25 @@ class PaymentService {
             },
         ];
     }
+    async getAllPaymentsByDebtor(id) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            debtorId: id,
+            caseId: { $ne: null },
+            isDeleted: false,
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
+            path: 'caseId',
+            select: ['_id', 'caseOwner', 'totalDebt'],
+            populate: [{
+                    path: 'debtor',
+                    select: ['basicInformation.fullName', 'basicInformation.SSID'],
+                },
+                {
+                    path: 'creditor',
+                    select: ['basicInformation.fullName'],
+                }
+            ],
+        });
+    }
     async getAllPaymentsByCaseId(id) {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
@@ -442,10 +480,19 @@ class PaymentService {
             isDeleted: false,
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 });
     }
-    async authorizeCreditCard(amount, customer_vault_id) {
-        const url = process.env.seamlesschexUrl;
+    async getSuccessCommissionPaymentsWithCaseId() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            caseId: { $ne: null },
+            isDeleted: false,
+            captured: 'Success',
+            commission: { $gt: 0 },
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 });
+    }
+    async authorizeCreditCard(amount, customer_vault_id, platform) {
+        const urlSecurityKey = await case_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
         const params = {
-            security_key: process.env.seamlesschexSecurityKey,
+            security_key: urlSecurityKey.securityKey,
             customer_vault_id: customer_vault_id,
             type: 'auth',
             amount: amount,
@@ -469,10 +516,11 @@ class PaymentService {
             }
         }
     }
-    async captureCreditCard(customer_vault_id, transactionId, creditorSecurityKey) {
-        const url = process.env.seamlesschexUrl;
+    async captureCreditCard(customer_vault_id, transactionId, platform) {
+        const urlSecurityKey = await case_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
         const params = {
-            security_key: process.env.seamlesschexSecurityKey,
+            security_key: urlSecurityKey.securityKey,
             customer_vault_id: customer_vault_id,
             transaction_id: transactionId,
             stored_credential_indicator: 'used',
@@ -497,10 +545,11 @@ class PaymentService {
             }
         }
     }
-    async achCredit(customer_vault_id, amount, creditorSecurityKey) {
-        const url = process.env.seamlesschexUrl;
+    async achCredit(customer_vault_id, amount, platform) {
+        const urlSecurityKey = await case_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
         const params = {
-            security_key: process.env.seamlesschexSecurityKey,
+            security_key: urlSecurityKey.securityKey,
             customer_vault_id: customer_vault_id,
             stored_credential_indicator: 'used',
             type: 'credit',
@@ -595,6 +644,9 @@ class PaymentService {
             // if (paynoteCustomer.user.status === 'unverified')
             //   return [false, 'User is unverified for payments'];
             const paymentResult = await paynote_util_1.default.sendPayment(payment);
+            if (paymentResult?.message === 'Server Error')
+                return [false, constants_util_1.default.Messages.PAYNOTE_SERVER_ERROR];
+            console.log(paymentResult, 'jhkjhi');
             if (paymentResult.error) {
                 let message = '';
                 if (paymentResult?.messages) {

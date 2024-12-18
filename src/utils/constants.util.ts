@@ -26,6 +26,8 @@ export default {
     EXCEPTION: 'We ran into an error. Please try again later',
     UPLOAD_FILES_FAILURE: 'Unable to upload files',
     UPLOAD_FILES_SUCCESS: 'Files uploaded successfully',
+    DELETE_FILES_FAILURE: 'Unable to delete files',
+    DELETE_FILES_SUCCESS: 'Files Delete successfully',
     ATTATCH_FILE_ERROR: 'Please attatch atleast one file to upload',
     INVALID_LINK: 'Invitation link may be expired or is invalid',
     VALID_LINK: 'Invitation link verified successfully',
@@ -39,6 +41,8 @@ export default {
     STATUS_CASE_EXIST: 'This status already exist',
     PIPELINE_DELETE_STATUS_ERROR:
       'All statuses must be deleted to delete pipeline',
+    PAYNOTE_SERVER_ERROR:
+      'There is some issue in paynote server. Please try again later.',
   },
   ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
   FORGOT_PASSWORD_SUBJECT: 'Reset Your Password',
@@ -63,4 +67,11 @@ export default {
   alreadyExistsMessage: (name: string): string => `${name} already exists!`,
   successFoundMessage: (name: string): string =>
     `${name} returned successfully!`,
+  failureFetchMessage: (entity: string) => `Failed to fetch ${entity}.`,
+  unexpectedErrorMessage: (action: string) =>
+    `An unexpected error occurred while ${action}.`,
+  paymentAlreadyExistsMessage: (name: string): string =>
+    `payment is already captured for this transaction`,
+  callMadesuccessMessage: (name: string): string =>
+    `${name} made successfully!`,
 };

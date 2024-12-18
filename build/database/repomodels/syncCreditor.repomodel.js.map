@@ -1,0 +1,1 @@
+{"version":3,"file":"syncCreditor.repomodel.js","sourceRoot":"","sources":["../../../src/database/repomodels/syncCreditor.repomodel.ts"],"names":[],"mappings":";;;;;;AAAA,0EAAiD;AAEjD,MAAa,YAAY;IAAzB;QACE,eAAU,GAAG,EAAE,CAAC;QAChB,UAAK,GAAG,EAAE,CAAC;QACX,cAAS,GAAG,qBAAU,CAAC,cAAc,EAAE,CAAC;QACxC,cAAS,GAAG,qBAAU,CAAC,cAAc,EAAE,CAAC;IAC1C,CAAC;CAAA;AALD,oCAKC"}

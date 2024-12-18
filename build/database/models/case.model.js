@@ -107,6 +107,9 @@ const caseModel = new mongoose_1.Schema({
     notes: {
         type: (Array),
     },
+    calls: {
+        type: (Array),
+    },
     chatId: {
         type: String,
     },
@@ -159,6 +162,29 @@ const caseModel = new mongoose_1.Schema({
     updatedAt: {
         type: Date,
         required: true,
+    },
+    // Interest Rate Fields
+    paymentFrequency: {
+        type: String, // Text field for frequency
+    },
+    impliedInterestRate: {
+        type: Number, // Implied Interest rate per creditor
+    },
+    averageInterestRate: {
+        type: Number, // Average interest rate
+    },
+    // Lawsuit Fields
+    lawsuitFile: {
+        type: (Array),
+    },
+    hasLawsuits: {
+        type: Boolean, // Do you have lawsuits?
+    },
+    lawsuitCreditorTags: {
+        type: (Array), // Creditor dropdown tags
+    },
+    dateServed: {
+        type: Date,
     },
 });
 caseModel.pre('save', async function (next) {

@@ -107,40 +107,19 @@ class CreditorUtil {
     debtor: IDebtor,
     scoreCard: any
   ) {
-    // const token = await moneyThumbUtil.authenticateUser();
-    // let appid = 0;
-    // console.log(debtor.appid, 'debtor.appid');
-    // if (debtor.appid) appid = debtor.appid;
-    // if (!debtor.appid) {
-    //   const moneyThumbApp = await moneyThumbUtil.createNewApp(
-    //     token,
-    //     debtor.businessInformation.companyName
-    //   );
-    //   appid = moneyThumbApp['appid'];
-    // }
-    // const scoreCard = await moneyThumbUtil.getScoreCard(token, appid);
     const accounts = scoreCard['accountslist'];
-    console.log(accounts.data.length, 'accounttttt');
-    let weeklyTrueCredit = 0;
+    let trueCredit = 0;
     if (accounts.data.length) {
-      weeklyTrueCredit = await moneyThumbUtil.getWeeklyTrueCredit(accounts);
+      trueCredit = await moneyThumbUtil.getWeeklyTrueCredit(accounts);
     }
-    console.log(weeklyTrueCredit, 'weeklyTrueCredit');
     let totalRemaining = creditors.reduce(
       (sum, item) => sum + item.remaining,
       0
     );
-    // const debtorTotalCommission = debtor?.totalCommission
-    //   ? debtor.totalCommission
-    //   : 0;
-    // console.log(debtorTotalCommission, 'debtorTotalCommission');
-    // totalRemaining = totalRemaining + debtorTotalCommission;
-    console.log(totalRemaining, 'totalRemaining');
 
     const weeklyBudgetStrategy3 = debtor?.weeklyBudgetStrategy3
       ? debtor.weeklyBudgetStrategy3
       : 0;
-    console.log(weeklyBudgetStrategy3, 'weeklyBudgetStrategy3');
     let popup1Value = 0;
     if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
       popup1Value = debtor.weeklyBudgetStrategy1;
@@ -148,46 +127,20 @@ class CreditorUtil {
       const percent80 = debtor.weeklyBudgetStrategy1 * 0.8;
       popup1Value = percent80;
     }
-    console.log(popup1Value, 'popppp');
     const aggressionData = await this.getCreditorWithAggression(creditors);
-    console.log(aggressionData, 'aggressionData');
     for (const creditor of creditors) {
-      console.log(debtor.weeklyBudgetStrategy3, 'debtor.weeklyBudgetStrategy3');
-      console.log(totalRemaining, 'totalRemaining');
-      console.log(creditor.remaining, 'creditor.remaining');
       const creditorPer = creditor.remaining / totalRemaining;
-      console.log(creditorPer, 'creditorPer');
       creditor.maxProfitAmount =
         Math.round(creditorPer * popup1Value * 100) / 100;
       const percentage = creditorPer * weeklyBudgetStrategy3;
       creditor.percentageReceivable = Math.round(percentage * 100) / 100;
-      console.log(
-        creditor.percentageReceivable,
-        'creditor.percentageReceivable'
-      );
       creditor.percentageReceivableAmount = parseFloat(
-        ((creditor.percentageReceivable / 100) * weeklyTrueCredit).toFixed(2)
-      );
-      console.log(
-        creditor.percentageReceivableAmount,
-        'creditor.percentageReceivableAmount'
+        ((creditor.percentageReceivable / 100) * trueCredit).toFixed(2)
       );
     }
     if (Object.keys(aggressionData).length) {
       await this.aggressionAdjustment(creditors, aggressionData, popup1Value);
     }
-
-    // const percentageReceivableCommission =
-    //   (debtorTotalCommission / totalRemaining) * weeklyBudgetStrategy3;
-    // const pRcRoundCommission =
-    //   Math.round(percentageReceivableCommission * 100) / 100;
-    // const pRCAmount = pRcRoundCommission * weeklyTrueCredit;
-    // console.log(
-    //   percentageReceivableCommission,
-    //   'percentageReceivableCommission'
-    // );
-    // console.log(pRcRoundCommission, 'pRcRoundCommission');
-    // console.log(pRCAmount, 'pRCAmount');
     let maxProfitCommission = 0;
     if (debtor.weeklyBudgetKeyStrategy1 === 'strategy1Profit') {
       maxProfitCommission = debtor.trueProfit * 0.2;

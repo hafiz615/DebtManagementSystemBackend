@@ -39,6 +39,7 @@ class Case {
         this.lumpSumJustifications = false;
         this.fullProfitJustifications = false;
         this.notes = Array();
+        this.calls = Array();
         this.chatId = '';
         this.settlementRange = false;
         this.getCaseIdPercentage = false;
@@ -46,6 +47,13 @@ class Case {
         this.creditorPaymentsProceed = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
+        this.paymentFrequency = ''; // Payment frequency (text field)
+        this.impliedInterestRate = 0; // Implied interest rate per creditor
+        this.averageInterestRate = 0; // Average interest rate
+        this.lawsuitFile = Array(); // Array of lawsuit file objects
+        this.hasLawsuits = false; // Do you have lawsuits?
+        this.lawsuitCreditorTags = Array(); // Creditor dropdown tags
+        this.dateServed = ''; // Date served
     }
 }
 exports.Case = Case;

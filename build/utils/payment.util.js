@@ -14,6 +14,9 @@ class PaymentUtil {
             fullName: obj.caseId?.debtor
                 ? obj.caseId.debtor.basicInformation.fullName
                 : '',
+            creditorName: obj.caseId?.creditor
+                ? obj.caseId.creditor.basicInformation.fullName
+                : '',
             SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
             authorized: obj.authorized,
             captured: obj.captured,
@@ -75,21 +78,6 @@ class PaymentUtil {
                     }
                 }
         }
-        // const failedPayments = transformedArray.filter(
-        //   payment => payment.captured === 'Failed'
-        // );
-        // const successPayments = transformedArray.filter(
-        //   payment => payment.captured === 'Success'
-        // );
-        // const failedAuthorizations = transformedArray.filter(
-        //   payment => payment.authorized === 'Failed'
-        // );
-        // const successAuthorizations = transformedArray.filter(
-        //   payment => payment.authorized === 'Success'
-        // );
-        // const upcomingPayments = transformedArray.filter(
-        //   payment => payment.status === 'Upcoming'
-        // );
         return {
             failedCaptures: failedCaptures,
             successPayments: successPayments,

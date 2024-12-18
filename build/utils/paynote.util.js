@@ -7,10 +7,13 @@ const creditor_repository_1 = require("../api/repository/creditor/creditor.repos
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_1 = __importDefault(require("./constants.util"));
+const syncCreditor_repository_1 = require("../api/repository/syncCreditor/syncCreditor.repository");
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.syncCreditorRepository = new syncCreditor_repository_1.SyncCreditorRepository();
     }
     async createCustomer(creditor) {
         if (!creditor.basicInformation?.fullName)
@@ -81,6 +84,9 @@ class PaynoteUtil {
         let lastName = '';
         if (!creditorNames[1]) {
             lastName = creditorNames[0];
+        }
+        else {
+            lastName = creditorNames.slice(1).join(' ');
         }
         var data = {
             firstName: creditorNames[0],
@@ -290,6 +296,116 @@ class PaynoteUtil {
         catch (error) {
             return error.message;
         }
+    }
+    async getAllCustomerDetails(page, limit) {
+        const apiUrl = `${process.env.paynoteUrl}/user?page=${page}&limit=${limit}`;
+        console.log('I am in getAllCustomerDetails');
+        console.log('URL: ', apiUrl);
+        console.log('Payload: ', {});
+        try {
+            const response = await axiosInstanceInterceptor_1.default.get(apiUrl, {
+                headers: {
+                    Authorization: process.env.paynoteSecretKey,
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.log(error, 'erorr');
+            return error.response.data;
+        }
+    }
+    async syncUsersPaynote() {
+        console.log('i am going to run syncUsersPaynote');
+        let page = 1;
+        let limit = 100;
+        const allCreditors = await this.creditorRepository.getAllWithoutPagination();
+        const creditorEmails = allCreditors
+            .filter(creditor => creditor.basicInformation.email) // Filter creditors with an email
+            .map(creditor => creditor.basicInformation.email);
+        const result = await this.getAllCustomerDetails(page, limit);
+        if (result?.error) {
+            return;
+        }
+        await this.processAllUsersResult(result.list.data, creditorEmails);
+        const lastPage = result.list.last_page;
+        if (lastPage > page) {
+            for (let i = page + 1; i <= lastPage; i++) {
+                const result = await this.getAllCustomerDetails(i, limit);
+                if (result?.error) {
+                    break;
+                }
+                await this.processAllUsersResult(result.list.data, creditorEmails);
+            }
+        }
+    }
+    async processAllUsersResult(users, creditorEmails) {
+        let update = {};
+        for (const user of users) {
+            if (creditorEmails.includes(user.email)) {
+                update['paynoteUserFound'] = true;
+                update['paynoteUserId'] = user.user_id;
+                let sourceVerified = false;
+                for (const source of user.sources) {
+                    if (source.status === 'verified') {
+                        sourceVerified = true;
+                        update['paynoteSourceId'] = source.source_id;
+                        break;
+                    }
+                }
+                update['paynoteSourceVerified'] = sourceVerified;
+            }
+            if (!creditorEmails.includes(user.email)) {
+                update['paynoteUserFound'] = false;
+                update['paynoteSourceVerified'] = false;
+            }
+            this.creditorRepository.updateByOne({ 'basicInformation.email': user.email }, update);
+            update = {};
+        }
+    }
+    async getPaynoteErrorMessage(result) {
+        let message = '';
+        if (result?.messages) {
+            message = result.messages[0];
+        }
+        else {
+            message = result.message;
+        }
+        return message;
+    }
+    async processSyncCreditorPaynote(users, creditorEmail) {
+        let update = {};
+        const paynoteEmails = users.map(user => {
+            return user.email;
+        });
+        const index = paynoteEmails.indexOf(creditorEmail);
+        if (index === -1) {
+            update['paynoteUserFound'] = false;
+            update['paynoteSourceVerified'] = false;
+            return [false, 'Could not found user in paynote'];
+        }
+        update['paynoteUserFound'] = true;
+        update['paynoteUserId'] = users[index].user_id;
+        let sourceVerified = false;
+        for (const source of users[index].sources) {
+            if (source.status === 'verified') {
+                sourceVerified = true;
+                update['paynoteSourceId'] = source.source_id;
+                break;
+            }
+        }
+        update['paynoteSourceVerified'] = sourceVerified;
+        return [true, update];
+    }
+    async updateSyncCreditorObject(data, creditorId) {
+        await this.creditorRepository.updateById(creditorId, data);
+    }
+    async upsertCreditorPaynoteEmail(creditorId, email) {
+        await this.syncCreditorRepository.upsert({ creditorId: creditorId }, {
+            email: email,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
     }
 }
 exports.default = new PaynoteUtil();

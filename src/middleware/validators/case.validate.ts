@@ -262,6 +262,24 @@ class CaseValidate {
           })
         )
         .optional(),
+      
+        // lawsuit fields
+        paymentFrequency: Joi.string().optional().allow(''),
+        impliedInterestRate: Joi.number().strict().optional(),
+        averageInterestRate: Joi.number().strict().optional(),
+        lawsuitFile: Joi.array()
+          .items(
+            Joi.object({
+              key: Joi.string().required(),
+              originalFileName: Joi.string().required(),
+              url: Joi.string().optional().allow(''),
+            })
+          )
+          .optional(),
+        hasLawsuits: Joi.boolean().optional(),
+        lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
+        dateServed: Joi.date().optional(),
+      
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -353,6 +371,22 @@ class CaseValidate {
               })
             )
             .optional(),
+             // lawsuit fields
+            paymentFrequency: Joi.string().optional().allow(''),
+            impliedInterestRate: Joi.number().strict().optional(),
+            averageInterestRate: Joi.number().strict().optional(),
+            lawsuitFile: Joi.array()
+              .items(
+                Joi.object({
+                  key: Joi.string().required(),
+                  originalFileName: Joi.string().required(),
+                  url: Joi.string().optional().allow(''),
+                })
+              )
+              .optional(),
+            hasLawsuits: Joi.boolean().optional(),
+            lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
+            dateServed: Joi.date().optional(),
         })
       ),
     });
@@ -452,6 +486,60 @@ class CaseValidate {
       llama: Joi.boolean().required(),
       chatgpt: Joi.boolean().required(),
       claude: Joi.boolean().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async updateContractDetails(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      label: Joi.string().required(),
+      value: Joi.string().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  async updateCasePlan(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      commission: Joi.number().strict().allow(0).optional(),
+      isExempt: Joi.boolean().optional(),
+      feePayment: Joi.string()
+        .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+        .optional()
+        .allow(''),
+      intervals: Joi.array()
+        .items(
+          Joi.object({
+            amount: Joi.number().strict().required(),
+            startDate: Joi.date().required(),
+            frequency: Joi.number().optional(),
+            timePeriod: Joi.string()
+              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+              .required(),
+          })
+        )
+        .optional(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {

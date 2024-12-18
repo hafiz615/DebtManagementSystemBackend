@@ -27,6 +27,8 @@ exports.default = {
         EXCEPTION: 'We ran into an error. Please try again later',
         UPLOAD_FILES_FAILURE: 'Unable to upload files',
         UPLOAD_FILES_SUCCESS: 'Files uploaded successfully',
+        DELETE_FILES_FAILURE: 'Unable to delete files',
+        DELETE_FILES_SUCCESS: 'Files Delete successfully',
         ATTATCH_FILE_ERROR: 'Please attatch atleast one file to upload',
         INVALID_LINK: 'Invitation link may be expired or is invalid',
         VALID_LINK: 'Invitation link verified successfully',
@@ -38,6 +40,7 @@ exports.default = {
         STATUS_PIPELINE_EXIST: 'The status already exist in pipeline',
         STATUS_CASE_EXIST: 'This status already exist',
         PIPELINE_DELETE_STATUS_ERROR: 'All statuses must be deleted to delete pipeline',
+        PAYNOTE_SERVER_ERROR: 'There is some issue in paynote server. Please try again later.',
     },
     ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
     FORGOT_PASSWORD_SUBJECT: 'Reset Your Password',
@@ -55,5 +58,9 @@ exports.default = {
     notFoundMessage: (name) => `Unable to find ${name}!`,
     alreadyExistsMessage: (name) => `${name} already exists!`,
     successFoundMessage: (name) => `${name} returned successfully!`,
+    failureFetchMessage: (entity) => `Failed to fetch ${entity}.`,
+    unexpectedErrorMessage: (action) => `An unexpected error occurred while ${action}.`,
+    paymentAlreadyExistsMessage: (name) => `payment is already captured for this transaction`,
+    callMadesuccessMessage: (name) => `${name} made successfully!`,
 };
 //# sourceMappingURL=constants.util.js.map

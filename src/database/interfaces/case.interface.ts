@@ -42,6 +42,7 @@ export interface ICase extends Document {
   confidence: number;
   closeDate: string;
   notes: Array<{userId: string; value: string; createdAt: string}>;
+  calls: Array<{callSid: string | null, callerName: string, accountSid: string | null, callTo: string, callFrom: string, callStartDate:string, callDuration: string | null, callStatus: string | null, callRecordingSid: string}>;
   chatId: string;
   strategyOne_1: boolean;
   strategyOne_2: boolean;
@@ -57,4 +58,16 @@ export interface ICase extends Document {
   creditorPaymentsProceed: boolean;
   createdAt: string;
   updatedAt: string;
+  paymentFrequency: string; // Payment frequency (text field)
+  impliedInterestRate: number; // Implied interest rate per creditor
+  averageInterestRate: number; // Average interest rate
+  lawsuitFile: Array<{
+    key: string;
+    originalFileName: string;
+    url?: string;
+  }>; // Array of lawsuit file objects
+  hasLawsuits: boolean; // Do you have lawsuits?
+  lawsuitCreditorTags: Array<string>; // Creditor dropdown tags
+  dateServed: string; // Date served
+
 }

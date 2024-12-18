@@ -33,6 +33,7 @@ class Payment {
         this.commission = 0;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
+        this.transactionType = '';
     }
 }
 exports.Payment = Payment;
