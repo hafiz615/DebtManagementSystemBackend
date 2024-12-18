@@ -42,6 +42,7 @@ export interface ICase extends Document {
   confidence: number;
   closeDate: string;
   notes: Array<{userId: string; value: string; createdAt: string}>;
+  calls: Array<{callSid: string | null, callerName: string, accountSid: string | null, callTo: string, callFrom: string, callStartDate:string, callDuration: string | null, callStatus: string | null, callRecordingSid: string}>;
   chatId: string;
   strategyOne_1: boolean;
   strategyOne_2: boolean;

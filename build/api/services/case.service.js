@@ -550,7 +550,7 @@ class CaseService {
             if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
                 return [true, []];
             }
-            return [true, findCase.calls];
+            return [true, findCase.calls.reverse()];
         };
         this.callFallback = async (req) => {
             const VoiceResponse = require('twilio').twiml.VoiceResponse;
