@@ -519,5 +519,40 @@ class CaseValidate {
         );
     }
   }
+
+  async updateCasePlan(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      commission: Joi.number().strict().allow(0).optional(),
+      isExempt: Joi.boolean().optional(),
+      feePayment: Joi.string()
+        .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+        .optional()
+        .allow(''),
+      intervals: Joi.array()
+        .items(
+          Joi.object({
+            amount: Joi.number().strict().required(),
+            startDate: Joi.date().required(),
+            frequency: Joi.number().optional(),
+            timePeriod: Joi.string()
+              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+              .required(),
+          })
+        )
+        .optional(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
 }
 export default new CaseValidate();

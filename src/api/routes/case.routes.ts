@@ -160,4 +160,11 @@ router.get('/twilio/token', caseController.getToken);
 router.post('/twilio/fallback', caseController.callFallBack);
 router.post('/twilio/call-status', caseController.callStatus);
 
+router.put(
+  '/updateCasePlan/:id',
+  authorize.validateAuth,
+  caseValidate.updateCasePlan,
+  caseController.updateCasePlan
+);
+
 export default router;

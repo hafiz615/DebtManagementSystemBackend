@@ -1854,11 +1854,19 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     console.log(lupmSum);
+    const result = await this.strategyRepository.getOne<IStrategy>({
+      caseId: String(caseTemp._id),
+      name: 'strategy_one',
+    });
     const url = `${
       process.env.baseUrlAI
     }get-lump-sum-justifications?debtor_id=${String(
       caseTemp.debtor._id
-    )}&enable_cache=${true}`;
+    )}&enable_cache=${true}&ucc_score=${
+      result.data.getScoresAIForAllCreditors.Scores['UCC Score']
+    }&default_risk_score=${
+      result.data.getScoresAIForAllCreditors.Scores['Default Risk Score']
+    }`;
     const data = {
       llm_options: {LLMs: models},
       lumpsum_settlement: {creditors: lupmSum},
@@ -2559,35 +2567,9 @@ class CaseUtil {
         'businessInformation.companyName':
           body.creditor.businessInformation.companyName,
       });
-      // if (body?.intervals) {
-      //   let weeklyBudgetObj: {
-      //     status: boolean;
-      //     commission: number;
-      //     totalCommission: number;
-      //   };
-      //   if (body.feePayment && body.feePayment === 'toPay') {
-      //     weeklyBudgetObj = await this.checkWeeklyBudget(body, true, debtor);
-      //     if (!weeklyBudgetObj.status) {
-      //       return [
-      //         false,
-      //         'Weekly budget is not fulfiling the payment plan of debtor',
-      //       ];
-      //     }
-      //     await this.debtRepository.updateById<IDebtor>(debtor._id, {
-      //       totalCommission: weeklyBudgetObj.totalCommission,
-      //       weeklyCommission: weeklyBudgetObj.commission,
-      //     });
-      //   }
-      // }
-      // if (body.creditor.paymentToken && body.creditor.paymentType) {
-      //   const customerVaultResponse = await this.createVault(body.paymentToken);
-      //   if (!customerVaultResponse[0]) return customerVaultResponse;
-      //   body.creditor.customerVaultId = customerVaultResponse[1];
-      // }
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
-        if (process.env.environment === 'prod')
-          await paynoteUtil.createCustomer(creditor);
+        await paynoteUtil.createCustomer(creditor);
       }
       if (getCreditor) {
         body.updatedAt = commonUtil.getCurrentDate();

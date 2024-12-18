@@ -457,6 +457,35 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
+    async updateCasePlan(req, res, next) {
+        const schema = joi_1.default.object({
+            commission: joi_1.default.number().strict().allow(0).optional(),
+            isExempt: joi_1.default.boolean().optional(),
+            feePayment: joi_1.default.string()
+                .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+                .optional()
+                .allow(''),
+            intervals: joi_1.default.array()
+                .items(joi_1.default.object({
+                amount: joi_1.default.number().strict().required(),
+                startDate: joi_1.default.date().required(),
+                frequency: joi_1.default.number().optional(),
+                timePeriod: joi_1.default.string()
+                    .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+                    .required(),
+            }))
+                .optional(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
 }
 exports.default = new CaseValidate();
 //# sourceMappingURL=case.validate.js.map

@@ -49,5 +49,6 @@ router.post('/twilio/recording-status', case_controller_1.default.callRecordingS
 router.get('/twilio/token', case_controller_1.default.getToken);
 router.post('/twilio/fallback', case_controller_1.default.callFallBack);
 router.post('/twilio/call-status', case_controller_1.default.callStatus);
+router.put('/updateCasePlan/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateCasePlan, case_controller_1.default.updateCasePlan);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

@@ -421,42 +421,40 @@ class CaseController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
-  
+
   callTwiml = async (req: Request, res: Response) => {
     try {
       const response = await this.caseService.callTwiml(req);
       if (!response[0]) {
         return res
-        .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
       }
       res.type('text/xml');
       return res.status(constants.CODE.OK).send(response[1]);
-    } 
-    catch (error) {
-    return res
-    .status(constants.CODE.BAD_REQUEST)
-    .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
-   }
-  }
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 
   callFallBack = async (req: Request, res: Response) => {
     try {
       const response = await this.caseService.callFallback(req);
       if (!response[0]) {
         return res
-        .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(response[1]));
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
       }
       res.type('text/xml');
       return res.status(constants.CODE.OK).send(response[1]);
-    } 
-    catch (error) {
-    return res
-    .status(constants.CODE.BAD_REQUEST)
-    .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
-   }
-  }
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 
   // callHangUp = async (req: Request, res: Response) => {
   //   try {
@@ -475,7 +473,7 @@ class CaseController {
   //         ),
   //       })
   //     );
-  //   } 
+  //   }
   //   catch (error) {
   //   return res
   //   .status(constants.CODE.BAD_REQUEST)
@@ -529,8 +527,7 @@ class CaseController {
 
   getCalls = async (req: Request, res: Response) => {
     try {
-      const response =
-        await this.caseService.getCalls(req);
+      const response = await this.caseService.getCalls(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -540,9 +537,7 @@ class CaseController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage(
-            'All Calls for this Case'
-          ),
+          message: constants.successFoundMessage('All Calls for this Case'),
         })
       );
     } catch (error) {
@@ -848,7 +843,30 @@ class CaseController {
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  updateCasePlan = async (req: Request, res: Response) => {
+    try {
+      const response = await this.caseService.updateCasePlan(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
       }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Creditor plan'),
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
   };
 }
 
