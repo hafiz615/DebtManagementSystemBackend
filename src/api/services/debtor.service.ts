@@ -252,8 +252,9 @@ class DebtorService {
     }
     let clientDetails = await caseUtil.getClientDetails(req);
 
-    if(clientDetails) clientDetails = await caseUtil.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
-  
+    if (clientDetails)
+      clientDetails = await caseUtil.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
+
     // console.log("Updated clientDetails: ", clientDetails);
     // if (req.query.filter === 'true' || req.query.search === 'true') {
     //   casesCount = clientDetails.caseHistory.length;
@@ -860,13 +861,6 @@ class DebtorService {
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-    // let creditors = null;
-    // creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
-    // creditors = Array.from(
-    //   new Map(
-    //     creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
-    //   ).values()
-    // );
     let lumpSum = {};
     if (caseTemp.strategyTwo) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -874,20 +868,6 @@ class DebtorService {
         name: 'strategy_two',
       });
       lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
-      // for (const creditor of creditors) {
-      //   console.log(
-      //     creditor.creditorAccountTitle,
-      //     'creditor.creditorAccountTitle'
-      //   );
-      //   const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
-      //   lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
-      //     parseFloat(
-      //       (
-      //         caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
-      //         repaidDebt
-      //       ).toFixed(2)
-      //     );
-      // }
     }
     if (caseTemp.lumpSumJustifications) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -1399,6 +1379,23 @@ class DebtorService {
       return [false, constants.failureAddMessage('Manual Payment')];
     }
     return [true, constants.successAddMessage('Manual Payment')];
+  }
+
+  async updateWeeklyBudget(req: Request): Promise<[boolean, IDebtor | string]> {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('case')];
+    }
+    const updateDebtor = await this.debtorRepository.updateById<IDebtor>(
+      req.params.id,
+      {
+        'basicInformation.weeklyBudget': req.body.weeklyBudget,
+      }
+    );
+    if (!updateDebtor) {
+      return [false, constants.failureUpdateMessage('debtor')];
+    }
+    return [true, updateDebtor];
   }
 }
 

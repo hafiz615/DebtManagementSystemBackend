@@ -446,7 +446,7 @@ class CaseService {
                 }
             }
             await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
-            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
+            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId, true);
             data['settlementRange'] = settlementRange;
             return [true, data];
         };
@@ -714,6 +714,7 @@ class CaseService {
             }
             const comm = Number(req.body.commissionPercentage);
             const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
+            const caseId = req.params.id;
             if (!caseTemp)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             let getScores = null, creditorNames = null;
@@ -748,6 +749,15 @@ class CaseService {
             });
             await debtor_util_1.default.updateDebtorTotalCommission(debtor);
             data['debtor'] = debtor;
+            const values = await moneyThumb_util_1.default.getMonthlyProfitValues(moneyThumb.scoreCard, debtor);
+            data['averageMonthlyProfitExcludingPayments'] =
+                values.averageMonthlyProfitExcludingPayments;
+            data['averageMonthlyProfitIncludingPayments'] =
+                values.averageMonthlyProfitIncludingPayments;
+            data['currentMonthlyProfitExcludingPayments'] =
+                values.currentMonthlyProfitExcludingPayments;
+            data['currentMonthlyProfitIncludingPayments'] =
+                values.currentMonthlyProfitIncludingPayments;
             let extractedFieldsTemp = null;
             if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
                 const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
@@ -763,14 +773,14 @@ class CaseService {
             data['creditorNames'] = creditorNames;
             if (typeof creditorNames === 'string') {
                 data['getScores'] = null;
-                data['settlementRange'] = null;
+                data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                 return [true, data];
             }
             if (req.query.all === 'true') {
                 getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, comm);
                 data['getScores'] = getScores;
                 if (typeof getScores === 'string') {
-                    data['settlementRange'] = null;
+                    data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                     return [true, data];
                 }
                 data['debtor'] = await this.debtorRepository.getById(debtor._id);
@@ -781,14 +791,18 @@ class CaseService {
                     getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, comm);
                     data['getScores'] = getScores;
                     if (typeof getScores === 'string') {
-                        data['settlementRange'] = null;
+                        data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
                         return [true, data];
                     }
                     data['debtor'] = await this.debtorRepository.getById(debtor._id);
                 }
             }
             settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+            if (typeof settlementRange === 'string') {
+                settlementRange = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
+            }
             await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
+            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId, true);
             data['settlementRange'] = settlementRange;
             return [true, data];
         };
@@ -797,15 +811,14 @@ class CaseService {
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
-            // Commenting this Code, so everytime, it will pass this to Ai to get the justification.
-            // if (caseTemp.justifications) {
-            //   const result = await this.strategyRepository.getOne<IStrategy>({
-            //     caseId: String(caseTemp._id),
-            //     name: 'justifications',
-            //   });
-            //   if (result?.data?.justifications)
-            //     return [true, result.data.justifications];
-            // }
+            if (caseTemp.justifications) {
+                const result = await this.strategyRepository.getOne({
+                    caseId: String(caseTemp._id),
+                    name: 'justifications',
+                });
+                if (result?.data?.justifications)
+                    return [true, result.data.justifications];
+            }
             const models = await case_util_1.default.getJustificationModels();
             const justifications = await case_util_1.default.getSettlementJustifications(caseTemp, models);
             return justifications;

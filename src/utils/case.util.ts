@@ -1758,43 +1758,13 @@ class CaseUtil {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
-    let percentage_settlement_over_weekly_budget =
-      result.data.settlementRange.percentage_settlement_over_weekly_budget;
-    // // Extracting the first dynamic key inside settlement_range
-    // const settlementRange = result.data.settlementRange.settlement_range;
-    // console.log('settlementRange: ', settlementRange);
-    // // Get the first dynamic key
-    // const dynamicKey = Object.keys(settlementRange)[0];
-    // console.log('dynamicKey: ', dynamicKey);
 
-    const settlementRange = result.data?.settlementRange?.settlement_range;
-    console.log('settlementRange: ', settlementRange);
-    // Get all keys of settlementRange
-    const keys = Object.keys(settlementRange);
+    let settlementRange = result.data?.settlementRange?.settlement_range;
 
-    // Find the first key that is not 'Summary'
-    const dynamicKey = keys.find(key => key !== 'Summary');
-
-    console.log('dynamicKey: ', dynamicKey);
-    // Dynamically extract the data for that key
-    const creditorKey = settlementRange[dynamicKey];
-
-    const adjustedMin =
-      creditorKey['recommendation 1'].max < 0
-        ? -creditorKey['recommendation 1'].max -
-          creditorKey['recommendation 1'].max * 0.2
-        : creditorKey['recommendation 1'].max -
-          creditorKey['recommendation 1'].max * 0.2;
-
-    creditorKey['recommendation 1'].min = adjustedMin;
-
-    if (
-      percentage_settlement_over_weekly_budget &&
-      Object.keys(percentage_settlement_over_weekly_budget).length
-    ) {
-      delete percentage_settlement_over_weekly_budget.Summary;
+    if (settlementRange && Object.keys(settlementRange).length) {
+      delete settlementRange.Summary;
     } else {
-      percentage_settlement_over_weekly_budget = {};
+      settlementRange = {};
     }
 
     const url = `${
@@ -1809,7 +1779,7 @@ class CaseUtil {
 
     const data = {
       llm_options: {LLMs: models},
-      settlements: {creditors: {[dynamicKey]: creditorKey}},
+      settlements: {creditors: settlementRange},
     };
     try {
       console.log('I am in get-settlement-justifications');

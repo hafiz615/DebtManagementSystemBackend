@@ -9,11 +9,14 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
+const common_util_1 = __importDefault(require("./common.util"));
+const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 dotenv_1.default.config();
 class MoneyThumbUtil {
     constructor() {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.uploadUtil = new upload_util_1.default();
+        this.strategyRepository = new strategy_repository_1.StrategyRepository();
     }
     async run(debtor, companyName) {
         try {
@@ -388,10 +391,15 @@ class MoneyThumbUtil {
         const negotiatorWeeklyBudget = debtor.weeklyBudgetStrategy1 * 4;
         const settlementRangeBank = await this.getSettlementValuesHelper(creditors, scoreCard, caseId, bankStatementBudget);
         const settlementRangeNegotiator = await this.getSettlementValuesHelper(creditors, scoreCard, caseId, negotiatorWeeklyBudget);
-        return {
+        const combineSettlementRange = {
             ...settlementRangeNegotiator,
             option_2_stats: settlementRangeBank,
         };
+        await this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, {
+            'data.settlementRange': combineSettlementRange,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return combineSettlementRange;
     }
     async getSettlementValuesHelper(creditors, scoreCard, caseId, budget) {
         const metricData = scoreCard['metrics']['metricdata'];
@@ -424,7 +432,7 @@ class MoneyThumbUtil {
             settlement_range,
             weeks_till_paid,
         };
-        await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId);
+        await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId, false);
         return settlementRange;
     }
     async getMonthlyProfitValues(scoreCard, debtor) {

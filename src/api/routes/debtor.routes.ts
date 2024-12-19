@@ -89,14 +89,16 @@ router.post(
   debtorController.createMultipleDebtors
 );
 
-router.get('/getStatementsSummary/:id', 
+router.get(
+  '/getStatementsSummary/:id',
   authorize.validateAuth,
-  debtorController.getStatementsSummary 
+  debtorController.getStatementsSummary
 );
 
-router.get('/getDailyCashFlows/:id', 
+router.get(
+  '/getDailyCashFlows/:id',
   authorize.validateAuth,
-  debtorController.getDailyCashFlows 
+  debtorController.getDailyCashFlows
 );
 
 router.put(
@@ -152,5 +154,12 @@ router.post(
   authorize.validateAuth,
   debtor.validateManualPayment,
   debtorController.addManualPayment
+);
+
+router.put(
+  '/updateWeeklyBudget/:id',
+  authorize.validateAuth,
+  debtor.updateWeeklyBudget,
+  debtorController.updateWeeklyBudget
 );
 export default router;
