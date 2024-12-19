@@ -102,13 +102,6 @@ class DebtorService {
             if (!caseTemp) {
                 return [false, constants_util_2.default.notFoundMessage('case')];
             }
-            // let creditors = null;
-            // creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
-            // creditors = Array.from(
-            //   new Map(
-            //     creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
-            //   ).values()
-            // );
             let lumpSum = {};
             if (caseTemp.strategyTwo) {
                 const result = await this.strategyRepository.getOne({
@@ -116,20 +109,6 @@ class DebtorService {
                     name: 'strategy_two',
                 });
                 lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
-                // for (const creditor of creditors) {
-                //   console.log(
-                //     creditor.creditorAccountTitle,
-                //     'creditor.creditorAccountTitle'
-                //   );
-                //   const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
-                //   lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
-                //     parseFloat(
-                //       (
-                //         caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
-                //         repaidDebt
-                //       ).toFixed(2)
-                //     );
-                // }
             }
             if (caseTemp.lumpSumJustifications) {
                 const result = await this.strategyRepository.getOne({
@@ -1115,6 +1094,19 @@ class DebtorService {
             return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
         }
         return [true, constants_util_1.default.successAddMessage('Manual Payment')];
+    }
+    async updateWeeklyBudget(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updateDebtor = await this.debtorRepository.updateById(req.params.id, {
+            'basicInformation.weeklyBudget': req.body.weeklyBudget,
+        });
+        if (!updateDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        return [true, updateDebtor];
     }
 }
 exports.default = DebtorService;
