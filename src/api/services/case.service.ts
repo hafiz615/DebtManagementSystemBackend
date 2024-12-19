@@ -779,7 +779,8 @@ class CaseService {
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
       settlementRange,
-      caseId
+      caseId,
+      true
     );
     data['settlementRange'] = settlementRange;
     return [true, data];
@@ -1105,6 +1106,7 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
+    const caseId = req.params.id;
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     let getScores = null,
       creditorNames = null;
@@ -1152,6 +1154,18 @@ class CaseService {
     });
     await debtorUtil.updateDebtorTotalCommission(debtor);
     data['debtor'] = debtor;
+    const values = await moneyThumbUtil.getMonthlyProfitValues(
+      moneyThumb.scoreCard,
+      debtor
+    );
+    data['averageMonthlyProfitExcludingPayments'] =
+      values.averageMonthlyProfitExcludingPayments;
+    data['averageMonthlyProfitIncludingPayments'] =
+      values.averageMonthlyProfitIncludingPayments;
+    data['currentMonthlyProfitExcludingPayments'] =
+      values.currentMonthlyProfitExcludingPayments;
+    data['currentMonthlyProfitIncludingPayments'] =
+      values.currentMonthlyProfitIncludingPayments;
     let extractedFieldsTemp = null;
     if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
       const extractedFields = await caseUtil.getExtractionMCA(debtor);
@@ -1171,7 +1185,12 @@ class CaseService {
     data['creditorNames'] = creditorNames;
     if (typeof creditorNames === 'string') {
       data['getScores'] = null;
-      data['settlementRange'] = null;
+      data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+        debtor,
+        creditors,
+        moneyThumb.scoreCard,
+        caseId
+      );
       return [true, data];
     }
     if (req.query.all === 'true') {
@@ -1182,7 +1201,12 @@ class CaseService {
       );
       data['getScores'] = getScores;
       if (typeof getScores === 'string') {
-        data['settlementRange'] = null;
+        data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
         return [true, data];
       }
       data['debtor'] = await this.debtorRepository.getById<IDebtor>(debtor._id);
@@ -1199,7 +1223,12 @@ class CaseService {
         getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -1208,7 +1237,21 @@ class CaseService {
       }
     }
     settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    if (typeof settlementRange === 'string') {
+      settlementRange = await moneyThumbUtil.getSettlementValues(
+        debtor,
+        creditors,
+        moneyThumb.scoreCard,
+        caseId
+      );
+    }
     await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange,
+      caseId,
+      true
+    );
     data['settlementRange'] = settlementRange;
     return [true, data];
   };
@@ -1407,15 +1450,14 @@ class CaseService {
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-    // Commenting this Code, so everytime, it will pass this to Ai to get the justification.
-    // if (caseTemp.justifications) {
-    //   const result = await this.strategyRepository.getOne<IStrategy>({
-    //     caseId: String(caseTemp._id),
-    //     name: 'justifications',
-    //   });
-    //   if (result?.data?.justifications)
-    //     return [true, result.data.justifications];
-    // }
+    if (caseTemp.justifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'justifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
     const models = await caseUtil.getJustificationModels();
     const justifications = await caseUtil.getSettlementJustifications(
       caseTemp,
