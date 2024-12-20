@@ -2967,5 +2967,23 @@ class CaseUtil {
       maxWeekRemaining,
     };
   }
+
+  async getAllEmailsOfCase(caseTemp: any, creditorsCases: any) {
+    const allEmails = Array<string>();
+    allEmails.push(caseTemp?.debtor?.basicInformation.email);
+    allEmails.push(caseTemp?.creditor?.basicInformation.email);
+    for (const contact of caseTemp.debtor.contacts) {
+      allEmails.push(contact.email);
+    }
+    for (const contact of caseTemp.creditor.contacts) {
+      allEmails.push(contact.email);
+    }
+
+    for (const caseTemp of creditorsCases) {
+      allEmails.push(caseTemp.creditor.basicInformation.email);
+    }
+
+    return allEmails.filter(str => str.trim() !== '');
+  }
 }
 export default new CaseUtil();

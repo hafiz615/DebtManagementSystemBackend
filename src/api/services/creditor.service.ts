@@ -439,7 +439,17 @@ class CreditorService {
     );
     if (!caseTemp) return [false, constants.notFoundMessage('case')];
     const scoreCard = await debtorUtil.getScoreCard(caseTemp.debtor);
-    return [true, ''];
+    const monthlyMca = scoreCard.scoreCard['monthlymca'];
+    if (!monthlyMca.data.length)
+      return [false, constants.notFoundMessage('monthly mca')];
+    const groupedByMonth = monthlyMca.data.reduce((acc, item) => {
+      if (!acc[item.month]) {
+        acc[item.month] = [];
+      }
+      acc[item.month].push(item);
+      return acc;
+    }, {});
+    return [true, groupedByMonth];
   }
 }
 

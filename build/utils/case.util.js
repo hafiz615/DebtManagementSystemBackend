@@ -2506,6 +2506,21 @@ class CaseUtil {
             maxWeekRemaining,
         };
     }
+    async getAllEmailsOfCase(caseTemp, creditorsCases) {
+        const allEmails = Array();
+        allEmails.push(caseTemp?.debtor?.basicInformation.email);
+        allEmails.push(caseTemp?.creditor?.basicInformation.email);
+        for (const contact of caseTemp.debtor.contacts) {
+            allEmails.push(contact.email);
+        }
+        for (const contact of caseTemp.creditor.contacts) {
+            allEmails.push(contact.email);
+        }
+        for (const caseTemp of creditorsCases) {
+            allEmails.push(caseTemp.creditor.basicInformation.email);
+        }
+        return allEmails.filter(str => str.trim() !== '');
+    }
 }
 exports.default = new CaseUtil();
 //# sourceMappingURL=case.util.js.map

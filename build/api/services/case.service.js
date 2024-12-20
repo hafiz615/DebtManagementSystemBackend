@@ -108,6 +108,7 @@ class CaseService {
                     };
                 }))
                 : [];
+            findCase['allEmails'] = await case_util_1.default.getAllEmailsOfCase(findCase, uniqueResult);
             findCase['creditors'] = uniqueResult;
             findCase['customFields'] = temp ? temp.customFields : [];
             findCase['notes'] = updateNotesForm ?? [];
@@ -143,24 +144,25 @@ class CaseService {
                 await case_util_1.default.updateCreditor(req.body.creditor);
                 delete req.body.creditor;
             }
-            if (req.body?.intervals &&
-                req.body?.intervals.length &&
-                findCase.intervals.length) {
-                return [false, 'Payment plan already exist!'];
-            }
-            if (req.body?.intervals?.length && req.body?.commission) {
-                if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-                    await this.debtorRepository.updateById(findCase.debtor._id, {
-                        weeklyCommission: req.body.commission,
-                        updatedAt: common_util_1.default.getCurrentDate(),
-                    });
-                }
-                findCase.intervals = req.body?.intervals;
-                findCase.isExempt = req.body.isExempt;
-                const checkCasePayment = await case_util_1.default.checkCasePayment(findCase);
-                if (!checkCasePayment[0])
-                    return checkCasePayment;
-            }
+            // if (
+            //   req.body?.intervals &&
+            //   req.body?.intervals.length &&
+            //   findCase.intervals.length
+            // ) {
+            //   return [false, 'Payment plan already exist!'];
+            // }
+            // if (req.body?.intervals?.length && req.body?.commission) {
+            //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+            //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+            //       weeklyCommission: req.body.commission,
+            //       updatedAt: commonUtil.getCurrentDate(),
+            //     });
+            //   }
+            //   findCase.intervals = req.body?.intervals;
+            //   findCase.isExempt = req.body.isExempt;
+            //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+            //   if (!checkCasePayment[0]) return checkCasePayment;
+            // }
             req.body.updatedAt = common_util_1.default.getCurrentDate();
             if (req.body.paidAmount && req.body.paidAmount > 0) {
                 req.body.remaining = req.body.totalDebt - req.body.paidAmount;
@@ -179,9 +181,9 @@ class CaseService {
                 Action: 'Case Updated',
                 'Updated By': reqTemp.name,
             }, caseUpdated._id);
-            if (req.body.intervals && req.body.intervals.length) {
-                case_util_1.default.createPayment(caseUpdated);
-            }
+            // if (req.body.intervals && req.body.intervals.length) {
+            //   caseUtil.createPayment(caseUpdated);
+            // }
             // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             caseUpdated = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {

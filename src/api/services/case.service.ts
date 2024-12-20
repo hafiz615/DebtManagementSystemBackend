@@ -206,7 +206,10 @@ class CaseService {
             })
           )
         : [];
-
+    findCase['allEmails'] = await caseUtil.getAllEmailsOfCase(
+      findCase,
+      uniqueResult
+    );
     findCase['creditors'] = uniqueResult;
     findCase['customFields'] = temp ? temp.customFields : [];
     findCase['notes'] = updateNotesForm ?? [];
@@ -280,26 +283,26 @@ class CaseService {
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
-    if (
-      req.body?.intervals &&
-      req.body?.intervals.length &&
-      findCase.intervals.length
-    ) {
-      return [false, 'Payment plan already exist!'];
-    }
+    // if (
+    //   req.body?.intervals &&
+    //   req.body?.intervals.length &&
+    //   findCase.intervals.length
+    // ) {
+    //   return [false, 'Payment plan already exist!'];
+    // }
 
-    if (req.body?.intervals?.length && req.body?.commission) {
-      if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-        await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-          weeklyCommission: req.body.commission,
-          updatedAt: commonUtil.getCurrentDate(),
-        });
-      }
-      findCase.intervals = req.body?.intervals;
-      findCase.isExempt = req.body.isExempt;
-      const checkCasePayment = await caseUtil.checkCasePayment(findCase);
-      if (!checkCasePayment[0]) return checkCasePayment;
-    }
+    // if (req.body?.intervals?.length && req.body?.commission) {
+    //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+    //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+    //       weeklyCommission: req.body.commission,
+    //       updatedAt: commonUtil.getCurrentDate(),
+    //     });
+    //   }
+    //   findCase.intervals = req.body?.intervals;
+    //   findCase.isExempt = req.body.isExempt;
+    //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+    //   if (!checkCasePayment[0]) return checkCasePayment;
+    // }
     req.body.updatedAt = commonUtil.getCurrentDate();
     if (req.body.paidAmount && req.body.paidAmount > 0) {
       req.body.remaining = req.body.totalDebt - req.body.paidAmount;
@@ -323,9 +326,9 @@ class CaseService {
       },
       caseUpdated._id
     );
-    if (req.body.intervals && req.body.intervals.length) {
-      caseUtil.createPayment(caseUpdated);
-    }
+    // if (req.body.intervals && req.body.intervals.length) {
+    //   caseUtil.createPayment(caseUpdated);
+    // }
     // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     caseUpdated = await this.caseRepository.getById<ICase>(
       req.params.id,
@@ -959,8 +962,7 @@ class CaseService {
       const dial = twiml.dial({
         record: 'record-from-answer',
         transcribe: true,
-        recordingStatusCallback:
-          `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
+        recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
 
       dial.client(identity);
@@ -968,8 +970,7 @@ class CaseService {
       const dial = twiml.dial({
         callerId,
         record: 'record-from-answer',
-        recordingStatusCallback:
-          `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
+        recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
       const attr = isAValidPhoneNumber(toNumberOrClientName)
         ? 'number'
