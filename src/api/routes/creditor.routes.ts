@@ -61,4 +61,10 @@ router.get(
   creditorController.getCreditorSyncEmail
 );
 
+router.get(
+  '/mcaByMonth/:id',
+  authorize.validateAuth,
+  creditorController.mcaByMonth
+);
+
 export default router;
