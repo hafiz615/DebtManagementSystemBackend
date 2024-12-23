@@ -26,6 +26,8 @@ const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 const moneyThumb_util_1 = __importDefault(require("../../utils/moneyThumb.util"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const uuid_1 = require("uuid");
+const settings_repository_1 = require("../repository/setting/settings.repository");
+const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -108,6 +110,9 @@ class CaseService {
                     };
                 }))
                 : [];
+            const templates = await settings_util_1.default.getEmailSmsTemplates();
+            findCase['emailTemplates'] = templates.emailTemplates;
+            findCase['smsTemplates'] = templates.smsTemplates;
             findCase['allEmails'] = await case_util_1.default.getAllEmailsOfCase(findCase, uniqueResult);
             findCase['creditors'] = uniqueResult;
             findCase['customFields'] = temp ? temp.customFields : [];
@@ -912,6 +917,7 @@ class CaseService {
         this.justificationRepository = new justification_repository_1.JustificationRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
+        this.settingsRepository = new settings_repository_1.SettingsRepository();
     }
     async getAmountDeliveredToCreditor(caseId) {
         const getPayments = await this.paymentRepository.getAllWithoutPagination({

@@ -5,9 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_util_1 = __importDefault(require("./common.util"));
 const targetCF_repository_1 = require("../api/repository/targetCustomFields/targetCF.repository");
+const settings_repository_1 = require("../api/repository/setting/settings.repository");
 class SettingsUtil {
     constructor() {
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
+        this.settingsRepository = new settings_repository_1.SettingsRepository();
     }
     async addCustomFieldByTarget(customField, body, target, caseId) {
         const { name, value } = body;
@@ -75,6 +77,17 @@ class SettingsUtil {
             });
         }
         return body;
+    }
+    async getEmailSmsTemplates() {
+        const findSettings = await this.settingsRepository.getAllWithoutPagination();
+        const templates = await findSettings[0].notificationTemplates;
+        const emailTemplates = templates.filter(template => {
+            return template.type === 'email';
+        });
+        const smsTemplates = templates.filter(template => {
+            return template.type === 'sms';
+        });
+        return { emailTemplates, smsTemplates };
     }
 }
 exports.default = new SettingsUtil();

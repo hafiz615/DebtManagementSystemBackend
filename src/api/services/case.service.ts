@@ -44,6 +44,9 @@ import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {IInbox} from '../../database/interfaces/inbox.interface';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {v4} from 'uuid';
+import {SettingsRepository} from '../repository/setting/settings.repository';
+import {ISettings} from '../../database/interfaces/settings.interface';
+import settingsUtil from '../../utils/settings.util';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -64,6 +67,7 @@ class CaseService {
   private justificationRepository: JustificationRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private inboxRepository: InboxRepository;
+  private settingsRepository: SettingsRepository;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -82,6 +86,7 @@ class CaseService {
     this.justificationRepository = new JustificationRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
     this.inboxRepository = new InboxRepository();
+    this.settingsRepository = new SettingsRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -206,6 +211,9 @@ class CaseService {
             })
           )
         : [];
+    const templates = await settingsUtil.getEmailSmsTemplates();
+    findCase['emailTemplates'] = templates.emailTemplates;
+    findCase['smsTemplates'] = templates.smsTemplates;
     findCase['allEmails'] = await caseUtil.getAllEmailsOfCase(
       findCase,
       uniqueResult

@@ -1293,6 +1293,7 @@ class CronJob {
             settings,
             getCommission
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1310,6 +1311,7 @@ class CronJob {
             'ck',
             getCommission
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1349,6 +1351,7 @@ class CronJob {
             cronId,
             settings
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1367,6 +1370,7 @@ class CronJob {
             'ck',
             totalAmount
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1548,6 +1552,7 @@ class CronJob {
             settings,
             'cc'
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1564,6 +1569,7 @@ class CronJob {
             settings,
             'ck'
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1608,6 +1614,7 @@ class CronJob {
             'cc',
             totalAmount
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1626,6 +1633,7 @@ class CronJob {
             'ck',
             totalAmount
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }

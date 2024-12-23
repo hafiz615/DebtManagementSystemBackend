@@ -977,12 +977,16 @@ class CronJob {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(sum, account.customerVaultId, account.platform);
                     const result = await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings, getCommission);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, sum, account.platform);
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', getCommission);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
@@ -1000,12 +1004,16 @@ class CronJob {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId, account.platform);
                     const result = await this.processCommissionAuthorizedResponse(payment, concatedPayments, response, retryPlus, cronId, settings);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, totalAmount, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'ck', totalAmount);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
@@ -1136,12 +1144,16 @@ class CronJob {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc');
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck');
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
@@ -1160,12 +1172,16 @@ class CronJob {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'cc', totalAmount);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'ck', totalAmount);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
