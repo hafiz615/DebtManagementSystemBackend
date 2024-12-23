@@ -5,8 +5,8 @@ export enum responseName {
 }
 
 export enum paymentPlatform {
-  easypay = 'easypay',
-  seamlesschex = 'seamlesschex',
+  easypay = 'Easypay direct',
+  seamlesschex = 'Seamlesschex',
 }
 
 export enum permissions {
