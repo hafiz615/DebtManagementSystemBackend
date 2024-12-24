@@ -17,7 +17,7 @@ class PaymentUtil {
             creditorName: obj.caseId?.creditor
                 ? obj.caseId.creditor.basicInformation.fullName
                 : '',
-            SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
+            // SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
             authorized: obj.authorized,
             captured: obj.captured,
             amount: obj.amount,
@@ -26,6 +26,7 @@ class PaymentUtil {
             failedReasonCaptured: obj.failedReasonCaptured,
             tryDate: obj.rescheduled,
             caseId: obj?.caseId?._id ? String(obj.caseId._id) : '',
+            transactionType: obj.transactionType ? obj.transactionType : '',
         }));
         return this.getFilteredPaymentsObj(transformedArray, arrayName);
     }

@@ -976,13 +976,17 @@ class CronJob {
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(sum, account.customerVaultId, account.platform);
-                    const result = await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings, getCommission);
+                    const result = await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings, getCommission, account.platform);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, sum, account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', getCommission);
+                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform, getCommission);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
@@ -1000,19 +1004,23 @@ class CronJob {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId, account.platform);
                     const result = await this.processCommissionAuthorizedResponse(payment, concatedPayments, response, retryPlus, cronId, settings);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, totalAmount, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'ck', totalAmount);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
             }
         }
     }
-    async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, commission) {
+    async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, commission, platform) {
         let result = false;
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
@@ -1020,6 +1028,7 @@ class CronJob {
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
         const updateObjPayment = {};
+        updateObjPayment['transactionType'] = platform;
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
@@ -1135,13 +1144,17 @@ class CronJob {
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc');
+                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc', account.platform);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck');
+                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
@@ -1160,19 +1173,23 @@ class CronJob {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'cc', totalAmount);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'ck', totalAmount);
+                    if (retryPlus)
+                        retryPlus = false;
                     if (result)
                         break;
                 }
             }
         }
     }
-    async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, commision) {
+    async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform, commision) {
         let result = false;
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
@@ -1180,6 +1197,7 @@ class CronJob {
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
         const updateObjPayment = {};
+        updateObjPayment['transactionType'] = platform;
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';

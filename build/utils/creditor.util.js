@@ -211,33 +211,50 @@ class CreditorUtil {
             }
         }
     }
-    async replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId) {
+    async replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId, save) {
         let newWeeks = [];
         let newAmount = 0;
+        let newWeeksMin = [];
+        let newAmountMin = 0;
         for (const creditor of creditors) {
             if (settlementRange.settlement_range &&
                 settlementRange.settlement_range[creditor.creditorAccountTitle]) {
                 settlementRange.settlement_range[creditor.creditorAccountTitle]['recommendation 1'].max = creditor.maxProfitAmount;
+                let minAmount = parseFloat((creditor.maxProfitAmount - creditor.maxProfitAmount * 0.2).toFixed(2));
+                settlementRange.settlement_range[creditor.creditorAccountTitle]['recommendation 1'].min = minAmount;
                 newAmount += creditor.maxProfitAmount;
+                newAmountMin += minAmount;
             }
             if (settlementRange.weeks_till_paid &&
                 settlementRange.weeks_till_paid[creditor.creditorAccountTitle]) {
-                const weeks = Math.round(creditor.remaining / creditor.maxProfitAmount);
+                const weeks = Math.ceil(creditor.remaining / creditor.maxProfitAmount);
                 settlementRange.weeks_till_paid[creditor.creditorAccountTitle]['Weeks remaining based on recommendation 1'].max = weeks;
+                let minWeaks = Math.ceil(weeks + weeks * 0.2);
+                settlementRange.weeks_till_paid[creditor.creditorAccountTitle]['Weeks remaining based on recommendation 1'].min = minWeaks;
                 newWeeks.push(weeks);
+                newWeeksMin.push(minWeaks);
             }
         }
         if (newAmount) {
             settlementRange.settlement_range.Summary['recommendation 1'].max =
                 newAmount;
         }
+        if (newAmountMin) {
+            settlementRange.settlement_range.Summary['recommendation 1'].min =
+                newAmountMin;
+        }
         if (newWeeks) {
             settlementRange.weeks_till_paid.Summary['Weeks remaining based on recommendation 1'].max = Math.max(...newWeeks);
         }
-        await this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, {
-            'data.settlementRange': settlementRange,
-            updatedAt: common_util_1.default.getCurrentDate(),
-        });
+        if (newWeeksMin) {
+            settlementRange.weeks_till_paid.Summary['Weeks remaining based on recommendation 1'].min = Math.max(...newWeeksMin);
+        }
+        if (save) {
+            await this.strategyRepository.upsert({ caseId: caseId, name: 'strategy_one' }, {
+                'data.settlementRange': settlementRange,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+        }
     }
 }
 exports.default = new CreditorUtil();

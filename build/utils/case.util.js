@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
+const callUpload_util_1 = __importDefault(require("./callUpload.util"));
 const contact_repository_1 = require("../api/repository/contact/contact.repository");
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
@@ -34,9 +35,11 @@ const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
 const enums_1 = require("../enums");
+const twilio_1 = __importDefault(require("twilio"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
+        this.callUploadUtil = new callUpload_util_1.default();
         this.contactRepository = new contact_repository_1.ContactRepository();
         this.debtRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -1543,39 +1546,17 @@ class CaseUtil {
             caseId: String(caseTemp._id),
             name: 'strategy_one',
         });
-        let percentage_settlement_over_weekly_budget = result.data.settlementRange.percentage_settlement_over_weekly_budget;
-        // // Extracting the first dynamic key inside settlement_range
-        // const settlementRange = result.data.settlementRange.settlement_range;
-        // console.log('settlementRange: ', settlementRange);
-        // // Get the first dynamic key
-        // const dynamicKey = Object.keys(settlementRange)[0];
-        // console.log('dynamicKey: ', dynamicKey);
-        const settlementRange = result.data?.settlementRange?.settlement_range;
-        console.log('settlementRange: ', settlementRange);
-        // Get all keys of settlementRange
-        const keys = Object.keys(settlementRange);
-        // Find the first key that is not 'Summary'
-        const dynamicKey = keys.find(key => key !== 'Summary');
-        console.log('dynamicKey: ', dynamicKey);
-        // Dynamically extract the data for that key
-        const creditorKey = settlementRange[dynamicKey];
-        const adjustedMin = creditorKey['recommendation 1'].max < 0
-            ? -creditorKey['recommendation 1'].max -
-                creditorKey['recommendation 1'].max * 0.2
-            : creditorKey['recommendation 1'].max -
-                creditorKey['recommendation 1'].max * 0.2;
-        creditorKey['recommendation 1'].min = adjustedMin;
-        if (percentage_settlement_over_weekly_budget &&
-            Object.keys(percentage_settlement_over_weekly_budget).length) {
-            delete percentage_settlement_over_weekly_budget.Summary;
+        let settlementRange = result.data?.settlementRange?.settlement_range;
+        if (settlementRange && Object.keys(settlementRange).length) {
+            delete settlementRange.Summary;
         }
         else {
-            percentage_settlement_over_weekly_budget = {};
+            settlementRange = {};
         }
         const url = `${process.env.baseUrlAI}get-settlement-justifications?debtor_id=${String(caseTemp.debtor)}&enable_cache=${false}&ucc_score=${result.data.getScoresAIForAllCreditors.Scores['UCC Score']}&default_risk_score=${result.data.getScoresAIForAllCreditors.Scores['Default Risk Score']}`;
         const data = {
             llm_options: { LLMs: models },
-            settlements: { creditors: { [dynamicKey]: creditorKey } },
+            settlements: { creditors: settlementRange },
         };
         try {
             console.log('I am in get-settlement-justifications');
@@ -2527,6 +2508,64 @@ class CaseUtil {
             caseHistory: updatedCaseHistory,
             maxWeekRemaining,
         };
+    }
+    async fetchRecording(recordingSid) {
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+        try {
+            const response = await fetch(recordingUrl, {
+                headers: {
+                    Authorization: `Basic ${btoa(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`)}`,
+                },
+            });
+            if (response.ok) {
+                const fileBlob = await response.blob();
+                const arrayBuffer = await fileBlob.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const fileName = `${recordingSid}`;
+                try {
+                    await this.callUploadUtil.uploadFile('hafizbucket', fileName, buffer);
+                }
+                catch (uploadError) {
+                    console.error('Error uploading file to S3:', uploadError);
+                }
+                return "File uploaded to S3";
+            }
+            else {
+                console.error("Failed to fetch recording. Status:", response.status);
+                return null;
+            }
+        }
+        catch (error) {
+            console.error("Error fetching the Twilio recording:", error);
+            return null;
+        }
+    }
+    ;
+    async getAllEmailsOfCase(caseTemp, creditorsCases) {
+        const allEmails = Array();
+        allEmails.push(caseTemp?.debtor?.basicInformation.email);
+        allEmails.push(caseTemp?.creditor?.basicInformation.email);
+        for (const contact of caseTemp.debtor.contacts) {
+            allEmails.push(contact.email);
+        }
+        for (const contact of caseTemp.creditor.contacts) {
+            allEmails.push(contact.email);
+        }
+        for (const caseTemp of creditorsCases) {
+            allEmails.push(caseTemp.creditor.basicInformation.email);
+        }
+        return allEmails.filter(str => str.trim() !== '');
+    }
+    async createTranscript(recordingSID) {
+        const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const transcript = await client.intelligence.v2.transcripts.create({
+            channel: { "media_properties": {
+                    "source_sid": recordingSID
+                } },
+            serviceSid: process.env.TWILIO_Service_SID,
+        });
+        console.log(transcript);
     }
 }
 exports.default = new CaseUtil();

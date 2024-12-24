@@ -102,13 +102,6 @@ class DebtorService {
             if (!caseTemp) {
                 return [false, constants_util_2.default.notFoundMessage('case')];
             }
-            // let creditors = null;
-            // creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
-            // creditors = Array.from(
-            //   new Map(
-            //     creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
-            //   ).values()
-            // );
             let lumpSum = {};
             if (caseTemp.strategyTwo) {
                 const result = await this.strategyRepository.getOne({
@@ -116,20 +109,6 @@ class DebtorService {
                     name: 'strategy_two',
                 });
                 lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
-                // for (const creditor of creditors) {
-                //   console.log(
-                //     creditor.creditorAccountTitle,
-                //     'creditor.creditorAccountTitle'
-                //   );
-                //   const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
-                //   lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
-                //     parseFloat(
-                //       (
-                //         caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
-                //         repaidDebt
-                //       ).toFixed(2)
-                //     );
-                // }
             }
             if (caseTemp.lumpSumJustifications) {
                 const result = await this.strategyRepository.getOne({
@@ -1096,25 +1075,107 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        //TODO: Add validation check here
-        req.body.transactionIds.forEach(async (transaction) => {
-            let updatedPayment = await this.paymentRepository.updateById(transaction, {
-                authorized: 'Success', // Make is success so it can be picked up by CRON Job
-                captured: 'Success', // Make is success so it can be picked up by CRON Job
-                status: 'Pending',
-                dueDate: req.body.transactionDate,
-                debtorTransId: req.body.referenceId,
-                transactionType: req.body.transactionType,
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
+        const foundPayment = await this.paymentRepository.getOne({
+            debtorTransId: req.body.referenceId,
         });
-        let updatedDebtor = await this.debtorRepository.updateById(req.body.debtorId, {
-            $inc: { commissionPaid: req.body.commission },
+        if (foundPayment)
+            return [false, constants_util_1.default.alreadyExistsMessage('Reference id')];
+        let updatedPayment = await this.paymentRepository.updateMany({ _id: req.body.transactionIds }, {
+            authorized: 'Success',
+            captured: 'Success',
+            status: 'Pending',
+            dueDate: req.body.transactionDate,
+            debtorTransId: req.body.referenceId,
+            transactionType: req.body.transactionType,
+            manualCommission: req.body.commission,
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
-        if (!updatedDebtor) {
+        if (!updatedPayment) {
             return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
         }
+        if (updatedPayment) {
+            let updatedDebtor = await this.debtorRepository.updateById(req.body.debtorId, {
+                $inc: { commissionPaid: req.body.commission },
+            });
+            if (!updatedDebtor) {
+                return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
+            }
+        }
         return [true, constants_util_1.default.successAddMessage('Manual Payment')];
+    }
+    async updateWeeklyBudget(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updateDebtor = await this.debtorRepository.updateById(req.params.id, {
+            'basicInformation.weeklyBudget': req.body.weeklyBudget,
+        });
+        if (!updateDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        return [true, updateDebtor];
+    }
+    async getManualPayments(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        let manualPayments = await this.paymentRepository.getAllWithoutPagination({
+            transactionType: 'Wire',
+            debtorId: req.params.id,
+        });
+        if (!manualPayments.length) {
+            return [false, constants_util_1.default.notFoundMessage('manual payments')];
+        }
+        const groupedByTransId = manualPayments.reduce((acc, item) => {
+            if (!acc[item.debtorTransId]) {
+                acc[item.debtorTransId] = [];
+            }
+            acc[item.debtorTransId].push(item);
+            return acc;
+        }, {});
+        return [true, groupedByTransId];
+    }
+    async revertManualPayments(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        let manualPayment = await this.paymentRepository.getOne({
+            transactionType: 'Wire',
+            debtorId: req.params.id,
+            debtorTransId: req.body.referenceId,
+        });
+        if (manualPayment) {
+            if (manualPayment.manualCommission !== req.body.commission)
+                return [false, 'Commission is not correct'];
+        }
+        let result = await this.paymentRepository.updateMany({
+            transactionType: 'Wire',
+            debtorId: req.params.id,
+            debtorTransId: req.body.referenceId,
+        }, {
+            authorized: 'Pending',
+            captured: 'Pending',
+            status: 'Upcoming',
+            debtorTransId: '',
+            transactionType: '',
+            manualCommission: 0,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        if (!result) {
+            return [false, 'Could not revert bounce payments'];
+        }
+        if (result.modifiedCount && manualPayment) {
+            let updatedDebtor = await this.debtorRepository.updateById(req.params.id, {
+                $inc: { commissionPaid: -req.body.commission },
+            });
+            if (!updatedDebtor) {
+                return [false, 'Could not revert bounce payments'];
+            }
+        }
+        return [true, 'Bounce payments revert successfully'];
     }
 }
 exports.default = DebtorService;

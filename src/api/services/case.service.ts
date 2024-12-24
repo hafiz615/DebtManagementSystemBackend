@@ -45,6 +45,9 @@ import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {IInbox} from '../../database/interfaces/inbox.interface';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {v4} from 'uuid';
+import {SettingsRepository} from '../repository/setting/settings.repository';
+import {ISettings} from '../../database/interfaces/settings.interface';
+import settingsUtil from '../../utils/settings.util';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -66,6 +69,7 @@ class CaseService {
   private justificationRepository: JustificationRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private inboxRepository: InboxRepository;
+  private settingsRepository: SettingsRepository;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -85,6 +89,7 @@ class CaseService {
     this.justificationRepository = new JustificationRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
     this.inboxRepository = new InboxRepository();
+    this.settingsRepository = new SettingsRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -209,7 +214,13 @@ class CaseService {
             })
           )
         : [];
-
+    const templates = await settingsUtil.getEmailSmsTemplates();
+    findCase['emailTemplates'] = templates.emailTemplates;
+    findCase['smsTemplates'] = templates.smsTemplates;
+    findCase['allEmails'] = await caseUtil.getAllEmailsOfCase(
+      findCase,
+      uniqueResult
+    );
     findCase['creditors'] = uniqueResult;
     findCase['customFields'] = temp ? temp.customFields : [];
     findCase['notes'] = updateNotesForm ?? [];
@@ -283,26 +294,26 @@ class CaseService {
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
-    if (
-      req.body?.intervals &&
-      req.body?.intervals.length &&
-      findCase.intervals.length
-    ) {
-      return [false, 'Payment plan already exist!'];
-    }
+    // if (
+    //   req.body?.intervals &&
+    //   req.body?.intervals.length &&
+    //   findCase.intervals.length
+    // ) {
+    //   return [false, 'Payment plan already exist!'];
+    // }
 
-    if (req.body?.intervals?.length && req.body?.commission) {
-      if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-        await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-          weeklyCommission: req.body.commission,
-          updatedAt: commonUtil.getCurrentDate(),
-        });
-      }
-      findCase.intervals = req.body?.intervals;
-      findCase.isExempt = req.body.isExempt;
-      const checkCasePayment = await caseUtil.checkCasePayment(findCase);
-      if (!checkCasePayment[0]) return checkCasePayment;
-    }
+    // if (req.body?.intervals?.length && req.body?.commission) {
+    //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+    //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+    //       weeklyCommission: req.body.commission,
+    //       updatedAt: commonUtil.getCurrentDate(),
+    //     });
+    //   }
+    //   findCase.intervals = req.body?.intervals;
+    //   findCase.isExempt = req.body.isExempt;
+    //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+    //   if (!checkCasePayment[0]) return checkCasePayment;
+    // }
     req.body.updatedAt = commonUtil.getCurrentDate();
     if (req.body.paidAmount && req.body.paidAmount > 0) {
       req.body.remaining = req.body.totalDebt - req.body.paidAmount;
@@ -326,9 +337,9 @@ class CaseService {
       },
       caseUpdated._id
     );
-    if (req.body.intervals && req.body.intervals.length) {
-      caseUtil.createPayment(caseUpdated);
-    }
+    // if (req.body.intervals && req.body.intervals.length) {
+    //   caseUtil.createPayment(caseUpdated);
+    // }
     // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     caseUpdated = await this.caseRepository.getById<ICase>(
       req.params.id,
@@ -782,7 +793,8 @@ class CaseService {
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
       settlementRange,
-      caseId
+      caseId,
+      true
     );
     data['settlementRange'] = settlementRange;
     return [true, data];
@@ -852,10 +864,10 @@ class CaseService {
   //   const callData = {
   //     from: '+17756307412',
   //     to: reqTemp.body.toNumber, // For testing Purposes Added My Number
-  //     url: 'https://debt-staging.hpdemos.co/api/v1/case/twilio/voice',
+  //     url: `${process.env.webHookURl}/api/v1/case/twilio/voice`,
   //     record: true,
   //     statusCallback:
-  //       'https://7276-139-135-36-105.ngrok-free.app/api/v1/case/twilio/recording-status',
+  //       `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
   //     statusCallbackEvent: ['completed'],
   //   };
   //   try {
@@ -949,11 +961,12 @@ class CaseService {
           callDuration: null, // Placeholder for later update
           callStatus: CallStatus, // Initial status
           callRecordingSid: '',
+          transcriptUrl:''
         },
       },
       updatedAt: commonUtil.getCurrentDate(),
     });
-    //console.log(result, 'hello1');
+    console.log(result, 'hello1');
     if (!result) return [false, 'Failed to update case with call SID'];
     const isAValidPhoneNumber = number => {
       return /^[\d\+\-\(\) ]+$/.test(number);
@@ -968,8 +981,7 @@ class CaseService {
       const dial = twiml.dial({
         record: 'record-from-answer',
         transcribe: true,
-        recordingStatusCallback:
-          'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+        recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
 
       dial.client(identity);
@@ -977,8 +989,7 @@ class CaseService {
       const dial = twiml.dial({
         callerId,
         record: 'record-from-answer',
-        recordingStatusCallback:
-          'https://debt-staging.hpdemos.co/api/v1/case/twilio/recording-status',
+        recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
       const attr = isAValidPhoneNumber(toNumberOrClientName)
         ? 'number'
@@ -1072,6 +1083,7 @@ class CaseService {
       } = req.body;
       const resultOfRecording = await caseUtil.fetchRecording(RecordingSid);
       console.log(resultOfRecording, 'resutl.......');
+      const transcriptUrl : any = await caseUtil.createTranscript(RecordingSid);
       const result = await this.caseRepository.updateByOne(
         {'calls.callSid': CallSid},
         {
@@ -1080,10 +1092,12 @@ class CaseService {
             'calls.$.callDuration': RecordingDuration,
             'calls.$.callStatus': RecordingStatus,
             'calls.$.callStartDate': RecordingStartTime,
+            'calls.$.transcriptUrl': transcriptUrl.links.sentences,
           },
           updatedAt: commonUtil.getCurrentDate(),
         }
       );
+      console.log(result)
       if (!result) {
         return [false, 'Failed to update call with recording details.'];
       }
@@ -1092,6 +1106,8 @@ class CaseService {
       return [false, 'Error handling recording status.'];
     }
   };
+
+  
 
   getScoresSettlementByCommPercentage = async (req: Request) => {
     if (
@@ -1107,6 +1123,7 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
+    const caseId = req.params.id;
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     let getScores = null,
       creditorNames = null;
@@ -1154,6 +1171,18 @@ class CaseService {
     });
     await debtorUtil.updateDebtorTotalCommission(debtor);
     data['debtor'] = debtor;
+    const values = await moneyThumbUtil.getMonthlyProfitValues(
+      moneyThumb.scoreCard,
+      debtor
+    );
+    data['averageMonthlyProfitExcludingPayments'] =
+      values.averageMonthlyProfitExcludingPayments;
+    data['averageMonthlyProfitIncludingPayments'] =
+      values.averageMonthlyProfitIncludingPayments;
+    data['currentMonthlyProfitExcludingPayments'] =
+      values.currentMonthlyProfitExcludingPayments;
+    data['currentMonthlyProfitIncludingPayments'] =
+      values.currentMonthlyProfitIncludingPayments;
     let extractedFieldsTemp = null;
     if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
       const extractedFields = await caseUtil.getExtractionMCA(debtor);
@@ -1173,7 +1202,12 @@ class CaseService {
     data['creditorNames'] = creditorNames;
     if (typeof creditorNames === 'string') {
       data['getScores'] = null;
-      data['settlementRange'] = null;
+      data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+        debtor,
+        creditors,
+        moneyThumb.scoreCard,
+        caseId
+      );
       return [true, data];
     }
     if (req.query.all === 'true') {
@@ -1184,7 +1218,12 @@ class CaseService {
       );
       data['getScores'] = getScores;
       if (typeof getScores === 'string') {
-        data['settlementRange'] = null;
+        data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
         return [true, data];
       }
       data['debtor'] = await this.debtorRepository.getById<IDebtor>(debtor._id);
@@ -1201,7 +1240,12 @@ class CaseService {
         getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -1210,7 +1254,21 @@ class CaseService {
       }
     }
     settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    if (typeof settlementRange === 'string') {
+      settlementRange = await moneyThumbUtil.getSettlementValues(
+        debtor,
+        creditors,
+        moneyThumb.scoreCard,
+        caseId
+      );
+    }
     await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange,
+      caseId,
+      true
+    );
     data['settlementRange'] = settlementRange;
     return [true, data];
   };
@@ -1409,15 +1467,14 @@ class CaseService {
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-    // Commenting this Code, so everytime, it will pass this to Ai to get the justification.
-    // if (caseTemp.justifications) {
-    //   const result = await this.strategyRepository.getOne<IStrategy>({
-    //     caseId: String(caseTemp._id),
-    //     name: 'justifications',
-    //   });
-    //   if (result?.data?.justifications)
-    //     return [true, result.data.justifications];
-    // }
+    if (caseTemp.justifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'justifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
     const models = await caseUtil.getJustificationModels();
     const justifications = await caseUtil.getSettlementJustifications(
       caseTemp,

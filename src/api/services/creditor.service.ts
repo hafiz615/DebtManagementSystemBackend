@@ -15,6 +15,7 @@ import paynoteUtil from '../../utils/paynote.util';
 import dotenv from 'dotenv';
 import {SyncCreditorRepository} from '../repository/syncCreditor/syncCreditor.repository';
 import {ISyncCreditor} from '../../database/interfaces/syncCreditor.interface';
+import debtorUtil from '../../utils/debtor.util';
 dotenv.config();
 
 class CreditorService {
@@ -427,6 +428,28 @@ class CreditorService {
     });
     if (!result) return [true, creditor.basicInformation.email];
     return [true, result.email];
+  }
+
+  async mcaByMonth(req: Request) {
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const scoreCard = await debtorUtil.getScoreCard(caseTemp.debtor);
+    const monthlyMca = scoreCard.scoreCard['monthlymca'];
+    if (!monthlyMca.data.length)
+      return [false, constants.notFoundMessage('monthly mca')];
+    const groupedByMonth = monthlyMca.data.reduce((acc, item) => {
+      if (!acc[item.month]) {
+        acc[item.month] = [];
+      }
+      acc[item.month].push(item);
+      return acc;
+    }, {});
+    return [true, groupedByMonth];
   }
 }
 

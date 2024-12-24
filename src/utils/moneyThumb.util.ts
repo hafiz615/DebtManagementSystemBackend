@@ -6,13 +6,17 @@ import UploadUtil from './upload.util';
 import caseUtil from './case.util';
 import creditorUtil from './creditor.util';
 import debtorUtil from './debtor.util';
+import commonUtil from './common.util';
+import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
 dotenv.config();
 class MoneyThumbUtil {
   private debtorRepository: DebtorRepository;
   private uploadUtil: UploadUtil;
+  private strategyRepository: StrategyRepository;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.uploadUtil = new UploadUtil();
+    this.strategyRepository = new StrategyRepository();
   }
 
   async run(debtor: IDebtor, companyName: string) {
@@ -148,7 +152,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Response Data', response.data['mcacompanies']);
+      // console.log('Response Data', response.data['mcacompanies']);
       return response.data;
     } catch (error) {
       console.log(error);
@@ -438,10 +442,18 @@ class MoneyThumbUtil {
       caseId,
       negotiatorWeeklyBudget
     );
-    return {
+    const combineSettlementRange = {
       ...settlementRangeNegotiator,
       option_2_stats: settlementRangeBank,
     };
+    await this.strategyRepository.upsert(
+      {caseId: caseId, name: 'strategy_one'},
+      {
+        'data.settlementRange': combineSettlementRange,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    return combineSettlementRange;
   }
 
   async getSettlementValuesHelper(
@@ -494,7 +506,8 @@ class MoneyThumbUtil {
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
       settlementRange,
-      caseId
+      caseId,
+      false
     );
     return settlementRange;
   }

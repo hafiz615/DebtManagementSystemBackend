@@ -39,5 +39,8 @@ router.post('/analyzeAndGetSettlementRanges/:id', authorize_middleware_1.default
 router.get('/getSummeryVideo/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.generateVideoWithGenAi);
 router.post('/addPaymentPlan/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.addPaymentPlan);
 router.post('/addManualPayment', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.validateManualPayment, debtor_controller_1.default.addManualPayment);
+router.put('/updateWeeklyBudget/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateWeeklyBudget, debtor_controller_1.default.updateWeeklyBudget);
+router.get('/getManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getManualPayments);
+router.post('/revertManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.revertManualPayment, debtor_controller_1.default.revertManualPayments);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

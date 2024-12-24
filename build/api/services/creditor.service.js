@@ -14,6 +14,7 @@ const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.rep
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const syncCreditor_repository_1 = require("../repository/syncCreditor/syncCreditor.repository");
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 dotenv_1.default.config();
 class CreditorService {
     constructor() {
@@ -347,6 +348,23 @@ class CreditorService {
         if (!result)
             return [true, creditor.basicInformation.email];
         return [true, result.email];
+    }
+    async mcaByMonth(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+        if (!caseTemp)
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        const scoreCard = await debtor_util_1.default.getScoreCard(caseTemp.debtor);
+        const monthlyMca = scoreCard.scoreCard['monthlymca'];
+        if (!monthlyMca.data.length)
+            return [false, constants_util_1.default.notFoundMessage('monthly mca')];
+        const groupedByMonth = monthlyMca.data.reduce((acc, item) => {
+            if (!acc[item.month]) {
+                acc[item.month] = [];
+            }
+            acc[item.month].push(item);
+            return acc;
+        }, {});
+        return [true, groupedByMonth];
     }
 }
 exports.default = CreditorService;

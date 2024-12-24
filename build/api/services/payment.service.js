@@ -70,6 +70,11 @@ class PaymentService {
                 paymentsObj[arrayName] = paymentsObj[arrayName]?.slice((page - 1) * limit, page * limit);
             }
         }
+        const successPayments = structuredClone(paymentsObj.successPayments);
+        for (const payment of successPayments) {
+            payment.transactionType = 'Paynote';
+        }
+        paymentsObj.successPayments = successPayments;
         return [
             true,
             {
@@ -447,17 +452,19 @@ class PaymentService {
             debtorId: id,
             caseId: { $ne: null },
             isDeleted: false,
+            status: 'Upcoming',
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: [{
+            populate: [
+                {
                     path: 'debtor',
                     select: ['basicInformation.fullName', 'basicInformation.SSID'],
                 },
                 {
                     path: 'creditor',
                     select: ['basicInformation.fullName'],
-                }
+                },
             ],
         });
     }
