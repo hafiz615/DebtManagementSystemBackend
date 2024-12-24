@@ -162,4 +162,17 @@ router.put(
   debtor.updateWeeklyBudget,
   debtorController.updateWeeklyBudget
 );
+
+router.get(
+  '/getManualPayments/:id',
+  authorize.validateAuth,
+  debtorController.getManualPayments
+);
+
+router.post(
+  '/revertManualPayments/:id',
+  authorize.validateAuth,
+  debtor.revertManualPayment,
+  debtorController.revertManualPayments
+);
 export default router;

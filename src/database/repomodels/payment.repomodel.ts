@@ -27,5 +27,6 @@ export class Payment {
   commission = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
-  transactionType = ''
+  transactionType = '';
+  manualCommission = 0;
 }

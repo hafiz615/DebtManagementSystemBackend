@@ -303,14 +303,14 @@ class DebtorRequests {
             }
         };
     }
-    async validateManualPayment(req, res, next) {
+    validateManualPayment(req, res, next) {
         const schema = joi_1.default.object({
             debtorId: joi_1.default.string().required(),
-            transactionIds: joi_1.default.array().required(),
+            transactionIds: joi_1.default.array().items(joi_1.default.string()).required(),
             amount: joi_1.default.number().required(),
             commission: joi_1.default.number().required(),
             transactionDate: joi_1.default.date().required(),
-            transactionType: joi_1.default.string().required(),
+            transactionType: joi_1.default.string().valid('Wire').required(),
             referenceId: joi_1.default.string().required(),
         });
         const { error } = schema.validate(req.body);
@@ -320,7 +320,22 @@ class DebtorRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async revertManualPayment(req, res, next) {
+        const schema = joi_1.default.object({
+            commission: joi_1.default.number().required(),
+            referenceId: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
 }
