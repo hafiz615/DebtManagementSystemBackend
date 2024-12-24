@@ -587,6 +587,7 @@ class PaymentService {
         debtorId: id,
         caseId: {$ne: null},
         isDeleted: false,
+        status: 'Upcoming',
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
       undefined,

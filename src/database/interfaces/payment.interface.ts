@@ -28,4 +28,5 @@ export interface IPayment extends Document {
   createdAt: string;
   updatedAt: string;
   transactionType: string;
+  manualCommission: number;
 }
