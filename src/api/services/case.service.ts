@@ -1,6 +1,7 @@
 import {Request} from 'express';
 import {DataCopier} from '../../utils/dataCopier.util';
 import asyncLocalStorage from '../../utils/localStorage.util';
+import CallUploadUtil from '../../utils/callUpload.util';
 import {Twilio} from 'twilio';
 import {UserRepository} from '../repository/user/user.repository';
 import {CaseRepository} from '../repository/case/case.repository';
@@ -51,6 +52,7 @@ const VoiceGrant = AccessToken.VoiceGrant;
 
 class CaseService {
   private twilioClient: any;
+  private callUploadUtil: CallUploadUtil;
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
   private targetCFRepository: TargetCFRepository;
@@ -70,6 +72,7 @@ class CaseService {
       process.env.TWILIO_AUTH_TOKEN
     );
     this.caseRepository = new CaseRepository();
+    this.callUploadUtil = new CallUploadUtil();
     this.uploadUtil = new UploadUtil();
     this.targetCFRepository = new TargetCFRepository();
     this.paymentRepository = new PaymentRepository();
@@ -900,6 +903,13 @@ class CaseService {
     if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
       return [true, []];
     }
+
+    for (let call of findCase.calls) {
+      if (call.callRecordingSid) {
+        const getFile = await this.callUploadUtil.generateSignedUrl('hafizbucket',call.callRecordingSid);
+        call.callRecordingSid = getFile;
+      }
+    }
     return [true, findCase.calls.reverse()];
   };
 
@@ -1054,24 +1064,16 @@ class CaseService {
   callRecordingStatus = async (req: Request) => {
     try {
       const {
+        CallSid,
         RecordingSid,
         RecordingDuration,
         RecordingStatus,
-        RecordingStartTime,
-        TranscriptionText,
-        TranscriptionStatus,
+        RecordingStartTime
       } = req.body;
-
-      console.log('TranscriptionText', TranscriptionText);
-      console.log('TranscriptionStatus', TranscriptionStatus);
-
-      const callSid = req.body.CallSid;
-      const recordingSid = req.body.RecordingSid;
-      const status = req.body.CallStatus;
-      const callDuration = req.body.RecordingDuration;
-      const callStartTime = req.body.Timestamp;
+      const resultOfRecording = await caseUtil.fetchRecording(RecordingSid);
+      console.log(resultOfRecording, 'resutl.......');
       const result = await this.caseRepository.updateByOne(
-        {'calls.callSid': callSid},
+        {'calls.callSid': CallSid},
         {
           $set: {
             'calls.$.callRecordingSid': RecordingSid,
