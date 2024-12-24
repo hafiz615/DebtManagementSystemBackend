@@ -45,6 +45,8 @@ import emailUtil from './email.util';
 import debtorUtil from './debtor.util';
 import {IStrategy} from '../database/interfaces/strategy.interface';
 import {paymentPlatform} from '../enums';
+import twilio from 'twilio'
+
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -2984,6 +2986,17 @@ class CaseUtil {
     }
 
     return allEmails.filter(str => str.trim() !== '');
+  }
+
+  async createTranscript(recordingSID: string) {
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    const transcript = await client.intelligence.v2.transcripts.create({
+      channel: {"media_properties":{
+          "source_sid": recordingSID
+       }},
+     serviceSid: process.env.TWILIO_Service_SID,
+    });
+    console.log(transcript);
   }
 }
 export default new CaseUtil();

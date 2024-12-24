@@ -34,6 +34,7 @@ const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
 const enums_1 = require("../enums");
+const twilio_1 = __importDefault(require("twilio"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -2520,6 +2521,16 @@ class CaseUtil {
             allEmails.push(caseTemp.creditor.basicInformation.email);
         }
         return allEmails.filter(str => str.trim() !== '');
+    }
+    async createTranscript(recordingSID) {
+        const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        const transcript = await client.intelligence.v2.transcripts.create({
+            channel: { "media_properties": {
+                    "source_sid": recordingSID
+                } },
+            serviceSid: process.env.TWILIO_Service_SID,
+        });
+        console.log(transcript);
     }
 }
 exports.default = new CaseUtil();

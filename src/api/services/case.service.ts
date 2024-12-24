@@ -951,11 +951,12 @@ class CaseService {
           callDuration: null, // Placeholder for later update
           callStatus: CallStatus, // Initial status
           callRecordingSid: '',
+          transcriptUrl:''
         },
       },
       updatedAt: commonUtil.getCurrentDate(),
     });
-    //console.log(result, 'hello1');
+    console.log(result, 'hello1');
     if (!result) return [false, 'Failed to update case with call SID'];
     const isAValidPhoneNumber = number => {
       return /^[\d\+\-\(\) ]+$/.test(number);
@@ -1075,6 +1076,8 @@ class CaseService {
       console.log('TranscriptionText', TranscriptionText);
       console.log('TranscriptionStatus', TranscriptionStatus);
 
+      const transcriptUrl : any = await caseUtil.createTranscript(RecordingSid);
+
       const callSid = req.body.CallSid;
       const recordingSid = req.body.RecordingSid;
       const status = req.body.CallStatus;
@@ -1088,10 +1091,12 @@ class CaseService {
             'calls.$.callDuration': RecordingDuration,
             'calls.$.callStatus': RecordingStatus,
             'calls.$.callStartDate': RecordingStartTime,
+            'calls.$.transcriptUrl': transcriptUrl.links.sentences,
           },
           updatedAt: commonUtil.getCurrentDate(),
         }
       );
+      console.log(result)
       if (!result) {
         return [false, 'Failed to update call with recording details.'];
       }
@@ -1100,6 +1105,8 @@ class CaseService {
       return [false, 'Error handling recording status.'];
     }
   };
+
+  
 
   getScoresSettlementByCommPercentage = async (req: Request) => {
     if (
