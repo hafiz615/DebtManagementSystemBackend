@@ -574,6 +574,7 @@ class CaseService {
                 email: email,
                 isDeleted: false,
             });
+            console.log(user);
             let identity = 'user';
             const toNumberOrClientName = req.body.To;
             const VoiceResponse = require('twilio').twiml.VoiceResponse;

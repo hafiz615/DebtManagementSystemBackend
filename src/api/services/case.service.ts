@@ -935,6 +935,7 @@ class CaseService {
       isDeleted: false,
     });
 
+    console.log(user)
 
     let identity = 'user';
     const toNumberOrClientName = req.body.To;
