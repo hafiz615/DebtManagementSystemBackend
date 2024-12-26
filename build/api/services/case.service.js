@@ -560,8 +560,10 @@ class CaseService {
             }
             for (let call of findCase.calls) {
                 if (call.callRecordingSid) {
-                    const getFile = await this.callUploadUtil.generateSignedUrl('hafizbucket', call.callRecordingSid);
-                    call.callRecordingSid = getFile;
+                    const getFile = await this.callUploadUtil.generateSignedUrl(call.callRecordingSid);
+                    if (getFile) {
+                        call.callRecordingSid = getFile;
+                    }
                 }
             }
             return [true, findCase.calls.reverse()];
@@ -701,13 +703,14 @@ class CaseService {
                 const resultOfRecording = await case_util_1.default.fetchRecording(RecordingSid);
                 console.log(resultOfRecording, 'resutl.......');
                 const transcriptUrl = await case_util_1.default.createTranscript(RecordingSid);
+                console.log('transcript url....................', transcriptUrl);
                 const result = await this.caseRepository.updateByOne({ 'calls.callSid': CallSid }, {
                     $set: {
                         'calls.$.callRecordingSid': RecordingSid,
                         'calls.$.callDuration': RecordingDuration,
                         'calls.$.callStatus': RecordingStatus,
                         'calls.$.callStartDate': RecordingStartTime,
-                        'calls.$.transcriptUrl': transcriptUrl.links.sentences,
+                        'calls.$.transcriptUrl': transcriptUrl,
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });

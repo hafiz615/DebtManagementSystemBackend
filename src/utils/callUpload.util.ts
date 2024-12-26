@@ -14,19 +14,15 @@ class CallUploadUtil {
       region: 'us-east-1',
     });
   }
-
-
-  async uploadFile(bucketName, fileName, fileContent) {
+  async uploadFile(fileName, fileContent) {
     try {
       console.log('process.env.callSecretAccessKey', process.env.callSecretAccessKey)
-      console.log(' process.env.callAccessKeyId,',  process.env.callAccessKeyId)
-
-      console.log("bucketName",bucketName);
+      console.log(' process.env.callAccessKeyId,',  process.env.callAccessKeyId);
       console.log("fileName",fileName);
       console.log("fileContent",fileContent);
       
         const params = {
-            Bucket: bucketName,
+            Bucket: process.env.callRecordingsBucket,
             Key: fileName,
             Body: fileContent,
         };
@@ -41,10 +37,10 @@ class CallUploadUtil {
     }
   };
 
-  async generateSignedUrl(bucketName, fileName) {
+  async generateSignedUrl(fileName) {
     try {
         const command = new GetObjectCommand({
-            Bucket: bucketName,
+            Bucket: process.env.callRecordingsBucket,
             Key: fileName,
         });
 

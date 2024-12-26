@@ -2526,7 +2526,7 @@ class CaseUtil {
                 const fileName = `${recordingSid}`;
                 try {
                     console.log('fileNameasas', fileName);
-                    await this.callUploadUtil.uploadFile('hafizbucket', fileName, buffer);
+                    await this.callUploadUtil.uploadFile(fileName, buffer);
                 }
                 catch (uploadError) {
                     console.error('Error uploading file to S3:', uploadError);
@@ -2567,7 +2567,7 @@ class CaseUtil {
                 } },
             serviceSid: process.env.TWILIO_Service_SID,
         });
-        console.log(transcript);
+        return transcript.links.sentences;
     }
 }
 exports.default = new CaseUtil();

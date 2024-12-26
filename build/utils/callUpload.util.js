@@ -17,15 +17,14 @@ class CallUploadUtil {
             region: 'us-east-1',
         });
     }
-    async uploadFile(bucketName, fileName, fileContent) {
+    async uploadFile(fileName, fileContent) {
         try {
             console.log('process.env.callSecretAccessKey', process.env.callSecretAccessKey);
             console.log(' process.env.callAccessKeyId,', process.env.callAccessKeyId);
-            console.log("bucketName", bucketName);
             console.log("fileName", fileName);
             console.log("fileContent", fileContent);
             const params = {
-                Bucket: bucketName,
+                Bucket: process.env.callRecordingsBucket,
                 Key: fileName,
                 Body: fileContent,
             };
@@ -40,10 +39,10 @@ class CallUploadUtil {
         }
     }
     ;
-    async generateSignedUrl(bucketName, fileName) {
+    async generateSignedUrl(fileName) {
         try {
             const command = new client_s3_1.GetObjectCommand({
-                Bucket: bucketName,
+                Bucket: process.env.callRecordingsBucket,
                 Key: fileName,
             });
             const signedUrl = await (0, s3_request_presigner_1.getSignedUrl)(this.s3Client, command, { expiresIn: 3600 });
