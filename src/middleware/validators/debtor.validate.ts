@@ -37,9 +37,7 @@ class DebtorRequests {
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
-        phone: Joi.string()
-          .pattern(/^\d{10}$/)
-          .required(),
+        phone: Joi.string().pattern(/^\d{10}$/),
         address: Joi.string().required(),
       }),
       contact: Joi.object({
@@ -108,9 +106,7 @@ class DebtorRequests {
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
-        phone: Joi.string()
-          .pattern(/^\d{10}$/)
-          .required(),
+        phone: Joi.string().pattern(/^\d{10}$/),
         address: Joi.string().required(),
       }),
       contacts: Joi.array().items(
@@ -184,9 +180,7 @@ class DebtorRequests {
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
-        phone: Joi.string()
-          .pattern(/^\d{10}$/)
-          .required(),
+        phone: Joi.string().pattern(/^\d{10}$/),
         address: Joi.string().required(),
       }),
       contacts: Joi.array().items(

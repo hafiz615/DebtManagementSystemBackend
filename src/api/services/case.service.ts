@@ -940,41 +940,7 @@ class CaseService {
   callTwiml = async (req: Request) => {
     //const reqTemp: any = req;
     const callerId = process.env.TWILIO_CALLER_ID;
-    const {AccountSid, CallSid, To, CallStatus, CaseId} = req.body;
     //console.log(reqTemp.name, CaseId, 'case id .................');
-    const findCase: any = await this.caseRepository.getById<ICase>(
-      CaseId,
-      undefined,
-      undefined,
-      ['debtor']
-    );
-    if (!findCase) {
-      return [false, constantsUtil.notFoundMessage('Case')];
-    }
-    // console.log(findCase, 'find case')
-    const result = await this.caseRepository.updateById<ICase>(CaseId, {
-      $push: {
-        calls: {
-          callSid: CallSid,
-          callerName: 'Hafiz Irshad',
-          accountSid: AccountSid,
-          callTo: To,
-          callFrom: callerId,
-          callStartDate: '',
-          callDuration: null, // Placeholder for later update
-          callStatus: CallStatus, // Initial status
-          callRecordingSid: '',
-          transcriptUrl:''
-        },
-      },
-      updatedAt: commonUtil.getCurrentDate(),
-    });
-    console.log(result, 'hello1');
-    if (!result) return [false, 'Failed to update case with call SID'];
-    const isAValidPhoneNumber = number => {
-      return /^[\d\+\-\(\) ]+$/.test(number);
-    };
-
     let identity = 'user';
     const toNumberOrClientName = req.body.To;
     const VoiceResponse = require('twilio').twiml.VoiceResponse;
@@ -983,12 +949,44 @@ class CaseService {
     if (toNumberOrClientName == callerId) {
       const dial = twiml.dial({
         record: 'record-from-answer',
-        transcribe: true,
         recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
 
       dial.client(identity);
     } else if (req.body.To) {
+      const {AccountSid, CallSid, To, CallStatus, CaseId} = req.body;
+      const findCase: any = await this.caseRepository.getById<ICase>(
+        CaseId,
+        undefined,
+        undefined,
+        ['debtor']
+      );
+      if (!findCase) {
+        return [false, constantsUtil.notFoundMessage('Case')];
+      }
+      // console.log(findCase, 'find case')
+      const result = await this.caseRepository.updateById<ICase>(CaseId, {
+        $push: {
+          calls: {
+            callSid: CallSid,
+            callerName: 'Hafiz Irshad',
+            accountSid: AccountSid,
+            callTo: To,
+            callFrom: callerId,
+            callStartDate: '',
+            callDuration: null, // Placeholder for later update
+            callStatus: CallStatus, // Initial status
+            callRecordingSid: '',
+            transcriptUrl:''
+          },
+        },
+        updatedAt: commonUtil.getCurrentDate(),
+      });
+      console.log(result, 'hello1');
+      if (!result) return [false, 'Failed to update case with call SID'];
+      const isAValidPhoneNumber = number => {
+        return /^[\d\+\-\(\) ]+$/.test(number);
+      };
       const dial = twiml.dial({
         callerId,
         record: 'record-from-answer',
