@@ -41,9 +41,7 @@ class DebtorRequests {
                     state: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
-                    phone: joi_1.default.string()
-                        .pattern(/^\d{10}$/)
-                        .required(),
+                    phone: joi_1.default.string().pattern(/^\d{10}$/),
                     address: joi_1.default.string().required(),
                 }),
                 contact: joi_1.default.object({
@@ -106,9 +104,7 @@ class DebtorRequests {
                     state: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
-                    phone: joi_1.default.string()
-                        .pattern(/^\d{10}$/)
-                        .required(),
+                    phone: joi_1.default.string().pattern(/^\d{10}$/),
                     address: joi_1.default.string().required(),
                 }),
                 contacts: joi_1.default.array().items(joi_1.default.object({
@@ -170,9 +166,7 @@ class DebtorRequests {
                     state: joi_1.default.string().required(),
                     city: joi_1.default.string().required(),
                     zipCode: joi_1.default.string().required(),
-                    phone: joi_1.default.string()
-                        .pattern(/^\d{10}$/)
-                        .required(),
+                    phone: joi_1.default.string().pattern(/^\d{10}$/),
                     address: joi_1.default.string().required(),
                 }),
                 contacts: joi_1.default.array().items(joi_1.default.object({
