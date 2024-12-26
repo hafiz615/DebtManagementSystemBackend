@@ -2518,12 +2518,14 @@ class CaseUtil {
                     Authorization: `Basic ${btoa(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`)}`,
                 },
             });
+            console.log('response', response);
             if (response.ok) {
                 const fileBlob = await response.blob();
                 const arrayBuffer = await fileBlob.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
                 const fileName = `${recordingSid}`;
                 try {
+                    console.log('fileNameasas', fileName);
                     await this.callUploadUtil.uploadFile('hafizbucket', fileName, buffer);
                 }
                 catch (uploadError) {

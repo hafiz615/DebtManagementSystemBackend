@@ -1081,6 +1081,7 @@ class CaseService {
         RecordingStatus,
         RecordingStartTime
       } = req.body;
+      console.log('In CallRecordingsStatus Function')
       const resultOfRecording = await caseUtil.fetchRecording(RecordingSid);
       console.log(resultOfRecording, 'resutl.......');
       const transcriptUrl : any = await caseUtil.createTranscript(RecordingSid);

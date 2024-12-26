@@ -19,6 +19,11 @@ class CallUploadUtil {
     }
     async uploadFile(bucketName, fileName, fileContent) {
         try {
+            console.log('process.env.callSecretAccessKey', process.env.callSecretAccessKey);
+            console.log(' process.env.callAccessKeyId,', process.env.callAccessKeyId);
+            console.log("bucketName", bucketName);
+            console.log("fileName", fileName);
+            console.log("fileContent", fileContent);
             const params = {
                 Bucket: bucketName,
                 Key: fileName,
