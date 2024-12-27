@@ -938,8 +938,10 @@ class CaseService {
   };
 
   callTwiml = async (req: Request) => {
-    const reqTemp: any = req;
+
+    console.log('req.body: ', req.body);  
     const callerId = process.env.TWILIO_CALLER_ID;
+    console.log('process.env.TWILIO_CALLER_ID: ', process.env.TWILIO_CALLER_ID);
     //console.log(reqTemp.name, CaseId, 'case id .................');
     const email = req.body.email.toLowerCase();
 
@@ -957,12 +959,12 @@ class CaseService {
     const VoiceResponse = require('twilio').twiml.VoiceResponse;
     let twiml = new VoiceResponse();
 
-    if (toNumberOrClientName == callerId) {
+    //If CalledId and To is same, meaning it is a incoming voice call
+        if (toNumberOrClientName == callerId) {
       const dial = twiml.dial({
         record: 'record-from-answer',
         recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
-
       dial.client(identity);
     } else if (req.body.To) {
       const {AccountSid, CallSid, To, CallStatus, CaseId} = req.body;
@@ -998,6 +1000,7 @@ class CaseService {
       const isAValidPhoneNumber = number => {
         return /^[\d\+\-\(\) ]+$/.test(number);
       };
+      //OutGoing Call
       const dial = twiml.dial({
         callerId: user?.twilioNo || callerId,
         record: 'record-from-answer',

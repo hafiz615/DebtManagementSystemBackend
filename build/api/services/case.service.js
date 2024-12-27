@@ -575,8 +575,9 @@ class CaseService {
             return [true, twiml.toString()];
         };
         this.callTwiml = async (req) => {
-            const reqTemp = req;
+            console.log('req.body: ', req.body);
             const callerId = process.env.TWILIO_CALLER_ID;
+            console.log('process.env.TWILIO_CALLER_ID: ', process.env.TWILIO_CALLER_ID);
             //console.log(reqTemp.name, CaseId, 'case id .................');
             const email = req.body.email.toLowerCase();
             console.log('this is email we test:', email);
@@ -589,6 +590,7 @@ class CaseService {
             const toNumberOrClientName = req.body.To;
             const VoiceResponse = require('twilio').twiml.VoiceResponse;
             let twiml = new VoiceResponse();
+            //If CalledId and To is same, meaning it is a incoming voice call
             if (toNumberOrClientName == callerId) {
                 const dial = twiml.dial({
                     record: 'record-from-answer',
@@ -626,6 +628,7 @@ class CaseService {
                 const isAValidPhoneNumber = number => {
                     return /^[\d\+\-\(\) ]+$/.test(number);
                 };
+                //OutGoing Call
                 const dial = twiml.dial({
                     callerId: user?.twilioNo || callerId,
                     record: 'record-from-answer',
