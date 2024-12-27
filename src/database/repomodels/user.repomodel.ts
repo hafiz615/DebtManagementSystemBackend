@@ -10,6 +10,7 @@ export class User {
   SSID = '';
   dateOfBirth = '';
   phone = '';
+  twilioNo: '';
   gender = '';
   address = '';
   isDeleted = false;

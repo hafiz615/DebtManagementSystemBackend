@@ -938,9 +938,20 @@ class CaseService {
   };
 
   callTwiml = async (req: Request) => {
-    //const reqTemp: any = req;
+    const reqTemp: any = req;
     const callerId = process.env.TWILIO_CALLER_ID;
     //console.log(reqTemp.name, CaseId, 'case id .................');
+    const email = req.body.email.toLowerCase();
+
+    console.log('this is email we test:', email)
+
+    let user = await this.userRepository.getOne<IUser>({
+      email: email,
+      isDeleted: false,
+    });
+
+    console.log('this is user we test:', user)
+
     let identity = 'user';
     const toNumberOrClientName = req.body.To;
     const VoiceResponse = require('twilio').twiml.VoiceResponse;
@@ -969,10 +980,10 @@ class CaseService {
         $push: {
           calls: {
             callSid: CallSid,
-            callerName: 'Hafiz Irshad',
+            callerName: user.name,
             accountSid: AccountSid,
             callTo: To,
-            callFrom: callerId,
+            callFrom: user?.twilioNo || callerId,
             callStartDate: '',
             callDuration: null, // Placeholder for later update
             callStatus: CallStatus, // Initial status
@@ -988,7 +999,7 @@ class CaseService {
         return /^[\d\+\-\(\) ]+$/.test(number);
       };
       const dial = twiml.dial({
-        callerId,
+        callerId: user?.twilioNo || callerId,
         record: 'record-from-answer',
         recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
