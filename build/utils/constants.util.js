@@ -50,6 +50,7 @@ exports.default = {
     failureRegisterMessage: (name) => `${name} not registered!`,
     successRegisterMessage: (name) => `${name} registered successfully!`,
     successAddMessage: (name) => `${name} added successfully!`,
+    successCreatedMessage: (name) => `${name} created successfully!`,
     failureAddMessage: (name) => `Unable to add ${name}`,
     failureUpdateMessage: (name) => `Unable to update ${name}`,
     failureDeleteMessage: (name) => `Unable to delete ${name}`,

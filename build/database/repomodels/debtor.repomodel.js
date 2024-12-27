@@ -23,7 +23,7 @@ class Debtor {
             companyName: '',
             EIN: '',
             businessCategory: '',
-            description: '',
+            // description: '',
             state: '',
             city: '',
             zipCode: '',
@@ -54,7 +54,7 @@ class Debtor {
         this.weeklyBudgetKeyStrategy3 = '';
         this.weeklyBudgetStrategy1 = 0;
         this.weeklyBudgetStrategy3 = 0;
-        this.profitMargin = 0;
+        // profitMargin = 0;
         this.moneyThumbAppId = 0;
         this.appid = 0;
         this.totalStatements = 0;

@@ -10,11 +10,11 @@ interface businessInformation {
   companyName: string;
   EIN: string;
   businessCategory: string;
-  description: string;
+  // description: string;
   state: string;
   city: string;
   zipCode: string;
-  phone: string;
+  // phone: string;
   address: string;
 }
 
@@ -38,10 +38,10 @@ export interface IDebtor extends Document {
     title: string;
     phone: string;
     email: string;
-    relationWithDebtor: string;
-    state: string;
-    city: string;
-    zipCode: string;
+    // relationWithDebtor: string;
+    // state: string;
+    // city: string;
+    // zipCode: string;
   }>;
   documents: Array<IKeyFile>;
   createdBy: string;
@@ -70,7 +70,7 @@ export interface IDebtor extends Document {
   weeklyBudgetKeyStrategy3: string;
   weeklyBudgetStrategy1: number;
   weeklyBudgetStrategy3: number;
-  profitMargin: number;
+  // profitMargin: number;
   moneyThumbAppId: number;
   appid: number;
   totalStatements: number;
