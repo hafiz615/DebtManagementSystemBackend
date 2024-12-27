@@ -943,12 +943,14 @@ class CaseService {
     //console.log(reqTemp.name, CaseId, 'case id .................');
     const email = req.body.email.toLowerCase();
 
+    console.log('this is email we test:', email)
+
     let user = await this.userRepository.getOne<IUser>({
       email: email,
       isDeleted: false,
     });
 
-    console.log(user)
+    console.log('this is user we test:', user)
 
     let identity = 'user';
     const toNumberOrClientName = req.body.To;
