@@ -999,7 +999,7 @@ class CaseService {
         return /^[\d\+\-\(\) ]+$/.test(number);
       };
       const dial = twiml.dial({
-        callerId,
+        callerId: user?.twilioNo || callerId,
         record: 'record-from-answer',
         recordingStatusCallback: `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
       });
