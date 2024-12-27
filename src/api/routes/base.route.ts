@@ -15,6 +15,7 @@ import emailRouter from './email.routes';
 import bulkUploadRouter from './bulkUpload.route';
 import inboxRouter from './inbox.routes';
 import notificationRouter from './notification.routes';
+import seemlesschexRouter from './seemlesschex.route';
 
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
@@ -33,4 +34,5 @@ export default function setup(app: Application) {
   app.use('/api/v1/bulk', bulkUploadRouter);
   app.use('/api/v1/inbox', inboxRouter);
   app.use('/api/v1/notification', notificationRouter);
+  app.use('/api/v1/seemlesschex', seemlesschexRouter);
 }

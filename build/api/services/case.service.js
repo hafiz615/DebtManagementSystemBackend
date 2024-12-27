@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const callUpload_util_1 = __importDefault(require("../../utils/callUpload.util"));
 const twilio_1 = require("twilio");
 const user_repository_1 = require("../repository/user/user.repository");
 const case_repository_1 = require("../repository/case/case.repository");
@@ -557,6 +558,14 @@ class CaseService {
             if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
                 return [true, []];
             }
+            for (let call of findCase.calls) {
+                if (call.callRecordingSid) {
+                    const getFile = await this.callUploadUtil.generateSignedUrl(call.callRecordingSid);
+                    if (getFile) {
+                        call.callRecordingSid = getFile;
+                    }
+                }
+            }
             return [true, findCase.calls.reverse()];
         };
         this.callFallback = async (req) => {
@@ -694,22 +703,19 @@ class CaseService {
         };
         this.callRecordingStatus = async (req) => {
             try {
-                const { RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime, TranscriptionText, TranscriptionStatus, } = req.body;
-                console.log('TranscriptionText', TranscriptionText);
-                console.log('TranscriptionStatus', TranscriptionStatus);
+                const { CallSid, RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime } = req.body;
+                console.log('In CallRecordingsStatus Function');
+                const resultOfRecording = await case_util_1.default.fetchRecording(RecordingSid);
+                console.log(resultOfRecording, 'resutl.......');
                 const transcriptUrl = await case_util_1.default.createTranscript(RecordingSid);
-                const callSid = req.body.CallSid;
-                const recordingSid = req.body.RecordingSid;
-                const status = req.body.CallStatus;
-                const callDuration = req.body.RecordingDuration;
-                const callStartTime = req.body.Timestamp;
-                const result = await this.caseRepository.updateByOne({ 'calls.callSid': callSid }, {
+                console.log('transcript url....................', transcriptUrl);
+                const result = await this.caseRepository.updateByOne({ 'calls.callSid': CallSid }, {
                     $set: {
                         'calls.$.callRecordingSid': RecordingSid,
                         'calls.$.callDuration': RecordingDuration,
                         'calls.$.callStatus': RecordingStatus,
                         'calls.$.callStartDate': RecordingStartTime,
-                        'calls.$.transcriptUrl': transcriptUrl.links.sentences,
+                        'calls.$.transcriptUrl': transcriptUrl,
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
@@ -914,6 +920,7 @@ class CaseService {
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.callUploadUtil = new callUpload_util_1.default();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();

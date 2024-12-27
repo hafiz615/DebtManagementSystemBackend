@@ -95,7 +95,9 @@ class PaymentController {
               'You do not have permission to perform this operation'
             )
           );
-      const response = await this.paymentService.getAllUpcomingPayments(req.params.id);
+      const response = await this.paymentService.getAllUpcomingPayments(
+        req.params.id
+      );
       if (!response[0]) {
         return res
           .status(constants.CODE.OK)
