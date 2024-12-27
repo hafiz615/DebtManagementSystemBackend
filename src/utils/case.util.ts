@@ -46,7 +46,7 @@ import emailUtil from './email.util';
 import debtorUtil from './debtor.util';
 import {IStrategy} from '../database/interfaces/strategy.interface';
 import {paymentPlatform} from '../enums';
-import twilio from 'twilio'
+import twilio from 'twilio';
 
 dotenv.config();
 class CaseUtil {
@@ -94,15 +94,8 @@ class CaseUtil {
   }
 
   async createDebtor(data: IDebtor, createdBy: string) {
-    console.log(createdBy, 'plplplpl');
-    // let data = req.body as IDebtor;
-    // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
-    // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
-    // newDebtor.createdBy = reqTemp.id;
-    // if (!data?.basicInformation?.weeklyBudget)
-    //   data.basicInformation.weeklyBudget = 1;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }
@@ -2973,41 +2966,43 @@ class CaseUtil {
     };
   }
 
-  async fetchRecording (recordingSid) {
+  async fetchRecording(recordingSid) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
 
     try {
-        const response = await fetch(recordingUrl, {
-            headers: {
-                Authorization: `Basic ${btoa(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`)}`,
-            },
-        });
+      const response = await fetch(recordingUrl, {
+        headers: {
+          Authorization: `Basic ${btoa(
+            `${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`
+          )}`,
+        },
+      });
 
-        console.log('response',response)
+      console.log('response', response);
 
-        if (response.ok) {
-            const fileBlob = await response.blob();
-            const arrayBuffer = await fileBlob.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const fileName = `${recordingSid}`;
-            try {
-              console.log('fileNameasas', fileName)
-                await this.callUploadUtil.uploadFile(fileName, buffer);   
-            } catch (uploadError) {
-                console.error('Error uploading file to S3:', uploadError);
-            }
-
-           return "File uploaded to S3";
-        } else {
-            console.error("Failed to fetch recording. Status:", response.status);
-            return null;
+      if (response.ok) {
+        const fileBlob = await response.blob();
+        const arrayBuffer = await fileBlob.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const fileName = `${recordingSid}`;
+        try {
+          console.log('fileNameasas', fileName);
+          await this.callUploadUtil.uploadFile(fileName, buffer);
+        } catch (uploadError) {
+          console.error('Error uploading file to S3:', uploadError);
         }
-    } catch (error) {
-        console.error("Error fetching the Twilio recording:", error);
+
+        return 'File uploaded to S3';
+      } else {
+        console.error('Failed to fetch recording. Status:', response.status);
         return null;
+      }
+    } catch (error) {
+      console.error('Error fetching the Twilio recording:', error);
+      return null;
     }
-  };
+  }
   async getAllEmailsOfCase(caseTemp: any, creditorsCases: any) {
     const allEmails = Array<string>();
     allEmails.push(caseTemp?.debtor?.basicInformation.email);
@@ -3027,12 +3022,17 @@ class CaseUtil {
   }
 
   async createTranscript(recordingSID: string) {
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
     const transcript = await client.intelligence.v2.transcripts.create({
-      channel: {"media_properties":{
-          "source_sid": recordingSID
-       }},
-     serviceSid: process.env.TWILIO_Service_SID,
+      channel: {
+        media_properties: {
+          source_sid: recordingSID,
+        },
+      },
+      serviceSid: process.env.TWILIO_Service_SID,
     });
     return transcript.links.sentences;
   }

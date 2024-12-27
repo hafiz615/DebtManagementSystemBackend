@@ -13,6 +13,7 @@ const payment_service_1 = __importDefault(require("./payment.service"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
+const upload_util_1 = __importDefault(require("../../utils/upload.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
@@ -148,6 +149,7 @@ class DebtorService {
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
         this.userRepository = new user_repository_1.UserRepository();
         this.caseService = new case_service_1.default();
+        this.uploadUtil = new upload_util_1.default();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -645,7 +647,7 @@ class DebtorService {
             ],
         });
         let debtor = null;
-        let account = [];
+        // let account = [];
         // if (body.paymentToken && body.paymentType) {
         //   const customerVaultResponse = await caseUtil.createVault(
         //     body.paymentToken,
@@ -659,16 +661,14 @@ class DebtorService {
         //   });
         // }
         if (!getDebtor) {
-            if (account.length)
-                body.accounts = account;
+            // if (account.length) body.accounts = account;
             if (body.basicInformation.weeklyBudget) {
                 body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
             }
             debtor = await case_util_1.default.createDebtor(body, id);
         }
         if (getDebtor) {
-            if (account.length)
-                body.accounts = getDebtor.accounts.concat(account);
+            // if (account.length) body.accounts = getDebtor.accounts.concat(account);
             // if (!req.body.basicInformation?.weeklyBudget)
             //   req.body.basicInformation.weeklyBudget = 1;
             body.updatedAt = common_util_1.default.getCurrentDate();
@@ -900,9 +900,6 @@ class DebtorService {
             return [false, 'Could not extract data from documents'];
         const debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
         debtorBody['extractedFields'] = extractedFields.extracted_fields;
-        for (const iterator of extractedFields.extracted_fields) {
-            console.log(iterator, 'extractedFields.extracted_fields');
-        }
         const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
         let finalObj = {};
         const finalArray = [];
@@ -1176,6 +1173,63 @@ class DebtorService {
             }
         }
         return [true, 'Bounce payments revert successfully'];
+    }
+    async getExtractFieldsAndDebtor(req) {
+        const reqTemp = req;
+        const files = reqTemp.files;
+        if (!files || !files.length) {
+            return [false, constants_util_2.default.Messages.ATTATCH_FILE_ERROR];
+        }
+        const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files);
+        if (!s3FileKeys.length) {
+            return [false, constants_util_2.default.Messages.UPLOAD_FILES_FAILURE];
+        }
+        const extractedFields = await case_util_1.default.getExtractionMCABuffer(files);
+        if (typeof extractedFields === 'string')
+            return [false, extractedFields];
+        const debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
+        debtorBody['extractedFields'] = extractedFields.extracted_fields;
+        const createDebtor = await this.createDebtorForPortal(debtorBody, 'Debtor Portal');
+        if (!createDebtor[0])
+            return [false, createDebtor[1]];
+        const debtor = createDebtor[1];
+        return [
+            true,
+            { debtorId: String(debtor._id), extractedFields: debtor.extractedFields },
+        ];
+    }
+    async createDebtorForPortal(body, source) {
+        const getDebtor = await this.debtorRepository.getOne({
+            $or: [
+                {
+                    'businessInformation.companyName': body.businessInformation.companyName,
+                },
+                {
+                    'businessInformation.EIN': body.businessInformation.EIN,
+                },
+            ],
+        });
+        if (getDebtor) {
+            if (getDebtor.businessInformation.companyName ===
+                body.businessInformation.companyName) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage(`Debtor with companyName ${body.businessInformation.companyName}`),
+                ];
+            }
+            if (getDebtor.businessInformation.EIN === body.businessInformation.EIN) {
+                return [
+                    false,
+                    constants_util_1.default.alreadyExistsMessage(`Debtor with EIN ${body.businessInformation.EIN}`),
+                ];
+            }
+        }
+        body['status'] = 'Pending';
+        let debtor = await case_util_1.default.createDebtor(body, source);
+        if (!debtor) {
+            return [false, constants_util_2.default.failureAddMessage('debtor')];
+        }
+        return [true, debtor];
     }
 }
 exports.default = DebtorService;

@@ -33,7 +33,7 @@ class UploadUtil {
     for (let file of files) {
       const key = await caseUtil.uploadFileFormat(file.originalname);
       let params = {
-        Bucket: 'debt-settlement-documents',
+        Bucket: process.env.s3BucketName,
         Key: key,
         Body: file.buffer,
       };
@@ -52,7 +52,7 @@ class UploadUtil {
   getPdfBytesFromS3 = async (key: string) => {
     try {
       const params = {
-        Bucket: 'debt-settlement-documents',
+        Bucket: process.env.s3BucketName,
         Key: key,
       };
 
@@ -70,7 +70,7 @@ class UploadUtil {
 
   // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
   //   let params = {
-  //     Bucket: 'debt-settlement-documents',
+  //     Bucket: process.env.s3BucketName,
   //     Key: key,
   //     Expires: 86400,
   //     ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
@@ -80,7 +80,7 @@ class UploadUtil {
   // }
   async getS3FileSignedUrl(key: string, download = false): Promise<string> {
     let params = {
-      Bucket: 'debt-settlement-documents',
+      Bucket: process.env.s3BucketName,
       Key: key,
       Expires: 86400,
     };

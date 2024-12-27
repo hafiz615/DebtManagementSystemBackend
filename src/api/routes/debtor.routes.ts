@@ -2,8 +2,11 @@ import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import debtorController from '../controllers/debtor/debtor.controller';
 import debtor from '../../middleware/validators/debtor.validate';
+import multer from 'multer';
 
 const router = Router();
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 
 router.post('/getDebtor', authorize.validateAuth, debtorController.getDebtor);
 router.post(
@@ -175,4 +178,11 @@ router.post(
   debtor.revertManualPayment,
   debtorController.revertManualPayments
 );
+
+router.post(
+  '/get-extracted-data',
+  upload.array('files'),
+  debtorController.getExtractFieldsAndDebtor
+);
+
 export default router;

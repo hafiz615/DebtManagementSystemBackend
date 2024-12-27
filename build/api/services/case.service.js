@@ -190,7 +190,7 @@ class CaseService {
             // if (req.body.intervals && req.body.intervals.length) {
             //   caseUtil.createPayment(caseUpdated);
             // }
-            // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             caseUpdated = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {
                 strategyOne_1: false,
@@ -237,7 +237,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
@@ -486,12 +486,7 @@ class CaseService {
                 result = await case_util_1.default.addNotes(req, reqTemp.id);
             if (!result)
                 return [false, result];
-            // await emailUtil.sendEmailOrSmsByEvent(
-            //   'case_details_update',
-            //   result._id,
-            //   '',
-            //   reqTemp.id
-            // );
+            await email_util_1.default.sendEmailOrSmsByEvent('case_details_update', result._id, '', reqTemp.id);
             await case_util_1.default.addInHistory({
                 Action,
                 Username: reqTemp.name,
@@ -616,7 +611,7 @@ class CaseService {
                             callDuration: null, // Placeholder for later update
                             callStatus: CallStatus, // Initial status
                             callRecordingSid: '',
-                            transcriptUrl: ''
+                            transcriptUrl: '',
                         },
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
@@ -706,7 +701,7 @@ class CaseService {
         };
         this.callRecordingStatus = async (req) => {
             try {
-                const { CallSid, RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime } = req.body;
+                const { CallSid, RecordingSid, RecordingDuration, RecordingStatus, RecordingStartTime, } = req.body;
                 console.log('In CallRecordingsStatus Function');
                 const resultOfRecording = await case_util_1.default.fetchRecording(RecordingSid);
                 console.log(resultOfRecording, 'resutl.......');
@@ -850,6 +845,7 @@ class CaseService {
         };
         this.deleteFile = async (req) => {
             // Fetch the case and populate debtor field
+            const reqTemp = req;
             let caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
@@ -866,9 +862,15 @@ class CaseService {
             if (response.documents.length === caseTemp.debtor.documents.length) {
                 return [false, `No document found with key: ${key}`];
             }
+            await case_util_1.default.addInHistory({
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case File Deleted',
+                'Deleted By': reqTemp.name,
+            }, req.params.id);
             return [true, `${key} is deleted successfully`];
         };
         this.deleteCreditor = async (req) => {
+            const reqTemp = req;
             let caseTemp = await this.caseRepository.getById(req.params.id);
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
@@ -877,6 +879,11 @@ class CaseService {
             if (!updateCase.isDeleted) {
                 return [false, constants_util_1.default.failureDeleteMessage('Creditor')];
             }
+            await case_util_1.default.addInHistory({
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case Creditor Deleted',
+                'Deleted By': reqTemp.name,
+            }, req.params.id);
             return [true, constants_util_1.default.successDeleteMessage('Creditor')];
         };
         this.updateCasePlan = async (req) => {
@@ -918,7 +925,7 @@ class CaseService {
                 Action: 'Case Updated',
                 'Updated By': reqTemp.name,
             }, caseUpdated._id);
-            //this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);

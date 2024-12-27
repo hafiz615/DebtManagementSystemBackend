@@ -340,7 +340,7 @@ class CaseService {
     // if (req.body.intervals && req.body.intervals.length) {
     //   caseUtil.createPayment(caseUpdated);
     // }
-    // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     caseUpdated = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -412,7 +412,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
     await caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
@@ -832,12 +832,12 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
-    // await emailUtil.sendEmailOrSmsByEvent(
-    //   'case_details_update',
-    //   result._id,
-    //   '',
-    //   reqTemp.id
-    // );
+    await emailUtil.sendEmailOrSmsByEvent(
+      'case_details_update',
+      result._id,
+      '',
+      reqTemp.id
+    );
     await caseUtil.addInHistory(
       {
         Action,
@@ -918,9 +918,10 @@ class CaseService {
 
     for (let call of findCase.calls) {
       if (call.callRecordingSid) {
-        const getFile = await this.callUploadUtil.generateSignedUrl(call.callRecordingSid);
-        if(getFile)
-        {
+        const getFile = await this.callUploadUtil.generateSignedUrl(
+          call.callRecordingSid
+        );
+        if (getFile) {
           call.callRecordingSid = getFile;
         }
       }
@@ -989,7 +990,7 @@ class CaseService {
             callDuration: null, // Placeholder for later update
             callStatus: CallStatus, // Initial status
             callRecordingSid: '',
-            transcriptUrl:''
+            transcriptUrl: '',
           },
         },
         updatedAt: commonUtil.getCurrentDate(),
@@ -1093,12 +1094,12 @@ class CaseService {
         RecordingSid,
         RecordingDuration,
         RecordingStatus,
-        RecordingStartTime
+        RecordingStartTime,
       } = req.body;
-      console.log('In CallRecordingsStatus Function')
+      console.log('In CallRecordingsStatus Function');
       const resultOfRecording = await caseUtil.fetchRecording(RecordingSid);
       console.log(resultOfRecording, 'resutl.......');
-      const transcriptUrl : any = await caseUtil.createTranscript(RecordingSid);
+      const transcriptUrl: any = await caseUtil.createTranscript(RecordingSid);
       console.log('transcript url....................', transcriptUrl);
       const result = await this.caseRepository.updateByOne(
         {'calls.callSid': CallSid},
@@ -1113,7 +1114,7 @@ class CaseService {
           updatedAt: commonUtil.getCurrentDate(),
         }
       );
-      console.log(result)
+      console.log(result);
       if (!result) {
         return [false, 'Failed to update call with recording details.'];
       }
@@ -1122,8 +1123,6 @@ class CaseService {
       return [false, 'Error handling recording status.'];
     }
   };
-
-  
 
   getScoresSettlementByCommPercentage = async (req: Request) => {
     if (
@@ -1501,6 +1500,7 @@ class CaseService {
 
   deleteFile = async (req: Request) => {
     // Fetch the case and populate debtor field
+    const reqTemp: any = req;
     let caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -1529,6 +1529,14 @@ class CaseService {
     if (response.documents.length === caseTemp.debtor.documents.length) {
       return [false, `No document found with key: ${key}`];
     }
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case File Deleted',
+        'Deleted By': reqTemp.name,
+      },
+      req.params.id
+    );
 
     return [true, `${key} is deleted successfully`];
   };
@@ -1548,6 +1556,7 @@ class CaseService {
     return [true, updateCase];
   }
   deleteCreditor = async (req: Request) => {
+    const reqTemp: any = req;
     let caseTemp: any = await this.caseRepository.getById<ICase>(req.params.id);
 
     if (!caseTemp) {
@@ -1562,6 +1571,15 @@ class CaseService {
     if (!updateCase.isDeleted) {
       return [false, constantsUtil.failureDeleteMessage('Creditor')];
     }
+
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Creditor Deleted',
+        'Deleted By': reqTemp.name,
+      },
+      req.params.id
+    );
 
     return [true, constantsUtil.successDeleteMessage('Creditor')];
   };
@@ -1616,7 +1634,7 @@ class CaseService {
       },
       caseUpdated._id
     );
-    //this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     return [true, caseUpdated];
   };
 }
