@@ -33,7 +33,7 @@ class SeemlesschexUtil {
         error: true,
         message: constantsUtil.notFoundMessage('creditor email'),
       };
-    const apiUrl = `${process.env.seemlessUrl}/${process.env.seemlessVersion}/check/create`;
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/create`;
     var data = {
       name: debtor.basicInformation?.fullName,
       email: debtor.basicInformation?.email,
@@ -62,7 +62,7 @@ class SeemlesschexUtil {
   }
 
   async getCheck(checkId: string) {
-    const apiUrl = `${process.env.seemlessUrl}/${process.env.seemlessVersion}/check/${checkId}`;
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/${checkId}`;
     console.log('I am in getCheck');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
@@ -111,7 +111,10 @@ class SeemlesschexUtil {
           message: fc.description_fc,
         };
       case 1:
-        if (fc.verification_fc === 'Null') {
+        if (
+          fc.verification_fc === 'Null' ||
+          fc.verification_fc === 'NonParticipatingBank'
+        ) {
           return {
             error: true,
             message: fc.description_fc,
@@ -122,7 +125,7 @@ class SeemlesschexUtil {
   }
 
   async createPaymentLink(amount: number) {
-    const apiUrl = `${process.env.seemlessUrl}/${process.env.seemlessVersion}/paymentlink/create`;
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/create`;
     var data = {
       amount: amount,
       basic_verification: true,
@@ -138,7 +141,95 @@ class SeemlesschexUtil {
           'Content-Type': 'application/json',
         },
       });
+      return response.data;
+    } catch (error) {
+      return error?.response?.data;
+    }
+  }
+
+  async updateCheck(
+    debtor: IDebtor,
+    token: string,
+    store: string,
+    checkId: string,
+    checkNumber: string
+  ) {
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/edit`;
+    var data = {
+      check_id: checkId,
+      number: checkNumber,
+      name: debtor.basicInformation?.fullName,
+      email: debtor.basicInformation?.email,
+      token: 'caf4f6e0c35f11efba16f7a09bc7e775',
+      store: 'firstchoice.com',
+      verify_before_save: true,
+      fund_confirmation: true,
+    };
+    console.log('I am in updateCheck');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.seamlessKey,
+          'Content-Type': 'application/json',
+        },
+      });
       console.log(response.data);
+      return response.data;
+    } catch (error) {
+      return error?.response?.data;
+    }
+  }
+
+  async voidCheck(checkId: string) {
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/${checkId}`;
+    console.log('I am in voidCheck');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', {});
+    try {
+      const response = await axiosInstance.delete(apiUrl, {
+        headers: {
+          Authorization: process.env.seamlessKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error?.response?.data;
+    }
+  }
+
+  async changePaymentLinkStatus(checkoutToken: string) {
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/changestatus/${checkoutToken}`;
+    console.log('I am in changePaymentLinkStatus');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', {});
+    try {
+      const response = await axiosInstance.post(apiUrl, {
+        headers: {
+          Authorization: process.env.seamlessKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error?.response?.data;
+    }
+  }
+
+  async deletePaymentLink(checkoutToken: string) {
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/${checkoutToken}`;
+    console.log('I am in deletePaymentLink');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', {});
+    try {
+      const response = await axiosInstance.delete(apiUrl, {
+        headers: {
+          Authorization: process.env.seamlessKey,
+          'Content-Type': 'application/json',
+        },
+      });
       return response.data;
     } catch (error) {
       return error?.response?.data;

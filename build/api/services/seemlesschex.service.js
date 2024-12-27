@@ -42,7 +42,7 @@ class SeemlesschexService {
         return [true, response.check];
     }
     async createPaymentLink(req) {
-        const debtor = await this.debtorRepository.getById(req.params.id);
+        const debtor = await this.debtorRepository.getById(req.body.debtorId);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor on DMS')];
         const response = await seemlesschex_util_1.default.createPaymentLink(req.body.amount);

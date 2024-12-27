@@ -16,7 +16,6 @@ import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogg
 import {DataCopier} from '../../utils/dataCopier.util';
 import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
 import constantsUtil from '../../utils/constants.util';
-import uploadUtil from '../../utils/upload.util';
 import UploadUtil from '../../utils/upload.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
@@ -48,8 +47,8 @@ class DebtorService {
   private strategyRepository: StrategyRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private userRepository: UserRepository;
-
   private caseService: CaseService;
+  private uploadUtil: UploadUtil;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -60,6 +59,7 @@ class DebtorService {
     this.bulkUploadRepository = new BulkUploadRepository();
     this.userRepository = new UserRepository();
     this.caseService = new CaseService();
+    this.uploadUtil = new UploadUtil();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -723,7 +723,7 @@ class DebtorService {
       ],
     });
     let debtor: IDebtor = null;
-    let account = [];
+    // let account = [];
     // if (body.paymentToken && body.paymentType) {
     //   const customerVaultResponse = await caseUtil.createVault(
     //     body.paymentToken,
@@ -737,14 +737,14 @@ class DebtorService {
     //   });
     // }
     if (!getDebtor) {
-      if (account.length) body.accounts = account;
+      // if (account.length) body.accounts = account;
       if (body.basicInformation.weeklyBudget) {
         body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
       }
       debtor = await caseUtil.createDebtor(body, id);
     }
     if (getDebtor) {
-      if (account.length) body.accounts = getDebtor.accounts.concat(account);
+      // if (account.length) body.accounts = getDebtor.accounts.concat(account);
       // if (!req.body.basicInformation?.weeklyBudget)
       //   req.body.basicInformation.weeklyBudget = 1;
       body.updatedAt = commonUtil.getCurrentDate();
@@ -1137,9 +1137,6 @@ class DebtorService {
       extractedFields.extracted_fields
     );
     debtorBody['extractedFields'] = extractedFields.extracted_fields;
-    for (const iterator of extractedFields.extracted_fields) {
-      console.log(iterator, 'extractedFields.extracted_fields');
-    }
     const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
     let finalObj = {};
     const finalArray = [];
@@ -1478,6 +1475,76 @@ class DebtorService {
       }
     }
     return [true, 'Bounce payments revert successfully'];
+  }
+
+  async getExtractFieldsAndDebtor(req: Request) {
+    const reqTemp: any = req;
+    const files = reqTemp.files;
+    if (!files || !files.length) {
+      return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
+    }
+    const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files);
+
+    if (!s3FileKeys.length) {
+      return [false, constantsUtil.Messages.UPLOAD_FILES_FAILURE];
+    }
+    const extractedFields = await caseUtil.getExtractionMCABuffer(files);
+    if (typeof extractedFields === 'string') return [false, extractedFields];
+    const debtorBody = await debtorUtil.mapDebtor(
+      extractedFields.extracted_fields
+    );
+    debtorBody['extractedFields'] = extractedFields.extracted_fields;
+    const createDebtor = await this.createDebtorForPortal(
+      debtorBody,
+      'Debtor Portal'
+    );
+    if (!createDebtor[0]) return [false, createDebtor[1]];
+    const debtor = createDebtor[1] as IDebtor;
+    return [
+      true,
+      {debtorId: String(debtor._id), extractedFields: debtor.extractedFields},
+    ];
+  }
+
+  async createDebtorForPortal(body: any, source: string) {
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      $or: [
+        {
+          'businessInformation.companyName':
+            body.businessInformation.companyName,
+        },
+        {
+          'businessInformation.EIN': body.businessInformation.EIN,
+        },
+      ],
+    });
+    if (getDebtor) {
+      if (
+        getDebtor.businessInformation.companyName ===
+        body.businessInformation.companyName
+      ) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            `Debtor with companyName ${body.businessInformation.companyName}`
+          ),
+        ];
+      }
+      if (getDebtor.businessInformation.EIN === body.businessInformation.EIN) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            `Debtor with EIN ${body.businessInformation.EIN}`
+          ),
+        ];
+      }
+    }
+    body['status'] = 'Pending';
+    let debtor = await caseUtil.createDebtor(body, source);
+    if (!debtor) {
+      return [false, constantsUtil.failureAddMessage('debtor')];
+    }
+    return [true, debtor];
   }
 }
 

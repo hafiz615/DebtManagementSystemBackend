@@ -82,6 +82,7 @@ export interface IDebtor extends Document {
   videoUrl: string;
   intervals: Array<IInterval>;
   isExempt: boolean;
+  status: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -195,6 +195,9 @@ const debtorSchema: Schema = new Schema({
     ],
   },
   isExempt: Boolean,
+  status: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

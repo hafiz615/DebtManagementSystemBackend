@@ -66,6 +66,7 @@ class Debtor {
         this.videoUrl = '';
         this.intervals = Array();
         this.isExempt = false;
+        this.status = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
