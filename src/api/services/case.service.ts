@@ -942,17 +942,6 @@ class CaseService {
     console.log('req.body: ', req.body);  
     const callerId = process.env.TWILIO_CALLER_ID;
     console.log('process.env.TWILIO_CALLER_ID: ', process.env.TWILIO_CALLER_ID);
-    //console.log(reqTemp.name, CaseId, 'case id .................');
-    const email = req.body.email.toLowerCase();
-
-    console.log('this is email we test:', email)
-
-    let user = await this.userRepository.getOne<IUser>({
-      email: email,
-      isDeleted: false,
-    });
-
-    console.log('this is user we test:', user)
 
     let identity = 'user';
     const toNumberOrClientName = req.body.To;
@@ -967,6 +956,16 @@ class CaseService {
       });
       dial.client(identity);
     } else if (req.body.To) {
+    const email = req.body?.email.toLowerCase();
+    console.log('this is email we test:', email)
+
+    let user = await this.userRepository.getOne<IUser>({
+      email: email,
+      isDeleted: false,
+    });
+
+    console.log('this is user we test:', user)
+
       const {AccountSid, CallSid, To, CallStatus, CaseId} = req.body;
       const findCase: any = await this.caseRepository.getById<ICase>(
         CaseId,
