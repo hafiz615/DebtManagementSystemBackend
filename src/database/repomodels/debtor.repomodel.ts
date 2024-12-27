@@ -18,7 +18,7 @@ export class Debtor {
     companyName: '',
     EIN: '',
     businessCategory: '',
-    description: '',
+    // description: '',
     state: '',
     city: '',
     zipCode: '',
@@ -34,10 +34,10 @@ export class Debtor {
     title: '';
     phone: '';
     email: '';
-    relationWithDebtor: '';
-    state: '';
-    city: '';
-    zipCode: '';
+    // relationWithDebtor: '';
+    // state: '';
+    // city: '';
+    // zipCode: '';
   }>();
   documents = Array<{key: ''; originalFileName: ''; url: ''}>();
   extractedFields = [];
@@ -58,7 +58,7 @@ export class Debtor {
   weeklyBudgetKeyStrategy3 = '';
   weeklyBudgetStrategy1 = 0;
   weeklyBudgetStrategy3 = 0;
-  profitMargin = 0;
+  // profitMargin = 0;
   moneyThumbAppId = 0;
   appid = 0;
   totalStatements = 0;
