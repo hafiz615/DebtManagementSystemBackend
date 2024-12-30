@@ -347,7 +347,9 @@ class EmailUtil {
         });
       }
     } else {
-     return await this.createNewInbox(emailData, caseTemp, type, threadId);
+      const res = await this.createNewInbox(emailData, caseTemp, type, threadId);
+      console.log("Create New Inbox response", res)
+      return res;
     }
     newNotification.caseId = caseTemp._id;
     newNotification.text = this.formatText(
@@ -403,7 +405,7 @@ class EmailUtil {
     newNotification.type = 'EMAIL';
     newMessage.threadId = threadId;
 
-    await this.inboxRepository.create<IInbox>(newMessage as any);
+   return await this.inboxRepository.create<IInbox>(newMessage as any);
   }
 
   formatText(text: String) {

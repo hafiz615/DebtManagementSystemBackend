@@ -242,7 +242,9 @@ class EmailUtil {
             }
         }
         else {
-            return await this.createNewInbox(emailData, caseTemp, type, threadId);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId);
+            console.log("Create New Inbox response", res);
+            return res;
         }
         newNotification.caseId = caseTemp._id;
         newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
@@ -282,7 +284,7 @@ class EmailUtil {
         newNotification.text = this.formatText(caseTemp.caseCode);
         newNotification.type = 'EMAIL';
         newMessage.threadId = threadId;
-        await this.inboxRepository.create(newMessage);
+        return await this.inboxRepository.create(newMessage);
     }
     formatText(text) {
         return `EMAIL received for ${text}`;
