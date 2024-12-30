@@ -1409,10 +1409,15 @@ class DebtorService {
       return [false, constants.notFoundMessage('Debtor')];
     }
     let manualPayments: IPayment[] =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>({
-        transactionType: 'Wire',
-        debtorId: req.params.id,
-      });
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          transactionType: 'Wire',
+          debtorId: req.params.id,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
 
     if (!manualPayments.length) {
       return [false, constants.notFoundMessage('manual payments')];

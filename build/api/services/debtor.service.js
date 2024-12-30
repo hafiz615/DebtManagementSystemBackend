@@ -1121,7 +1121,7 @@ class DebtorService {
         let manualPayments = await this.paymentRepository.getAllWithoutPagination({
             transactionType: 'Wire',
             debtorId: req.params.id,
-        });
+        }, undefined, undefined, { _id: -1 });
         if (!manualPayments.length) {
             return [false, constants_util_1.default.notFoundMessage('manual payments')];
         }

@@ -350,7 +350,9 @@ class EmailUtil {
      return await this.createNewInbox(emailData, caseTemp, type, threadId);
     }
     newNotification.caseId = caseTemp._id;
-    newNotification.text = this.formatText(caseTemp.caseCode);
+    newNotification.text = this.formatText(
+      caseTemp.creditor.businessInformation.companyName
+    );
     newNotification.type = 'EMAIL';
     await this.notificationRepository.create<INotification>(
       newNotification as any
