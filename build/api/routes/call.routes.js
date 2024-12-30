@@ -10,9 +10,7 @@ const call_controller_1 = __importDefault(require("../controllers/call/call.cont
 const router = (0, express_1.Router)();
 router.get('/getCalls/:caseId', authorize_middleware_1.default.validateAuth, call_controller_1.default.getCalls);
 router.post('/voice', call_controller_1.default.callTwiml);
-//router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
 router.post('/twilio/recording-status', call_controller_1.default.callRecordingStatus);
-//router.post('/twilio/call-hangup/:callSid', caseController.callHangUp);
 router.get('/twilio/token', call_controller_1.default.getToken);
 router.post('/twilio/fallback', call_controller_1.default.callFallBack);
 router.post('/twilio/call-status', call_controller_1.default.callStatus);

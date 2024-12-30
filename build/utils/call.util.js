@@ -18,33 +18,20 @@ class CallUtil {
     async fetchRecording(recordingSid) {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
-        try {
-            const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
-                headers: {
-                    Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
-                },
-                responseType: 'arraybuffer', // To get the file as binary data
-            });
-            //console.log('response', response);
-            if (response.status === 200) {
-                const buffer = Buffer.from(response.data);
-                const fileName = `${recordingSid}`;
-                try {
-                    console.log('fileName', fileName);
-                    await this.callUploadUtil.uploadFile(fileName, buffer);
-                }
-                catch (uploadError) {
-                    console.error('Error uploading file to S3:', uploadError);
-                }
-                return 'File uploaded to S3';
-            }
-            else {
-                console.error('Failed to fetch recording. Status:', response.status);
-                return null;
-            }
+        const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
+            headers: {
+                Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+            },
+            responseType: 'arraybuffer',
+        });
+        if (response.status === 200) {
+            const buffer = Buffer.from(response.data);
+            const fileName = `${recordingSid}`;
+            await this.callUploadUtil.uploadFile(fileName, buffer);
+            return 'File uploaded to S3';
         }
-        catch (error) {
-            console.error('Error fetching the Twilio recording:', error);
+        else {
+            console.error('Failed to fetch recording. Status:', response.status);
             return null;
         }
     }

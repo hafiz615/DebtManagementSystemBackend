@@ -39,7 +39,6 @@ class Case {
         this.lumpSumJustifications = false;
         this.fullProfitJustifications = false;
         this.notes = Array();
-        this.calls = Array();
         this.chatId = '';
         this.settlementRange = false;
         this.getCaseIdPercentage = false;

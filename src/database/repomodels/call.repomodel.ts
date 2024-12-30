@@ -7,7 +7,7 @@ export class Call {
   accountSid = '';
   callTo = '';
   callFrom = ''; 
-  callStartTime = null; 
+  callStartTime = ''; 
   callDuration = ''; 
   callStatus = ''; 
   callRecordingSid = ''; 

@@ -13,7 +13,7 @@ class Call {
         this.accountSid = '';
         this.callTo = '';
         this.callFrom = '';
-        this.callStartTime = null;
+        this.callStartTime = '';
         this.callDuration = '';
         this.callStatus = '';
         this.callRecordingSid = '';

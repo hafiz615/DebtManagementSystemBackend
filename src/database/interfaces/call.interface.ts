@@ -7,7 +7,7 @@ export interface ICall extends Document {
     accountSid: string;
     callTo: string;
     callFrom: string;
-    callStartTime: Date;
+    callStartTime: string;
     callDuration: string ;
     callStatus: string;
     callRecordingSid: string;
