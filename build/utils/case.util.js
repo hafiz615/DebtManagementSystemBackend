@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
-const callUpload_util_1 = __importDefault(require("./callUpload.util"));
 const contact_repository_1 = require("../api/repository/contact/contact.repository");
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
@@ -39,7 +38,6 @@ const twilio_1 = __importDefault(require("twilio"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
-        this.callUploadUtil = new callUpload_util_1.default();
         this.contactRepository = new contact_repository_1.ContactRepository();
         this.debtRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -2501,40 +2499,6 @@ class CaseUtil {
             caseHistory: updatedCaseHistory,
             maxWeekRemaining,
         };
-    }
-    async fetchRecording(recordingSid) {
-        const accountSid = process.env.TWILIO_ACCOUNT_SID;
-        const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
-        try {
-            const response = await fetch(recordingUrl, {
-                headers: {
-                    Authorization: `Basic ${btoa(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`)}`,
-                },
-            });
-            console.log('response', response);
-            if (response.ok) {
-                const fileBlob = await response.blob();
-                const arrayBuffer = await fileBlob.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-                const fileName = `${recordingSid}`;
-                try {
-                    console.log('fileNameasas', fileName);
-                    await this.callUploadUtil.uploadFile(fileName, buffer);
-                }
-                catch (uploadError) {
-                    console.error('Error uploading file to S3:', uploadError);
-                }
-                return 'File uploaded to S3';
-            }
-            else {
-                console.error('Failed to fetch recording. Status:', response.status);
-                return null;
-            }
-        }
-        catch (error) {
-            console.error('Error fetching the Twilio recording:', error);
-            return null;
-        }
     }
     async getAllEmailsOfCase(caseTemp, creditorsCases) {
         const allEmails = Array();
