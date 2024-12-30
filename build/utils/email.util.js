@@ -242,7 +242,7 @@ class EmailUtil {
             }
         }
         else {
-            await this.createNewInbox(emailData, caseTemp, type, threadId);
+            return await this.createNewInbox(emailData, caseTemp, type, threadId);
         }
         newNotification.caseId = caseTemp._id;
         newNotification.text = this.formatText(caseTemp.caseCode);

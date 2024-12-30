@@ -1,17 +1,17 @@
 import { Document } from 'mongoose';
 
 export interface ICall extends Document {
-    callSid: string | null;
+    callSid: string ;
     caseId: string;
     callerName: string;
-    accountSid: string | null;
+    accountSid: string;
     callTo: string;
     callFrom: string;
-    callStartTime: string;
-    callDuration: string | null;
-    callStatus: string | null;
+    callStartTime: Date;
+    callDuration: string ;
+    callStatus: string;
     callRecordingSid: string;
     transcriptUrl: string;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
   }

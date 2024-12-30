@@ -5,19 +5,19 @@ import UpdateLog from './updateLogs.model';
 import { v4 } from 'uuid';
 
 const callSchema: Schema = new Schema({
-  callSid: { type: String, default: null },
-  caseId: { type: String, required: true },
-  callerName: { type: String, required: true },
-  accountSid: { type: String, default: null },
-  callTo: { type: String, required: true },
-  callFrom: { type: String, required: true },
-  callStartTime: { type: String, default: '' },
-  callDuration: { type: String, default: null },
-  callStatus: { type: String, default: null },
-  callRecordingSid: { type: String, default: ''},
-  transcriptUrl: { type: String, default: '' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  callSid: { type: String},
+  caseId: { type: String},
+  callerName: { type: String},
+  accountSid: { type: String},
+  callTo: { type: String},
+  callFrom: { type: String},
+  callStartTime: {type: Date},
+  callDuration: { type: String},
+  callStatus: { type: String},
+  callRecordingSid: { type: String},
+  transcriptUrl: { type: String},
+  createdAt: { type: Date, required: true },
+  updatedAt: { type: Date, required: true },
 });
 
 // Automatically update `updatedAt` field
