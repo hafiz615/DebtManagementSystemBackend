@@ -245,7 +245,7 @@ class EmailUtil {
             await this.createNewInbox(emailData, caseTemp, type, threadId);
         }
         newNotification.caseId = caseTemp._id;
-        newNotification.text = this.formatText(caseTemp.caseCode);
+        newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
         newNotification.type = 'EMAIL';
         await this.notificationRepository.create(newNotification);
         const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);

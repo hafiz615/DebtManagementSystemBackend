@@ -709,7 +709,7 @@ class DebtorController {
       const response = await this.debtorService.getManualPayments(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.OK)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -761,8 +761,10 @@ class DebtorController {
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
-          data: [],
-          message: response[1],
+          data: response[1],
+          message: constants.successFoundMessage(
+            'Extracted data and debtor id'
+          ),
         })
       );
     } catch (error) {
