@@ -336,7 +336,7 @@ class DebtorRequests {
       amount: Joi.number().required(),
       commission: Joi.number().required(),
       transactionDate: Joi.date().required(),
-      transactionType: Joi.string().valid('Wire').required(),
+      transactionType: Joi.string().valid('Wire', 'Check', 'Cash').required(),
       referenceId: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
