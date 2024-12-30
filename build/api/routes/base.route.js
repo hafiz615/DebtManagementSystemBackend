@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const user_routes_1 = __importDefault(require("./user.routes"));
 const case_routes_1 = __importDefault(require("./case.routes"));
+const call_routes_1 = __importDefault(require("./call.routes"));
 const upload_routes_1 = __importDefault(require("./upload.routes"));
 const debtor_routes_1 = __importDefault(require("./debtor.routes"));
 const creditor_routes_1 = __importDefault(require("./creditor.routes"));
@@ -23,6 +24,7 @@ const seemlesschex_route_1 = __importDefault(require("./seemlesschex.route"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
     app.use('/api/v1/case', case_routes_1.default);
+    app.use('/api/v1/call', call_routes_1.default);
     app.use('/api/v1/upload', upload_routes_1.default);
     app.use('/api/v1/debtor', debtor_routes_1.default);
     app.use('/api/v1/creditor', creditor_routes_1.default);

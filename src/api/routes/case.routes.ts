@@ -151,14 +151,14 @@ router.delete(
   caseController.deleteCreditor
 );
 //router.post('/createCall/:id', caseController.createCall);
-router.get('/getCalls/:id', authorize.validateAuth, caseController.getCalls);
-router.post('/voice', caseController.callTwiml);
-//router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
-router.post('/twilio/recording-status', caseController.callRecordingStatus);
-//router.post('/twilio/call-hangup/:callSid', caseController.callHangUp);
-router.get('/twilio/token', caseController.getToken);
-router.post('/twilio/fallback', caseController.callFallBack);
-router.post('/twilio/call-status', caseController.callStatus);
+// router.get('/getCalls/:id', authorize.validateAuth, caseController.getCalls);
+// router.post('/voice', caseController.callTwiml);
+// //router.post('/twilio/transcription-status', caseController.callTranscriptionStatus);
+// router.post('/twilio/recording-status', caseController.callRecordingStatus);
+// //router.post('/twilio/call-hangup/:callSid', caseController.callHangUp);
+// router.get('/twilio/token', caseController.getToken);
+// router.post('/twilio/fallback', caseController.callFallBack);
+// router.post('/twilio/call-status', caseController.callStatus);
 
 router.put(
   '/updateCasePlan/:id',
