@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const callUpload_util_1 = __importDefault(require("./callUpload.util"));
+const upload_util_1 = __importDefault(require("./upload.util"));
 const twilio_1 = __importDefault(require("twilio"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const call_repomodel_1 = require("../database/repomodels/call.repomodel");
@@ -12,7 +12,7 @@ const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInter
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
-        this.callUploadUtil = new callUpload_util_1.default();
+        this.uploadUtil = new upload_util_1.default();
         this.callRepository = new call_repository_1.CallRepository();
     }
     async fetchRecording(recordingSid) {
@@ -27,7 +27,7 @@ class CallUtil {
         if (response.status === 200) {
             const buffer = Buffer.from(response.data);
             const fileName = `${recordingSid}`;
-            await this.callUploadUtil.uploadFile(fileName, buffer);
+            await this.uploadUtil.callUploadFile(fileName, buffer);
             return 'File uploaded to S3';
         }
         else {

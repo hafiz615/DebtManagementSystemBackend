@@ -1,7 +1,6 @@
 import {Request} from 'express';
 import {DataCopier} from '../../utils/dataCopier.util';
 import asyncLocalStorage from '../../utils/localStorage.util';
-import CallUploadUtil from '../../utils/callUpload.util';
 import {Twilio} from 'twilio';
 import {UserRepository} from '../repository/user/user.repository';
 import {CaseRepository} from '../repository/case/case.repository';
@@ -55,7 +54,6 @@ const VoiceGrant = AccessToken.VoiceGrant;
 
 class CaseService {
   private twilioClient: any;
-  private callUploadUtil: CallUploadUtil;
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
   private targetCFRepository: TargetCFRepository;
@@ -76,7 +74,6 @@ class CaseService {
       process.env.TWILIO_AUTH_TOKEN
     );
     this.caseRepository = new CaseRepository();
-    this.callUploadUtil = new CallUploadUtil();
     this.uploadUtil = new UploadUtil();
     this.targetCFRepository = new TargetCFRepository();
     this.paymentRepository = new PaymentRepository();

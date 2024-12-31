@@ -1,4 +1,4 @@
-import CallUploadUtil from './callUpload.util';
+import UploadUtil from './upload.util';
 import twilio from 'twilio';
 import dotenv from 'dotenv';
 import { DataCopier } from './dataCopier.util';
@@ -10,9 +10,9 @@ dotenv.config();
 
 class CallUtil {
     private callRepository: CallRepository;
-    private callUploadUtil: CallUploadUtil;
+    private uploadUtil: UploadUtil;
     constructor() {
-        this.callUploadUtil = new CallUploadUtil();
+        this.uploadUtil = new UploadUtil();
         this.callRepository = new CallRepository();
     }
 
@@ -29,7 +29,7 @@ class CallUtil {
       if (response.status === 200) {
         const buffer = Buffer.from(response.data);
         const fileName = `${recordingSid}`;
-        await this.callUploadUtil.uploadFile(fileName, buffer);
+        await this.uploadUtil.callUploadFile(fileName, buffer);
         return 'File uploaded to S3';
       } else {
         console.error('Failed to fetch recording. Status:', response.status);
@@ -37,7 +37,7 @@ class CallUtil {
       }
     } 
     
-    async createCall(data,userName: string, callerId: string) {
+    async createCall(data: any,userName: string, callerId: string) {
       const newCall= new Call();
       const {CaseId, CallSid, AccountSid, To, CallStatus} = data;
       newCall.caseId = CaseId;

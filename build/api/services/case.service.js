@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const callUpload_util_1 = __importDefault(require("../../utils/callUpload.util"));
 const twilio_1 = require("twilio");
 const user_repository_1 = require("../repository/user/user.repository");
 const case_repository_1 = require("../repository/case/case.repository");
@@ -698,7 +697,6 @@ class CaseService {
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
-        this.callUploadUtil = new callUpload_util_1.default();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
