@@ -52,12 +52,16 @@ class CallUtil {
         const openai = new openai_1.default({
             apiKey: process.env.openAiKey
         });
-        const response = await openai.completions.create({
-            model: 'gpt-3.5-turbo-instruct',
-            prompt: `Summarize this paragraph: ${text}`,
-            max_tokens: 100,
+        const response = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+                { role: "system", content: "You are an expert summarizer." },
+                { role: "user", content: `Please summarize the following transcript:\n${text}` }
+            ],
+            temperature: 0.5,
+            max_tokens: 300,
         });
-        return response.choices[0].text.trim();
+        return response.choices[0].message.content;
     }
     async createTranscript(recordingSID) {
         const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
