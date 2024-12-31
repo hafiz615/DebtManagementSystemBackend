@@ -119,6 +119,7 @@ class EmailUtil {
       await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
         {value}
       );
+    const threadId = v4();
     if (event) {
       const userPermissions = event.userPermission;
       let [user, debtor, creditor, caseTemp, payment] =
@@ -152,7 +153,7 @@ class EmailUtil {
             const from = template.from
               ? template.from
               : process.env.defaultEmail;
-            await this.sendEmail(emails, from, template.subject, content);
+            await this.sendEmail(emails, from, template.subject, content, null, null, caseId, threadId);
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
@@ -400,7 +401,8 @@ class EmailUtil {
     newMessage.textAsHtml = emailData.textAsHtml;
     newMessage.to = emailData.to;
     newMessage.type = type;
-    newNotification.caseId = caseTemp._id;
+    newMessage.caseId = String(caseTemp._id);
+    newNotification.caseId = String(caseTemp._id);
     newNotification.text = this.formatText(caseTemp.caseCode);
     newNotification.type = 'EMAIL';
     newMessage.threadId = threadId;
