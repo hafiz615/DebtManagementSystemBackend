@@ -477,7 +477,7 @@ class CronJob {
                 isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode', 'remaining'],
+                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
                 populate: [
                     {
                         path: 'creditor',
@@ -485,6 +485,7 @@ class CronJob {
                             'paynoteSourceId',
                             'paynoteUserId',
                             'basicInformation.fullName',
+                            'businessInformation.companyName',
                         ],
                     },
                     { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
@@ -498,7 +499,7 @@ class CronJob {
                 isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode', 'remaining'],
+                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
                 populate: [
                     {
                         path: 'creditor',
@@ -506,6 +507,7 @@ class CronJob {
                             'paynoteSourceId',
                             'paynoteUserId',
                             'basicInformation.fullName',
+                            'businessInformation.companyName',
                         ],
                     },
                     { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
@@ -604,6 +606,9 @@ class CronJob {
     }
     async processPaynotePayments(payments, retryPlus, interval) {
         for (const payment of payments) {
+            if (!payment?.caseId?.creditorPaymentsProceed) {
+                continue;
+            }
             if (payment.caseId.creditor.paynoteUserId &&
                 payment.caseId.creditor.paynoteSourceId) {
                 // const paynoteCustomer = await paynoteUtil.getCustomer(

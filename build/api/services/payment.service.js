@@ -450,14 +450,15 @@ class PaymentService {
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: [{
+            populate: [
+                {
                     path: 'debtor',
                     select: ['basicInformation.fullName', 'basicInformation.SSID'],
                 },
                 {
                     path: 'creditor',
                     select: ['basicInformation.fullName'],
-                }
+                },
             ],
         });
     }
@@ -614,6 +615,7 @@ class PaymentService {
                         'paynoteSourceId',
                         'paynoteUserId',
                         'basicInformation.fullName',
+                        'businessInformation.companyName',
                     ],
                 },
                 { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
@@ -628,7 +630,7 @@ class PaymentService {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
         if (!payment.caseId?.creditor?.paynoteSourceId) {
-            return [false, 'Account not added for user'];
+            return [false, 'No verified account added for this user'];
         }
         if (!payment.caseId?.creditorPaymentsProceed) {
             return [false, 'Funds transfer for this creditor is paused'];

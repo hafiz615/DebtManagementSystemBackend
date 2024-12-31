@@ -331,7 +331,7 @@ class CreditorService {
                 }
                 if (!resultSync[0] && i === lastPage) {
                     await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
-                    returnValue = resultSync;
+                    returnValue = [false, 'Could not found user in paynote'];
                 }
             }
             return returnValue;
