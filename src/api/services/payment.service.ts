@@ -580,7 +580,7 @@ class PaymentService {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         debtorId: id,
-        caseId: {$ne:null},
+        caseId: {$ne: null},
         isDeleted: false,
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
@@ -589,15 +589,16 @@ class PaymentService {
       {
         path: 'caseId',
         select: ['_id', 'caseOwner', 'totalDebt'],
-        populate: [{
-          path: 'debtor',
-          select: ['basicInformation.fullName', 'basicInformation.SSID'],
-        },
-        {
-          path: 'creditor',
-          select: ['basicInformation.fullName'],
-        }
-      ],
+        populate: [
+          {
+            path: 'debtor',
+            select: ['basicInformation.fullName', 'basicInformation.SSID'],
+          },
+          {
+            path: 'creditor',
+            select: ['basicInformation.fullName'],
+          },
+        ],
       }
     );
   }
@@ -796,6 +797,7 @@ class PaymentService {
               'paynoteSourceId',
               'paynoteUserId',
               'basicInformation.fullName',
+              'businessInformation.companyName',
             ],
           },
           {path: 'debtor', select: ['_id', 'basicInformation.fullName']},
@@ -811,7 +813,7 @@ class PaymentService {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
     if (!payment.caseId?.creditor?.paynoteSourceId) {
-      return [false, 'Account not added for user'];
+      return [false, 'No verified account added for this user'];
     }
     if (!payment.caseId?.creditorPaymentsProceed) {
       return [false, 'Funds transfer for this creditor is paused'];
