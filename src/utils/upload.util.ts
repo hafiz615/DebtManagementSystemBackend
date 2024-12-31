@@ -85,7 +85,7 @@ class UploadUtil {
       return data;
   };
 
-  async generateCallSignedUrl(fileName: string, type: string,  download: false) {
+  async generateCallSignedUrl(fileName: string, type: string,  download = false) {
     const params = {
       Bucket: process.env.callRecordingsBucket,
       Key: fileName,
