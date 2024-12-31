@@ -1,5 +1,6 @@
 import UploadUtil from './upload.util';
 import twilio from 'twilio';
+import  OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { DataCopier } from './dataCopier.util';
 import { ICall } from '../database/interfaces/call.interface';
@@ -48,6 +49,18 @@ class CallUtil {
       newCall.callFrom = callerId,
       newCall.callStatus = CallStatus;
       return await this.callRepository.create<ICall>(newCall as any);
+    }
+
+    async summarizeTranscriptText(text:string){
+      const openai = new OpenAI({
+        apiKey: process.env.openAiKey 
+      });
+      const response = await openai.completions.create({
+        model: 'gpt-3.5-turbo-instruct', 
+        prompt: `Summarize this paragraph: ${text}`,
+        max_tokens: 100,
+      });
+      return response.choices[0].text.trim();
     }
 
     async createTranscript(recordingSID: string) {

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const upload_util_1 = __importDefault(require("./upload.util"));
 const twilio_1 = __importDefault(require("twilio"));
+const openai_1 = __importDefault(require("openai"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const call_repomodel_1 = require("../database/repomodels/call.repomodel");
 const call_repository_1 = require("../api/repository/call/call.repository");
@@ -46,6 +47,17 @@ class CallUtil {
         newCall.callFrom = callerId,
             newCall.callStatus = CallStatus;
         return await this.callRepository.create(newCall);
+    }
+    async summarizeTranscriptText(text) {
+        const openai = new openai_1.default({
+            apiKey: process.env.openAiKey
+        });
+        const response = await openai.completions.create({
+            model: 'gpt-3.5-turbo-instruct',
+            prompt: `Summarize this paragraph: ${text}`,
+            max_tokens: 100,
+        });
+        return response.choices[0].text.trim();
     }
     async createTranscript(recordingSID) {
         const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);

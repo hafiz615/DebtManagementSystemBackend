@@ -29,6 +29,28 @@ class CallController {
     }
   };
 
+  callSummary = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.callSummary(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Summary for this call'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   callFallBack = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.callFallback(req);
@@ -46,52 +68,7 @@ class CallController {
     }
   };
 
-  // callHangUp = async (req: Request, res: Response) => {
-  //   try {
-  //     const response = await this.caseService.callHangUp(req);
-  //     if (!response[0]) {
-  //       return res
-  //       .status(constants.CODE.BAD_REQUEST)
-  //       .send(responseHelper.get4xxResponse(response[1]));
-  //     }
-  //     return res.status(constants.CODE.OK).send(
-  //       responseHelper.get2xxResponse({
-  //         statusCode: constants.CODE.OK,
-  //         data: response[1],
-  //         message: constants.successFoundMessage(
-  //           'Twilio'
-  //         ),
-  //       })
-  //     );
-  //   }
-  //   catch (error) {
-  //   return res
-  //   .status(constants.CODE.BAD_REQUEST)
-  //   .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
-  //  }
-  // }
-
-  // callTranscriptionStatus = async (req: Request, res: Response) => {
-  //   try {
-  //     const response = await this.caseService.callTranscriptionStatus(req);
-  //     if (!response[0]) {
-  //       return res
-  //         .status(constants.CODE.BAD_REQUEST)
-  //         .send(responseHelper.get4xxResponse(response));
-  //     }
-  //     return res.status(constants.CODE.CREATED).send(
-  //       responseHelper.get2xxResponse({
-  //         statusCode: constants.CODE.CREATED,
-  //         data: response[1],
-  //         message: constants.successUpdateMessage('Cases'),
-  //       })
-  //     );
-  //   } catch (error) {
-  //     return res
-  //       .status(constants.CODE.BAD_REQUEST)
-  //       .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
-  //   }
-  // };
+  
 
   callRecordingStatus = async (req: Request, res: Response) => {
     try {
@@ -159,27 +136,6 @@ class CallController {
     }
   };
 
-  // createCall = async (req: Request, res: Response) => {
-  //   try {
-  //     const response = await this.caseService.createCall(req);
-  //     if (!response[0]) {
-  //       return res
-  //         .status(constants.CODE.BAD_REQUEST)
-  //         .send(responseHelper.get4xxResponse(response));
-  //     }
-  //     return res.status(constants.CODE.CREATED).send(
-  //       responseHelper.get2xxResponse({
-  //         statusCode: constants.CODE.CREATED,
-  //         data: response[1],
-  //         message: constants.callMadesuccessMessage('Call'),
-  //       })
-  //     );
-  //   } catch (error) {
-  //     return res
-  //       .status(constants.CODE.BAD_REQUEST)
-  //       .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
-  //   }
-  // };
   
   getToken = async (req: Request, res: Response) => {
     try {
