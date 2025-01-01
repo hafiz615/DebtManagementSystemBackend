@@ -718,7 +718,10 @@ class CaseUtil {
               },
               caseOwner: '$caseOwner',
               outstandingDebt: {
-                $subtract: ['$remaining', {$sum: '$payments.amount'}],
+                $subtract: [
+                  '$totalDebt',
+                  {$ifNull: ['$remainingAmountPaid', 0]},
+                ],
               },
               remaining: '$remaining',
               pipeLineStatus: '$status',
