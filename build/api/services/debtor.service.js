@@ -1189,6 +1189,7 @@ class DebtorService {
             return [false, extractedFields];
         const debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
         debtorBody['extractedFields'] = extractedFields.extracted_fields;
+        debtorBody['documents'] = s3FileKeys;
         const createDebtor = await this.createDebtorForPortal(debtorBody, 'Debtor Portal');
         if (!createDebtor[0])
             return [false, createDebtor[1]];

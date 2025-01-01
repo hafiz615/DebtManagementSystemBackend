@@ -113,13 +113,14 @@ class PaynoteUtil {
     const apiUrl = `${process.env.paynoteUrl}/check/send`;
     const creditor = payment.caseId.creditor;
     console.log(payment.caseId.creditor.paynoteUserId);
+    const desc = payment.caseId?.creditor?.businessInformation.companyName
+      ? payment.caseId?.creditor?.businessInformation.companyName
+      : payment.caseId?.creditor?.basicInformation.fullName;
     var data = {
       recipient: payment.caseId?.creditor?.paynoteUserId,
       name: creditor.basicInformation?.fullName,
       amount: payment.amount,
-      description: `Payment: ${String(
-        payment._id
-      )} Sending payment to creditor for ${payment.caseId.caseCode}`,
+      description: desc,
     };
     console.log('I am in sendPayment');
     console.log('URL: ', apiUrl);
@@ -355,6 +356,7 @@ class PaynoteUtil {
   async processAllUsersResult(users: any, creditorEmails: string[]) {
     let update = {};
     for (const user of users) {
+      update = {paynoteUserId: '', paynoteSourceId: ''};
       if (creditorEmails.includes(user.email)) {
         update['paynoteUserFound'] = true;
         update['paynoteUserId'] = user.user_id;
@@ -391,18 +393,19 @@ class PaynoteUtil {
   }
 
   async processSyncCreditorPaynote(users: any, creditorEmail: string) {
-    let update = {};
+    let update = {paynoteUserId: '', paynoteSourceId: ''};
     const paynoteEmails = users.map(user => {
-      return user.email;
+      return user.email.toLowerCase();
     });
     const index = paynoteEmails.indexOf(creditorEmail);
     if (index === -1) {
       update['paynoteUserFound'] = false;
       update['paynoteSourceVerified'] = false;
-      return [false, 'Could not found user in paynote'];
+      return [false, update];
     }
     update['paynoteUserFound'] = true;
     update['paynoteUserId'] = users[index].user_id;
+    console.log(users[index], 'users[index]');
     let sourceVerified = false;
     for (const source of users[index].sources) {
       if (source.status === 'verified') {

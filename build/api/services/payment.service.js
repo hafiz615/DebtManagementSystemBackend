@@ -12,7 +12,6 @@ const axios_1 = __importDefault(require("axios"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
-const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
@@ -587,7 +586,7 @@ class PaymentService {
         if (!creditor)
             return [false, constants_util_1.default.notFoundMessage('creditor')];
         const data = req.body.data;
-        const paymentObj = (0, n_krypta_1.decrypt)(data, process.env.kryptaSecretKey);
+        const paymentObj = common_util_1.default.getDecryptedData(data);
         if (!creditor.paynoteUserId)
             return [false, 'User is not added in paynote!'];
         const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);
@@ -621,6 +620,7 @@ class PaymentService {
                         'paynoteSourceId',
                         'paynoteUserId',
                         'basicInformation.fullName',
+                        'businessInformation.companyName',
                     ],
                 },
                 { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
@@ -635,7 +635,7 @@ class PaymentService {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
         if (!payment.caseId?.creditor?.paynoteSourceId) {
-            return [false, 'Account not added for user'];
+            return [false, 'No verified account added for this user'];
         }
         if (!payment.caseId?.creditorPaymentsProceed) {
             return [false, 'Funds transfer for this creditor is paused'];

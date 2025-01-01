@@ -16,26 +16,36 @@ class SeemlesschexService {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
     }
     async createCheck(req) {
-        const debtor = await this.debtorRepository.getById(req.params.id);
+        const debtor = await this.debtorRepository.getById(req.body.debtorId);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
-        const { amount, token, store } = req.body;
-        const response = await seemlesschex_util_1.default.createCheck(debtor, amount, token, store);
-        if (!response?.error)
+        const { amount, referenceId, transactionType, commission, transactionIds, data, transactionDate, } = req.body;
+        const decryptedData = common_util_1.default.getDecryptedData(data);
+        const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+        if (tokenResponse?.error)
+            return [false, tokenResponse.message];
+        let totalAmount = amount + commission;
+        const response = await seemlesschex_util_1.default.createCheck(debtor, totalAmount, tokenResponse.tokenization.token, decryptedData);
+        if (response?.error)
             return [false, response.message];
         const bv = await seemlesschex_util_1.default.checkBasicVerification(response);
         const fc = await seemlesschex_util_1.default.checkFundsVerification(response);
-        let updatedPayment = await this.paymentRepository.updateMany({ _id: req.body.transactionIds }, {
-            authorized: 'Success',
+        let authorized = 'Success';
+        if (fc?.error || bv?.error)
+            authorized = 'Failed';
+        await seemlesschex_util_1.default.saveCheckInfo(bv, fc, response, req.body.debtorId);
+        let updatedPayment = await this.paymentRepository.updateMany({ _id: transactionIds }, {
+            authorized: authorized,
             captured: 'Pending',
             status: 'Pending',
-            debtorTransId: req.body.referenceId,
-            transactionType: req.body.transactionType,
-            manualCommission: req.body.commission,
+            debtorTransId: response.check.check_id,
+            transactionType: transactionType,
+            manualCommission: commission,
+            dueDate: transactionDate,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        if (updatedPayment) {
-            await this.debtorRepository.updateById(req.params.id, {
+        if (updatedPayment.modifiedCount) {
+            await this.debtorRepository.updateById(req.body.debtorId, {
                 $inc: { commissionPaid: req.body.commission },
             });
         }
@@ -49,6 +59,92 @@ class SeemlesschexService {
         if (response?.error)
             return [false, response.message];
         return [true, response.checkout_link];
+    }
+    async updateCheck(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const { data, checkId } = req.body;
+        const foundCheck = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
+        });
+        if (foundCheck)
+            return [false, constants_util_1.default.alreadyExistsMessage('Reference id')];
+        const decryptedData = common_util_1.default.getDecryptedData(data);
+        const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+        if (tokenResponse?.error)
+            return [false, tokenResponse.message];
+        const response = await seemlesschex_util_1.default.updateCheck(debtor, tokenResponse.tokenization.token, checkId);
+        if (response?.error)
+            return [false, response.message];
+        const bv = await seemlesschex_util_1.default.checkBasicVerification(response);
+        const fc = await seemlesschex_util_1.default.checkFundsVerification(response);
+        console.log(fc, 'fcccc');
+        console.log(bv, 'bvvvvv');
+        let authorized = 'Success';
+        if (bv?.erorr || fc?.error)
+            authorized = 'Failed';
+        await seemlesschex_util_1.default.saveCheckInfo(bv, fc, response, req.params.id);
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
+            authorized: authorized,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return [true, response.check];
+    }
+    async voidCheck(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const { checkId, transactionIds } = req.body;
+        const foundCheck = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
+        });
+        if (foundCheck)
+            return [false, constants_util_1.default.alreadyExistsMessage('Reference id')];
+        const response = await seemlesschex_util_1.default.voidCheck(checkId);
+        if (response?.error)
+            return [false, response.message];
+        await seemlesschex_util_1.default.deleteCheckInfo(checkId);
+        let updatedPayment = await this.paymentRepository.updateMany({ _id: transactionIds }, {
+            authorized: 'Pending',
+            captured: 'Pending',
+            status: 'Upcoming',
+            debtorTransId: '',
+            transactionType: '',
+            manualCommission: 0,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        if (updatedPayment.modifiedCount) {
+            await this.debtorRepository.updateById(req.params.id, {
+                $inc: { commissionPaid: -req.body.commission },
+            });
+        }
+        return [true, response.check];
+    }
+    async getClientChecks(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        let payments = await this.paymentRepository.getAllWithoutPagination({
+            transactionType: 'Check',
+            debtorId: req.params.id,
+        }, undefined, undefined, { _id: -1 });
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('payments')];
+        }
+        const groupedByTransId = payments.reduce((acc, item) => {
+            if (!acc[item.debtorTransId]) {
+                acc[item.debtorTransId] = [];
+            }
+            acc[item.debtorTransId].push(item);
+            return acc;
+        }, {});
+        for (const [key, value] of Object.entries(groupedByTransId)) {
+            const checkInfo = await seemlesschex_util_1.default.getCheckInfo(key);
+            groupedByTransId[key] = { payments: value, checkInfo };
+        }
+        return [true, groupedByTransId];
     }
 }
 exports.default = SeemlesschexService;

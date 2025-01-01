@@ -5,44 +5,45 @@ import dotenv from 'dotenv';
 import constantsUtil from './constants.util';
 import {SyncCreditorRepository} from '../api/repository/syncCreditor/syncCreditor.repository';
 import {IDebtor} from '../database/interfaces/debtor.interface';
+import {Check} from '../database/repomodels/check.repomodel';
+import {CheckRepository} from '../api/repository/check/check.repository';
+import {ICheck} from '../database/interfaces/check.interface';
 dotenv.config();
 
 class SeemlesschexUtil {
   private creditorRepository: CreditorRepository;
+  private checkRepository: CheckRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
+    this.checkRepository = new CheckRepository();
   }
   async createCheck(
     debtor: IDebtor,
     amount: number,
     token: string,
-    store: string
+    accountInfo: any
   ) {
-    if (!debtor.basicInformation?.fullName)
-      return {
-        error: true,
-        message: constantsUtil.notFoundMessage('creditor name'),
-      };
     if (!debtor?.basicInformation?.email)
       return {
         error: true,
-        message: constantsUtil.notFoundMessage('creditor email'),
+        message: constantsUtil.notFoundMessage('debtor email'),
       };
     if (!debtor?.basicInformation?.phone)
       return {
         error: true,
-        message: constantsUtil.notFoundMessage('creditor email'),
+        message: constantsUtil.notFoundMessage('debtor phone'),
       };
     const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/create`;
     var data = {
-      name: debtor.basicInformation?.fullName,
+      name: accountInfo.firstName + ' ' + accountInfo.lastName,
       email: debtor.basicInformation?.email,
-      amount: 99,
+      amount: amount,
       memo: `First Choice Debt Solutions`,
-      token: 'caf4f6e0c35f11efba16f7a09bc7e775',
+      token: token,
       store: 'firstchoice.com',
       verify_before_save: true,
       fund_confirmation: true,
+      phone: debtor?.basicInformation?.phone,
     };
     console.log('I am in createCheck');
     console.log('URL: ', apiUrl);
@@ -88,16 +89,6 @@ class SeemlesschexUtil {
           message: bv.description_bv,
         };
       case 1:
-        if (
-          bv.code_bv === 'RT03' ||
-          bv.code_bv === 'RT03' ||
-          bv.code_bv === 'RT03'
-        ) {
-          return {
-            error: true,
-            message: bv.description_bv,
-          };
-        }
         return data;
     }
   }
@@ -111,15 +102,6 @@ class SeemlesschexUtil {
           message: fc.description_fc,
         };
       case 1:
-        if (
-          fc.verification_fc === 'Null' ||
-          fc.verification_fc === 'NonParticipatingBank'
-        ) {
-          return {
-            error: true,
-            message: fc.description_fc,
-          };
-        }
         return data;
     }
   }
@@ -147,20 +129,13 @@ class SeemlesschexUtil {
     }
   }
 
-  async updateCheck(
-    debtor: IDebtor,
-    token: string,
-    store: string,
-    checkId: string,
-    checkNumber: string
-  ) {
+  async updateCheck(debtor: IDebtor, token: string, checkId: string) {
     const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/edit`;
     var data = {
       check_id: checkId,
-      number: checkNumber,
       name: debtor.basicInformation?.fullName,
       email: debtor.basicInformation?.email,
-      token: 'caf4f6e0c35f11efba16f7a09bc7e775',
+      token: token,
       store: 'firstchoice.com',
       verify_before_save: true,
       fund_confirmation: true,
@@ -225,6 +200,60 @@ class SeemlesschexUtil {
     console.log('Payload: ', {});
     try {
       const response = await axiosInstance.delete(apiUrl, {
+        headers: {
+          Authorization: process.env.seamlessKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error?.response?.data;
+    }
+  }
+
+  async saveCheckInfo(bv: any, fc: any, response: any, debtorId: string) {
+    const newCheck = new Check();
+    newCheck.checkId = response.check.check_id;
+    newCheck.number = response.check.number;
+    newCheck.status = response.check.status;
+    newCheck.basicVerification = bv?.error ? 'Fail' : 'Pass';
+    newCheck.fundsConfirmation = fc?.error ? 'Fail' : 'Pass';
+    newCheck.bvReason = bv?.error ? bv.message : '';
+    newCheck.fcReason = fc?.error ? fc.message : '';
+    newCheck.debtorId = debtorId;
+    await this.checkRepository.create<ICheck>(newCheck);
+  }
+
+  async deleteCheckInfo(checkId: string) {
+    const check = await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId},
+      {isDeleted: true}
+    );
+    console.log(check, 'checkkkkkk');
+  }
+
+  async getCheckInfo(checkId: string) {
+    return await this.checkRepository.getOne<ICheck>(
+      {checkId: checkId},
+      {isDeleted: false}
+    );
+  }
+
+  async tokenization(accountInfoObject: any) {
+    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/account/tokenization`;
+
+    const data = {
+      first_name: accountInfoObject.firstName,
+      last_name: accountInfoObject.lastName,
+      bank_routing: accountInfoObject.bankRouting,
+      bank_account: accountInfoObject.bankAccount,
+      store: 'firstchoice.com',
+    };
+    console.log('I am in tokenization');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
         headers: {
           Authorization: process.env.seamlessKey,
           'Content-Type': 'application/json',

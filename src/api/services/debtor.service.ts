@@ -1499,6 +1499,7 @@ class DebtorService {
       extractedFields.extracted_fields
     );
     debtorBody['extractedFields'] = extractedFields.extracted_fields;
+    debtorBody['documents'] = s3FileKeys;
     const createDebtor = await this.createDebtorForPortal(
       debtorBody,
       'Debtor Portal'
