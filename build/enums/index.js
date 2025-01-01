@@ -9,8 +9,8 @@ var responseName;
 })(responseName || (exports.responseName = responseName = {}));
 var paymentPlatform;
 (function (paymentPlatform) {
-    paymentPlatform["easypay"] = "easypay";
-    paymentPlatform["seamlesschex"] = "seamlesschex";
+    paymentPlatform["easypay"] = "Easypay direct";
+    paymentPlatform["seamlesschex"] = "Seamlesschex";
 })(paymentPlatform || (exports.paymentPlatform = paymentPlatform = {}));
 var permissions;
 (function (permissions) {

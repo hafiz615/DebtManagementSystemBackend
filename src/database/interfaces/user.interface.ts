@@ -10,6 +10,7 @@ export interface IUser extends Document {
   SSID: string;
   dateOfBirth: string;
   phone: string;
+  twilioNo: string;
   gender: string;
   address: string;
   sessionIds: Array<string>;

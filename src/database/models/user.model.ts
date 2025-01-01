@@ -39,6 +39,9 @@ const userModel: Schema = new Schema({
   phone: {
     type: String,
   },
+  twilioNo: {
+    type: String,
+  },
   gender: {
     type: String,
   },

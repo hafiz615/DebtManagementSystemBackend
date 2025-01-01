@@ -12,7 +12,6 @@ const axios_1 = __importDefault(require("axios"));
 const axiosInstanceInterceptor_1 = __importDefault(require("../../utils/axiosInstanceInterceptor"));
 const creditor_repository_1 = require("../repository/creditor/creditor.repository");
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
-const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
@@ -70,6 +69,11 @@ class PaymentService {
                 paymentsObj[arrayName] = paymentsObj[arrayName]?.slice((page - 1) * limit, page * limit);
             }
         }
+        const successPayments = structuredClone(paymentsObj.successPayments);
+        for (const payment of successPayments) {
+            payment.transactionType = 'Paynote';
+        }
+        paymentsObj.successPayments = successPayments;
         return [
             true,
             {
@@ -447,6 +451,7 @@ class PaymentService {
             debtorId: id,
             caseId: { $ne: null },
             isDeleted: false,
+            status: 'Upcoming',
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
@@ -581,7 +586,7 @@ class PaymentService {
         if (!creditor)
             return [false, constants_util_1.default.notFoundMessage('creditor')];
         const data = req.body.data;
-        const paymentObj = (0, n_krypta_1.decrypt)(data, process.env.kryptaSecretKey);
+        const paymentObj = common_util_1.default.getDecryptedData(data);
         if (!creditor.paynoteUserId)
             return [false, 'User is not added in paynote!'];
         const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);

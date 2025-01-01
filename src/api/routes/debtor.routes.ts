@@ -2,8 +2,11 @@ import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import debtorController from '../controllers/debtor/debtor.controller';
 import debtor from '../../middleware/validators/debtor.validate';
+import multer from 'multer';
 
 const router = Router();
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 
 router.post('/getDebtor', authorize.validateAuth, debtorController.getDebtor);
 router.post(
@@ -89,14 +92,16 @@ router.post(
   debtorController.createMultipleDebtors
 );
 
-router.get('/getStatementsSummary/:id', 
+router.get(
+  '/getStatementsSummary/:id',
   authorize.validateAuth,
-  debtorController.getStatementsSummary 
+  debtorController.getStatementsSummary
 );
 
-router.get('/getDailyCashFlows/:id', 
+router.get(
+  '/getDailyCashFlows/:id',
   authorize.validateAuth,
-  debtorController.getDailyCashFlows 
+  debtorController.getDailyCashFlows
 );
 
 router.put(
@@ -153,4 +158,31 @@ router.post(
   debtor.validateManualPayment,
   debtorController.addManualPayment
 );
+
+router.put(
+  '/updateWeeklyBudget/:id',
+  authorize.validateAuth,
+  debtor.updateWeeklyBudget,
+  debtorController.updateWeeklyBudget
+);
+
+router.get(
+  '/getManualPayments/:id',
+  authorize.validateAuth,
+  debtorController.getManualPayments
+);
+
+router.post(
+  '/revertManualPayments/:id',
+  authorize.validateAuth,
+  debtor.revertManualPayment,
+  debtorController.revertManualPayments
+);
+
+router.post(
+  '/get-extracted-data',
+  upload.array('files'),
+  debtorController.getExtractFieldsAndDebtor
+);
+
 export default router;

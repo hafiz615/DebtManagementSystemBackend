@@ -104,6 +104,11 @@ class PaymentService {
         );
       }
     }
+    const successPayments = structuredClone(paymentsObj.successPayments);
+    for (const payment of successPayments) {
+      payment.transactionType = 'Paynote';
+    }
+    paymentsObj.successPayments = successPayments;
     return [
       true,
       {
@@ -582,6 +587,7 @@ class PaymentService {
         debtorId: id,
         caseId: {$ne: null},
         isDeleted: false,
+        status: 'Upcoming',
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
       undefined,
@@ -753,7 +759,7 @@ class PaymentService {
     if (!creditor) return [false, constants.notFoundMessage('creditor')];
 
     const data = req.body.data;
-    const paymentObj = decrypt(data, process.env.kryptaSecretKey);
+    const paymentObj = commonUtil.getDecryptedData(data);
     if (!creditor.paynoteUserId)
       return [false, 'User is not added in paynote!'];
     const fundingSource = await paynoteUtil.addFundingSource(

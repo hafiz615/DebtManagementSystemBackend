@@ -47,9 +47,9 @@ const debtorSchema: Schema = new Schema({
     businessCategory: {
       type: String,
     },
-    description: {
-      type: String,
-    },
+    // description: {
+    //   type: String,
+    // },
     state: {
       type: String,
     },
@@ -73,10 +73,10 @@ const debtorSchema: Schema = new Schema({
         title: String,
         phone: String,
         email: String,
-        relationWithDebtor: String,
-        state: String,
-        city: String,
-        zipCode: String,
+        // relationWithDebtor: String,
+        // state: String,
+        // city: String,
+        // zipCode: String,
       },
     ],
   },
@@ -160,9 +160,9 @@ const debtorSchema: Schema = new Schema({
   weeklyBudgetStrategy3: {
     type: Number,
   },
-  profitMargin: {
-    type: Number,
-  },
+  // profitMargin: {
+  //   type: Number,
+  // },
   moneyThumbAppId: {
     type: Number,
   },
@@ -195,6 +195,9 @@ const debtorSchema: Schema = new Schema({
     ],
   },
   isExempt: Boolean,
+  status: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

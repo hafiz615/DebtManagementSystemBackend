@@ -97,7 +97,10 @@ const PaymentModel: Schema = new Schema({
   },
   transactionType: {
     type: String,
-  }
+  },
+  manualCommission: {
+    type: Number,
+  },
 });
 
 PaymentModel.pre('save', async function (next) {

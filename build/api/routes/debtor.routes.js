@@ -7,7 +7,10 @@ const express_1 = require("express");
 const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
 const debtor_controller_1 = __importDefault(require("../controllers/debtor/debtor.controller"));
 const debtor_validate_1 = __importDefault(require("../../middleware/validators/debtor.validate"));
+const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
+const storage = multer_1.default.memoryStorage();
+const upload = (0, multer_1.default)({ storage });
 router.post('/getDebtor', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtor);
 router.post('/listing/details/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.listingDetails);
 router.post('/listing/search', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.searchListing);
@@ -39,5 +42,9 @@ router.post('/analyzeAndGetSettlementRanges/:id', authorize_middleware_1.default
 router.get('/getSummeryVideo/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.generateVideoWithGenAi);
 router.post('/addPaymentPlan/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.addPaymentPlan);
 router.post('/addManualPayment', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.validateManualPayment, debtor_controller_1.default.addManualPayment);
+router.put('/updateWeeklyBudget/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateWeeklyBudget, debtor_controller_1.default.updateWeeklyBudget);
+router.get('/getManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getManualPayments);
+router.post('/revertManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.revertManualPayment, debtor_controller_1.default.revertManualPayments);
+router.post('/get-extracted-data', upload.array('files'), debtor_controller_1.default.getExtractFieldsAndDebtor);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

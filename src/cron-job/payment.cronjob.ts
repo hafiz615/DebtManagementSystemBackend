@@ -1296,8 +1296,10 @@ class CronJob {
             retryPlus,
             cronId,
             settings,
-            getCommission
+            getCommission,
+            account.platform
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1313,8 +1315,10 @@ class CronJob {
             cronId,
             settings,
             'ck',
+            account.platform,
             getCommission
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1354,6 +1358,7 @@ class CronJob {
             cronId,
             settings
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1372,6 +1377,7 @@ class CronJob {
             'ck',
             totalAmount
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1384,7 +1390,8 @@ class CronJob {
     retryPlus: boolean,
     cronId: string,
     settings: ISettings[],
-    commission: number
+    commission: number,
+    platform: string
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -1393,6 +1400,7 @@ class CronJob {
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
+    updateObjPayment['transactionType'] = platform;
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -1551,8 +1559,10 @@ class CronJob {
             retryPlus,
             cronId,
             settings,
-            'cc'
+            'cc',
+            account.platform
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1567,8 +1577,10 @@ class CronJob {
             retryPlus,
             cronId,
             settings,
-            'ck'
+            'ck',
+            account.platform
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1613,6 +1625,7 @@ class CronJob {
             'cc',
             totalAmount
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
@@ -1631,6 +1644,7 @@ class CronJob {
             'ck',
             totalAmount
           );
+          if (retryPlus) retryPlus = false;
           if (result) break;
         }
       }
@@ -1644,6 +1658,7 @@ class CronJob {
     cronId: string,
     settings: ISettings[],
     type: string,
+    platform: string,
     commision?: number
   ) {
     let result = false;
@@ -1653,6 +1668,7 @@ class CronJob {
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
+    updateObjPayment['transactionType'] = platform;
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';

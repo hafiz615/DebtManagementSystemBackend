@@ -16,7 +16,6 @@ import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogg
 import {DataCopier} from '../../utils/dataCopier.util';
 import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
 import constantsUtil from '../../utils/constants.util';
-import uploadUtil from '../../utils/upload.util';
 import UploadUtil from '../../utils/upload.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
 import {IStrategy} from '../../database/interfaces/strategy.interface';
@@ -48,8 +47,8 @@ class DebtorService {
   private strategyRepository: StrategyRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private userRepository: UserRepository;
-
   private caseService: CaseService;
+  private uploadUtil: UploadUtil;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -60,6 +59,7 @@ class DebtorService {
     this.bulkUploadRepository = new BulkUploadRepository();
     this.userRepository = new UserRepository();
     this.caseService = new CaseService();
+    this.uploadUtil = new UploadUtil();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -252,8 +252,9 @@ class DebtorService {
     }
     let clientDetails = await caseUtil.getClientDetails(req);
 
-    if(clientDetails) clientDetails = await caseUtil.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
-  
+    if (clientDetails)
+      clientDetails = await caseUtil.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
+
     // console.log("Updated clientDetails: ", clientDetails);
     // if (req.query.filter === 'true' || req.query.search === 'true') {
     //   casesCount = clientDetails.caseHistory.length;
@@ -722,7 +723,7 @@ class DebtorService {
       ],
     });
     let debtor: IDebtor = null;
-    let account = [];
+    // let account = [];
     // if (body.paymentToken && body.paymentType) {
     //   const customerVaultResponse = await caseUtil.createVault(
     //     body.paymentToken,
@@ -736,14 +737,14 @@ class DebtorService {
     //   });
     // }
     if (!getDebtor) {
-      if (account.length) body.accounts = account;
+      // if (account.length) body.accounts = account;
       if (body.basicInformation.weeklyBudget) {
         body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
       }
       debtor = await caseUtil.createDebtor(body, id);
     }
     if (getDebtor) {
-      if (account.length) body.accounts = getDebtor.accounts.concat(account);
+      // if (account.length) body.accounts = getDebtor.accounts.concat(account);
       // if (!req.body.basicInformation?.weeklyBudget)
       //   req.body.basicInformation.weeklyBudget = 1;
       body.updatedAt = commonUtil.getCurrentDate();
@@ -860,13 +861,6 @@ class DebtorService {
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-    // let creditors = null;
-    // creditors = await caseUtil.getAllCreditorsOfDebtor(caseTemp.debtor as any);
-    // creditors = Array.from(
-    //   new Map(
-    //     creditors.map(creditor => [creditor.creditorAccountTitle, creditor])
-    //   ).values()
-    // );
     let lumpSum = {};
     if (caseTemp.strategyTwo) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -874,20 +868,6 @@ class DebtorService {
         name: 'strategy_two',
       });
       lumpSum = result.data.lumpSumAmount.lumpsum_settlement;
-      // for (const creditor of creditors) {
-      //   console.log(
-      //     creditor.creditorAccountTitle,
-      //     'creditor.creditorAccountTitle'
-      //   );
-      //   const repaidDebt = lumpSum[creditor.creditorAccountTitle].repaid_debt;
-      //   lumpSum[creditor.creditorAccountTitle].remaining_principle_amount =
-      //     parseFloat(
-      //       (
-      //         caseUtil.getCleanAmount(creditor.contractDetails.funded_amount) -
-      //         repaidDebt
-      //       ).toFixed(2)
-      //     );
-      // }
     }
     if (caseTemp.lumpSumJustifications) {
       const result = await this.strategyRepository.getOne<IStrategy>({
@@ -1157,9 +1137,6 @@ class DebtorService {
       extractedFields.extracted_fields
     );
     debtorBody['extractedFields'] = extractedFields.extracted_fields;
-    for (const iterator of extractedFields.extracted_fields) {
-      console.log(iterator, 'extractedFields.extracted_fields');
-    }
     const createDebtor = await this.createDebtor(debtorBody, reqTemp.id);
     let finalObj = {};
     const finalArray = [];
@@ -1371,34 +1348,209 @@ class DebtorService {
       return [false, constants.notFoundMessage('Debtor')];
     }
 
-    //TODO: Add validation check here
-
-    req.body.transactionIds.forEach(async transaction => {
-      let updatedPayment = await this.paymentRepository.updateById(
-        transaction,
-        {
-          authorized: 'Success', // Make is success so it can be picked up by CRON Job
-          captured: 'Success', // Make is success so it can be picked up by CRON Job
-          status: 'Pending',
-          dueDate: req.body.transactionDate,
-          debtorTransId: req.body.referenceId,
-          transactionType: req.body.transactionType,
-          updatedAt: commonUtil.getCurrentDate(),
-        }
-      );
+    const foundPayment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: req.body.referenceId,
     });
+    if (foundPayment)
+      return [false, constants.alreadyExistsMessage('Reference id')];
 
-    let updatedDebtor = await this.debtorRepository.updateById(
-      req.body.debtorId,
+    let updatedPayment = await this.paymentRepository.updateMany<IPayment>(
+      {_id: req.body.transactionIds},
       {
-        $inc: {commissionPaid: req.body.commission},
+        authorized: 'Success',
+        captured: 'Success',
+        status: 'Pending',
+        dueDate: req.body.transactionDate,
+        debtorTransId: req.body.referenceId,
+        transactionType: req.body.transactionType,
+        manualCommission: req.body.commission,
+        updatedAt: commonUtil.getCurrentDate(),
       }
     );
 
-    if (!updatedDebtor) {
+    if (!updatedPayment) {
       return [false, constants.failureAddMessage('Manual Payment')];
     }
+    if (updatedPayment) {
+      let updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+        req.body.debtorId,
+        {
+          $inc: {commissionPaid: req.body.commission},
+        }
+      );
+
+      if (!updatedDebtor) {
+        return [false, constants.failureAddMessage('Manual Payment')];
+      }
+    }
     return [true, constants.successAddMessage('Manual Payment')];
+  }
+
+  async updateWeeklyBudget(req: Request): Promise<[boolean, IDebtor | string]> {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('case')];
+    }
+    const updateDebtor = await this.debtorRepository.updateById<IDebtor>(
+      req.params.id,
+      {
+        'basicInformation.weeklyBudget': req.body.weeklyBudget,
+      }
+    );
+    if (!updateDebtor) {
+      return [false, constants.failureUpdateMessage('debtor')];
+    }
+    return [true, updateDebtor];
+  }
+
+  async getManualPayments(req: Request) {
+    let debtor = await this.debtorRepository.getById(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    let manualPayments: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          transactionType: 'Wire',
+          debtorId: req.params.id,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
+
+    if (!manualPayments.length) {
+      return [false, constants.notFoundMessage('manual payments')];
+    }
+
+    const groupedByTransId = manualPayments.reduce((acc, item) => {
+      if (!acc[item.debtorTransId]) {
+        acc[item.debtorTransId] = [];
+      }
+      acc[item.debtorTransId].push(item);
+      return acc;
+    }, {});
+    return [true, groupedByTransId];
+  }
+
+  async revertManualPayments(req: Request) {
+    let debtor = await this.debtorRepository.getById(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    let manualPayment = await this.paymentRepository.getOne<IPayment>({
+      transactionType: 'Wire',
+      debtorId: req.params.id,
+      debtorTransId: req.body.referenceId,
+    });
+    if (manualPayment) {
+      if (manualPayment.manualCommission !== req.body.commission)
+        return [false, 'Commission is not correct'];
+    }
+    let result = await this.paymentRepository.updateMany<IPayment>(
+      {
+        transactionType: 'Wire',
+        debtorId: req.params.id,
+        debtorTransId: req.body.referenceId,
+      },
+      {
+        authorized: 'Pending',
+        captured: 'Pending',
+        status: 'Upcoming',
+        debtorTransId: '',
+        transactionType: '',
+        manualCommission: 0,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+
+    if (!result) {
+      return [false, 'Could not revert bounce payments'];
+    }
+
+    if (result.modifiedCount && manualPayment) {
+      let updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+        req.params.id,
+        {
+          $inc: {commissionPaid: -req.body.commission},
+        }
+      );
+      if (!updatedDebtor) {
+        return [false, 'Could not revert bounce payments'];
+      }
+    }
+    return [true, 'Bounce payments revert successfully'];
+  }
+
+  async getExtractFieldsAndDebtor(req: Request) {
+    const reqTemp: any = req;
+    const files = reqTemp.files;
+    if (!files || !files.length) {
+      return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
+    }
+    const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files);
+
+    if (!s3FileKeys.length) {
+      return [false, constantsUtil.Messages.UPLOAD_FILES_FAILURE];
+    }
+    const extractedFields = await caseUtil.getExtractionMCABuffer(files);
+    if (typeof extractedFields === 'string') return [false, extractedFields];
+    const debtorBody = await debtorUtil.mapDebtor(
+      extractedFields.extracted_fields
+    );
+    debtorBody['extractedFields'] = extractedFields.extracted_fields;
+    debtorBody['documents'] = s3FileKeys;
+    const createDebtor = await this.createDebtorForPortal(
+      debtorBody,
+      'Debtor Portal'
+    );
+    if (!createDebtor[0]) return [false, createDebtor[1]];
+    const debtor = createDebtor[1] as IDebtor;
+    return [
+      true,
+      {debtorId: String(debtor._id), extractedFields: debtor.extractedFields},
+    ];
+  }
+
+  async createDebtorForPortal(body: any, source: string) {
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      $or: [
+        {
+          'businessInformation.companyName':
+            body.businessInformation.companyName,
+        },
+        {
+          'businessInformation.EIN': body.businessInformation.EIN,
+        },
+      ],
+    });
+    if (getDebtor) {
+      if (
+        getDebtor.businessInformation.companyName ===
+        body.businessInformation.companyName
+      ) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            `Debtor with companyName ${body.businessInformation.companyName}`
+          ),
+        ];
+      }
+      if (getDebtor.businessInformation.EIN === body.businessInformation.EIN) {
+        return [
+          false,
+          constants.alreadyExistsMessage(
+            `Debtor with EIN ${body.businessInformation.EIN}`
+          ),
+        ];
+      }
+    }
+    body['status'] = 'Pending';
+    let debtor = await caseUtil.createDebtor(body, source);
+    if (!debtor) {
+      return [false, constantsUtil.failureAddMessage('debtor')];
+    }
+    return [true, debtor];
   }
 }
 

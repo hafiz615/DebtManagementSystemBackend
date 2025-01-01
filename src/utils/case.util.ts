@@ -45,6 +45,8 @@ import emailUtil from './email.util';
 import debtorUtil from './debtor.util';
 import {IStrategy} from '../database/interfaces/strategy.interface';
 import {paymentPlatform} from '../enums';
+import twilio from 'twilio';
+
 dotenv.config();
 class CaseUtil {
   private contactRepository: ContactRepository;
@@ -89,15 +91,8 @@ class CaseUtil {
   }
 
   async createDebtor(data: IDebtor, createdBy: string) {
-    console.log(createdBy, 'plplplpl');
-    // let data = req.body as IDebtor;
-    // const reqTemp: any = req;
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
-    // newDebtor.emailKey = `[${nanoid(10).toUpperCase().replace(/[_-]/g, '')}]`;
-    // newDebtor.createdBy = reqTemp.id;
-    // if (!data?.basicInformation?.weeklyBudget)
-    //   data.basicInformation.weeklyBudget = 1;
     const validatedDebtor = DataCopier.copy(newDebtor, data);
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }
@@ -1761,43 +1756,13 @@ class CaseUtil {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
-    let percentage_settlement_over_weekly_budget =
-      result.data.settlementRange.percentage_settlement_over_weekly_budget;
-    // // Extracting the first dynamic key inside settlement_range
-    // const settlementRange = result.data.settlementRange.settlement_range;
-    // console.log('settlementRange: ', settlementRange);
-    // // Get the first dynamic key
-    // const dynamicKey = Object.keys(settlementRange)[0];
-    // console.log('dynamicKey: ', dynamicKey);
 
-    const settlementRange = result.data?.settlementRange?.settlement_range;
-    console.log('settlementRange: ', settlementRange);
-    // Get all keys of settlementRange
-    const keys = Object.keys(settlementRange);
+    let settlementRange = result.data?.settlementRange?.settlement_range;
 
-    // Find the first key that is not 'Summary'
-    const dynamicKey = keys.find(key => key !== 'Summary');
-
-    console.log('dynamicKey: ', dynamicKey);
-    // Dynamically extract the data for that key
-    const creditorKey = settlementRange[dynamicKey];
-
-    const adjustedMin =
-      creditorKey['recommendation 1'].max < 0
-        ? -creditorKey['recommendation 1'].max -
-          creditorKey['recommendation 1'].max * 0.2
-        : creditorKey['recommendation 1'].max -
-          creditorKey['recommendation 1'].max * 0.2;
-
-    creditorKey['recommendation 1'].min = adjustedMin;
-
-    if (
-      percentage_settlement_over_weekly_budget &&
-      Object.keys(percentage_settlement_over_weekly_budget).length
-    ) {
-      delete percentage_settlement_over_weekly_budget.Summary;
+    if (settlementRange && Object.keys(settlementRange).length) {
+      delete settlementRange.Summary;
     } else {
-      percentage_settlement_over_weekly_budget = {};
+      settlementRange = {};
     }
 
     const url = `${
@@ -1812,7 +1777,7 @@ class CaseUtil {
 
     const data = {
       llm_options: {LLMs: models},
-      settlements: {creditors: {[dynamicKey]: creditorKey}},
+      settlements: {creditors: settlementRange},
     };
     try {
       console.log('I am in get-settlement-justifications');
@@ -2317,10 +2282,6 @@ class CaseUtil {
           contentType: 'application/pdf',
         });
       }
-      // form.getLength((err, length) => {
-      //   if (err) return 'null';
-      //   return ''
-      // });
       console.log('I am in getExtractionMCA_AIBuffer');
       console.log('URL: ', url);
       console.log('Payload: ', form);
@@ -2331,7 +2292,6 @@ class CaseUtil {
           ...form.getHeaders(),
         },
       });
-      console.log('Response Data', response.data);
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
       console.log(error);
@@ -2999,6 +2959,40 @@ class CaseUtil {
       caseHistory: updatedCaseHistory,
       maxWeekRemaining,
     };
+  }
+
+  async getAllEmailsOfCase(caseTemp: any, creditorsCases: any) {
+    const allEmails = Array<string>();
+    allEmails.push(caseTemp?.debtor?.basicInformation.email);
+    allEmails.push(caseTemp?.creditor?.basicInformation.email);
+    for (const contact of caseTemp.debtor.contacts) {
+      allEmails.push(contact.email);
+    }
+    for (const contact of caseTemp.creditor.contacts) {
+      allEmails.push(contact.email);
+    }
+
+    for (const caseTemp of creditorsCases) {
+      allEmails.push(caseTemp.creditor.basicInformation.email);
+    }
+
+    return allEmails.filter(str => str.trim() !== '');
+  }
+
+  async createTranscript(recordingSID: string) {
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    const transcript = await client.intelligence.v2.transcripts.create({
+      channel: {
+        media_properties: {
+          source_sid: recordingSID,
+        },
+      },
+      serviceSid: process.env.TWILIO_Service_SID,
+    });
+    return transcript.links.sentences;
   }
 }
 export default new CaseUtil();

@@ -18,5 +18,6 @@ router.post('/createPaynoteCustomer/:id', authorize_middleware_1.default.validat
 router.post('/pausePayments/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.pausePayments);
 router.post('/syncPaynoteCreditor/:id', authorize_middleware_1.default.validateAuth, creditor_validate_1.default.syncCreditorEmail, creditor_controller_1.default.syncPaynoteCreditor);
 router.get('/getCreditorSyncEmail/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.getCreditorSyncEmail);
+router.get('/mcaByMonth/:id', authorize_middleware_1.default.validateAuth, creditor_controller_1.default.mcaByMonth);
 exports.default = router;
 //# sourceMappingURL=creditor.routes.js.map

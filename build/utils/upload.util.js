@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_s3_1 = require("@aws-sdk/client-s3");
+const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const aws_sdk_1 = __importDefault(require("aws-sdk"));
 const case_util_1 = __importDefault(require("./case.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -13,7 +14,7 @@ class UploadUtil {
         this.getPdfBytesFromS3 = async (key) => {
             try {
                 const params = {
-                    Bucket: 'debt-settlement-documents',
+                    Bucket: process.env.s3BucketName,
                     Key: key,
                 };
                 const data = await this.s3Client.send(new client_s3_1.GetObjectCommand(params));
@@ -51,7 +52,7 @@ class UploadUtil {
         for (let file of files) {
             const key = await case_util_1.default.uploadFileFormat(file.originalname);
             let params = {
-                Bucket: 'debt-settlement-documents',
+                Bucket: process.env.s3BucketName,
                 Key: key,
                 Body: file.buffer,
             };
@@ -65,9 +66,37 @@ class UploadUtil {
         await Promise.all(uploadPromises);
         return s3FileKeys;
     }
+    async callUploadFile(fileName, fileContent) {
+        console.log("fileName", fileName);
+        console.log("fileContent", fileContent);
+        const params = {
+            Bucket: process.env.callRecordingsBucket,
+            Key: fileName,
+            Body: fileContent,
+        };
+        const command = new client_s3_1.PutObjectCommand(params);
+        const data = await this.s3Client.send(command);
+        console.log('File successfully uploaded:', data);
+        return data;
+    }
+    ;
+    async generateCallSignedUrl(fileName, type, download = false) {
+        const params = {
+            Bucket: process.env.callRecordingsBucket,
+            Key: fileName,
+        };
+        if (!download) {
+            params['ResponseContentDisposition'] = 'inline';
+            params['ResponseContentType'] = type;
+        }
+        const command = new client_s3_1.GetObjectCommand(params);
+        const signedUrl = await (0, s3_request_presigner_1.getSignedUrl)(this.s3Client, command, { expiresIn: 3600 });
+        return signedUrl;
+    }
+    ;
     // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
     //   let params = {
-    //     Bucket: 'debt-settlement-documents',
+    //     Bucket: process.env.s3BucketName,
     //     Key: key,
     //     Expires: 86400,
     //     ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
@@ -77,7 +106,7 @@ class UploadUtil {
     // }
     async getS3FileSignedUrl(key, download = false) {
         let params = {
-            Bucket: 'debt-settlement-documents',
+            Bucket: process.env.s3BucketName,
             Key: key,
             Expires: 86400,
         };

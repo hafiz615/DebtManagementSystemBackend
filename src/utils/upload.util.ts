@@ -1,4 +1,5 @@
 import {PutObjectCommand, GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
+import { getSignedUrl }  from '@aws-sdk/s3-request-presigner';
 import AWS from 'aws-sdk';
 import caseUtil from './case.util';
 import dotenv from 'dotenv';
@@ -33,7 +34,7 @@ class UploadUtil {
     for (let file of files) {
       const key = await caseUtil.uploadFileFormat(file.originalname);
       let params = {
-        Bucket: 'debt-settlement-documents',
+        Bucket: process.env.s3BucketName,
         Key: key,
         Body: file.buffer,
       };
@@ -52,7 +53,7 @@ class UploadUtil {
   getPdfBytesFromS3 = async (key: string) => {
     try {
       const params = {
-        Bucket: 'debt-settlement-documents',
+        Bucket: process.env.s3BucketName,
         Key: key,
       };
 
@@ -67,10 +68,40 @@ class UploadUtil {
       return error.message;
     }
   };
+  
+  async callUploadFile(fileName: string, fileContent: Buffer) {
+    console.log("fileName",fileName);
+    console.log("fileContent",fileContent);
+    
+      const params = {
+          Bucket: process.env.callRecordingsBucket,
+          Key: fileName,
+          Body: fileContent,
+      };
 
+      const command = new PutObjectCommand(params);
+      const data = await this.s3Client.send(command); 
+      console.log('File successfully uploaded:', data);
+      return data;
+  };
+
+  async generateCallSignedUrl(fileName: string, type: string,  download = false) {
+    const params = {
+      Bucket: process.env.callRecordingsBucket,
+      Key: fileName,
+    };
+    if (!download) {
+      params['ResponseContentDisposition'] = 'inline';
+      params['ResponseContentType'] = type;
+    }
+    const command = new GetObjectCommand(params);
+
+    const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+    return signedUrl;
+  };
   // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
   //   let params = {
-  //     Bucket: 'debt-settlement-documents',
+  //     Bucket: process.env.s3BucketName,
   //     Key: key,
   //     Expires: 86400,
   //     ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
@@ -80,7 +111,7 @@ class UploadUtil {
   // }
   async getS3FileSignedUrl(key: string, download = false): Promise<string> {
     let params = {
-      Bucket: 'debt-settlement-documents',
+      Bucket: process.env.s3BucketName,
       Key: key,
       Expires: 86400,
     };

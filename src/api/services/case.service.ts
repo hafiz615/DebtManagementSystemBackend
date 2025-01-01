@@ -44,6 +44,9 @@ import {Inbox} from '../../database/repomodels/inbox.repomodel';
 import {IInbox} from '../../database/interfaces/inbox.interface';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {v4} from 'uuid';
+import {SettingsRepository} from '../repository/setting/settings.repository';
+import {ISettings} from '../../database/interfaces/settings.interface';
+import settingsUtil from '../../utils/settings.util';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -64,6 +67,7 @@ class CaseService {
   private justificationRepository: JustificationRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private inboxRepository: InboxRepository;
+  private settingsRepository: SettingsRepository;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -82,6 +86,7 @@ class CaseService {
     this.justificationRepository = new JustificationRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
     this.inboxRepository = new InboxRepository();
+    this.settingsRepository = new SettingsRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -206,7 +211,13 @@ class CaseService {
             })
           )
         : [];
-
+    const templates = await settingsUtil.getEmailSmsTemplates();
+    findCase['emailTemplates'] = templates.emailTemplates;
+    findCase['smsTemplates'] = templates.smsTemplates;
+    findCase['allEmails'] = await caseUtil.getAllEmailsOfCase(
+      findCase,
+      uniqueResult
+    );
     findCase['creditors'] = uniqueResult;
     findCase['customFields'] = temp ? temp.customFields : [];
     findCase['notes'] = updateNotesForm ?? [];
@@ -280,26 +291,26 @@ class CaseService {
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
-    if (
-      req.body?.intervals &&
-      req.body?.intervals.length &&
-      findCase.intervals.length
-    ) {
-      return [false, 'Payment plan already exist!'];
-    }
+    // if (
+    //   req.body?.intervals &&
+    //   req.body?.intervals.length &&
+    //   findCase.intervals.length
+    // ) {
+    //   return [false, 'Payment plan already exist!'];
+    // }
 
-    if (req.body?.intervals?.length && req.body?.commission) {
-      if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-        await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-          weeklyCommission: req.body.commission,
-          updatedAt: commonUtil.getCurrentDate(),
-        });
-      }
-      findCase.intervals = req.body?.intervals;
-      findCase.isExempt = req.body.isExempt;
-      const checkCasePayment = await caseUtil.checkCasePayment(findCase);
-      if (!checkCasePayment[0]) return checkCasePayment;
-    }
+    // if (req.body?.intervals?.length && req.body?.commission) {
+    //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+    //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+    //       weeklyCommission: req.body.commission,
+    //       updatedAt: commonUtil.getCurrentDate(),
+    //     });
+    //   }
+    //   findCase.intervals = req.body?.intervals;
+    //   findCase.isExempt = req.body.isExempt;
+    //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+    //   if (!checkCasePayment[0]) return checkCasePayment;
+    // }
     req.body.updatedAt = commonUtil.getCurrentDate();
     if (req.body.paidAmount && req.body.paidAmount > 0) {
       req.body.remaining = req.body.totalDebt - req.body.paidAmount;
@@ -323,10 +334,10 @@ class CaseService {
       },
       caseUpdated._id
     );
-    if (req.body.intervals && req.body.intervals.length) {
-      caseUtil.createPayment(caseUpdated);
-    }
-    // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    // if (req.body.intervals && req.body.intervals.length) {
+    //   caseUtil.createPayment(caseUpdated);
+    // }
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     caseUpdated = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -398,7 +409,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.notFoundMessage('Case')];
     }
-    // await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+    await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
     await caseUtil.addInHistory(
       {
         Time: new Date(commonUtil.getCurrentDate()),
@@ -779,7 +790,8 @@ class CaseService {
     await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
       creditors,
       settlementRange,
-      caseId
+      caseId,
+      true
     );
     data['settlementRange'] = settlementRange;
     return [true, data];
@@ -817,12 +829,12 @@ class CaseService {
     } else result = await caseUtil.addNotes(req, reqTemp.id);
 
     if (!result) return [false, result];
-    // await emailUtil.sendEmailOrSmsByEvent(
-    //   'case_details_update',
-    //   result._id,
-    //   '',
-    //   reqTemp.id
-    // );
+    await emailUtil.sendEmailOrSmsByEvent(
+      'case_details_update',
+      result._id,
+      '',
+      reqTemp.id
+    );
     await caseUtil.addInHistory(
       {
         Action,
@@ -833,262 +845,6 @@ class CaseService {
       findCase._id
     );
     return [true, result];
-  };
-
-  // createCall = async (req: Request): Promise<[boolean, ICase | string]> => {
-  //   const reqTemp: any = req;
-  //   const findCase: any = await this.caseRepository.getById<ICase>(
-  //     req.params.id,
-  //     undefined,
-  //     undefined,
-  //     ['debtor']
-  //   );
-  //   if (!findCase) {
-  //     return [false, constantsUtil.notFoundMessage('Case')];
-  //   }
-  //   const callData = {
-  //     from: '+17756307412',
-  //     to: reqTemp.body.toNumber, // For testing Purposes Added My Number
-  //     url: `${process.env.webHookURl}/api/v1/case/twilio/voice`,
-  //     record: true,
-  //     statusCallback:
-  //       `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
-  //     statusCallbackEvent: ['completed'],
-  //   };
-  //   try {
-  //     const call = await this.twilioClient.calls.create(callData);
-  //     console.log('Call', call);
-  //     const result = await this.caseRepository.updateById<ICase>(
-  //       req.params.id,
-  //       {
-  //         $push: {
-  //           calls: {
-  //             callSid: call.sid,
-  //             callerName: reqTemp.name,
-  //             accountSid: call.accountSid,
-  //             callTo: call.to,
-  //             callFrom: call.from,
-  //             callStartDate: call.startTime,
-  //             callDuration: null, // Placeholder for later update
-  //             callStatus: 'initiated', // Initial status
-  //             callRecordingSid: '',
-  //             callTranscription: '',
-  //           },
-  //         },
-  //         updatedAt: commonUtil.getCurrentDate(),
-  //       }
-  //     );
-
-  //     if (!result) return [false, 'Failed to update case with call SID'];
-  //     return [true, call.sid];
-  //   } catch (err) {
-  //     console.log('Error Creating Call', err);
-  //     return [false, 'Error creating call.'];
-  //   }
-  // };
-
-  getCalls = async (req: Request) => {
-    const findCase: any = await this.caseRepository.getById<ICase>(
-      req.params.id,
-      undefined,
-      undefined,
-      [{path: 'debtor'}]
-    );
-    if (!findCase) {
-      return [false, constantsUtil.notFoundMessage('Case')];
-    }
-    if (!Array.isArray(findCase.calls) || findCase.calls.length === 0) {
-      return [true, []];
-    }
-    return [true, findCase.calls.reverse()];
-  };
-
-  callFallback = async (req: Request) => {
-    const VoiceResponse = require('twilio').twiml.VoiceResponse;
-    const twiml = new VoiceResponse();
-    twiml.say(
-      'We are experiencing technical difficulties. Please try again later.'
-    );
-    return [true, twiml.toString()];
-  };
-
-  callTwiml = async (req: Request) => {
-    //const reqTemp: any = req;
-    const callerId = process.env.TWILIO_CALLER_ID;
-    const {AccountSid, CallSid, To, CallStatus, CaseId} = req.body;
-    //console.log(reqTemp.name, CaseId, 'case id .................');
-    const findCase: any = await this.caseRepository.getById<ICase>(
-      CaseId,
-      undefined,
-      undefined,
-      ['debtor']
-    );
-    if (!findCase) {
-      return [false, constantsUtil.notFoundMessage('Case')];
-    }
-    // console.log(findCase, 'find case')
-    const result = await this.caseRepository.updateById<ICase>(CaseId, {
-      $push: {
-        calls: {
-          callSid: CallSid,
-          callerName: 'Hafiz Irshad',
-          accountSid: AccountSid,
-          callTo: To,
-          callFrom: callerId,
-          callStartDate: '',
-          callDuration: null, // Placeholder for later update
-          callStatus: CallStatus, // Initial status
-          callRecordingSid: '',
-        },
-      },
-      updatedAt: commonUtil.getCurrentDate(),
-    });
-    //console.log(result, 'hello1');
-    if (!result) return [false, 'Failed to update case with call SID'];
-    const isAValidPhoneNumber = number => {
-      return /^[\d\+\-\(\) ]+$/.test(number);
-    };
-
-    let identity = 'user';
-    const toNumberOrClientName = req.body.To;
-    const VoiceResponse = require('twilio').twiml.VoiceResponse;
-    let twiml = new VoiceResponse();
-
-    if (toNumberOrClientName == callerId) {
-      const dial = twiml.dial({
-        record: 'record-from-answer',
-        transcribe: true,
-        recordingStatusCallback:
-          `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
-      });
-
-      dial.client(identity);
-    } else if (req.body.To) {
-      const dial = twiml.dial({
-        callerId,
-        record: 'record-from-answer',
-        recordingStatusCallback:
-          `${process.env.webHookURl}/api/v1/case/twilio/recording-status`,
-      });
-      const attr = isAValidPhoneNumber(toNumberOrClientName)
-        ? 'number'
-        : 'client';
-      dial[attr]({}, toNumberOrClientName);
-    } else {
-      twiml.say('Thanks for calling!');
-    }
-    return [true, twiml.toString()];
-  };
-
-  callStatus = async (req: Request) => {
-    const {CallSid, CallStatus} = req.body;
-    console.log(`Call SID: ${CallSid}, Status: ${CallStatus}`);
-    // res.status(200).send("Call status received");
-    return [true, '"Call status received"'];
-  };
-
-  // callTranscriptionStatus = async (req: Request) => {
-  //   try {
-  //     const callSid = req.body.CallSid;
-  //     const transcriptionText = req.body.TranscriptionText;
-  //     const result = await this.caseRepository.updateByOne(
-  //       {'calls.callSid': callSid},
-  //       {
-  //         $set: {
-  //           'calls.$.callTranscription': transcriptionText,
-  //         },
-  //         updatedAt: commonUtil.getCurrentDate(),
-  //       }
-  //     );
-  //     if (!result) {
-  //       return [false, 'Failed to update case with recording details.'];
-  //     }
-  //     return [true, 'Recording status received and updated successfully.'];
-  //   } catch (err) {
-  //     return [false, 'Error handling recording status.'];
-  //   }
-  // };
-
-  // callHangUp = async (req: Request) => {
-  //   try {
-  //     const callSid = req.params.callSid;
-  //     if (!callSid) {
-  //       return [false, 'Call SID is required.'];
-  //     }
-  //     await this.twilioClient.calls(callSid).update({status: 'completed'});
-  //     return [true, 'Call hung up successfully.'];
-  //   } catch (err) {
-  //     console.error('Error hanging up the call:', err);
-  //     return [false, 'Error hanging up the call.'];
-  //   }
-  // };
-
-  getToken = async (req: Request) => {
-    let identity = 'user';
-    const AccessToken = require('twilio').jwt.AccessToken;
-    const VoiceGrant = AccessToken.VoiceGrant;
-    const accessToken = new AccessToken(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_API_KEY,
-      process.env.TWILIO_API_SECRET,
-      {identity}
-    );
-    console.log(accessToken, 'accessToken1');
-    accessToken.identity = 'user';
-    console.log(accessToken, 'accessToken2');
-    const grant = new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
-      incomingAllow: true,
-    });
-    accessToken.addGrant(grant);
-
-    return [
-      true,
-      {
-        identity: 'user',
-        token: accessToken.toJwt(),
-      },
-    ];
-  };
-
-  callRecordingStatus = async (req: Request) => {
-    try {
-      const {
-        RecordingSid,
-        RecordingDuration,
-        RecordingStatus,
-        RecordingStartTime,
-        TranscriptionText,
-        TranscriptionStatus,
-      } = req.body;
-
-      console.log('TranscriptionText', TranscriptionText);
-      console.log('TranscriptionStatus', TranscriptionStatus);
-
-      const callSid = req.body.CallSid;
-      const recordingSid = req.body.RecordingSid;
-      const status = req.body.CallStatus;
-      const callDuration = req.body.RecordingDuration;
-      const callStartTime = req.body.Timestamp;
-      const result = await this.caseRepository.updateByOne(
-        {'calls.callSid': callSid},
-        {
-          $set: {
-            'calls.$.callRecordingSid': RecordingSid,
-            'calls.$.callDuration': RecordingDuration,
-            'calls.$.callStatus': RecordingStatus,
-            'calls.$.callStartDate': RecordingStartTime,
-          },
-          updatedAt: commonUtil.getCurrentDate(),
-        }
-      );
-      if (!result) {
-        return [false, 'Failed to update call with recording details.'];
-      }
-      return [true, 'Recording status received and updated successfully.'];
-    } catch (err) {
-      return [false, 'Error handling recording status.'];
-    }
   };
 
   getScoresSettlementByCommPercentage = async (req: Request) => {
@@ -1105,6 +861,7 @@ class CaseService {
       undefined,
       [{path: 'debtor'}]
     );
+    const caseId = req.params.id;
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     let getScores = null,
       creditorNames = null;
@@ -1152,6 +909,18 @@ class CaseService {
     });
     await debtorUtil.updateDebtorTotalCommission(debtor);
     data['debtor'] = debtor;
+    const values = await moneyThumbUtil.getMonthlyProfitValues(
+      moneyThumb.scoreCard,
+      debtor
+    );
+    data['averageMonthlyProfitExcludingPayments'] =
+      values.averageMonthlyProfitExcludingPayments;
+    data['averageMonthlyProfitIncludingPayments'] =
+      values.averageMonthlyProfitIncludingPayments;
+    data['currentMonthlyProfitExcludingPayments'] =
+      values.currentMonthlyProfitExcludingPayments;
+    data['currentMonthlyProfitIncludingPayments'] =
+      values.currentMonthlyProfitIncludingPayments;
     let extractedFieldsTemp = null;
     if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
       const extractedFields = await caseUtil.getExtractionMCA(debtor);
@@ -1171,7 +940,12 @@ class CaseService {
     data['creditorNames'] = creditorNames;
     if (typeof creditorNames === 'string') {
       data['getScores'] = null;
-      data['settlementRange'] = null;
+      data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+        debtor,
+        creditors,
+        moneyThumb.scoreCard,
+        caseId
+      );
       return [true, data];
     }
     if (req.query.all === 'true') {
@@ -1182,7 +956,12 @@ class CaseService {
       );
       data['getScores'] = getScores;
       if (typeof getScores === 'string') {
-        data['settlementRange'] = null;
+        data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+          debtor,
+          creditors,
+          moneyThumb.scoreCard,
+          caseId
+        );
         return [true, data];
       }
       data['debtor'] = await this.debtorRepository.getById<IDebtor>(debtor._id);
@@ -1199,7 +978,12 @@ class CaseService {
         getScores = await caseUtil.getScores(caseTemp, casesCreditors, comm);
         data['getScores'] = getScores;
         if (typeof getScores === 'string') {
-          data['settlementRange'] = null;
+          data['settlementRange'] = await moneyThumbUtil.getSettlementValues(
+            debtor,
+            creditors,
+            moneyThumb.scoreCard,
+            caseId
+          );
           return [true, data];
         }
         data['debtor'] = await this.debtorRepository.getById<IDebtor>(
@@ -1208,7 +992,21 @@ class CaseService {
       }
     }
     settlementRange = await caseUtil.getSettlementRange(caseTemp);
+    if (typeof settlementRange === 'string') {
+      settlementRange = await moneyThumbUtil.getSettlementValues(
+        debtor,
+        creditors,
+        moneyThumb.scoreCard,
+        caseId
+      );
+    }
     await creditorUtil.addWeeklyTrueAmount(creditors, settlementRange);
+    await creditorUtil.replaceSettlementRangeAndWeeksTillPaid(
+      creditors,
+      settlementRange,
+      caseId,
+      true
+    );
     data['settlementRange'] = settlementRange;
     return [true, data];
   };
@@ -1407,15 +1205,14 @@ class CaseService {
     if (!caseTemp) {
       return [false, constantsUtil.notFoundMessage('case')];
     }
-    // Commenting this Code, so everytime, it will pass this to Ai to get the justification.
-    // if (caseTemp.justifications) {
-    //   const result = await this.strategyRepository.getOne<IStrategy>({
-    //     caseId: String(caseTemp._id),
-    //     name: 'justifications',
-    //   });
-    //   if (result?.data?.justifications)
-    //     return [true, result.data.justifications];
-    // }
+    if (caseTemp.justifications) {
+      const result = await this.strategyRepository.getOne<IStrategy>({
+        caseId: String(caseTemp._id),
+        name: 'justifications',
+      });
+      if (result?.data?.justifications)
+        return [true, result.data.justifications];
+    }
     const models = await caseUtil.getJustificationModels();
     const justifications = await caseUtil.getSettlementJustifications(
       caseTemp,
@@ -1426,6 +1223,7 @@ class CaseService {
 
   deleteFile = async (req: Request) => {
     // Fetch the case and populate debtor field
+    const reqTemp: any = req;
     let caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
@@ -1454,6 +1252,14 @@ class CaseService {
     if (response.documents.length === caseTemp.debtor.documents.length) {
       return [false, `No document found with key: ${key}`];
     }
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case File Deleted',
+        'Deleted By': reqTemp.name,
+      },
+      req.params.id
+    );
 
     return [true, `${key} is deleted successfully`];
   };
@@ -1473,6 +1279,7 @@ class CaseService {
     return [true, updateCase];
   }
   deleteCreditor = async (req: Request) => {
+    const reqTemp: any = req;
     let caseTemp: any = await this.caseRepository.getById<ICase>(req.params.id);
 
     if (!caseTemp) {
@@ -1487,6 +1294,15 @@ class CaseService {
     if (!updateCase.isDeleted) {
       return [false, constantsUtil.failureDeleteMessage('Creditor')];
     }
+
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Creditor Deleted',
+        'Deleted By': reqTemp.name,
+      },
+      req.params.id
+    );
 
     return [true, constantsUtil.successDeleteMessage('Creditor')];
   };
@@ -1541,7 +1357,7 @@ class CaseService {
       },
       caseUpdated._id
     );
-    //this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     return [true, caseUpdated];
   };
 }

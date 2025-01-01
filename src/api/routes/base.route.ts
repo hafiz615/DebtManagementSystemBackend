@@ -1,6 +1,7 @@
 import {Application} from 'express';
 import userRouter from './user.routes';
 import caseRouter from './case.routes';
+import callRouter from './call.routes';
 import uploadFileRouter from './upload.routes';
 import debtorRouter from './debtor.routes';
 import creditorRouter from './creditor.routes';
@@ -15,10 +16,12 @@ import emailRouter from './email.routes';
 import bulkUploadRouter from './bulkUpload.route';
 import inboxRouter from './inbox.routes';
 import notificationRouter from './notification.routes';
+import seemlesschexRouter from './seemlesschex.route';
 
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
   app.use('/api/v1/case', caseRouter);
+  app.use('/api/v1/call', callRouter);
   app.use('/api/v1/upload', uploadFileRouter);
   app.use('/api/v1/debtor', debtorRouter);
   app.use('/api/v1/creditor', creditorRouter);
@@ -33,4 +36,5 @@ export default function setup(app: Application) {
   app.use('/api/v1/bulk', bulkUploadRouter);
   app.use('/api/v1/inbox', inboxRouter);
   app.use('/api/v1/notification', notificationRouter);
+  app.use('/api/v1/seemlesschex', seemlesschexRouter);
 }

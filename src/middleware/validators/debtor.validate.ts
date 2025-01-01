@@ -37,9 +37,7 @@ class DebtorRequests {
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
-        phone: Joi.string()
-          .pattern(/^\d{10}$/)
-          .required(),
+        phone: Joi.string().pattern(/^\d{10}$/),
         address: Joi.string().required(),
       }),
       contact: Joi.object({
@@ -108,9 +106,7 @@ class DebtorRequests {
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
-        phone: Joi.string()
-          .pattern(/^\d{10}$/)
-          .required(),
+        phone: Joi.string().pattern(/^\d{10}$/),
         address: Joi.string().required(),
       }),
       contacts: Joi.array().items(
@@ -184,9 +180,7 @@ class DebtorRequests {
         state: Joi.string().required(),
         city: Joi.string().required(),
         zipCode: Joi.string().required(),
-        phone: Joi.string()
-          .pattern(/^\d{10}$/)
-          .required(),
+        phone: Joi.string().pattern(/^\d{10}$/),
         address: Joi.string().required(),
       }),
       contacts: Joi.array().items(
@@ -291,7 +285,7 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentType: Joi.string().required(),
       paymentToken: Joi.string().required(),
-      platform: Joi.string().valid('easypay', 'seamlesschex').required(),
+      platform: Joi.string().valid('Easypay direct', 'Seamlesschex').required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -335,14 +329,14 @@ class DebtorRequests {
         );
     }
   };
-  async validateManualPayment(req: Request, res: Response, next: NextFunction) {
+  validateManualPayment(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       debtorId: Joi.string().required(),
-      transactionIds: Joi.array().required(),
+      transactionIds: Joi.array().items(Joi.string()).required(),
       amount: Joi.number().required(),
       commission: Joi.number().required(),
       transactionDate: Joi.date().required(),
-      transactionType: Joi.string().required(),
+      transactionType: Joi.string().valid('Wire', 'Check', 'Cash').required(),
       referenceId: Joi.string().required(),
     });
     const {error} = schema.validate(req.body);
@@ -351,9 +345,54 @@ class DebtorRequests {
     } else {
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.details[0].message));
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
     }
   }
+
+  async revertManualPayment(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      commission: Joi.number().required(),
+      referenceId: Joi.string().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
+
+  updateWeeklyBudget = (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const schema = Joi.object({
+      weeklyBudget: Joi.number().strict().required(),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  };
 }
 
 export default new DebtorRequests();

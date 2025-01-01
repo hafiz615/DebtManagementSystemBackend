@@ -6,6 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const constants_util_1 = __importDefault(require("./constants.util"));
 const rolesPermissions_service_1 = __importDefault(require("../api/services/rolesPermissions.service"));
+const n_krypta_1 = require("n-krypta");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class CommonUtil {
     getCurrentDate() {
         let date = new Date().toUTCString();
@@ -79,6 +82,9 @@ class CommonUtil {
             lastName: lastName,
         };
         return data;
+    }
+    getDecryptedData(data) {
+        return (0, n_krypta_1.decrypt)(data, process.env.kryptaSecretKey);
     }
 }
 exports.default = new CommonUtil();

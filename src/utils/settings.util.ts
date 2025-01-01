@@ -9,12 +9,15 @@ import {
 } from '../database/interfaces/customField.interface';
 import {TargetCFRepository} from '../api/repository/targetCustomFields/targetCF.repository';
 import {ISettings} from '../database/interfaces/settings.interface';
+import {SettingsRepository} from '../api/repository/setting/settings.repository';
 
 class SettingsUtil {
   private targetCFRepository: TargetCFRepository;
+  private settingsRepository: SettingsRepository;
 
   constructor() {
     this.targetCFRepository = new TargetCFRepository();
+    this.settingsRepository = new SettingsRepository();
   }
   async addCustomFieldByTarget(
     customField: ICustomField,
@@ -91,6 +94,18 @@ class SettingsUtil {
       });
     }
     return body;
+  }
+  async getEmailSmsTemplates() {
+    const findSettings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const templates = await findSettings[0].notificationTemplates;
+    const emailTemplates = templates.filter(template => {
+      return template.type === 'email';
+    });
+    const smsTemplates = templates.filter(template => {
+      return template.type === 'sms';
+    });
+    return {emailTemplates, smsTemplates};
   }
 }
 export default new SettingsUtil();

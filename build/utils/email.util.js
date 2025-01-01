@@ -85,6 +85,7 @@ class EmailUtil {
     }
     async sendEmailOrSmsByEvent(value, caseId, paymentId, userId) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
+        const threadId = (0, uuid_1.v4)();
         if (event) {
             const userPermissions = event.userPermission;
             let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, paymentId, userId);
@@ -108,7 +109,7 @@ class EmailUtil {
                         const from = template.from
                             ? template.from
                             : process.env.defaultEmail;
-                        await this.sendEmail(emails, from, template.subject, content);
+                        await this.sendEmail(emails, from, template.subject, content, null, null, caseId, threadId);
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
@@ -242,10 +243,12 @@ class EmailUtil {
             }
         }
         else {
-            await this.createNewInbox(emailData, caseTemp, type, threadId);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId);
+            console.log("Create New Inbox response", res);
+            return res;
         }
         newNotification.caseId = caseTemp._id;
-        newNotification.text = this.formatText(caseTemp.caseCode);
+        newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
         newNotification.type = 'EMAIL';
         await this.notificationRepository.create(newNotification);
         const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
@@ -278,11 +281,12 @@ class EmailUtil {
         newMessage.textAsHtml = emailData.textAsHtml;
         newMessage.to = emailData.to;
         newMessage.type = type;
-        newNotification.caseId = caseTemp._id;
+        newMessage.caseId = String(caseTemp._id);
+        newNotification.caseId = String(caseTemp._id);
         newNotification.text = this.formatText(caseTemp.caseCode);
         newNotification.type = 'EMAIL';
         newMessage.threadId = threadId;
-        await this.inboxRepository.create(newMessage);
+        return await this.inboxRepository.create(newMessage);
     }
     formatText(text) {
         return `EMAIL received for ${text}`;
