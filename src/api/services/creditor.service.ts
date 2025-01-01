@@ -411,7 +411,7 @@ class CreditorService {
             resultSync[1],
             req.params.id
           );
-          returnValue = resultSync;
+          returnValue = [false, 'Could not found user in paynote'];
         }
       }
       return returnValue;

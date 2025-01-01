@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs';
 import constantsUtil from './constants.util';
 import RolesPermissionsService from '../api/services/rolesPermissions.service';
 import {Request} from 'express';
-
+import {decrypt} from 'n-krypta';
+import dotnev from 'dotenv';
+dotnev.config();
 class CommonUtil {
   getCurrentDate() {
     let date = new Date().toUTCString();
@@ -80,6 +82,10 @@ class CommonUtil {
       lastName: lastName,
     };
     return data;
+  }
+
+  getDecryptedData(data: string) {
+    return decrypt(data, process.env.kryptaSecretKey);
   }
 }
 export default new CommonUtil();

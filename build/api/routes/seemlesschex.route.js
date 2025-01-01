@@ -10,5 +10,8 @@ const seemlesschex_validate_1 = __importDefault(require("../../middleware/valida
 const router = (0, express_1.Router)();
 router.post('/createCheck', authorize_middleware_1.default.validateAuth, seemlesschex_validate_1.default.createCheck, seemlesschex_controller_1.default.createCheck);
 router.post('/createPaymentLink', seemlesschex_validate_1.default.createPaymentLink, seemlesschex_controller_1.default.createPaymentLink);
+router.post('/updateCheck/:id', authorize_middleware_1.default.validateAuth, seemlesschex_validate_1.default.updateCheck, seemlesschex_controller_1.default.updateCheck);
+router.post('/voidCheck/:id', authorize_middleware_1.default.validateAuth, seemlesschex_validate_1.default.voidCheck, seemlesschex_controller_1.default.voidCheck);
+router.get('/getClientChecks/:id', authorize_middleware_1.default.validateAuth, seemlesschex_controller_1.default.getClientChecks);
 exports.default = router;
 //# sourceMappingURL=seemlesschex.route.js.map

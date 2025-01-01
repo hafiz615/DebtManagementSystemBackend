@@ -759,7 +759,7 @@ class PaymentService {
     if (!creditor) return [false, constants.notFoundMessage('creditor')];
 
     const data = req.body.data;
-    const paymentObj = decrypt(data, process.env.kryptaSecretKey);
+    const paymentObj = commonUtil.getDecryptedData(data);
     if (!creditor.paynoteUserId)
       return [false, 'User is not added in paynote!'];
     const fundingSource = await paynoteUtil.addFundingSource(
@@ -803,6 +803,7 @@ class PaymentService {
               'paynoteSourceId',
               'paynoteUserId',
               'basicInformation.fullName',
+              'businessInformation.companyName',
             ],
           },
           {path: 'debtor', select: ['_id', 'basicInformation.fullName']},
@@ -818,7 +819,7 @@ class PaymentService {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
     if (!payment.caseId?.creditor?.paynoteSourceId) {
-      return [false, 'Account not added for user'];
+      return [false, 'No verified account added for this user'];
     }
     if (!payment.caseId?.creditorPaymentsProceed) {
       return [false, 'Funds transfer for this creditor is paused'];

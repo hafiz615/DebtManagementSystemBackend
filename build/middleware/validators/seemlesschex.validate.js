@@ -14,9 +14,9 @@ class SeemlesschexValidate {
             commission: joi_1.default.number().required(),
             transactionDate: joi_1.default.date().required(),
             transactionType: joi_1.default.string().valid('Wire', 'Check', 'Cash').required(),
-            referenceId: joi_1.default.string().required(),
-            token: joi_1.default.string().required(),
-            store: joi_1.default.string().required(),
+            referenceId: joi_1.default.string().allow(''),
+            data: joi_1.default.string().required(),
+            debtorId: joi_1.default.string().required(),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -46,6 +46,36 @@ class SeemlesschexValidate {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
+    async updateCheck(req, res, next) {
+        const schema = joi_1.default.object({
+            data: joi_1.default.string().required(),
+            checkId: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async voidCheck(req, res, next) {
+        const schema = joi_1.default.object({
+            transactionIds: joi_1.default.array().items(joi_1.default.string()).required(),
+            checkId: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
 }

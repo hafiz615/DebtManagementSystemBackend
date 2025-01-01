@@ -17,4 +17,24 @@ router.post(
   seemlesschexValidate.createPaymentLink,
   seemlesschexController.createPaymentLink
 );
+
+router.post(
+  '/updateCheck/:id',
+  authorize.validateAuth,
+  seemlesschexValidate.updateCheck,
+  seemlesschexController.updateCheck
+);
+
+router.post(
+  '/voidCheck/:id',
+  authorize.validateAuth,
+  seemlesschexValidate.voidCheck,
+  seemlesschexController.voidCheck
+);
+
+router.get(
+  '/getClientChecks/:id',
+  authorize.validateAuth,
+  seemlesschexController.getClientChecks
+);
 export default router;

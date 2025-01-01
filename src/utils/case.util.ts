@@ -2279,10 +2279,6 @@ class CaseUtil {
           contentType: 'application/pdf',
         });
       }
-      // form.getLength((err, length) => {
-      //   if (err) return 'null';
-      //   return ''
-      // });
       console.log('I am in getExtractionMCA_AIBuffer');
       console.log('URL: ', url);
       console.log('Payload: ', form);
@@ -2293,7 +2289,6 @@ class CaseUtil {
           ...form.getHeaders(),
         },
       });
-      console.log('Response Data', response.data);
       return response.data.error ? response.data.error : response.data;
     } catch (error) {
       console.log(error);
