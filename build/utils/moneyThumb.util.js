@@ -100,7 +100,7 @@ class MoneyThumbUtil {
     }
     async convertPdf(token, debtorId, appId) {
         const debtor = await this.debtorRepository.getById(debtorId);
-        const documents = debtor.documents;
+        const documents = debtor.bankStatementDocuments;
         let url = `https://online.moneythumb.com/api/v${process.env.moneyThumbVersion}/makecsv`;
         try {
             for (const document of documents) {

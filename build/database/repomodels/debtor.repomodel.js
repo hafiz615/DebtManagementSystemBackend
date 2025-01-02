@@ -36,6 +36,9 @@ class Debtor {
         this.createdBy = '';
         this.contacts = Array();
         this.documents = Array();
+        this.mcaDocuments = Array();
+        this.bankStatementDocuments = Array();
+        this.otherDocuments = Array();
         this.extractedFields = [];
         this.totalCommission = 0;
         this.commissionPaid = 0;

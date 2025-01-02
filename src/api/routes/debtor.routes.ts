@@ -54,6 +54,7 @@ router.post(
 router.post(
   '/addDocumentsToDebtor/:id',
   authorize.validateAuth,
+  debtor.addDocumentsToDebtor,
   debtorController.addDocumentsToDebtor
 );
 router.get(
