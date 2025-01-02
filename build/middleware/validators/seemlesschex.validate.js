@@ -65,7 +65,6 @@ class SeemlesschexValidate {
     }
     async voidCheck(req, res, next) {
         const schema = joi_1.default.object({
-            transactionIds: joi_1.default.array().items(joi_1.default.string()).required(),
             checkId: joi_1.default.string().required(),
         });
         const { error } = schema.validate(req.body);

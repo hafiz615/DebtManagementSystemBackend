@@ -9,11 +9,16 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_1 = __importDefault(require("./constants.util"));
 const check_repomodel_1 = require("../database/repomodels/check.repomodel");
 const check_repository_1 = require("../api/repository/check/check.repository");
+const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const common_util_1 = __importDefault(require("./common.util"));
+const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 dotenv_1.default.config();
 class SeemlesschexUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.checkRepository = new check_repository_1.CheckRepository();
+        this.paymentRepository = new payment_repository_1.PaymentRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
     }
     async createCheck(debtor, amount, token, accountInfo) {
         if (!debtor?.basicInformation?.email)
@@ -120,11 +125,11 @@ class SeemlesschexUtil {
             return error?.response?.data;
         }
     }
-    async updateCheck(debtor, token, checkId) {
+    async updateCheck(debtor, token, checkId, accountInfo) {
         const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/edit`;
         var data = {
             check_id: checkId,
-            name: debtor.basicInformation?.fullName,
+            name: accountInfo.firstName + ' ' + accountInfo.lastName,
             email: debtor.basicInformation?.email,
             token: token,
             store: 'firstchoice.com',
@@ -245,6 +250,72 @@ class SeemlesschexUtil {
         catch (error) {
             return error?.response?.data;
         }
+    }
+    async updateCheckInfo(bv, fc, response, checkId) {
+        const data = {
+            status: response.check.status,
+            basicVerification: bv?.error ? 'Fail' : 'Pass',
+            fundsConfirmation: fc?.error ? 'Fail' : 'Pass',
+            bvReason: bv?.error ? bv.message : '',
+            fcReason: fc?.error ? fc.message : '',
+        };
+        await this.checkRepository.updateByOne({ checkId: checkId }, data);
+    }
+    async updateIfCheckDeleted(checkId, status) {
+        const foundCheck = await this.checkRepository.getOne({
+            checkId: checkId,
+            isDeleted: false,
+        });
+        if (!foundCheck)
+            return [true, ''];
+        await this.deleteCheckInfo(checkId);
+        await this.checkRepository.updateByOne({ checkId: checkId }, { status: status });
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
+            authorized: 'Pending',
+            captured: 'Pending',
+            status: 'Upcoming',
+            debtorTransId: '',
+            transactionType: '',
+            manualCommission: 0,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return [true, ''];
+    }
+    async updateIfCheckDeposited(checkId, status) {
+        const foundCheck = await this.checkRepository.getOne({
+            checkId: checkId,
+            isDeleted: false,
+        });
+        if (!foundCheck)
+            return [true, ''];
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
+        });
+        await this.checkRepository.updateByOne({ checkId: checkId }, { status: status });
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
+            authorized: 'Success',
+            captured: 'Success',
+            status: 'Pending',
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        await this.debtorRepository.updateById(foundCheck.debtorId, {
+            $inc: { commissionPaid: payment.manualCommission },
+        });
+        return [true, ''];
+    }
+    async updateIfCheckFailed(checkId, status) {
+        const foundCheck = await this.checkRepository.getOne({
+            checkId: checkId,
+            isDeleted: false,
+        });
+        if (!foundCheck)
+            return [true, ''];
+        await this.checkRepository.updateByOne({ checkId: checkId }, { status: status });
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
+            captured: 'Failed',
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return [true, ''];
     }
 }
 exports.default = new SeemlesschexUtil();

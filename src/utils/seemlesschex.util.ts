@@ -8,14 +8,22 @@ import {IDebtor} from '../database/interfaces/debtor.interface';
 import {Check} from '../database/repomodels/check.repomodel';
 import {CheckRepository} from '../api/repository/check/check.repository';
 import {ICheck} from '../database/interfaces/check.interface';
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+import {IPayment} from '../database/interfaces/payment.interface';
+import commonUtil from './common.util';
+import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 dotenv.config();
 
 class SeemlesschexUtil {
   private creditorRepository: CreditorRepository;
   private checkRepository: CheckRepository;
+  private paymentRepository: PaymentRepository;
+  private debtorRepository: DebtorRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.checkRepository = new CheckRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.debtorRepository = new DebtorRepository();
   }
   async createCheck(
     debtor: IDebtor,
@@ -129,11 +137,16 @@ class SeemlesschexUtil {
     }
   }
 
-  async updateCheck(debtor: IDebtor, token: string, checkId: string) {
+  async updateCheck(
+    debtor: IDebtor,
+    token: string,
+    checkId: string,
+    accountInfo: any
+  ) {
     const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/edit`;
     var data = {
       check_id: checkId,
-      name: debtor.basicInformation?.fullName,
+      name: accountInfo.firstName + ' ' + accountInfo.lastName,
       email: debtor.basicInformation?.email,
       token: token,
       store: 'firstchoice.com',
@@ -263,6 +276,92 @@ class SeemlesschexUtil {
     } catch (error) {
       return error?.response?.data;
     }
+  }
+
+  async updateCheckInfo(bv: any, fc: any, response: any, checkId: string) {
+    const data = {
+      status: response.check.status,
+      basicVerification: bv?.error ? 'Fail' : 'Pass',
+      fundsConfirmation: fc?.error ? 'Fail' : 'Pass',
+      bvReason: bv?.error ? bv.message : '',
+      fcReason: fc?.error ? fc.message : '',
+    };
+
+    await this.checkRepository.updateByOne<ICheck>({checkId: checkId}, data);
+  }
+
+  async updateIfCheckDeleted(checkId: string, status: string) {
+    const foundCheck = await this.checkRepository.getOne<ICheck>({
+      checkId: checkId,
+      isDeleted: false,
+    });
+    if (!foundCheck) return [true, ''];
+    await this.deleteCheckInfo(checkId);
+    await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId},
+      {status: status}
+    );
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      {
+        authorized: 'Pending',
+        captured: 'Pending',
+        status: 'Upcoming',
+        debtorTransId: '',
+        transactionType: '',
+        manualCommission: 0,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    return [true, ''];
+  }
+
+  async updateIfCheckDeposited(checkId: string, status: string) {
+    const foundCheck = await this.checkRepository.getOne<ICheck>({
+      checkId: checkId,
+      isDeleted: false,
+    });
+    if (!foundCheck) return [true, ''];
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: checkId,
+    });
+    await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId},
+      {status: status}
+    );
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      {
+        authorized: 'Success',
+        captured: 'Success',
+        status: 'Pending',
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    await this.debtorRepository.updateById<IDebtor>(foundCheck.debtorId, {
+      $inc: {commissionPaid: payment.manualCommission},
+    });
+    return [true, ''];
+  }
+
+  async updateIfCheckFailed(checkId: string, status: string) {
+    const foundCheck = await this.checkRepository.getOne<ICheck>({
+      checkId: checkId,
+      isDeleted: false,
+    });
+    if (!foundCheck) return [true, ''];
+    await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId},
+      {status: status}
+    );
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      {
+        captured: 'Failed',
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    return [true, ''];
   }
 }
 
