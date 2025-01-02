@@ -173,10 +173,10 @@ router.get(
 );
 
 router.post(
-  '/revertManualPayments/:id',
+  '/revertPayments/:id',
   authorize.validateAuth,
-  debtor.revertManualPayment,
-  debtorController.revertManualPayments
+  debtor.revertPayment,
+  debtorController.revertPayments
 );
 
 router.post(

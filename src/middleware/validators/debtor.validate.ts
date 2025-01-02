@@ -353,7 +353,7 @@ class DebtorRequests {
     }
   }
 
-  async revertManualPayment(req: Request, res: Response, next: NextFunction) {
+  async revertPayment(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       commission: Joi.number().required(),
       referenceId: Joi.string().required(),

@@ -1134,22 +1134,16 @@ class DebtorService {
         }, {});
         return [true, groupedByTransId];
     }
-    async revertManualPayments(req) {
+    async revertPayments(req) {
         let debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         let manualPayment = await this.paymentRepository.getOne({
-            transactionType: 'Wire',
             debtorId: req.params.id,
             debtorTransId: req.body.referenceId,
         });
-        if (manualPayment) {
-            if (manualPayment.manualCommission !== req.body.commission)
-                return [false, 'Commission is not correct'];
-        }
         let result = await this.paymentRepository.updateMany({
-            transactionType: 'Wire',
             debtorId: req.params.id,
             debtorTransId: req.body.referenceId,
         }, {
@@ -1162,17 +1156,16 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!result) {
-            return [false, 'Could not revert bounce payments'];
+            return [false, 'Could not revert payments'];
         }
-        if (result.modifiedCount && manualPayment) {
-            let updatedDebtor = await this.debtorRepository.updateById(req.params.id, {
+        if (result.modifiedCount &&
+            (manualPayment.transactionType === 'Wire' ||
+                manualPayment.transactionType === 'Check')) {
+            await this.debtorRepository.updateById(req.params.id, {
                 $inc: { commissionPaid: -req.body.commission },
             });
-            if (!updatedDebtor) {
-                return [false, 'Could not revert bounce payments'];
-            }
         }
-        return [true, 'Bounce payments revert successfully'];
+        return [true, 'Payments reverted successfully'];
     }
     async getExtractFieldsAndDebtor(req) {
         const reqTemp = req;
