@@ -25,7 +25,7 @@ router.post(
   seemlesschexController.updateCheck
 );
 
-router.post(
+router.delete(
   '/voidCheck/:id',
   authorize.validateAuth,
   seemlesschexValidate.voidCheck,
@@ -37,4 +37,6 @@ router.get(
   authorize.validateAuth,
   seemlesschexController.getClientChecks
 );
+
+router.post('/statusChanged', seemlesschexController.statusChanged);
 export default router;

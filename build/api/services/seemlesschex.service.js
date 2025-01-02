@@ -9,11 +9,13 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const seemlesschex_util_1 = __importDefault(require("../../utils/seemlesschex.util"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
+const check_repository_1 = require("../repository/check/check.repository");
 dotenv_1.default.config();
 class SeemlesschexService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.checkRepository = new check_repository_1.CheckRepository();
     }
     async createCheck(req) {
         const debtor = await this.debtorRepository.getById(req.body.debtorId);
@@ -34,7 +36,7 @@ class SeemlesschexService {
         if (fc?.error || bv?.error)
             authorized = 'Failed';
         await seemlesschex_util_1.default.saveCheckInfo(bv, fc, response, req.body.debtorId);
-        let updatedPayment = await this.paymentRepository.updateMany({ _id: transactionIds }, {
+        await this.paymentRepository.updateMany({ _id: transactionIds }, {
             authorized: authorized,
             captured: 'Pending',
             status: 'Pending',
@@ -44,11 +46,6 @@ class SeemlesschexService {
             dueDate: transactionDate,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        if (updatedPayment.modifiedCount) {
-            await this.debtorRepository.updateById(req.body.debtorId, {
-                $inc: { commissionPaid: req.body.commission },
-            });
-        }
         return [true, response.check];
     }
     async createPaymentLink(req) {
@@ -65,26 +62,25 @@ class SeemlesschexService {
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         const { data, checkId } = req.body;
-        const foundCheck = await this.paymentRepository.getOne({
-            debtorTransId: checkId,
+        const foundCheck = await this.checkRepository.getOne({
+            checkId: checkId,
+            isDeleted: false,
         });
-        if (foundCheck)
-            return [false, constants_util_1.default.alreadyExistsMessage('Reference id')];
+        if (!foundCheck)
+            return [false, constants_util_1.default.notFoundMessage('check')];
         const decryptedData = common_util_1.default.getDecryptedData(data);
         const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
         if (tokenResponse?.error)
             return [false, tokenResponse.message];
-        const response = await seemlesschex_util_1.default.updateCheck(debtor, tokenResponse.tokenization.token, checkId);
+        const response = await seemlesschex_util_1.default.updateCheck(debtor, tokenResponse.tokenization.token, checkId, decryptedData);
         if (response?.error)
             return [false, response.message];
         const bv = await seemlesschex_util_1.default.checkBasicVerification(response);
         const fc = await seemlesschex_util_1.default.checkFundsVerification(response);
-        console.log(fc, 'fcccc');
-        console.log(bv, 'bvvvvv');
         let authorized = 'Success';
-        if (bv?.erorr || fc?.error)
+        if (bv?.error || fc?.error)
             authorized = 'Failed';
-        await seemlesschex_util_1.default.saveCheckInfo(bv, fc, response, req.params.id);
+        await seemlesschex_util_1.default.updateCheckInfo(bv, fc, response, checkId);
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             authorized: authorized,
             updatedAt: common_util_1.default.getCurrentDate(),
@@ -95,17 +91,18 @@ class SeemlesschexService {
         const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
-        const { checkId, transactionIds } = req.body;
-        const foundCheck = await this.paymentRepository.getOne({
-            debtorTransId: checkId,
+        const { checkId } = req.body;
+        const foundCheck = await this.checkRepository.getOne({
+            checkId: checkId,
+            isDeleted: false,
         });
-        if (foundCheck)
-            return [false, constants_util_1.default.alreadyExistsMessage('Reference id')];
+        if (!foundCheck)
+            return [false, constants_util_1.default.notFoundMessage('check')];
         const response = await seemlesschex_util_1.default.voidCheck(checkId);
         if (response?.error)
             return [false, response.message];
         await seemlesschex_util_1.default.deleteCheckInfo(checkId);
-        let updatedPayment = await this.paymentRepository.updateMany({ _id: transactionIds }, {
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             authorized: 'Pending',
             captured: 'Pending',
             status: 'Upcoming',
@@ -114,12 +111,7 @@ class SeemlesschexService {
             manualCommission: 0,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        if (updatedPayment.modifiedCount) {
-            await this.debtorRepository.updateById(req.params.id, {
-                $inc: { commissionPaid: -req.body.commission },
-            });
-        }
-        return [true, response.check];
+        return [true, []];
     }
     async getClientChecks(req) {
         let debtor = await this.debtorRepository.getById(req.params.id);
@@ -145,6 +137,29 @@ class SeemlesschexService {
             groupedByTransId[key] = { payments: value, checkInfo };
         }
         return [true, groupedByTransId];
+    }
+    async statusChanged(req) {
+        const response = req.body;
+        const checkId = response.data.check_id;
+        switch (response.event) {
+            case 'check.changed':
+                switch (response.data.status) {
+                    case 'void':
+                        await seemlesschex_util_1.default.updateIfCheckDeleted(checkId, response.data.status);
+                        break;
+                    case 'deposited':
+                        await seemlesschex_util_1.default.updateIfCheckDeposited(checkId, response.data.status);
+                        break;
+                    case 'failed':
+                        await seemlesschex_util_1.default.updateIfCheckFailed(checkId, response.data.status);
+                        break;
+                }
+                break;
+            case 'check.deleted':
+                await seemlesschex_util_1.default.updateIfCheckDeleted(checkId, response.data.status);
+                break;
+        }
+        return [true, ''];
     }
 }
 exports.default = SeemlesschexService;

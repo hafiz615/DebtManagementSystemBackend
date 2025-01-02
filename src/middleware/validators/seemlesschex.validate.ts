@@ -72,7 +72,6 @@ class SeemlesschexValidate {
 
   async voidCheck(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
-      transactionIds: Joi.array().items(Joi.string()).required(),
       checkId: Joi.string().required(),
     });
 
