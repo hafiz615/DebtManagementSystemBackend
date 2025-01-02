@@ -183,7 +183,7 @@ class App {
     bulkUploadCronjob.startCronJob();
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
-    paymentCronjob.startCronJob();
+    // paymentCronjob.startCronJob();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
     // paymentCronjob.testPaynote();
