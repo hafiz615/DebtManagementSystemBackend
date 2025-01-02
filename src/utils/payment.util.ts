@@ -31,6 +31,7 @@ class PaymentUtil {
       tryDate: obj.rescheduled,
       caseId: obj?.caseId?._id ? String(obj.caseId._id) : '',
       transactionType: obj.transactionType ? obj.transactionType : '',
+      transactionId: obj.debtorTransId,
     }));
 
     return this.getFilteredPaymentsObj(transformedArray, arrayName);

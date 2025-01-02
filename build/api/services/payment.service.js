@@ -471,13 +471,19 @@ class PaymentService {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
             isDeleted: false,
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: {
-                path: 'debtor',
-                select: ['basicInformation.fullName', 'basicInformation.SSID'],
-            },
+            populate: [
+                {
+                    path: 'debtor',
+                    select: ['basicInformation.fullName', 'basicInformation.SSID'],
+                },
+                {
+                    path: 'creditor',
+                    select: ['basicInformation.fullName'],
+                },
+            ],
         });
     }
     async getAllCommissionPayments() {
@@ -746,6 +752,15 @@ class PaymentService {
         if (!updateDebtor || !updatePayments)
             return [false, 'Failed to cancel payment plan'];
         return [true, 'Payment plan canceled successfully'];
+    }
+    async getRelatedPayments(req) {
+        let payments = await this.paymentRepository.getAllWithoutPagination({
+            debtorTransId: req.params.id,
+        }, undefined, undefined, { _id: -1 });
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('payments')];
+        }
+        return [true, payments];
     }
 }
 exports.default = PaymentService;

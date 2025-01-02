@@ -19,5 +19,6 @@ router.get('/sendPaymentPaynote/:id', authorize_middleware_1.default.validateAut
 router.get('/cancelCasePaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelCasePaymentPlan);
 router.get('/cancelDebtorPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelDebtorPaymentPlan);
 router.get('/getCommissionPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCommissionPayments);
+router.get('/getRelatedPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getRelatedPayments);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map
