@@ -71,4 +71,10 @@ router.get(
   authorize.validateAuth,
   paymentController.getCommissionPayments
 );
+
+router.get(
+  '/getRelatedPayments/:id',
+  authorize.validateAuth,
+  paymentController.getRelatedPayments
+);
 export default router;

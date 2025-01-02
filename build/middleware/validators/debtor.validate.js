@@ -329,7 +329,7 @@ class DebtorRequests {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
-    async revertManualPayment(req, res, next) {
+    async revertPayment(req, res, next) {
         const schema = joi_1.default.object({
             commission: joi_1.default.number().required(),
             referenceId: joi_1.default.string().required(),
