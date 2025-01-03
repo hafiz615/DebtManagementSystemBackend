@@ -34,6 +34,7 @@ class Payment {
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
         this.transactionType = '';
+        this.paymentGateway = '';
         this.manualCommission = 0;
     }
 }

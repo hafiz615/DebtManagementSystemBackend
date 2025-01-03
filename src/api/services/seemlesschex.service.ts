@@ -65,6 +65,7 @@ class SeemlesschexService {
         transactionType: transactionType,
         manualCommission: commission,
         dueDate: transactionDate,
+        paymentGateway: 'Seemlesschex',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
@@ -141,6 +142,7 @@ class SeemlesschexService {
         debtorTransId: '',
         transactionType: '',
         manualCommission: 0,
+        paymentGateway: '',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );

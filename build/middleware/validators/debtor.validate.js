@@ -273,7 +273,9 @@ class DebtorRequests {
             const schema = joi_1.default.object({
                 paymentType: joi_1.default.string().required(),
                 paymentToken: joi_1.default.string().required(),
-                platform: joi_1.default.string().valid('Easypay direct', 'Seamlesschex').required(),
+                platform: joi_1.default.string()
+                    .valid('Easypay direct', 'Seamlesschex merchant')
+                    .required(),
             });
             const { error } = schema.validate(req.body);
             if (!error) {
@@ -369,7 +371,7 @@ class DebtorRequests {
             otherDocuments: joi_1.default.array().items(joi_1.default.object({
                 key: joi_1.default.string().required(),
                 originalFileName: joi_1.default.string().required(),
-            }).optional())
+            }).optional()),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

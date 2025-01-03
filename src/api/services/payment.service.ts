@@ -106,7 +106,8 @@ class PaymentService {
     }
     const successPayments = structuredClone(paymentsObj.successPayments);
     for (const payment of successPayments) {
-      payment.transactionType = 'Paynote';
+      payment.transactionType = 'ACH';
+      payment.paymentGateway = 'Paynote';
     }
     paymentsObj.successPayments = successPayments;
     return [

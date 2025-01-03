@@ -10,7 +10,7 @@ var responseName;
 var paymentPlatform;
 (function (paymentPlatform) {
     paymentPlatform["easypay"] = "Easypay direct";
-    paymentPlatform["seamlesschex"] = "Seamlesschex";
+    paymentPlatform["seamlesschexMerchant"] = "Seamlesschex merchant";
 })(paymentPlatform || (exports.paymentPlatform = paymentPlatform = {}));
 var permissions;
 (function (permissions) {
