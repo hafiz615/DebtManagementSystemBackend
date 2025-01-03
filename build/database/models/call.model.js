@@ -38,6 +38,7 @@ const callSchema = new mongoose_1.Schema({
     callTo: { type: String },
     callFrom: { type: String },
     callStartTime: { type: Date },
+    callDirection: { type: String },
     callDuration: { type: String },
     callStatus: { type: String },
     callRecordingSid: { type: String },

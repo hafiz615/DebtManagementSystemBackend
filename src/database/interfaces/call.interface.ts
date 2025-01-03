@@ -8,6 +8,7 @@ export interface ICall extends Document {
     callTo: string;
     callFrom: string;
     callStartTime: string;
+    callDirection: string;
     callDuration: string ;
     callStatus: string;
     callRecordingSid: string;

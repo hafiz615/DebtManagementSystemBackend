@@ -255,6 +255,43 @@ class CaseService {
     return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
   }
 
+
+  getAllUserCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
+    const reqTemp: any = req;
+    try {
+        const findCases:ICase[] = await this.caseRepository.getAllWithoutPagination<ICase>(
+            { caseOwnerId: reqTemp.id }, // Filter by caseOwnerId
+            undefined, // No projection on the main document
+            undefined, 
+            undefined,// Sorting not required here
+            {
+                path: 'debtor', // Populate the 'debtor' field
+                select: ['basicInformation.fullName'], // Include only 'fullName' from debtor
+            }
+        );
+        const result = findCases.reduce(
+          (acc, caseItem:any) => {
+              const debtorFullName = caseItem.debtor?.basicInformation?.fullName || 'Unknown';
+              if (!acc?.some((item) => item.debtorFullName === debtorFullName)) {
+                  acc.push({
+                      caseId: caseItem._id, 
+                      debtorFullName,       
+                  });
+              }
+      
+              return acc;
+          },
+          []
+      );
+      
+        return [true, result];
+    } catch (error) {
+        console.error("Error fetching user cases:", error);
+        return [false, "Error fetching user cases"];
+    }
+};
+
+
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
