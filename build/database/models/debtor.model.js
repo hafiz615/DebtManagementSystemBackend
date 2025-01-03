@@ -110,6 +110,15 @@ const debtorSchema = new mongoose_1.Schema({
     documents: {
         type: (Array),
     },
+    mcaDocuments: {
+        type: (Array),
+    },
+    bankStatementDocuments: {
+        type: (Array),
+    },
+    otherDocuments: {
+        type: (Array),
+    },
     accounts: {
         type: (Array),
     },

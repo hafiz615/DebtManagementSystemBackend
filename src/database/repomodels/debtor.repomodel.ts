@@ -40,6 +40,9 @@ export class Debtor {
     // zipCode: '';
   }>();
   documents = Array<{key: ''; originalFileName: ''; url: ''}>();
+  mcaDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
+  bankStatementDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
+  otherDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
   extractedFields = [];
   totalCommission = 0;
   commissionPaid = 0;

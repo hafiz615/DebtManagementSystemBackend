@@ -2186,7 +2186,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const creditorNames = await this.getCreditorNamesAI(
-      debtor.documents,
+      debtor.mcaDocuments,
       AIAuth.auth_token,
       debtor.businessInformation.companyName,
       debtor._id,
@@ -2206,7 +2206,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const extractedFields = await this.getExtractionMCA_AI(
-      debtor.documents,
+      debtor.mcaDocuments,
       AIAuth.auth_token
     );
     return extractedFields;

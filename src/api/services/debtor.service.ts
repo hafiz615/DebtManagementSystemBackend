@@ -772,9 +772,6 @@ class DebtorService {
   }
 
   async addDocumentsToDebtor(req: Request) {
-    if (!req.body.documents) {
-      return [false, 'Documents are missing'];
-    }
     // if (!req.body.extractedFields) {
     //   return [false, 'Extracted fields are missing'];
     // }
@@ -791,8 +788,14 @@ class DebtorService {
       caseTemp.debtor._id,
       {
         $push: {
-          documents: {
-            $each: req.body.documents,
+          mcaDocuments: {
+            $each: req.body.mcaDocuments,
+          },
+          bankStatementDocuments: {
+            $each: req.body.bankStatementDocuments,
+          },
+          otherDocuments: {
+            $each: req.body.otherDocuments,
           },
         },
         updatedAt: commonUtil.getCurrentDate(),

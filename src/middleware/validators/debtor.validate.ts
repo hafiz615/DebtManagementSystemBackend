@@ -6,7 +6,7 @@ import Joi from 'joi';
 
 dotenv.config();
 class DebtorRequests {
-  validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
+    validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
       paymentToken: Joi.string().optional().allow(''),
       paymentType: Joi.string().optional().allow(''),
@@ -71,6 +71,24 @@ class DebtorRequests {
   createDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
       documents: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
         Joi.object({
           key: Joi.string().required(),
           originalFileName: Joi.string().required(),
@@ -145,6 +163,24 @@ class DebtorRequests {
   ) => {
     const schema = Joi.object({
       documents: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
         Joi.object({
           key: Joi.string().required(),
           originalFileName: Joi.string().required(),
@@ -393,6 +429,40 @@ class DebtorRequests {
         );
     }
   };
+
+  async addDocumentsToDebtor(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({  
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      )})
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
 }
 
 export default new DebtorRequests();
