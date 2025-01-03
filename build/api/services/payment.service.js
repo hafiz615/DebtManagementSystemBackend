@@ -760,7 +760,14 @@ class PaymentService {
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('payments')];
         }
-        return [true, payments];
+        const groupedByTransId = payments.reduce((acc, item) => {
+            if (!acc[item.debtorTransId]) {
+                acc[item.debtorTransId] = [];
+            }
+            acc[item.debtorTransId].push(item);
+            return acc;
+        }, {});
+        return [true, groupedByTransId];
     }
 }
 exports.default = PaymentService;

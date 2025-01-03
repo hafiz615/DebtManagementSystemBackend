@@ -978,7 +978,15 @@ class PaymentService {
       return [false, constants.notFoundMessage('payments')];
     }
 
-    return [true, payments];
+    const groupedByTransId = payments.reduce((acc, item) => {
+      if (!acc[item.debtorTransId]) {
+        acc[item.debtorTransId] = [];
+      }
+      acc[item.debtorTransId].push(item);
+      return acc;
+    }, {});
+
+    return [true, groupedByTransId];
   }
 }
 
