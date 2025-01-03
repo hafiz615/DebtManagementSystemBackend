@@ -168,6 +168,24 @@ class DebtorRequests {
           originalFileName: Joi.string().required(),
         }).optional()
       ),
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
       extractedFields: Joi.array().allow(null).optional(),

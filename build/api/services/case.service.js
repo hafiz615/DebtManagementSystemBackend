@@ -88,7 +88,7 @@ class CaseService {
             const documentFields = ['mcaDocuments', 'bankStatementDocuments', 'otherDocuments'];
             for (const field of documentFields) {
                 const documents = findCase.debtor?.[field]; // Access documents dynamically
-                if (!documents)
+                if (!documents.length)
                     continue;
                 for (const doc of documents) {
                     const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);

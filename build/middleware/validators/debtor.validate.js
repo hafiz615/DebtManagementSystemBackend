@@ -148,6 +148,18 @@ class DebtorRequests {
                     key: joi_1.default.string().required(),
                     originalFileName: joi_1.default.string().required(),
                 }).optional()),
+                mcaDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                bankStatementDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                otherDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
                 extractedFields: joi_1.default.array().allow(null).optional(),
