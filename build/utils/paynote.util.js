@@ -326,17 +326,20 @@ class PaynoteUtil {
         const allCreditors = await this.creditorRepository.getAllWithoutPagination();
         const creditorEmails = allCreditors
             .filter(creditor => creditor.basicInformation.email) // Filter creditors with an email
-            .map(creditor => creditor.basicInformation.email);
+            .map(creditor => creditor.basicInformation.email.toLowerCase());
         const result = await this.getAllCustomerDetails(page, limit);
         if (result?.error) {
+            console.log(result?.error, 'result?.error 1');
             return;
         }
         await this.processAllUsersResult(result.list.data, creditorEmails);
+        console.log(result.list.last_page, 'result.list.last_page');
         const lastPage = result.list.last_page;
         if (lastPage > page) {
             for (let i = page + 1; i <= lastPage; i++) {
                 const result = await this.getAllCustomerDetails(i, limit);
                 if (result?.error) {
+                    console.log(result?.error, 'result?.error processAllUsersResult 2');
                     break;
                 }
                 await this.processAllUsersResult(result.list.data, creditorEmails);
@@ -347,7 +350,8 @@ class PaynoteUtil {
         let update = {};
         for (const user of users) {
             update = { paynoteUserId: '', paynoteSourceId: '' };
-            if (creditorEmails.includes(user.email)) {
+            const email = user.email.toLowerCase();
+            if (creditorEmails.includes(email)) {
                 update['paynoteUserFound'] = true;
                 update['paynoteUserId'] = user.user_id;
                 let sourceVerified = false;
@@ -360,11 +364,13 @@ class PaynoteUtil {
                 }
                 update['paynoteSourceVerified'] = sourceVerified;
             }
-            if (!creditorEmails.includes(user.email)) {
+            if (!creditorEmails.includes(email)) {
                 update['paynoteUserFound'] = false;
                 update['paynoteSourceVerified'] = false;
             }
-            this.creditorRepository.updateByOne({ 'basicInformation.email': user.email }, update);
+            this.creditorRepository.updateByOne({ 'basicInformation.email': email }, update);
+            console.log(email, 'user.email');
+            console.log(update, 'update');
             update = {};
         }
     }
