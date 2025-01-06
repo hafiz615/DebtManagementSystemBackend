@@ -6,7 +6,7 @@ import Joi from 'joi';
 
 dotenv.config();
 class DebtorRequests {
-    validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
+  validateDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
       paymentToken: Joi.string().optional().allow(''),
       paymentType: Joi.string().optional().allow(''),
@@ -321,7 +321,9 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentType: Joi.string().required(),
       paymentToken: Joi.string().required(),
-      platform: Joi.string().valid('Easypay direct', 'Seamlesschex').required(),
+      platform: Joi.string()
+        .valid('Easypay direct', 'Seamlesschex merchant')
+        .required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -431,7 +433,7 @@ class DebtorRequests {
   };
 
   async addDocumentsToDebtor(req: Request, res: Response, next: NextFunction) {
-    const schema = Joi.object({  
+    const schema = Joi.object({
       mcaDocuments: Joi.array().items(
         Joi.object({
           key: Joi.string().required(),
@@ -449,7 +451,8 @@ class DebtorRequests {
           key: Joi.string().required(),
           originalFileName: Joi.string().required(),
         }).optional()
-      )})
+      ),
+    });
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

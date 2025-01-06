@@ -31,7 +31,7 @@ class SeemlesschexUtil {
                 error: true,
                 message: constants_util_1.default.notFoundMessage('debtor phone'),
             };
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/create`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/create`;
         var data = {
             name: accountInfo.firstName + ' ' + accountInfo.lastName,
             email: debtor.basicInformation?.email,
@@ -49,7 +49,7 @@ class SeemlesschexUtil {
         try {
             const response = await axiosInstanceInterceptor_1.default.post(apiUrl, data, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -61,14 +61,14 @@ class SeemlesschexUtil {
         }
     }
     async getCheck(checkId) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/${checkId}`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/${checkId}`;
         console.log('I am in getCheck');
         console.log('URL: ', apiUrl);
         console.log('Payload: ', {});
         try {
             const response = await axiosInstanceInterceptor_1.default.get(apiUrl, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -103,7 +103,7 @@ class SeemlesschexUtil {
         }
     }
     async createPaymentLink(amount) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/create`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/paymentlink/create`;
         var data = {
             amount: amount,
             basic_verification: true,
@@ -115,7 +115,7 @@ class SeemlesschexUtil {
         try {
             const response = await axiosInstanceInterceptor_1.default.post(apiUrl, data, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -126,7 +126,7 @@ class SeemlesschexUtil {
         }
     }
     async updateCheck(debtor, token, checkId, accountInfo) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/edit`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/edit`;
         var data = {
             check_id: checkId,
             name: accountInfo.firstName + ' ' + accountInfo.lastName,
@@ -142,7 +142,7 @@ class SeemlesschexUtil {
         try {
             const response = await axiosInstanceInterceptor_1.default.post(apiUrl, data, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -154,14 +154,14 @@ class SeemlesschexUtil {
         }
     }
     async voidCheck(checkId) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/${checkId}`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/${checkId}`;
         console.log('I am in voidCheck');
         console.log('URL: ', apiUrl);
         console.log('Payload: ', {});
         try {
             const response = await axiosInstanceInterceptor_1.default.delete(apiUrl, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -172,14 +172,14 @@ class SeemlesschexUtil {
         }
     }
     async changePaymentLinkStatus(checkoutToken) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/changestatus/${checkoutToken}`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/paymentlink/changestatus/${checkoutToken}`;
         console.log('I am in changePaymentLinkStatus');
         console.log('URL: ', apiUrl);
         console.log('Payload: ', {});
         try {
             const response = await axiosInstanceInterceptor_1.default.post(apiUrl, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -190,14 +190,14 @@ class SeemlesschexUtil {
         }
     }
     async deletePaymentLink(checkoutToken) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/${checkoutToken}`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/paymentlink/${checkoutToken}`;
         console.log('I am in deletePaymentLink');
         console.log('URL: ', apiUrl);
         console.log('Payload: ', {});
         try {
             const response = await axiosInstanceInterceptor_1.default.delete(apiUrl, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -227,7 +227,7 @@ class SeemlesschexUtil {
         return await this.checkRepository.getOne({ checkId: checkId }, { isDeleted: false });
     }
     async tokenization(accountInfoObject) {
-        const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/account/tokenization`;
+        const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/account/tokenization`;
         const data = {
             first_name: accountInfoObject.firstName,
             last_name: accountInfoObject.lastName,
@@ -241,7 +241,7 @@ class SeemlesschexUtil {
         try {
             const response = await axiosInstanceInterceptor_1.default.post(apiUrl, data, {
                 headers: {
-                    Authorization: process.env.seamlessKey,
+                    Authorization: process.env.seamlesschexKey,
                     'Content-Type': 'application/json',
                 },
             });
@@ -276,6 +276,7 @@ class SeemlesschexUtil {
             status: 'Upcoming',
             debtorTransId: '',
             transactionType: '',
+            paymentGateway: '',
             manualCommission: 0,
             updatedAt: common_util_1.default.getCurrentDate(),
         });

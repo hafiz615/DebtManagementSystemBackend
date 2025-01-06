@@ -1087,6 +1087,7 @@ class DebtorService {
             dueDate: req.body.transactionDate,
             debtorTransId: req.body.referenceId,
             transactionType: req.body.transactionType,
+            paymentGateway: 'Manual',
             manualCommission: req.body.commission,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
@@ -1156,6 +1157,7 @@ class DebtorService {
             debtorTransId: '',
             transactionType: '',
             manualCommission: 0,
+            paymentGateway: '',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!result) {

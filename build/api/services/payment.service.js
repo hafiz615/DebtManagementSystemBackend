@@ -71,7 +71,8 @@ class PaymentService {
         }
         const successPayments = structuredClone(paymentsObj.successPayments);
         for (const payment of successPayments) {
-            payment.transactionType = 'Paynote';
+            payment.transactionType = 'ACH';
+            payment.paymentGateway = 'Paynote';
         }
         paymentsObj.successPayments = successPayments;
         return [
@@ -290,7 +291,7 @@ class PaymentService {
         return Array.from(uniqueObjects.values());
     }
     async getAllPaymentsQuery(filters, page, limit) {
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: {
@@ -471,7 +472,7 @@ class PaymentService {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
             isDeleted: false,
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId', undefined, { createdAt: -1 }, {
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [

@@ -2307,9 +2307,9 @@ class CaseUtil {
                 securityKey = process.env.easypaySecurityKey;
                 url = process.env.easypayUrl;
                 break;
-            case enums_1.paymentPlatform.seamlesschex:
-                securityKey = process.env.seamlesschexSecurityKey;
-                url = process.env.seamlesschexUrl;
+            case enums_1.paymentPlatform.seamlesschexMerchant:
+                securityKey = process.env.seamlesschexMerchantSecurityKey;
+                url = process.env.seamlesschexMerchantUrl;
                 break;
         }
         return { securityKey, url };

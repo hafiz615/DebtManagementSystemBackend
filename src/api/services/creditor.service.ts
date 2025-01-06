@@ -235,10 +235,10 @@ class CreditorService {
   }
 
   async createVault(paymentToken: string, id: string, paymentType: string) {
-    const url = process.env.seamlesschexUrl;
+    const url = process.env.seamlesschexMerchantUrl;
     const params = {
       customer_vault: 'add_customer',
-      security_key: process.env.seamlesschexSecurityKey,
+      security_key: process.env.seamlesschexMerchantSecurityKey,
       payment_token: paymentToken,
     };
     const response = await axiosInstance.get(url, {params});

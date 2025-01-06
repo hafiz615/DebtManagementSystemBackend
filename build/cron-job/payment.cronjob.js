@@ -1033,7 +1033,8 @@ class CronJob {
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
         const updateObjPayment = {};
-        updateObjPayment['transactionType'] = platform;
+        updateObjPayment['transactionType'] = 'CC';
+        updateObjPayment['paymentGateway'] = platform;
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
@@ -1202,7 +1203,8 @@ class CronJob {
         const responseNum = new url_1.URLSearchParams(response).get('response');
         const responseText = new url_1.URLSearchParams(response).get('responsetext');
         const updateObjPayment = {};
-        updateObjPayment['transactionType'] = platform;
+        updateObjPayment['paymentGateway'] = platform;
+        updateObjPayment['transactionType'] = type === 'cc' ? 'CC' : 'ACH';
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
