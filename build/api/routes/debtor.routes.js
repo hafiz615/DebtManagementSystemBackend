@@ -45,7 +45,13 @@ router.post('/addManualPayment', authorize_middleware_1.default.validateAuth, de
 router.put('/updateWeeklyBudget/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateWeeklyBudget, debtor_controller_1.default.updateWeeklyBudget);
 router.get('/getManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getManualPayments);
 router.post('/revertPayments/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.revertPayment, debtor_controller_1.default.revertPayments);
-router.post('/get-extracted-data', upload.array('files'), debtor_controller_1.default.getExtractFieldsAndDebtor);
+// To Pass the Different Files in the Extracted Data
+const uploadFields = upload.fields([
+    { name: 'mcaDocuments' },
+    { name: 'otherDocuments' },
+    { name: 'bankStatementDocuments' }
+]);
+router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.getExtractFieldsAndDebtor);
 router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map
