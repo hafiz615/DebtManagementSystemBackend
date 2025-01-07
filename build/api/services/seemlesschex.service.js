@@ -26,8 +26,7 @@ class SeemlesschexService {
         const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
         if (tokenResponse?.error)
             return [false, tokenResponse.message];
-        let totalAmount = amount + commission;
-        const response = await seemlesschex_util_1.default.createCheck(debtor, totalAmount, tokenResponse.tokenization.token, decryptedData);
+        const response = await seemlesschex_util_1.default.createCheck(debtor, amount, tokenResponse.tokenization.token, decryptedData);
         if (response?.error)
             return [false, response.message];
         const bv = await seemlesschex_util_1.default.checkBasicVerification(response);
@@ -102,7 +101,7 @@ class SeemlesschexService {
         const response = await seemlesschex_util_1.default.voidCheck(checkId);
         if (response?.error)
             return [false, response.message];
-        await seemlesschex_util_1.default.deleteCheckInfo(checkId);
+        await seemlesschex_util_1.default.deleteCheckInfo(checkId, 'void');
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             authorized: 'Pending',
             captured: 'Pending',
@@ -143,23 +142,25 @@ class SeemlesschexService {
     async statusChanged(req) {
         const response = req.body;
         const checkId = response.data.check_id;
-        switch (response.event) {
-            case 'check.changed':
-                switch (response.data.status) {
-                    case 'void':
-                        await seemlesschex_util_1.default.updateIfCheckDeleted(checkId, response.data.status);
-                        break;
-                    case 'deposited':
-                        await seemlesschex_util_1.default.updateIfCheckDeposited(checkId, response.data.status);
-                        break;
-                    case 'failed':
-                        await seemlesschex_util_1.default.updateIfCheckFailed(checkId, response.data.status);
-                        break;
-                }
-                break;
-            case 'check.deleted':
-                await seemlesschex_util_1.default.updateIfCheckDeleted(checkId, response.data.status);
-                break;
+        if (response?.data) {
+            switch (response.event) {
+                case 'check.changed':
+                    switch (response.data.status) {
+                        case 'void':
+                            await seemlesschex_util_1.default.updateIfCheckDeleted(checkId, response.data.status);
+                            break;
+                        case 'deposited':
+                            await seemlesschex_util_1.default.updateIfCheckDeposited(checkId, response.data.status);
+                            break;
+                        case 'failed':
+                            await seemlesschex_util_1.default.updateIfCheckFailed(checkId, response.data.status);
+                            break;
+                    }
+                    break;
+                case 'check.deleted':
+                    await seemlesschex_util_1.default.updateIfCheckDeleted(checkId, response.data.status);
+                    break;
+            }
         }
         return [true, ''];
     }

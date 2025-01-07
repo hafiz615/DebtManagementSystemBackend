@@ -42,10 +42,9 @@ class SeemlesschexService {
     const decryptedData = commonUtil.getDecryptedData(data);
     const tokenResponse = await seemlesschexUtil.tokenization(decryptedData);
     if (tokenResponse?.error) return [false, tokenResponse.message];
-    let totalAmount = amount + commission;
     const response = await seemlesschexUtil.createCheck(
       debtor,
-      totalAmount,
+      amount,
       tokenResponse.tokenization.token,
       decryptedData
     );
@@ -132,7 +131,7 @@ class SeemlesschexService {
     const response = await seemlesschexUtil.voidCheck(checkId);
     if (response?.error) return [false, response.message];
 
-    await seemlesschexUtil.deleteCheckInfo(checkId);
+    await seemlesschexUtil.deleteCheckInfo(checkId, 'void');
     await this.paymentRepository.updateMany<IPayment>(
       {debtorTransId: checkId},
       {
@@ -186,35 +185,37 @@ class SeemlesschexService {
   async statusChanged(req: Request) {
     const response = req.body;
     const checkId = response.data.check_id;
-    switch (response.event) {
-      case 'check.changed':
-        switch (response.data.status) {
-          case 'void':
-            await seemlesschexUtil.updateIfCheckDeleted(
-              checkId,
-              response.data.status
-            );
-            break;
-          case 'deposited':
-            await seemlesschexUtil.updateIfCheckDeposited(
-              checkId,
-              response.data.status
-            );
-            break;
-          case 'failed':
-            await seemlesschexUtil.updateIfCheckFailed(
-              checkId,
-              response.data.status
-            );
-            break;
-        }
-        break;
-      case 'check.deleted':
-        await seemlesschexUtil.updateIfCheckDeleted(
-          checkId,
-          response.data.status
-        );
-        break;
+    if (response?.data) {
+      switch (response.event) {
+        case 'check.changed':
+          switch (response.data.status) {
+            case 'void':
+              await seemlesschexUtil.updateIfCheckDeleted(
+                checkId,
+                response.data.status
+              );
+              break;
+            case 'deposited':
+              await seemlesschexUtil.updateIfCheckDeposited(
+                checkId,
+                response.data.status
+              );
+              break;
+            case 'failed':
+              await seemlesschexUtil.updateIfCheckFailed(
+                checkId,
+                response.data.status
+              );
+              break;
+          }
+          break;
+        case 'check.deleted':
+          await seemlesschexUtil.updateIfCheckDeleted(
+            checkId,
+            response.data.status
+          );
+          break;
+      }
     }
     return [true, ''];
   }

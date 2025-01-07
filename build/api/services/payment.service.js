@@ -131,7 +131,7 @@ class PaymentService {
                     filters['captured'] = 'Failed';
                     break;
                 case 'successPayments':
-                    filters['status'] = 'Success';
+                    filters['sendViaPaynote'] = 'Success';
                     break;
                 case 'successCaptures':
                     filters['captured'] = 'Success';
@@ -175,79 +175,6 @@ class PaymentService {
         return {};
     }
     async getAllPayments(req, filters, page, limit, upcomingFilter) {
-        // let arrayName = String(req.query.arrayName);
-        // const filters = {
-        //   caseId: {$ne: null},
-        //   isDeleted: false,
-        // };
-        // let page = 1;
-        // let limit = 5;
-        // if (arrayName === 'default') {
-        //   // Check if pageNumber and pageSize are provided and valid
-        //   if (req.query.page && !isNaN(Number(req.query.page))) {
-        //     page = Number(req.query.page) ? Number(req.query.page) : page;
-        //   }
-        //   if (req.query.limit && !isNaN(Number(req.query.limit))) {
-        //     limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-        //   }
-        //   filters['$or'] = [
-        //     {captured: 'Failed'},
-        //     {authorized: 'Failed'},
-        //     {authorized: 'Success'},
-        //     {captured: 'Success'},
-        //     {status: 'Upcoming'},
-        //   ];
-        // } else {
-        //   page = 0;
-        //   limit = 0;
-        //   let filtersApply: any;
-        //   if (req.query.filters === 'true') {
-        //     filtersApply = req.body.filters;
-        //     if (filtersApply?.dueDate) {
-        //       filters['dueDate'] = {
-        //         $gte: filtersApply.dueDate.start,
-        //         $lte: filtersApply.dueDate.end,
-        //       };
-        //     }
-        //     if (filtersApply?.tryDate) {
-        //       filters['reschedule'] = {
-        //         $gte: filtersApply.tryDate.start,
-        //         $lte: filtersApply.tryDate.end,
-        //       };
-        //     }
-        //   }
-        //   switch (arrayName) {
-        //     case 'failedPayments':
-        //       filters['captured'] = 'Failed';
-        //       break;
-        //     case 'successPayments':
-        //       filters['captured'] = 'Success';
-        //       break;
-        //     case 'failedAuthorizations':
-        //       filters['authorized'] = 'Failed';
-        //       break;
-        //     case 'successAuthorizations':
-        //       filters['authorized'] = 'Success';
-        //       break;
-        //     case 'upcomingPayments':
-        //       filters['status'] = 'Upcoming';
-        //       break;
-        //     default:
-        //       filters['captured'] = 'Failed';
-        //       break;
-        //   }
-        // }
-        // let days = Number(req.query.days);
-        // if (days && (days === 3 || days === 5 || days === 7)) {
-        //   let currentDate = commonUtil.getCurrentDate();
-        //   const startDate = new Date(
-        //     new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
-        //   ).toUTCString();
-        //   filters['dueDate'] = {
-        //     $gte: startDate,
-        //     $lte: currentDate,
-        //   };
-        // }
         if (String(req.query.arrayName) === 'default') {
             const failedAuth = { ...filters };
             failedAuth['authorized'] = 'Failed';
@@ -266,7 +193,7 @@ class PaymentService {
             upcoming['dueDate'] = upcomingFilter;
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
             const successPayments = { ...filters };
-            successPayments['status'] = 'Success';
+            successPayments['sendViaPaynote'] = 'Success';
             const getSuccessPayments = await this.getAllPaymentsQuery(successPayments, page, limit);
             const mergedArray = [
                 ...getFailedAuthPayments,
@@ -291,7 +218,7 @@ class PaymentService {
         return Array.from(uniqueObjects.values());
     }
     async getAllPaymentsQuery(filters, page, limit) {
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status sendViaPaynote debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: {
@@ -314,7 +241,7 @@ class PaymentService {
         upcoming['status'] = 'Upcoming';
         upcoming['dueDate'] = upcomingFilter;
         const successPaynote = { ...filters };
-        successPaynote['status'] = 'Success';
+        successPaynote['sendViaPaynote'] = 'Success';
         const successAuthorizations = await this.paymentRepository.getCount(successAuth);
         const failedCaptures = await this.paymentRepository.getCount(failedCapture);
         const failedAuthorizations = await this.paymentRepository.getCount(failedAuth);

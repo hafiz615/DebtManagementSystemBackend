@@ -83,7 +83,7 @@ class App {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
     if (
-      process.env.environment === 'prod' &&
+      process.env.environment === 'dev' &&
       process.env.runPaynoteScript === 'true'
     )
       await paynoteUtil.syncUsersPaynote();

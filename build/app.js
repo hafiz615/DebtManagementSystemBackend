@@ -58,7 +58,7 @@ class App {
         this.httpServer.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
-        if (process.env.environment === 'prod' &&
+        if (process.env.environment === 'dev' &&
             process.env.runPaynoteScript === 'true')
             await paynote_util_1.default.syncUsersPaynote();
         bulkUpload_cronjob_1.default.startCronJob();

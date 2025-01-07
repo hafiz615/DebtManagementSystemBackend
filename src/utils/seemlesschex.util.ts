@@ -237,10 +237,10 @@ class SeemlesschexUtil {
     await this.checkRepository.create<ICheck>(newCheck);
   }
 
-  async deleteCheckInfo(checkId: string) {
+  async deleteCheckInfo(checkId: string, status: string) {
     const check = await this.checkRepository.updateByOne<ICheck>(
       {checkId: checkId},
-      {isDeleted: true}
+      {isDeleted: true, status: status}
     );
     console.log(check, 'checkkkkkk');
   }
@@ -296,11 +296,7 @@ class SeemlesschexUtil {
       isDeleted: false,
     });
     if (!foundCheck) return [true, ''];
-    await this.deleteCheckInfo(checkId);
-    await this.checkRepository.updateByOne<ICheck>(
-      {checkId: checkId},
-      {status: status}
-    );
+    await this.deleteCheckInfo(checkId, status);
     await this.paymentRepository.updateMany<IPayment>(
       {debtorTransId: checkId},
       {
