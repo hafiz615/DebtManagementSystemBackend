@@ -709,15 +709,15 @@ class PaymentService {
       }
       return [false, message];
     }
-    const sourceId = fundingSource.funding_source.source_id;
-    this.creditorReposiotry.updateById(creditor._id, {
-      paynoteSourceId: fundingSource.funding_source.source_id,
-    });
-    paynoteUtil.initiateFundingSourceVerifcation(
-      sourceId,
-      creditor.paynoteUserId
-    );
-    paynoteUtil.verifyFundingSource(sourceId);
+    // const sourceId = fundingSource.funding_source.source_id;
+    // this.creditorReposiotry.updateById(creditor._id, {
+    //   paynoteSourceId: fundingSource.funding_source.source_id,
+    // });
+    // paynoteUtil.initiateFundingSourceVerifcation(
+    //   sourceId,
+    //   creditor.paynoteUserId
+    // );
+    // paynoteUtil.verifyFundingSource(sourceId);
     return [true, constants.successAddMessage('ACH details')];
   }
 
@@ -752,8 +752,8 @@ class PaymentService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
-    if (!payment.caseId?.creditor?.paynoteSourceId) {
-      return [false, 'No verified account added for this user'];
+    if (!payment.caseId?.creditor?.paynoteUserId) {
+      return [false, 'User not added in paynote!'];
     }
     if (!payment.caseId?.creditorPaymentsProceed) {
       return [false, 'Funds transfer for this creditor is paused'];
@@ -761,10 +761,7 @@ class PaymentService {
     if (payment.status === 'Success') {
       return [false, 'Payment already send'];
     }
-    if (
-      payment.caseId.creditor.paynoteUserId &&
-      payment.caseId.creditor.paynoteSourceId
-    ) {
+    if (payment.caseId.creditor.paynoteUserId) {
       // const paynoteCustomer = await paynoteUtil.getCustomer(
       //   payment.caseId.creditor
       // );
