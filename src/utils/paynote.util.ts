@@ -359,24 +359,24 @@ class PaynoteUtil {
   async processAllUsersResult(users: any, creditorEmails: string[]) {
     let update = {};
     for (const user of users) {
-      update = {paynoteUserId: '', paynoteSourceId: ''};
+      update = {paynoteUserId: ''};
       const email = user.email.toLowerCase();
       if (creditorEmails.includes(email)) {
         update['paynoteUserFound'] = true;
         update['paynoteUserId'] = user.user_id;
-        let sourceVerified = false;
-        for (const source of user.sources) {
-          if (source.status === 'verified') {
-            sourceVerified = true;
-            update['paynoteSourceId'] = source.source_id;
-            break;
-          }
-        }
-        update['paynoteSourceVerified'] = sourceVerified;
+        // let sourceVerified = false;
+        // for (const source of user.sources) {
+        //   if (source.status === 'verified') {
+        //     sourceVerified = true;
+        //     update['paynoteSourceId'] = source.source_id;
+        //     break;
+        //   }
+        // }
+        // update['paynoteSourceVerified'] = sourceVerified;
       }
       if (!creditorEmails.includes(email)) {
         update['paynoteUserFound'] = false;
-        update['paynoteSourceVerified'] = false;
+        // update['paynoteSourceVerified'] = false;
       }
       this.creditorRepository.updateByOne(
         {'basicInformation.email': email},
@@ -399,28 +399,28 @@ class PaynoteUtil {
   }
 
   async processSyncCreditorPaynote(users: any, creditorEmail: string) {
-    let update = {paynoteUserId: '', paynoteSourceId: ''};
+    let update = {paynoteUserId: ''};
     const paynoteEmails = users.map(user => {
       return user.email.toLowerCase();
     });
     const index = paynoteEmails.indexOf(creditorEmail);
     if (index === -1) {
       update['paynoteUserFound'] = false;
-      update['paynoteSourceVerified'] = false;
+      // update['paynoteSourceVerified'] = false;
       return [false, update];
     }
     update['paynoteUserFound'] = true;
     update['paynoteUserId'] = users[index].user_id;
     console.log(users[index], 'users[index]');
-    let sourceVerified = false;
-    for (const source of users[index].sources) {
-      if (source.status === 'verified') {
-        sourceVerified = true;
-        update['paynoteSourceId'] = source.source_id;
-        break;
-      }
-    }
-    update['paynoteSourceVerified'] = sourceVerified;
+    // let sourceVerified = false;
+    // for (const source of users[index].sources) {
+    //   if (source.status === 'verified') {
+    //     sourceVerified = true;
+    //     update['paynoteSourceId'] = source.source_id;
+    //     break;
+    //   }
+    // }
+    // update['paynoteSourceVerified'] = sourceVerified;
     return [true, update];
   }
 

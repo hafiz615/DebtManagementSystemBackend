@@ -184,8 +184,7 @@ class CronJob {
             if (!payment?.caseId?.creditorPaymentsProceed) {
                 continue;
             }
-            if (payment.caseId.creditor.paynoteUserId &&
-                payment.caseId.creditor.paynoteSourceId) {
+            if (payment.caseId.creditor.paynoteUserId) {
                 // const paynoteCustomer = await paynoteUtil.getCustomer(
                 //   payment.caseId.creditor
                 // );
