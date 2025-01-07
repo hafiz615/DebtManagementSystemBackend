@@ -179,10 +179,16 @@ router.post(
   debtor.revertPayment,
   debtorController.revertPayments
 );
+// To Pass the Different Files in the Extracted Data
+const uploadFields = upload.fields([
+  { name: 'mcaDocuments' },          
+  { name: 'otherDocuments' },        
+  { name: 'bankStatementDocuments' } 
+]);
 
 router.post(
   '/get-extracted-data',
-  upload.array('files'),
+  uploadFields,
   debtorController.getExtractFieldsAndDebtor
 );
 
