@@ -10,5 +10,9 @@ router.get('/twilio/token', callController.getToken);
 router.post('/twilio/fallback', callController.callFallBack);
 router.post('/twilio/call-status', callController.callStatus);
 router.post('/callSummary', callController.callSummary);
+router.patch(
+  '/updateCall/:callSid',
+  authorize.validateAuth, callController.updateCall
+);
 
 export default router;

@@ -125,6 +125,23 @@ class CaseService {
             findCase['amountNotDeliveredToCreditor'] = amountNotDelivered;
             return [true, findCase];
         };
+        this.getAllUserCases = async (req) => {
+            const reqTemp = req;
+            try {
+                const findCases = await this.caseRepository.getAllWithoutPagination({ caseOwnerId: reqTemp.id }, undefined, undefined, undefined, {
+                    path: 'creditor', select: ['businessInformation.companyName']
+                });
+                const filteredData = findCases.map((item) => ({
+                    caseId: item._id,
+                    creditorCompanyName: item.creditor?.businessInformation?.companyName
+                }));
+                return [true, filteredData];
+            }
+            catch (error) {
+                console.error("Error fetching user cases:", error);
+                return [false, "Error fetching user cases"];
+            }
+        };
         this.updateCase = async (req) => {
             let reqTemp = req;
             let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
@@ -887,4 +904,7 @@ class CaseService {
     }
 }
 exports.default = CaseService;
+function item(value, index, array) {
+    throw new Error('Function not implemented.');
+}
 //# sourceMappingURL=case.service.js.map

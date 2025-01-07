@@ -14,6 +14,7 @@ class Call {
         this.callTo = '';
         this.callFrom = '';
         this.callStartTime = '';
+        this.callDirection = '';
         this.callDuration = '';
         this.callStatus = '';
         this.callRecordingSid = '';

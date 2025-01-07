@@ -38,13 +38,27 @@ class CallUtil {
     }
     async createCall(data, userName, callerId) {
         const newCall = new call_repomodel_1.Call();
-        const { CaseId, CallSid, AccountSid, To, CallStatus } = data;
+        const { CaseId, CallSid, AccountSid, To, CallStatus, Direction } = data;
         newCall.caseId = CaseId;
         newCall.callSid = CallSid;
         newCall.callerName = userName,
             newCall.accountSid = AccountSid;
         newCall.callTo = To;
-        newCall.callFrom = callerId,
+        newCall.callDirection = Direction,
+            newCall.callFrom = callerId,
+            newCall.callStatus = CallStatus;
+        return await this.callRepository.create(newCall);
+    }
+    async createIncomingCall(data, userName, callerId) {
+        console.log('userName', userName);
+        const newCall = new call_repomodel_1.Call();
+        const { CallSid, AccountSid, CallStatus, From, Direction } = data;
+        newCall.callSid = CallSid;
+        newCall.callerName = userName,
+            newCall.accountSid = AccountSid;
+        newCall.callTo = callerId;
+        newCall.callDirection = Direction,
+            newCall.callFrom = From,
             newCall.callStatus = CallStatus;
         return await this.callRepository.create(newCall);
     }
