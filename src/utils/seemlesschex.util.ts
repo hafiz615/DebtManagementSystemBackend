@@ -8,14 +8,22 @@ import {IDebtor} from '../database/interfaces/debtor.interface';
 import {Check} from '../database/repomodels/check.repomodel';
 import {CheckRepository} from '../api/repository/check/check.repository';
 import {ICheck} from '../database/interfaces/check.interface';
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+import {IPayment} from '../database/interfaces/payment.interface';
+import commonUtil from './common.util';
+import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 dotenv.config();
 
 class SeemlesschexUtil {
   private creditorRepository: CreditorRepository;
   private checkRepository: CheckRepository;
+  private paymentRepository: PaymentRepository;
+  private debtorRepository: DebtorRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.checkRepository = new CheckRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.debtorRepository = new DebtorRepository();
   }
   async createCheck(
     debtor: IDebtor,
@@ -33,7 +41,7 @@ class SeemlesschexUtil {
         error: true,
         message: constantsUtil.notFoundMessage('debtor phone'),
       };
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/create`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/create`;
     var data = {
       name: accountInfo.firstName + ' ' + accountInfo.lastName,
       email: debtor.basicInformation?.email,
@@ -51,7 +59,7 @@ class SeemlesschexUtil {
     try {
       const response = await axiosInstance.post(apiUrl, data, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -63,14 +71,14 @@ class SeemlesschexUtil {
   }
 
   async getCheck(checkId: string) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/${checkId}`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/${checkId}`;
     console.log('I am in getCheck');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
     try {
       const response = await axiosInstance.get(apiUrl, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -107,7 +115,7 @@ class SeemlesschexUtil {
   }
 
   async createPaymentLink(amount: number) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/create`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/paymentlink/create`;
     var data = {
       amount: amount,
       basic_verification: true,
@@ -119,7 +127,7 @@ class SeemlesschexUtil {
     try {
       const response = await axiosInstance.post(apiUrl, data, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -129,11 +137,16 @@ class SeemlesschexUtil {
     }
   }
 
-  async updateCheck(debtor: IDebtor, token: string, checkId: string) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/edit`;
+  async updateCheck(
+    debtor: IDebtor,
+    token: string,
+    checkId: string,
+    accountInfo: any
+  ) {
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/edit`;
     var data = {
       check_id: checkId,
-      name: debtor.basicInformation?.fullName,
+      name: accountInfo.firstName + ' ' + accountInfo.lastName,
       email: debtor.basicInformation?.email,
       token: token,
       store: 'firstchoice.com',
@@ -146,7 +159,7 @@ class SeemlesschexUtil {
     try {
       const response = await axiosInstance.post(apiUrl, data, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -158,14 +171,14 @@ class SeemlesschexUtil {
   }
 
   async voidCheck(checkId: string) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/check/${checkId}`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/${checkId}`;
     console.log('I am in voidCheck');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
     try {
       const response = await axiosInstance.delete(apiUrl, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -176,14 +189,14 @@ class SeemlesschexUtil {
   }
 
   async changePaymentLinkStatus(checkoutToken: string) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/changestatus/${checkoutToken}`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/paymentlink/changestatus/${checkoutToken}`;
     console.log('I am in changePaymentLinkStatus');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
     try {
       const response = await axiosInstance.post(apiUrl, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -194,14 +207,14 @@ class SeemlesschexUtil {
   }
 
   async deletePaymentLink(checkoutToken: string) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/paymentlink/${checkoutToken}`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/paymentlink/${checkoutToken}`;
     console.log('I am in deletePaymentLink');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', {});
     try {
       const response = await axiosInstance.delete(apiUrl, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -224,10 +237,10 @@ class SeemlesschexUtil {
     await this.checkRepository.create<ICheck>(newCheck);
   }
 
-  async deleteCheckInfo(checkId: string) {
+  async deleteCheckInfo(checkId: string, status: string) {
     const check = await this.checkRepository.updateByOne<ICheck>(
       {checkId: checkId},
-      {isDeleted: true}
+      {isDeleted: true, status: status}
     );
     console.log(check, 'checkkkkkk');
   }
@@ -240,7 +253,7 @@ class SeemlesschexUtil {
   }
 
   async tokenization(accountInfoObject: any) {
-    const apiUrl = `${process.env.seamlessUrl}/${process.env.seamlessVersion}/account/tokenization`;
+    const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/account/tokenization`;
 
     const data = {
       first_name: accountInfoObject.firstName,
@@ -255,7 +268,7 @@ class SeemlesschexUtil {
     try {
       const response = await axiosInstance.post(apiUrl, data, {
         headers: {
-          Authorization: process.env.seamlessKey,
+          Authorization: process.env.seamlesschexKey,
           'Content-Type': 'application/json',
         },
       });
@@ -263,6 +276,89 @@ class SeemlesschexUtil {
     } catch (error) {
       return error?.response?.data;
     }
+  }
+
+  async updateCheckInfo(bv: any, fc: any, response: any, checkId: string) {
+    const data = {
+      status: response.check.status,
+      basicVerification: bv?.error ? 'Fail' : 'Pass',
+      fundsConfirmation: fc?.error ? 'Fail' : 'Pass',
+      bvReason: bv?.error ? bv.message : '',
+      fcReason: fc?.error ? fc.message : '',
+    };
+
+    await this.checkRepository.updateByOne<ICheck>({checkId: checkId}, data);
+  }
+
+  async updateIfCheckDeleted(checkId: string, status: string) {
+    const foundCheck = await this.checkRepository.getOne<ICheck>({
+      checkId: checkId,
+      isDeleted: false,
+    });
+    if (!foundCheck) return [true, ''];
+    await this.deleteCheckInfo(checkId, status);
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      {
+        authorized: 'Pending',
+        captured: 'Pending',
+        status: 'Upcoming',
+        debtorTransId: '',
+        transactionType: '',
+        paymentGateway: '',
+        manualCommission: 0,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    return [true, ''];
+  }
+
+  async updateIfCheckDeposited(checkId: string, status: string) {
+    const foundCheck = await this.checkRepository.getOne<ICheck>({
+      checkId: checkId,
+      isDeleted: false,
+    });
+    if (!foundCheck) return [true, ''];
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: checkId,
+    });
+    await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId},
+      {status: status}
+    );
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      {
+        authorized: 'Success',
+        captured: 'Success',
+        status: 'Pending',
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    await this.debtorRepository.updateById<IDebtor>(foundCheck.debtorId, {
+      $inc: {commissionPaid: payment.manualCommission},
+    });
+    return [true, ''];
+  }
+
+  async updateIfCheckFailed(checkId: string, status: string) {
+    const foundCheck = await this.checkRepository.getOne<ICheck>({
+      checkId: checkId,
+      isDeleted: false,
+    });
+    if (!foundCheck) return [true, ''];
+    await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId},
+      {status: status}
+    );
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      {
+        captured: 'Failed',
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+    return [true, ''];
   }
 }
 

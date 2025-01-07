@@ -54,6 +54,7 @@ router.post(
 router.post(
   '/addDocumentsToDebtor/:id',
   authorize.validateAuth,
+  debtor.addDocumentsToDebtor,
   debtorController.addDocumentsToDebtor
 );
 router.get(
@@ -173,16 +174,27 @@ router.get(
 );
 
 router.post(
-  '/revertManualPayments/:id',
+  '/revertPayments/:id',
   authorize.validateAuth,
-  debtor.revertManualPayment,
-  debtorController.revertManualPayments
+  debtor.revertPayment,
+  debtorController.revertPayments
 );
+// To Pass the Different Files in the Extracted Data
+const uploadFields = upload.fields([
+  { name: 'mcaDocuments' },          
+  { name: 'otherDocuments' },        
+  { name: 'bankStatementDocuments' } 
+]);
 
 router.post(
   '/get-extracted-data',
-  upload.array('files'),
+  uploadFields,
   debtorController.getExtractFieldsAndDebtor
+);
+
+router.get(
+  '/get-debtor-extracted-data/:id',
+  debtorController.getDebtorExtractedFields
 );
 
 export default router;

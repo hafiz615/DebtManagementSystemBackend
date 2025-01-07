@@ -158,4 +158,8 @@ router.put(
   caseController.updateCasePlan
 );
 
+router.get('/getAllUserCases',
+  authorize.validateAuth,
+  caseController.getAllUserCases
+)
 export default router;

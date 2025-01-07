@@ -31,6 +31,8 @@ class PaymentUtil {
       tryDate: obj.rescheduled,
       caseId: obj?.caseId?._id ? String(obj.caseId._id) : '',
       transactionType: obj.transactionType ? obj.transactionType : '',
+      paymentGateway: obj.paymentGateway ? obj.paymentGateway : '',
+      transactionId: obj.debtorTransId,
     }));
 
     return this.getFilteredPaymentsObj(transformedArray, arrayName);
@@ -181,6 +183,7 @@ class PaymentUtil {
         authorized: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
+        transactionType: {$nin: ['Wire', 'Check']},
       },
       undefined,
       undefined,
@@ -210,6 +213,7 @@ class PaymentUtil {
         captured: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
+        transactionType: {$nin: ['Wire', 'Check']},
       },
       undefined,
       undefined,
@@ -240,6 +244,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
+        transactionType: {$nin: ['Wire', 'Check']},
       },
       undefined,
       undefined,
@@ -270,6 +275,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
+        transactionType: {$nin: ['Wire', 'Check']},
       },
       undefined,
       undefined,
@@ -293,259 +299,6 @@ class PaymentUtil {
     );
   }
 
-  // async getAllCronJobPayments() {
-  //   const pipeline = [
-  //     {
-  //       $facet: {
-  //         pendingAuthorized: [
-  //           {
-  //             $match: {
-  //               authorized: 'Pending',
-  //               isDeleted: {$ne: true},
-  //             },
-  //           },
-  //           {
-  //             $lookup: {
-  //               from: 'cases',
-  //               localField: 'caseId',
-  //               foreignField: '_id',
-  //               as: 'caseDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'debtors',
-  //               localField: 'caseDetails.debtor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.debtorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.debtorDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'creditors',
-  //               localField: 'caseDetails.creditor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.creditorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.creditorDetails'},
-  //           {
-  //             $project: {
-  //               _id: 1,
-  //               caseId: 1,
-  //               caseDetails: 1,
-  //               authorized: 1,
-  //               captured: 1,
-  //               status: 1,
-  //               amount: 1,
-  //               dueDate: 1,
-  //               frequency: 1,
-  //               intervalId: 1,
-  //               failedReasonAuthorization: 1,
-  //               failedReasonCaptured: 1,
-  //               rescheduled: 1,
-  //               debtorTransId: 1,
-  //               retriesAuth: 1,
-  //               retriesCapture: 1,
-  //               commission: 1,
-  //               creditorAmount: 1,
-  //               timePeriod: 1,
-  //               createdAt: 1,
-  //               updatedAt: 1,
-  //             },
-  //           },
-  //         ],
-  //         pendingCaptured: [
-  //           {
-  //             $match: {
-  //               authorized: 'Success',
-  //               captured: 'Pending',
-  //               isDeleted: {$ne: true},
-  //             },
-  //           },
-  //           {
-  //             $lookup: {
-  //               from: 'cases',
-  //               localField: 'caseId',
-  //               foreignField: '_id',
-  //               as: 'caseDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'debtors',
-  //               localField: 'caseDetails.debtor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.debtorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.debtorDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'creditors',
-  //               localField: 'caseDetails.creditor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.creditorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.creditorDetails'},
-  //           {
-  //             $project: {
-  //               _id: 1,
-  //               caseId: 1,
-  //               caseDetails: 1,
-  //               authorized: 1,
-  //               captured: 1,
-  //               status: 1,
-  //               amount: 1,
-  //               dueDate: 1,
-  //               frequency: 1,
-  //               intervalId: 1,
-  //               failedReasonAuthorization: 1,
-  //               failedReasonCaptured: 1,
-  //               rescheduled: 1,
-  //               transactionId: 1,
-  //               retriesAuth: 1,
-  //               retriesCapture: 1,
-  //               commission: 1,
-  //               creditorAmount: 1,
-  //               timePeriod: 1,
-  //               createdAt: 1,
-  //               updatedAt: 1,
-  //             },
-  //           },
-  //         ],
-  //         failedAuthorized: [
-  //           {
-  //             $match: {
-  //               authorized: 'Failed',
-  //               isDeleted: {$ne: true},
-  //             },
-  //           },
-  //           {
-  //             $lookup: {
-  //               from: 'cases',
-  //               localField: 'caseId',
-  //               foreignField: '_id',
-  //               as: 'caseDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'debtors',
-  //               localField: 'caseDetails.debtor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.debtorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.debtorDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'creditors',
-  //               localField: 'caseDetails.creditor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.creditorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.creditorDetails'},
-  //           {
-  //             $project: {
-  //               _id: 1,
-  //               caseId: 1,
-  //               caseDetails: 1,
-  //               authorized: 1,
-  //               captured: 1,
-  //               status: 1,
-  //               amount: 1,
-  //               dueDate: 1,
-  //               frequency: 1,
-  //               intervalId: 1,
-  //               failedReasonAuthorization: 1,
-  //               failedReasonCaptured: 1,
-  //               rescheduled: 1,
-  //               transactionId: 1,
-  //               retriesAuth: 1,
-  //               retriesCapture: 1,
-  //               commission: 1,
-  //               creditorAmount: 1,
-  //               timePeriod: 1,
-  //               createdAt: 1,
-  //               updatedAt: 1,
-  //             },
-  //           },
-  //         ],
-  //         failedCaptured: [
-  //           {
-  //             $match: {
-  //               authorized: 'Success',
-  //               captured: 'Failed',
-  //               isDeleted: {$ne: true},
-  //             },
-  //           },
-  //           {
-  //             $lookup: {
-  //               from: 'cases',
-  //               localField: 'caseId',
-  //               foreignField: '_id',
-  //               as: 'caseDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'debtors',
-  //               localField: 'caseDetails.debtor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.debtorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.debtorDetails'},
-  //           {
-  //             $lookup: {
-  //               from: 'creditors',
-  //               localField: 'caseDetails.creditor',
-  //               foreignField: '_id',
-  //               as: 'caseDetails.creditorDetails',
-  //             },
-  //           },
-  //           {$unwind: '$caseDetails.creditorDetails'},
-  //           {
-  //             $project: {
-  //               _id: 1,
-  //               caseId: 1,
-  //               caseDetails: 1,
-  //               authorized: 1,
-  //               captured: 1,
-  //               status: 1,
-  //               amount: 1,
-  //               dueDate: 1,
-  //               frequency: 1,
-  //               intervalId: 1,
-  //               failedReasonAuthorization: 1,
-  //               failedReasonCaptured: 1,
-  //               rescheduled: 1,
-  //               transactionId: 1,
-  //               retriesAuth: 1,
-  //               retriesCapture: 1,
-  //               commission: 1,
-  //               creditorAmount: 1,
-  //               timePeriod: 1,
-  //               createdAt: 1,
-  //               updatedAt: 1,
-  //             },
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   ];
-
-  //   return await this.paymentRepository.applyAggregate<IPayment>(pipeline);
-  // }
-
   async searchAndFilterHomePayments(payments: any, req: Request) {
     // Helper function to apply text search
     const applyTextSearch = (paymentObj: any, text: string | RegExp) => {
@@ -566,20 +319,6 @@ class PaymentUtil {
       ) {
         return false;
       }
-      // if (
-      //   filters.dueDate &&
-      //   (new Date(paymentObj.dueDate) < new Date(filters.dueDate.start) ||
-      //     new Date(paymentObj.dueDate) > new Date(filters.dueDate.end))
-      // ) {
-      //   return false;
-      // }
-      // if (
-      //   filters.tryDate &&
-      //   (new Date(paymentObj.tryDate) < new Date(filters.tryDate.start) ||
-      //     new Date(paymentObj.tryDate) > new Date(filters.tryDate.end))
-      // ) {
-      //   return false;
-      // }
       return true;
     };
     let text = '',

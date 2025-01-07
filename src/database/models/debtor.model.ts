@@ -87,6 +87,27 @@ const debtorSchema: Schema = new Schema({
       url: {type: String; default: ''};
     }>,
   },
+  mcaDocuments: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
+  },
+  bankStatementDocuments: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
+  },
+  otherDocuments: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
+  },
   accounts: {
     type: Array<{paymentType: String; customerVaultId: String}>,
   },

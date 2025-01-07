@@ -772,9 +772,6 @@ class DebtorService {
   }
 
   async addDocumentsToDebtor(req: Request) {
-    if (!req.body.documents) {
-      return [false, 'Documents are missing'];
-    }
     // if (!req.body.extractedFields) {
     //   return [false, 'Extracted fields are missing'];
     // }
@@ -791,8 +788,14 @@ class DebtorService {
       caseTemp.debtor._id,
       {
         $push: {
-          documents: {
-            $each: req.body.documents,
+          mcaDocuments: {
+            $each: req.body.mcaDocuments,
+          },
+          bankStatementDocuments: {
+            $each: req.body.bankStatementDocuments,
+          },
+          otherDocuments: {
+            $each: req.body.otherDocuments,
           },
         },
         updatedAt: commonUtil.getCurrentDate(),
@@ -1363,6 +1366,7 @@ class DebtorService {
         dueDate: req.body.transactionDate,
         debtorTransId: req.body.referenceId,
         transactionType: req.body.transactionType,
+        paymentGateway: 'Manual',
         manualCommission: req.body.commission,
         updatedAt: commonUtil.getCurrentDate(),
       }
@@ -1433,23 +1437,17 @@ class DebtorService {
     return [true, groupedByTransId];
   }
 
-  async revertManualPayments(req: Request) {
+  async revertPayments(req: Request) {
     let debtor = await this.debtorRepository.getById(req.params.id);
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
     let manualPayment = await this.paymentRepository.getOne<IPayment>({
-      transactionType: 'Wire',
       debtorId: req.params.id,
       debtorTransId: req.body.referenceId,
     });
-    if (manualPayment) {
-      if (manualPayment.manualCommission !== req.body.commission)
-        return [false, 'Commission is not correct'];
-    }
     let result = await this.paymentRepository.updateMany<IPayment>(
       {
-        transactionType: 'Wire',
         debtorId: req.params.id,
         debtorTransId: req.body.referenceId,
       },
@@ -1460,97 +1458,306 @@ class DebtorService {
         debtorTransId: '',
         transactionType: '',
         manualCommission: 0,
+        paymentGateway: '',
+        retriesAuth: 0,
+        retriesCapture: 0,
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
 
     if (!result) {
-      return [false, 'Could not revert bounce payments'];
+      return [false, 'Could not revert payments'];
     }
 
-    if (result.modifiedCount && manualPayment) {
-      let updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
-        req.params.id,
-        {
-          $inc: {commissionPaid: -req.body.commission},
-        }
-      );
-      if (!updatedDebtor) {
-        return [false, 'Could not revert bounce payments'];
-      }
+    if (
+      result.modifiedCount &&
+      (manualPayment.transactionType === 'Wire' ||
+        manualPayment.transactionType === 'Check')
+    ) {
+      await this.debtorRepository.updateById<IDebtor>(req.params.id, {
+        $inc: {commissionPaid: -req.body.commission},
+      });
     }
-    return [true, 'Bounce payments revert successfully'];
+    return [true, 'Payments reverted successfully'];
   }
+
+  // async getExtractFieldsAndDebtor(req: Request) {
+  //   const reqTemp: any = req;
+  //   const files = {...reqTemp.files};
+
+  //   // console.log("this is the file:", files)
+
+  //   if (!files.mcaDocuments) {
+  //     return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
+  //   }
+
+  //   // return [true, 'Succesfully show files']
+  //   // const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files);
+
+  //   // if (!s3FileKeys.length) {
+  //   //   return [false, constantsUtil.Messages.UPLOAD_FILES_FAILURE];
+  //   // }
+  //   const extractedFields = await caseUtil.getExtractionMCABuffer(files.mcaDocuments[0]); // check the debtor exist?
+  //   if (typeof extractedFields === 'string') return [false, extractedFields];
+  //   const debtorBody = await debtorUtil.mapDebtor(
+  //     extractedFields.extracted_fields
+  //   );
+  //   debtorBody['extractedFields'] = extractedFields.extracted_fields;
+
+  //   const checkDebtor = this.checkDebtorExist(debtorBody);
+
+  //   if(!checkDebtor)
+  //   {
+  //     if(files.mcaDocuments.length > 1){
+  //       const extractedFieldsForMultipleFiles = await caseUtil.getExtractionMCABuffer(files.mcaDocuments);
+  //       if (typeof extractedFieldsForMultipleFiles === 'string') return [false, extractedFieldsForMultipleFiles];
+  //       const debtorBody = await debtorUtil.mapDebtor(
+  //         extractedFieldsForMultipleFiles.extracted_fields
+  //       );
+  //       debtorBody['extractedFields'] = extractedFieldsForMultipleFiles.extracted_fields;
+
+  //       if(files.mcaDocuments){
+  //         const s3McaDocument = await this.uploadUtil.awsS3FileUpload(files.mcaDocuments);
+  //         debtorBody['mcaDocuments'] = s3McaDocument;
+  //       }
+
+  //       else if(files.bankStatementDocuments){
+  //         const s3BankStatementDocument = await this.uploadUtil.awsS3FileUpload(files.bankStatementDocuments);
+  //         debtorBody['bankStatementDocuments'] = s3BankStatementDocument;
+  //       }
+
+  //       else if(files.otherDocuments)
+  //       {
+  //         const s3OtherDocument = await this.uploadUtil.awsS3FileUpload(files.otherDocuments);
+  //         debtorBody['otherDocuments'] = s3OtherDocument;
+  //       }
+
+  //       // if (!s3FileKeys.length) {
+  //       //   return [false, constantsUtil.Messages.UPLOAD_FILES_FAILURE];
+  //       // }
+        
+  //       debtorBody['extractedFields'] = extractedFieldsForMultipleFiles.extracted_fields;
+
+
+  //       const createDebtor = await this.createDebtorForPortal(
+  //         debtorBody,
+  //         'Debtor Portal'
+  //       );
+
+  //     }
+
+  //     if(files.mcaDocuments){
+  //       const s3McaDocument = await this.uploadUtil.awsS3FileUpload(files.mcaDocuments);
+  //       debtorBody['mcaDocuments'] = s3McaDocument;
+  //     }
+
+  //     else if(files.bankStatementDocuments){
+  //       const s3BankStatementDocument = await this.uploadUtil.awsS3FileUpload(files.bankStatementDocuments);
+  //       debtorBody['bankStatementDocuments'] = s3BankStatementDocument;
+  //     }
+
+  //     else if(files.otherDocuments)
+  //     {
+  //       const s3OtherDocument = await this.uploadUtil.awsS3FileUpload(files.otherDocuments);
+  //       debtorBody['otherDocuments'] = s3OtherDocument;
+  //     }
+
+  //     const createDebtor = await this.createDebtorForPortal(
+  //       debtorBody,
+  //       'Debtor Portal'
+  //     );
+
+  //   }
+
+  //   // debtorBody['documents'] = s3FileKeys;
+  //   const createDebtor = await this.createDebtorForPortal(
+  //     debtorBody,
+  //     'Debtor Portal'
+  //   );
+  //   if (!createDebtor[0]) return [false, createDebtor[1]];
+  //   const debtor = createDebtor[1] as IDebtor;
+  //   return [
+  //     true,
+  //     {debtorId: String(debtor._id), extractedFields: debtor.extractedFields},
+  //   ];
+  // }
 
   async getExtractFieldsAndDebtor(req: Request) {
     const reqTemp: any = req;
-    const files = reqTemp.files;
-    if (!files || !files.length) {
-      return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
-    }
-    const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files);
+    const files = { ...reqTemp.files };
 
-    if (!s3FileKeys.length) {
-      return [false, constantsUtil.Messages.UPLOAD_FILES_FAILURE];
+    console.log("this is the file", files)
+
+    // return [true, "success"];
+
+    if (!files.mcaDocuments) {
+        return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
     }
-    const extractedFields = await caseUtil.getExtractionMCABuffer(files);
+
+    const extractedFields = await caseUtil.getExtractionMCABuffer(files.mcaDocuments);
     if (typeof extractedFields === 'string') return [false, extractedFields];
-    const debtorBody = await debtorUtil.mapDebtor(
-      extractedFields.extracted_fields
-    );
-    debtorBody['extractedFields'] = extractedFields.extracted_fields;
-    debtorBody['documents'] = s3FileKeys;
-    const createDebtor = await this.createDebtorForPortal(
-      debtorBody,
-      'Debtor Portal'
-    );
-    if (!createDebtor[0]) return [false, createDebtor[1]];
-    const debtor = createDebtor[1] as IDebtor;
-    return [
-      true,
-      {debtorId: String(debtor._id), extractedFields: debtor.extractedFields},
-    ];
-  }
 
-  async createDebtorForPortal(body: any, source: string) {
+    let debtorBody = await debtorUtil.mapDebtor(extractedFields.extracted_fields);
+
+    const debtorExist = await this.checkDebtorExist(debtorBody);
+
+    console.log(debtorExist)
+    let previousMca=[]
+    let newMca=[]
+    if (!debtorExist[0]) { 
+      debtorBody['extractedFields'] = extractedFields.extracted_fields;
+      debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
+    }
+    else{
+      const newFiles = await this.updateDebtorIdExist(debtorExist[1], files)
+      if(!newFiles.mcaDocuments.length && !newFiles.bankStatementDocuments.length && !newFiles.otherDocuments.length)
+      {
+         return [true, {debtorId: String(debtorExist[1]._id), extractedFields: debtorExist[1].extractedFields}];
+      }
+       // Process MCA documents if any new ones exist
+      if (newFiles.mcaDocuments && newFiles.mcaDocuments.length) {
+      const extractedFieldsForNewFiles = await caseUtil.getExtractionMCABuffer(newFiles.mcaDocuments);
+      if (typeof extractedFieldsForNewFiles === 'string') {
+          return [true, {debtorId: String(debtorExist[1]._id), extractedFields: debtorExist[1].extractedFields}]; // Return error if extraction fails
+      }
+        debtorExist[1].extractedFields.push(...extractedFieldsForNewFiles.extracted_fields);
+        console.log(newFiles,'newFiles')
+      newMca=newFiles.mcaDocuments.map((obj)=>{ return obj.originalname})
+    }
+    previousMca=debtorExist[1].mcaDocuments.map((obj)=>{ return obj.originalFileName})
+    // Upload and assign new files to debtorBody
+    const updatedDebtorBody = await this.uploadAndAssignFiles(newFiles, debtorExist[1]);
+
+    // If debtorBody was successfully updated, save the changes
+    if (updatedDebtorBody) {
+        const updateResult : IDebtor = await this.debtorRepository.updateById(debtorExist[1]._id, updatedDebtorBody);
+
+        // Return the updated debtor ID and extracted fields
+        return [true, { debtorId: String(updateResult._id), extractedFields: updateResult.extractedFields,newMca,previousMca }];
+      }
+
+    } 
+    
+  return await this.createDebtorForPortal(debtorBody, 'Debtor Portal');
+
+}
+
+async updateDebtorIdExist(debtor : any, files: any){
+   // Compare MCA Documents
+   const mcaDocuments = await this.getNewFiles(
+    files.mcaDocuments,
+    debtor.mcaDocuments
+  );
+
+  // Compare Bank Statement Documents
+  const bankStatementDocuments = await this.getNewFiles(
+      files.bankStatementDocuments,
+      debtor.bankStatementDocuments
+  );
+
+  // Compare Other Documents
+  const otherDocuments = await this.getNewFiles(
+      files.otherDocuments,
+      debtor.otherDocuments
+  );
+
+  // Return the newly uploaded files that don't already exist in the debtor
+  return {
+    mcaDocuments,
+    bankStatementDocuments,
+    otherDocuments,
+  };
+}
+
+private async getNewFiles(newFiles: any[], existingFiles: any[]) {
+  if (!newFiles || newFiles.length === 0) return [];
+
+  const existingKeys = existingFiles?.map((doc: any) => doc.originalFileName);
+  return newFiles.filter((file: any) => !existingKeys.includes(file.originalname));
+}
+
+async processMultipleFiles(files: any, debtorBody: any) {
+    const extractedFieldsForMultipleFiles = await caseUtil.getExtractionMCABuffer(files.mcaDocuments);
+    if (typeof extractedFieldsForMultipleFiles === 'string') return [false, extractedFieldsForMultipleFiles];
+
+    debtorBody['extractedFields'] = extractedFieldsForMultipleFiles.extracted_fields;
+
+    debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
+
+    return debtorBody;
+}
+
+async uploadAndAssignFiles(files: any, debtorBody: any) {
+    if(files.mcaDocuments && files.mcaDocuments.length) {
+        const s3McaDocument = await this.uploadUtil.awsS3FileUpload(files.mcaDocuments);
+        if(debtorBody.mcaDocuments && debtorBody.mcaDocuments.length)
+        {
+            // Append new files to the existing ones
+            debtorBody['mcaDocuments'] = [...debtorBody.mcaDocuments, ...s3McaDocument];
+        }
+        else{
+          debtorBody['mcaDocuments'] = s3McaDocument;  
+        }
+    }
+
+    if (files.bankStatementDocuments && files.bankStatementDocuments) {
+        const s3BankStatementDocument = await this.uploadUtil.awsS3FileUpload(files.bankStatementDocuments);
+        if (debtorBody.bankStatementDocuments && debtorBody.bankStatementDocuments.length) {
+          // Append new files to the existing ones
+          debtorBody['bankStatementDocuments'] = [...debtorBody.bankStatementDocuments, ...s3BankStatementDocument];
+        }
+        else{
+          debtorBody['bankStatementDocuments'] = s3BankStatementDocument;
+        }
+    }
+
+    if (files.otherDocuments && files.otherDocuments.length) {
+        const s3OtherDocument = await this.uploadUtil.awsS3FileUpload(files.otherDocuments);
+        if (debtorBody.otherDocuments && debtorBody.otherDocuments.length) {
+          // Append new files to the existing ones
+          debtorBody['otherDocuments'] = [...debtorBody.otherDocuments, ...s3OtherDocument];
+        }
+        else{
+          debtorBody['otherDocuments'] = s3OtherDocument;
+        }
+    }
+
+    return debtorBody;
+}
+
+
+  async checkDebtorExist(body: any){
     const getDebtor = await this.debtorRepository.getOne<IDebtor>({
       $or: [
         {
-          'businessInformation.companyName':
-            body.businessInformation.companyName,
-        },
-        {
           'businessInformation.EIN': body.businessInformation.EIN,
         },
+        {
+          'businessInformation.companyName':
+            body.businessInformation.companyName,
+        }
       ],
     });
-    if (getDebtor) {
-      if (
-        getDebtor.businessInformation.companyName ===
-        body.businessInformation.companyName
-      ) {
-        return [
-          false,
-          constants.alreadyExistsMessage(
-            `Debtor with companyName ${body.businessInformation.companyName}`
-          ),
-        ];
-      }
-      if (getDebtor.businessInformation.EIN === body.businessInformation.EIN) {
-        return [
-          false,
-          constants.alreadyExistsMessage(
-            `Debtor with EIN ${body.businessInformation.EIN}`
-          ),
-        ];
-      }
-    }
+
+    if(getDebtor) return [true, getDebtor];
+
+    return false;
+  }
+  async createDebtorForPortal(body: any, source: string) {
     body['status'] = 'Pending';
     let debtor = await caseUtil.createDebtor(body, source);
     if (!debtor) {
       return [false, constantsUtil.failureAddMessage('debtor')];
     }
-    return [true, debtor];
+    return [true, {debtorId: String(debtor._id), extractedFields: debtor.extractedFields}];
+  }
+
+  async getDebtorExtractedFields(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    return [true, debtor.extractedFields];
   }
 }
 

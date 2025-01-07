@@ -74,6 +74,18 @@ class DebtorRequests {
                     key: joi_1.default.string().required(),
                     originalFileName: joi_1.default.string().required(),
                 }).optional()),
+                mcaDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                bankStatementDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                otherDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
                 paymentType: joi_1.default.string().allow(''),
                 paymentToken: joi_1.default.string().allow(''),
                 extractedFields: joi_1.default.array().allow(null).optional(),
@@ -133,6 +145,18 @@ class DebtorRequests {
         this.updateDebtorBulk = (req, res, next) => {
             const schema = joi_1.default.object({
                 documents: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                mcaDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                bankStatementDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required(),
+                    originalFileName: joi_1.default.string().required(),
+                }).optional()),
+                otherDocuments: joi_1.default.array().items(joi_1.default.object({
                     key: joi_1.default.string().required(),
                     originalFileName: joi_1.default.string().required(),
                 }).optional()),
@@ -249,7 +273,9 @@ class DebtorRequests {
             const schema = joi_1.default.object({
                 paymentType: joi_1.default.string().required(),
                 paymentToken: joi_1.default.string().required(),
-                platform: joi_1.default.string().valid('Easypay direct', 'Seamlesschex').required(),
+                platform: joi_1.default.string()
+                    .valid('Easypay direct', 'Seamlesschex merchant')
+                    .required(),
             });
             const { error } = schema.validate(req.body);
             if (!error) {
@@ -317,10 +343,35 @@ class DebtorRequests {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
         }
     }
-    async revertManualPayment(req, res, next) {
+    async revertPayment(req, res, next) {
         const schema = joi_1.default.object({
             commission: joi_1.default.number().required(),
             referenceId: joi_1.default.string().required(),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+        }
+    }
+    async addDocumentsToDebtor(req, res, next) {
+        const schema = joi_1.default.object({
+            mcaDocuments: joi_1.default.array().items(joi_1.default.object({
+                key: joi_1.default.string().required(),
+                originalFileName: joi_1.default.string().required(),
+            }).optional()),
+            bankStatementDocuments: joi_1.default.array().items(joi_1.default.object({
+                key: joi_1.default.string().required(),
+                originalFileName: joi_1.default.string().required(),
+            }).optional()),
+            otherDocuments: joi_1.default.array().items(joi_1.default.object({
+                key: joi_1.default.string().required(),
+                originalFileName: joi_1.default.string().required(),
+            }).optional()),
         });
         const { error } = schema.validate(req.body);
         if (!error) {

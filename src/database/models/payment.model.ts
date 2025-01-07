@@ -98,6 +98,9 @@ const PaymentModel: Schema = new Schema({
   transactionType: {
     type: String,
   },
+  paymentGateway: {
+    type: String,
+  },
   manualCommission: {
     type: Number,
   },

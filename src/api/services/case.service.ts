@@ -173,13 +173,18 @@ class CaseService {
     const amountDelivered = await this.getAmountNotDeliveredToCreditor(
       req.params.id
     );
-    for (let doc of findCase.debtor.documents) {
-      const url = await this.uploadUtil.getS3FileSignedUrl(
-        doc.key
-        //'application/pdf'
-      );
-      doc.url = url;
+    
+    const documentFields = ['mcaDocuments', 'bankStatementDocuments', 'otherDocuments'];
+
+    for (const field of documentFields) {
+      const documents = findCase.debtor?.[field]; // Access documents dynamically
+      if (!documents.length) continue; 
+      for (const doc of documents) {
+        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+        doc.url = url;
+      }
     }
+
     const cases: any = await caseUtil.getAllCreditorsOfDebtorForCase(
       findCase.debtor._id,
       findCase.creditor._id
@@ -249,6 +254,32 @@ class CaseService {
       });
     return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
   }
+
+
+  getAllUserCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
+    const reqTemp: any = req;
+    try {
+        const findCases:ICase[] = await this.caseRepository.getAllWithoutPagination<ICase>(
+            { caseOwnerId: reqTemp.id }, 
+            undefined, 
+            undefined, 
+            undefined,
+            {
+              path: 'creditor', select: ['businessInformation.companyName']
+            }
+        );
+      const filteredData: any = findCases.map((item: any) => ({
+        caseId: item._id,
+        creditorCompanyName: item.creditor?.businessInformation?.companyName
+      }));
+      return [true, filteredData];
+    
+    } catch (error) {
+        console.error("Error fetching user cases:", error);
+        return [false, "Error fetching user cases"];
+    }
+};
+
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     let reqTemp: any = req;
@@ -1240,16 +1271,16 @@ class CaseService {
     if (!key) {
       return [false, 'Key is required in the request body.'];
     }
-
+    const documentField = String(req.query.documentField);
     // Update the debtor's documents by removing the document with the matching key
     const response: any = await this.debtorRepository.updateById(
       caseTemp.debtor._id,
       {
-        $pull: {documents: {key}},
+        $pull: {[documentField]: {key}},
       }
     );
 
-    if (response.documents.length === caseTemp.debtor.documents.length) {
+    if (response[documentField].length === caseTemp.debtor[documentField].length) {
       return [false, `No document found with key: ${key}`];
     }
     await caseUtil.addInHistory(
@@ -1363,3 +1394,7 @@ class CaseService {
 }
 
 export default CaseService;
+function item(value: ICase, index: number, array: ICase[]): unknown {
+  throw new Error('Function not implemented.');
+}
+

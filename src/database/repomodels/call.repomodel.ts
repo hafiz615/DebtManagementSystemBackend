@@ -8,6 +8,7 @@ export class Call {
   callTo = '';
   callFrom = ''; 
   callStartTime = ''; 
+  callDirection = '';
   callDuration = ''; 
   callStatus = ''; 
   callRecordingSid = ''; 

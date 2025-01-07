@@ -28,5 +28,6 @@ export class Payment {
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
   transactionType = '';
+  paymentGateway = '';
   manualCommission = 0;
 }

@@ -14,5 +14,6 @@ router.get('/twilio/token', call_controller_1.default.getToken);
 router.post('/twilio/fallback', call_controller_1.default.callFallBack);
 router.post('/twilio/call-status', call_controller_1.default.callStatus);
 router.post('/callSummary', call_controller_1.default.callSummary);
+router.patch('/updateCall/:callSid', authorize_middleware_1.default.validateAuth, call_controller_1.default.updateCall);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

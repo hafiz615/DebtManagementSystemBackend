@@ -106,7 +106,8 @@ class PaymentService {
     }
     const successPayments = structuredClone(paymentsObj.successPayments);
     for (const payment of successPayments) {
-      payment.transactionType = 'Paynote';
+      payment.transactionType = 'ACH';
+      payment.paymentGateway = 'Paynote';
     }
     paymentsObj.successPayments = successPayments;
     return [
@@ -166,7 +167,7 @@ class PaymentService {
           filters['captured'] = 'Failed';
           break;
         case 'successPayments':
-          filters['status'] = 'Success';
+          filters['sendViaPaynote'] = 'Success';
           break;
         case 'successCaptures':
           filters['captured'] = 'Success';
@@ -223,79 +224,6 @@ class PaymentService {
     limit: number,
     upcomingFilter: any
   ) {
-    // let arrayName = String(req.query.arrayName);
-    // const filters = {
-    //   caseId: {$ne: null},
-    //   isDeleted: false,
-    // };
-    // let page = 1;
-    // let limit = 5;
-    // if (arrayName === 'default') {
-    //   // Check if pageNumber and pageSize are provided and valid
-    //   if (req.query.page && !isNaN(Number(req.query.page))) {
-    //     page = Number(req.query.page) ? Number(req.query.page) : page;
-    //   }
-    //   if (req.query.limit && !isNaN(Number(req.query.limit))) {
-    //     limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
-    //   }
-    //   filters['$or'] = [
-    //     {captured: 'Failed'},
-    //     {authorized: 'Failed'},
-    //     {authorized: 'Success'},
-    //     {captured: 'Success'},
-    //     {status: 'Upcoming'},
-    //   ];
-    // } else {
-    //   page = 0;
-    //   limit = 0;
-    //   let filtersApply: any;
-    //   if (req.query.filters === 'true') {
-    //     filtersApply = req.body.filters;
-    //     if (filtersApply?.dueDate) {
-    //       filters['dueDate'] = {
-    //         $gte: filtersApply.dueDate.start,
-    //         $lte: filtersApply.dueDate.end,
-    //       };
-    //     }
-    //     if (filtersApply?.tryDate) {
-    //       filters['reschedule'] = {
-    //         $gte: filtersApply.tryDate.start,
-    //         $lte: filtersApply.tryDate.end,
-    //       };
-    //     }
-    //   }
-    //   switch (arrayName) {
-    //     case 'failedPayments':
-    //       filters['captured'] = 'Failed';
-    //       break;
-    //     case 'successPayments':
-    //       filters['captured'] = 'Success';
-    //       break;
-    //     case 'failedAuthorizations':
-    //       filters['authorized'] = 'Failed';
-    //       break;
-    //     case 'successAuthorizations':
-    //       filters['authorized'] = 'Success';
-    //       break;
-    //     case 'upcomingPayments':
-    //       filters['status'] = 'Upcoming';
-    //       break;
-    //     default:
-    //       filters['captured'] = 'Failed';
-    //       break;
-    //   }
-    // }
-    // let days = Number(req.query.days);
-    // if (days && (days === 3 || days === 5 || days === 7)) {
-    //   let currentDate = commonUtil.getCurrentDate();
-    //   const startDate = new Date(
-    //     new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
-    //   ).toUTCString();
-    //   filters['dueDate'] = {
-    //     $gte: startDate,
-    //     $lte: currentDate,
-    //   };
-    // }
     if (String(req.query.arrayName) === 'default') {
       const failedAuth = {...filters};
       failedAuth['authorized'] = 'Failed';
@@ -335,7 +263,7 @@ class PaymentService {
       );
 
       const successPayments = {...filters};
-      successPayments['status'] = 'Success';
+      successPayments['sendViaPaynote'] = 'Success';
       const getSuccessPayments = await this.getAllPaymentsQuery(
         successPayments,
         page,
@@ -370,7 +298,7 @@ class PaymentService {
   async getAllPaymentsQuery(filters: any, page: number, limit: number) {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status sendViaPaynote debtorTransId transactionType paymentGateway',
       undefined,
       {createdAt: -1},
       {
@@ -401,7 +329,7 @@ class PaymentService {
     upcoming['status'] = 'Upcoming';
     upcoming['dueDate'] = upcomingFilter;
     const successPaynote = {...filters};
-    successPaynote['status'] = 'Success';
+    successPaynote['sendViaPaynote'] = 'Success';
     const successAuthorizations =
       await this.paymentRepository.getCount<IPayment>(successAuth);
     const failedCaptures =
@@ -615,16 +543,22 @@ class PaymentService {
         caseId: id,
         isDeleted: false,
       },
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway',
       undefined,
       {createdAt: -1},
       {
         path: 'caseId',
         select: ['_id', 'caseOwner', 'totalDebt'],
-        populate: {
-          path: 'debtor',
-          select: ['basicInformation.fullName', 'basicInformation.SSID'],
-        },
+        populate: [
+          {
+            path: 'debtor',
+            select: ['basicInformation.fullName', 'basicInformation.SSID'],
+          },
+          {
+            path: 'creditor',
+            select: ['basicInformation.fullName'],
+          },
+        ],
       }
     );
   }
@@ -775,15 +709,15 @@ class PaymentService {
       }
       return [false, message];
     }
-    const sourceId = fundingSource.funding_source.source_id;
-    this.creditorReposiotry.updateById(creditor._id, {
-      paynoteSourceId: fundingSource.funding_source.source_id,
-    });
-    paynoteUtil.initiateFundingSourceVerifcation(
-      sourceId,
-      creditor.paynoteUserId
-    );
-    paynoteUtil.verifyFundingSource(sourceId);
+    // const sourceId = fundingSource.funding_source.source_id;
+    // this.creditorReposiotry.updateById(creditor._id, {
+    //   paynoteSourceId: fundingSource.funding_source.source_id,
+    // });
+    // paynoteUtil.initiateFundingSourceVerifcation(
+    //   sourceId,
+    //   creditor.paynoteUserId
+    // );
+    // paynoteUtil.verifyFundingSource(sourceId);
     return [true, constants.successAddMessage('ACH details')];
   }
 
@@ -818,8 +752,8 @@ class PaymentService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
-    if (!payment.caseId?.creditor?.paynoteSourceId) {
-      return [false, 'No verified account added for this user'];
+    if (!payment.caseId?.creditor?.paynoteUserId) {
+      return [false, 'User not added in paynote!'];
     }
     if (!payment.caseId?.creditorPaymentsProceed) {
       return [false, 'Funds transfer for this creditor is paused'];
@@ -827,10 +761,7 @@ class PaymentService {
     if (payment.status === 'Success') {
       return [false, 'Payment already send'];
     }
-    if (
-      payment.caseId.creditor.paynoteUserId &&
-      payment.caseId.creditor.paynoteSourceId
-    ) {
+    if (payment.caseId.creditor.paynoteUserId) {
       // const paynoteCustomer = await paynoteUtil.getCustomer(
       //   payment.caseId.creditor
       // );
@@ -955,6 +886,32 @@ class PaymentService {
     if (!updateDebtor || !updatePayments)
       return [false, 'Failed to cancel payment plan'];
     return [true, 'Payment plan canceled successfully'];
+  }
+
+  async getRelatedPayments(req: Request) {
+    let payments: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorTransId: req.params.id,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
+
+    if (!payments.length) {
+      return [false, constants.notFoundMessage('payments')];
+    }
+
+    const groupedByTransId = payments.reduce((acc, item) => {
+      if (!acc[item.debtorTransId]) {
+        acc[item.debtorTransId] = [];
+      }
+      acc[item.debtorTransId].push(item);
+      return acc;
+    }, {});
+
+    return [true, groupedByTransId];
   }
 }
 

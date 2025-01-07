@@ -1864,7 +1864,7 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const creditorNames = await this.getCreditorNamesAI(debtor.documents, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor._id, extractedFields, caseId);
+        const creditorNames = await this.getCreditorNamesAI(debtor.mcaDocuments, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor._id, extractedFields, caseId);
         console.log(creditorNames);
         return creditorNames;
     }
@@ -1874,7 +1874,7 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const extractedFields = await this.getExtractionMCA_AI(debtor.documents, global_1.AIAuth.auth_token);
+        const extractedFields = await this.getExtractionMCA_AI(debtor.mcaDocuments, global_1.AIAuth.auth_token);
         return extractedFields;
     }
     async getExtractionMCABuffer(documents) {
@@ -2307,9 +2307,9 @@ class CaseUtil {
                 securityKey = process.env.easypaySecurityKey;
                 url = process.env.easypayUrl;
                 break;
-            case enums_1.paymentPlatform.seamlesschex:
-                securityKey = process.env.seamlesschexSecurityKey;
-                url = process.env.seamlesschexUrl;
+            case enums_1.paymentPlatform.seamlesschexMerchant:
+                securityKey = process.env.seamlesschexMerchantSecurityKey;
+                url = process.env.seamlesschexMerchantUrl;
                 break;
         }
         return { securityKey, url };

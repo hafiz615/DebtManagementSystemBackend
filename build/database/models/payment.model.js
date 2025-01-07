@@ -125,6 +125,9 @@ const PaymentModel = new mongoose_1.Schema({
     transactionType: {
         type: String,
     },
+    paymentGateway: {
+        type: String,
+    },
     manualCommission: {
         type: Number,
     },

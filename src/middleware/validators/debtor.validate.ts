@@ -76,6 +76,24 @@ class DebtorRequests {
           originalFileName: Joi.string().required(),
         }).optional()
       ),
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
       paymentType: Joi.string().allow(''),
       paymentToken: Joi.string().allow(''),
       extractedFields: Joi.array().allow(null).optional(),
@@ -145,6 +163,24 @@ class DebtorRequests {
   ) => {
     const schema = Joi.object({
       documents: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
         Joi.object({
           key: Joi.string().required(),
           originalFileName: Joi.string().required(),
@@ -285,7 +321,9 @@ class DebtorRequests {
     const schema = Joi.object({
       paymentType: Joi.string().required(),
       paymentToken: Joi.string().required(),
-      platform: Joi.string().valid('Easypay direct', 'Seamlesschex').required(),
+      platform: Joi.string()
+        .valid('Easypay direct', 'Seamlesschex merchant')
+        .required(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -353,7 +391,7 @@ class DebtorRequests {
     }
   }
 
-  async revertManualPayment(req: Request, res: Response, next: NextFunction) {
+  async revertPayment(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       commission: Joi.number().required(),
       referenceId: Joi.string().required(),
@@ -393,6 +431,41 @@ class DebtorRequests {
         );
     }
   };
+
+  async addDocumentsToDebtor(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      mcaDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      bankStatementDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+      otherDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          originalFileName: Joi.string().required(),
+        }).optional()
+      ),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(
+          responseHelper.get4xxResponse(
+            error.details[0].context.label + constants.Messages.INVALID_FIELD
+          )
+        );
+    }
+  }
 }
 
 export default new DebtorRequests();

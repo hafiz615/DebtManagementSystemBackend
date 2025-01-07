@@ -24,7 +24,7 @@ router.get('/retryAuth/:id', authorize_middleware_1.default.validateAuth, debtor
 router.get('/retryCapture/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.retryCapture);
 router.get('/getAllDebtors', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getAllDebtors);
 router.post('/createDebtor', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createDebtor, debtor_controller_1.default.createDebtor);
-router.post('/addDocumentsToDebtor/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.addDocumentsToDebtor);
+router.post('/addDocumentsToDebtor/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDocumentsToDebtor, debtor_controller_1.default.addDocumentsToDebtor);
 router.get('/getLumpSumAmount/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getLumpSumAmount);
 router.get('/getFullProfitSettlement/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getFullProfitSettlement);
 router.get('/getLumpSumJustifications/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getLumpSumJustifications);
@@ -44,7 +44,14 @@ router.post('/addPaymentPlan/:id', authorize_middleware_1.default.validateAuth, 
 router.post('/addManualPayment', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.validateManualPayment, debtor_controller_1.default.addManualPayment);
 router.put('/updateWeeklyBudget/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateWeeklyBudget, debtor_controller_1.default.updateWeeklyBudget);
 router.get('/getManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getManualPayments);
-router.post('/revertManualPayments/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.revertManualPayment, debtor_controller_1.default.revertManualPayments);
-router.post('/get-extracted-data', upload.array('files'), debtor_controller_1.default.getExtractFieldsAndDebtor);
+router.post('/revertPayments/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.revertPayment, debtor_controller_1.default.revertPayments);
+// To Pass the Different Files in the Extracted Data
+const uploadFields = upload.fields([
+    { name: 'mcaDocuments' },
+    { name: 'otherDocuments' },
+    { name: 'bankStatementDocuments' }
+]);
+router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.getExtractFieldsAndDebtor);
+router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

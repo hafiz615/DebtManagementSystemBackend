@@ -2186,7 +2186,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const creditorNames = await this.getCreditorNamesAI(
-      debtor.documents,
+      debtor.mcaDocuments,
       AIAuth.auth_token,
       debtor.businessInformation.companyName,
       debtor._id,
@@ -2206,7 +2206,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const extractedFields = await this.getExtractionMCA_AI(
-      debtor.documents,
+      debtor.mcaDocuments,
       AIAuth.auth_token
     );
     return extractedFields;
@@ -2729,9 +2729,9 @@ class CaseUtil {
         securityKey = process.env.easypaySecurityKey;
         url = process.env.easypayUrl;
         break;
-      case paymentPlatform.seamlesschex:
-        securityKey = process.env.seamlesschexSecurityKey;
-        url = process.env.seamlesschexUrl;
+      case paymentPlatform.seamlesschexMerchant:
+        securityKey = process.env.seamlesschexMerchantSecurityKey;
+        url = process.env.seamlesschexMerchantUrl;
         break;
     }
     return {securityKey, url};
