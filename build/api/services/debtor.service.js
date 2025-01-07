@@ -1158,6 +1158,8 @@ class DebtorService {
             transactionType: '',
             manualCommission: 0,
             paymentGateway: '',
+            retriesAuth: 0,
+            retriesCapture: 0,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         if (!result) {

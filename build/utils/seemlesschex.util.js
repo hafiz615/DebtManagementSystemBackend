@@ -219,8 +219,8 @@ class SeemlesschexUtil {
         newCheck.debtorId = debtorId;
         await this.checkRepository.create(newCheck);
     }
-    async deleteCheckInfo(checkId) {
-        const check = await this.checkRepository.updateByOne({ checkId: checkId }, { isDeleted: true });
+    async deleteCheckInfo(checkId, status) {
+        const check = await this.checkRepository.updateByOne({ checkId: checkId }, { isDeleted: true, status: status });
         console.log(check, 'checkkkkkk');
     }
     async getCheckInfo(checkId) {
@@ -268,8 +268,7 @@ class SeemlesschexUtil {
         });
         if (!foundCheck)
             return [true, ''];
-        await this.deleteCheckInfo(checkId);
-        await this.checkRepository.updateByOne({ checkId: checkId }, { status: status });
+        await this.deleteCheckInfo(checkId, status);
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             authorized: 'Pending',
             captured: 'Pending',
