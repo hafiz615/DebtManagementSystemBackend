@@ -260,31 +260,20 @@ class CaseService {
     const reqTemp: any = req;
     try {
         const findCases:ICase[] = await this.caseRepository.getAllWithoutPagination<ICase>(
-            { caseOwnerId: reqTemp.id }, // Filter by caseOwnerId
-            undefined, // No projection on the main document
+            { caseOwnerId: reqTemp.id }, 
             undefined, 
-            undefined,// Sorting not required here
+            undefined, 
+            undefined,
             {
-                path: 'debtor', // Populate the 'debtor' field
-                select: ['basicInformation.fullName'], // Include only 'fullName' from debtor
+              path: 'creditor', select: ['businessInformation.companyName']
             }
         );
-        const result = findCases.reduce(
-          (acc, caseItem:any) => {
-              const debtorFullName = caseItem.debtor?.basicInformation?.fullName || 'Unknown';
-              if (!acc?.some((item) => item.debtorFullName === debtorFullName)) {
-                  acc.push({
-                      caseId: caseItem._id, 
-                      debtorFullName,       
-                  });
-              }
-      
-              return acc;
-          },
-          []
-      );
-      
-        return [true, result];
+      const filteredData: any = findCases.map((item: any) => ({
+        caseId: item._id,
+        creditorCompanyName: item.creditor?.businessInformation?.companyName
+      }));
+      return [true, filteredData];
+    
     } catch (error) {
         console.error("Error fetching user cases:", error);
         return [false, "Error fetching user cases"];
@@ -1405,3 +1394,7 @@ class CaseService {
 }
 
 export default CaseService;
+function item(value: ICase, index: number, array: ICase[]): unknown {
+  throw new Error('Function not implemented.');
+}
+

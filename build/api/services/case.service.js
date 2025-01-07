@@ -128,24 +128,14 @@ class CaseService {
         this.getAllUserCases = async (req) => {
             const reqTemp = req;
             try {
-                const findCases = await this.caseRepository.getAllWithoutPagination({ caseOwnerId: reqTemp.id }, // Filter by caseOwnerId
-                undefined, // No projection on the main document
-                undefined, undefined, // Sorting not required here
-                {
-                    path: 'debtor', // Populate the 'debtor' field
-                    select: ['basicInformation.fullName'], // Include only 'fullName' from debtor
+                const findCases = await this.caseRepository.getAllWithoutPagination({ caseOwnerId: reqTemp.id }, undefined, undefined, undefined, {
+                    path: 'creditor', select: ['businessInformation.companyName']
                 });
-                const result = findCases.reduce((acc, caseItem) => {
-                    const debtorFullName = caseItem.debtor?.basicInformation?.fullName || 'Unknown';
-                    if (!acc?.some((item) => item.debtorFullName === debtorFullName)) {
-                        acc.push({
-                            caseId: caseItem._id,
-                            debtorFullName,
-                        });
-                    }
-                    return acc;
-                }, []);
-                return [true, result];
+                const filteredData = findCases.map((item) => ({
+                    caseId: item._id,
+                    creditorCompanyName: item.creditor?.businessInformation?.companyName
+                }));
+                return [true, filteredData];
             }
             catch (error) {
                 console.error("Error fetching user cases:", error);
@@ -914,4 +904,7 @@ class CaseService {
     }
 }
 exports.default = CaseService;
+function item(value, index, array) {
+    throw new Error('Function not implemented.');
+}
 //# sourceMappingURL=case.service.js.map
