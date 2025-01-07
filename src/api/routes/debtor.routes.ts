@@ -186,4 +186,9 @@ router.post(
   debtorController.getExtractFieldsAndDebtor
 );
 
+router.get(
+  '/get-debtor-extracted-data/:id',
+  debtorController.getDebtorExtractedFields
+);
+
 export default router;

@@ -1551,6 +1551,14 @@ class DebtorService {
     }
     return [true, debtor];
   }
+
+  async getDebtorExtractedFields(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    return [true, debtor.extractedFields];
+  }
 }
 
 export default DebtorService;
