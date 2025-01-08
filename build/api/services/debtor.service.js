@@ -25,6 +25,7 @@ const lodash_1 = __importDefault(require("lodash"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
 const lodash_2 = require("lodash");
 const case_service_1 = __importDefault(require("./case.service"));
+const mongoose_1 = __importDefault(require("mongoose"));
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -1177,24 +1178,34 @@ class DebtorService {
     async getExtractFieldsAndDebtor(req) {
         const reqTemp = req;
         const files = { ...reqTemp.files };
-        console.log("this is the file", files);
-        // return [true, "success"];
-        if (!files.mcaDocuments) {
+        const debtorId = reqTemp?.body?.debtorId;
+        // console.log("this is the file we are getting", files)
+        // console.log("this is req Debtor: ", debtorId)
+        if (!files.mcaDocuments && !debtorId) {
             return [false, constants_util_2.default.Messages.ATTATCH_FILE_ERROR];
         }
-        const extractedFields = await case_util_1.default.getExtractionMCABuffer(files.mcaDocuments);
-        if (typeof extractedFields === 'string')
-            return [false, extractedFields];
-        let debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
-        const debtorExist = await this.checkDebtorExist(debtorBody);
-        console.log(debtorExist);
         let previousMca = [];
         let newMca = [];
-        if (!debtorExist[0]) {
+        let debtorBody = [];
+        if (!debtorId) {
+            const extractedFields = await case_util_1.default.getExtractionMCABuffer(files.mcaDocuments);
+            if (typeof extractedFields === 'string')
+                return [false, extractedFields];
+            debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
+            const checkDebtorAlreadyExist = await this.checkDebtorAlreadyExist(debtorBody);
+            console.log(checkDebtorAlreadyExist);
+            if (checkDebtorAlreadyExist[0])
+                return [false, "Debtor Already Exist. Please add the Debtor Id"];
             debtorBody['extractedFields'] = extractedFields.extracted_fields;
             debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
         }
         else {
+            if (!mongoose_1.default.Types.ObjectId.isValid(debtorId)) {
+                return [false, "Invalid Debtor Id!"];
+            }
+            const debtorExist = await this.checkDebtor(debtorId);
+            if (!debtorExist)
+                return [false, constants_util_2.default.notFoundMessage("Debtor")];
             const newFiles = await this.updateDebtorIdExist(debtorExist[1], files);
             previousMca = debtorExist[1].mcaDocuments.map((obj) => { return obj.originalFileName; });
             if (!newFiles.mcaDocuments.length && !newFiles.bankStatementDocuments.length && !newFiles.otherDocuments.length) {
@@ -1248,7 +1259,11 @@ class DebtorService {
         await uploadAndAppend('otherDocuments', 'otherDocuments');
         return debtorBody;
     }
-    async checkDebtorExist(body) {
+    async checkDebtor(id) {
+        const debtor = await this.debtorRepository.getById(id);
+        return debtor ? [true, debtor] : false;
+    }
+    async checkDebtorAlreadyExist(body) {
         const debtor = await this.debtorRepository.getOne({
             $or: [
                 { 'businessInformation.EIN': body.businessInformation.EIN },
@@ -1258,10 +1273,13 @@ class DebtorService {
         return debtor ? [true, debtor] : [false];
     }
     async createDebtorForPortal(body, source) {
+        let previousMca = [];
+        let newMca = [];
         body.status = 'Pending';
         const debtor = await case_util_1.default.createDebtor(body, source);
+        newMca = debtor.mcaDocuments.map((obj) => { return obj.originalFileName; });
         return debtor
-            ? [true, { debtorId: String(debtor._id), extractedFields: debtor.extractedFields }]
+            ? [true, { debtorId: String(debtor._id), extractedFields: debtor.extractedFields, newMca, previousMca }]
             : [false, constants_util_2.default.failureAddMessage('debtor')];
     }
     async getDebtorExtractedFields(req) {
@@ -1269,7 +1287,13 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
-        return [true, debtor.extractedFields];
+        const mcaDocuments = debtor.mcaDocuments.map((obj) => { return obj.originalFileName; });
+        const bankStatementDocuments = debtor.bankStatementDocuments.map((obj) => { return obj.originalFileName; });
+        const otherDocuments = debtor.otherDocuments.map((obj) => { return obj.originalFileName; });
+        return [true, { extractedFields: debtor.extractedFields,
+                mcaDocuments: mcaDocuments,
+                bankStatementDocuments: bankStatementDocuments,
+                otherDocuments: otherDocuments }];
     }
 }
 exports.default = DebtorService;
