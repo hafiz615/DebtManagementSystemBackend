@@ -28,7 +28,7 @@ export default {
     UPLOAD_FILES_SUCCESS: 'Files uploaded successfully',
     DELETE_FILES_FAILURE: 'Unable to delete files',
     DELETE_FILES_SUCCESS: 'Files Delete successfully',
-    ATTATCH_FILE_ERROR: 'Please attatch atleast one file to upload',
+    ATTATCH_FILE_ERROR: 'Please attatch atleast one MCA file to upload',
     INVALID_LINK: 'Invitation link may be expired or is invalid',
     VALID_LINK: 'Invitation link verified successfully',
     SEND_INVITATION_LINK_200: 'Invitation link sent successfully',
