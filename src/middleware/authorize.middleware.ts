@@ -55,6 +55,7 @@ class Authorize {
           req.role = exists.role;
           req.sessionId = decoded?.sessionId;
           req.name = exists.name;
+          req.twilioNo = exists.twilioNo;
           const store = asyncLocalStorage.getStore();
           if (store) {
             store.set('ip', req.ip);

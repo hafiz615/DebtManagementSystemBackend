@@ -10,7 +10,7 @@ const router = (0, express_1.Router)();
 router.get('/getCalls/:caseId', authorize_middleware_1.default.validateAuth, call_controller_1.default.getCalls);
 router.post('/voice', call_controller_1.default.callTwiml);
 router.post('/twilio/recording-status', call_controller_1.default.callRecordingStatus);
-router.get('/twilio/token', call_controller_1.default.getToken);
+router.get('/twilio/token', authorize_middleware_1.default.validateAuth, call_controller_1.default.getToken);
 router.post('/twilio/fallback', call_controller_1.default.callFallBack);
 router.post('/twilio/call-status', call_controller_1.default.callStatus);
 router.post('/callSummary', call_controller_1.default.callSummary);
