@@ -352,13 +352,25 @@ class PaymentService {
     };
   }
 
-  async getCasePayments(id: string): Promise<[boolean, {} | string]> {
-    const payments: IPayment[] = await this.getAllPaymentsByCaseId(id);
-    if (!payments.length) {
-      return [false, constants.notFoundMessage('Payments')];
-    }
+  async getCasePayments(req: Request): Promise<[boolean, {} | string]> {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const paymentsPrevious: IPayment[] = await this.getPreviousPaymentsByCaseId(
+      req.params.id
+    );
+    const paymentsUpcoming: IPayment[] = await this.getUpcomingPaymentsByCaseId(
+      req.params.id,
+      pageLimit.page,
+      pageLimit.limit
+    );
+    // if (!payments.length) {
+    //   return [false, constants.notFoundMessage('Payments')];
+    // }
+    const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
+
     const paymentsObj = await paymentUtil.getFilteredPayments(
-      payments,
+      newPaymentsArray,
       'default'
     );
     let paidAmount = 0,
@@ -412,7 +424,7 @@ class PaymentService {
       successAuthorizations: paymentsObj.successAuthorizations.length,
       successPayments: paymentsObj.successPayments.length,
       paidAmount: paidAmount,
-      remainingAmount: upcomingAmount + failedAmount,
+      remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
     };
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
@@ -421,11 +433,15 @@ class PaymentService {
       (a: any, b: any) =>
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
+    const paginatedArray = mergedArray.slice(
+      (pageLimit.page - 1) * pageLimit.limit,
+      pageLimit.page * pageLimit.limit
+    );
     return [
       true,
       {
         transactions: {
-          previous: mergedArray,
+          previous: paginatedArray,
           upcomingPayments: paymentsObj.upcomingPayments,
         },
         paymentCounts: paymentCounts,
@@ -433,8 +449,15 @@ class PaymentService {
     ];
   }
 
-  async getAllUpcomingPayments(id: string): Promise<[boolean, {} | string]> {
-    const payments: IPayment[] = await this.getAllPaymentsByDebtor(id);
+  async getAllUpcomingPayments(req: Request): Promise<[boolean, {} | string]> {
+    const debtor = await this.debtorReposiotry.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('case')];
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const payments: IPayment[] = await this.getAllPaymentsByDebtor(
+      req.params.id,
+      pageLimit.page,
+      pageLimit.limit
+    );
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -452,14 +475,16 @@ class PaymentService {
     ];
   }
 
-  async getCommissionPayments(): Promise<[boolean, {} | string]> {
-    const payments: IPayment[] = await this.getAllCommissionPayments();
-    if (!payments.length) {
-      return [false, constants.notFoundMessage('Payments')];
-    }
-    const successCommissionPaymentsForCase: IPayment[] =
-      await this.getSuccessCommissionPaymentsWithCaseId();
-    const newPaymentsArray = payments.concat(successCommissionPaymentsForCase);
+  async getCommissionPayments(req: Request): Promise<[boolean, {} | string]> {
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const paymentsPrevious: IPayment[] =
+      await this.getPreviousCommissionPayments();
+    const paymentsUpcoming: IPayment[] =
+      await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
+    // if (!payments.length) {
+    //   return [false, constants.notFoundMessage('Payments')];
+    // }
+    const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
     const paymentsObj =
       await paymentUtil.getFilteredCommissionPayments(newPaymentsArray);
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
@@ -498,19 +523,27 @@ class PaymentService {
       (a: any, b: any) =>
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
+    const paginatedArray = mergedArray.slice(
+      (pageLimit.page - 1) * pageLimit.limit,
+      pageLimit.page * pageLimit.limit
+    );
     return [
       true,
       {
         transactions: {
-          previous: mergedArray,
+          previous: paginatedArray,
           upcomingPayments: paymentsObj.upcomingPayments,
         },
       },
     ];
   }
 
-  private async getAllPaymentsByDebtor(id: string) {
-    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+  private async getAllPaymentsByDebtor(
+    id: string,
+    page: number,
+    limit: number
+  ) {
+    return await this.paymentRepository.getAll<IPayment>(
       {
         debtorId: id,
         caseId: {$ne: null},
@@ -533,15 +566,19 @@ class PaymentService {
             select: ['basicInformation.fullName'],
           },
         ],
-      }
+      },
+      undefined,
+      page,
+      limit
     );
   }
 
-  private async getAllPaymentsByCaseId(id: string) {
+  private async getPreviousPaymentsByCaseId(id: string) {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         caseId: id,
         isDeleted: false,
+        status: {$ne: 'Upcoming'},
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway',
       undefined,
@@ -563,15 +600,67 @@ class PaymentService {
     );
   }
 
-  private async getAllCommissionPayments() {
+  private async getUpcomingPaymentsByCaseId(
+    id: string,
+    page: number,
+    limit: number
+  ) {
+    return await this.paymentRepository.getAll<IPayment>(
+      {
+        caseId: id,
+        isDeleted: false,
+        status: 'Upcoming',
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway',
+      undefined,
+      {createdAt: -1},
+      {
+        path: 'caseId',
+        select: ['_id', 'caseOwner', 'totalDebt'],
+        populate: [
+          {
+            path: 'debtor',
+            select: ['basicInformation.fullName', 'basicInformation.SSID'],
+          },
+          {
+            path: 'creditor',
+            select: ['basicInformation.fullName'],
+          },
+        ],
+      },
+      undefined,
+      page,
+      limit
+    );
+  }
+
+  private async getPreviousCommissionPayments() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
         caseId: null,
         isDeleted: false,
+        status: {$ne: 'Upcoming'},
       },
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway',
       undefined,
       {createdAt: -1}
+    );
+  }
+
+  private async getUpcomingCommissionPayments(page: number, limit: number) {
+    return await this.paymentRepository.getAll<IPayment>(
+      {
+        caseId: null,
+        isDeleted: false,
+        status: 'Upcoming',
+      },
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway',
+      undefined,
+      {createdAt: -1},
+      undefined,
+      undefined,
+      page,
+      limit
     );
   }
 
@@ -595,7 +684,7 @@ class PaymentService {
     platform: string
   ) {
     const urlSecurityKey =
-      await caseUtil.getUrlAndSecurityKeyPlatform(platform);
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
     const url = urlSecurityKey.url;
     const params = {
       security_key: urlSecurityKey.securityKey,
@@ -627,7 +716,7 @@ class PaymentService {
     platform: string
   ) {
     const urlSecurityKey =
-      await caseUtil.getUrlAndSecurityKeyPlatform(platform);
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
     const url = urlSecurityKey.url;
     const params = {
       security_key: urlSecurityKey.securityKey,
@@ -657,7 +746,7 @@ class PaymentService {
 
   async achCredit(customer_vault_id: string, amount: number, platform: string) {
     const urlSecurityKey =
-      await caseUtil.getUrlAndSecurityKeyPlatform(platform);
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
     const url = urlSecurityKey.url;
     const params = {
       security_key: urlSecurityKey.securityKey,

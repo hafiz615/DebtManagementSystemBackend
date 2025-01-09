@@ -33,7 +33,6 @@ const justification_repository_1 = require("../api/repository/justification/just
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
-const enums_1 = require("../enums");
 const twilio_1 = __importDefault(require("twilio"));
 dotenv_1.default.config();
 class CaseUtil {
@@ -1886,7 +1885,7 @@ class CaseUtil {
         return extractedFields;
     }
     async findMCASubStr(str) {
-        const regex = /mca/i;
+        const regex = /(mca|contract)/i;
         const match = str.match(regex);
         return match ? true : false;
     }
@@ -2279,7 +2278,7 @@ class CaseUtil {
     }
     async createVault(paymentToken, debtorName, platform) {
         const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
-        const urlSecurityKey = await this.getUrlAndSecurityKeyPlatform(platform);
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
         const url = urlSecurityKey.url;
         const params = {
             customer_vault: 'add_customer',
@@ -2298,21 +2297,6 @@ class CaseUtil {
             return [true, customerVault];
         }
         return [false, 'Unable to create customer vault'];
-    }
-    async getUrlAndSecurityKeyPlatform(platform) {
-        let securityKey = '';
-        let url = '';
-        switch (platform) {
-            case enums_1.paymentPlatform.easypay:
-                securityKey = process.env.easypaySecurityKey;
-                url = process.env.easypayUrl;
-                break;
-            case enums_1.paymentPlatform.seamlesschexMerchant:
-                securityKey = process.env.seamlesschexMerchantSecurityKey;
-                url = process.env.seamlesschexMerchantUrl;
-                break;
-        }
-        return { securityKey, url };
     }
     async getSettlementRangeSummery(data) {
         console.log(' getSettlementRangeSummery ---- data: ', data);
@@ -2524,6 +2508,11 @@ class CaseUtil {
             serviceSid: process.env.TWILIO_Service_SID,
         });
         return transcript.links.sentences;
+    }
+    async findBankStatementSubStr(str) {
+        const regex = /(bank|statement)/i; // Match either "bank" or "statement" (case-insensitive)
+        const match = str.match(regex);
+        return match ? true : false;
     }
 }
 exports.default = new CaseUtil();

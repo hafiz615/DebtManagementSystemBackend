@@ -127,6 +127,8 @@ class PaymentUtil {
       failedReasonAuthorization: obj.failedReasonAuthorization,
       failedReasonCaptured: obj.failedReasonCaptured,
       tryDate: obj.rescheduled,
+      transactionType: obj.transactionType ? obj.transactionType : '',
+      paymentGateway: obj.paymentGateway ? obj.paymentGateway : '',
     }));
 
     return this.getFilteredCommissionPaymentsObj(transformedArray);

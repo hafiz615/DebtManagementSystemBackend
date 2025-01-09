@@ -2227,7 +2227,7 @@ class CaseUtil {
   }
 
   async findMCASubStr(str: string) {
-    const regex = /mca/i;
+    const regex = /(mca|contract)/i;
     const match = str.match(regex);
     return match ? true : false;
   }
@@ -2698,7 +2698,8 @@ class CaseUtil {
     platform: string
   ): Promise<[boolean, string]> {
     const names = await commonUtil.getFirstAndLastNameByFullName(debtorName);
-    const urlSecurityKey = await this.getUrlAndSecurityKeyPlatform(platform);
+    const urlSecurityKey =
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
     const url = urlSecurityKey.url;
     const params = {
       customer_vault: 'add_customer',
@@ -2719,22 +2720,6 @@ class CaseUtil {
       return [true, customerVault];
     }
     return [false, 'Unable to create customer vault'];
-  }
-
-  async getUrlAndSecurityKeyPlatform(platform: string) {
-    let securityKey = '';
-    let url = '';
-    switch (platform) {
-      case paymentPlatform.easypay:
-        securityKey = process.env.easypaySecurityKey;
-        url = process.env.easypayUrl;
-        break;
-      case paymentPlatform.seamlesschexMerchant:
-        securityKey = process.env.seamlesschexMerchantSecurityKey;
-        url = process.env.seamlesschexMerchantUrl;
-        break;
-    }
-    return {securityKey, url};
   }
 
   async getSettlementRangeSummery(
@@ -2993,6 +2978,11 @@ class CaseUtil {
       serviceSid: process.env.TWILIO_Service_SID,
     });
     return transcript.links.sentences;
+  }
+  async findBankStatementSubStr(str: string) {
+    const regex = /(bank|statement)/i; // Match either "bank" or "statement" (case-insensitive)
+    const match = str.match(regex);
+    return match ? true : false;
   }
 }
 export default new CaseUtil();
