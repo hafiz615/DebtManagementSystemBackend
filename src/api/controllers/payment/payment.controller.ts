@@ -61,7 +61,7 @@ class PaymentController {
               'You do not have permission to perform this operation'
             )
           );
-      const response = await this.paymentService.getCasePayments(req.params.id);
+      const response = await this.paymentService.getCasePayments(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.OK)
@@ -95,9 +95,7 @@ class PaymentController {
               'You do not have permission to perform this operation'
             )
           );
-      const response = await this.paymentService.getAllUpcomingPayments(
-        req.params.id
-      );
+      const response = await this.paymentService.getAllUpcomingPayments(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.OK)
@@ -265,7 +263,7 @@ class PaymentController {
 
   getCommissionPayments = async (req: Request, res: Response) => {
     try {
-      const response = await this.paymentService.getCommissionPayments();
+      const response = await this.paymentService.getCommissionPayments(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.OK)
