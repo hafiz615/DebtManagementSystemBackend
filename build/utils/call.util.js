@@ -31,10 +31,7 @@ class CallUtil {
             await this.uploadUtil.callUploadFile(fileName, buffer);
             return 'File uploaded to S3';
         }
-        else {
-            console.error('Failed to fetch recording. Status:', response.status);
-            return null;
-        }
+        return null;
     }
     async fetchParentCallSid(callSid) {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -49,10 +46,7 @@ class CallUtil {
             console.log('Parent CallSid:', call.parent_call_sid);
             return call.parent_call_sid;
         }
-        else {
-            console.error('Failed to fetch call details. Status:', response.status);
-            return null;
-        }
+        return null;
     }
     async createCall(data, userName, callerId) {
         const newCall = new call_repomodel_1.Call();

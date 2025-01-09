@@ -32,10 +32,8 @@ class CallUtil {
         const fileName = `${recordingSid}`;
         await this.uploadUtil.callUploadFile(fileName, buffer);
         return 'File uploaded to S3';
-      } else {
-        console.error('Failed to fetch recording. Status:', response.status);
-        return null;
       }
+      return null;
     } 
 
     async fetchParentCallSid(callSid: string) {
@@ -52,10 +50,8 @@ class CallUtil {
         const call = response.data;
         console.log('Parent CallSid:', call.parent_call_sid);
         return call.parent_call_sid;
-      } else {
-        console.error('Failed to fetch call details. Status:', response.status);
-        return null;
-      }
+      } 
+      return null;
     }
     
     async createCall(data: any,userName: string, callerId: string) {
