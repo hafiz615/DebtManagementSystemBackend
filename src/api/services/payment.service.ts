@@ -364,6 +364,9 @@ class PaymentService {
       pageLimit.page,
       pageLimit.limit
     );
+    const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(
+      req.params.id
+    );
     // if (!payments.length) {
     //   return [false, constants.notFoundMessage('Payments')];
     // }
@@ -443,6 +446,7 @@ class PaymentService {
         transactions: {
           previous: paginatedArray,
           upcomingPayments: paymentsObj.upcomingPayments,
+          totalCount: mergedArray.length + paymentsUpcomingCount,
         },
         paymentCounts: paymentCounts,
       },
@@ -458,6 +462,7 @@ class PaymentService {
       pageLimit.page,
       pageLimit.limit
     );
+    const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id);
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -470,6 +475,7 @@ class PaymentService {
       {
         transactions: {
           upcomingPayments: paymentsObj.upcomingPayments,
+          totalCount: paymentsCount,
         },
       },
     ];
@@ -481,6 +487,8 @@ class PaymentService {
       await this.getPreviousCommissionPayments();
     const paymentsUpcoming: IPayment[] =
       await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
+    const paymentsUpcomingCount =
+      await this.getUpcomingCommissionPaymentsCount();
     // if (!payments.length) {
     //   return [false, constants.notFoundMessage('Payments')];
     // }
@@ -533,6 +541,7 @@ class PaymentService {
         transactions: {
           previous: paginatedArray,
           upcomingPayments: paymentsObj.upcomingPayments,
+          totalCount: mergedArray.length + paymentsUpcomingCount,
         },
       },
     ];
@@ -571,6 +580,15 @@ class PaymentService {
       page,
       limit
     );
+  }
+
+  private async getAllPaymentsByDebtorCount(id: string) {
+    return await this.paymentRepository.getCount<IPayment>({
+      debtorId: id,
+      caseId: {$ne: null},
+      isDeleted: false,
+      status: 'Upcoming',
+    });
   }
 
   private async getPreviousPaymentsByCaseId(id: string) {
@@ -634,6 +652,14 @@ class PaymentService {
     );
   }
 
+  private async getUpcomingPaymentsByCaseIdCount(id: string) {
+    return await this.paymentRepository.getCount<IPayment>({
+      caseId: id,
+      isDeleted: false,
+      status: 'Upcoming',
+    });
+  }
+
   private async getPreviousCommissionPayments() {
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       {
@@ -662,6 +688,14 @@ class PaymentService {
       page,
       limit
     );
+  }
+
+  private async getUpcomingCommissionPaymentsCount() {
+    return await this.paymentRepository.getCount<IPayment>({
+      caseId: null,
+      isDeleted: false,
+      status: 'Upcoming',
+    });
   }
 
   private async getSuccessCommissionPaymentsWithCaseId() {

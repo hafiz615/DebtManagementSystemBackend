@@ -263,6 +263,7 @@ class PaymentService {
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const paymentsPrevious = await this.getPreviousPaymentsByCaseId(req.params.id);
         const paymentsUpcoming = await this.getUpcomingPaymentsByCaseId(req.params.id, pageLimit.page, pageLimit.limit);
+        const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(req.params.id);
         // if (!payments.length) {
         //   return [false, constants.notFoundMessage('Payments')];
         // }
@@ -315,6 +316,7 @@ class PaymentService {
                 transactions: {
                     previous: paginatedArray,
                     upcomingPayments: paymentsObj.upcomingPayments,
+                    totalCount: mergedArray.length + paymentsUpcomingCount,
                 },
                 paymentCounts: paymentCounts,
             },
@@ -326,6 +328,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const payments = await this.getAllPaymentsByDebtor(req.params.id, pageLimit.page, pageLimit.limit);
+        const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -335,6 +338,7 @@ class PaymentService {
             {
                 transactions: {
                     upcomingPayments: paymentsObj.upcomingPayments,
+                    totalCount: paymentsCount,
                 },
             },
         ];
@@ -343,6 +347,7 @@ class PaymentService {
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const paymentsPrevious = await this.getPreviousCommissionPayments();
         const paymentsUpcoming = await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
+        const paymentsUpcomingCount = await this.getUpcomingCommissionPaymentsCount();
         // if (!payments.length) {
         //   return [false, constants.notFoundMessage('Payments')];
         // }
@@ -382,6 +387,7 @@ class PaymentService {
                 transactions: {
                     previous: paginatedArray,
                     upcomingPayments: paymentsObj.upcomingPayments,
+                    totalCount: mergedArray.length + paymentsUpcomingCount,
                 },
             },
         ];
@@ -406,6 +412,14 @@ class PaymentService {
                 },
             ],
         }, undefined, page, limit);
+    }
+    async getAllPaymentsByDebtorCount(id) {
+        return await this.paymentRepository.getCount({
+            debtorId: id,
+            caseId: { $ne: null },
+            isDeleted: false,
+            status: 'Upcoming',
+        });
     }
     async getPreviousPaymentsByCaseId(id) {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -447,6 +461,13 @@ class PaymentService {
             ],
         }, undefined, page, limit);
     }
+    async getUpcomingPaymentsByCaseIdCount(id) {
+        return await this.paymentRepository.getCount({
+            caseId: id,
+            isDeleted: false,
+            status: 'Upcoming',
+        });
+    }
     async getPreviousCommissionPayments() {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: null,
@@ -460,6 +481,13 @@ class PaymentService {
             isDeleted: false,
             status: 'Upcoming',
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
+    }
+    async getUpcomingCommissionPaymentsCount() {
+        return await this.paymentRepository.getCount({
+            caseId: null,
+            isDeleted: false,
+            status: 'Upcoming',
+        });
     }
     async getSuccessCommissionPaymentsWithCaseId() {
         return await this.paymentRepository.getAllWithoutPagination({
