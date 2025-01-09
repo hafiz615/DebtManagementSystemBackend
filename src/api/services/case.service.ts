@@ -173,12 +173,16 @@ class CaseService {
     const amountDelivered = await this.getAmountNotDeliveredToCreditor(
       req.params.id
     );
-    
-    const documentFields = ['mcaDocuments', 'bankStatementDocuments', 'otherDocuments'];
+
+    const documentFields = [
+      'mcaDocuments',
+      'bankStatementDocuments',
+      'otherDocuments',
+    ];
 
     for (const field of documentFields) {
       const documents = findCase.debtor?.[field]; // Access documents dynamically
-      if (!documents.length) continue; 
+      if (!documents.length) continue;
       for (const doc of documents) {
         const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
         doc.url = url;
@@ -194,7 +198,9 @@ class CaseService {
     // });
     const uniqueResult: any = Array.from(
       new Map(
-        cases.map(caseTemp => [String(caseTemp.creditor._id), caseTemp])
+        cases
+          .filter(caseTemp => caseTemp.creditor)
+          .map(caseTemp => [String(caseTemp.creditor?._id), caseTemp])
       ).values()
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
@@ -255,31 +261,32 @@ class CaseService {
     return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
   }
 
-
-  getAllUserCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
+  getAllUserCases = async (
+    req: Request
+  ): Promise<[boolean, ICase[] | string]> => {
     const reqTemp: any = req;
     try {
-        const findCases:ICase[] = await this.caseRepository.getAllWithoutPagination<ICase>(
-            { caseOwnerId: reqTemp.id }, 
-            undefined, 
-            undefined, 
-            undefined,
-            {
-              path: 'creditor', select: ['businessInformation.companyName']
-            }
+      const findCases: ICase[] =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {caseOwnerId: reqTemp.id},
+          undefined,
+          undefined,
+          undefined,
+          {
+            path: 'creditor',
+            select: ['businessInformation.companyName'],
+          }
         );
       const filteredData: any = findCases.map((item: any) => ({
         caseId: item._id,
-        creditorCompanyName: item.creditor?.businessInformation?.companyName
+        creditorCompanyName: item.creditor?.businessInformation?.companyName,
       }));
       return [true, filteredData];
-    
     } catch (error) {
-        console.error("Error fetching user cases:", error);
-        return [false, "Error fetching user cases"];
+      console.error('Error fetching user cases:', error);
+      return [false, 'Error fetching user cases'];
     }
-};
-
+  };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     let reqTemp: any = req;
@@ -1280,7 +1287,9 @@ class CaseService {
       }
     );
 
-    if (response[documentField].length === caseTemp.debtor[documentField].length) {
+    if (
+      response[documentField].length === caseTemp.debtor[documentField].length
+    ) {
       return [false, `No document found with key: ${key}`];
     }
     await caseUtil.addInHistory(
@@ -1397,4 +1406,3 @@ export default CaseService;
 function item(value: ICase, index: number, array: ICase[]): unknown {
   throw new Error('Function not implemented.');
 }
-
