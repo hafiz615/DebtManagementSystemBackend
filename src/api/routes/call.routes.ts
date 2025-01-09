@@ -9,6 +9,7 @@ router.post('/twilio/recording-status', callController.callRecordingStatus);
 router.get('/twilio/token', authorize.validateAuth, callController.getToken);
 router.post('/twilio/fallback', callController.callFallBack);
 router.post('/twilio/call-status', callController.callStatus);
+router.get('/twilio/getIncomingCall/:callSid', callController.getIncomingCallSid);
 router.post('/callSummary', callController.callSummary);
 router.patch(
   '/updateCall/:callSid',
