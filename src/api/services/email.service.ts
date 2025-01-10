@@ -68,12 +68,12 @@ class EmailService {
       if (caseId) {
         await caseUtil.addInHistory(
           {
+            Subject: subject,
             From: from,
             To: to,
             Content: parseData.textAsHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
-            Subject: subject,
           },
           caseId
         );

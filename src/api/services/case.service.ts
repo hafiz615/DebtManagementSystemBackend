@@ -1160,12 +1160,12 @@ class CaseService {
     const time = new Date(commonUtil.getCurrentDate());
     await caseUtil.addInHistory(
       {
+        Subject: subject,
         From: from,
         To: sendTo,
         Content: content,
         Time: time,
-        Action: 'EMAIL',
-        Subject: subject,
+        Action: 'EMAIL'
       },
       caseId
     );
