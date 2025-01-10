@@ -29,6 +29,7 @@ import {IPayment} from './database/interfaces/payment.interface';
 import {Server, Socket} from 'socket.io';
 import {createServer} from 'http';
 import dotenv from 'dotenv';
+import easypayUtil from './utils/easypay.util';
 dotenv.config();
 
 class App {
@@ -88,6 +89,7 @@ class App {
     )
       await paynoteUtil.syncUsersPaynote();
     bulkUploadCronjob.startCronJob();
+    // await easypayUtil.syncClients('Easypay direct');
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
     // paymentCronjob.startCronJob();

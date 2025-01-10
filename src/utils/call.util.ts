@@ -32,11 +32,27 @@ class CallUtil {
         const fileName = `${recordingSid}`;
         await this.uploadUtil.callUploadFile(fileName, buffer);
         return 'File uploaded to S3';
-      } else {
-        console.error('Failed to fetch recording. Status:', response.status);
-        return null;
       }
+      return null;
     } 
+
+    async fetchParentCallSid(callSid: string) {
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls/${callSid}.json`;
+
+      const response = await axiosInstance.get(url, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+        },
+      });
+
+      if (response.status === 200) {
+        const call = response.data;
+        console.log('Parent CallSid:', call.parent_call_sid);
+        return call.parent_call_sid;
+      } 
+      return null;
+    }
     
     async createCall(data: any,userName: string, callerId: string) {
       const newCall= new Call();

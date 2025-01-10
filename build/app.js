@@ -62,6 +62,7 @@ class App {
             process.env.runPaynoteScript === 'true')
             await paynote_util_1.default.syncUsersPaynote();
         bulkUpload_cronjob_1.default.startCronJob();
+        // await easypayUtil.syncClients('Easypay direct');
         // paymentCronjob.processPayments();
         // paymentCronjob.processCommissionPayments();
         // paymentCronjob.startCronJob();

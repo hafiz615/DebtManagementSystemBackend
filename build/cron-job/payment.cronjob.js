@@ -588,6 +588,7 @@ class CronJob {
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['commission'] = commission;
+            updateObjPayment['status'] = 'Pending';
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
             //   'successful_authorization',
@@ -599,6 +600,7 @@ class CronJob {
         else {
             updateObjPayment['authorized'] = 'Failed';
             updateObjPayment['failedReasonAuthorization'] = responseText;
+            updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;
@@ -630,6 +632,7 @@ class CronJob {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
+            updateObjPayment['status'] = 'Pending';
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
             //   'successful_authorization',
@@ -641,6 +644,7 @@ class CronJob {
         else {
             updateObjPayment['authorized'] = 'Failed';
             updateObjPayment['failedReasonAuthorization'] = responseText;
+            updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;
@@ -743,11 +747,11 @@ class CronJob {
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
-            updateObjPayment['status'] = 'Pending';
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
                 updateObjPayment['commission'] = commision;
+                updateObjPayment['status'] = 'Pending';
             }
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
@@ -760,7 +764,7 @@ class CronJob {
         else {
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
-                // updateObjPayment['status'] = 'Pending';
+                updateObjPayment['status'] = 'Pending';
             }
             updateObjPayment['captured'] = 'Failed';
             updateObjPayment['failedReasonCaptured'] = responseText;
@@ -789,10 +793,10 @@ class CronJob {
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
-            updateObjPayment['status'] = 'Pending';
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
+                updateObjPayment['status'] = 'Pending';
             }
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
@@ -819,7 +823,7 @@ class CronJob {
         else {
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
-                // updateObjPayment['status'] = 'Pending';
+                updateObjPayment['status'] = 'Pending';
             }
             updateObjPayment['captured'] = 'Failed';
             updateObjPayment['failedReasonCaptured'] = responseText;

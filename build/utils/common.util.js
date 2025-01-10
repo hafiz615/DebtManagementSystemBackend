@@ -8,6 +8,7 @@ const constants_util_1 = __importDefault(require("./constants.util"));
 const rolesPermissions_service_1 = __importDefault(require("../api/services/rolesPermissions.service"));
 const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
+const enums_1 = require("../enums");
 dotenv_1.default.config();
 class CommonUtil {
     getCurrentDate() {
@@ -85,6 +86,46 @@ class CommonUtil {
     }
     getDecryptedData(data) {
         return (0, n_krypta_1.decrypt)(data, process.env.kryptaSecretKey);
+    }
+    async getUrlAndSecurityKeyPlatform(platform) {
+        let securityKey = '';
+        let url = '';
+        switch (platform) {
+            case enums_1.paymentPlatform.easypay:
+                securityKey = process.env.easypaySecurityKey;
+                url = process.env.easypayUrl;
+                break;
+            case enums_1.paymentPlatform.seamlesschexMerchant:
+                securityKey = process.env.seamlesschexMerchantSecurityKey;
+                url = process.env.seamlesschexMerchantUrl;
+                break;
+        }
+        return { securityKey, url };
+    }
+    async getUrlAndSecurityKeyQuery(platform) {
+        let securityKey = '';
+        let url = '';
+        switch (platform) {
+            case enums_1.paymentPlatform.easypay:
+                securityKey = process.env.easypaySecurityKey;
+                url = process.env.easypayQueryUrl;
+                break;
+            case enums_1.paymentPlatform.seamlesschexMerchant:
+                securityKey = process.env.seamlesschexMerchantSecurityKey;
+                url = process.env.seamlesschexMerchantQueryUrl;
+                break;
+        }
+        return { securityKey, url };
+    }
+    async getPageAndLimit(defaultPage, defaultLimit, req) {
+        let page = 0, limit = 0;
+        if (req.query.page && !isNaN(Number(req.query.page))) {
+            page = Number(req.query.page) ? Number(req.query.page) : defaultPage;
+        }
+        if (req.query.limit && !isNaN(Number(req.query.limit))) {
+            limit = Number(req.query.limit) ? Number(req.query.limit) : defaultLimit;
+        }
+        return { page, limit };
     }
 }
 exports.default = new CommonUtil();

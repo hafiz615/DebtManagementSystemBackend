@@ -28,6 +28,7 @@ const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const uuid_1 = require("uuid");
 const settings_repository_1 = require("../repository/setting/settings.repository");
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
+const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -84,7 +85,7 @@ class CaseService {
                 });
             }
             const amountNotDelivered = await this.getAmountNotDeliveredToCreditor(req.params.id);
-            const amountDelivered = await this.getAmountNotDeliveredToCreditor(req.params.id);
+            const amountDelivered = await this.getAmountDeliveredToCreditor(req.params.id);
             const documentFields = [
                 'mcaDocuments',
                 'bankStatementDocuments',
@@ -121,6 +122,7 @@ class CaseService {
                 }))
                 : [];
             const templates = await settings_util_1.default.getEmailSmsTemplates();
+            const pipelineStatus = await this.pipelineRepository.getAllWithoutPagination();
             findCase['emailTemplates'] = templates.emailTemplates;
             findCase['smsTemplates'] = templates.smsTemplates;
             findCase['allEmails'] = await case_util_1.default.getAllEmailsOfCase(findCase, uniqueResult);
@@ -129,6 +131,7 @@ class CaseService {
             findCase['notes'] = updateNotesForm ?? [];
             findCase['amountDeliveredToCreditor'] = amountDelivered;
             findCase['amountNotDeliveredToCreditor'] = amountNotDelivered;
+            findCase['pipelineStatus'] = pipelineStatus;
             return [true, findCase];
         };
         this.getAllUserCases = async (req) => {
@@ -739,6 +742,7 @@ class CaseService {
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.settingsRepository = new settings_repository_1.SettingsRepository();
+        this.pipelineRepository = new pipelineStatus_repository_1.PipelineStatusRepository();
     }
     async getAmountDeliveredToCreditor(caseId) {
         const getPayments = await this.paymentRepository.getAllWithoutPagination({
@@ -841,12 +845,12 @@ class CaseService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const time = new Date(common_util_1.default.getCurrentDate());
         await case_util_1.default.addInHistory({
+            Subject: subject,
             From: from,
             To: sendTo,
             Content: content,
             Time: time,
             Action: 'EMAIL',
-            Subject: subject,
         }, caseId);
         const emailData = {
             from,

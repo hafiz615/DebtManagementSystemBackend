@@ -47,6 +47,8 @@ import {v4} from 'uuid';
 import {SettingsRepository} from '../repository/setting/settings.repository';
 import {ISettings} from '../../database/interfaces/settings.interface';
 import settingsUtil from '../../utils/settings.util';
+import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineStatus.repository';
+import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -68,6 +70,7 @@ class CaseService {
   private bulkUploadRepository: BulkUploadRepository;
   private inboxRepository: InboxRepository;
   private settingsRepository: SettingsRepository;
+  private pipelineRepository: PipelineStatusRepository;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -87,6 +90,7 @@ class CaseService {
     this.bulkUploadRepository = new BulkUploadRepository();
     this.inboxRepository = new InboxRepository();
     this.settingsRepository = new SettingsRepository();
+    this.pipelineRepository = new PipelineStatusRepository();
   }
   createCase = async (req: Request): Promise<[boolean, {} | string]> => {
     const reqTemp: any = req;
@@ -170,7 +174,7 @@ class CaseService {
     const amountNotDelivered = await this.getAmountNotDeliveredToCreditor(
       req.params.id
     );
-    const amountDelivered = await this.getAmountNotDeliveredToCreditor(
+    const amountDelivered = await this.getAmountDeliveredToCreditor(
       req.params.id
     );
 
@@ -223,6 +227,8 @@ class CaseService {
           )
         : [];
     const templates = await settingsUtil.getEmailSmsTemplates();
+    const pipelineStatus =
+      await this.pipelineRepository.getAllWithoutPagination<IPipelineStatus>();
     findCase['emailTemplates'] = templates.emailTemplates;
     findCase['smsTemplates'] = templates.smsTemplates;
     findCase['allEmails'] = await caseUtil.getAllEmailsOfCase(
@@ -234,6 +240,7 @@ class CaseService {
     findCase['notes'] = updateNotesForm ?? [];
     findCase['amountDeliveredToCreditor'] = amountDelivered;
     findCase['amountNotDeliveredToCreditor'] = amountNotDelivered;
+    findCase['pipelineStatus'] = pipelineStatus;
     return [true, findCase];
   };
 
@@ -1161,12 +1168,12 @@ class CaseService {
     const time = new Date(commonUtil.getCurrentDate());
     await caseUtil.addInHistory(
       {
+        Subject: subject,
         From: from,
         To: sendTo,
         Content: content,
         Time: time,
         Action: 'EMAIL',
-        Subject: subject,
       },
       caseId
     );

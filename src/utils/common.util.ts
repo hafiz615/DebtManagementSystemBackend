@@ -4,6 +4,7 @@ import RolesPermissionsService from '../api/services/rolesPermissions.service';
 import {Request} from 'express';
 import {decrypt} from 'n-krypta';
 import dotnev from 'dotenv';
+import {paymentPlatform} from '../enums';
 dotnev.config();
 class CommonUtil {
   getCurrentDate() {
@@ -86,6 +87,54 @@ class CommonUtil {
 
   getDecryptedData(data: string) {
     return decrypt(data, process.env.kryptaSecretKey);
+  }
+
+  async getUrlAndSecurityKeyPlatform(platform: string) {
+    let securityKey = '';
+    let url = '';
+    switch (platform) {
+      case paymentPlatform.easypay:
+        securityKey = process.env.easypaySecurityKey;
+        url = process.env.easypayUrl;
+        break;
+      case paymentPlatform.seamlesschexMerchant:
+        securityKey = process.env.seamlesschexMerchantSecurityKey;
+        url = process.env.seamlesschexMerchantUrl;
+        break;
+    }
+    return {securityKey, url};
+  }
+
+  async getUrlAndSecurityKeyQuery(platform: string) {
+    let securityKey = '';
+    let url = '';
+    switch (platform) {
+      case paymentPlatform.easypay:
+        securityKey = process.env.easypaySecurityKey;
+        url = process.env.easypayQueryUrl;
+        break;
+      case paymentPlatform.seamlesschexMerchant:
+        securityKey = process.env.seamlesschexMerchantSecurityKey;
+        url = process.env.seamlesschexMerchantQueryUrl;
+        break;
+    }
+    return {securityKey, url};
+  }
+
+  async getPageAndLimit(
+    defaultPage: number,
+    defaultLimit: number,
+    req: Request
+  ) {
+    let page = 0,
+      limit = 0;
+    if (req.query.page && !isNaN(Number(req.query.page))) {
+      page = Number(req.query.page) ? Number(req.query.page) : defaultPage;
+    }
+    if (req.query.limit && !isNaN(Number(req.query.limit))) {
+      limit = Number(req.query.limit) ? Number(req.query.limit) : defaultLimit;
+    }
+    return {page, limit};
   }
 }
 export default new CommonUtil();

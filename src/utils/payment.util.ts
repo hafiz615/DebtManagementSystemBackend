@@ -58,7 +58,7 @@ class PaymentUtil {
         break;
       case 'successPayments':
         successPayments = transformedArray.filter(
-          payment => payment.status === 'Success'
+          payment => payment.sendViaPaynote === 'Success'
         );
         break;
       case 'failedAuthorizations':
@@ -95,13 +95,11 @@ class PaymentUtil {
               successAuthorizations.push(payment);
               break;
           }
-          switch (payment.status) {
-            case 'Upcoming':
-              upcomingPayments.push(payment);
-              break;
-            case 'Success':
-              successPayments.push(payment);
-              break;
+          if (payment.status === 'Upcoming') {
+            upcomingPayments.push(payment);
+          }
+          if (payment.sendViaPaynote === 'Success') {
+            successPayments.push(payment);
           }
         }
     }
@@ -127,6 +125,8 @@ class PaymentUtil {
       failedReasonAuthorization: obj.failedReasonAuthorization,
       failedReasonCaptured: obj.failedReasonCaptured,
       tryDate: obj.rescheduled,
+      transactionType: obj.transactionType ? obj.transactionType : '',
+      paymentGateway: obj.paymentGateway ? obj.paymentGateway : '',
     }));
 
     return this.getFilteredCommissionPaymentsObj(transformedArray);

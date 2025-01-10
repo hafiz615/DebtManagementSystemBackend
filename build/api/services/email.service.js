@@ -58,12 +58,12 @@ class EmailService {
             const threadId = this.extractThreadId(subject);
             if (caseId) {
                 await case_util_1.default.addInHistory({
+                    Subject: subject,
                     From: from,
                     To: to,
                     Content: parseData.textAsHtml,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
-                    Subject: subject,
                 }, caseId);
                 const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
