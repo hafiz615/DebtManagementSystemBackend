@@ -838,12 +838,12 @@ class CaseService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const time = new Date(common_util_1.default.getCurrentDate());
         await case_util_1.default.addInHistory({
+            Subject: subject,
             From: from,
             To: sendTo,
             Content: content,
             Time: time,
-            Action: 'EMAIL',
-            Subject: subject,
+            Action: 'EMAIL'
         }, caseId);
         const emailData = {
             from,

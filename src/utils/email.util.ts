@@ -158,12 +158,12 @@ class EmailUtil {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
                 {
+                  Subject: template.subject,
                   From: from,
                   To: emails,
                   Content: content,
                   Time: time,
                   Action: 'EMAIL',
-                  Subject: template.subject,
                 },
                 caseId
               );
@@ -264,12 +264,12 @@ class EmailUtil {
         if (result[0]) {
           await caseUtil.addInHistory(
             {
+              Subject: subject,
               From: from,
               To: sendTo,
               Content: content,
               Time: time,
               Action: 'EMAIL',
-              Subject: subject,
             },
             caseId
           );
@@ -880,12 +880,12 @@ class EmailUtil {
       const subject = `Notification Regarding Debtor's Paid Debt`;
       await caseUtil.addInHistory(
         {
+          Subject: subject,
           From: from,
           To: to,
           Content: content,
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'EMAIL',
-          Subject: subject,
         },
         creditor.caseId
       );
@@ -931,12 +931,12 @@ class EmailUtil {
       const subject = `Notice of Sales Performance for ${currentMonth}, ${currentYear}`;
       await caseUtil.addInHistory(
         {
+          Subject: subject,
           From: from,
           To: to,
           Content: content,
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'EMAIL',
-          Subject: subject,
         },
         caseId
       );
