@@ -85,8 +85,12 @@ class CaseService {
                 });
             }
             const amountNotDelivered = await this.getAmountNotDeliveredToCreditor(req.params.id);
-            const amountDelivered = await this.getAmountNotDeliveredToCreditor(req.params.id);
-            const documentFields = ['mcaDocuments', 'bankStatementDocuments', 'otherDocuments'];
+            const amountDelivered = await this.getAmountDeliveredToCreditor(req.params.id);
+            const documentFields = [
+                'mcaDocuments',
+                'bankStatementDocuments',
+                'otherDocuments',
+            ];
             for (const field of documentFields) {
                 const documents = findCase.debtor?.[field]; // Access documents dynamically
                 if (!documents.length)
@@ -100,7 +104,9 @@ class CaseService {
             // const creditors: any = cases.map(caseTemp => {
             //   return caseTemp.creditor;
             // });
-            const uniqueResult = Array.from(new Map(cases.map(caseTemp => [String(caseTemp.creditor._id), caseTemp])).values());
+            const uniqueResult = Array.from(new Map(cases
+                .filter(caseTemp => caseTemp.creditor)
+                .map(caseTemp => [String(caseTemp.creditor._id), caseTemp])).values());
             const temp = await this.targetCFRepository.getOne({
                 target: 'case',
                 caseId: req.params.id,
@@ -132,17 +138,18 @@ class CaseService {
             const reqTemp = req;
             try {
                 const findCases = await this.caseRepository.getAllWithoutPagination({ caseOwnerId: reqTemp.id }, undefined, undefined, undefined, {
-                    path: 'creditor', select: ['businessInformation.companyName']
+                    path: 'creditor',
+                    select: ['businessInformation.companyName'],
                 });
                 const filteredData = findCases.map((item) => ({
                     caseId: item._id,
-                    creditorCompanyName: item.creditor?.businessInformation?.companyName
+                    creditorCompanyName: item.creditor?.businessInformation?.companyName,
                 }));
                 return [true, filteredData];
             }
             catch (error) {
-                console.error("Error fetching user cases:", error);
-                return [false, "Error fetching user cases"];
+                console.error('Error fetching user cases:', error);
+                return [false, 'Error fetching user cases'];
             }
         };
         this.updateCase = async (req) => {
@@ -843,7 +850,7 @@ class CaseService {
             To: sendTo,
             Content: content,
             Time: time,
-            Action: 'EMAIL'
+            Action: 'EMAIL',
         }, caseId);
         const emailData = {
             from,

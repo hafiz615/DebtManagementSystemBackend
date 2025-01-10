@@ -47,8 +47,8 @@ import {v4} from 'uuid';
 import {SettingsRepository} from '../repository/setting/settings.repository';
 import {ISettings} from '../../database/interfaces/settings.interface';
 import settingsUtil from '../../utils/settings.util';
-import { PipelineStatusRepository } from '../repository/pipelineStatus/pipelineStatus.repository';
-import { IPipelineStatus } from '../../database/interfaces/pipelineStatus.interface';
+import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineStatus.repository';
+import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -174,15 +174,19 @@ class CaseService {
     const amountNotDelivered = await this.getAmountNotDeliveredToCreditor(
       req.params.id
     );
-    const amountDelivered = await this.getAmountNotDeliveredToCreditor(
+    const amountDelivered = await this.getAmountDeliveredToCreditor(
       req.params.id
     );
-    
-    const documentFields = ['mcaDocuments', 'bankStatementDocuments', 'otherDocuments'];
+
+    const documentFields = [
+      'mcaDocuments',
+      'bankStatementDocuments',
+      'otherDocuments',
+    ];
 
     for (const field of documentFields) {
       const documents = findCase.debtor?.[field]; // Access documents dynamically
-      if (!documents.length) continue; 
+      if (!documents.length) continue;
       for (const doc of documents) {
         const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
         doc.url = url;
@@ -198,7 +202,9 @@ class CaseService {
     // });
     const uniqueResult: any = Array.from(
       new Map(
-        cases.map(caseTemp => [String(caseTemp.creditor._id), caseTemp])
+        cases
+          .filter(caseTemp => caseTemp.creditor)
+          .map(caseTemp => [String(caseTemp.creditor._id), caseTemp])
       ).values()
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
@@ -221,7 +227,8 @@ class CaseService {
           )
         : [];
     const templates = await settingsUtil.getEmailSmsTemplates();
-    const pipelineStatus = await this.pipelineRepository.getAllWithoutPagination<IPipelineStatus>();
+    const pipelineStatus =
+      await this.pipelineRepository.getAllWithoutPagination<IPipelineStatus>();
     findCase['emailTemplates'] = templates.emailTemplates;
     findCase['smsTemplates'] = templates.smsTemplates;
     findCase['allEmails'] = await caseUtil.getAllEmailsOfCase(
@@ -261,31 +268,32 @@ class CaseService {
     return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
   }
 
-
-  getAllUserCases = async (req: Request): Promise<[boolean, ICase[] | string]> => {
+  getAllUserCases = async (
+    req: Request
+  ): Promise<[boolean, ICase[] | string]> => {
     const reqTemp: any = req;
     try {
-        const findCases:ICase[] = await this.caseRepository.getAllWithoutPagination<ICase>(
-            { caseOwnerId: reqTemp.id }, 
-            undefined, 
-            undefined, 
-            undefined,
-            {
-              path: 'creditor', select: ['businessInformation.companyName']
-            }
+      const findCases: ICase[] =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {caseOwnerId: reqTemp.id},
+          undefined,
+          undefined,
+          undefined,
+          {
+            path: 'creditor',
+            select: ['businessInformation.companyName'],
+          }
         );
       const filteredData: any = findCases.map((item: any) => ({
         caseId: item._id,
-        creditorCompanyName: item.creditor?.businessInformation?.companyName
+        creditorCompanyName: item.creditor?.businessInformation?.companyName,
       }));
       return [true, filteredData];
-    
     } catch (error) {
-        console.error("Error fetching user cases:", error);
-        return [false, "Error fetching user cases"];
+      console.error('Error fetching user cases:', error);
+      return [false, 'Error fetching user cases'];
     }
-};
-
+  };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     let reqTemp: any = req;
@@ -1165,7 +1173,7 @@ class CaseService {
         To: sendTo,
         Content: content,
         Time: time,
-        Action: 'EMAIL'
+        Action: 'EMAIL',
       },
       caseId
     );
@@ -1286,7 +1294,9 @@ class CaseService {
       }
     );
 
-    if (response[documentField].length === caseTemp.debtor[documentField].length) {
+    if (
+      response[documentField].length === caseTemp.debtor[documentField].length
+    ) {
       return [false, `No document found with key: ${key}`];
     }
     await caseUtil.addInHistory(
@@ -1403,4 +1413,3 @@ export default CaseService;
 function item(value: ICase, index: number, array: ICase[]): unknown {
   throw new Error('Function not implemented.');
 }
-
