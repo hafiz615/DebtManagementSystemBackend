@@ -106,7 +106,7 @@ class CaseService {
             // });
             const uniqueResult = Array.from(new Map(cases
                 .filter(caseTemp => caseTemp.creditor)
-                .map(caseTemp => [String(caseTemp.creditor._id), caseTemp])).values());
+                .map(caseTemp => [String(caseTemp.creditor?._id), caseTemp])).values());
             const temp = await this.targetCFRepository.getOne({
                 target: 'case',
                 caseId: req.params.id,

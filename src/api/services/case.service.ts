@@ -204,7 +204,7 @@ class CaseService {
       new Map(
         cases
           .filter(caseTemp => caseTemp.creditor)
-          .map(caseTemp => [String(caseTemp.creditor._id), caseTemp])
+          .map(caseTemp => [String(caseTemp.creditor?._id), caseTemp])
       ).values()
     );
     const temp = await this.targetCFRepository.getOne<ITargetCustomFields>({
