@@ -49,11 +49,13 @@ class EmailService {
       caseTemp ? String(caseTemp._id) : null,
       reqTemp.id,
       req.body,
-      type
+      type,
+      reqTemp.name,
     );
   }
 
   async sendGridEmail(req: Request) {
+    const reqTemp : any = req;
     const parseData = await simpleParser(req.body.email);
     const subject = parseData.subject;
     const text = parseData.text;
@@ -64,6 +66,8 @@ class EmailService {
     const referencesHeader = parseData.headers.get('references');
     if (referencesHeader) {
       const caseId = this.extractCaseId(referencesHeader.toString());
+      const userId = this.extractUserId(referencesHeader.toString());
+      const userName = this.extractUserName(referencesHeader.toString());
       const threadId = this.extractThreadId(subject);
       if (caseId) {
         await caseUtil.addInHistory(
@@ -99,7 +103,9 @@ class EmailService {
             caseData,
             'received',
             emailData,
-            threadId
+            threadId,
+            userId,
+            userName
           );
           const notificationCount: NotificationCount[] =
             await this.notificationCountRepository.getAll(
@@ -150,6 +156,17 @@ class EmailService {
     const match = header && header.match(/threadId-([^@>]+)/);
     return match ? match[1] : null;
   };
+
+  extractUserId = (header: string) => {
+    const match = header && header.match(/userId-([^@>]+)/);
+    return match ? match[1] : null;
+  };
+
+  extractUserName = (header: string) => {
+    const match = header && header.match(/userName-([^@>]+)/);
+    return match ? match[1] : null;
+  };
+  
 
   async getAllLinks() {
     const links =

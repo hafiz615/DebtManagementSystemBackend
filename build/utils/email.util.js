@@ -163,7 +163,7 @@ class EmailUtil {
             }
         }
     }
-    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type) {
+    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, userName) {
         let { from, sendTo, subject, content, cc } = body;
         const threadId = (0, uuid_1.v4)();
         const allValues = await this.getValues(content);
@@ -179,7 +179,7 @@ class EmailUtil {
         const time = new Date(common_util_1.default.getCurrentDate());
         switch (type) {
             case 'email':
-                const result = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId, threadId);
+                const result = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId, threadId, userId, userName);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
                         Subject: subject,
@@ -201,7 +201,7 @@ class EmailUtil {
                         textAsHtml: content,
                         cc: cc,
                     };
-                    this.createInbox(caseData, 'sent', emailData, threadId);
+                    this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
                 }
                 return result;
             case 'sms':
@@ -223,7 +223,7 @@ class EmailUtil {
         }
         return [true, ''];
     }
-    async createInbox(caseTemp, type, emailData, threadId) {
+    async createInbox(caseTemp, type, emailData, threadId, userId, userName) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -233,7 +233,8 @@ class EmailUtil {
                 type,
             });
             if (!existingInbox) {
-                await this.createNewInbox(emailData, caseTemp, type, threadId);
+                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+                console.log("Create New Inbox response when Received", res);
             }
             else {
                 await this.inboxRepository.updateById(existingInbox._id, {
@@ -243,8 +244,8 @@ class EmailUtil {
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId);
-            console.log("Create New Inbox response", res);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+            console.log("Create New Inbox response when Create", res);
             return res;
         }
         newNotification.caseId = caseTemp._id;
@@ -264,7 +265,7 @@ class EmailUtil {
         await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;
     }
-    async createNewInbox(emailData, caseTemp, type, threadId) {
+    async createNewInbox(emailData, caseTemp, type, threadId, userId, userName) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -286,6 +287,8 @@ class EmailUtil {
         newNotification.text = this.formatText(caseTemp.caseCode);
         newNotification.type = 'EMAIL';
         newMessage.threadId = threadId;
+        newMessage.userId = userId;
+        newMessage.userName = userName;
         return await this.inboxRepository.create(newMessage);
     }
     formatText(text) {
@@ -473,7 +476,7 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, content, cc, buffer, caseId, threadId) {
+    async sendEmail(to, from, subject, content, cc, buffer, caseId, threadId, userId, userName) {
         let headers = {};
         if (caseId) {
             const bin = await this.getVerifySender(from);
@@ -490,14 +493,16 @@ class EmailUtil {
                     subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
                 if (caseTemp.debtor?.businessInformation?.EIN)
                     subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+                headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}@yourdomain.com>`;
+                console.log("This is Reference: ", headers['References']);
             }
             if (bin === 'user') {
                 const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
                 user
                     ? (subject += ` First Choice-DMS ${user.name}`)
                     : (subject += ` First Choice-DMS`);
-                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+                headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}@yourdomain.com>`;
+                console.log("This is Reference: ", headers['References']);
             }
         }
         subject += `<threadId-${threadId}@yourdomain.com>`;
@@ -532,7 +537,8 @@ class EmailUtil {
             return [true, `Your email is delivered successfully`];
         }
         catch (error) {
-            return [false, error.response.body.errors[0].message];
+            console.log(error);
+            return [false, error.response.errors[0].message];
         }
     }
     async sendSms(body, phone, from) {

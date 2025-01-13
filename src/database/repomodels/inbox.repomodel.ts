@@ -10,6 +10,8 @@ export class Inbox {
   textAsHtml = '';
   caseCode = '';
   caseId = '';
+  userId = '';
+  userName = '';
   isRead = false;
   type = '';
   debtorCompanyName = '';

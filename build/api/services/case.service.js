@@ -833,6 +833,7 @@ class CaseService {
         ];
     }
     async sendSettlementEmail(req) {
+        const reqTemp = req;
         const { from, sendTo, subject, content, cc } = req.body;
         const threadId = (0, uuid_1.v4)();
         const buffer = await email_util_1.default.generatePdfFromHtml(content);
@@ -860,8 +861,8 @@ class CaseService {
             textAsHtml: content,
             cc: cc,
         };
-        email_util_1.default.createInbox(caseTemp, 'sent', emailData, threadId);
-        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId, threadId);
+        email_util_1.default.createInbox(caseTemp, 'sent', emailData, threadId, reqTemp.Id, reqTemp.name);
+        return await email_util_1.default.sendEmail(sendTo, from, subject, content, cc, buffer, caseId, threadId, reqTemp.id, reqTemp.name);
     }
     async caseHistory(req) {
         const findCase = await this.caseRepository.getById(req.params.id);

@@ -24,6 +24,14 @@ class EmailService {
             const match = header && header.match(/threadId-([^@>]+)/);
             return match ? match[1] : null;
         };
+        this.extractUserId = (header) => {
+            const match = header && header.match(/userId-([^@>]+)/);
+            return match ? match[1] : null;
+        };
+        this.extractUserName = (header) => {
+            const match = header && header.match(/userName-([^@>]+)/);
+            return match ? match[1] : null;
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
@@ -42,9 +50,10 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp.name);
     }
     async sendGridEmail(req) {
+        const reqTemp = req;
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
         const subject = parseData.subject;
         const text = parseData.text;
@@ -55,6 +64,8 @@ class EmailService {
         const referencesHeader = parseData.headers.get('references');
         if (referencesHeader) {
             const caseId = this.extractCaseId(referencesHeader.toString());
+            const userId = this.extractUserId(referencesHeader.toString());
+            const userName = this.extractUserName(referencesHeader.toString());
             const threadId = this.extractThreadId(subject);
             if (caseId) {
                 await case_util_1.default.addInHistory({
@@ -78,7 +89,7 @@ class EmailService {
                     cc: parseData.cc,
                 };
                 if (threadId) {
-                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId);
+                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                     const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                     app_1.default.socketInstance.emit('notify', {
                         notificationCount: notificationCount[0].count,

@@ -224,7 +224,8 @@ class EmailUtil {
     caseId: string,
     userId: string,
     body: any,
-    type: string
+    type: string,
+    userName?: string
   ) {
     let {from, sendTo, subject, content, cc} = body;
     const threadId = v4();
@@ -259,7 +260,9 @@ class EmailUtil {
           cc,
           null,
           caseId,
-          threadId
+          threadId,
+          userId,
+          userName,
         );
         if (result[0]) {
           await caseUtil.addInHistory(
@@ -290,7 +293,7 @@ class EmailUtil {
             textAsHtml: content,
             cc: cc,
           };
-          this.createInbox(caseData, 'sent', emailData, threadId);
+          this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
         }
         return result;
       case 'sms':
@@ -328,7 +331,9 @@ class EmailUtil {
     caseTemp: any,
     type: string,
     emailData: any,
-    threadId: any
+    threadId: any,
+    userId?: string,
+    userName?: string
   ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
@@ -340,7 +345,8 @@ class EmailUtil {
         type,
       });
       if (!existingInbox) {
-        await this.createNewInbox(emailData, caseTemp, type, threadId);
+        const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+        console.log("Create New Inbox response when Received", res)
       } else {
         await this.inboxRepository.updateById(existingInbox._id, {
           text: existingInbox.text + emailData.text,
@@ -348,8 +354,8 @@ class EmailUtil {
         });
       }
     } else {
-      const res = await this.createNewInbox(emailData, caseTemp, type, threadId);
-      console.log("Create New Inbox response", res)
+      const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+      console.log("Create New Inbox response when Create", res)
       return res;
     }
     newNotification.caseId = caseTemp._id;
@@ -383,7 +389,7 @@ class EmailUtil {
     return newNotification;
   }
 
-  async createNewInbox(emailData, caseTemp, type, threadId) {
+  async createNewInbox(emailData, caseTemp, type, threadId, userId, userName) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
@@ -406,6 +412,8 @@ class EmailUtil {
     newNotification.text = this.formatText(caseTemp.caseCode);
     newNotification.type = 'EMAIL';
     newMessage.threadId = threadId;
+    newMessage.userId = userId;
+    newMessage.userName = userName;
 
    return await this.inboxRepository.create<IInbox>(newMessage as any);
   }
@@ -670,7 +678,9 @@ class EmailUtil {
     cc?: Array<string>,
     buffer?: Buffer,
     caseId?: string,
-    threadId?: string
+    threadId?: string,
+    userId?: string,
+    userName?: string
   ) {
     let headers = {};
     if (caseId) {
@@ -693,7 +703,8 @@ class EmailUtil {
           subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
         if (caseTemp.debtor?.businessInformation?.EIN)
           subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-        headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+        headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}@yourdomain.com>`;
+        console.log("This is Reference: ", headers['References']);
       }
       if (bin === 'user') {
         const user = await this.userRepository.getOne<IUser>(
@@ -704,7 +715,9 @@ class EmailUtil {
         user
           ? (subject += ` First Choice-DMS ${user.name}`)
           : (subject += ` First Choice-DMS`);
-        headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
+        headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}@yourdomain.com>`;
+        console.log("This is Reference: ", headers['References']);
+        
       }
     }
     subject += `<threadId-${threadId}@yourdomain.com>`;
@@ -737,7 +750,8 @@ class EmailUtil {
       await sgMail.send(msg);
       return [true, `Your email is delivered successfully`];
     } catch (error: any) {
-      return [false, error.response.body.errors[0].message];
+      console.log(error)
+      return [false, error.response.errors[0].message];
     }
   }
 

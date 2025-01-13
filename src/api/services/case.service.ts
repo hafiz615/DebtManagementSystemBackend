@@ -1151,6 +1151,7 @@ class CaseService {
   }
 
   async sendSettlementEmail(req: Request) {
+    const reqTemp: any = req;
     const {from, sendTo, subject, content, cc} = req.body;
     const threadId = v4();
     const buffer = await emailUtil.generatePdfFromHtml(content);
@@ -1185,7 +1186,7 @@ class CaseService {
       textAsHtml: content,
       cc: cc,
     };
-    emailUtil.createInbox(caseTemp, 'sent', emailData, threadId);
+    emailUtil.createInbox(caseTemp, 'sent', emailData, threadId, reqTemp.Id, reqTemp.name);
 
     return await emailUtil.sendEmail(
       sendTo,
@@ -1195,7 +1196,9 @@ class CaseService {
       cc,
       buffer,
       caseId,
-      threadId
+      threadId,
+      reqTemp.id,
+      reqTemp.name
     );
   }
 
