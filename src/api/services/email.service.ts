@@ -155,23 +155,23 @@ class EmailService {
     return true;
   }
 
-  extractCaseId = (header: string) => {
-    const match = header && header.match(/caseId-([^@>]+)/);
-    return match ? match[1] : null;
-  };
-
   extractThreadId = (header: string) => {
     const match = header && header.match(/threadId-([^@>]+)/);
     return match ? match[1] : null;
   };
 
-  extractUserId = (header: string) => {
-    const match = header && header.match(/userId-([^@>]+)/);
+  extractCaseId = (header: string) => {
+    const match = header && header.match(/caseId-([^&@>]+)/);
     return match ? match[1] : null;
   };
-
+  
+  extractUserId = (header: string) => {
+    const match = header && header.match(/userId-([^&@>]+)/);
+    return match ? match[1] : null;
+  };
+  
   extractUserName = (header: string) => {
-    const match = header && header.match(/userName-([^@>]+)/);
+    const match = header && header.match(/userName-([^&@>]+)/);
     return match ? match[1] : null;
   };
   

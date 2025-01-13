@@ -16,20 +16,20 @@ const app_1 = __importDefault(require("../../app"));
 const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
 class EmailService {
     constructor() {
-        this.extractCaseId = (header) => {
-            const match = header && header.match(/caseId-([^@>]+)/);
-            return match ? match[1] : null;
-        };
         this.extractThreadId = (header) => {
             const match = header && header.match(/threadId-([^@>]+)/);
             return match ? match[1] : null;
         };
+        this.extractCaseId = (header) => {
+            const match = header && header.match(/caseId-([^&@>]+)/);
+            return match ? match[1] : null;
+        };
         this.extractUserId = (header) => {
-            const match = header && header.match(/userId-([^@>]+)/);
+            const match = header && header.match(/userId-([^&@>]+)/);
             return match ? match[1] : null;
         };
         this.extractUserName = (header) => {
-            const match = header && header.match(/userName-([^@>]+)/);
+            const match = header && header.match(/userName-([^&@>]+)/);
             return match ? match[1] : null;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
