@@ -340,6 +340,8 @@ class EmailUtil {
     const newNotificationCount = new NotificationCount();
 
     if (type == 'received') {
+  console.log("ABC"
+      )
       const existingInbox = await this.inboxRepository.getOne<IInbox>({
         threadId,
         type,
@@ -348,6 +350,7 @@ class EmailUtil {
         const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
         console.log("Create New Inbox response when Received", res)
       } else {
+        console.log("Else")
         await this.inboxRepository.updateById(existingInbox._id, {
           text: existingInbox.text + emailData.text,
           textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,

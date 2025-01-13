@@ -67,6 +67,10 @@ class EmailService {
             const userId = this.extractUserId(referencesHeader.toString());
             const userName = this.extractUserName(referencesHeader.toString());
             const threadId = this.extractThreadId(subject);
+            console.log('Tyoe', typeof (caseId));
+            console.log("THis is the data for caseID: ", caseId);
+            console.log("THis is the data for userId: ", userId);
+            console.log("THis is the data for userName: ", userName);
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     Subject: subject,
@@ -89,6 +93,7 @@ class EmailService {
                     cc: parseData.cc,
                 };
                 if (threadId) {
+                    console.log("ThreadId", threadId);
                     const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                     const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                     app_1.default.socketInstance.emit('notify', {
