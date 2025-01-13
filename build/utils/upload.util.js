@@ -45,12 +45,14 @@ class UploadUtil {
             region: 'us-east-1',
         });
     }
-    async awsS3FileUpload(files) {
+    async awsS3FileUpload(files, generateKey) {
         console.log(files, 'filessss');
         let s3FileKeys = [];
         const uploadPromises = [];
         for (let file of files) {
-            const key = await case_util_1.default.uploadFileFormat(file.originalname);
+            let key = generateKey
+                ? await case_util_1.default.uploadFileFormat(file.originalname)
+                : file.originalname;
             let params = {
                 Bucket: process.env.s3BucketName,
                 Key: key,
@@ -67,8 +69,8 @@ class UploadUtil {
         return s3FileKeys;
     }
     async callUploadFile(fileName, fileContent) {
-        console.log("fileName", fileName);
-        console.log("fileContent", fileContent);
+        console.log('fileName', fileName);
+        console.log('fileContent', fileContent);
         const params = {
             Bucket: process.env.callRecordingsBucket,
             Key: fileName,
@@ -79,10 +81,9 @@ class UploadUtil {
         console.log('File successfully uploaded:', data);
         return data;
     }
-    ;
-    async generateCallSignedUrl(fileName, type, download = false) {
+    async generateSignedUrl(fileName, type, expiresIn, bucket, download = false) {
         const params = {
-            Bucket: process.env.callRecordingsBucket,
+            Bucket: bucket,
             Key: fileName,
         };
         if (!download) {
@@ -90,31 +91,45 @@ class UploadUtil {
             params['ResponseContentType'] = type;
         }
         const command = new client_s3_1.GetObjectCommand(params);
-        const signedUrl = await (0, s3_request_presigner_1.getSignedUrl)(this.s3Client, command, { expiresIn: 3600 });
+        const signedUrl = await (0, s3_request_presigner_1.getSignedUrl)(this.s3Client, command, {
+            expiresIn: expiresIn,
+        });
         return signedUrl;
     }
-    ;
-    // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
-    //   let params = {
-    //     Bucket: process.env.s3BucketName,
-    //     Key: key,
-    //     Expires: 86400,
-    //     ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
-    //     ...(!isEmpty(downLoadable) && {ResponseContentType: 'application/pdf'}),
-    //   };
-    //   return await this.s3.getSignedUrlPromise('getObject', params);
-    // }
-    async getS3FileSignedUrl(key, download = false) {
+    async getS3FileSignedUrl(key, type, expiresIn, bucket, download = false) {
         let params = {
-            Bucket: process.env.s3BucketName,
+            Bucket: bucket,
             Key: key,
-            Expires: 86400,
+            Expires: expiresIn,
         };
         if (!download) {
             params['ResponseContentDisposition'] = 'inline';
-            params['ResponseContentType'] = 'application/pdf';
+            params['ResponseContentType'] = type;
         }
         return await this.s3.getSignedUrlPromise('getObject', params);
+    }
+    async sendGridAwsS3FileUpload(files, generateKey) {
+        console.log(files, 'filessss');
+        let s3FileKeys = [];
+        const uploadPromises = [];
+        for (let file of files) {
+            let key = generateKey
+                ? await case_util_1.default.uploadFileFormat(file.filename)
+                : file.filename;
+            let params = {
+                Bucket: process.env.s3BucketName,
+                Key: key,
+                Body: file.content,
+            };
+            const command = new client_s3_1.PutObjectCommand(params);
+            uploadPromises.push(this.s3Client.send(command));
+            s3FileKeys.push({
+                key: key,
+                originalFileName: file.filename,
+            });
+        }
+        await Promise.all(uploadPromises);
+        return s3FileKeys;
     }
 }
 exports.default = UploadUtil;

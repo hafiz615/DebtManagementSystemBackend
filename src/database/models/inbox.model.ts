@@ -32,6 +32,12 @@ const inbox: Schema = new Schema({
   threadId: {
     type: String,
   },
+  userId: {
+    type: String,
+  },
+  userName: {
+    type: String,
+  },
   isRead: {
     type: Boolean,
     default: false,
@@ -50,6 +56,13 @@ const inbox: Schema = new Schema({
   },
   logTrackingId: {
     type: String,
+  },
+  attachments: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
   },
   createdAt: {
     type: Date,

@@ -403,8 +403,17 @@ class CaseValidate {
             from: joi_1.default.string().email().required(),
             content: joi_1.default.string().required(),
             subject: joi_1.default.string().required(),
-            cc: joi_1.default.array().items(joi_1.default.string().email()),
+            cc: joi_1.default.string().required(),
         });
+        if (req.body?.cc && typeof req.body?.cc === 'string') {
+            console.log(req.body.cc);
+            console.log(typeof req.body?.cc, 'typeoffff');
+            if (!Array.isArray(JSON.parse(req.body.cc))) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse('cc is invalid'));
+            }
+        }
         if (type === 'sms') {
             object = joi_1.default.object({
                 sendTo: joi_1.default.string()
@@ -415,6 +424,7 @@ class CaseValidate {
             });
         }
         const schema = object;
+        console.log(req.body.sendTo);
         const { error } = schema.validate(req.body);
         if (!error) {
             return next();
