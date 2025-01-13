@@ -51,7 +51,10 @@ class BulkCronJob {
         checkError = await this.checkErrorAI(bulkUpload, getFilesData);
         if (checkError) continue;
         console.log(getFilesData, 'get filesss');
-        const documents = await this.uploadUtil.awsS3FileUpload(getFilesData);
+        const documents = await this.uploadUtil.awsS3FileUpload(
+          getFilesData,
+          true
+        );
         console.log(documents);
         const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
           String(bulkUpload.debtor),
@@ -137,7 +140,10 @@ class BulkCronJob {
           checkError = await this.checkErrorAI(bulkUpload, getFilesData);
           if (checkError) continue;
           console.log(getFilesData, 'get filesss');
-          const documents = await this.uploadUtil.awsS3FileUpload(getFilesData);
+          const documents = await this.uploadUtil.awsS3FileUpload(
+            getFilesData,
+            true
+          );
           console.log(documents);
           const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
             String(bulkUpload.debtor),

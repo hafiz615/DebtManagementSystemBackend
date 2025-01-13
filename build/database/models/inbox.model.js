@@ -84,6 +84,9 @@ const inbox = new mongoose_1.Schema({
     logTrackingId: {
         type: String,
     },
+    attachments: {
+        type: (Array),
+    },
     createdAt: {
         type: Date,
         required: true,

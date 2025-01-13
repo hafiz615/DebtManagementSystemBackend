@@ -19,21 +19,27 @@ import app from '../../app';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
+import {IKeyFile} from '../../database/interfaces/debtor.interface';
 
 class EmailService {
   private caseRepository: CaseRepository;
   private domainVerifyRepository: DomainVerifyRepository;
   private inboxRepository: InboxRepository;
   private notificationCountRepository: NotificationCountRepository;
+  private uploadUtil: UploadUtil;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.inboxRepository = new InboxRepository();
     this.domainVerifyRepository = new DomainVerifyRepository();
     this.notificationCountRepository = new NotificationCountRepository();
+    this.uploadUtil = new UploadUtil();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
+    console.log(req.body.sendTo);
     const reqTemp: any = req;
+    console.log(reqTemp.files);
+    // const reqTemp: any = req;
     const type = String(req.query.type);
     if (type !== 'email' && type !== 'sms' && type !== 'compose') {
       return [false, 'Type is missing!'];
@@ -50,6 +56,7 @@ class EmailService {
       reqTemp.id,
       req.body,
       type,
+      typeof reqTemp.files === 'string' ? [] : reqTemp.files.files,
       reqTemp.name,
     );
   }
@@ -63,8 +70,22 @@ class EmailService {
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
+    const attachments = parseData.attachments;
     const referencesHeader = parseData.headers.get('references');
     if (referencesHeader) {
+      const data: IKeyFile[] = await this.uploadUtil.sendGridAwsS3FileUpload(
+        attachments,
+        false
+      );
+      for (const obj of data) {
+        const mimeType = commonUtil.getMimeType(obj.key);
+        obj.url = await this.uploadUtil.getS3FileSignedUrl(
+          obj.key,
+          mimeType,
+          60 * 60 * 24 * 365 * 10,
+          process.env.s3BucketName
+        );
+      }
       const caseId = this.extractCaseId(referencesHeader.toString());
       const userId = this.extractUserId(referencesHeader.toString());
       const userName = this.extractUserName(referencesHeader.toString());
@@ -85,6 +106,7 @@ class EmailService {
             Content: parseData.textAsHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
+            Attachments: data,
           },
           caseId
         );
@@ -104,6 +126,7 @@ class EmailService {
           text,
           textAsHtml: parseData.textAsHtml,
           cc: parseData.cc,
+          attachments: data,
         };
         if (threadId) {
           console.log("ThreadId", threadId)

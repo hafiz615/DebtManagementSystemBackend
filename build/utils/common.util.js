@@ -9,6 +9,7 @@ const rolesPermissions_service_1 = __importDefault(require("../api/services/role
 const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const enums_1 = require("../enums");
+const mime_types_1 = __importDefault(require("mime-types"));
 dotenv_1.default.config();
 class CommonUtil {
     getCurrentDate() {
@@ -126,6 +127,9 @@ class CommonUtil {
             limit = Number(req.query.limit) ? Number(req.query.limit) : defaultLimit;
         }
         return { page, limit };
+    }
+    getMimeType(fileName) {
+        return mime_types_1.default.lookup(fileName) || 'application/octet-stream';
     }
 }
 exports.default = new CommonUtil();

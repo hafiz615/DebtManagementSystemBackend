@@ -10,7 +10,7 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import {IPayment} from '../database/interfaces/payment.interface';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
-import {IDebtor} from '../database/interfaces/debtor.interface';
+import {IDebtor, IKeyFile} from '../database/interfaces/debtor.interface';
 import {ICreditor} from '../database/interfaces/creditor.interface';
 import {UserRepository} from '../api/repository/user/user.repository';
 import {Request} from 'express';
@@ -37,6 +37,8 @@ import {NotificationCount} from '../database/repomodels/notificationCount.repomo
 import {NotificationCountRepository} from '../api/repository/notificationCount/notificationCount.repository';
 import {INotificationCount} from '../database/interfaces/notificationCount.interface';
 import {v4} from 'uuid';
+import UploadUtil from './upload.util';
+import mime from 'mime-types';
 // import {threadId} from 'worker_threads';
 
 dotenv.config();
@@ -51,6 +53,7 @@ class EmailUtil {
   private notificationRepository: NotificationRepository;
   private notificationCountRepository: NotificationCountRepository;
   private client: Twilio;
+  private uploadUtil: UploadUtil;
   constructor() {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
     this.notificationConfigurationRepository =
@@ -68,6 +71,7 @@ class EmailUtil {
       process.env.twilioAuthToken
     );
     clientSendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
+    this.uploadUtil = new UploadUtil();
   }
 
   async sendInvitationLink(user: IUser, link: string) {
@@ -153,7 +157,16 @@ class EmailUtil {
             const from = template.from
               ? template.from
               : process.env.defaultEmail;
-            await this.sendEmail(emails, from, template.subject, content, null, null, caseId, threadId);
+            await this.sendEmail(
+              emails,
+              from,
+              template.subject,
+              content,
+              null,
+              null,
+              caseId,
+              threadId
+            );
             if (caseId) {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
@@ -225,9 +238,11 @@ class EmailUtil {
     userId: string,
     body: any,
     type: string,
-    userName?: string
+    files: any,
+    userName?: string,
   ) {
     let {from, sendTo, subject, content, cc} = body;
+    cc = JSON.parse(cc);
     const threadId = v4();
     const allValues = await this.getValues(content);
     if (allValues.length) {
@@ -250,15 +265,37 @@ class EmailUtil {
     }
 
     const time = new Date(commonUtil.getCurrentDate());
+    let attachments = [];
     switch (type) {
       case 'email':
+        for (const file of files) {
+          attachments.push({
+            content: file.buffer.toString('base64'),
+            filename: file.originalname,
+            type: file.mimetype,
+            disposition: 'attachment',
+          });
+        }
+        const data: IKeyFile[] = await this.uploadUtil.awsS3FileUpload(
+          files,
+          false
+        );
+        for (const obj of data) {
+          const mimeType = commonUtil.getMimeType(obj.key);
+          obj.url = await this.uploadUtil.getS3FileSignedUrl(
+            obj.key,
+            mimeType,
+            60 * 60 * 24 * 365 * 10,
+            process.env.s3BucketName
+          );
+        }
         const result = await this.sendEmail(
           sendTo,
           from,
           subject,
           content,
           cc,
-          null,
+          attachments,
           caseId,
           threadId,
           userId,
@@ -273,6 +310,7 @@ class EmailUtil {
               Content: content,
               Time: time,
               Action: 'EMAIL',
+              Attachments: data,
             },
             caseId
           );
@@ -292,6 +330,7 @@ class EmailUtil {
             text: content,
             textAsHtml: content,
             cc: cc,
+            attachments: data,
           };
           this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
         }
@@ -313,14 +352,22 @@ class EmailUtil {
         }
         return smsResult;
       case 'compose':
+        for (const file of files) {
+          attachments.push({
+            content: file.buffer.toString('base64'),
+            filename: file.originalname,
+            type: file.mimetype,
+            disposition: 'attachment',
+          });
+        }
         const resultCompose = await this.sendEmail(
           sendTo,
           from,
           subject,
           content,
           cc,
-          null,
-          caseId
+          attachments,
+          ''
         );
         return resultCompose;
     }
@@ -350,10 +397,21 @@ class EmailUtil {
         const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
         console.log("Create New Inbox response when Received", res)
       } else {
-        console.log("Else")
-        await this.inboxRepository.updateById(existingInbox._id, {
+        const existingAttachments = existingInbox.attachments || [];
+        const mergedAttachments = [
+          ...existingAttachments,
+          ...emailData.attachments,
+        ];
+
+        // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
+        const uniqueAttachments = _.uniqBy(
+          mergedAttachments,
+          item => `${item.key}-${item.originalFileName}`
+        );
+        await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
           text: existingInbox.text + emailData.text,
           textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
+          attachments: uniqueAttachments,
         });
       }
     } else {
@@ -411,6 +469,7 @@ class EmailUtil {
     newMessage.to = emailData.to;
     newMessage.type = type;
     newMessage.caseId = String(caseTemp._id);
+    newMessage.attachments = emailData.attachments;
     newNotification.caseId = String(caseTemp._id);
     newNotification.text = this.formatText(caseTemp.caseCode);
     newNotification.type = 'EMAIL';
@@ -418,7 +477,7 @@ class EmailUtil {
     newMessage.userId = userId;
     newMessage.userName = userName;
 
-   return await this.inboxRepository.create<IInbox>(newMessage as any);
+    return await this.inboxRepository.create<IInbox>(newMessage as any);
   }
 
   formatText(text: String) {
@@ -679,7 +738,12 @@ class EmailUtil {
     subject: string,
     content: any,
     cc?: Array<string>,
-    buffer?: Buffer,
+    attachments?: Array<{
+      content: string;
+      filename: string;
+      type: string;
+      disposition: string;
+    }>,
     caseId?: string,
     threadId?: string,
     userId?: string,
@@ -722,16 +786,15 @@ class EmailUtil {
         console.log("This is Reference: ", headers['References']);
         
       }
+      subject += `<threadId-${threadId}@yourdomain.com>`;
     }
-    subject += `<threadId-${threadId}@yourdomain.com>`;
-    const thread = `<threadId-${threadId}@yourdomain.com>`;
+    // const thread = `<threadId-${threadId}@yourdomain.com>`;
     console.log(subject, 'subject');
     const msg = {
       to: to,
       from: from, // Use the email address or domain you verified above
       subject: subject,
       html: content,
-      thread,
     };
     console.log(headers, 'heardersssss');
     if (Object.keys(headers).length) msg['headers'] = headers;
@@ -739,15 +802,8 @@ class EmailUtil {
     if (cc?.length) {
       msg['cc'] = cc;
     }
-    if (Buffer.isBuffer(buffer)) {
-      msg['attachments'] = [
-        {
-          content: buffer.toString('base64'),
-          filename: 'Settlement Agreement.pdf',
-          type: 'application/pdf',
-          disposition: 'attachment',
-        },
-      ];
+    if (attachments.length) {
+      msg['attachments'] = attachments;
     }
     try {
       await sgMail.send(msg);

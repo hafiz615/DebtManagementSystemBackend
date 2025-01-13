@@ -8,9 +8,19 @@ const router = Router();
 const storage = multer.memoryStorage();
 const upload = multer({storage});
 
+const sendEmailFields = upload.fields([
+  {name: 'sendTo'},
+  {name: 'from'},
+  {name: 'content'},
+  {name: 'subject'},
+  {name: 'cc'},
+  {name: 'files'},
+]);
+
 router.post(
   '/sendSmsEmailDebtorCreditor/:id',
   authorize.validateAuth,
+  sendEmailFields,
   caseValidate.sendSmsEmailDebtorCreditor,
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use

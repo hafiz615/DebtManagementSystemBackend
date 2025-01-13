@@ -5,6 +5,7 @@ import {Request} from 'express';
 import {decrypt} from 'n-krypta';
 import dotnev from 'dotenv';
 import {paymentPlatform} from '../enums';
+import mime from 'mime-types';
 dotnev.config();
 class CommonUtil {
   getCurrentDate() {
@@ -135,6 +136,10 @@ class CommonUtil {
       limit = Number(req.query.limit) ? Number(req.query.limit) : defaultLimit;
     }
     return {page, limit};
+  }
+
+  getMimeType(fileName: string) {
+    return mime.lookup(fileName) || 'application/octet-stream';
   }
 }
 export default new CommonUtil();

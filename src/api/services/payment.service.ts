@@ -54,7 +54,8 @@ class PaymentService {
     }
     const populatedFiltersResult = await this.populateFilterHomePayments(
       {...filters},
-      req
+      req,
+      upcomingFilter
     );
     let page = populatedFiltersResult.page;
     let limit = populatedFiltersResult.limit;
@@ -119,7 +120,11 @@ class PaymentService {
     ];
   }
 
-  async populateFilterHomePayments(filters: any, req: Request) {
+  async populateFilterHomePayments(
+    filters: any,
+    req: Request,
+    upcomingFilter: any
+  ) {
     let page = 1;
     let limit = 5;
     let arrayName = String(req.query.arrayName);
@@ -180,6 +185,7 @@ class PaymentService {
           break;
         case 'upcomingPayments':
           filters['status'] = 'Upcoming';
+          filters['dueDate'] = upcomingFilter;
           break;
         default:
           filters['authorized'] = 'Failed';
@@ -322,7 +328,6 @@ class PaymentService {
     failedCapture['captured'] = 'Failed';
     const successAuth = {...filters};
     successAuth['authorized'] = 'Success';
-    console.log(successAuth, 'successAuth');
     const successCapture = {...filters};
     successCapture['captured'] = 'Success';
     const upcoming = {...filters};
