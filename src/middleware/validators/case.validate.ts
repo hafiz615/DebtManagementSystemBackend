@@ -262,24 +262,23 @@ class CaseValidate {
           })
         )
         .optional(),
-      
-        // lawsuit fields
-        paymentFrequency: Joi.string().optional().allow(''),
-        impliedInterestRate: Joi.number().strict().optional(),
-        averageInterestRate: Joi.number().strict().optional(),
-        lawsuitFile: Joi.array()
-          .items(
-            Joi.object({
-              key: Joi.string().required(),
-              originalFileName: Joi.string().required(),
-              url: Joi.string().optional().allow(''),
-            })
-          )
-          .optional(),
-        hasLawsuits: Joi.boolean().optional(),
-        lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
-        dateServed: Joi.date().optional(),
-      
+
+      // lawsuit fields
+      paymentFrequency: Joi.string().optional().allow(''),
+      impliedInterestRate: Joi.number().strict().optional(),
+      averageInterestRate: Joi.number().strict().optional(),
+      lawsuitFile: Joi.array()
+        .items(
+          Joi.object({
+            key: Joi.string().required(),
+            originalFileName: Joi.string().required(),
+            url: Joi.string().optional().allow(''),
+          })
+        )
+        .optional(),
+      hasLawsuits: Joi.boolean().optional(),
+      lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
+      dateServed: Joi.date().optional(),
     });
     const {error} = schema.validate(req.body);
     if (!error) {
@@ -371,22 +370,22 @@ class CaseValidate {
               })
             )
             .optional(),
-             // lawsuit fields
-            paymentFrequency: Joi.string().optional().allow(''),
-            impliedInterestRate: Joi.number().strict().optional(),
-            averageInterestRate: Joi.number().strict().optional(),
-            lawsuitFile: Joi.array()
-              .items(
-                Joi.object({
-                  key: Joi.string().required(),
-                  originalFileName: Joi.string().required(),
-                  url: Joi.string().optional().allow(''),
-                })
-              )
-              .optional(),
-            hasLawsuits: Joi.boolean().optional(),
-            lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
-            dateServed: Joi.date().optional(),
+          // lawsuit fields
+          paymentFrequency: Joi.string().optional().allow(''),
+          impliedInterestRate: Joi.number().strict().optional(),
+          averageInterestRate: Joi.number().strict().optional(),
+          lawsuitFile: Joi.array()
+            .items(
+              Joi.object({
+                key: Joi.string().required(),
+                originalFileName: Joi.string().required(),
+                url: Joi.string().optional().allow(''),
+              })
+            )
+            .optional(),
+          hasLawsuits: Joi.boolean().optional(),
+          lawsuitCreditorTags: Joi.array().items(Joi.string()).optional(),
+          dateServed: Joi.date().optional(),
         })
       ),
     });
@@ -454,8 +453,17 @@ class CaseValidate {
       from: Joi.string().email().required(),
       content: Joi.string().required(),
       subject: Joi.string().required(),
-      cc: Joi.array().items(Joi.string().email()),
+      cc: Joi.string().required(),
     });
+    if (req.body?.cc && typeof req.body?.cc === 'string') {
+      console.log(req.body.cc);
+      console.log(typeof req.body?.cc, 'typeoffff');
+      if (!Array.isArray(JSON.parse(req.body.cc))) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse('cc is invalid'));
+      }
+    }
     if (type === 'sms') {
       object = Joi.object({
         sendTo: Joi.string()
@@ -466,6 +474,7 @@ class CaseValidate {
       });
     }
     const schema = object;
+    console.log(req.body.sendTo);
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

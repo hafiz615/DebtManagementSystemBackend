@@ -187,11 +187,6 @@ class DebtorService {
                 },
             ],
         }, undefined, undefined, { _id: -1 });
-        // const uploadUtil = new UploadUtil();
-        // for (let doc of debtor[0].documents) {
-        //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
-        //   console.log(url);
-        // }
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -666,6 +661,16 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
+        // const statements = caseTemp.debtor?.totalStatements;
+        // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
+        //   debtorUtil.percentageChangeEmail(
+        //     updatedDebtor.businessInformation.companyName,
+        //     String(updatedDebtor._id),
+        //     statements ? statements : 0,
+        //     caseTemp.debtor?.basicInformation?.fullName,
+        //     req.params.id
+        //   );
+        // }
         return [true, updatedDebtor];
     }
     async getExtractedFields(req) {
@@ -1230,7 +1235,7 @@ class DebtorService {
     async uploadAndAssignFiles(files, debtorBody) {
         const uploadAndAppend = async (fileKey, debtorKey) => {
             if (files[fileKey]?.length) {
-                const uploadedFiles = await this.uploadUtil.awsS3FileUpload(files[fileKey]);
+                const uploadedFiles = await this.uploadUtil.awsS3FileUpload(files[fileKey], true);
                 debtorBody[debtorKey] = debtorBody[debtorKey]?.length
                     ? [...debtorBody[debtorKey], ...uploadedFiles]
                     : uploadedFiles;

@@ -1399,7 +1399,8 @@ class CaseUtil {
         const urls = [];
         try {
             for (let doc of documents) {
-                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, true);
+                const mimeType = common_util_1.default.getMimeType(doc.key);
+                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, mimeType, 86400, process.env.s3BucketName, true);
                 urls.push(url);
             }
             // Data to be sent in the body of the request

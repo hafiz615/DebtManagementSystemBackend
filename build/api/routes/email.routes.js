@@ -11,7 +11,15 @@ const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
 const storage = multer_1.default.memoryStorage();
 const upload = (0, multer_1.default)({ storage });
-router.post('/sendSmsEmailDebtorCreditor/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.sendSmsEmailDebtorCreditor, email_controller_1.default.sendSmsEmailDebtorCreditor); // not in current use
+const sendEmailFields = upload.fields([
+    { name: 'sendTo' },
+    { name: 'from' },
+    { name: 'content' },
+    { name: 'subject' },
+    { name: 'cc' },
+    { name: 'files' },
+]);
+router.post('/sendSmsEmailDebtorCreditor/:id', authorize_middleware_1.default.validateAuth, sendEmailFields, case_validate_1.default.sendSmsEmailDebtorCreditor, email_controller_1.default.sendSmsEmailDebtorCreditor); // not in current use
 router.post('/sendGridParseEmail', upload.any(), email_controller_1.default.sendGridEmail);
 router.get('/getAllLinks', authorize_middleware_1.default.validateAuth, email_controller_1.default.getAllLinks);
 router.delete('/deleteLink/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.linkVerified);

@@ -137,12 +137,6 @@ class CaseService {
     if (!cases.length) {
       return [false, constantsUtil.notFoundMessage('Cases')];
     }
-    // for (let temp of cases) {
-    //   for (let doc of temp.documents) {
-    //     const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
-    //     doc.url = url;
-    //   }
-    // }
     return [true, cases];
   };
 
@@ -188,7 +182,13 @@ class CaseService {
       const documents = findCase.debtor?.[field]; // Access documents dynamically
       if (!documents.length) continue;
       for (const doc of documents) {
-        const url = await this.uploadUtil.getS3FileSignedUrl(doc.key);
+        const mimeType = commonUtil.getMimeType(doc.key);
+        const url = await this.uploadUtil.getS3FileSignedUrl(
+          doc.key,
+          mimeType,
+          86400,
+          process.env.s3BucketName
+        );
         doc.url = url;
       }
     }
@@ -1186,14 +1186,21 @@ class CaseService {
       cc: cc,
     };
     emailUtil.createInbox(caseTemp, 'sent', emailData, threadId);
-
+    const attachments = [
+      {
+        content: buffer.toString('base64'),
+        filename: 'Settlement Agreement.pdf',
+        type: 'application/pdf',
+        disposition: 'attachment',
+      },
+    ];
     return await emailUtil.sendEmail(
       sendTo,
       from,
       subject,
       content,
       cc,
-      buffer,
+      attachments,
       caseId,
       threadId
     );
