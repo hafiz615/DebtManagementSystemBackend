@@ -17,12 +17,20 @@ const app_1 = __importDefault(require("../../app"));
 const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
 class EmailService {
     constructor() {
-        this.extractCaseId = (header) => {
-            const match = header && header.match(/caseId-([^@>]+)/);
-            return match ? match[1] : null;
-        };
         this.extractThreadId = (header) => {
             const match = header && header.match(/threadId-([^@>]+)/);
+            return match ? match[1] : null;
+        };
+        this.extractCaseId = (header) => {
+            const match = header && header.match(/caseId-([^&@>]+)/);
+            return match ? match[1] : null;
+        };
+        this.extractUserId = (header) => {
+            const match = header && header.match(/userId-([^&@>]+)/);
+            return match ? match[1] : null;
+        };
+        this.extractUserName = (header) => {
+            const match = header && header.match(/userName-([^&@>]+)/);
             return match ? match[1] : null;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
@@ -47,9 +55,10 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, typeof reqTemp.files === 'string' ? [] : reqTemp.files.files);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, typeof reqTemp.files === 'string' ? [] : reqTemp.files.files, reqTemp.name);
     }
     async sendGridEmail(req) {
+        const reqTemp = req;
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
         const subject = parseData.subject;
         const text = parseData.text;
@@ -66,7 +75,13 @@ class EmailService {
                 obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
             }
             const caseId = this.extractCaseId(referencesHeader.toString());
+            const userId = this.extractUserId(referencesHeader.toString());
+            const userName = this.extractUserName(referencesHeader.toString());
             const threadId = this.extractThreadId(subject);
+            console.log('Tyoe', typeof (caseId));
+            console.log("THis is the data for caseID: ", caseId);
+            console.log("THis is the data for userId: ", userId);
+            console.log("THis is the data for userName: ", userName);
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     Subject: subject,
@@ -91,7 +106,8 @@ class EmailService {
                     attachments: data,
                 };
                 if (threadId) {
-                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId);
+                    console.log("ThreadId", threadId);
+                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                     const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                     app_1.default.socketInstance.emit('notify', {
                         notificationCount: notificationCount[0].count,

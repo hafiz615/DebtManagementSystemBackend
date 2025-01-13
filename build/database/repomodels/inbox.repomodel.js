@@ -16,6 +16,8 @@ class Inbox {
         this.textAsHtml = '';
         this.caseCode = '';
         this.caseId = '';
+        this.userId = '';
+        this.userName = '';
         this.isRead = false;
         this.type = '';
         this.debtorCompanyName = '';

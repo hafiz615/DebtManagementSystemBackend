@@ -11,6 +11,8 @@ export interface IInbox extends Document {
   caseCode: string;
   caseId: string;
   threadId: string;
+  userId: string;
+  userName: string;
   isRead: boolean;
   type: string;
   debtorCompanyName: string;

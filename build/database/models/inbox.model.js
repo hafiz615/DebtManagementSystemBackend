@@ -59,6 +59,12 @@ const inbox = new mongoose_1.Schema({
     threadId: {
         type: String,
     },
+    userId: {
+        type: String,
+    },
+    userName: {
+        type: String,
+    },
     isRead: {
         type: Boolean,
         default: false,
