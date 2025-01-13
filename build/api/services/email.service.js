@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
+const upload_util_1 = __importDefault(require("../../utils/upload.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const mailparser_1 = require("mailparser");
@@ -28,9 +29,13 @@ class EmailService {
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
+        this.uploadUtil = new upload_util_1.default();
     }
     async sendSmsEmailDebtorCreditor(req) {
+        console.log(req.body.sendTo);
         const reqTemp = req;
+        console.log(reqTemp.files);
+        // const reqTemp: any = req;
         const type = String(req.query.type);
         if (type !== 'email' && type !== 'sms' && type !== 'compose') {
             return [false, 'Type is missing!'];
@@ -42,7 +47,7 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, typeof reqTemp.files === 'string' ? [] : reqTemp.files.files);
     }
     async sendGridEmail(req) {
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
@@ -52,8 +57,14 @@ class EmailService {
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
+        const attachments = parseData.attachments;
         const referencesHeader = parseData.headers.get('references');
         if (referencesHeader) {
+            const data = await this.uploadUtil.sendGridAwsS3FileUpload(attachments, false);
+            for (const obj of data) {
+                const mimeType = common_util_1.default.getMimeType(obj.key);
+                obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+            }
             const caseId = this.extractCaseId(referencesHeader.toString());
             const threadId = this.extractThreadId(subject);
             if (caseId) {
@@ -64,6 +75,7 @@ class EmailService {
                     Content: parseData.textAsHtml,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
+                    Attachments: data,
                 }, caseId);
                 const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -76,6 +88,7 @@ class EmailService {
                     text,
                     textAsHtml: parseData.textAsHtml,
                     cc: parseData.cc,
+                    attachments: data,
                 };
                 if (threadId) {
                     const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId);

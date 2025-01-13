@@ -51,6 +51,13 @@ const inbox: Schema = new Schema({
   logTrackingId: {
     type: String,
   },
+  attachments: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
+  },
   createdAt: {
     type: Date,
     required: true,
