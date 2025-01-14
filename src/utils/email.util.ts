@@ -771,7 +771,7 @@ class EmailUtil {
           subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
         if (caseTemp.debtor?.businessInformation?.EIN)
           subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-        headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}@yourdomain.com>`;
+        headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
         console.log("This is Reference: ", headers['References']);
       }
       if (bin === 'user') {
@@ -783,11 +783,10 @@ class EmailUtil {
         user
           ? (subject += ` First Choice-DMS ${user.name}`)
           : (subject += ` First Choice-DMS`);
-        headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}@yourdomain.com>`;
+        headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
         console.log("This is Reference: ", headers['References']);
         
       }
-      subject += `<threadId-${threadId}@yourdomain.com>`;
     }
     // const thread = `<threadId-${threadId}@yourdomain.com>`;
     const msg = {

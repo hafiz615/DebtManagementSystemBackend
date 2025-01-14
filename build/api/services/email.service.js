@@ -18,7 +18,7 @@ const notificationCount_repository_1 = require("../repository/notificationCount/
 class EmailService {
     constructor() {
         this.extractThreadId = (header) => {
-            const match = header && header.match(/threadId-([^@>]+)/);
+            const match = header && header.match(/threadId-([^&@>]+)/);
             return match ? match[1] : null;
         };
         this.extractCaseId = (header) => {
@@ -75,11 +75,11 @@ class EmailService {
             const caseId = this.extractCaseId(referencesHeader.toString());
             const userId = this.extractUserId(referencesHeader.toString());
             const userName = this.extractUserName(referencesHeader.toString());
-            const threadId = this.extractThreadId(subject);
-            console.log('Tyoe', typeof caseId);
-            console.log('THis is the data for caseID: ', caseId);
-            console.log('THis is the data for userId: ', userId);
-            console.log('THis is the data for userName: ', userName);
+            const threadId = this.extractThreadId(referencesHeader.toString());
+            console.log('This is the data for caseID: ', caseId);
+            console.log('This is the data for userId: ', userId);
+            console.log('This is the data for userName: ', userName);
+            console.log('This is the data for ThreadId: ', threadId);
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     Subject: subject,
@@ -104,7 +104,6 @@ class EmailService {
                     attachments: data,
                 };
                 if (threadId) {
-                    console.log('ThreadId', threadId);
                     const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                     const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                     app_1.default.socketInstance.emit('notify', {

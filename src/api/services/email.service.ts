@@ -87,13 +87,12 @@ class EmailService {
       const caseId = this.extractCaseId(referencesHeader.toString());
       const userId = this.extractUserId(referencesHeader.toString());
       const userName = this.extractUserName(referencesHeader.toString());
-      const threadId = this.extractThreadId(subject);
-
-      console.log('Tyoe', typeof caseId);
-
-      console.log('THis is the data for caseID: ', caseId);
-      console.log('THis is the data for userId: ', userId);
-      console.log('THis is the data for userName: ', userName);
+      const threadId = this.extractThreadId(referencesHeader.toString());
+      
+      console.log('This is the data for caseID: ', caseId);
+      console.log('This is the data for userId: ', userId);
+      console.log('This is the data for userName: ', userName);
+      console.log('This is the data for ThreadId: ', threadId);
 
       if (caseId) {
         await caseUtil.addInHistory(
@@ -127,7 +126,6 @@ class EmailService {
           attachments: data,
         };
         if (threadId) {
-          console.log('ThreadId', threadId);
           const notification = await emailUtil.createInbox(
             caseData,
             'received',
@@ -177,7 +175,7 @@ class EmailService {
   }
 
   extractThreadId = (header: string) => {
-    const match = header && header.match(/threadId-([^@>]+)/);
+    const match = header && header.match(/threadId-([^&@>]+)/);
     return match ? match[1] : null;
   };
 
