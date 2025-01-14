@@ -9,5 +9,6 @@ const authorize_middleware_1 = __importDefault(require("../../middleware/authori
 const router = (0, express_1.Router)();
 router.post('/getAllMessages', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.getAllMessages);
 router.put('/markAsRead/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.markAsRead);
+router.post('/createEmailDraft', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.createEmailDraft);
 exports.default = router;
 //# sourceMappingURL=inbox.routes.js.map

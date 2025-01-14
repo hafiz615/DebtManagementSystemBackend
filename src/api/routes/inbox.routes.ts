@@ -17,4 +17,10 @@ router.put(
   inboxController.markAsRead
 );
 
+router.post(
+  '/createEmailDraft',
+  authorize.validateAuth,
+  inboxController.createEmailDraft
+);
+
 export default router;

@@ -13,6 +13,7 @@ export interface IInbox extends Document {
   threadId: string;
   userId: string;
   userName: string;
+  isDeleted: boolean;
   isRead: boolean;
   type: string;
   debtorCompanyName: string;

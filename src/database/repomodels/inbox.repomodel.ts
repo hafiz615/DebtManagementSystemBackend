@@ -13,7 +13,8 @@ export class Inbox {
   userId = '';
   userName = '';
   isRead = false;
-  type = '';
+  type = 'draft';
+  isDeleted = false;
   debtorCompanyName = '';
   creditorCompanyName = '';
   negotiatorName = '';

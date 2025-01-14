@@ -9,9 +9,11 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const inbox_utils_1 = __importDefault(require("../../utils/inbox.utils"));
+const case_repository_1 = require("../repository/case/case.repository");
 dotenv_1.default.config();
 class InboxService {
     constructor() {
+        this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.userRepository = new user_repository_1.UserRepository();
     }
@@ -40,6 +42,26 @@ class InboxService {
             return [false, constants_util_1.default.failureUpdateMessage('email')];
         }
         return [true, inboxTemp];
+    }
+    async createEmailDraft(req) {
+        const reqTemp = req;
+        let caseData = null;
+        if (req.body.caseId) {
+            caseData = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [
+                { path: 'debtor', select: ['businessInformation.companyName'] },
+                { path: 'creditor', select: ['businessInformation.companyName'] },
+            ]);
+            console.log('case data', caseData);
+            if (!caseData) {
+                return [false, constants_util_2.default.notFoundMessage('Case')];
+            }
+        }
+        const validateDraft = inbox_utils_1.default.createDraft(req.body, req.body.content, caseData, reqTemp.id);
+        const result = await this.inboxRepository.create(validateDraft);
+        if (!result) {
+            return [false, constants_util_2.default.failureAddMessage('draft')];
+        }
+        return [true, result];
     }
 }
 exports.default = InboxService;

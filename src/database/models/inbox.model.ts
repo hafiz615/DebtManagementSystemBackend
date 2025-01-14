@@ -42,6 +42,10 @@ const inbox: Schema = new Schema({
     type: Boolean,
     default: false,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
   type: {
     type: String,
   },

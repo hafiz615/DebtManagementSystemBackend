@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
+const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
+const dataCopier_util_1 = require("./dataCopier.util");
 class InboxUtil {
     constructor() {
         this.inboxRepository = new inbox_repository_1.InboxRepository();
@@ -56,6 +58,19 @@ class InboxUtil {
             }
         }
         return fromObj;
+    }
+    createDraft(data, text, caseData, userId) {
+        const newDraft = new inbox_repomodel_1.Inbox();
+        newDraft.userId = userId;
+        newDraft.text = text;
+        if (caseData) {
+            newDraft.caseCode = caseData.caseCode;
+            newDraft.debtorCompanyName = caseData.debtor.businessInformation.companyName;
+            newDraft.creditorCompanyName = caseData.creditor.businessInformation.companyName;
+            newDraft.negotiatorName = caseData.negotiator;
+        }
+        const validateDraft = dataCopier_util_1.DataCopier.copy(newDraft, data);
+        return validateDraft;
     }
 }
 exports.default = new InboxUtil();
