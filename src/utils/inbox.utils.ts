@@ -1,5 +1,7 @@
 import {Request} from 'express';
 import {InboxRepository} from '../api/repository/inbox/inbox.repository';
+import { Inbox } from '../database/repomodels/inbox.repomodel';
+import { DataCopier } from './dataCopier.util';
 
 class InboxUtil {
   private inboxRepository: InboxRepository;
@@ -67,5 +69,19 @@ class InboxUtil {
 
     return fromObj;
   }
+
+  createDraft(data: any, text: string, caseData: any, userId: string){
+      const newDraft= new Inbox();
+      newDraft.userId = userId;
+      newDraft.text = text;
+      if(caseData){
+        newDraft.caseCode = caseData.caseCode;
+        newDraft.debtorCompanyName = caseData.debtor.businessInformation.companyName;
+        newDraft.creditorCompanyName = caseData.creditor.businessInformation.companyName;
+        newDraft.negotiatorName = caseData.negotiator;
+      }
+      const validateDraft = DataCopier.copy(newDraft, data);
+      return validateDraft;
+    }
 }
 export default new InboxUtil();

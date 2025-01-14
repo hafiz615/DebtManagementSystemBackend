@@ -18,6 +18,7 @@ class InboxRequests {
       creditorCompanyName: Joi.string().required(),
       caseCode: Joi.string().required(),
       isRead: Joi.boolean().required(),
+      isDeleted: Joi.boolean().required(),
     });
 
     const {error} = schema.validate(req.body);

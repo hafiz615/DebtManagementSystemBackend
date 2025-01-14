@@ -33,6 +33,28 @@ class InboxController {
     }
   };
 
+  createEmailDraft = async (req: Request, res: Response) => {
+        try {
+          const response = await this.inboxService.createEmailDraft(req);
+          if (!response[0]) {
+            return res
+              .status(constants.CODE.BAD_REQUEST)
+              .send(responseHelper.get4xxResponse(response[1]));
+          }
+          return res.status(constants.CODE.CREATED).send(
+            responseHelper.get2xxResponse({
+              statusCode: constants.CODE.CREATED,
+              data: response[1],
+              message: constants.successCreatedMessage('Draft'),
+            })
+          );
+        } catch (error: any) {
+          return res
+            .status(constants.CODE.BAD_REQUEST)
+            .send(responseHelper.get4xxResponse(error.message));
+        }
+      };  
+
   markAsRead = async (req: Request, res: Response) => {
     try {
       const response = await this.inboxService.markAsRead(req.params.id);

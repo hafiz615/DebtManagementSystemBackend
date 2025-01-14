@@ -19,7 +19,8 @@ class Inbox {
         this.userId = '';
         this.userName = '';
         this.isRead = false;
-        this.type = '';
+        this.type = 'draft';
+        this.isDeleted = false;
         this.debtorCompanyName = '';
         this.creditorCompanyName = '';
         this.negotiatorName = '';
