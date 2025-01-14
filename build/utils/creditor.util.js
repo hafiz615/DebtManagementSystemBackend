@@ -77,7 +77,6 @@ class CreditorUtil {
         ]);
     }
     async addBreakEven(creditors) {
-        console.log(creditors, 'kjkjkjkjk');
         for (const creditor of creditors) {
             const contractDetails = creditor.contractDetails;
             let amount = 0;
@@ -94,7 +93,6 @@ class CreditorUtil {
                 breakEven = currentBalance * 0.3;
             if (breakEven < 0)
                 breakEven = 0;
-            console.log(breakEven, 'popopo');
             creditor['breakEven'] = parseFloat(breakEven.toFixed(2));
         }
     }
@@ -197,12 +195,9 @@ class CreditorUtil {
             const settlementWeeklyRevenue = settlementRange.percentage_settlement_over_weekly_true_revenue;
             for (const creditor of creditors) {
                 if (settlementWeeklyRevenue[creditor.creditorAccountTitle]) {
-                    console.log(settlementWeeklyRevenue[creditor.creditorAccountTitle], 'settlementWeeklyRevenue[creditor.creditorAccountTitle]');
                     const recommendations = settlementWeeklyRevenue[creditor.creditorAccountTitle];
                     const recommendation1 = recommendations['recommendation 1'];
-                    console.log(recommendation1, 'recommendation1');
                     const amount = (recommendation1.max / 100) * settlementRange.weekly_true_revenue;
-                    console.log(amount, 'amounttttt');
                     creditor.weeklyTrueRevenueAmount = Math.round(amount * 100) / 100;
                 }
                 else {

@@ -228,7 +228,6 @@ class PipelineStatusService {
       const matchingCases = cases.filter(
         caseItem => caseItem.status === statusName
       );
-      console.log(matchingCases.length);
       const annualizedValue = matchingCases.reduce(
         (sum, obj) => sum + (obj.totalDebt || 0),
         0
@@ -259,7 +258,6 @@ class PipelineStatusService {
     const caseIds = customFields.map(data => {
       return data.caseId;
     });
-    console.log(caseIds, 'caseIdssss');
     const cases: ICase[] =
       await this.caseRepository.getAllWithoutPagination<ICase>(
         {isDeleted: false, status: {$in: statusNames}, _id: caseIds},

@@ -454,10 +454,9 @@ class CaseValidate {
       content: Joi.string().required(),
       subject: Joi.string().required(),
       cc: Joi.string().required(),
+      files: Joi.string().optional(),
     });
     if (req.body?.cc && typeof req.body?.cc === 'string') {
-      console.log(req.body.cc);
-      console.log(typeof req.body?.cc, 'typeoffff');
       if (!Array.isArray(JSON.parse(req.body.cc))) {
         return res
           .status(constants.CODE.BAD_REQUEST)

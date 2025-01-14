@@ -46,7 +46,6 @@ class UploadUtil {
         });
     }
     async awsS3FileUpload(files, generateKey) {
-        console.log(files, 'filessss');
         let s3FileKeys = [];
         const uploadPromises = [];
         for (let file of files) {
@@ -69,8 +68,6 @@ class UploadUtil {
         return s3FileKeys;
     }
     async callUploadFile(fileName, fileContent) {
-        console.log('fileName', fileName);
-        console.log('fileContent', fileContent);
         const params = {
             Bucket: process.env.callRecordingsBucket,
             Key: fileName,
@@ -78,7 +75,6 @@ class UploadUtil {
         };
         const command = new client_s3_1.PutObjectCommand(params);
         const data = await this.s3Client.send(command);
-        console.log('File successfully uploaded:', data);
         return data;
     }
     async generateSignedUrl(fileName, type, expiresIn, bucket, download = false) {
@@ -109,7 +105,6 @@ class UploadUtil {
         return await this.s3.getSignedUrlPromise('getObject', params);
     }
     async sendGridAwsS3FileUpload(files, generateKey) {
-        console.log(files, 'filessss');
         let s3FileKeys = [];
         const uploadPromises = [];
         for (let file of files) {

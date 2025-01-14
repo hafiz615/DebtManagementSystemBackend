@@ -112,7 +112,6 @@ class PaynoteUtil {
   async sendPayment(payment: any) {
     const apiUrl = `${process.env.paynoteUrl}/check/send`;
     const creditor = payment.caseId.creditor;
-    console.log(payment.caseId.creditor.paynoteUserId);
     const desc = payment.caseId?.creditor?.businessInformation.companyName
       ? payment.caseId?.creditor?.businessInformation.companyName
       : payment.caseId?.creditor?.basicInformation.fullName;
@@ -169,10 +168,8 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response, 'popopop');
       return response.data;
     } catch (error) {
-      console.log(error?.response?.data, 'okokokoko');
       return error?.response?.data;
     }
   }
@@ -193,7 +190,6 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
       return response.data;
     } catch (error) {
       return error?.response?.data;
@@ -338,17 +334,14 @@ class PaynoteUtil {
       .map(creditor => creditor.basicInformation.email.toLowerCase());
     const result = await this.getAllCustomerDetails(page, limit);
     if (result?.error) {
-      console.log(result?.error, 'result?.error 1');
       return;
     }
     await this.processAllUsersResult(result.list.data, creditorEmails);
-    console.log(result.list.last_page, 'result.list.last_page');
     const lastPage = result.list.last_page;
     if (lastPage > page) {
       for (let i = page + 1; i <= lastPage; i++) {
         const result = await this.getAllCustomerDetails(i, limit);
         if (result?.error) {
-          console.log(result?.error, 'result?.error processAllUsersResult 2');
           break;
         }
         await this.processAllUsersResult(result.list.data, creditorEmails);
@@ -382,8 +375,6 @@ class PaynoteUtil {
         {'basicInformation.email': email},
         update
       );
-      console.log(email, 'user.email');
-      console.log(update, 'update');
       update = {};
     }
   }
@@ -406,21 +397,10 @@ class PaynoteUtil {
     const index = paynoteEmails.indexOf(creditorEmail);
     if (index === -1) {
       update['paynoteUserFound'] = false;
-      // update['paynoteSourceVerified'] = false;
       return [false, update];
     }
     update['paynoteUserFound'] = true;
     update['paynoteUserId'] = users[index].user_id;
-    console.log(users[index], 'users[index]');
-    // let sourceVerified = false;
-    // for (const source of users[index].sources) {
-    //   if (source.status === 'verified') {
-    //     sourceVerified = true;
-    //     update['paynoteSourceId'] = source.source_id;
-    //     break;
-    //   }
-    // }
-    // update['paynoteSourceVerified'] = sourceVerified;
     return [true, update];
   }
 

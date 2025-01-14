@@ -40,9 +40,7 @@ class EmailService {
         this.uploadUtil = new upload_util_1.default();
     }
     async sendSmsEmailDebtorCreditor(req) {
-        console.log(req.body.sendTo);
         const reqTemp = req;
-        console.log(reqTemp.files);
         // const reqTemp: any = req;
         const type = String(req.query.type);
         if (type !== 'email' && type !== 'sms' && type !== 'compose') {
@@ -55,7 +53,7 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, typeof reqTemp.files === 'string' ? [] : reqTemp.files.files, reqTemp.name);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp.name, reqTemp?.files ? reqTemp.files.files : []);
     }
     async sendGridEmail(req) {
         const reqTemp = req;
@@ -78,10 +76,10 @@ class EmailService {
             const userId = this.extractUserId(referencesHeader.toString());
             const userName = this.extractUserName(referencesHeader.toString());
             const threadId = this.extractThreadId(subject);
-            console.log('Tyoe', typeof (caseId));
-            console.log("THis is the data for caseID: ", caseId);
-            console.log("THis is the data for userId: ", userId);
-            console.log("THis is the data for userName: ", userName);
+            console.log('Tyoe', typeof caseId);
+            console.log('THis is the data for caseID: ', caseId);
+            console.log('THis is the data for userId: ', userId);
+            console.log('THis is the data for userName: ', userName);
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     Subject: subject,
@@ -106,7 +104,7 @@ class EmailService {
                     attachments: data,
                 };
                 if (threadId) {
-                    console.log("ThreadId", threadId);
+                    console.log('ThreadId', threadId);
                     const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                     const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                     app_1.default.socketInstance.emit('notify', {

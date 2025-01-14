@@ -29,7 +29,6 @@ class UploadUtil {
     files: any,
     generateKey?: boolean
   ): Promise<{key: string; originalFileName: string}[]> {
-    console.log(files, 'filessss');
     let s3FileKeys = [];
     const uploadPromises = [];
     for (let file of files) {
@@ -73,9 +72,6 @@ class UploadUtil {
   };
 
   async callUploadFile(fileName: string, fileContent: Buffer) {
-    console.log('fileName', fileName);
-    console.log('fileContent', fileContent);
-
     const params = {
       Bucket: process.env.callRecordingsBucket,
       Key: fileName,
@@ -84,7 +80,6 @@ class UploadUtil {
 
     const command = new PutObjectCommand(params);
     const data = await this.s3Client.send(command);
-    console.log('File successfully uploaded:', data);
     return data;
   }
 
@@ -133,7 +128,6 @@ class UploadUtil {
     files: any,
     generateKey?: boolean
   ): Promise<{key: string; originalFileName: string}[]> {
-    console.log(files, 'filessss');
     let s3FileKeys = [];
     const uploadPromises = [];
     for (let file of files) {

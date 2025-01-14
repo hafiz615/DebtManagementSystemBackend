@@ -63,7 +63,6 @@ class SeemlesschexUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
       return response.data;
     } catch (error) {
       return error?.response?.data;
@@ -163,7 +162,6 @@ class SeemlesschexUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
       return response.data;
     } catch (error) {
       return error?.response?.data;
@@ -242,7 +240,6 @@ class SeemlesschexUtil {
       {checkId: checkId},
       {isDeleted: true, status: status}
     );
-    console.log(check, 'checkkkkkk');
   }
 
   async getCheckInfo(checkId: string) {
