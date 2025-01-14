@@ -185,7 +185,8 @@ class PaymentService {
           break;
         case 'upcomingPayments':
           filters['status'] = 'Upcoming';
-          filters['dueDate'] = upcomingFilter;
+          if (Object.keys(upcomingFilter).length)
+            filters['dueDate'] = upcomingFilter;
           break;
         default:
           filters['authorized'] = 'Failed';
@@ -261,7 +262,8 @@ class PaymentService {
       );
       const upcoming = {...filters};
       upcoming['status'] = 'Upcoming';
-      upcoming['dueDate'] = upcomingFilter;
+      if (Object.keys(upcomingFilter).length)
+        upcoming['dueDate'] = upcomingFilter;
       const getUpcomingPayments = await this.getAllPaymentsQuery(
         upcoming,
         page,
@@ -343,6 +345,7 @@ class PaymentService {
       await this.paymentRepository.getCount<IPayment>(failedAuth);
     const successCaptures =
       await this.paymentRepository.getCount<IPayment>(successCapture);
+    console.log(upcoming, 'upcoming');
     const upcomingPayments =
       await this.paymentRepository.getCount<IPayment>(upcoming);
     const successPayments =

@@ -143,7 +143,8 @@ class PaymentService {
                     break;
                 case 'upcomingPayments':
                     filters['status'] = 'Upcoming';
-                    filters['dueDate'] = upcomingFilter;
+                    if (Object.keys(upcomingFilter).length)
+                        filters['dueDate'] = upcomingFilter;
                     break;
                 default:
                     filters['authorized'] = 'Failed';
@@ -190,7 +191,8 @@ class PaymentService {
             const getSuccessCapturePayments = await this.getAllPaymentsQuery(successCapture, page, limit);
             const upcoming = { ...filters };
             upcoming['status'] = 'Upcoming';
-            upcoming['dueDate'] = upcomingFilter;
+            if (Object.keys(upcomingFilter).length)
+                upcoming['dueDate'] = upcomingFilter;
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
             const successPayments = { ...filters };
             successPayments['sendViaPaynote'] = 'Success';
@@ -245,6 +247,7 @@ class PaymentService {
         const failedCaptures = await this.paymentRepository.getCount(failedCapture);
         const failedAuthorizations = await this.paymentRepository.getCount(failedAuth);
         const successCaptures = await this.paymentRepository.getCount(successCapture);
+        console.log(upcoming, 'upcoming');
         const upcomingPayments = await this.paymentRepository.getCount(upcoming);
         const successPayments = await this.paymentRepository.getCount(successPaynote);
         return {
