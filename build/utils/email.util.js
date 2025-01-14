@@ -555,7 +555,7 @@ class EmailUtil {
         if (cc?.length) {
             msg['cc'] = cc;
         }
-        if (attachments.length) {
+        if (attachments?.length) {
             msg['attachments'] = attachments;
         }
         try {

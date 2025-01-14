@@ -1419,11 +1419,25 @@ class DebtorService {
       if (typeof extractedFields === 'string') return [false, extractedFields];
 
       debtorBody = await debtorUtil.mapDebtor(extractedFields.extracted_fields);
-      const checkDebtorAlreadyExist =
-        await this.checkDebtorAlreadyExist(debtorBody);
-      if (checkDebtorAlreadyExist[0])
-        return [false, 'Debtor Already Exist. Please add the Debtor Id'];
 
+      const checkDebtorAlreadyExist: any =
+        await this.checkDebtorAlreadyExist(debtorBody);
+
+      if (checkDebtorAlreadyExist[0]){
+          previousMca = checkDebtorAlreadyExist[1].mcaDocuments.map(obj => {
+            return obj.originalFileName;
+          });
+        
+        return  [
+          true,
+          {
+            debtorId: String(checkDebtorAlreadyExist[1]._id),
+            extractedFields: checkDebtorAlreadyExist[1].extractedFields,
+            newMca,
+            previousMca,
+          },
+        ];
+      }
       debtorBody['extractedFields'] = extractedFields.extracted_fields;
       debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
     } else {
@@ -1465,7 +1479,7 @@ class DebtorService {
               newMca,
               previousMca,
             },
-          ]; // Return error if extraction fails
+          ]; 
         }
         debtorExist[1].extractedFields.push(
           ...extractedFieldsForNewFiles.extracted_fields
