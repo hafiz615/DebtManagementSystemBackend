@@ -54,8 +54,8 @@ class EmailService {
       reqTemp.id,
       req.body,
       type,
+      reqTemp?.files?.files || [],
       reqTemp.name,
-      reqTemp?.files ? reqTemp.files.files : []
     );
   }
 
@@ -88,11 +88,6 @@ class EmailService {
       const userId = this.extractUserId(referencesHeader.toString());
       const userName = this.extractUserName(referencesHeader.toString());
       const threadId = this.extractThreadId(referencesHeader.toString());
-      
-      console.log('This is the data for caseID: ', caseId);
-      console.log('This is the data for userId: ', userId);
-      console.log('This is the data for userName: ', userName);
-      console.log('This is the data for ThreadId: ', threadId);
 
       if (caseId) {
         await caseUtil.addInHistory(

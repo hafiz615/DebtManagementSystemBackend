@@ -53,7 +53,7 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp.name, reqTemp?.files ? reqTemp.files.files : []);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], reqTemp.name);
     }
     async sendGridEmail(req) {
         const reqTemp = req;
@@ -76,10 +76,6 @@ class EmailService {
             const userId = this.extractUserId(referencesHeader.toString());
             const userName = this.extractUserName(referencesHeader.toString());
             const threadId = this.extractThreadId(referencesHeader.toString());
-            console.log('This is the data for caseID: ', caseId);
-            console.log('This is the data for userId: ', userId);
-            console.log('This is the data for userName: ', userName);
-            console.log('This is the data for ThreadId: ', threadId);
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     Subject: subject,
