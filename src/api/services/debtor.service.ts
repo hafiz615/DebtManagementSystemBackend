@@ -1114,9 +1114,6 @@ class DebtorService {
       extractedFields.extracted_fields,
       createDebtor[1]['creditorNames']
     );
-    for (const iterator of caseTemp) {
-      console.log(iterator, 'okokokok');
-    }
     for (const bin of caseTemp) {
       bin['platform'] = true;
       bin.creditor.platform = true;
@@ -1176,12 +1173,6 @@ class DebtorService {
     );
     const moneyThumb = await debtorUtil.getScoreCard(getDebtor);
     const scoreCard = moneyThumb.scoreCard;
-    // await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
-    //   debtorCreditors,
-    //   getDebtor,
-    //   moneyThumb.scoreCard
-    // );
-    // await creditorUtil.addBreakEven(debtorCreditors);
     const plans = {};
     const commissionPlan = {};
     const allCreditorsResult = [];
@@ -1189,33 +1180,20 @@ class DebtorService {
     const metricData = scoreCard['metrics']['metricdata'];
     if (metricData?.length) {
       const revenueArray = metricData.find(row => row[0] === 'Revenue');
-      console.log(revenueArray, 'revenueArray');
       combineResult['avgMonthlySales'] = parseFloat(revenueArray[1]);
     }
     const mcaCompanies = scoreCard['mcacompanies'];
     const getTotalBudget = await moneyThumbUtil.getTotalBudget(mcaCompanies);
-    console.log(getTotalBudget, 'getTotalBudget');
     const getProfitAndTrueRevenue =
       await moneyThumbUtil.getAnuallyProfitAndTrueRevenue(metricData);
-    console.log(getProfitAndTrueRevenue, 'getProfitAndTrueRevenue');
     const netProfitMargin =
       (Math.abs(getTotalBudget) + getProfitAndTrueRevenue.profit) /
       getProfitAndTrueRevenue.trueRevenue;
 
-    console.log(netProfitMargin, 'netProfitMargin');
     const netProfitMargin100 = netProfitMargin * 100;
     combineResult['netProfitMargin'] =
       Math.round(netProfitMargin100 * 100) / 100;
     if (debtorCreditors.length) {
-      // const data = getScoresSettlementRange[1];
-      // plans['maximum'] = debtorCreditors.reduce(
-      //   (sum, obj) => sum + obj.breakEven,
-      //   0
-      // );
-      // plans['percentageShare'] = debtorCreditors.reduce(
-      //   (sum, obj) => sum + obj.percentageReceivable,
-      //   0
-      // );
       const totalRemaining = debtorCreditors.reduce(
         (sum, obj) => sum + obj.remaining,
         0
@@ -1223,20 +1201,7 @@ class DebtorService {
       plans['weeklyPayment'] = parseFloat(
         ((totalRemaining / 12 / 22) * 5).toFixed(2)
       );
-      // const benefits = await debtorUtil.getBenefits(
-      //   plans,
-      //   scoreCard,
-      //   getDebtor,
-      //   debtorCreditors,
-      //   totalRemaining
-      // );
-      // combineResult['benefits'] = benefits;
-      console.log(totalRemaining, 'totalRemaining');
-      // commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
       commissionPlan['4Week'] = parseFloat((totalRemaining * 0.12).toFixed(2));
-      // commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
-      console.log(commissionPlan, 'commissionPlan');
-      console.log(plans, 'planssss');
       combineResult['plans'] = plans;
       combineResult['commissionPlan'] = commissionPlan;
       for (const creditor of debtorCreditors) {
@@ -1258,19 +1223,15 @@ class DebtorService {
         creditors.push(creditorObj);
         allCreditorsResult.push(capture);
       }
-      console.log(allCreditorsResult, 'allCreditorsResult');
-      console.log(creditors, 'creditors');
 
       combineResult['allCreditorsResult'] = allCreditorsResult;
       combineResult['creditors'] = creditors;
     }
     const accounts = scoreCard['accountslist']['data'];
     const yearlyResults = await debtorUtil.getYearlySales(accounts);
-    console.log(yearlyResults, 'yearlyResults');
     combineResult['yearlySales'] = yearlyResults;
     const yearlyProfitMargin =
       await debtorUtil.getYearlyProfitMargin(scoreCard);
-    console.log(yearlyProfitMargin, 'yearlyProfitMargin');
     combineResult['yearlyProfitMargin'] = yearlyProfitMargin;
     return [true, combineResult];
   }
@@ -1444,9 +1405,6 @@ class DebtorService {
     const files = {...reqTemp.files};
     const debtorId = reqTemp?.body?.debtorId;
 
-    // console.log("this is the file we are getting", files)
-    // console.log("this is req Debtor: ", debtorId)
-
     if (!files.mcaDocuments && !debtorId) {
       return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
     }
@@ -1463,7 +1421,6 @@ class DebtorService {
       debtorBody = await debtorUtil.mapDebtor(extractedFields.extracted_fields);
       const checkDebtorAlreadyExist =
         await this.checkDebtorAlreadyExist(debtorBody);
-      console.log(checkDebtorAlreadyExist);
       if (checkDebtorAlreadyExist[0])
         return [false, 'Debtor Already Exist. Please add the Debtor Id'];
 
@@ -1513,7 +1470,6 @@ class DebtorService {
         debtorExist[1].extractedFields.push(
           ...extractedFieldsForNewFiles.extracted_fields
         );
-        console.log(newFiles, 'newFiles');
         newMca = newFiles.mcaDocuments.map(obj => {
           return obj.originalname;
         });

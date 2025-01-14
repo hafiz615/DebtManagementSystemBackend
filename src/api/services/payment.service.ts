@@ -734,7 +734,6 @@ class PaymentService {
 
     try {
       const response = await axiosInstance.get(url, {params});
-      console.log('Response:', response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -767,7 +766,6 @@ class PaymentService {
 
     try {
       const response = await axiosInstance.get(url, {params});
-      console.log('Response:', response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -798,7 +796,6 @@ class PaymentService {
 
     try {
       const response = await axiosInstance.get(url, {params});
-      console.log('Response:', response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -898,7 +895,6 @@ class PaymentService {
       const paymentResult = await paynoteUtil.sendPayment(payment);
       if (paymentResult?.message === 'Server Error')
         return [false, constants.Messages.PAYNOTE_SERVER_ERROR];
-      console.log(paymentResult, 'jhkjhi');
       if (paymentResult.error) {
         let message = '';
         if (paymentResult?.messages) {

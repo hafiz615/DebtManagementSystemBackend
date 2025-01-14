@@ -167,7 +167,6 @@ class EmailUtil {
     }
     async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, files, userName) {
         let { from, sendTo, subject, content, cc } = body;
-        cc = JSON.parse(cc);
         const threadId = (0, uuid_1.v4)();
         const allValues = await this.getValues(content);
         if (allValues.length) {
@@ -183,6 +182,7 @@ class EmailUtil {
         let attachments = [];
         switch (type) {
             case 'email':
+                cc = JSON.parse(cc);
                 for (const file of files) {
                     attachments.push({
                         content: file.buffer.toString('base64'),
@@ -237,6 +237,7 @@ class EmailUtil {
                 }
                 return smsResult;
             case 'compose':
+                cc = JSON.parse(cc);
                 for (const file of files) {
                     attachments.push({
                         content: file.buffer.toString('base64'),
@@ -544,17 +545,14 @@ class EmailUtil {
             subject += `<threadId-${threadId}@yourdomain.com>`;
         }
         // const thread = `<threadId-${threadId}@yourdomain.com>`;
-        console.log(subject, 'subject');
         const msg = {
             to: to,
             from: from, // Use the email address or domain you verified above
             subject: subject,
             html: content,
         };
-        console.log(headers, 'heardersssss');
         if (Object.keys(headers).length)
             msg['headers'] = headers;
-        console.log(msg);
         if (cc?.length) {
             msg['cc'] = cc;
         }
@@ -620,7 +618,6 @@ class EmailUtil {
     async getConfirmationLinkFromEmailText(text) {
         const linkRegex = /https:\/\/[^\s]+/g;
         const links = text.match(linkRegex);
-        console.log(links, 'linksssss');
         // Return the first match if found
         if (links && links.length > 0) {
             return links[0];
@@ -639,7 +636,6 @@ class EmailUtil {
                 return temp.from_email === data;
             });
         }
-        console.log(email, 'kjhkjhkjhkj');
         let bin = '';
         if (email[0]?.nickname.includes('debtor'))
             bin = 'debtor';

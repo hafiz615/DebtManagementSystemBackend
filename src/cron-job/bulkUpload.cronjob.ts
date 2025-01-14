@@ -35,7 +35,6 @@ class BulkCronJob {
       1,
       10
     );
-    console.log(bulkUploads, 'bulkuploadssss');
     for (const bulkUpload of bulkUploads) {
       try {
         let checkError = false;
@@ -46,42 +45,32 @@ class BulkCronJob {
           await this.checkErrorAI(bulkUpload, folderId);
           continue;
         }
-        console.log(folderId, 'folderIdd');
         const getFilesData = await googleDriveUtil.listFiles(folderId);
         checkError = await this.checkErrorAI(bulkUpload, getFilesData);
         if (checkError) continue;
-        console.log(getFilesData, 'get filesss');
         const documents = await this.uploadUtil.awsS3FileUpload(
           getFilesData,
           true
         );
-        console.log(documents);
         const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
           String(bulkUpload.debtor),
           {documents: documents}
         );
-        console.log(updatedDebtor);
         const extractedFields =
           await caseUtil.getExtractionMCABuffer(getFilesData);
         checkError = await this.checkErrorAI(bulkUpload, extractedFields);
         if (checkError) continue;
-        console.log(
-          extractedFields.extracted_fields,
-          'extractedFields.extracted_fields'
-        );
         const creditorData = await caseUtil.getCreditorNames(
           updatedDebtor,
           extractedFields.extracted_fields,
           ''
         );
-        console.log(creditorData, 'creditor Dataaaa');
         checkError = await this.checkErrorAI(bulkUpload, creditorData);
         if (checkError) continue;
         const caseTemp = await googleDriveUtil.mapCreditorsCases(
           extractedFields.extracted_fields,
           creditorData
         );
-        console.log(caseTemp, 'caseTempoppp');
         const result = await caseUtil.createCreditorsCases(
           {data: caseTemp},
           bulkUpload.createdByName,
@@ -102,9 +91,8 @@ class BulkCronJob {
             retries: retries,
           });
         }
-        console.log(result);
       } catch (error) {
-        console.log(error);
+        console.log(error.message);
         await this.checkErrorAI(bulkUpload, error.message);
       }
     }
@@ -124,7 +112,6 @@ class BulkCronJob {
         1,
         10
       );
-      console.log(bulkUploads, 'bulkuploadssss');
       for (const bulkUpload of bulkUploads) {
         try {
           let checkError = false;
@@ -135,42 +122,32 @@ class BulkCronJob {
             await this.checkErrorAI(bulkUpload, folderId);
             continue;
           }
-          console.log(folderId, 'folderIdd');
           const getFilesData = await googleDriveUtil.listFiles(folderId);
           checkError = await this.checkErrorAI(bulkUpload, getFilesData);
           if (checkError) continue;
-          console.log(getFilesData, 'get filesss');
           const documents = await this.uploadUtil.awsS3FileUpload(
             getFilesData,
             true
           );
-          console.log(documents);
           const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
             String(bulkUpload.debtor),
             {documents: documents}
           );
-          console.log(updatedDebtor);
           const extractedFields =
             await caseUtil.getExtractionMCABuffer(getFilesData);
           checkError = await this.checkErrorAI(bulkUpload, extractedFields);
           if (checkError) continue;
-          console.log(
-            extractedFields.extracted_fields,
-            'extractedFields.extracted_fields'
-          );
           const creditorData = await caseUtil.getCreditorNames(
             updatedDebtor,
             extractedFields.extracted_fields,
             ''
           );
-          console.log(creditorData, 'creditor Dataaaa');
           checkError = await this.checkErrorAI(bulkUpload, creditorData);
           if (checkError) continue;
           const caseTemp = await googleDriveUtil.mapCreditorsCases(
             extractedFields.extracted_fields,
             creditorData
           );
-          console.log(caseTemp, 'caseTempoppp');
           const result = await caseUtil.createCreditorsCases(
             {data: caseTemp},
             bulkUpload.createdByName,
@@ -191,9 +168,8 @@ class BulkCronJob {
               retries: retries,
             });
           }
-          console.log(result);
         } catch (error) {
-          console.log(error);
+          console.log(error.message);
           await this.checkErrorAI(bulkUpload, error.message);
         }
       }

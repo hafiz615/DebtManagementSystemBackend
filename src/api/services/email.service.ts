@@ -36,9 +36,7 @@ class EmailService {
     this.uploadUtil = new UploadUtil();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
-    console.log(req.body.sendTo);
     const reqTemp: any = req;
-    console.log(reqTemp.files);
     // const reqTemp: any = req;
     const type = String(req.query.type);
     if (type !== 'email' && type !== 'sms' && type !== 'compose') {
@@ -56,13 +54,13 @@ class EmailService {
       reqTemp.id,
       req.body,
       type,
-      typeof reqTemp.files === 'string' ? [] : reqTemp.files.files,
       reqTemp.name,
+      reqTemp?.files ? reqTemp.files.files : []
     );
   }
 
   async sendGridEmail(req: Request) {
-    const reqTemp : any = req;
+    const reqTemp: any = req;
     const parseData = await simpleParser(req.body.email);
     const subject = parseData.subject;
     const text = parseData.text;
@@ -91,11 +89,11 @@ class EmailService {
       const userName = this.extractUserName(referencesHeader.toString());
       const threadId = this.extractThreadId(subject);
 
-      console.log('Tyoe', typeof(caseId));
+      console.log('Tyoe', typeof caseId);
 
-      console.log("THis is the data for caseID: ", caseId)
-      console.log("THis is the data for userId: ", userId)
-      console.log("THis is the data for userName: ", userName)
+      console.log('THis is the data for caseID: ', caseId);
+      console.log('THis is the data for userId: ', userId);
+      console.log('THis is the data for userName: ', userName);
 
       if (caseId) {
         await caseUtil.addInHistory(
@@ -129,7 +127,7 @@ class EmailService {
           attachments: data,
         };
         if (threadId) {
-          console.log("ThreadId", threadId)
+          console.log('ThreadId', threadId);
           const notification = await emailUtil.createInbox(
             caseData,
             'received',
@@ -187,17 +185,16 @@ class EmailService {
     const match = header && header.match(/caseId-([^&@>]+)/);
     return match ? match[1] : null;
   };
-  
+
   extractUserId = (header: string) => {
     const match = header && header.match(/userId-([^&@>]+)/);
     return match ? match[1] : null;
   };
-  
+
   extractUserName = (header: string) => {
     const match = header && header.match(/userName-([^&@>]+)/);
     return match ? match[1] : null;
   };
-  
 
   async getAllLinks() {
     const links =

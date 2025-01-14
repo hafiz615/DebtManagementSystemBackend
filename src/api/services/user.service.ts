@@ -550,7 +550,6 @@ class UserService {
     };
 
     const result: any = await client.request(request);
-    console.log(result[0].body.results, 'result[0].body.results');
     let emails = [];
     for (const item of result[0].body.results) {
       if (item.verified) {
@@ -564,7 +563,6 @@ class UserService {
           item => item.from_email === reqTemp.email && item.verified === true
         )
         .map(item => item.from_email);
-      console.log(email, 'uhuhuhu');
       if (email.length) emails.push(...email);
     }
     return [true, emails];
@@ -600,7 +598,6 @@ class UserService {
     req.body.email = req.body.email.toLowerCase();
     req.body.role = 'Debtor';
     const email = req.body.email;
-    console.log(email);
     let user = await this.userRepository.getOne<IUser>({
       email: email,
       isDeleted: false,
@@ -648,7 +645,6 @@ class UserService {
     };
     data['country'] = 'USA';
     data['nickname'] = `user-${reqTemp.id}-${new Date().getSeconds()}`;
-    console.log(data);
     const request: ClientRequest = {
       url: `/v3/verified_senders`,
       method: 'POST',
