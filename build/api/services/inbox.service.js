@@ -18,13 +18,14 @@ class InboxService {
         this.userRepository = new user_repository_1.UserRepository();
     }
     async getAllInboxes(req) {
-        const filters = await inbox_utils_1.default.getAllInboxFilters(req);
+        const reqTemp = req;
+        const type = req.query.type;
+        const filters = (Object.keys(await inbox_utils_1.default.getAllInboxFilters(req))).length ? await inbox_utils_1.default.getAllInboxFilters(req) : { userId: reqTemp.id };
         let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined
         // Number(req.query.page),
         // Number(req.query.limit)
         );
-        const formattedData = inbox_utils_1.default.formatInboxData(inbox);
-        // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
+        const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
         if (!inbox.length) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
