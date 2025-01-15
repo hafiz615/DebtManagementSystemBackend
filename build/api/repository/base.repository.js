@@ -10,10 +10,6 @@ class BaseRepository {
         select && result.select(select);
         sort && result.sort(sort);
         populate && result.populate(populate);
-        if (!page || !limit) {
-            page = 1;
-            limit = 5;
-        }
         if (page && limit) {
             const skip = (page - 1) * limit;
             result.skip(skip).limit(limit);
@@ -91,7 +87,7 @@ class BaseRepository {
         return response;
     }
     async findAll(filter) {
-        return await this.model.find(filter).exec();
+        return (await this.model.find(filter).exec());
     }
 }
 exports.BaseRepository = BaseRepository;
