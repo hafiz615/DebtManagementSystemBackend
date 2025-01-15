@@ -111,13 +111,12 @@ class PaynoteUtil {
 
   async sendPayment(payment: any) {
     const apiUrl = `${process.env.paynoteUrl}/check/send`;
-    const creditor = payment.caseId.creditor;
-    const desc = payment.caseId?.creditor?.businessInformation.companyName
-      ? payment.caseId?.creditor?.businessInformation.companyName
-      : payment.caseId?.creditor?.basicInformation.fullName;
+    const companyName = payment.caseId?.debtor?.businessInformation.companyName;
+    const creditorName = payment.caseId?.creditor?.basicInformation.fullName;
+    const desc = companyName + ' - ' + creditorName;
     var data = {
       recipient: payment.caseId?.creditor?.paynoteUserId,
-      name: creditor.basicInformation?.fullName,
+      name: creditorName,
       amount: payment.amount,
       description: desc,
     };
