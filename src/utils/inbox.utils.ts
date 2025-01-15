@@ -41,33 +41,32 @@ class InboxUtil {
       if (filter && filter.negotiatorName) {
         filters['negotiatorName'] = filter.negotiatorName;
       }
+      if(filter && filter.userId){
+        filters['userId'] = filter.userId;
+      }
     }
     return filters;
   }
-  formatInboxData(inbox: any) {
-    const fromArray: string[] = [];
 
-    for (let message of inbox) {
-      if (
-        message.creditorCompanyName &&
-        fromArray.indexOf(message.creditorCompanyName) === -1
-      ) {
-        fromArray.push(message.creditorCompanyName);
-      }
-    }
-
-    let fromObj: {[key: string]: any[]} = {};
-
-    for (let message of inbox) {
-      if (message.creditorCompanyName) {
-        if (!fromObj[message.creditorCompanyName]) {
-          fromObj[message.creditorCompanyName] = [];
+  formatInboxData(inbox: any, userName: string, type: any) {
+    const validTypes = type === 'default' ? ['draft', 'sent', 'received'] : [type];
+    const result = inbox.reduce(
+      (acc: any, email: any) => {
+        if (validTypes.includes(email.type)) {
+          if (!acc[email.type]) {
+            acc[email.type] = [];
+            acc[`${email.type}Count`] = 0;
+          }
+          acc[email.type].push(email);
+          acc[`${email.type}Count`] += 1;
         }
-        fromObj[message.creditorCompanyName].push(message);
+        return acc;
+      },
+      {
+        userName: userName
       }
-    }
-
-    return fromObj;
+    );
+    return result;
   }
 
   createDraft(data: any, text: string, caseData: any, userId: string){

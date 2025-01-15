@@ -37,27 +37,28 @@ class InboxUtil {
             if (filter && filter.negotiatorName) {
                 filters['negotiatorName'] = filter.negotiatorName;
             }
+            if (filter && filter.userId) {
+                filters['userId'] = filter.userId;
+            }
         }
         return filters;
     }
-    formatInboxData(inbox) {
-        const fromArray = [];
-        for (let message of inbox) {
-            if (message.creditorCompanyName &&
-                fromArray.indexOf(message.creditorCompanyName) === -1) {
-                fromArray.push(message.creditorCompanyName);
-            }
-        }
-        let fromObj = {};
-        for (let message of inbox) {
-            if (message.creditorCompanyName) {
-                if (!fromObj[message.creditorCompanyName]) {
-                    fromObj[message.creditorCompanyName] = [];
+    formatInboxData(inbox, userName, type) {
+        const validTypes = type === 'default' ? ['draft', 'sent', 'received'] : [type];
+        const result = inbox.reduce((acc, email) => {
+            if (validTypes.includes(email.type)) {
+                if (!acc[email.type]) {
+                    acc[email.type] = [];
+                    acc[`${email.type}Count`] = 0;
                 }
-                fromObj[message.creditorCompanyName].push(message);
+                acc[email.type].push(email);
+                acc[`${email.type}Count`] += 1;
             }
-        }
-        return fromObj;
+            return acc;
+        }, {
+            userName: userName
+        });
+        return result;
     }
     createDraft(data, text, caseData, userId) {
         const newDraft = new inbox_repomodel_1.Inbox();
