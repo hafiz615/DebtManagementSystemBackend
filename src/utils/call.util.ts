@@ -69,6 +69,8 @@ class CallUtil {
     }
 
     async createIncomingCall(data: any,userName: string, callerId: string) {
+      console.log('data', data);
+      console.log(callerId);
       console.log('userName', userName);
       const newCall= new Call();
       const {CallSid, AccountSid, CallStatus, From, Direction} = data;
