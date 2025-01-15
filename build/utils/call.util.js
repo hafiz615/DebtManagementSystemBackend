@@ -62,6 +62,8 @@ class CallUtil {
         return await this.callRepository.create(newCall);
     }
     async createIncomingCall(data, userName, callerId) {
+        console.log('data', data);
+        console.log(callerId);
         console.log('userName', userName);
         const newCall = new call_repomodel_1.Call();
         const { CallSid, AccountSid, CallStatus, From, Direction } = data;
