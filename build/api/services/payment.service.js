@@ -629,7 +629,14 @@ class PaymentService {
                         'businessInformation.companyName',
                     ],
                 },
-                { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+                {
+                    path: 'debtor',
+                    select: [
+                        '_id',
+                        'basicInformation.fullName',
+                        'businessInformation.companyName',
+                    ],
+                },
             ],
         });
         const interval = {
@@ -645,6 +652,12 @@ class PaymentService {
         }
         if (!payment.caseId?.creditorPaymentsProceed) {
             return [false, 'Funds transfer for this creditor is paused'];
+        }
+        if (!payment.caseId?.creditor?.basicInformation?.fullName) {
+            return [false, 'Creditor name is required'];
+        }
+        if (!payment.caseId?.debtor?.businessInformation?.companyName) {
+            return [false, 'Debtor company name is required'];
         }
         if (payment.status === 'Success') {
             return [false, 'Payment already send'];

@@ -104,7 +104,14 @@ class CronJob {
                             'businessInformation.companyName',
                         ],
                     },
-                    { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+                    {
+                        path: 'debtor',
+                        select: [
+                            '_id',
+                            'basicInformation.fullName',
+                            'businessInformation.companyName',
+                        ],
+                    },
                 ],
             });
             await this.paynotePending(pendingPayments);
@@ -126,7 +133,14 @@ class CronJob {
                             'businessInformation.companyName',
                         ],
                     },
-                    { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+                    {
+                        path: 'debtor',
+                        select: [
+                            '_id',
+                            'basicInformation.fullName',
+                            'businessInformation.companyName',
+                        ],
+                    },
                 ],
             });
             await this.paynoteFailed(failedPayments);
@@ -588,7 +602,7 @@ class CronJob {
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['commission'] = commission;
-            updateObjPayment['status'] = 'Pending';
+            // updateObjPayment['status'] = 'Pending';
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
             //   'successful_authorization',
@@ -600,7 +614,7 @@ class CronJob {
         else {
             updateObjPayment['authorized'] = 'Failed';
             updateObjPayment['failedReasonAuthorization'] = responseText;
-            updateObjPayment['status'] = 'Pending';
+            // updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;
@@ -632,7 +646,7 @@ class CronJob {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
-            updateObjPayment['status'] = 'Pending';
+            // updateObjPayment['status'] = 'Pending';
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
             //   'successful_authorization',
@@ -644,7 +658,7 @@ class CronJob {
         else {
             updateObjPayment['authorized'] = 'Failed';
             updateObjPayment['failedReasonAuthorization'] = responseText;
-            updateObjPayment['status'] = 'Pending';
+            // updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;
@@ -764,7 +778,7 @@ class CronJob {
         else {
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
-                updateObjPayment['status'] = 'Pending';
+                // updateObjPayment['status'] = 'Pending';
             }
             updateObjPayment['captured'] = 'Failed';
             updateObjPayment['failedReasonCaptured'] = responseText;
@@ -823,7 +837,7 @@ class CronJob {
         else {
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
-                updateObjPayment['status'] = 'Pending';
+                // updateObjPayment['status'] = 'Pending';
             }
             updateObjPayment['captured'] = 'Failed';
             updateObjPayment['failedReasonCaptured'] = responseText;
