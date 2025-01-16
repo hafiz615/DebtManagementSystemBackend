@@ -125,12 +125,14 @@ class CallUtil {
             return {
                 debtorId: getDebtor._id,
                 debtorName: getDebtor.basicInformation.fullName,
+                companyName: getDebtor.businessInformation.companyName,
             };
         }
         else if (getCreditor) {
             return {
                 creditorId: getCreditor._id,
                 creditorName: getCreditor.basicInformation.fullName,
+                companyName: getCreditor.businessInformation.companyName,
             };
         }
         return {};
