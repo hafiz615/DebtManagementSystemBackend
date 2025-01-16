@@ -6,8 +6,8 @@ import dotenv from 'dotenv';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {IInbox} from '../../database/interfaces/inbox.interface';
 import inboxUtils from '../../utils/inbox.utils';
-import { CaseRepository } from '../repository/case/case.repository';
-import { ICase } from '../../database/interfaces/case.interface';
+import {CaseRepository} from '../repository/case/case.repository';
+import {ICase} from '../../database/interfaces/case.interface';
 dotenv.config();
 
 class InboxService {
@@ -24,8 +24,10 @@ class InboxService {
   async getAllInboxes(req: Request) {
     const reqTemp: any = req;
     const type = req.query.type;
-   const filters = (Object.keys(await inboxUtils.getAllInboxFilters(req))).length ? await inboxUtils.getAllInboxFilters(req) : { userId: reqTemp.id };
-
+    const filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
+      ? await inboxUtils.getAllInboxFilters(req)
+      : {userId: reqTemp.id};
+    filters['isDeleted'] = false;
     let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
       filters,
       undefined,
@@ -62,8 +64,8 @@ class InboxService {
   async createEmailDraft(req: Request) {
     const reqTemp: any = req;
     let caseData = null;
-    if(req.body.caseId){
-        caseData = await this.caseRepository.getById<ICase>(
+    if (req.body.caseId) {
+      caseData = await this.caseRepository.getById<ICase>(
         req.body.caseId,
         undefined,
         undefined,
@@ -78,40 +80,39 @@ class InboxService {
         return [false, constantsUtil.notFoundMessage('Case')];
       }
     }
-    const validateDraft = await inboxUtils.createDraft(req.body, caseData, reqTemp.id, reqTemp?.files?.files || [])
+    const validateDraft = await inboxUtils.createDraft(
+      req.body,
+      caseData,
+      reqTemp.id,
+      reqTemp?.files?.files || []
+    );
     const result = await this.inboxRepository.create<IInbox>(validateDraft);
-      if (!result) {
-        return [false, constantsUtil.failureAddMessage('draft')];
-      }
+    if (!result) {
+      return [false, constantsUtil.failureAddMessage('draft')];
+    }
     return [true, result];
   }
 
   deleteDraftEmail = async (req: Request) => {
-      console.log('id', req.params.id);
-      let draftTemp: any = await this.inboxRepository.getById<IInbox>(req.params.id);
-  
-      if (!draftTemp) {
-        return [false, constantsUtil.notFoundMessage('Draft')];
-      }
-      console.log('draftTemp', draftTemp);
-      try {
-        const updateDraft = await this.caseRepository.updateById<IInbox>(
-          req.params.id,
-          { isDeleted: true }
-        );
-    
-        console.log('Update result:', updateDraft);
-    
-        if (!updateDraft || !updateDraft.isDeleted) {
-          return [false, constantsUtil.failureDeleteMessage('Draft')];
-        }
-    
-        return [true, constantsUtil.successDeleteMessage('Draft')];
-      } catch (error) {
-        console.error('Error during update:', error);
-        return [false, 'An error occurred while updating the draft.'];
-      }
-  }
+    let draftTemp: any = await this.inboxRepository.getById<IInbox>(
+      req.params.id
+    );
+
+    if (!draftTemp) {
+      return [false, constantsUtil.notFoundMessage('Draft')];
+    }
+
+    const updateDraft = await this.inboxRepository.updateById<IInbox>(
+      req.params.id,
+      {isDeleted: true}
+    );
+
+    if (!updateDraft || !updateDraft.isDeleted) {
+      return [false, constantsUtil.failureDeleteMessage('Draft')];
+    }
+
+    return [true, constantsUtil.successDeleteMessage('Draft')];
+  };
 }
 
 export default InboxService;

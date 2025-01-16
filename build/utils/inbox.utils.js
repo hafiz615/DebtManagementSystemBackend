@@ -60,7 +60,7 @@ class InboxUtil {
             }
             return acc;
         }, {
-            userName: userName
+            userName: userName,
         });
         return result;
     }
@@ -79,8 +79,10 @@ class InboxUtil {
         newDraft.attachments = filesData;
         if (caseData) {
             newDraft.caseCode = caseData.caseCode;
-            newDraft.debtorCompanyName = caseData.debtor.businessInformation.companyName;
-            newDraft.creditorCompanyName = caseData.creditor.businessInformation.companyName;
+            newDraft.debtorCompanyName =
+                caseData.debtor.businessInformation.companyName;
+            newDraft.creditorCompanyName =
+                caseData.creditor.businessInformation.companyName;
             newDraft.negotiatorName = caseData.negotiator;
         }
         const validateDraft = dataCopier_util_1.DataCopier.copy(newDraft, data);
