@@ -40,7 +40,7 @@ class InboxService {
         // Number(req.query.limit)
         );
         const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
-        if (!inbox.length) {
+        if (!formattedData) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
         return [true, formattedData];

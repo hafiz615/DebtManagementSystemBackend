@@ -40,7 +40,7 @@ class InboxService {
     );
 
     const formattedData = inboxUtils.formatInboxData(inbox, reqTemp.name, type);
-    if (!inbox.length) {
+    if (!formattedData) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
     return [true, formattedData];
