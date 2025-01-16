@@ -736,7 +736,7 @@ class DebtorController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
-                    message: 'Debtor synced successfully!',
+                    message: 'Client synced successfully!',
                 }));
             }
             catch (error) {
