@@ -4,16 +4,16 @@ import {IPayment} from '../database/interfaces/payment.interface';
 import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
 import constantsUtil from './constants.util';
-import {SyncCreditorRepository} from '../api/repository/syncCreditor/syncCreditor.repository';
+import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import commonUtil from './common.util';
 dotenv.config();
 
 class PaynoteUtil {
   private creditorRepository: CreditorRepository;
-  private syncCreditorRepository: SyncCreditorRepository;
+  private syncPaymentMethodRepository: SyncPaymentMethodRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
-    this.syncCreditorRepository = new SyncCreditorRepository();
+    this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
   }
   async createCustomer(creditor: ICreditor) {
     if (!creditor.basicInformation?.fullName)
@@ -408,10 +408,11 @@ class PaynoteUtil {
   }
 
   async upsertCreditorPaynoteEmail(creditorId: string, email: string) {
-    await this.syncCreditorRepository.upsert(
-      {creditorId: creditorId},
+    await this.syncPaymentMethodRepository.upsert(
+      {syncId: creditorId},
       {
         email: email,
+        platform: 'Paynote',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );

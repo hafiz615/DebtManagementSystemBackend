@@ -26,19 +26,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SyncCreditor = void 0;
+exports.SyncPaymentMethod = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const uuid_1 = require("uuid");
 const syncPaymentMethodModel = new mongoose_1.Schema({
-    creditorId: {
+    syncId: {
         type: String,
     },
     email: {
         type: String,
     },
     logTrackingId: {
+        type: String,
+    },
+    platform: {
+        type: String,
+    },
+    customerVaultId: {
         type: String,
     },
     createdAt: {
@@ -98,5 +104,5 @@ syncPaymentMethodModel.pre('updateOne', logUpdate);
 syncPaymentMethodModel.post('findOneAndUpdate', logUpdatePost);
 syncPaymentMethodModel.post('updateMany', logUpdatePost);
 syncPaymentMethodModel.post('updateOne', logUpdatePost);
-exports.SyncCreditor = mongoose_1.default.model('syncCreditor', syncPaymentMethodModel);
-//# sourceMappingURL=syncCreditor.model.js.map
+exports.SyncPaymentMethod = mongoose_1.default.model('syncPaymentMethod', syncPaymentMethodModel);
+//# sourceMappingURL=syncPaymentMethod.model.js.map

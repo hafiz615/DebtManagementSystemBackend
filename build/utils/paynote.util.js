@@ -7,13 +7,13 @@ const creditor_repository_1 = require("../api/repository/creditor/creditor.repos
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_1 = __importDefault(require("./constants.util"));
-const syncCreditor_repository_1 = require("../api/repository/syncCreditor/syncCreditor.repository");
+const syncPaymentMethod_repository_1 = require("../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
-        this.syncCreditorRepository = new syncCreditor_repository_1.SyncCreditorRepository();
+        this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
     }
     async createCustomer(creditor) {
         if (!creditor.basicInformation?.fullName)
@@ -392,8 +392,9 @@ class PaynoteUtil {
         await this.creditorRepository.updateById(creditorId, data);
     }
     async upsertCreditorPaynoteEmail(creditorId, email) {
-        await this.syncCreditorRepository.upsert({ creditorId: creditorId }, {
+        await this.syncPaymentMethodRepository.upsert({ syncId: creditorId }, {
             email: email,
+            platform: 'Paynote',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
     }

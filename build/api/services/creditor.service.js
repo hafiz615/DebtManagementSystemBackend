@@ -13,7 +13,7 @@ const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.rep
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const syncCreditor_repository_1 = require("../repository/syncCreditor/syncCreditor.repository");
+const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 dotenv_1.default.config();
 class CreditorService {
@@ -21,7 +21,7 @@ class CreditorService {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
-        this.syncCreditorRepository = new syncCreditor_repository_1.SyncCreditorRepository();
+        this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
     }
     async getCreditor(text) {
         const creditor = await this.creditorRepository.getAll({
@@ -342,8 +342,8 @@ class CreditorService {
         const creditor = await this.creditorRepository.getById(req.params.id);
         if (!creditor)
             return [false, constants_util_1.default.notFoundMessage('creditor')];
-        const result = await this.syncCreditorRepository.getOne({
-            creditorId: req.params.id,
+        const result = await this.syncPaymentMethodRepository.getOne({
+            syncId: req.params.id,
         });
         if (!result)
             return [true, creditor.basicInformation.email];

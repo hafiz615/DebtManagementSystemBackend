@@ -26,6 +26,9 @@ const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util
 const lodash_2 = require("lodash");
 const case_service_1 = __importDefault(require("./case.service"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
+const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
+const index_1 = require("../../enums/index");
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -151,6 +154,7 @@ class DebtorService {
         this.userRepository = new user_repository_1.UserRepository();
         this.caseService = new case_service_1.default();
         this.uploadUtil = new upload_util_1.default();
+        this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -1273,6 +1277,33 @@ class DebtorService {
                 otherDocuments: otherDocuments,
             },
         ];
+    }
+    async getClientSyncEmail(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('client')];
+        const result = await this.syncPaymentMethodRepository.getOne({
+            syncId: req.params.id,
+        });
+        return result ? [true, result.email] : [true, debtor.basicInformation.email];
+    }
+    async clientSync(req) {
+        console.log(req.body);
+        const platformExists = Object.values(index_1.paymentPlatform).includes(req.body?.platform);
+        console.log("platform", platformExists);
+        if (!platformExists)
+            return [false, constants_util_1.default.Messages.INVALID_PLATFORM];
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('client')];
+        const email = req.body.email.toLowerCase();
+        const customers = await easypay_util_1.default.getEasyPayCustomers(req.body.platform);
+        const checkClientExist = await easypay_util_1.default.checkClientExist(customers, email, req.body.platform, req.params.id, debtor);
+        console.log(checkClientExist[1]['userId']);
+        if (checkClientExist[0]) {
+            await easypay_util_1.default.upsertDebtorEasyPayEmail(req.params.id, email, req.body.platform, checkClientExist[1]['userIds']);
+        }
+        return checkClientExist;
     }
 }
 exports.default = DebtorService;

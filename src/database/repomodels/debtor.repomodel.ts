@@ -25,7 +25,7 @@ export class Debtor {
     phone: '',
     address: '',
   };
-  accounts = Array<{paymentType: ''; customerVaultId: ''}>();
+  accounts = Array<{paymentType: ''; customerVaultId: ''; platform: ''}>();
   // paymentType = '';
   // customerVaultId = '';
   createdBy = '';

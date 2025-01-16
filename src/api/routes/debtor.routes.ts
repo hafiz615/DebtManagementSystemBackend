@@ -3,6 +3,7 @@ import authorize from '../../middleware/authorize.middleware';
 import debtorController from '../controllers/debtor/debtor.controller';
 import debtor from '../../middleware/validators/debtor.validate';
 import multer from 'multer';
+import debtorValidate from '../../middleware/validators/debtor.validate';
 
 const router = Router();
 const storage = multer.memoryStorage();
@@ -196,5 +197,16 @@ router.get(
   '/get-debtor-extracted-data/:id',
   debtorController.getDebtorExtractedFields
 );
+
+router.get(
+  '/getClientSyncEmail/:id',
+  debtorController.getClientSyncEmail
+)
+
+router.post(
+  '/clientSync/:id',
+  debtorValidate.syncDebtorEmail,
+  debtorController.clientSync
+)
 
 export default router;

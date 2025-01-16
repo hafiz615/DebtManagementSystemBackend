@@ -2,16 +2,22 @@ import mongoose, {Schema} from 'mongoose';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
-import {ISyncCreditor} from '../interfaces/syncCreditor.interface';
+import {ISyncPaymentMethod} from '../interfaces/syncPaymentMethod.interface';
 
-const syncCreditorModel = new Schema({
-  creditorId: {
+const syncPaymentMethodModel = new Schema({
+  syncId: {
     type: String,
   },
   email: {
     type: String,
   },
   logTrackingId: {
+    type: String,
+  },
+  platform: {
+    type: String,
+  },
+  customerVaultId: {
     type: String,
   },
   createdAt: {
@@ -23,7 +29,7 @@ const syncCreditorModel = new Schema({
   },
 });
 
-syncCreditorModel.pre('save', async function (next) {
+syncPaymentMethodModel.pre('save', async function (next) {
   this.logTrackingId = v4();
   next();
 });
@@ -68,15 +74,15 @@ const logUpdatePost = async function (doc) {
   });
 };
 
-syncCreditorModel.pre('findOneAndUpdate', logUpdate);
-syncCreditorModel.pre('updateMany', logUpdate);
-syncCreditorModel.pre('updateOne', logUpdate);
+syncPaymentMethodModel.pre('findOneAndUpdate', logUpdate);
+syncPaymentMethodModel.pre('updateMany', logUpdate);
+syncPaymentMethodModel.pre('updateOne', logUpdate);
 
-syncCreditorModel.post('findOneAndUpdate', logUpdatePost);
-syncCreditorModel.post('updateMany', logUpdatePost);
-syncCreditorModel.post('updateOne', logUpdatePost);
+syncPaymentMethodModel.post('findOneAndUpdate', logUpdatePost);
+syncPaymentMethodModel.post('updateMany', logUpdatePost);
+syncPaymentMethodModel.post('updateOne', logUpdatePost);
 
-export const SyncCreditor = mongoose.model<ISyncCreditor>(
-  'syncCreditor',
-  syncCreditorModel
+export const SyncPaymentMethod = mongoose.model<ISyncPaymentMethod>(
+  'syncPaymentMethod',
+  syncPaymentMethodModel
 );
