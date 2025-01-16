@@ -267,11 +267,8 @@ class PaymentService {
         const paymentsPrevious = await this.getPreviousPaymentsByCaseId(req.params.id);
         const paymentsUpcoming = await this.getUpcomingPaymentsByCaseId(req.params.id, pageLimit.page, pageLimit.limit);
         const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(req.params.id);
-        // if (!payments.length) {
-        //   return [false, constants.notFoundMessage('Payments')];
-        // }
-        const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
-        const paymentsObj = await payment_util_1.default.getFilteredPayments(newPaymentsArray, 'default');
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
+        const upcomingPaymentsObj = await payment_util_1.default.getFilteredPayments(paymentsUpcoming, 'upcomingPayments');
         let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
         paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
         upcomingAmount = paymentsObj.upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
@@ -311,14 +308,14 @@ class PaymentService {
             remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
         };
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        upcomingPaymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         const paginatedArray = mergedArray.slice((pageLimit.page - 1) * pageLimit.limit, pageLimit.page * pageLimit.limit);
         return [
             true,
             {
                 transactions: {
                     previous: paginatedArray,
-                    upcomingPayments: paymentsObj.upcomingPayments,
+                    upcomingPayments: upcomingPaymentsObj.upcomingPayments,
                     totalCount: mergedArray.length + paymentsUpcomingCount,
                 },
                 paymentCounts: paymentCounts,
@@ -351,11 +348,9 @@ class PaymentService {
         const paymentsPrevious = await this.getPreviousCommissionPayments();
         const paymentsUpcoming = await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
         const paymentsUpcomingCount = await this.getUpcomingCommissionPaymentsCount();
-        // if (!payments.length) {
-        //   return [false, constants.notFoundMessage('Payments')];
-        // }
-        const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
-        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(newPaymentsArray);
+        // const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
+        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(paymentsPrevious);
+        const upcomingPaymentsObj = await payment_util_1.default.getFilteredCommissionPayments(paymentsUpcoming);
         const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
             ...obj,
             type: 'authorization',
@@ -382,14 +377,14 @@ class PaymentService {
             ...failedCapture,
         ];
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        upcomingPaymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         const paginatedArray = mergedArray.slice((pageLimit.page - 1) * pageLimit.limit, pageLimit.page * pageLimit.limit);
         return [
             true,
             {
                 transactions: {
                     previous: paginatedArray,
-                    upcomingPayments: paymentsObj.upcomingPayments,
+                    upcomingPayments: upcomingPaymentsObj.upcomingPayments,
                     totalCount: mergedArray.length + paymentsUpcomingCount,
                 },
             },
@@ -428,7 +423,12 @@ class PaymentService {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
             isDeleted: false,
-            status: { $ne: 'Upcoming' },
+            $or: [
+                { authorized: 'Success' },
+                { authorized: 'Failed' },
+                { captured: 'Success' },
+                { captured: 'Failed' },
+            ],
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],

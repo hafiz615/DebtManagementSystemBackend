@@ -375,14 +375,14 @@ class PaymentService {
     const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(
       req.params.id
     );
-    // if (!payments.length) {
-    //   return [false, constants.notFoundMessage('Payments')];
-    // }
-    const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
 
     const paymentsObj = await paymentUtil.getFilteredPayments(
-      newPaymentsArray,
+      paymentsPrevious,
       'default'
+    );
+    const upcomingPaymentsObj = await paymentUtil.getFilteredPayments(
+      paymentsUpcoming,
+      'upcomingPayments'
     );
     let paidAmount = 0,
       upcomingAmount = 0,
@@ -440,7 +440,7 @@ class PaymentService {
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
-    paymentsObj.upcomingPayments.sort(
+    upcomingPaymentsObj.upcomingPayments.sort(
       (a: any, b: any) =>
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
@@ -453,7 +453,7 @@ class PaymentService {
       {
         transactions: {
           previous: paginatedArray,
-          upcomingPayments: paymentsObj.upcomingPayments,
+          upcomingPayments: upcomingPaymentsObj.upcomingPayments,
           totalCount: mergedArray.length + paymentsUpcomingCount,
         },
         paymentCounts: paymentCounts,
@@ -497,12 +497,11 @@ class PaymentService {
       await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
     const paymentsUpcomingCount =
       await this.getUpcomingCommissionPaymentsCount();
-    // if (!payments.length) {
-    //   return [false, constants.notFoundMessage('Payments')];
-    // }
-    const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
+    // const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
     const paymentsObj =
-      await paymentUtil.getFilteredCommissionPayments(newPaymentsArray);
+      await paymentUtil.getFilteredCommissionPayments(paymentsPrevious);
+    const upcomingPaymentsObj =
+      await paymentUtil.getFilteredCommissionPayments(paymentsUpcoming);
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
       ...obj,
       type: 'authorization',
@@ -535,7 +534,7 @@ class PaymentService {
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
-    paymentsObj.upcomingPayments.sort(
+    upcomingPaymentsObj.upcomingPayments.sort(
       (a: any, b: any) =>
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
@@ -548,7 +547,7 @@ class PaymentService {
       {
         transactions: {
           previous: paginatedArray,
-          upcomingPayments: paymentsObj.upcomingPayments,
+          upcomingPayments: upcomingPaymentsObj.upcomingPayments,
           totalCount: mergedArray.length + paymentsUpcomingCount,
         },
       },
@@ -604,7 +603,12 @@ class PaymentService {
       {
         caseId: id,
         isDeleted: false,
-        status: {$ne: 'Upcoming'},
+        $or: [
+          {authorized: 'Success'},
+          {authorized: 'Failed'},
+          {captured: 'Success'},
+          {captured: 'Failed'},
+        ],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway',
       undefined,
