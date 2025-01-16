@@ -1,11 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
 const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
 const dataCopier_util_1 = require("./dataCopier.util");
+const upload_util_1 = __importDefault(require("./upload.util"));
+const common_util_1 = __importDefault(require("./common.util"));
 class InboxUtil {
     constructor() {
-        this.inboxRepository = new inbox_repository_1.InboxRepository();
+        this.uploadUtil = new upload_util_1.default();
     }
     async getAllInboxFilters(req) {
         const filters = {};
@@ -60,10 +64,19 @@ class InboxUtil {
         });
         return result;
     }
-    createDraft(data, text, caseData, userId) {
+    async createDraft(data, caseData, userId, files) {
+        let { sendTo, content } = data;
         const newDraft = new inbox_repomodel_1.Inbox();
+        const filesData = await this.uploadUtil.awsS3FileUpload(files, false);
+        for (const obj of filesData) {
+            const mimeType = common_util_1.default.getMimeType(obj.key);
+            obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+        }
+        newDraft.to = sendTo;
         newDraft.userId = userId;
-        newDraft.text = text;
+        newDraft.text = content;
+        newDraft.textAsHtml = content;
+        newDraft.attachments = filesData;
         if (caseData) {
             newDraft.caseCode = caseData.caseCode;
             newDraft.debtorCompanyName = caseData.debtor.businessInformation.companyName;

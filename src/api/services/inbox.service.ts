@@ -60,32 +60,58 @@ class InboxService {
   }
 
   async createEmailDraft(req: Request) {
-      const reqTemp: any = req;
-      let caseData = null;
-      if(req.body.caseId){
-          caseData = await this.caseRepository.getById<ICase>(
-          req.body.caseId,
-          undefined,
-          undefined,
-          [
-            {path: 'debtor', select: ['businessInformation.companyName']},
-            {path: 'creditor', select: ['businessInformation.companyName']},
-          ]
-        );
+    const reqTemp: any = req;
+    let caseData = null;
+    if(req.body.caseId){
+        caseData = await this.caseRepository.getById<ICase>(
+        req.body.caseId,
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
 
-        console.log('case data', caseData);
-        if (!caseData) {
-          return [false, constantsUtil.notFoundMessage('Case')];
-        }
+      console.log('case data', caseData);
+      if (!caseData) {
+        return [false, constantsUtil.notFoundMessage('Case')];
       }
-      const validateDraft = inboxUtils.createDraft(req.body, req.body.content, caseData, reqTemp.id)
-      const result = await this.inboxRepository.create<IInbox>(validateDraft);
-        if (!result) {
-          return [false, constantsUtil.failureAddMessage('draft')];
-        }
-      return [true, result];
     }
-}
+    const validateDraft = await inboxUtils.createDraft(req.body, caseData, reqTemp.id, reqTemp?.files?.files || [])
+    const result = await this.inboxRepository.create<IInbox>(validateDraft);
+      if (!result) {
+        return [false, constantsUtil.failureAddMessage('draft')];
+      }
+    return [true, result];
+  }
 
+  deleteDraftEmail = async (req: Request) => {
+      console.log('id', req.params.id);
+      let draftTemp: any = await this.inboxRepository.getById<IInbox>(req.params.id);
+  
+      if (!draftTemp) {
+        return [false, constantsUtil.notFoundMessage('Draft')];
+      }
+      console.log('draftTemp', draftTemp);
+      try {
+        const updateDraft = await this.caseRepository.updateById<IInbox>(
+          req.params.id,
+          { isDeleted: true }
+        );
+    
+        console.log('Update result:', updateDraft);
+    
+        if (!updateDraft || !updateDraft.isDeleted) {
+          return [false, constantsUtil.failureDeleteMessage('Draft')];
+        }
+    
+        return [true, constantsUtil.successDeleteMessage('Draft')];
+      } catch (error) {
+        console.error('Error during update:', error);
+        return [false, 'An error occurred while updating the draft.'];
+      }
+  }
+}
 
 export default InboxService;
