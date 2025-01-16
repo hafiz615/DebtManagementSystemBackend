@@ -2,12 +2,14 @@ import {Request} from 'express';
 import {InboxRepository} from '../api/repository/inbox/inbox.repository';
 import { Inbox } from '../database/repomodels/inbox.repomodel';
 import { DataCopier } from './dataCopier.util';
+import { IKeyFile } from '../database/interfaces/debtor.interface';
+import UploadUtil from './upload.util';
+import commonUtil from './common.util';
 
 class InboxUtil {
-  private inboxRepository: InboxRepository;
-
+  private uploadUtil: UploadUtil;
   constructor() {
-    this.inboxRepository = new InboxRepository();
+    this.uploadUtil = new UploadUtil();
   }
 
   async getAllInboxFilters(req: Request) {
@@ -69,18 +71,36 @@ class InboxUtil {
     return result;
   }
 
-  createDraft(data: any, text: string, caseData: any, userId: string){
-      const newDraft= new Inbox();
-      newDraft.userId = userId;
-      newDraft.text = text;
-      if(caseData){
-        newDraft.caseCode = caseData.caseCode;
-        newDraft.debtorCompanyName = caseData.debtor.businessInformation.companyName;
-        newDraft.creditorCompanyName = caseData.creditor.businessInformation.companyName;
-        newDraft.negotiatorName = caseData.negotiator;
-      }
-      const validateDraft = DataCopier.copy(newDraft, data);
-      return validateDraft;
+  async createDraft(data: any, caseData: any, userId: string, files: any){
+    let { sendTo,  content} = data;
+    const newDraft= new Inbox();
+    const filesData: IKeyFile[] = await this.uploadUtil.awsS3FileUpload(
+              files,
+              false
+            );
+    for (const obj of filesData) {
+      const mimeType = commonUtil.getMimeType(obj.key);
+      obj.url = await this.uploadUtil.getS3FileSignedUrl(
+        obj.key,
+        mimeType,
+        60 * 60 * 24 * 365 * 10,
+        process.env.s3BucketName
+      );
     }
+    
+    newDraft.to = sendTo;
+    newDraft.userId = userId;
+    newDraft.text = content;
+    newDraft.textAsHtml = content;
+    newDraft.attachments = filesData as any ;
+    if(caseData){
+      newDraft.caseCode = caseData.caseCode;
+      newDraft.debtorCompanyName = caseData.debtor.businessInformation.companyName;
+      newDraft.creditorCompanyName = caseData.creditor.businessInformation.companyName;
+      newDraft.negotiatorName = caseData.negotiator;
+    }
+    const validateDraft = DataCopier.copy(newDraft, data);
+    return validateDraft;
+  }
 }
 export default new InboxUtil();

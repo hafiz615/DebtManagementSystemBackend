@@ -13,6 +13,26 @@ const case_repository_1 = require("../repository/case/case.repository");
 dotenv_1.default.config();
 class InboxService {
     constructor() {
+        this.deleteDraftEmail = async (req) => {
+            console.log('id', req.params.id);
+            let draftTemp = await this.inboxRepository.getById(req.params.id);
+            if (!draftTemp) {
+                return [false, constants_util_2.default.notFoundMessage('Draft')];
+            }
+            console.log('draftTemp', draftTemp);
+            try {
+                const updateDraft = await this.caseRepository.updateById(req.params.id, { isDeleted: true });
+                console.log('Update result:', updateDraft);
+                if (!updateDraft || !updateDraft.isDeleted) {
+                    return [false, constants_util_2.default.failureDeleteMessage('Draft')];
+                }
+                return [true, constants_util_2.default.successDeleteMessage('Draft')];
+            }
+            catch (error) {
+                console.error('Error during update:', error);
+                return [false, 'An error occurred while updating the draft.'];
+            }
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.userRepository = new user_repository_1.UserRepository();
@@ -57,7 +77,7 @@ class InboxService {
                 return [false, constants_util_2.default.notFoundMessage('Case')];
             }
         }
-        const validateDraft = inbox_utils_1.default.createDraft(req.body, req.body.content, caseData, reqTemp.id);
+        const validateDraft = await inbox_utils_1.default.createDraft(req.body, caseData, reqTemp.id, reqTemp?.files?.files || []);
         const result = await this.inboxRepository.create(validateDraft);
         if (!result) {
             return [false, constants_util_2.default.failureAddMessage('draft')];
