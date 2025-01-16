@@ -109,7 +109,7 @@ const debtorSchema: Schema = new Schema({
     }>,
   },
   accounts: {
-    type: Array<{paymentType: String; customerVaultId: String}>,
+    type: Array<{paymentType: String; customerVaultId: String; platform: String}>,
   },
   // paymentType: {
   //   type: String,

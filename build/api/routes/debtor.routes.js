@@ -8,6 +8,7 @@ const authorize_middleware_1 = __importDefault(require("../../middleware/authori
 const debtor_controller_1 = __importDefault(require("../controllers/debtor/debtor.controller"));
 const debtor_validate_1 = __importDefault(require("../../middleware/validators/debtor.validate"));
 const multer_1 = __importDefault(require("multer"));
+const debtor_validate_2 = __importDefault(require("../../middleware/validators/debtor.validate"));
 const router = (0, express_1.Router)();
 const storage = multer_1.default.memoryStorage();
 const upload = (0, multer_1.default)({ storage });
@@ -53,5 +54,7 @@ const uploadFields = upload.fields([
 ]);
 router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.getExtractFieldsAndDebtor);
 router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);
+router.get('/getClientSyncEmail/:id', debtor_controller_1.default.getClientSyncEmail);
+router.post('/clientSync/:id', debtor_validate_2.default.syncDebtorEmail, debtor_controller_1.default.clientSync);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

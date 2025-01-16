@@ -11,6 +11,7 @@ const payment_repository_1 = require("../api/repository/payment/payment.reposito
 const common_util_1 = __importDefault(require("./common.util"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const xml2js_1 = require("xml2js");
+const syncPaymentMethod_repository_1 = require("../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 dotenv_1.default.config();
 class EasypayUtil {
     constructor() {
@@ -18,6 +19,88 @@ class EasypayUtil {
         this.checkRepository = new check_repository_1.CheckRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
+    }
+    async getEasyPayCustomers(platform) {
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyQuery(platform);
+        const url = urlSecurityKey.url;
+        const params = {
+            report_type: 'customer_vault',
+            security_key: urlSecurityKey.securityKey,
+        };
+        console.log(url, 'urlllllll');
+        const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+        const json = await this.convertXmlToJson(response.data);
+        if (!json.nm_response?.customer_vault?.customer &&
+            !json.nm_response?.customer_vault?.customer.length)
+            return [false, 'Unable To Find Data'];
+        const customers = json.nm_response.customer_vault.customer;
+        console.log(customers.length, 'customers.length');
+        // console.log(debtor, 'klklklk');
+        return customers;
+    }
+    async convertXmlToJson(xmlData) {
+        return await (0, xml2js_1.parseStringPromise)(xmlData, { explicitArray: false });
+    }
+    async checkClientExist(users, debtorEmail, platform, _id, existingDebtor) {
+        let update = { easyPayUserId: '' };
+        const easyPayEmails = users.map(user => {
+            return user.email.toLowerCase();
+        });
+        // const index = easyPayEmails.indexOf(debtorEmail);
+        // if (index === -1) return [false, `Could Not Found the User in ${platform}`];
+        const indices = easyPayEmails.reduce((acc, email, index) => {
+            if (email === debtorEmail) {
+                acc.push(index);
+            }
+            return acc;
+        }, []);
+        if (indices.length === 0) {
+            return [false, `Could not find the user in ${platform}`];
+        }
+        const userIds = [];
+        for (const index of indices) {
+            const email = users[index].email.toLowerCase();
+            let paymentType = '';
+            if (users[index].cc_number)
+                paymentType = 'cc';
+            if (users[index].check_account)
+                paymentType = 'ck';
+            console.log(email, 'user.email');
+            console.log(paymentType, 'paymentType');
+            console.log(users[index].customer_vault_id, 'user.customer_vault_id');
+            console.log(platform, 'platform');
+            const customerVaultExists = existingDebtor.accounts?.some((account) => account.customerVaultId === users[index].customer_vault_id);
+            if (customerVaultExists) {
+                userIds.push(users[index].customer_vault_id);
+                continue;
+            }
+            await this.debtorRepository.updateById(_id, {
+                $push: {
+                    accounts: {
+                        $each: [
+                            {
+                                paymentType: paymentType,
+                                customerVaultId: users[index].customer_vault_id,
+                                platform: platform,
+                            },
+                        ],
+                    },
+                },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            userIds.push(users[index].customer_vault_id);
+        }
+        update['userIds'] = userIds;
+        return [true, update];
+    }
+    async upsertDebtorEasyPayEmail(debtorId, email, platform, customerVaultIds) {
+        for (const customerVaultId of customerVaultIds) {
+            await this.syncPaymentMethodRepository.upsert({ syncId: debtorId, platform: platform }, {
+                email: email,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+        }
     }
     async syncClients(platform) {
         const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyQuery(platform);
@@ -39,14 +122,6 @@ class EasypayUtil {
                 .map(debtor => debtor.basicInformation.email.toLowerCase());
             console.log(debtorEmails, 'klklklk');
             await this.processAllUsersResults(customers, debtorEmails, platform);
-        }
-    }
-    async convertXmlToJson(xmlData) {
-        try {
-            return await (0, xml2js_1.parseStringPromise)(xmlData, { explicitArray: false });
-        }
-        catch (error) {
-            console.error('Error parsing XML:', error);
         }
     }
     async processAllUsersResults(users, debtorEmails, platform) {

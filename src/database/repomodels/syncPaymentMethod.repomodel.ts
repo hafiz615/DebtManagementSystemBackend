@@ -1,8 +1,10 @@
 import commonUtil from '../../utils/common.util';
 
-export class SyncCreditor {
-  creditorId = '';
+export class syncPaymentMethod {
+  syncId = '';
   email = '';
+  platform = '';
+  customerVaultId='';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

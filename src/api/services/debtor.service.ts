@@ -38,6 +38,11 @@ import CaseService from './case.service';
 import {any} from 'joi';
 import {Payment} from '../../database/repomodels/payment.repomodel';
 import mongoose from 'mongoose';
+import {SyncPaymentMethodRepository} from '../repository/ISyncPaymentMethod/syncPaymentMethod.repository';
+import {ISyncPaymentMethod} from '../../database/interfaces/syncPaymentMethod.interface';
+import easypayUtil from '../../utils/easypay.util';
+import {paymentPlatform} from '../../enums/index'
+import { platform } from 'os';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -50,6 +55,7 @@ class DebtorService {
   private userRepository: UserRepository;
   private caseService: CaseService;
   private uploadUtil: UploadUtil;
+  private syncPaymentMethodRepository: SyncPaymentMethodRepository;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -61,6 +67,7 @@ class DebtorService {
     this.userRepository = new UserRepository();
     this.caseService = new CaseService();
     this.uploadUtil = new UploadUtil();
+    this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -1628,6 +1635,36 @@ class DebtorService {
         otherDocuments: otherDocuments,
       },
     ];
+  }
+
+  async getClientSyncEmail(req: Request) {
+      const debtor = await this.debtorRepository.getById<IDebtor>(
+        req.params.id
+      );
+      if (!debtor) return [false, constants.notFoundMessage('client')];
+      const result = await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
+        syncId: req.params.id,
+      });
+      return result ? [true, result.email] : [true, debtor.basicInformation.email];
+  }
+
+  async clientSync(req: Request) {
+    console.log(req.body)
+    const platformExists = Object.values(paymentPlatform).includes(req.body?.platform);
+    console.log("platform" , platformExists)
+    if(!platformExists) return [false, constants.Messages.INVALID_PLATFORM]
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+        req.params.id
+      );
+    if (!debtor) return [false, constants.notFoundMessage('client')];
+    const email = req.body.email.toLowerCase();
+    const customers = await easypayUtil.getEasyPayCustomers(req.body.platform);
+    const checkClientExist = await easypayUtil.checkClientExist(customers, email, req.body.platform, req.params.id, debtor)
+    console.log(checkClientExist[1]['userId'])
+    if(checkClientExist[0]){
+      await easypayUtil.upsertDebtorEasyPayEmail(req.params.id, email, req.body.platform, checkClientExist[1]['userIds'])
+    }
+    return checkClientExist;
   }
 }
 

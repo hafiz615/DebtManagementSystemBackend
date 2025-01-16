@@ -19,6 +19,7 @@ exports.default = {
         EXCESSIVE_REQUEST: 429,
     },
     Messages: {
+        INVALID_PLATFORM: 'Invalid Platform',
         INVALID: 'Invalid Email or Password',
         SIGNIN_SUCCESSFULL: 'Signed in successfully',
         PASSWORD_FORMAT: 'Password must have UpperCase, LowerCase, Number/SpecialChar and min 8 Chars',

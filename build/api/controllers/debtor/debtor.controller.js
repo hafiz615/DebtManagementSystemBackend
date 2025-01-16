@@ -704,6 +704,48 @@ class DebtorController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.getClientSyncEmail = async (req, res) => {
+            try {
+                const response = await this.debtorService.getClientSyncEmail(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: 'Client email returned successfully!',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.clientSync = async (req, res) => {
+            try {
+                const response = await this.debtorService.clientSync(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Debtor synced successfully!',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.debtorService = new debtor_service_1.default();
     }
 }
