@@ -27,7 +27,7 @@ class InboxService {
     const filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
       ? await inboxUtils.getAllInboxFilters(req)
       : {userId: reqTemp.id};
-    filters['isDeleted'] = false;
+    filters['isDeleted'] = {$ne: true};
     let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
       filters,
       undefined,
