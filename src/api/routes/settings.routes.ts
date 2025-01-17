@@ -91,4 +91,10 @@ router.get(
   settingsController.getCustomFields
 );
 
+router.get(
+  '/getTemplates',
+  authorize.validateAuth,
+  settingsController.getTemplates
+);
+
 export default router;
