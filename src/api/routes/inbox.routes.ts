@@ -38,9 +38,17 @@ router.post(
   inboxController.createEmailDraft
 );
 
-router.delete('/deleteDraftEmail/:id',
+router.delete(
+  '/deleteDraftEmail/:id',
   authorize.validateAuth,
   inboxController.deleteDraftEmail
-)
+);
+
+router.put(
+  '/updateDraftEmail/:id',
+  authorize.validateAuth,
+  draftEmailFields,
+  inboxController.updateDraftEmail
+);
 
 export default router;

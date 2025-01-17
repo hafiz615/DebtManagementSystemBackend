@@ -51,28 +51,36 @@ class InboxUtil {
   }
 
   formatInboxData(inbox: any, userName: string, type: any) {
-    const validTypes =
-      type === 'default' ? ['draft', 'sent', 'received'] : [type];
-    const result = inbox.reduce(
-      (acc: any, email: any) => {
-        if (validTypes.includes(email.type)) {
-          if (!acc[email.type]) {
-            acc[email.type] = [];
-            acc[`${email.type}Count`] = 0;
-          }
-          acc[email.type].push(email);
-          acc[`${email.type}Count`] += 1;
-        }
-        return acc;
-      },
-      {
-        userName: userName,
+    const result: any = {userName};
+
+    if (type === 'default') {
+      ['draft', 'sent', 'received'].forEach(defaultType => {
+        result[defaultType] = [];
+        result[`${defaultType}Count`] = 0;
+      });
+    } else {
+      result[type] = [];
+      result[`${type}Count`] = 0;
+    }
+
+    inbox.forEach((email: any) => {
+      const validTypes =
+        type === 'default' ? ['draft', 'sent', 'received'] : [type];
+      if (validTypes.includes(email.type)) {
+        result[email.type].push(email);
+        result[`${email.type}Count`] += 1;
       }
-    );
+    });
+
     return result;
   }
 
-  async createDraft(data: any, caseData: any, userId: string, files: any) {
+  async prepareCreateDraft(
+    data: any,
+    caseData: any,
+    userId: string,
+    files: any
+  ) {
     let {sendTo, content} = data;
     const newDraft = new Inbox();
     const filesData: IKeyFile[] = await this.uploadUtil.awsS3FileUpload(
@@ -88,21 +96,75 @@ class InboxUtil {
         process.env.s3BucketName
       );
     }
+    const validateDraft = await this.prepareDraft(
+      data,
+      newDraft,
+      sendTo,
+      content,
+      filesData,
+      caseData,
+      userId
+    );
+    return validateDraft;
+  }
 
-    newDraft.to = sendTo;
-    newDraft.userId = userId;
-    newDraft.text = content;
-    newDraft.textAsHtml = content;
-    newDraft.attachments = filesData as any;
+  async prepareDraft(
+    data: any,
+    updateDraft: any,
+    sendTo: string,
+    content: string,
+    filesData: any,
+    caseData: any,
+    userId: string
+  ) {
+    updateDraft.to = sendTo;
+    updateDraft.userId = userId;
+    updateDraft.text = content;
+    updateDraft.textAsHtml = content;
+    updateDraft.attachments = filesData as any;
     if (caseData) {
-      newDraft.caseCode = caseData.caseCode;
-      newDraft.debtorCompanyName =
+      updateDraft.caseCode = caseData.caseCode;
+      updateDraft.debtorCompanyName =
         caseData.debtor.businessInformation.companyName;
-      newDraft.creditorCompanyName =
+      updateDraft.creditorCompanyName =
         caseData.creditor.businessInformation.companyName;
-      newDraft.negotiatorName = caseData.negotiator;
+      updateDraft.negotiatorName = caseData.negotiator;
     }
-    const validateDraft = DataCopier.copy(newDraft, data);
+    const preparedDraft = DataCopier.copy(updateDraft, data);
+    return preparedDraft;
+  }
+
+  async prepareUpdateDraft(
+    updateDraft: any,
+    data: any,
+    caseData: any,
+    userId: string,
+    files: any
+  ) {
+    let {sendTo, content} = data;
+    const filesData: IKeyFile[] = await this.uploadUtil.awsS3FileUpload(
+      files,
+      false
+    );
+    for (const obj of filesData) {
+      const mimeType = commonUtil.getMimeType(obj.key);
+      obj.url = await this.uploadUtil.getS3FileSignedUrl(
+        obj.key,
+        mimeType,
+        60 * 60 * 24 * 365 * 10,
+        process.env.s3BucketName
+      );
+    }
+
+    const validateDraft = await this.prepareDraft(
+      data,
+      updateDraft,
+      sendTo,
+      content,
+      filesData,
+      caseData,
+      userId
+    );
     return validateDraft;
   }
 }
