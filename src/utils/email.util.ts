@@ -810,44 +810,44 @@ class EmailUtil {
     userName?: string
   ) {
     let headers = {};
-    if (caseId) {
-      const bin = await this.getVerifySender(from);
-      console.log(bin);
-      if (bin === 'debtor') {
-        const caseTemp: any = await this.caseRepository.getById<ICase>(
-          caseId,
-          '_id',
-          undefined,
-          {
-            path: 'debtor',
-            select: [
-              'businessInformation.companyName',
-              'businessInformation.EIN',
-            ],
-          }
-        );
-        if (caseTemp.debtor?.businessInformation?.companyName)
-          subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
-        if (caseTemp.debtor?.businessInformation?.EIN)
-          subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-        headers['References'] =
-          `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
-        console.log('This is Reference: ', headers['References']);
-      }
-      if (bin === 'user') {
-        const user = await this.userRepository.getOne<IUser>(
-          {email: from},
-          '_id name',
-          undefined
-        );
-        user
-          ? (subject += ` First Choice-DMS ${user.name}`)
-          : (subject += ` First Choice-DMS`);
-        headers['References'] =
-          `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
-        console.log('This is Reference: ', headers['References']);
-      }
+
+    const bin = await this.getVerifySender(from);
+    console.log(bin);
+    if (bin === 'debtor' && caseId) {
+      const caseTemp: any = await this.caseRepository.getById<ICase>(
+        caseId,
+        '_id',
+        undefined,
+        {
+          path: 'debtor',
+          select: [
+            'businessInformation.companyName',
+            'businessInformation.EIN',
+          ],
+        }
+      );
+      if (caseTemp.debtor?.businessInformation?.companyName)
+        subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+      if (caseTemp.debtor?.businessInformation?.EIN)
+        subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+      headers['References'] =
+        `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+      console.log('This is Reference: ', headers['References']);
     }
+    if (bin === 'user') {
+      const user = await this.userRepository.getOne<IUser>(
+        {email: from},
+        '_id name',
+        undefined
+      );
+      user
+        ? (subject += ` First Choice-DMS ${user.name}`)
+        : (subject += ` First Choice-DMS`);
+      headers['References'] =
+        `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+      console.log('This is Reference: ', headers['References']);
+    }
+
     // const thread = `<threadId-${threadId}@yourdomain.com>`;
     const msg = {
       to: to,

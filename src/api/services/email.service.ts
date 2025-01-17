@@ -70,6 +70,7 @@ class EmailService {
       : parseData.to?.text;
     const attachments = parseData.attachments;
     const referencesHeader = parseData.headers.get('references');
+    console.log('referencesHeader: ', referencesHeader);
     if (referencesHeader) {
       const data: IKeyFile[] = await this.uploadUtil.sendGridAwsS3FileUpload(
         attachments,
@@ -85,12 +86,18 @@ class EmailService {
         );
       }
       const caseId = this.extractCaseId(referencesHeader.toString());
+      console.log('caseId: ', caseId);
       const userId = this.extractUserId(referencesHeader.toString());
+      console.log('userId: ', userId);
       const userName = this.extractUserName(referencesHeader.toString());
+      console.log('userName: ', userName);
       const threadId = this.extractThreadId(referencesHeader.toString());
+      console.log('threadId: ', threadId);
 
       let caseData = null;
       if (caseId) {
+        console.log('caseId Check in caseID: ', caseId);
+
         await caseUtil.addInHistory(
           {
             Subject: subject,
@@ -123,6 +130,9 @@ class EmailService {
         attachments: data,
       };
       if (threadId) {
+        console.log('threadId: ', threadId);
+        console.log('threadId: inside the thread ID ', threadId);
+
         const notification = await emailUtil.createInbox(
           caseData,
           'received',

@@ -66,6 +66,7 @@ class EmailService {
             : parseData.to?.text;
         const attachments = parseData.attachments;
         const referencesHeader = parseData.headers.get('references');
+        console.log('referencesHeader: ', referencesHeader);
         if (referencesHeader) {
             const data = await this.uploadUtil.sendGridAwsS3FileUpload(attachments, false);
             for (const obj of data) {
@@ -73,11 +74,16 @@ class EmailService {
                 obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
             }
             const caseId = this.extractCaseId(referencesHeader.toString());
+            console.log('caseId: ', caseId);
             const userId = this.extractUserId(referencesHeader.toString());
+            console.log('userId: ', userId);
             const userName = this.extractUserName(referencesHeader.toString());
+            console.log('userName: ', userName);
             const threadId = this.extractThreadId(referencesHeader.toString());
+            console.log('threadId: ', threadId);
             let caseData = null;
             if (caseId) {
+                console.log('caseId Check in caseID: ', caseId);
                 await case_util_1.default.addInHistory({
                     Subject: subject,
                     From: from,
@@ -102,6 +108,8 @@ class EmailService {
                 attachments: data,
             };
             if (threadId) {
+                console.log('threadId: ', threadId);
+                console.log('threadId: inside the thread ID ', threadId);
                 const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                 const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                 app_1.default.socketInstance.emit('notify', {
