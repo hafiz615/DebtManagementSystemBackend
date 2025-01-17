@@ -26,6 +26,9 @@ const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util
 const lodash_2 = require("lodash");
 const case_service_1 = __importDefault(require("./case.service"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
+const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
+const index_1 = require("../../enums/index");
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -151,6 +154,7 @@ class DebtorService {
         this.userRepository = new user_repository_1.UserRepository();
         this.caseService = new case_service_1.default();
         this.uploadUtil = new upload_util_1.default();
+        this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -187,11 +191,6 @@ class DebtorService {
                 },
             ],
         }, undefined, undefined, { _id: -1 });
-        // const uploadUtil = new UploadUtil();
-        // for (let doc of debtor[0].documents) {
-        //   const url = await uploadUtil.getS3FileSignedUrl(doc.key);
-        //   console.log(url);
-        // }
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
@@ -666,6 +665,16 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
+        // const statements = caseTemp.debtor?.totalStatements;
+        // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
+        //   debtorUtil.percentageChangeEmail(
+        //     updatedDebtor.businessInformation.companyName,
+        //     String(updatedDebtor._id),
+        //     statements ? statements : 0,
+        //     caseTemp.debtor?.basicInformation?.fullName,
+        //     req.params.id
+        //   );
+        // }
         return [true, updatedDebtor];
     }
     async getExtractedFields(req) {
@@ -864,9 +873,6 @@ class DebtorService {
         await this.debtorRepository.updateById(String(createDebtor[1]['debtor']._id), { userId: reqTemp.id });
         console.log(createDebtor[1]['creditorNames'], 'createDebtor[1][creditorNames]');
         const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(extractedFields.extracted_fields, createDebtor[1]['creditorNames']);
-        for (const iterator of caseTemp) {
-            console.log(iterator, 'okokokok');
-        }
         for (const bin of caseTemp) {
             bin['platform'] = true;
             bin.creditor.platform = true;
@@ -914,12 +920,6 @@ class DebtorService {
         const debtorCreditors = await case_util_1.default.getAllCreditorsByCaseIds(req.body.caseIds);
         const moneyThumb = await debtor_util_1.default.getScoreCard(getDebtor);
         const scoreCard = moneyThumb.scoreCard;
-        // await creditorUtil.addCreditorPercentagesAndGetPercentageCommission(
-        //   debtorCreditors,
-        //   getDebtor,
-        //   moneyThumb.scoreCard
-        // );
-        // await creditorUtil.addBreakEven(debtorCreditors);
         const plans = {};
         const commissionPlan = {};
         const allCreditorsResult = [];
@@ -927,46 +927,20 @@ class DebtorService {
         const metricData = scoreCard['metrics']['metricdata'];
         if (metricData?.length) {
             const revenueArray = metricData.find(row => row[0] === 'Revenue');
-            console.log(revenueArray, 'revenueArray');
             combineResult['avgMonthlySales'] = parseFloat(revenueArray[1]);
         }
         const mcaCompanies = scoreCard['mcacompanies'];
         const getTotalBudget = await moneyThumb_util_1.default.getTotalBudget(mcaCompanies);
-        console.log(getTotalBudget, 'getTotalBudget');
         const getProfitAndTrueRevenue = await moneyThumb_util_1.default.getAnuallyProfitAndTrueRevenue(metricData);
-        console.log(getProfitAndTrueRevenue, 'getProfitAndTrueRevenue');
         const netProfitMargin = (Math.abs(getTotalBudget) + getProfitAndTrueRevenue.profit) /
             getProfitAndTrueRevenue.trueRevenue;
-        console.log(netProfitMargin, 'netProfitMargin');
         const netProfitMargin100 = netProfitMargin * 100;
         combineResult['netProfitMargin'] =
             Math.round(netProfitMargin100 * 100) / 100;
         if (debtorCreditors.length) {
-            // const data = getScoresSettlementRange[1];
-            // plans['maximum'] = debtorCreditors.reduce(
-            //   (sum, obj) => sum + obj.breakEven,
-            //   0
-            // );
-            // plans['percentageShare'] = debtorCreditors.reduce(
-            //   (sum, obj) => sum + obj.percentageReceivable,
-            //   0
-            // );
             const totalRemaining = debtorCreditors.reduce((sum, obj) => sum + obj.remaining, 0);
             plans['weeklyPayment'] = parseFloat(((totalRemaining / 12 / 22) * 5).toFixed(2));
-            // const benefits = await debtorUtil.getBenefits(
-            //   plans,
-            //   scoreCard,
-            //   getDebtor,
-            //   debtorCreditors,
-            //   totalRemaining
-            // );
-            // combineResult['benefits'] = benefits;
-            console.log(totalRemaining, 'totalRemaining');
-            // commissionPlan['lumpSum'] = parseFloat((totalRemaining * 0.1).toFixed(2));
             commissionPlan['4Week'] = parseFloat((totalRemaining * 0.12).toFixed(2));
-            // commissionPlan['4month'] = parseFloat((totalRemaining * 0.19).toFixed(2));
-            console.log(commissionPlan, 'commissionPlan');
-            console.log(plans, 'planssss');
             combineResult['plans'] = plans;
             combineResult['commissionPlan'] = commissionPlan;
             for (const creditor of debtorCreditors) {
@@ -986,17 +960,13 @@ class DebtorService {
                 creditors.push(creditorObj);
                 allCreditorsResult.push(capture);
             }
-            console.log(allCreditorsResult, 'allCreditorsResult');
-            console.log(creditors, 'creditors');
             combineResult['allCreditorsResult'] = allCreditorsResult;
             combineResult['creditors'] = creditors;
         }
         const accounts = scoreCard['accountslist']['data'];
         const yearlyResults = await debtor_util_1.default.getYearlySales(accounts);
-        console.log(yearlyResults, 'yearlyResults');
         combineResult['yearlySales'] = yearlyResults;
         const yearlyProfitMargin = await debtor_util_1.default.getYearlyProfitMargin(scoreCard);
-        console.log(yearlyProfitMargin, 'yearlyProfitMargin');
         combineResult['yearlyProfitMargin'] = yearlyProfitMargin;
         return [true, combineResult];
     }
@@ -1131,8 +1101,6 @@ class DebtorService {
         const reqTemp = req;
         const files = { ...reqTemp.files };
         const debtorId = reqTemp?.body?.debtorId;
-        // console.log("this is the file we are getting", files)
-        // console.log("this is req Debtor: ", debtorId)
         if (!files.mcaDocuments && !debtorId) {
             return [false, constants_util_2.default.Messages.ATTATCH_FILE_ERROR];
         }
@@ -1145,9 +1113,20 @@ class DebtorService {
                 return [false, extractedFields];
             debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
             const checkDebtorAlreadyExist = await this.checkDebtorAlreadyExist(debtorBody);
-            console.log(checkDebtorAlreadyExist);
-            if (checkDebtorAlreadyExist[0])
-                return [false, 'Debtor Already Exist. Please add the Debtor Id'];
+            if (checkDebtorAlreadyExist[0]) {
+                previousMca = checkDebtorAlreadyExist[1].mcaDocuments.map(obj => {
+                    return obj.originalFileName;
+                });
+                return [
+                    true,
+                    {
+                        debtorId: String(checkDebtorAlreadyExist[1]._id),
+                        extractedFields: checkDebtorAlreadyExist[1].extractedFields,
+                        newMca,
+                        previousMca,
+                    },
+                ];
+            }
             debtorBody['extractedFields'] = extractedFields.extracted_fields;
             debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
         }
@@ -1187,10 +1166,9 @@ class DebtorService {
                             newMca,
                             previousMca,
                         },
-                    ]; // Return error if extraction fails
+                    ];
                 }
                 debtorExist[1].extractedFields.push(...extractedFieldsForNewFiles.extracted_fields);
-                console.log(newFiles, 'newFiles');
                 newMca = newFiles.mcaDocuments.map(obj => {
                     return obj.originalname;
                 });
@@ -1230,7 +1208,7 @@ class DebtorService {
     async uploadAndAssignFiles(files, debtorBody) {
         const uploadAndAppend = async (fileKey, debtorKey) => {
             if (files[fileKey]?.length) {
-                const uploadedFiles = await this.uploadUtil.awsS3FileUpload(files[fileKey]);
+                const uploadedFiles = await this.uploadUtil.awsS3FileUpload(files[fileKey], true);
                 debtorBody[debtorKey] = debtorBody[debtorKey]?.length
                     ? [...debtorBody[debtorKey], ...uploadedFiles]
                     : uploadedFiles;
@@ -1299,6 +1277,33 @@ class DebtorService {
                 otherDocuments: otherDocuments,
             },
         ];
+    }
+    async getClientSyncEmail(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('client')];
+        const result = await this.syncPaymentMethodRepository.getOne({
+            syncId: req.params.id,
+        });
+        return result ? [true, result.email] : [true, debtor.basicInformation.email];
+    }
+    async clientSync(req) {
+        console.log(req.body);
+        const platformExists = Object.values(index_1.paymentPlatform).includes(req.body?.platform);
+        console.log("platform", platformExists);
+        if (!platformExists)
+            return [false, constants_util_1.default.Messages.INVALID_PLATFORM];
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('client')];
+        const email = req.body.email.toLowerCase();
+        const customers = await easypay_util_1.default.getEasyPayCustomers(req.body.platform);
+        const checkClientExist = await easypay_util_1.default.checkClientExist(customers, email, req.body.platform, req.params.id, debtor);
+        console.log(checkClientExist[1]['userId']);
+        if (checkClientExist[0]) {
+            await easypay_util_1.default.upsertDebtorEasyPayEmail(req.params.id, email, req.body.platform, checkClientExist[1]['userIds']);
+        }
+        return checkClientExist;
     }
 }
 exports.default = DebtorService;

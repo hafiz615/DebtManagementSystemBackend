@@ -33,6 +33,7 @@ class PaymentUtil {
       transactionType: obj.transactionType ? obj.transactionType : '',
       paymentGateway: obj.paymentGateway ? obj.paymentGateway : '',
       transactionId: obj.debtorTransId,
+      sendViaPaynote: obj.sendViaPaynote,
     }));
 
     return this.getFilteredPaymentsObj(transformedArray, arrayName);

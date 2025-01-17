@@ -39,7 +39,6 @@ class GoogleDriveUtil {
       const driveFilesData = [];
       if (files.length) {
         for (const file of files) {
-          console.log(file, 'fileeeeeeee');
           if (file.mimeType === 'application/vnd.google-apps.folder') {
             if (
               file.name.toLowerCase().includes('mca') ||
@@ -71,7 +70,6 @@ class GoogleDriveUtil {
       } else {
         return 'Could not find MCA or bank statements';
       }
-      console.log(driveFilesData, 'driveFilesData');
       return driveFilesData.length
         ? driveFilesData
         : 'Could not find MCA or bank statements';
@@ -138,7 +136,6 @@ class GoogleDriveUtil {
       businessInformation = {};
       caseTemp = {};
     }
-    console.log(cases);
     return cases;
   }
 }

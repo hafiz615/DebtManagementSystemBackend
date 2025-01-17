@@ -31,7 +31,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const uuid_1 = require("uuid");
-const syncCreditorModel = new mongoose_1.Schema({
+const syncPaymentMethodModel = new mongoose_1.Schema({
     creditorId: {
         type: String,
     },
@@ -49,7 +49,7 @@ const syncCreditorModel = new mongoose_1.Schema({
         type: Date,
     },
 });
-syncCreditorModel.pre('save', async function (next) {
+syncPaymentMethodModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();
     next();
 });
@@ -92,11 +92,11 @@ const logUpdatePost = async function (doc) {
         console.error('Error saving log entry', err);
     });
 };
-syncCreditorModel.pre('findOneAndUpdate', logUpdate);
-syncCreditorModel.pre('updateMany', logUpdate);
-syncCreditorModel.pre('updateOne', logUpdate);
-syncCreditorModel.post('findOneAndUpdate', logUpdatePost);
-syncCreditorModel.post('updateMany', logUpdatePost);
-syncCreditorModel.post('updateOne', logUpdatePost);
-exports.SyncCreditor = mongoose_1.default.model('syncCreditor', syncCreditorModel);
+syncPaymentMethodModel.pre('findOneAndUpdate', logUpdate);
+syncPaymentMethodModel.pre('updateMany', logUpdate);
+syncPaymentMethodModel.pre('updateOne', logUpdate);
+syncPaymentMethodModel.post('findOneAndUpdate', logUpdatePost);
+syncPaymentMethodModel.post('updateMany', logUpdatePost);
+syncPaymentMethodModel.post('updateOne', logUpdatePost);
+exports.SyncCreditor = mongoose_1.default.model('syncCreditor', syncPaymentMethodModel);
 //# sourceMappingURL=syncCreditor.model.js.map

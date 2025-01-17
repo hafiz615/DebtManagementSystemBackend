@@ -16,12 +16,16 @@ class Inbox {
         this.textAsHtml = '';
         this.caseCode = '';
         this.caseId = '';
+        this.userId = '';
+        this.userName = '';
         this.isRead = false;
-        this.type = '';
+        this.type = 'draft';
+        this.isDeleted = false;
         this.debtorCompanyName = '';
         this.creditorCompanyName = '';
         this.negotiatorName = '';
         this.threadId = '';
+        this.attachments = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

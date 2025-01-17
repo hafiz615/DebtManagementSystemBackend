@@ -9,21 +9,62 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const inbox_utils_1 = __importDefault(require("../../utils/inbox.utils"));
+const case_repository_1 = require("../repository/case/case.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 dotenv_1.default.config();
 class InboxService {
     constructor() {
+        this.deleteDraftEmail = async (req) => {
+            let draftTemp = await this.inboxRepository.getById(req.params.id);
+            if (!draftTemp) {
+                return [false, constants_util_2.default.notFoundMessage('Draft')];
+            }
+            const updateDraft = await this.inboxRepository.updateById(req.params.id, { isDeleted: true });
+            if (!updateDraft || !updateDraft.isDeleted) {
+                return [false, constants_util_2.default.failureDeleteMessage('Draft')];
+            }
+            return [true, constants_util_2.default.successDeleteMessage('Draft')];
+        };
+        this.updateDraft = async (req) => {
+            const reqTemp = req;
+            const draftTemp = await this.inboxRepository.getById(req.params.id);
+            if (!draftTemp) {
+                return [false, constants_util_2.default.notFoundMessage('Draft')];
+            }
+            let caseData = null;
+            if (req.body.caseId) {
+                caseData = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [
+                    { path: 'debtor', select: ['businessInformation.companyName'] },
+                    { path: 'creditor', select: ['businessInformation.companyName'] },
+                ]);
+                if (!caseData) {
+                    return [false, constants_util_2.default.notFoundMessage('Case')];
+                }
+            }
+            const updatedDraftData = await inbox_utils_1.default.prepareUpdateDraft(draftTemp, req.body, caseData, reqTemp.id, reqTemp?.files?.files || []);
+            const updatedDraft = await this.inboxRepository.updateById(req.params.id, { ...updatedDraftData, updatedAt: common_util_1.default.getCurrentDate() });
+            if (!updatedDraft) {
+                return [false, constants_util_2.default.failureUpdateMessage('Draft')];
+            }
+            return [true, updatedDraft];
+        };
+        this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.userRepository = new user_repository_1.UserRepository();
     }
     async getAllInboxes(req) {
-        const filters = await inbox_utils_1.default.getAllInboxFilters(req);
+        const reqTemp = req;
+        const type = req.query.type;
+        const filters = Object.keys(await inbox_utils_1.default.getAllInboxFilters(req)).length
+            ? await inbox_utils_1.default.getAllInboxFilters(req)
+            : { userId: reqTemp.id };
+        filters['isDeleted'] = { $ne: true };
         let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined
         // Number(req.query.page),
         // Number(req.query.limit)
         );
-        const formattedData = inbox_utils_1.default.formatInboxData(inbox);
-        // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
-        if (!inbox.length) {
+        const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
+        if (!formattedData) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
         return [true, formattedData];
@@ -40,6 +81,25 @@ class InboxService {
             return [false, constants_util_1.default.failureUpdateMessage('email')];
         }
         return [true, inboxTemp];
+    }
+    async createEmailDraft(req) {
+        const reqTemp = req;
+        let caseData = null;
+        if (req.body.caseId) {
+            caseData = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [
+                { path: 'debtor', select: ['businessInformation.companyName'] },
+                { path: 'creditor', select: ['businessInformation.companyName'] },
+            ]);
+            if (!caseData) {
+                return [false, constants_util_2.default.notFoundMessage('Case')];
+            }
+        }
+        const validateDraft = await inbox_utils_1.default.prepareCreateDraft(req.body, caseData, reqTemp.id, reqTemp?.files?.files || []);
+        const result = await this.inboxRepository.create(validateDraft);
+        if (!result) {
+            return [false, constants_util_2.default.failureAddMessage('draft')];
+        }
+        return [true, result];
     }
 }
 exports.default = InboxService;

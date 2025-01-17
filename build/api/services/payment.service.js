@@ -39,7 +39,7 @@ class PaymentService {
         if (arrayName === 'default') {
             counts = await this.getCountForAllPaymentsStatus({ ...filters }, upcomingFilter);
         }
-        const populatedFiltersResult = await this.populateFilterHomePayments({ ...filters }, req);
+        const populatedFiltersResult = await this.populateFilterHomePayments({ ...filters }, req, upcomingFilter);
         let page = populatedFiltersResult.page;
         let limit = populatedFiltersResult.limit;
         const finalFilters = populatedFiltersResult.filters;
@@ -82,7 +82,7 @@ class PaymentService {
             },
         ];
     }
-    async populateFilterHomePayments(filters, req) {
+    async populateFilterHomePayments(filters, req, upcomingFilter) {
         let page = 1;
         let limit = 5;
         let arrayName = String(req.query.arrayName);
@@ -143,6 +143,8 @@ class PaymentService {
                     break;
                 case 'upcomingPayments':
                     filters['status'] = 'Upcoming';
+                    if (Object.keys(upcomingFilter).length)
+                        filters['dueDate'] = upcomingFilter;
                     break;
                 default:
                     filters['authorized'] = 'Failed';
@@ -189,7 +191,8 @@ class PaymentService {
             const getSuccessCapturePayments = await this.getAllPaymentsQuery(successCapture, page, limit);
             const upcoming = { ...filters };
             upcoming['status'] = 'Upcoming';
-            upcoming['dueDate'] = upcomingFilter;
+            if (Object.keys(upcomingFilter).length)
+                upcoming['dueDate'] = upcomingFilter;
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
             const successPayments = { ...filters };
             successPayments['sendViaPaynote'] = 'Success';
@@ -233,7 +236,6 @@ class PaymentService {
         failedCapture['captured'] = 'Failed';
         const successAuth = { ...filters };
         successAuth['authorized'] = 'Success';
-        console.log(successAuth, 'successAuth');
         const successCapture = { ...filters };
         successCapture['captured'] = 'Success';
         const upcoming = { ...filters };
@@ -245,6 +247,7 @@ class PaymentService {
         const failedCaptures = await this.paymentRepository.getCount(failedCapture);
         const failedAuthorizations = await this.paymentRepository.getCount(failedAuth);
         const successCaptures = await this.paymentRepository.getCount(successCapture);
+        console.log(upcoming, 'upcoming');
         const upcomingPayments = await this.paymentRepository.getCount(upcoming);
         const successPayments = await this.paymentRepository.getCount(successPaynote);
         return {
@@ -264,11 +267,8 @@ class PaymentService {
         const paymentsPrevious = await this.getPreviousPaymentsByCaseId(req.params.id);
         const paymentsUpcoming = await this.getUpcomingPaymentsByCaseId(req.params.id, pageLimit.page, pageLimit.limit);
         const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(req.params.id);
-        // if (!payments.length) {
-        //   return [false, constants.notFoundMessage('Payments')];
-        // }
-        const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
-        const paymentsObj = await payment_util_1.default.getFilteredPayments(newPaymentsArray, 'default');
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
+        const upcomingPaymentsObj = await payment_util_1.default.getFilteredPayments(paymentsUpcoming, 'upcomingPayments');
         let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
         paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
         upcomingAmount = paymentsObj.upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
@@ -308,15 +308,16 @@ class PaymentService {
             remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
         };
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        upcomingPaymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         const paginatedArray = mergedArray.slice((pageLimit.page - 1) * pageLimit.limit, pageLimit.page * pageLimit.limit);
         return [
             true,
             {
                 transactions: {
                     previous: paginatedArray,
-                    upcomingPayments: paymentsObj.upcomingPayments,
-                    totalCount: mergedArray.length + paymentsUpcomingCount,
+                    upcomingPayments: upcomingPaymentsObj.upcomingPayments,
+                    previousCount: mergedArray.length,
+                    upcomingCount: paymentsUpcomingCount,
                 },
                 paymentCounts: paymentCounts,
             },
@@ -348,11 +349,9 @@ class PaymentService {
         const paymentsPrevious = await this.getPreviousCommissionPayments();
         const paymentsUpcoming = await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
         const paymentsUpcomingCount = await this.getUpcomingCommissionPaymentsCount();
-        // if (!payments.length) {
-        //   return [false, constants.notFoundMessage('Payments')];
-        // }
-        const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
-        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(newPaymentsArray);
+        // const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
+        const paymentsObj = await payment_util_1.default.getFilteredCommissionPayments(paymentsPrevious);
+        const upcomingPaymentsObj = await payment_util_1.default.getFilteredCommissionPayments(paymentsUpcoming);
         const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
             ...obj,
             type: 'authorization',
@@ -379,15 +378,16 @@ class PaymentService {
             ...failedCapture,
         ];
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
-        paymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        upcomingPaymentsObj.upcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         const paginatedArray = mergedArray.slice((pageLimit.page - 1) * pageLimit.limit, pageLimit.page * pageLimit.limit);
         return [
             true,
             {
                 transactions: {
                     previous: paginatedArray,
-                    upcomingPayments: paymentsObj.upcomingPayments,
-                    totalCount: mergedArray.length + paymentsUpcomingCount,
+                    upcomingPayments: upcomingPaymentsObj.upcomingPayments,
+                    previousCount: mergedArray.length,
+                    upcomingCount: paymentsUpcomingCount,
                 },
             },
         ];
@@ -425,7 +425,12 @@ class PaymentService {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
             isDeleted: false,
-            status: { $ne: 'Upcoming' },
+            $or: [
+                { authorized: 'Success' },
+                { authorized: 'Failed' },
+                { captured: 'Success' },
+                { captured: 'Failed' },
+            ],
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
@@ -508,7 +513,6 @@ class PaymentService {
         };
         try {
             const response = await axiosInstanceInterceptor_1.default.get(url, { params });
-            console.log('Response:', response.data);
             return response.data;
         }
         catch (error) {
@@ -537,7 +541,6 @@ class PaymentService {
         };
         try {
             const response = await axiosInstanceInterceptor_1.default.get(url, { params });
-            console.log('Response:', response.data);
             return response.data;
         }
         catch (error) {
@@ -567,7 +570,6 @@ class PaymentService {
         };
         try {
             const response = await axiosInstanceInterceptor_1.default.get(url, { params });
-            console.log('Response:', response.data);
             return response.data;
         }
         catch (error) {
@@ -629,7 +631,14 @@ class PaymentService {
                         'businessInformation.companyName',
                     ],
                 },
-                { path: 'debtor', select: ['_id', 'basicInformation.fullName'] },
+                {
+                    path: 'debtor',
+                    select: [
+                        '_id',
+                        'basicInformation.fullName',
+                        'businessInformation.companyName',
+                    ],
+                },
             ],
         });
         const interval = {
@@ -646,6 +655,12 @@ class PaymentService {
         if (!payment.caseId?.creditorPaymentsProceed) {
             return [false, 'Funds transfer for this creditor is paused'];
         }
+        if (!payment.caseId?.creditor?.basicInformation?.fullName) {
+            return [false, 'Creditor name is required'];
+        }
+        if (!payment.caseId?.debtor?.businessInformation?.companyName) {
+            return [false, 'Debtor company name is required'];
+        }
         if (payment.status === 'Success') {
             return [false, 'Payment already send'];
         }
@@ -658,7 +673,6 @@ class PaymentService {
             const paymentResult = await paynote_util_1.default.sendPayment(payment);
             if (paymentResult?.message === 'Server Error')
                 return [false, constants_util_1.default.Messages.PAYNOTE_SERVER_ERROR];
-            console.log(paymentResult, 'jhkjhi');
             if (paymentResult.error) {
                 let message = '';
                 if (paymentResult?.messages) {

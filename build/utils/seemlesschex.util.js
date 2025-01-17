@@ -53,7 +53,6 @@ class SeemlesschexUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            console.log(response.data);
             return response.data;
         }
         catch (error) {
@@ -146,7 +145,6 @@ class SeemlesschexUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            console.log(response.data);
             return response.data;
         }
         catch (error) {
@@ -221,7 +219,6 @@ class SeemlesschexUtil {
     }
     async deleteCheckInfo(checkId, status) {
         const check = await this.checkRepository.updateByOne({ checkId: checkId }, { isDeleted: true, status: status });
-        console.log(check, 'checkkkkkk');
     }
     async getCheckInfo(checkId) {
         return await this.checkRepository.getOne({ checkId: checkId }, { isDeleted: false });

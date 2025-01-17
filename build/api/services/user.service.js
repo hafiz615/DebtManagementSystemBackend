@@ -246,6 +246,19 @@ class UserService {
             }
             return [true, result[0]];
         };
+        this.getUsers = async (req) => {
+            const reqTemp = req;
+            const filters = { isDeleted: false, isPlatform: { $ne: true } };
+            if (reqTemp.role !== 'Super User') {
+                filters['role'] = { $ne: 'Super User' };
+            }
+            let users = await this.userRepository.getAllWithoutPagination(filters, 'name', undefined, { createdAt: -1 });
+            if (!users.length) {
+                return [false, constants_util_2.default.notFoundMessage('Users')];
+            }
+            users = await this.moveObjectToTop(users, reqTemp.id);
+            return [true, users];
+        };
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
         this.caseRepository = new case_repository_1.CaseRepository();
@@ -487,7 +500,6 @@ class UserService {
             method: 'GET',
         };
         const result = await client_1.default.request(request);
-        console.log(result[0].body.results, 'result[0].body.results');
         let emails = [];
         for (const item of result[0].body.results) {
             if (item.verified) {
@@ -501,7 +513,6 @@ class UserService {
             const email = result[0].body.results
                 .filter(item => item.from_email === reqTemp.email && item.verified === true)
                 .map(item => item.from_email);
-            console.log(email, 'uhuhuhu');
             if (email.length)
                 emails.push(...email);
         }
@@ -532,7 +543,6 @@ class UserService {
         req.body.email = req.body.email.toLowerCase();
         req.body.role = 'Debtor';
         const email = req.body.email;
-        console.log(email);
         let user = await this.userRepository.getOne({
             email: email,
             isDeleted: false,
@@ -579,7 +589,6 @@ class UserService {
         };
         data['country'] = 'USA';
         data['nickname'] = `user-${reqTemp.id}-${new Date().getSeconds()}`;
-        console.log(data);
         const request = {
             url: `/v3/verified_senders`,
             method: 'POST',
@@ -587,6 +596,14 @@ class UserService {
         };
         const result = await client_1.default.request(request);
         return [true, []];
+    }
+    async moveObjectToTop(data, id) {
+        const index = data.findIndex(item => String(item._id) === id);
+        if (index > 0) {
+            const [objectToMove] = data.splice(index, 1);
+            data.unshift(objectToMove);
+        }
+        return data;
     }
 }
 exports.default = UserService;

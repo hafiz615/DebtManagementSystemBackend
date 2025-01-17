@@ -3,7 +3,7 @@ import {ICreditor} from '../database/interfaces/creditor.interface';
 import axiosInstance from './axiosInstanceInterceptor';
 import dotenv from 'dotenv';
 import constantsUtil from './constants.util';
-import {SyncCreditorRepository} from '../api/repository/syncCreditor/syncCreditor.repository';
+import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {Check} from '../database/repomodels/check.repomodel';
 import {CheckRepository} from '../api/repository/check/check.repository';
@@ -63,7 +63,6 @@ class SeemlesschexUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
       return response.data;
     } catch (error) {
       return error?.response?.data;
@@ -163,7 +162,6 @@ class SeemlesschexUtil {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
       return response.data;
     } catch (error) {
       return error?.response?.data;
@@ -242,7 +240,6 @@ class SeemlesschexUtil {
       {checkId: checkId},
       {isDeleted: true, status: status}
     );
-    console.log(check, 'checkkkkkk');
   }
 
   async getCheckInfo(checkId: string) {

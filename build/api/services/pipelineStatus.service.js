@@ -149,7 +149,6 @@ class PipelineStatusService {
         const result = {};
         statusNames.forEach(statusName => {
             const matchingCases = cases.filter(caseItem => caseItem.status === statusName);
-            console.log(matchingCases.length);
             const annualizedValue = matchingCases.reduce((sum, obj) => sum + (obj.totalDebt || 0), 0);
             result[statusName] = { cases: matchingCases, annualizedValue };
         });
@@ -170,7 +169,6 @@ class PipelineStatusService {
         const caseIds = customFields.map(data => {
             return data.caseId;
         });
-        console.log(caseIds, 'caseIdssss');
         const cases = await this.caseRepository.getAllWithoutPagination({ isDeleted: false, status: { $in: statusNames }, _id: caseIds }, undefined, undefined, { _id: -1 }, ['debtor', 'creditor']);
         if (!cases.length) {
             return [false, constants_util_1.default.notFoundMessage('cases')];

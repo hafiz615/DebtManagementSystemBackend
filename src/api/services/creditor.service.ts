@@ -13,8 +13,8 @@ import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 import paynoteUtil from '../../utils/paynote.util';
 import dotenv from 'dotenv';
-import {SyncCreditorRepository} from '../repository/syncCreditor/syncCreditor.repository';
-import {ISyncCreditor} from '../../database/interfaces/syncCreditor.interface';
+import {SyncPaymentMethodRepository} from '../repository/ISyncPaymentMethod/syncPaymentMethod.repository';
+import {ISyncPaymentMethod} from '../../database/interfaces/syncPaymentMethod.interface';
 import debtorUtil from '../../utils/debtor.util';
 dotenv.config();
 
@@ -22,13 +22,13 @@ class CreditorService {
   private creditorRepository: CreditorRepository;
   private caseRepository: CaseRepository;
   private bulkUploadRepository: BulkUploadRepository;
-  private syncCreditorRepository: SyncCreditorRepository;
+  private syncPaymentMethodRepository: SyncPaymentMethodRepository;
 
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.caseRepository = new CaseRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
-    this.syncCreditorRepository = new SyncCreditorRepository();
+    this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
   }
 
   async getCreditor(text: string): Promise<[boolean, ICreditor[] | string]> {
@@ -423,8 +423,8 @@ class CreditorService {
       req.params.id
     );
     if (!creditor) return [false, constants.notFoundMessage('creditor')];
-    const result = await this.syncCreditorRepository.getOne<ISyncCreditor>({
-      creditorId: req.params.id,
+    const result = await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
+      syncId: req.params.id,
     });
     if (!result) return [true, creditor.basicInformation.email];
     return [true, result.email];

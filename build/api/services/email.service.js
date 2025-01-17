@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
+const upload_util_1 = __importDefault(require("../../utils/upload.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const mailparser_1 = require("mailparser");
@@ -14,23 +15,35 @@ const case_util_1 = __importDefault(require("../../utils/case.util"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const app_1 = __importDefault(require("../../app"));
 const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
+const notification_repository_1 = require("../repository/notification/notification.repository");
 class EmailService {
     constructor() {
-        this.extractCaseId = (header) => {
-            const match = header && header.match(/caseId-([^@>]+)/);
+        this.extractThreadId = (header) => {
+            const match = header && header.match(/threadId-([^&@>]+)/);
             return match ? match[1] : null;
         };
-        this.extractThreadId = (header) => {
-            const match = header && header.match(/threadId-([^@>]+)/);
+        this.extractCaseId = (header) => {
+            const match = header && header.match(/caseId-([^&@>]+)/);
+            return match ? match[1] : null;
+        };
+        this.extractUserId = (header) => {
+            const match = header && header.match(/userId-([^&@>]+)/);
+            return match ? match[1] : null;
+        };
+        this.extractUserName = (header) => {
+            const match = header && header.match(/userName-([^&@>]+)/);
             return match ? match[1] : null;
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
+        this.uploadUtil = new upload_util_1.default();
+        this.notificationRepository = new notification_repository_1.NotificationRepository();
     }
     async sendSmsEmailDebtorCreditor(req) {
         const reqTemp = req;
+        // const reqTemp: any = req;
         const type = String(req.query.type);
         if (type !== 'email' && type !== 'sms' && type !== 'compose') {
             return [false, 'Type is missing!'];
@@ -42,21 +55,38 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], reqTemp.name);
     }
     async sendGridEmail(req) {
+        const reqTemp = req;
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
         const subject = parseData.subject;
         const text = parseData.text;
         const from = parseData.from?.value[0].address;
+        const fromName = parseData.from?.value[0].name;
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
+        const attachments = parseData.attachments;
         const referencesHeader = parseData.headers.get('references');
+        console.log('referencesHeader: ', referencesHeader);
         if (referencesHeader) {
+            const data = await this.uploadUtil.sendGridAwsS3FileUpload(attachments, false);
+            for (const obj of data) {
+                const mimeType = common_util_1.default.getMimeType(obj.key);
+                obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+            }
             const caseId = this.extractCaseId(referencesHeader.toString());
-            const threadId = this.extractThreadId(subject);
+            console.log('caseId: ', caseId);
+            const userId = this.extractUserId(referencesHeader.toString());
+            console.log('userId: ', userId);
+            const userName = this.extractUserName(referencesHeader.toString());
+            console.log('userName: ', userName);
+            const threadId = this.extractThreadId(referencesHeader.toString());
+            console.log('threadId: ', threadId);
+            let caseData = null;
             if (caseId) {
+                console.log('caseId Check in caseID: ', caseId);
                 await case_util_1.default.addInHistory({
                     Subject: subject,
                     From: from,
@@ -64,27 +94,35 @@ class EmailService {
                     Content: parseData.textAsHtml,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
+                    Attachments: data,
                 }, caseId);
-                const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
                     { path: 'creditor', select: ['businessInformation.companyName'] },
                 ]);
-                const emailData = {
-                    from,
-                    to,
-                    subject,
-                    text,
-                    textAsHtml: parseData.textAsHtml,
-                    cc: parseData.cc,
-                };
-                if (threadId) {
-                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId);
-                    const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
-                    app_1.default.socketInstance.emit('notify', {
-                        notificationCount: notificationCount[0].count,
-                        notification: notification,
-                    });
+            }
+            const emailData = {
+                from,
+                to,
+                subject,
+                text,
+                textAsHtml: parseData.textAsHtml,
+                cc: parseData.cc,
+                attachments: data,
+            };
+            if (threadId) {
+                console.log('threadId: ', threadId);
+                console.log('threadId: inside the thread ID ', threadId);
+                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                if (!caseData) {
+                    notification.text = email_util_1.default.formatText(fromName);
                 }
+                await this.notificationRepository.create(notification);
+                const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+                app_1.default.socketInstance.emit('notify', {
+                    notificationCount: notificationCount[0].count,
+                    notification: notification,
+                });
                 return true;
             }
         }

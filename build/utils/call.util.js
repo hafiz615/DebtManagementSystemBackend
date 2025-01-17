@@ -9,12 +9,16 @@ const openai_1 = __importDefault(require("openai"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const call_repomodel_1 = require("../database/repomodels/call.repomodel");
 const call_repository_1 = require("../api/repository/call/call.repository");
+const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
+const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
         this.uploadUtil = new upload_util_1.default();
         this.callRepository = new call_repository_1.CallRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
     async fetchRecording(recordingSid) {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -53,36 +57,45 @@ class CallUtil {
         const { CaseId, CallSid, AccountSid, To, CallStatus, Direction } = data;
         newCall.caseId = CaseId;
         newCall.callSid = CallSid;
-        newCall.callerName = userName,
-            newCall.accountSid = AccountSid;
+        (newCall.callerName = userName), (newCall.accountSid = AccountSid);
         newCall.callTo = To;
-        newCall.callDirection = Direction,
-            newCall.callFrom = callerId,
-            newCall.callStatus = CallStatus;
+        (newCall.callDirection = Direction),
+            (newCall.callFrom = callerId),
+            (newCall.callStatus = CallStatus);
         return await this.callRepository.create(newCall);
     }
     async createIncomingCall(data, userName, callerId) {
-        console.log('userName', userName);
-        const newCall = new call_repomodel_1.Call();
         const { CallSid, AccountSid, CallStatus, From, Direction } = data;
+        console.log('data', data);
+        console.log(callerId);
+        console.log('userName', userName);
+        const getDebtor = await this.debtorRepository.getOne({
+            $or: [
+                { 'basicInformation.phone': data.from },
+                { 'businessInformation.phone': data.from },
+            ],
+        });
+        const newCall = new call_repomodel_1.Call();
         newCall.callSid = CallSid;
-        newCall.callerName = userName,
-            newCall.accountSid = AccountSid;
+        (newCall.callerName = userName), (newCall.accountSid = AccountSid);
         newCall.callTo = callerId;
-        newCall.callDirection = Direction,
-            newCall.callFrom = From,
-            newCall.callStatus = CallStatus;
+        (newCall.callDirection = Direction),
+            (newCall.callFrom = From),
+            (newCall.callStatus = CallStatus);
         return await this.callRepository.create(newCall);
     }
     async summarizeTranscriptText(text) {
         const openai = new openai_1.default({
-            apiKey: process.env.openAiKey
+            apiKey: process.env.openAiKey,
         });
         const response = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: 'gpt-4',
             messages: [
-                { role: "system", content: "You are an expert summarizer." },
-                { role: "user", content: `Please summarize the following transcript:\n${text}` }
+                { role: 'system', content: 'You are an expert summarizer.' },
+                {
+                    role: 'user',
+                    content: `Please summarize the following transcript:\n${text}`,
+                },
             ],
             temperature: 0.5,
             max_tokens: 300,
@@ -92,12 +105,37 @@ class CallUtil {
     async createTranscript(recordingSID) {
         const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         const transcript = await client.intelligence.v2.transcripts.create({
-            channel: { "media_properties": {
-                    "source_sid": recordingSID
-                } },
+            channel: {
+                media_properties: {
+                    source_sid: recordingSID,
+                },
+            },
             serviceSid: process.env.TWILIO_Service_SID,
         });
         return transcript.links.sentences;
+    }
+    async getDebtorOrCreditorName(number) {
+        const getCreditor = await this.creditorRepository.getOne({
+            'basicInformation.phone': number,
+        });
+        const getDebtor = await this.debtorRepository.getOne({
+            'basicInformation.phone': number,
+        });
+        if (getDebtor) {
+            return {
+                debtorId: getDebtor._id,
+                debtorName: getDebtor.basicInformation.fullName,
+                companyName: getDebtor.businessInformation.companyName,
+            };
+        }
+        else if (getCreditor) {
+            return {
+                creditorId: getCreditor._id,
+                creditorName: getCreditor.basicInformation.fullName,
+                companyName: getCreditor.businessInformation.companyName,
+            };
+        }
+        return {};
     }
 }
 exports.default = new CallUtil();

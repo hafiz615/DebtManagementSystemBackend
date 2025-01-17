@@ -179,9 +179,7 @@ class CaseUtil {
         return 'CASE-' + (count + 1).toString().padStart(3, '0');
     }
     async getAllCreditorsOfDebtor(debtor) {
-        console.log(debtor, 'debtorrrrs');
         const cases = await this.getAllCreditorsOfDebtorQuery(String(debtor._id));
-        console.log(cases);
         return await this.getAllCreditorsMapping(cases);
     }
     async getAllCreditorsMapping(cases) {
@@ -344,11 +342,8 @@ class CaseUtil {
         //     body.paymentTypeCreditor
         //   );
         // }
-        console.log('i am going to call AI');
         const creditorNames = await this.getCreditorNames(debtor, '', '');
-        console.log(creditorNames, 'creditonamess');
         const findCreditor = creditorNames.includes(creditor.businessInformation.companyName);
-        console.log(findCreditor, 'findCrediotrrr');
         if (findCreditor) {
             await this.creditorRepository.updateById(creditor._id, {
                 'businessInformation.accountTitle': creditor.businessInformation.companyName,
@@ -399,10 +394,6 @@ class CaseUtil {
                 debt += caseTemp.remaining;
             }
         }
-        console.log(cases, 'casessss');
-        console.log(weeklyBudget, 'weeklyBudget');
-        console.log(amount, 'amounttttt');
-        console.log(debt, 'debteeee');
         return amount >= weeklyBudget
             ? {
                 status: false,
@@ -1217,7 +1208,6 @@ class CaseUtil {
         if (req.query.filter === 'true') {
             filters = req.body.filter;
         }
-        console.log(filters);
         // Apply text search and filters
         let filteredCaseHistory = clients.filter(client => {
             const textMatches = !text || applyTextSearch(client, text);
@@ -1377,11 +1367,6 @@ class CaseUtil {
             amount += await this.getWeeklyAmount(caseTemp.intervals[0]);
             debt += caseTemp.remaining;
         }
-        for (const caseTemp of cases) {
-            console.log(caseTemp.intervals);
-        }
-        console.log(amount, 'amounttt');
-        console.log(weeklyBudget, 'weeklyy budget');
         return amount >= weeklyBudget
             ? {
                 status: false,
@@ -1399,7 +1384,8 @@ class CaseUtil {
         const urls = [];
         try {
             for (let doc of documents) {
-                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, true);
+                const mimeType = common_util_1.default.getMimeType(doc.key);
+                const url = await this.uploadUtil.getS3FileSignedUrl(doc.key, mimeType, 86400, process.env.s3BucketName, true);
                 urls.push(url);
             }
             // Data to be sent in the body of the request
@@ -1523,7 +1509,6 @@ class CaseUtil {
                     token: token,
                 },
             });
-            console.log(response.data, 'historyyyy');
             return response.data.error ? [] : response.data;
         }
         catch (error) {
@@ -1561,7 +1546,6 @@ class CaseUtil {
                     token: global_1.AIAuth.auth_token,
                 },
             });
-            console.log('response:------------------- ', response.data);
             if (response.data && response.data.error) {
                 this.caseRepository.updateById(caseTemp._id, {
                     justifications: false,
@@ -1588,7 +1572,6 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        console.log(lupmSum);
         const result = await this.strategyRepository.getOne({
             caseId: String(caseTemp._id),
             name: 'strategy_one',
@@ -1702,7 +1685,6 @@ class CaseUtil {
             for (const creditor of creditors) {
                 if (lumpsum_settlement[creditor.creditorAccountTitle]) {
                     const repaidDebt = lumpsum_settlement[creditor.creditorAccountTitle].repaid_debt;
-                    console.log(this.getCleanAmount(creditor.contractDetails.funded_amount));
                     lumpsum_settlement[creditor.creditorAccountTitle].remaining_principle_amount = parseFloat((this.getCleanAmount(creditor.contractDetails.funded_amount) -
                         repaidDebt).toFixed(2));
                 }
@@ -1864,11 +1846,9 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const creditorNames = await this.getCreditorNamesAI(debtor.mcaDocuments, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor._id, extractedFields, caseId);
-        console.log(creditorNames);
         return creditorNames;
     }
     async getExtractionMCA(debtor) {
-        console.log('hahahahahah');
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
@@ -1922,7 +1902,6 @@ class CaseUtil {
                     ...form.getHeaders(),
                 },
             });
-            console.log('Response Data', response.data);
             return response.data.error ? null : response.data;
         }
         catch (error) {
@@ -1953,7 +1932,7 @@ class CaseUtil {
             return response.data.error ? response.data.error : response.data;
         }
         catch (error) {
-            console.log(error);
+            console.log(error.message);
             return error.message;
         }
     }
@@ -2038,7 +2017,6 @@ class CaseUtil {
             await this.storeAuthToken('test', 'test');
         }
         const getCreditorHistory = await this.getCreditorHistoryAI(req.params.id, global_1.AIAuth.auth_token);
-        console.log(getCreditorHistory);
         return getCreditorHistory;
     }
     async getScoresAIForAllCreditors(comm, token, caseTemp, creditors) {
@@ -2177,7 +2155,6 @@ class CaseUtil {
                 newCase.chatId = (0, uuid_1.v4)();
                 newCase.caseCode = await this.getCaseCode();
                 const validatedCase = dataCopier_util_1.DataCopier.copy(newCase, body);
-                console.log(validatedCase, 'validated caseeee');
                 const caseCreated = await this.caseRepository.create(validatedCase);
                 // if (!caseCreated) {
                 //   return [false, constantsUtil.failureAddMessage('case')];
@@ -2287,10 +2264,7 @@ class CaseUtil {
             first_name: names.firstName,
             last_name: names.lastName,
         };
-        console.log(params, 'kjkjk');
-        console.log(url, 'urlll');
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
-        console.log(response.data, 'okoko');
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
@@ -2299,7 +2273,6 @@ class CaseUtil {
         return [false, 'Unable to create customer vault'];
     }
     async getSettlementRangeSummery(data) {
-        console.log(' getSettlementRangeSummery ---- data: ', data);
         const result = { Summary: {} };
         if (data) {
             for (const key of Object.keys(data)) {
@@ -2318,9 +2291,6 @@ class CaseUtil {
                         // Accumulate the values for summary
                         result.Summary[recKey].min += min;
                         result.Summary[recKey].max += max;
-                        console.log('max: ', max);
-                        console.log(' result.Summary[recKey].max += max: ', (result.Summary[recKey].max += max));
-                        console.log('result.Summary[recKey].max: ', result.Summary[recKey].max);
                     }
                 }
             }
@@ -2338,14 +2308,6 @@ class CaseUtil {
                         summary[key].max = Math.max(summary[key].max, company[key].max);
                     }
                 }
-                // for (let i = 1; i <= Object.keys(company).length; i++) {
-                //   const key = `Weeks remaining based on recommendation ${i}`;
-                //   console.log(company[i - 0]);
-                //   if (company[key]) {
-                //     summary[key].min = Math.max(summary[key].min, company[key][0]);
-                //     summary[key].max = Math.max(summary[key].max, company[key][1]);
-                //   }
-                // }
             });
         }
         return summary;
@@ -2385,7 +2347,6 @@ class CaseUtil {
     }
     async getJustificationModels() {
         const justification = await this.justificationRepository.getOne({});
-        console.log(justification, 'justification');
         const defaultModels = ['chatgpt', 'claude', 'gemini', 'llama'];
         if (!justification)
             return defaultModels;
@@ -2468,14 +2429,12 @@ class CaseUtil {
             if (weekRemaining !== null && weekRemaining > maxWeekRemaining) {
                 maxWeekRemaining = weekRemaining;
             }
-            console.log(`Case Remaining: ${remaining}, Proportion: ${proportionOfTotal}, Weekly Amount: ${weeklyAmount}, Week Remaining: ${weekRemaining}`);
             // Return updated case object with weekRemaining
             return {
                 ...caseHistory,
                 weekRemaining,
             };
         });
-        console.log('Max Week Remaining:', maxWeekRemaining);
         return {
             ...clientDetails,
             caseHistory: updatedCaseHistory,

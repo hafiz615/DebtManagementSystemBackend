@@ -54,7 +54,8 @@ class PaymentService {
     }
     const populatedFiltersResult = await this.populateFilterHomePayments(
       {...filters},
-      req
+      req,
+      upcomingFilter
     );
     let page = populatedFiltersResult.page;
     let limit = populatedFiltersResult.limit;
@@ -119,7 +120,11 @@ class PaymentService {
     ];
   }
 
-  async populateFilterHomePayments(filters: any, req: Request) {
+  async populateFilterHomePayments(
+    filters: any,
+    req: Request,
+    upcomingFilter: any
+  ) {
     let page = 1;
     let limit = 5;
     let arrayName = String(req.query.arrayName);
@@ -180,6 +185,8 @@ class PaymentService {
           break;
         case 'upcomingPayments':
           filters['status'] = 'Upcoming';
+          if (Object.keys(upcomingFilter).length)
+            filters['dueDate'] = upcomingFilter;
           break;
         default:
           filters['authorized'] = 'Failed';
@@ -255,7 +262,8 @@ class PaymentService {
       );
       const upcoming = {...filters};
       upcoming['status'] = 'Upcoming';
-      upcoming['dueDate'] = upcomingFilter;
+      if (Object.keys(upcomingFilter).length)
+        upcoming['dueDate'] = upcomingFilter;
       const getUpcomingPayments = await this.getAllPaymentsQuery(
         upcoming,
         page,
@@ -322,7 +330,6 @@ class PaymentService {
     failedCapture['captured'] = 'Failed';
     const successAuth = {...filters};
     successAuth['authorized'] = 'Success';
-    console.log(successAuth, 'successAuth');
     const successCapture = {...filters};
     successCapture['captured'] = 'Success';
     const upcoming = {...filters};
@@ -338,6 +345,7 @@ class PaymentService {
       await this.paymentRepository.getCount<IPayment>(failedAuth);
     const successCaptures =
       await this.paymentRepository.getCount<IPayment>(successCapture);
+    console.log(upcoming, 'upcoming');
     const upcomingPayments =
       await this.paymentRepository.getCount<IPayment>(upcoming);
     const successPayments =
@@ -367,14 +375,14 @@ class PaymentService {
     const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(
       req.params.id
     );
-    // if (!payments.length) {
-    //   return [false, constants.notFoundMessage('Payments')];
-    // }
-    const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
 
     const paymentsObj = await paymentUtil.getFilteredPayments(
-      newPaymentsArray,
+      paymentsPrevious,
       'default'
+    );
+    const upcomingPaymentsObj = await paymentUtil.getFilteredPayments(
+      paymentsUpcoming,
+      'upcomingPayments'
     );
     let paidAmount = 0,
       upcomingAmount = 0,
@@ -432,7 +440,7 @@ class PaymentService {
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
-    paymentsObj.upcomingPayments.sort(
+    upcomingPaymentsObj.upcomingPayments.sort(
       (a: any, b: any) =>
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
@@ -445,8 +453,9 @@ class PaymentService {
       {
         transactions: {
           previous: paginatedArray,
-          upcomingPayments: paymentsObj.upcomingPayments,
-          totalCount: mergedArray.length + paymentsUpcomingCount,
+          upcomingPayments: upcomingPaymentsObj.upcomingPayments,
+          previousCount: mergedArray.length,
+          upcomingCount: paymentsUpcomingCount,
         },
         paymentCounts: paymentCounts,
       },
@@ -489,12 +498,11 @@ class PaymentService {
       await this.getUpcomingCommissionPayments(pageLimit.page, pageLimit.limit);
     const paymentsUpcomingCount =
       await this.getUpcomingCommissionPaymentsCount();
-    // if (!payments.length) {
-    //   return [false, constants.notFoundMessage('Payments')];
-    // }
-    const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
+    // const newPaymentsArray = paymentsPrevious.concat(paymentsUpcoming);
     const paymentsObj =
-      await paymentUtil.getFilteredCommissionPayments(newPaymentsArray);
+      await paymentUtil.getFilteredCommissionPayments(paymentsPrevious);
+    const upcomingPaymentsObj =
+      await paymentUtil.getFilteredCommissionPayments(paymentsUpcoming);
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
       ...obj,
       type: 'authorization',
@@ -527,7 +535,7 @@ class PaymentService {
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
-    paymentsObj.upcomingPayments.sort(
+    upcomingPaymentsObj.upcomingPayments.sort(
       (a: any, b: any) =>
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
@@ -540,8 +548,9 @@ class PaymentService {
       {
         transactions: {
           previous: paginatedArray,
-          upcomingPayments: paymentsObj.upcomingPayments,
-          totalCount: mergedArray.length + paymentsUpcomingCount,
+          upcomingPayments: upcomingPaymentsObj.upcomingPayments,
+          previousCount: mergedArray.length,
+          upcomingCount: paymentsUpcomingCount,
         },
       },
     ];
@@ -596,7 +605,12 @@ class PaymentService {
       {
         caseId: id,
         isDeleted: false,
-        status: {$ne: 'Upcoming'},
+        $or: [
+          {authorized: 'Success'},
+          {authorized: 'Failed'},
+          {captured: 'Success'},
+          {captured: 'Failed'},
+        ],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway',
       undefined,
@@ -729,7 +743,6 @@ class PaymentService {
 
     try {
       const response = await axiosInstance.get(url, {params});
-      console.log('Response:', response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -762,7 +775,6 @@ class PaymentService {
 
     try {
       const response = await axiosInstance.get(url, {params});
-      console.log('Response:', response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -793,7 +805,6 @@ class PaymentService {
 
     try {
       const response = await axiosInstance.get(url, {params});
-      console.log('Response:', response.data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -863,7 +874,14 @@ class PaymentService {
               'businessInformation.companyName',
             ],
           },
-          {path: 'debtor', select: ['_id', 'basicInformation.fullName']},
+          {
+            path: 'debtor',
+            select: [
+              '_id',
+              'basicInformation.fullName',
+              'businessInformation.companyName',
+            ],
+          },
         ],
       }
     );
@@ -881,6 +899,12 @@ class PaymentService {
     if (!payment.caseId?.creditorPaymentsProceed) {
       return [false, 'Funds transfer for this creditor is paused'];
     }
+    if (!payment.caseId?.creditor?.basicInformation?.fullName) {
+      return [false, 'Creditor name is required'];
+    }
+    if (!payment.caseId?.debtor?.businessInformation?.companyName) {
+      return [false, 'Debtor company name is required'];
+    }
     if (payment.status === 'Success') {
       return [false, 'Payment already send'];
     }
@@ -893,7 +917,6 @@ class PaymentService {
       const paymentResult = await paynoteUtil.sendPayment(payment);
       if (paymentResult?.message === 'Server Error')
         return [false, constants.Messages.PAYNOTE_SERVER_ERROR];
-      console.log(paymentResult, 'jhkjhi');
       if (paymentResult.error) {
         let message = '';
         if (paymentResult?.messages) {

@@ -19,21 +19,29 @@ import app from '../../app';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
+import {IKeyFile} from '../../database/interfaces/debtor.interface';
+import {NotificationRepository} from '../repository/notification/notification.repository';
+import {INotification} from '../../database/interfaces/notification.interface';
 
 class EmailService {
   private caseRepository: CaseRepository;
   private domainVerifyRepository: DomainVerifyRepository;
   private inboxRepository: InboxRepository;
   private notificationCountRepository: NotificationCountRepository;
+  private uploadUtil: UploadUtil;
+  private notificationRepository: NotificationRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.inboxRepository = new InboxRepository();
     this.domainVerifyRepository = new DomainVerifyRepository();
     this.notificationCountRepository = new NotificationCountRepository();
+    this.uploadUtil = new UploadUtil();
+    this.notificationRepository = new NotificationRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
+    // const reqTemp: any = req;
     const type = String(req.query.type);
     if (type !== 'email' && type !== 'sms' && type !== 'compose') {
       return [false, 'Type is missing!'];
@@ -49,23 +57,52 @@ class EmailService {
       caseTemp ? String(caseTemp._id) : null,
       reqTemp.id,
       req.body,
-      type
+      type,
+      reqTemp?.files?.files || [],
+      reqTemp.name
     );
   }
 
   async sendGridEmail(req: Request) {
+    const reqTemp: any = req;
     const parseData = await simpleParser(req.body.email);
     const subject = parseData.subject;
     const text = parseData.text;
     const from = parseData.from?.value[0].address;
+    const fromName = parseData.from?.value[0].name;
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
+    const attachments = parseData.attachments;
     const referencesHeader = parseData.headers.get('references');
+    console.log('referencesHeader: ', referencesHeader);
     if (referencesHeader) {
+      const data: IKeyFile[] = await this.uploadUtil.sendGridAwsS3FileUpload(
+        attachments,
+        false
+      );
+      for (const obj of data) {
+        const mimeType = commonUtil.getMimeType(obj.key);
+        obj.url = await this.uploadUtil.getS3FileSignedUrl(
+          obj.key,
+          mimeType,
+          60 * 60 * 24 * 365 * 10,
+          process.env.s3BucketName
+        );
+      }
       const caseId = this.extractCaseId(referencesHeader.toString());
-      const threadId = this.extractThreadId(subject);
+      console.log('caseId: ', caseId);
+      const userId = this.extractUserId(referencesHeader.toString());
+      console.log('userId: ', userId);
+      const userName = this.extractUserName(referencesHeader.toString());
+      console.log('userName: ', userName);
+      const threadId = this.extractThreadId(referencesHeader.toString());
+      console.log('threadId: ', threadId);
+
+      let caseData = null;
       if (caseId) {
+        console.log('caseId Check in caseID: ', caseId);
+
         await caseUtil.addInHistory(
           {
             Subject: subject,
@@ -74,10 +111,11 @@ class EmailService {
             Content: parseData.textAsHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
+            Attachments: data,
           },
           caseId
         );
-        const caseData = await this.caseRepository.getById<ICase>(
+        caseData = await this.caseRepository.getById<ICase>(
           caseId,
           undefined,
           undefined,
@@ -86,34 +124,47 @@ class EmailService {
             {path: 'creditor', select: ['businessInformation.companyName']},
           ]
         );
-        const emailData = {
-          from,
-          to,
-          subject,
-          text,
-          textAsHtml: parseData.textAsHtml,
-          cc: parseData.cc,
-        };
-        if (threadId) {
-          const notification = await emailUtil.createInbox(
-            caseData,
-            'received',
-            emailData,
-            threadId
-          );
-          const notificationCount: NotificationCount[] =
-            await this.notificationCountRepository.getAll(
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined
-            );
-          app.socketInstance.emit('notify', {
-            notificationCount: notificationCount[0].count,
-            notification: notification,
-          });
+      }
+      const emailData = {
+        from,
+        to,
+        subject,
+        text,
+        textAsHtml: parseData.textAsHtml,
+        cc: parseData.cc,
+        attachments: data,
+      };
+      if (threadId) {
+        console.log('threadId: ', threadId);
+        console.log('threadId: inside the thread ID ', threadId);
+
+        const notification = await emailUtil.createInbox(
+          caseData,
+          'received',
+          emailData,
+          threadId,
+          userId,
+          userName
+        );
+        if (!caseData) {
+          notification.text = emailUtil.formatText(fromName);
         }
+        await this.notificationRepository.create<INotification>(
+          notification as any
+        );
+        const notificationCount: NotificationCount[] =
+          await this.notificationCountRepository.getAll(
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          );
+        app.socketInstance.emit('notify', {
+          notificationCount: notificationCount[0].count,
+          notification: notification,
+        });
+
         return true;
       }
     }
@@ -141,13 +192,23 @@ class EmailService {
     return true;
   }
 
-  extractCaseId = (header: string) => {
-    const match = header && header.match(/caseId-([^@>]+)/);
+  extractThreadId = (header: string) => {
+    const match = header && header.match(/threadId-([^&@>]+)/);
     return match ? match[1] : null;
   };
 
-  extractThreadId = (header: string) => {
-    const match = header && header.match(/threadId-([^@>]+)/);
+  extractCaseId = (header: string) => {
+    const match = header && header.match(/caseId-([^&@>]+)/);
+    return match ? match[1] : null;
+  };
+
+  extractUserId = (header: string) => {
+    const match = header && header.match(/userId-([^&@>]+)/);
+    return match ? match[1] : null;
+  };
+
+  extractUserName = (header: string) => {
+    const match = header && header.match(/userName-([^&@>]+)/);
     return match ? match[1] : null;
   };
 

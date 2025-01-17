@@ -10,7 +10,7 @@ class UploadService {
     if (!files || !files.length) {
       return [false, constantsUtil.Messages.ATTATCH_FILE_ERROR];
     }
-    const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files);
+    const s3FileKeys = await this.uploadUtil.awsS3FileUpload(files, true);
 
     if (!s3FileKeys.length) {
       return [false, constantsUtil.Messages.UPLOAD_FILES_FAILURE];

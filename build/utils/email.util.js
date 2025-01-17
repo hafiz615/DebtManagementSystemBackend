@@ -26,6 +26,7 @@ const notification_repomodel_1 = require("../database/repomodels/notification.re
 const notificationCount_repomodel_1 = require("../database/repomodels/notificationCount.repomodel");
 const notificationCount_repository_1 = require("../api/repository/notificationCount/notificationCount.repository");
 const uuid_1 = require("uuid");
+const upload_util_1 = __importDefault(require("./upload.util"));
 // import {threadId} from 'worker_threads';
 dotenv_1.default.config();
 class EmailUtil {
@@ -43,6 +44,7 @@ class EmailUtil {
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
         this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
+        this.uploadUtil = new upload_util_1.default();
     }
     async sendInvitationLink(user, link) {
         const msg = {
@@ -163,7 +165,7 @@ class EmailUtil {
             }
         }
     }
-    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type) {
+    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, files, userName) {
         let { from, sendTo, subject, content, cc } = body;
         const threadId = (0, uuid_1.v4)();
         const allValues = await this.getValues(content);
@@ -177,9 +179,24 @@ class EmailUtil {
             }
         }
         const time = new Date(common_util_1.default.getCurrentDate());
+        let attachments = [];
         switch (type) {
             case 'email':
-                const result = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId, threadId);
+                cc = JSON.parse(cc);
+                for (const file of files) {
+                    attachments.push({
+                        content: file.buffer.toString('base64'),
+                        filename: file.originalname,
+                        type: file.mimetype,
+                        disposition: 'attachment',
+                    });
+                }
+                const data = await this.uploadUtil.awsS3FileUpload(files, false);
+                for (const obj of data) {
+                    const mimeType = common_util_1.default.getMimeType(obj.key);
+                    obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+                }
+                const result = await this.sendEmail(sendTo, from, subject, content, cc, attachments, caseId, threadId, userId, userName);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
                         Subject: subject,
@@ -188,6 +205,7 @@ class EmailUtil {
                         Content: content,
                         Time: time,
                         Action: 'EMAIL',
+                        Attachments: data,
                     }, caseId);
                     const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                         { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -200,8 +218,9 @@ class EmailUtil {
                         text: content,
                         textAsHtml: content,
                         cc: cc,
+                        attachments: data,
                     };
-                    this.createInbox(caseData, 'sent', emailData, threadId);
+                    this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
                 }
                 return result;
             case 'sms':
@@ -218,39 +237,77 @@ class EmailUtil {
                 }
                 return smsResult;
             case 'compose':
-                const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, null, caseId);
+                cc = JSON.parse(cc);
+                for (const file of files) {
+                    attachments.push({
+                        content: file.buffer.toString('base64'),
+                        filename: file.originalname,
+                        type: file.mimetype,
+                        disposition: 'attachment',
+                    });
+                }
+                const composeData = await this.uploadUtil.awsS3FileUpload(files, false);
+                for (const obj of composeData) {
+                    const mimeType = common_util_1.default.getMimeType(obj.key);
+                    obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+                }
+                const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, attachments, '', threadId, userId, userName);
+                const composeEmailData = {
+                    from,
+                    to: sendTo,
+                    subject,
+                    text: content,
+                    textAsHtml: content,
+                    cc: cc,
+                    attachments: composeData,
+                };
+                const composeEmail = this.createInbox(null, 'sent', composeEmailData, threadId, userId, userName);
                 return resultCompose;
         }
         return [true, ''];
     }
-    async createInbox(caseTemp, type, emailData, threadId) {
+    async createInbox(caseTemp, type, emailData, threadId, userId, userName) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
         if (type == 'received') {
+            console.log('ABC');
             const existingInbox = await this.inboxRepository.getOne({
                 threadId,
                 type,
             });
             if (!existingInbox) {
-                await this.createNewInbox(emailData, caseTemp, type, threadId);
+                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+                console.log('Create New Inbox response when Received', res);
             }
             else {
+                const existingAttachments = existingInbox.attachments || [];
+                const mergedAttachments = [
+                    ...existingAttachments,
+                    ...emailData.attachments,
+                ];
+                // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
+                const uniqueAttachments = lodash_1.default.uniqBy(mergedAttachments, item => `${item.key}-${item.originalFileName}`);
                 await this.inboxRepository.updateById(existingInbox._id, {
                     text: existingInbox.text + emailData.text,
                     textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
+                    attachments: uniqueAttachments,
                 });
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId);
-            console.log("Create New Inbox response", res);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+            console.log('Create New Inbox response when Create', res);
             return res;
         }
-        newNotification.caseId = caseTemp._id;
-        newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
+        if (caseTemp) {
+            newNotification.caseId = caseTemp._id;
+            newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
+        }
         newNotification.type = 'EMAIL';
-        await this.notificationRepository.create(newNotification);
+        // await this.notificationRepository.create<INotification>(
+        //   newNotification as any
+        // );
         const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
         if (currentCount.length < 1) {
             newNotificationCount.count = 1;
@@ -264,28 +321,33 @@ class EmailUtil {
         await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;
     }
-    async createNewInbox(emailData, caseTemp, type, threadId) {
+    async createNewInbox(emailData, caseTemp, type, threadId, userId, userName) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
+        if (caseTemp) {
+            newMessage.caseCode = caseTemp.caseCode;
+            newMessage.creditorCompanyName =
+                caseTemp.creditor.businessInformation.companyName;
+            newMessage.debtorCompanyName =
+                caseTemp.debtor.businessInformation.companyName;
+            newMessage.negotiatorName = caseTemp.negotiator;
+            newNotification.caseId = String(caseTemp._id);
+            newMessage.caseId = String(caseTemp._id);
+            newNotification.text = this.formatText(caseTemp.caseCode);
+        }
         newMessage.cc = emailData.cc;
-        newMessage.caseCode = caseTemp.caseCode;
-        newMessage.creditorCompanyName =
-            caseTemp.creditor.businessInformation.companyName;
-        newMessage.debtorCompanyName =
-            caseTemp.debtor.businessInformation.companyName;
         newMessage.from = emailData.from;
-        newMessage.negotiatorName = caseTemp.negotiator;
         newMessage.subject = emailData.subject;
         newMessage.text = emailData.text;
         newMessage.textAsHtml = emailData.textAsHtml;
         newMessage.to = emailData.to;
         newMessage.type = type;
-        newMessage.caseId = String(caseTemp._id);
-        newNotification.caseId = String(caseTemp._id);
-        newNotification.text = this.formatText(caseTemp.caseCode);
+        newMessage.attachments = emailData.attachments;
         newNotification.type = 'EMAIL';
         newMessage.threadId = threadId;
+        newMessage.userId = userId;
+        newMessage.userName = userName;
         return await this.inboxRepository.create(newMessage);
     }
     formatText(text) {
@@ -473,66 +535,57 @@ class EmailUtil {
         }
         return populatedObj;
     }
-    async sendEmail(to, from, subject, content, cc, buffer, caseId, threadId) {
+    async sendEmail(to, from, subject, content, cc, attachments, caseId, threadId, userId, userName) {
         let headers = {};
-        if (caseId) {
-            const bin = await this.getVerifySender(from);
-            console.log(bin);
-            if (bin === 'debtor') {
-                const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
-                    path: 'debtor',
-                    select: [
-                        'businessInformation.companyName',
-                        'businessInformation.EIN',
-                    ],
-                });
-                if (caseTemp.debtor?.businessInformation?.companyName)
-                    subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
-                if (caseTemp.debtor?.businessInformation?.EIN)
-                    subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
-            }
-            if (bin === 'user') {
-                const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
-                user
-                    ? (subject += ` First Choice-DMS ${user.name}`)
-                    : (subject += ` First Choice-DMS`);
-                headers['References'] = `<caseId-${caseId}@yourdomain.com>`;
-            }
+        const bin = await this.getVerifySender(from);
+        console.log(bin);
+        if (bin === 'debtor' && caseId) {
+            const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
+                path: 'debtor',
+                select: [
+                    'businessInformation.companyName',
+                    'businessInformation.EIN',
+                ],
+            });
+            if (caseTemp.debtor?.businessInformation?.companyName)
+                subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+            if (caseTemp.debtor?.businessInformation?.EIN)
+                subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+            headers['References'] =
+                `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+            console.log('This is Reference: ', headers['References']);
         }
-        subject += `<threadId-${threadId}@yourdomain.com>`;
-        const thread = `<threadId-${threadId}@yourdomain.com>`;
-        console.log(subject, 'subject');
+        if (bin === 'user') {
+            const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
+            user
+                ? (subject += ` First Choice-DMS ${user.name}`)
+                : (subject += ` First Choice-DMS`);
+            headers['References'] =
+                `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+            console.log('This is Reference: ', headers['References']);
+        }
+        // const thread = `<threadId-${threadId}@yourdomain.com>`;
         const msg = {
             to: to,
             from: from, // Use the email address or domain you verified above
             subject: subject,
             html: content,
-            thread,
         };
-        console.log(headers, 'heardersssss');
         if (Object.keys(headers).length)
             msg['headers'] = headers;
-        console.log(msg);
         if (cc?.length) {
             msg['cc'] = cc;
         }
-        if (Buffer.isBuffer(buffer)) {
-            msg['attachments'] = [
-                {
-                    content: buffer.toString('base64'),
-                    filename: 'Settlement Agreement.pdf',
-                    type: 'application/pdf',
-                    disposition: 'attachment',
-                },
-            ];
+        if (attachments?.length) {
+            msg['attachments'] = attachments;
         }
         try {
             await mail_1.default.send(msg);
             return [true, `Your email is delivered successfully`];
         }
         catch (error) {
-            return [false, error.response.body.errors[0].message];
+            console.log(error);
+            return [false, error.response.errors[0].message];
         }
     }
     async sendSms(body, phone, from) {
@@ -585,7 +638,6 @@ class EmailUtil {
     async getConfirmationLinkFromEmailText(text) {
         const linkRegex = /https:\/\/[^\s]+/g;
         const links = text.match(linkRegex);
-        console.log(links, 'linksssss');
         // Return the first match if found
         if (links && links.length > 0) {
             return links[0];
@@ -604,7 +656,6 @@ class EmailUtil {
                 return temp.from_email === data;
             });
         }
-        console.log(email, 'kjhkjhkjhkj');
         let bin = '';
         if (email[0]?.nickname.includes('debtor'))
             bin = 'debtor';

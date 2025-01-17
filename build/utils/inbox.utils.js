@@ -1,9 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
+const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
+const dataCopier_util_1 = require("./dataCopier.util");
+const upload_util_1 = __importDefault(require("./upload.util"));
+const common_util_1 = __importDefault(require("./common.util"));
 class InboxUtil {
     constructor() {
-        this.inboxRepository = new inbox_repository_1.InboxRepository();
+        this.uploadUtil = new upload_util_1.default();
     }
     async getAllInboxFilters(req) {
         const filters = {};
@@ -35,27 +41,70 @@ class InboxUtil {
             if (filter && filter.negotiatorName) {
                 filters['negotiatorName'] = filter.negotiatorName;
             }
+            if (filter && filter.userId) {
+                filters['userId'] = filter.userId;
+            }
         }
         return filters;
     }
-    formatInboxData(inbox) {
-        const fromArray = [];
-        for (let message of inbox) {
-            if (message.creditorCompanyName &&
-                fromArray.indexOf(message.creditorCompanyName) === -1) {
-                fromArray.push(message.creditorCompanyName);
-            }
+    formatInboxData(inbox, userName, type) {
+        const result = { userName };
+        if (type === 'default') {
+            ['draft', 'sent', 'received'].forEach(defaultType => {
+                result[defaultType] = [];
+                result[`${defaultType}Count`] = 0;
+            });
         }
-        let fromObj = {};
-        for (let message of inbox) {
-            if (message.creditorCompanyName) {
-                if (!fromObj[message.creditorCompanyName]) {
-                    fromObj[message.creditorCompanyName] = [];
-                }
-                fromObj[message.creditorCompanyName].push(message);
-            }
+        else {
+            result[type] = [];
+            result[`${type}Count`] = 0;
         }
-        return fromObj;
+        inbox.forEach((email) => {
+            const validTypes = type === 'default' ? ['draft', 'sent', 'received'] : [type];
+            if (validTypes.includes(email.type)) {
+                result[email.type].push(email);
+                result[`${email.type}Count`] += 1;
+            }
+        });
+        return result;
+    }
+    async prepareCreateDraft(data, caseData, userId, files) {
+        let { sendTo, content } = data;
+        const newDraft = new inbox_repomodel_1.Inbox();
+        const filesData = await this.uploadUtil.awsS3FileUpload(files, false);
+        for (const obj of filesData) {
+            const mimeType = common_util_1.default.getMimeType(obj.key);
+            obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+        }
+        const validateDraft = await this.prepareDraft(data, newDraft, sendTo, content, filesData, caseData, userId);
+        return validateDraft;
+    }
+    async prepareDraft(data, updateDraft, sendTo, content, filesData, caseData, userId) {
+        updateDraft.to = sendTo;
+        updateDraft.userId = userId;
+        updateDraft.text = content;
+        updateDraft.textAsHtml = content;
+        updateDraft.attachments = filesData;
+        if (caseData) {
+            updateDraft.caseCode = caseData.caseCode;
+            updateDraft.debtorCompanyName =
+                caseData.debtor.businessInformation.companyName;
+            updateDraft.creditorCompanyName =
+                caseData.creditor.businessInformation.companyName;
+            updateDraft.negotiatorName = caseData.negotiator;
+        }
+        const preparedDraft = dataCopier_util_1.DataCopier.copy(updateDraft, data);
+        return preparedDraft;
+    }
+    async prepareUpdateDraft(updateDraft, data, caseData, userId, files) {
+        let { sendTo, content } = data;
+        const filesData = await this.uploadUtil.awsS3FileUpload(files, false);
+        for (const obj of filesData) {
+            const mimeType = common_util_1.default.getMimeType(obj.key);
+            obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+        }
+        const validateDraft = await this.prepareDraft(data, updateDraft, sendTo, content, filesData, caseData, userId);
+        return validateDraft;
     }
 }
 exports.default = new InboxUtil();

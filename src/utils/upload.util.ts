@@ -1,5 +1,5 @@
 import {PutObjectCommand, GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
-import { getSignedUrl }  from '@aws-sdk/s3-request-presigner';
+import {getSignedUrl} from '@aws-sdk/s3-request-presigner';
 import AWS from 'aws-sdk';
 import caseUtil from './case.util';
 import dotenv from 'dotenv';
@@ -26,13 +26,15 @@ class UploadUtil {
     });
   }
   async awsS3FileUpload(
-    files: any
+    files: any,
+    generateKey?: boolean
   ): Promise<{key: string; originalFileName: string}[]> {
-    console.log(files, 'filessss');
     let s3FileKeys = [];
     const uploadPromises = [];
     for (let file of files) {
-      const key = await caseUtil.uploadFileFormat(file.originalname);
+      let key = generateKey
+        ? await caseUtil.uploadFileFormat(file.originalname)
+        : file.originalname;
       let params = {
         Bucket: process.env.s3BucketName,
         Key: key,
@@ -68,26 +70,28 @@ class UploadUtil {
       return error.message;
     }
   };
-  
+
   async callUploadFile(fileName: string, fileContent: Buffer) {
-    console.log("fileName",fileName);
-    console.log("fileContent",fileContent);
-    
-      const params = {
-          Bucket: process.env.callRecordingsBucket,
-          Key: fileName,
-          Body: fileContent,
-      };
-
-      const command = new PutObjectCommand(params);
-      const data = await this.s3Client.send(command); 
-      console.log('File successfully uploaded:', data);
-      return data;
-  };
-
-  async generateCallSignedUrl(fileName: string, type: string,  download = false) {
     const params = {
       Bucket: process.env.callRecordingsBucket,
+      Key: fileName,
+      Body: fileContent,
+    };
+
+    const command = new PutObjectCommand(params);
+    const data = await this.s3Client.send(command);
+    return data;
+  }
+
+  async generateSignedUrl(
+    fileName: string,
+    type: string,
+    expiresIn: number,
+    bucket: string,
+    download = false
+  ) {
+    const params = {
+      Bucket: bucket,
       Key: fileName,
     };
     if (!download) {
@@ -96,30 +100,55 @@ class UploadUtil {
     }
     const command = new GetObjectCommand(params);
 
-    const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+    const signedUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: expiresIn,
+    });
     return signedUrl;
-  };
-  // async getS3FileSignedUrl(key: string, downLoadable=null): Promise<string> {
-  //   let params = {
-  //     Bucket: process.env.s3BucketName,
-  //     Key: key,
-  //     Expires: 86400,
-  //     ...(!isEmpty(downLoadable) && {ResponseContentDisposition: 'inline'}),
-  //     ...(!isEmpty(downLoadable) && {ResponseContentType: 'application/pdf'}),
-  //   };
-  //   return await this.s3.getSignedUrlPromise('getObject', params);
-  // }
-  async getS3FileSignedUrl(key: string, download = false): Promise<string> {
+  }
+  async getS3FileSignedUrl(
+    key: string,
+    type: string,
+    expiresIn: number,
+    bucket: string,
+    download = false
+  ): Promise<string> {
     let params = {
-      Bucket: process.env.s3BucketName,
+      Bucket: bucket,
       Key: key,
-      Expires: 86400,
+      Expires: expiresIn,
     };
     if (!download) {
       params['ResponseContentDisposition'] = 'inline';
-      params['ResponseContentType'] = 'application/pdf';
+      params['ResponseContentType'] = type;
     }
     return await this.s3.getSignedUrlPromise('getObject', params);
+  }
+
+  async sendGridAwsS3FileUpload(
+    files: any,
+    generateKey?: boolean
+  ): Promise<{key: string; originalFileName: string}[]> {
+    let s3FileKeys = [];
+    const uploadPromises = [];
+    for (let file of files) {
+      let key = generateKey
+        ? await caseUtil.uploadFileFormat(file.filename)
+        : file.filename;
+      let params = {
+        Bucket: process.env.s3BucketName,
+        Key: key,
+        Body: file.content,
+      };
+      const command = new PutObjectCommand(params);
+      uploadPromises.push(this.s3Client.send(command));
+
+      s3FileKeys.push({
+        key: key,
+        originalFileName: file.filename,
+      });
+    }
+    await Promise.all(uploadPromises);
+    return s3FileKeys;
   }
 }
 
