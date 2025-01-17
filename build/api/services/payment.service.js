@@ -316,7 +316,8 @@ class PaymentService {
                 transactions: {
                     previous: paginatedArray,
                     upcomingPayments: upcomingPaymentsObj.upcomingPayments,
-                    totalCount: mergedArray.length + paymentsUpcomingCount,
+                    previousCount: mergedArray.length,
+                    upcomingCount: paymentsUpcomingCount,
                 },
                 paymentCounts: paymentCounts,
             },
@@ -385,7 +386,8 @@ class PaymentService {
                 transactions: {
                     previous: paginatedArray,
                     upcomingPayments: upcomingPaymentsObj.upcomingPayments,
-                    totalCount: mergedArray.length + paymentsUpcomingCount,
+                    previousCount: mergedArray.length,
+                    upcomingCount: paymentsUpcomingCount,
                 },
             },
         ];
