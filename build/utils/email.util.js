@@ -246,7 +246,22 @@ class EmailUtil {
                         disposition: 'attachment',
                     });
                 }
+                const composeData = await this.uploadUtil.awsS3FileUpload(files, false);
+                for (const obj of composeData) {
+                    const mimeType = common_util_1.default.getMimeType(obj.key);
+                    obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+                }
                 const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, attachments, '');
+                const composeEmailData = {
+                    from,
+                    to: sendTo,
+                    subject,
+                    text: content,
+                    textAsHtml: content,
+                    cc: cc,
+                    attachments: composeData,
+                };
+                const composeEmail = this.createInbox(null, 'sent', composeEmailData, threadId, userId, userName);
                 return resultCompose;
         }
         return [true, ''];
@@ -256,14 +271,14 @@ class EmailUtil {
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
         if (type == 'received') {
-            console.log("ABC");
+            console.log('ABC');
             const existingInbox = await this.inboxRepository.getOne({
                 threadId,
                 type,
             });
             if (!existingInbox) {
                 const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
-                console.log("Create New Inbox response when Received", res);
+                console.log('Create New Inbox response when Received', res);
             }
             else {
                 const existingAttachments = existingInbox.attachments || [];
@@ -282,11 +297,13 @@ class EmailUtil {
         }
         else {
             const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
-            console.log("Create New Inbox response when Create", res);
+            console.log('Create New Inbox response when Create', res);
             return res;
         }
-        newNotification.caseId = caseTemp._id;
-        newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
+        if (caseTemp) {
+            newNotification.caseId = caseTemp._id;
+            newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
+        }
         newNotification.type = 'EMAIL';
         await this.notificationRepository.create(newNotification);
         const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
@@ -306,23 +323,25 @@ class EmailUtil {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
+        if (caseTemp) {
+            newMessage.caseCode = caseTemp.caseCode;
+            newMessage.creditorCompanyName =
+                caseTemp.creditor.businessInformation.companyName;
+            newMessage.debtorCompanyName =
+                caseTemp.debtor.businessInformation.companyName;
+            newMessage.negotiatorName = caseTemp.negotiator;
+            newNotification.caseId = String(caseTemp._id);
+            newMessage.caseId = String(caseTemp._id);
+            newNotification.text = this.formatText(caseTemp.caseCode);
+        }
         newMessage.cc = emailData.cc;
-        newMessage.caseCode = caseTemp.caseCode;
-        newMessage.creditorCompanyName =
-            caseTemp.creditor.businessInformation.companyName;
-        newMessage.debtorCompanyName =
-            caseTemp.debtor.businessInformation.companyName;
         newMessage.from = emailData.from;
-        newMessage.negotiatorName = caseTemp.negotiator;
         newMessage.subject = emailData.subject;
         newMessage.text = emailData.text;
         newMessage.textAsHtml = emailData.textAsHtml;
         newMessage.to = emailData.to;
         newMessage.type = type;
-        newMessage.caseId = String(caseTemp._id);
         newMessage.attachments = emailData.attachments;
-        newNotification.caseId = String(caseTemp._id);
-        newNotification.text = this.formatText(caseTemp.caseCode);
         newNotification.type = 'EMAIL';
         newMessage.threadId = threadId;
         newMessage.userId = userId;
@@ -516,32 +535,32 @@ class EmailUtil {
     }
     async sendEmail(to, from, subject, content, cc, attachments, caseId, threadId, userId, userName) {
         let headers = {};
-        if (caseId) {
-            const bin = await this.getVerifySender(from);
-            console.log(bin);
-            if (bin === 'debtor') {
-                const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
-                    path: 'debtor',
-                    select: [
-                        'businessInformation.companyName',
-                        'businessInformation.EIN',
-                    ],
-                });
-                if (caseTemp.debtor?.businessInformation?.companyName)
-                    subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
-                if (caseTemp.debtor?.businessInformation?.EIN)
-                    subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-                headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
-                console.log("This is Reference: ", headers['References']);
-            }
-            if (bin === 'user') {
-                const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
-                user
-                    ? (subject += ` First Choice-DMS ${user.name}`)
-                    : (subject += ` First Choice-DMS`);
-                headers['References'] = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
-                console.log("This is Reference: ", headers['References']);
-            }
+        const bin = await this.getVerifySender(from);
+        console.log(bin);
+        if (bin === 'debtor' && caseId) {
+            const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
+                path: 'debtor',
+                select: [
+                    'businessInformation.companyName',
+                    'businessInformation.EIN',
+                ],
+            });
+            if (caseTemp.debtor?.businessInformation?.companyName)
+                subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
+            if (caseTemp.debtor?.businessInformation?.EIN)
+                subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
+            headers['References'] =
+                `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+            console.log('This is Reference: ', headers['References']);
+        }
+        if (bin === 'user') {
+            const user = await this.userRepository.getOne({ email: from }, '_id name', undefined);
+            user
+                ? (subject += ` First Choice-DMS ${user.name}`)
+                : (subject += ` First Choice-DMS`);
+            headers['References'] =
+                `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+            console.log('This is Reference: ', headers['References']);
         }
         // const thread = `<threadId-${threadId}@yourdomain.com>`;
         const msg = {
