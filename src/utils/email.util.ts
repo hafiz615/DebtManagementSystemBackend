@@ -391,7 +391,10 @@ class EmailUtil {
           content,
           cc,
           attachments,
-          ''
+          '',
+          threadId,
+          userId,
+          userName
         );
 
         const composeEmailData = {

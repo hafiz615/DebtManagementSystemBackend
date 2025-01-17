@@ -251,7 +251,7 @@ class EmailUtil {
                     const mimeType = common_util_1.default.getMimeType(obj.key);
                     obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
                 }
-                const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, attachments, '');
+                const resultCompose = await this.sendEmail(sendTo, from, subject, content, cc, attachments, '', threadId, userId, userName);
                 const composeEmailData = {
                     from,
                     to: sendTo,
