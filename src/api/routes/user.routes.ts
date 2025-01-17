@@ -83,4 +83,6 @@ router.post(
   userController.addUserSender
 );
 
+router.get('/getUsers', authorize.validateAuth, userController.getUsers);
+
 export default router;
