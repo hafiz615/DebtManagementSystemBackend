@@ -454,6 +454,14 @@ class SettingsService {
     }
     return [true, customFields];
   }
+
+  async getTemplates() {
+    const templates = await settingsUtil.getEmailSmsTemplates();
+    const data = {};
+    data['emailTemplates'] = templates.emailTemplates;
+    data['smsTemplates'] = templates.smsTemplates;
+    return [true, templates];
+  }
 }
 
 export default SettingsService;

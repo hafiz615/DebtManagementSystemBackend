@@ -55,7 +55,7 @@ class EmailService {
       req.body,
       type,
       reqTemp?.files?.files || [],
-      reqTemp.name,
+      reqTemp.name
     );
   }
 
@@ -70,6 +70,7 @@ class EmailService {
       : parseData.to?.text;
     const attachments = parseData.attachments;
     const referencesHeader = parseData.headers.get('references');
+    console.log('referencesHeader: ', referencesHeader);
     if (referencesHeader) {
       const data: IKeyFile[] = await this.uploadUtil.sendGridAwsS3FileUpload(
         attachments,
@@ -85,11 +86,18 @@ class EmailService {
         );
       }
       const caseId = this.extractCaseId(referencesHeader.toString());
+      console.log('caseId: ', caseId);
       const userId = this.extractUserId(referencesHeader.toString());
+      console.log('userId: ', userId);
       const userName = this.extractUserName(referencesHeader.toString());
+      console.log('userName: ', userName);
       const threadId = this.extractThreadId(referencesHeader.toString());
+      console.log('threadId: ', threadId);
 
+      let caseData = null;
       if (caseId) {
+        console.log('caseId Check in caseID: ', caseId);
+
         await caseUtil.addInHistory(
           {
             Subject: subject,
@@ -102,7 +110,7 @@ class EmailService {
           },
           caseId
         );
-        const caseData = await this.caseRepository.getById<ICase>(
+        caseData = await this.caseRepository.getById<ICase>(
           caseId,
           undefined,
           undefined,
@@ -111,37 +119,41 @@ class EmailService {
             {path: 'creditor', select: ['businessInformation.companyName']},
           ]
         );
-        const emailData = {
-          from,
-          to,
-          subject,
-          text,
-          textAsHtml: parseData.textAsHtml,
-          cc: parseData.cc,
-          attachments: data,
-        };
-        if (threadId) {
-          const notification = await emailUtil.createInbox(
-            caseData,
-            'received',
-            emailData,
-            threadId,
-            userId,
-            userName
+      }
+      const emailData = {
+        from,
+        to,
+        subject,
+        text,
+        textAsHtml: parseData.textAsHtml,
+        cc: parseData.cc,
+        attachments: data,
+      };
+      if (threadId) {
+        console.log('threadId: ', threadId);
+        console.log('threadId: inside the thread ID ', threadId);
+
+        const notification = await emailUtil.createInbox(
+          caseData,
+          'received',
+          emailData,
+          threadId,
+          userId,
+          userName
+        );
+        const notificationCount: NotificationCount[] =
+          await this.notificationCountRepository.getAll(
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined
           );
-          const notificationCount: NotificationCount[] =
-            await this.notificationCountRepository.getAll(
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined
-            );
-          app.socketInstance.emit('notify', {
-            notificationCount: notificationCount[0].count,
-            notification: notification,
-          });
-        }
+        app.socketInstance.emit('notify', {
+          notificationCount: notificationCount[0].count,
+          notification: notification,
+        });
+
         return true;
       }
     }
