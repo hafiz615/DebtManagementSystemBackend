@@ -147,7 +147,7 @@ class EmailService {
           userName
         );
         if (!caseData) {
-          notification.text = emailUtil.formatText(fromName);
+          notification.text = emailUtil.formatText(userName);
         }
         await this.notificationRepository.create<INotification>(
           notification as any

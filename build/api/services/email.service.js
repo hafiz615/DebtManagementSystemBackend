@@ -115,7 +115,7 @@ class EmailService {
                 console.log('threadId: inside the thread ID ', threadId);
                 const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
                 if (!caseData) {
-                    notification.text = email_util_1.default.formatText(fromName);
+                    notification.text = email_util_1.default.formatText(userName);
                 }
                 await this.notificationRepository.create(notification);
                 const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
