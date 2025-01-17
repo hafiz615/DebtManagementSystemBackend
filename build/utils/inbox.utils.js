@@ -48,23 +48,27 @@ class InboxUtil {
         return filters;
     }
     formatInboxData(inbox, userName, type) {
-        const validTypes = type === 'default' ? ['draft', 'sent', 'received'] : [type];
-        const result = inbox.reduce((acc, email) => {
+        const result = { userName };
+        if (type === 'default') {
+            ['draft', 'sent', 'received'].forEach(defaultType => {
+                result[defaultType] = [];
+                result[`${defaultType}Count`] = 0;
+            });
+        }
+        else {
+            result[type] = [];
+            result[`${type}Count`] = 0;
+        }
+        inbox.forEach((email) => {
+            const validTypes = type === 'default' ? ['draft', 'sent', 'received'] : [type];
             if (validTypes.includes(email.type)) {
-                if (!acc[email.type]) {
-                    acc[email.type] = [];
-                    acc[`${email.type}Count`] = 0;
-                }
-                acc[email.type].push(email);
-                acc[`${email.type}Count`] += 1;
+                result[email.type].push(email);
+                result[`${email.type}Count`] += 1;
             }
-            return acc;
-        }, {
-            userName: userName,
         });
         return result;
     }
-    async createDraft(data, caseData, userId, files) {
+    async prepareCreateDraft(data, caseData, userId, files) {
         let { sendTo, content } = data;
         const newDraft = new inbox_repomodel_1.Inbox();
         const filesData = await this.uploadUtil.awsS3FileUpload(files, false);
@@ -72,20 +76,34 @@ class InboxUtil {
             const mimeType = common_util_1.default.getMimeType(obj.key);
             obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
         }
-        newDraft.to = sendTo;
-        newDraft.userId = userId;
-        newDraft.text = content;
-        newDraft.textAsHtml = content;
-        newDraft.attachments = filesData;
+        const validateDraft = await this.prepareDraft(data, newDraft, sendTo, content, filesData, caseData, userId);
+        return validateDraft;
+    }
+    async prepareDraft(data, updateDraft, sendTo, content, filesData, caseData, userId) {
+        updateDraft.to = sendTo;
+        updateDraft.userId = userId;
+        updateDraft.text = content;
+        updateDraft.textAsHtml = content;
+        updateDraft.attachments = filesData;
         if (caseData) {
-            newDraft.caseCode = caseData.caseCode;
-            newDraft.debtorCompanyName =
+            updateDraft.caseCode = caseData.caseCode;
+            updateDraft.debtorCompanyName =
                 caseData.debtor.businessInformation.companyName;
-            newDraft.creditorCompanyName =
+            updateDraft.creditorCompanyName =
                 caseData.creditor.businessInformation.companyName;
-            newDraft.negotiatorName = caseData.negotiator;
+            updateDraft.negotiatorName = caseData.negotiator;
         }
-        const validateDraft = dataCopier_util_1.DataCopier.copy(newDraft, data);
+        const preparedDraft = dataCopier_util_1.DataCopier.copy(updateDraft, data);
+        return preparedDraft;
+    }
+    async prepareUpdateDraft(updateDraft, data, caseData, userId, files) {
+        let { sendTo, content } = data;
+        const filesData = await this.uploadUtil.awsS3FileUpload(files, false);
+        for (const obj of filesData) {
+            const mimeType = common_util_1.default.getMimeType(obj.key);
+            obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
+        }
+        const validateDraft = await this.prepareDraft(data, updateDraft, sendTo, content, filesData, caseData, userId);
         return validateDraft;
     }
 }
