@@ -304,6 +304,10 @@ class EmailUtil {
             newNotification.caseId = caseTemp._id;
             newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
         }
+        else {
+            newNotification.caseId = '';
+            newNotification.text = this.formatText(userName);
+        }
         newNotification.type = 'EMAIL';
         await this.notificationRepository.create(newNotification);
         const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);

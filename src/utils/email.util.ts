@@ -483,6 +483,9 @@ class EmailUtil {
       newNotification.text = this.formatText(
         caseTemp.creditor.businessInformation.companyName
       );
+    } else {
+      newNotification.caseId = '';
+      newNotification.text = this.formatText(userName);
     }
     newNotification.type = 'EMAIL';
     await this.notificationRepository.create<INotification>(
