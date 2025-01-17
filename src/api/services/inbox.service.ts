@@ -8,6 +8,7 @@ import {IInbox} from '../../database/interfaces/inbox.interface';
 import inboxUtils from '../../utils/inbox.utils';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
+import commonUtil from '../../utils/common.util';
 dotenv.config();
 
 class InboxService {
@@ -74,13 +75,11 @@ class InboxService {
           {path: 'creditor', select: ['businessInformation.companyName']},
         ]
       );
-
-      console.log('case data', caseData);
       if (!caseData) {
         return [false, constantsUtil.notFoundMessage('Case')];
       }
     }
-    const validateDraft = await inboxUtils.createDraft(
+    const validateDraft = await inboxUtils.prepareCreateDraft(
       req.body,
       caseData,
       reqTemp.id,
@@ -112,6 +111,51 @@ class InboxService {
     }
 
     return [true, constantsUtil.successDeleteMessage('Draft')];
+  };
+
+  updateDraft = async (req: Request) => {
+    const reqTemp: any = req;
+
+    const draftTemp = await this.inboxRepository.getById<IInbox>(req.params.id);
+    if (!draftTemp) {
+      return [false, constantsUtil.notFoundMessage('Draft')];
+    }
+
+    let caseData = null;
+    if (req.body.caseId) {
+      caseData = await this.caseRepository.getById<ICase>(
+        req.body.caseId,
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
+
+      if (!caseData) {
+        return [false, constantsUtil.notFoundMessage('Case')];
+      }
+    }
+
+    const updatedDraftData = await inboxUtils.prepareUpdateDraft(
+      draftTemp,
+      req.body,
+      caseData,
+      reqTemp.id,
+      reqTemp?.files?.files || []
+    );
+
+    const updatedDraft = await this.inboxRepository.updateById<IInbox>(
+      req.params.id,
+      {...updatedDraftData, updatedAt: commonUtil.getCurrentDate()}
+    );
+
+    if (!updatedDraft) {
+      return [false, constantsUtil.failureUpdateMessage('Draft')];
+    }
+
+    return [true, updatedDraft];
   };
 }
 

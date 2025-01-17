@@ -23,5 +23,6 @@ router.post('/getAllMessages', authorize_middleware_1.default.validateAuth, inbo
 router.put('/markAsRead/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.markAsRead);
 router.post('/createEmailDraft', authorize_middleware_1.default.validateAuth, draftEmailFields, inbox_controller_1.default.createEmailDraft);
 router.delete('/deleteDraftEmail/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.deleteDraftEmail);
+router.put('/updateDraftEmail/:id', authorize_middleware_1.default.validateAuth, draftEmailFields, inbox_controller_1.default.updateDraftEmail);
 exports.default = router;
 //# sourceMappingURL=inbox.routes.js.map
