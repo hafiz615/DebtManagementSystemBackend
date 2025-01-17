@@ -36,5 +36,6 @@ router.put('/forgotPasswordUpdate', user_controller_1.default.forgotPasswordUpda
 router.get('/getVerifySenders/:id', authorize_middleware_1.default.validateAuth, user_controller_1.default.getVerifySenders);
 router.post('/thirdPartySignIn', user_validate_1.default.thirdPartySignIn, user_controller_1.default.thirdPartySignIn);
 router.post('/addUserSender', authorize_middleware_1.default.validateAuth, user_validate_1.default.addSenderIdentity, user_controller_1.default.addUserSender);
+router.get('/getUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUsers);
 exports.default = router;
 //# sourceMappingURL=user.routes.js.map

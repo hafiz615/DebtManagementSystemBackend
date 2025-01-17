@@ -246,6 +246,19 @@ class UserService {
             }
             return [true, result[0]];
         };
+        this.getUsers = async (req) => {
+            const reqTemp = req;
+            const filters = { isDeleted: false, isPlatform: { $ne: true } };
+            if (reqTemp.role !== 'Super User') {
+                filters['role'] = { $ne: 'Super User' };
+            }
+            let users = await this.userRepository.getAllWithoutPagination(filters, 'name', undefined, { createdAt: -1 });
+            if (!users.length) {
+                return [false, constants_util_2.default.notFoundMessage('Users')];
+            }
+            users = await this.moveObjectToTop(users, reqTemp.id);
+            return [true, users];
+        };
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = new token_service_1.default();
         this.caseRepository = new case_repository_1.CaseRepository();
@@ -583,6 +596,14 @@ class UserService {
         };
         const result = await client_1.default.request(request);
         return [true, []];
+    }
+    async moveObjectToTop(data, id) {
+        const index = data.findIndex(item => String(item._id) === id);
+        if (index > 0) {
+            const [objectToMove] = data.splice(index, 1);
+            data.unshift(objectToMove);
+        }
+        return data;
     }
 }
 exports.default = UserService;

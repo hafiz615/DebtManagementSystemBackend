@@ -654,6 +654,35 @@ class UserService {
     const result = await client.request(request);
     return [true, []];
   }
+
+  getUsers = async (req: Request) => {
+    const reqTemp: any = req;
+    const filters = {isDeleted: false, isPlatform: {$ne: true}};
+    if (reqTemp.role !== 'Super User') {
+      filters['role'] = {$ne: 'Super User'};
+    }
+    let users = await this.userRepository.getAllWithoutPagination<IUser>(
+      filters,
+      'name',
+      undefined,
+      {createdAt: -1}
+    );
+    if (!users.length) {
+      return [false, constantsUtil.notFoundMessage('Users')];
+    }
+    users = await this.moveObjectToTop(users, reqTemp.id);
+    return [true, users];
+  };
+
+  async moveObjectToTop(data: IUser[], id: string) {
+    const index = data.findIndex(item => String(item._id) === id);
+
+    if (index > 0) {
+      const [objectToMove] = data.splice(index, 1);
+      data.unshift(objectToMove);
+    }
+    return data;
+  }
 }
 
 export default UserService;
