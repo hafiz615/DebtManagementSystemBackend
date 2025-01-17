@@ -76,6 +76,7 @@ class EmailService {
             const userId = this.extractUserId(referencesHeader.toString());
             const userName = this.extractUserName(referencesHeader.toString());
             const threadId = this.extractThreadId(referencesHeader.toString());
+            let caseData = null;
             if (caseId) {
                 await case_util_1.default.addInHistory({
                     Subject: subject,
@@ -86,27 +87,27 @@ class EmailService {
                     Action: 'EMAIL',
                     Attachments: data,
                 }, caseId);
-                const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
                     { path: 'creditor', select: ['businessInformation.companyName'] },
                 ]);
-                const emailData = {
-                    from,
-                    to,
-                    subject,
-                    text,
-                    textAsHtml: parseData.textAsHtml,
-                    cc: parseData.cc,
-                    attachments: data,
-                };
-                if (threadId) {
-                    const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
-                    const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
-                    app_1.default.socketInstance.emit('notify', {
-                        notificationCount: notificationCount[0].count,
-                        notification: notification,
-                    });
-                }
+            }
+            const emailData = {
+                from,
+                to,
+                subject,
+                text,
+                textAsHtml: parseData.textAsHtml,
+                cc: parseData.cc,
+                attachments: data,
+            };
+            if (threadId) {
+                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+                app_1.default.socketInstance.emit('notify', {
+                    notificationCount: notificationCount[0].count,
+                    notification: notification,
+                });
                 return true;
             }
         }

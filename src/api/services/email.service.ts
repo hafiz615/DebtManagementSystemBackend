@@ -55,7 +55,7 @@ class EmailService {
       req.body,
       type,
       reqTemp?.files?.files || [],
-      reqTemp.name,
+      reqTemp.name
     );
   }
 
@@ -89,6 +89,7 @@ class EmailService {
       const userName = this.extractUserName(referencesHeader.toString());
       const threadId = this.extractThreadId(referencesHeader.toString());
 
+      let caseData = null;
       if (caseId) {
         await caseUtil.addInHistory(
           {
@@ -102,7 +103,7 @@ class EmailService {
           },
           caseId
         );
-        const caseData = await this.caseRepository.getById<ICase>(
+        caseData = await this.caseRepository.getById<ICase>(
           caseId,
           undefined,
           undefined,
@@ -111,37 +112,38 @@ class EmailService {
             {path: 'creditor', select: ['businessInformation.companyName']},
           ]
         );
-        const emailData = {
-          from,
-          to,
-          subject,
-          text,
-          textAsHtml: parseData.textAsHtml,
-          cc: parseData.cc,
-          attachments: data,
-        };
-        if (threadId) {
-          const notification = await emailUtil.createInbox(
-            caseData,
-            'received',
-            emailData,
-            threadId,
-            userId,
-            userName
+      }
+      const emailData = {
+        from,
+        to,
+        subject,
+        text,
+        textAsHtml: parseData.textAsHtml,
+        cc: parseData.cc,
+        attachments: data,
+      };
+      if (threadId) {
+        const notification = await emailUtil.createInbox(
+          caseData,
+          'received',
+          emailData,
+          threadId,
+          userId,
+          userName
+        );
+        const notificationCount: NotificationCount[] =
+          await this.notificationCountRepository.getAll(
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined
           );
-          const notificationCount: NotificationCount[] =
-            await this.notificationCountRepository.getAll(
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              undefined
-            );
-          app.socketInstance.emit('notify', {
-            notificationCount: notificationCount[0].count,
-            notification: notification,
-          });
-        }
+        app.socketInstance.emit('notify', {
+          notificationCount: notificationCount[0].count,
+          notification: notification,
+        });
+
         return true;
       }
     }
