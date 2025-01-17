@@ -20,6 +20,8 @@ import asyncLocalStorage from '../../utils/localStorage.util';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
 import {IKeyFile} from '../../database/interfaces/debtor.interface';
+import {NotificationRepository} from '../repository/notification/notification.repository';
+import {INotification} from '../../database/interfaces/notification.interface';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -27,6 +29,7 @@ class EmailService {
   private inboxRepository: InboxRepository;
   private notificationCountRepository: NotificationCountRepository;
   private uploadUtil: UploadUtil;
+  private notificationRepository: NotificationRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -34,6 +37,7 @@ class EmailService {
     this.domainVerifyRepository = new DomainVerifyRepository();
     this.notificationCountRepository = new NotificationCountRepository();
     this.uploadUtil = new UploadUtil();
+    this.notificationRepository = new NotificationRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -65,6 +69,7 @@ class EmailService {
     const subject = parseData.subject;
     const text = parseData.text;
     const from = parseData.from?.value[0].address;
+    const fromName = parseData.from?.value[0].name;
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
@@ -140,6 +145,12 @@ class EmailService {
           threadId,
           userId,
           userName
+        );
+        if (!caseData) {
+          notification.text = emailUtil.formatText(fromName);
+        }
+        await this.notificationRepository.create<INotification>(
+          notification as any
         );
         const notificationCount: NotificationCount[] =
           await this.notificationCountRepository.getAll(

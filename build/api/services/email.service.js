@@ -15,6 +15,7 @@ const case_util_1 = __importDefault(require("../../utils/case.util"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const app_1 = __importDefault(require("../../app"));
 const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
+const notification_repository_1 = require("../repository/notification/notification.repository");
 class EmailService {
     constructor() {
         this.extractThreadId = (header) => {
@@ -38,6 +39,7 @@ class EmailService {
         this.domainVerifyRepository = new domainVerify_repository_1.DomainVerifyRepository();
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
         this.uploadUtil = new upload_util_1.default();
+        this.notificationRepository = new notification_repository_1.NotificationRepository();
     }
     async sendSmsEmailDebtorCreditor(req) {
         const reqTemp = req;
@@ -61,6 +63,7 @@ class EmailService {
         const subject = parseData.subject;
         const text = parseData.text;
         const from = parseData.from?.value[0].address;
+        const fromName = parseData.from?.value[0].name;
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
@@ -111,6 +114,10 @@ class EmailService {
                 console.log('threadId: ', threadId);
                 console.log('threadId: inside the thread ID ', threadId);
                 const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                if (!caseData) {
+                    notification.text = email_util_1.default.formatText(fromName);
+                }
+                await this.notificationRepository.create(notification);
                 const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
                 app_1.default.socketInstance.emit('notify', {
                     notificationCount: notificationCount[0].count,
