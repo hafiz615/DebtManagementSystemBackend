@@ -83,6 +83,17 @@ class App {
     this.httpServer.listen(appPort, () => {
       console.log(`Server running at http://localhost:${appPort}/`);
     });
+    // const debtorRepo = new DebtorRepository();
+    // const token = await moneyThumbUtil.authenticateUser();
+    // const app = await moneyThumbUtil.createNewApp(
+    //   token,
+    //   'Smoke Studio & Mart LLC'
+    // );
+    // const debtor = await debtorRepo.getById<IDebtor>(
+    //   '67179c6b9f1cc6c8f4839b84'
+    // );
+    // const card = await moneyThumbUtil.getScoreCard(token, app.appid);
+    // await moneyThumbUtil.getProfitMarginPerMonth(debtor, card);
     if (
       process.env.environment === 'prod' &&
       process.env.runPaynoteScript === 'true'

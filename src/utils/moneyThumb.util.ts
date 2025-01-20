@@ -633,5 +633,40 @@ class MoneyThumbUtil {
       },
     };
   }
+
+  async getProfitMarginPerMonth(debtor: IDebtor, scoreCard: any) {
+    const mcaCompanies = scoreCard['mcacompanies'];
+    const metricData = scoreCard['metrics']['metricdata'];
+    const profitAndTrueRevenue =
+      await this.getMonthlyProfitAndTrueRevenue(metricData);
+    const data = mcaCompanies.data;
+    let creditors = await debtorUtil.getCreditorsMapping(debtor);
+    const creditorsAccTitleArray = creditors.map(creditor => {
+      return creditor.creditorAccountTitle;
+    });
+
+    const groupedByCreditorAcc = data.reduce((acc, item) => {
+      if (!creditorsAccTitleArray.includes(item.lender)) {
+        return acc;
+      }
+      if (item.month === 'Totals') {
+        return acc;
+      }
+
+      if (!acc[item.lender]) {
+        acc[item.lender] = [];
+      }
+      acc[item.lender].push({
+        month: item.month,
+        profitMargin:
+          Math.abs(parseFloat(item.withdrawal_total)) +
+          profitAndTrueRevenue.profit,
+      });
+
+      return acc;
+    }, {});
+    if (!Object.keys(groupedByCreditorAcc).length) return null;
+    return groupedByCreditorAcc;
+  }
 }
 export default new MoneyThumbUtil();
