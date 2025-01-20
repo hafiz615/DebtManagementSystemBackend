@@ -455,12 +455,21 @@ class CaseValidate {
       subject: Joi.string().required(),
       cc: Joi.string().required(),
       files: Joi.string().optional(),
+      signedUrls: Joi.string().optional(),
     });
     if (req.body?.cc && typeof req.body?.cc === 'string') {
       if (!Array.isArray(JSON.parse(req.body.cc))) {
         return res
           .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse('cc is invalid'));
+      }
+    }
+
+    if (req.body?.signedUrls && typeof req.body?.signedUrls === 'string') {
+      if (!Array.isArray(JSON.parse(req.body.signedUrls))) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse('signedUrls is invalid'));
       }
     }
     if (type === 'sms') {
@@ -474,6 +483,7 @@ class CaseValidate {
     }
     const schema = object;
     console.log(req.body.sendTo);
+    console.log('validation', schema.validate(req.body));
     const {error} = schema.validate(req.body);
     if (!error) {
       return next();

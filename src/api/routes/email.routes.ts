@@ -15,6 +15,7 @@ const sendEmailFields = upload.fields([
   {name: 'subject'},
   {name: 'cc'},
   {name: 'files'},
+  {name: 'signedUrls'},
 ]);
 
 router.post(

@@ -18,6 +18,7 @@ const sendEmailFields = upload.fields([
     { name: 'subject' },
     { name: 'cc' },
     { name: 'files' },
+    { name: 'signedUrls' },
 ]);
 router.post('/sendSmsEmailDebtorCreditor/:id', authorize_middleware_1.default.validateAuth, sendEmailFields, case_validate_1.default.sendSmsEmailDebtorCreditor, email_controller_1.default.sendSmsEmailDebtorCreditor); // not in current use
 router.post('/sendGridParseEmail', upload.any(), email_controller_1.default.sendGridEmail);

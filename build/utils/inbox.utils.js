@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
 const dataCopier_util_1 = require("./dataCopier.util");
+const lodash_1 = __importDefault(require("lodash"));
 const upload_util_1 = __importDefault(require("./upload.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 class InboxUtil {
@@ -76,7 +77,8 @@ class InboxUtil {
             const mimeType = common_util_1.default.getMimeType(obj.key);
             obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
         }
-        const validateDraft = await this.prepareDraft(data, newDraft, sendTo, content, filesData, caseData, userId);
+        const uniqueAttachments = lodash_1.default.uniqBy(filesData, item => `${item.key}-${item.originalFileName}`);
+        const validateDraft = await this.prepareDraft(data, newDraft, sendTo, content, uniqueAttachments, caseData, userId);
         return validateDraft;
     }
     async prepareDraft(data, updateDraft, sendTo, content, filesData, caseData, userId) {
@@ -97,13 +99,22 @@ class InboxUtil {
         return preparedDraft;
     }
     async prepareUpdateDraft(updateDraft, data, caseData, userId, files) {
-        let { sendTo, content } = data;
+        let { sendTo, content, removedFiles } = data;
+        if (typeof removedFiles === 'string') {
+            removedFiles = JSON.parse(removedFiles);
+        }
+        let updatedExistingFiles = updateDraft.attachments || [];
+        if (removedFiles) {
+            updatedExistingFiles = updatedExistingFiles.filter((file) => !removedFiles.some((removed) => removed.key === file.key));
+        }
         const filesData = await this.uploadUtil.awsS3FileUpload(files, false);
         for (const obj of filesData) {
             const mimeType = common_util_1.default.getMimeType(obj.key);
             obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
         }
-        const validateDraft = await this.prepareDraft(data, updateDraft, sendTo, content, filesData, caseData, userId);
+        const allFilesData = [...updatedExistingFiles, ...filesData];
+        const uniqueAttachments = lodash_1.default.uniqBy(allFilesData, item => `${item.key}-${item.originalFileName}`);
+        const validateDraft = await this.prepareDraft(data, updateDraft, sendTo, content, uniqueAttachments, caseData, userId);
         return validateDraft;
     }
 }
