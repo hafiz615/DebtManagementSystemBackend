@@ -241,7 +241,10 @@ class EmailUtil {
     files: any,
     userName?: string
   ) {
-    let {from, sendTo, subject, content, cc} = body;
+    let {from, sendTo, subject, content, cc, signedUrls} = body;
+    if (typeof signedUrls === 'string') {
+      signedUrls = JSON.parse(signedUrls);
+    }
     const threadId = v4();
     const allValues = await this.getValues(content);
     if (allValues.length) {
@@ -289,6 +292,21 @@ class EmailUtil {
             process.env.s3BucketName
           );
         }
+
+        signedUrls?.forEach(async (urlObj: IKeyFile) => {
+          const byteArray = await this.uploadUtil.getPdfBytesFromS3(urlObj.key);
+          const base64Content =
+            byteArray.length > 0
+              ? Buffer.from(byteArray).toString('base64')
+              : '';
+          const mimeType = commonUtil.getMimeType(urlObj.key);
+          attachments.push({
+            content: base64Content,
+            filename: urlObj.originalFileName,
+            type: mimeType,
+            disposition: 'attachment',
+          });
+        });
         const result = await this.sendEmail(
           sendTo,
           from,
@@ -301,6 +319,11 @@ class EmailUtil {
           userId,
           userName
         );
+        const updatedData = [...data, ...signedUrls];
+        const uniqueAttachments = _.uniqBy(
+          updatedData,
+          item => `${item.key}-${item.originalFileName}`
+        );
         if (result[0]) {
           await caseUtil.addInHistory(
             {
@@ -310,7 +333,7 @@ class EmailUtil {
               Content: content,
               Time: time,
               Action: 'EMAIL',
-              Attachments: data,
+              Attachments: uniqueAttachments,
             },
             caseId
           );
@@ -330,7 +353,7 @@ class EmailUtil {
             text: content,
             textAsHtml: content,
             cc: cc,
-            attachments: data,
+            attachments: uniqueAttachments,
           };
           this.createInbox(
             caseData,

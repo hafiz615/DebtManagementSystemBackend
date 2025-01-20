@@ -166,7 +166,10 @@ class EmailUtil {
         }
     }
     async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, files, userName) {
-        let { from, sendTo, subject, content, cc } = body;
+        let { from, sendTo, subject, content, cc, signedUrls } = body;
+        if (typeof signedUrls === 'string') {
+            signedUrls = JSON.parse(signedUrls);
+        }
         const threadId = (0, uuid_1.v4)();
         const allValues = await this.getValues(content);
         if (allValues.length) {
@@ -196,7 +199,22 @@ class EmailUtil {
                     const mimeType = common_util_1.default.getMimeType(obj.key);
                     obj.url = await this.uploadUtil.getS3FileSignedUrl(obj.key, mimeType, 60 * 60 * 24 * 365 * 10, process.env.s3BucketName);
                 }
+                signedUrls?.forEach(async (urlObj) => {
+                    const byteArray = await this.uploadUtil.getPdfBytesFromS3(urlObj.key);
+                    const base64Content = byteArray.length > 0
+                        ? Buffer.from(byteArray).toString('base64')
+                        : '';
+                    const mimeType = common_util_1.default.getMimeType(urlObj.key);
+                    attachments.push({
+                        content: base64Content,
+                        filename: urlObj.originalFileName,
+                        type: mimeType,
+                        disposition: 'attachment',
+                    });
+                });
                 const result = await this.sendEmail(sendTo, from, subject, content, cc, attachments, caseId, threadId, userId, userName);
+                const updatedData = [...data, ...signedUrls];
+                const uniqueAttachments = lodash_1.default.uniqBy(updatedData, item => `${item.key}-${item.originalFileName}`);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
                         Subject: subject,
@@ -205,7 +223,7 @@ class EmailUtil {
                         Content: content,
                         Time: time,
                         Action: 'EMAIL',
-                        Attachments: data,
+                        Attachments: uniqueAttachments,
                     }, caseId);
                     const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                         { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -218,7 +236,7 @@ class EmailUtil {
                         text: content,
                         textAsHtml: content,
                         cc: cc,
-                        attachments: data,
+                        attachments: uniqueAttachments,
                     };
                     this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
                 }

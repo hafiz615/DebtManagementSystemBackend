@@ -3,6 +3,7 @@ import {InboxRepository} from '../api/repository/inbox/inbox.repository';
 import {Inbox} from '../database/repomodels/inbox.repomodel';
 import {DataCopier} from './dataCopier.util';
 import {IKeyFile} from '../database/interfaces/debtor.interface';
+import _ from 'lodash';
 import UploadUtil from './upload.util';
 import commonUtil from './common.util';
 
@@ -96,12 +97,17 @@ class InboxUtil {
         process.env.s3BucketName
       );
     }
+
+    const uniqueAttachments = _.uniqBy(
+      filesData,
+      item => `${item.key}-${item.originalFileName}`
+    );
     const validateDraft = await this.prepareDraft(
       data,
       newDraft,
       sendTo,
       content,
-      filesData,
+      uniqueAttachments,
       caseData,
       userId
     );
@@ -141,7 +147,18 @@ class InboxUtil {
     userId: string,
     files: any
   ) {
-    let {sendTo, content} = data;
+    let {sendTo, content, removedFiles} = data;
+
+    if (typeof removedFiles === 'string') {
+      removedFiles = JSON.parse(removedFiles);
+    }
+    let updatedExistingFiles = updateDraft.attachments || [];
+    if (removedFiles) {
+      updatedExistingFiles = updatedExistingFiles.filter(
+        (file: any) =>
+          !removedFiles.some((removed: any) => removed.key === file.key)
+      );
+    }
     const filesData: IKeyFile[] = await this.uploadUtil.awsS3FileUpload(
       files,
       false
@@ -155,13 +172,17 @@ class InboxUtil {
         process.env.s3BucketName
       );
     }
-
+    const allFilesData = [...updatedExistingFiles, ...filesData];
+    const uniqueAttachments = _.uniqBy(
+      allFilesData,
+      item => `${item.key}-${item.originalFileName}`
+    );
     const validateDraft = await this.prepareDraft(
       data,
       updateDraft,
       sendTo,
       content,
-      filesData,
+      uniqueAttachments,
       caseData,
       userId
     );

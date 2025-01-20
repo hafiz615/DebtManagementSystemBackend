@@ -412,6 +412,8 @@ class CaseService {
                 values.currentMonthlyProfitExcludingPayments;
             data['currentMonthlyProfitIncludingPayments'] =
                 values.currentMonthlyProfitIncludingPayments;
+            const profitMarginPerMonth = await moneyThumb_util_1.default.getProfitMarginPerMonth(debtor, moneyThumb.scoreCard);
+            data['profitMarginPerMonth'] = profitMarginPerMonth;
             if (hardReload !== 'true' &&
                 caseTemp.strategyOne_1 &&
                 result?.data?.creditorNames) {
@@ -571,6 +573,8 @@ class CaseService {
                 values.currentMonthlyProfitExcludingPayments;
             data['currentMonthlyProfitIncludingPayments'] =
                 values.currentMonthlyProfitIncludingPayments;
+            const profitMarginPerMonth = await moneyThumb_util_1.default.getProfitMarginPerMonth(debtor, moneyThumb.scoreCard);
+            data['profitMarginPerMonth'] = profitMarginPerMonth;
             let extractedFieldsTemp = null;
             if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
                 const extractedFields = await case_util_1.default.getExtractionMCA(debtor);

@@ -719,6 +719,11 @@ class CaseService {
       values.currentMonthlyProfitExcludingPayments;
     data['currentMonthlyProfitIncludingPayments'] =
       values.currentMonthlyProfitIncludingPayments;
+    const profitMarginPerMonth = await moneyThumbUtil.getProfitMarginPerMonth(
+      debtor,
+      moneyThumb.scoreCard
+    );
+    data['profitMarginPerMonth'] = profitMarginPerMonth;
     if (
       hardReload !== 'true' &&
       caseTemp.strategyOne_1 &&
@@ -966,6 +971,11 @@ class CaseService {
       values.currentMonthlyProfitExcludingPayments;
     data['currentMonthlyProfitIncludingPayments'] =
       values.currentMonthlyProfitIncludingPayments;
+    const profitMarginPerMonth = await moneyThumbUtil.getProfitMarginPerMonth(
+      debtor,
+      moneyThumb.scoreCard
+    );
+    data['profitMarginPerMonth'] = profitMarginPerMonth;
     let extractedFieldsTemp = null;
     if (!debtor?.extractedFields && !debtor?.extractedFields?.length) {
       const extractedFields = await caseUtil.getExtractionMCA(debtor);
@@ -1186,7 +1196,14 @@ class CaseService {
       textAsHtml: content,
       cc: cc,
     };
-    emailUtil.createInbox(caseTemp, 'sent', emailData, threadId, reqTemp.Id, reqTemp.name);
+    emailUtil.createInbox(
+      caseTemp,
+      'sent',
+      emailData,
+      threadId,
+      reqTemp.Id,
+      reqTemp.name
+    );
 
     const attachments = [
       {
