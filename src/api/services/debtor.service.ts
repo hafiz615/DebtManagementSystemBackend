@@ -10,11 +10,8 @@ import {URLSearchParams} from 'url';
 import {IPayment} from '../../database/interfaces/payment.interface';
 import {PaymentRepository} from '../repository/payment/payment.repository';
 import PaymentService from './payment.service';
-import {PaymentLogging} from '../../database/repomodels/paymentLogging.repomodel';
 import commonUtil from '../../utils/common.util';
-import {PaymentLoggingRepository} from '../repository/paymentLogging/paymentLogging.repository';
 import {DataCopier} from '../../utils/dataCopier.util';
-import {IPaymentLogging} from '../../database/interfaces/paymentLogging.interface';
 import constantsUtil from '../../utils/constants.util';
 import UploadUtil from '../../utils/upload.util';
 import {StrategyRepository} from '../repository/strategy/strategy.repository';
@@ -41,15 +38,14 @@ import mongoose from 'mongoose';
 import {SyncPaymentMethodRepository} from '../repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import {ISyncPaymentMethod} from '../../database/interfaces/syncPaymentMethod.interface';
 import easypayUtil from '../../utils/easypay.util';
-import {paymentPlatform} from '../../enums/index'
-import { platform } from 'os';
+import {paymentPlatform} from '../../enums/index';
+import {platform} from 'os';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
   private paymentRepository: PaymentRepository;
   private paymentService: PaymentService;
-  private paymentLoggingRepository: PaymentLoggingRepository;
   private strategyRepository: StrategyRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private userRepository: UserRepository;
@@ -61,7 +57,6 @@ class DebtorService {
     this.caseRepository = new CaseRepository();
     this.paymentRepository = new PaymentRepository();
     this.paymentService = new PaymentService();
-    this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.strategyRepository = new StrategyRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
     this.userRepository = new UserRepository();
@@ -72,6 +67,7 @@ class DebtorService {
 
   getStatementsSummary = async (req: Request) => {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const token = await moneyThumbUtil.authenticateUser();
     const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
     const accountDetails = debtorUtil.getAccountDetails(
@@ -89,6 +85,7 @@ class DebtorService {
 
   getDailyCashFlows = async (req: Request) => {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const token = await moneyThumbUtil.authenticateUser();
     const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
     const getDailyCashFlowsLastDate = debtorUtil.getDailyCashFlowsLastDate(
@@ -610,7 +607,9 @@ class DebtorService {
       // );
       console.log(amount, 'amounttttt');
       if (amount) {
-        const commissionAmount = payment.amount - amount;
+        const commissionAmount = parseFloat(
+          (payment.amount - amount).toFixed(2)
+        );
         await this.paymentRepository.updateById<IPayment>(payment._id, {
           amount: commissionAmount,
         });
@@ -623,11 +622,11 @@ class DebtorService {
           $inc: {commissionPaid: payment.amount},
         });
       }
-      if (!amount && payment.caseId !== null && payment.commision) {
-        await this.debtorRepository.updateById(payment.debtorId, {
-          $inc: {commissionPaid: payment.commision},
-        });
-      }
+      // if (!amount && payment.caseId !== null && payment.commision) {
+      //   await this.debtorRepository.updateById(payment.debtorId, {
+      //     $inc: {commissionPaid: payment.commision},
+      //   });
+      // }
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
       // await emailUtil.sendEmailOrSmsByEvent(
@@ -1251,8 +1250,8 @@ class DebtorService {
     if (debtor.intervals && debtor.intervals.length)
       return [false, constants.alreadyExistsMessage('Debtor payment plan')];
 
-    if (debtor.weeklyCommission)
-      return [false, 'Weekly commission already settled'];
+    // if (debtor.weeklyCommission)
+    //   return [false, 'Weekly commission already settled'];
     // req.body.isExempt = false;
     const checkCasePayment = await caseUtil.checkCasePayment(
       req.body,
@@ -1430,12 +1429,12 @@ class DebtorService {
       const checkDebtorAlreadyExist: any =
         await this.checkDebtorAlreadyExist(debtorBody);
 
-      if (checkDebtorAlreadyExist[0]){
-          previousMca = checkDebtorAlreadyExist[1].mcaDocuments.map(obj => {
-            return obj.originalFileName;
-          });
-        
-        return  [
+      if (checkDebtorAlreadyExist[0]) {
+        previousMca = checkDebtorAlreadyExist[1].mcaDocuments.map(obj => {
+          return obj.originalFileName;
+        });
+
+        return [
           true,
           {
             debtorId: String(checkDebtorAlreadyExist[1]._id),
@@ -1486,7 +1485,7 @@ class DebtorService {
               newMca,
               previousMca,
             },
-          ]; 
+          ];
         }
         debtorExist[1].extractedFields.push(
           ...extractedFieldsForNewFiles.extracted_fields
@@ -1638,31 +1637,43 @@ class DebtorService {
   }
 
   async getClientSyncEmail(req: Request) {
-      const debtor = await this.debtorRepository.getById<IDebtor>(
-        req.params.id
-      );
-      if (!debtor) return [false, constants.notFoundMessage('client')];
-      const result = await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('client')];
+    const result =
+      await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
         syncId: req.params.id,
       });
-      return result ? [true, result.email] : [true, debtor.basicInformation.email];
+    return result
+      ? [true, result.email]
+      : [true, debtor.basicInformation.email];
   }
 
   async clientSync(req: Request) {
-    console.log(req.body)
-    const platformExists = Object.values(paymentPlatform).includes(req.body?.platform);
-    console.log("platform" , platformExists)
-    if(!platformExists) return [false, constants.Messages.INVALID_PLATFORM]
-    const debtor = await this.debtorRepository.getById<IDebtor>(
-        req.params.id
-      );
+    console.log(req.body);
+    const platformExists = Object.values(paymentPlatform).includes(
+      req.body?.platform
+    );
+    console.log('platform', platformExists);
+    if (!platformExists) return [false, constants.Messages.INVALID_PLATFORM];
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('client')];
     const email = req.body.email.toLowerCase();
     const customers = await easypayUtil.getEasyPayCustomers(req.body.platform);
-    const checkClientExist = await easypayUtil.checkClientExist(customers, email, req.body.platform, req.params.id, debtor)
-    console.log(checkClientExist[1]['userId'])
-    if(checkClientExist[0]){
-      await easypayUtil.upsertDebtorEasyPayEmail(req.params.id, email, req.body.platform, checkClientExist[1]['userIds'])
+    const checkClientExist = await easypayUtil.checkClientExist(
+      customers,
+      email,
+      req.body.platform,
+      req.params.id,
+      debtor
+    );
+    console.log(checkClientExist[1]['userId']);
+    if (checkClientExist[0]) {
+      await easypayUtil.upsertDebtorEasyPayEmail(
+        req.params.id,
+        email,
+        req.body.platform,
+        checkClientExist[1]['userIds']
+      );
     }
     return checkClientExist;
   }

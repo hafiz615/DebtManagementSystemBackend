@@ -1,12 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PaymentLoggingRepository = void 0;
-const paymentLogging_model_1 = require("../../../database/models/paymentLogging.model");
-const base_repository_1 = require("../base.repository");
-class PaymentLoggingRepository extends base_repository_1.BaseRepository {
-    constructor() {
-        super(paymentLogging_model_1.PaymentLogging);
-    }
-}
-exports.PaymentLoggingRepository = PaymentLoggingRepository;
+// import {IPaymentLogging} from '../../../database/interfaces/paymentLogging.interface';
+// import {PaymentLogging} from '../../../database/models/paymentLogging.model';
+// import {BaseRepository} from '../base.repository';
+// import {IPaymentLoggingRepository} from './paymentLogging.repository.interface';
+// export class PaymentLoggingRepository
+//   extends BaseRepository<IPaymentLogging>
+//   implements IPaymentLoggingRepository
+// {
+//   constructor() {
+//     super(PaymentLogging);
+//   }
+// }
 //# sourceMappingURL=paymentLogging.repository.js.map

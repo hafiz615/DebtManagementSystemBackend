@@ -109,7 +109,11 @@ const debtorSchema: Schema = new Schema({
     }>,
   },
   accounts: {
-    type: Array<{paymentType: String; customerVaultId: String; platform: String}>,
+    type: Array<{
+      paymentType: String;
+      customerVaultId: String;
+      platform: String;
+    }>,
   },
   // paymentType: {
   //   type: String,
@@ -132,22 +136,17 @@ const debtorSchema: Schema = new Schema({
   commissionPaid: {
     type: Number,
   },
-  weeklyCommission: {
-    type: Number,
-  },
-  weeklyCommissionPaid: {
-    type: Boolean,
-    select: false,
-  },
-  weeklyCommissionDate: {
-    type: Date,
-    select: false,
-  },
-  commissionPaymentId: {
-    type: String,
-    // ref: 'Payments',
-    select: false,
-  },
+  // weeklyCommission: {
+  //   type: Number,
+  // },
+  // weeklyCommissionPaid: {
+  //   type: Boolean,
+  //   select: false,
+  // },
+  // weeklyCommissionDate: {
+  //   type: Date,
+  //   select: false,
+  // },
   logTrackingId: {
     type: String,
   },

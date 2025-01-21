@@ -5,16 +5,12 @@ import paymentUtil from '../utils/payment.util';
 import {SettingsRepository} from '../api/repository/setting/settings.repository';
 import {ISettings} from '../database/interfaces/settings.interface';
 import {URLSearchParams} from 'url';
-import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
-import {PaymentLogging} from '../database/repomodels/paymentLogging.repomodel';
 import commonUtil from '../utils/common.util';
 import {v4 as uuidv4, v4} from 'uuid';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {Payment} from '../database/repomodels/payment.repomodel';
 import mongoose from 'mongoose';
-import {DataCopier} from '../utils/dataCopier.util';
-import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
 import paynoteUtil from '../utils/paynote.util';
 import emailUtil from '../utils/email.util';
 import PaymentService from '../api/services/payment.service';
@@ -27,7 +23,6 @@ class CronJob {
   private paymentRepository: PaymentRepository;
   private paymentService: PaymentService;
   private settingsRepository: SettingsRepository;
-  private paymentLoggingRepository: PaymentLoggingRepository;
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
 
@@ -35,7 +30,6 @@ class CronJob {
     this.paymentRepository = new PaymentRepository();
     this.settingsRepository = new SettingsRepository();
     this.paymentService = new PaymentService();
-    this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
   }
@@ -437,167 +431,6 @@ class CronJob {
     );
   }
 
-  async updateDebtorPaidValues(id: string, commission: number) {
-    await this.debtorRepository.updateById<IDebtor>(id, {
-      weeklyCommissionPaid: true,
-      $inc: {commissionPaid: commission},
-    });
-  }
-
-  async calculateCommission(
-    totalCommision: number,
-    commissionPaid: number,
-    weeklyCommission: number
-  ) {
-    let sumTotalPaidWeekly = commissionPaid + weeklyCommission;
-    if (sumTotalPaidWeekly <= totalCommision) return weeklyCommission;
-    let amountUp = sumTotalPaidWeekly - totalCommision;
-    return weeklyCommission - amountUp;
-  }
-
-  async getCommissionDocument(debtorId: string, amount: number) {
-    const payment = new Payment();
-    payment.timePeriod = 'hours';
-    payment.dueDate = commonUtil.getCurrentDate();
-    payment.debtorId = debtorId;
-    payment.caseId = null;
-    payment.amount = amount;
-    const createdPayment = await this.paymentRepository.create<IPayment>(
-      payment as any
-    );
-    await this.debtorRepository.updateById<IDebtor>(debtorId, {
-      commissionPaymentId: createdPayment.id,
-    });
-    return createdPayment;
-  }
-
-  async processCommissionAuthResponse(
-    payment: any,
-    response: any,
-    retryPlus: boolean,
-    cronId: string
-  ) {
-    const retryCommissionInterval = {
-      unit: 'hours',
-      value: 8,
-      maxRetry: 3,
-    };
-    let successAuth = false;
-    const responseNum = new URLSearchParams(response).get('response');
-    const responseText = new URLSearchParams(response).get('responsetext');
-    const updateObjPayment = {};
-    if (responseNum === '1') {
-      const transactionId = new URLSearchParams(response).get('transactionid');
-      updateObjPayment['debtorTransId'] = transactionId;
-      updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['status'] = 'Pending';
-
-      successAuth = true;
-      // emailUtil.sendEmailOrSmsByEventForCommission(
-      //   'successful_payment',
-      //   payment
-      // );
-    } else {
-      updateObjPayment['authorized'] = 'Failed';
-      updateObjPayment['status'] = 'Pending';
-      updateObjPayment['failedReasonAuthorization'] = responseText;
-      const retry = payment.retriesAuth + 1;
-      const value = retryCommissionInterval.value * retry;
-      const retryDate = this.getRetryDate(
-        retryCommissionInterval.unit,
-        value,
-        payment.dueDate
-      );
-      updateObjPayment['rescheduled'] = retryDate;
-      // emailUtil.sendEmailOrSmsByEventForCommission('failed_payment', payment);
-    }
-    if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
-    if (Object.keys(updateObjPayment).length) {
-      await this.paymentRepository.updateById<IPayment>(
-        payment._id,
-        updateObjPayment
-      );
-    }
-    return successAuth;
-  }
-
-  async processCommissionCaptureResponse(
-    payment: any,
-    response: any,
-    retryPlus: boolean,
-    cronId: string,
-    type: string
-  ) {
-    const retryCommissionInterval = {
-      unit: 'hours',
-      value: 8,
-      maxRetry: 3,
-    };
-    let successCapture = false;
-    const responseNum = new URLSearchParams(response).get('response');
-    const responseText = new URLSearchParams(response).get('responsetext');
-    const updateObjPayment = {};
-    if (responseNum === '1') {
-      const transactionId = new URLSearchParams(response).get('transactionid');
-      updateObjPayment['captured'] = 'Success';
-      updateObjPayment['status'] = 'Success';
-      if (type === 'ck') {
-        updateObjPayment['authorized'] = 'Success';
-        updateObjPayment['debtorTransId'] = transactionId;
-      }
-      await this.debtorRepository.updateById<IDebtor>(payment._id, {
-        weeklyCommissionPaid: true,
-      });
-      successCapture = true;
-      // emailUtil.sendEmailOrSmsByEventForCommission(
-      //   'successful_payment',
-      //   payment
-      // );
-    } else {
-      if (type === 'ck') {
-        updateObjPayment['authorized'] = 'Success';
-        updateObjPayment['status'] = 'Pending';
-      }
-      updateObjPayment['captured'] = 'Failed';
-      updateObjPayment['failedReasonCaptured'] = responseText;
-      const retry = payment.retriesCapture + 1;
-      const value = retryCommissionInterval.value * retry;
-      const retryDate = this.getRetryDate(
-        retryCommissionInterval.unit,
-        value,
-        payment.dueDate
-      );
-      updateObjPayment['rescheduled'] = retryDate;
-
-      // emailUtil.sendEmailOrSmsByEventForCommission('failed_payment', payment);
-    }
-    if (retryPlus)
-      updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
-    if (Object.keys(updateObjPayment).length) {
-      await this.paymentRepository.updateById<IPayment>(
-        payment._id,
-        updateObjPayment
-      );
-    }
-    return successCapture;
-  }
-
-  checkCommissionTimePeriod(date: string, timePeriod: string) {
-    const dateTemp = new Date(date);
-    const currentDate = new Date(commonUtil.getCurrentDate());
-    switch (timePeriod) {
-      case 'weekly':
-        dateTemp.setDate(dateTemp.getDate() + 7);
-        break;
-      case 'hours':
-        dateTemp.setHours(dateTemp.getHours() + 8);
-        break;
-      default:
-        break;
-    }
-    return currentDate >= dateTemp;
-  }
-
   shouldAuthorize(unit: string, value: number, payment: IPayment): boolean {
     const dueDate = new Date(payment.dueDate);
     const currentDate = new Date(commonUtil.getCurrentDate());
@@ -665,20 +498,6 @@ class CronJob {
     return pendingAuthorized;
   }
 
-  async groupPaymentsByDebtor(payments: any) {
-    let resultObj = {};
-    const seen = new Set();
-    for (const payment of payments) {
-      if (!seen.has(String(payment.caseDetails.debtor))) {
-        seen.add(String(payment.caseDetails.debtor));
-        resultObj[String(payment.caseDetails.debtor)] = [payment];
-      } else {
-        resultObj[String(payment.caseDetails.debtor)].push(payment);
-      }
-    }
-    return resultObj;
-  }
-
   async pendingCaptured(payments: any, cronId: string, settings: ISettings[]) {
     const currentDate = new Date(commonUtil.getCurrentDate());
     const pendingCaptured = payments.filter((payment: IPayment) => {
@@ -734,12 +553,12 @@ class CronJob {
   ) {
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
-      const getCommission = await debtorUtil.getCommissionAmount(payment);
-      const sum = getCommission + payment.amount;
+      // const getCommission = await debtorUtil.getCommissionAmount(payment);
+      // const sum = getCommission + payment.amount;
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
-            sum,
+            payment.amount,
             account.customerVaultId,
             account.platform
           );
@@ -749,7 +568,7 @@ class CronJob {
             retryPlus,
             cronId,
             settings,
-            getCommission,
+            // getCommission,
             account.platform
           );
           if (retryPlus) retryPlus = false;
@@ -758,7 +577,7 @@ class CronJob {
         if (account.paymentType === 'ck') {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
-            sum,
+            payment.amount,
             account.platform
           );
           const result = await this.processCaptureResponse(
@@ -768,8 +587,8 @@ class CronJob {
             cronId,
             settings,
             'ck',
-            account.platform,
-            getCommission
+            account.platform
+            // getCommission
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -843,7 +662,7 @@ class CronJob {
     retryPlus: boolean,
     cronId: string,
     settings: ISettings[],
-    commission: number,
+    // commission: number,
     platform: string
   ) {
     let result = false;
@@ -860,7 +679,7 @@ class CronJob {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['commission'] = commission;
+      // updateObjPayment['commission'] = commission;
       // updateObjPayment['status'] = 'Pending';
       result = true;
       // emailUtil.sendEmailOrSmsByEvent(
@@ -1102,8 +921,8 @@ class CronJob {
     cronId: string,
     settings: ISettings[],
     type: string,
-    platform: string,
-    commision?: number
+    platform: string
+    // commision?: number
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -1120,7 +939,7 @@ class CronJob {
       if (type === 'ck') {
         updateObjPayment['authorized'] = 'Success';
         updateObjPayment['debtorTransId'] = transactionId;
-        updateObjPayment['commission'] = commision;
+        // updateObjPayment['commission'] = commision;
         updateObjPayment['status'] = 'Pending';
       }
       result = true;
