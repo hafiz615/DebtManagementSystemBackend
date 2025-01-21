@@ -9,20 +9,57 @@ const joi_1 = __importDefault(require("joi"));
 class UserRequests {
     async createUser(req, res, next) {
         const schema = joi_1.default.object({
-            name: joi_1.default.string().required(),
-            email: joi_1.default.string().email().required(),
-            role: joi_1.default.string().valid().required(),
-            isActive: joi_1.default.string(),
-            createdBy: joi_1.default.string(),
+            name: joi_1.default.string().required().messages({
+                'any.required': 'Name is required.',
+                'string.base': 'Name must be a string.',
+            }),
+            email: joi_1.default.string().email().required().messages({
+                'any.required': 'Email is required.',
+                'string.email': 'Email must be a valid email address.',
+                'string.base': 'Email must be a string.',
+            }),
+            role: joi_1.default.string().valid().required().messages({
+                'any.required': 'Role is required.',
+                'any.only': 'Role must be valid.',
+                'string.base': 'Role must be a string.',
+            }),
+            isActive: joi_1.default.string().messages({
+                'string.base': 'isActive must be a string.',
+            }),
+            createdBy: joi_1.default.string().messages({
+                'string.base': 'CreatedBy must be a string.',
+            }),
             SSID: joi_1.default.string()
                 .pattern(/^\d{9}$/)
-                .required(),
-            dateOfBirth: joi_1.default.date().required(),
+                .required()
+                .messages({
+                'any.required': 'SSID is required.',
+                'string.pattern.base': 'SSID must be a 9-digit number.',
+                'string.base': 'SSID must be a string.',
+            }),
+            dateOfBirth: joi_1.default.date().required().messages({
+                'any.required': 'Date of birth is required.',
+            }),
             phone: joi_1.default.string()
                 .pattern(/^\d{10}$/)
-                .required(),
-            gender: joi_1.default.string().valid('Male', 'Female', 'Other').required(),
-            address: joi_1.default.string().required(),
+                .required()
+                .messages({
+                'any.required': 'Phone number is required.',
+                'string.pattern.base': 'Phone number must be a 10-digit number.',
+                'string.base': 'Phone number must be a string.',
+            }),
+            gender: joi_1.default.string()
+                .valid('Male', 'Female', 'Other')
+                .required()
+                .messages({
+                'any.required': 'Gender is required.',
+                'any.only': 'Gender must be one of Male, Female, or Other.',
+                'string.base': 'Gender must be a string.',
+            }),
+            address: joi_1.default.string().required().messages({
+                'any.required': 'Address is required.',
+                'string.base': 'Address must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -31,13 +68,24 @@ class UserRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async signIn(req, res, next) {
         const schema = joi_1.default.object({
-            email: joi_1.default.string().email().required(),
-            password: joi_1.default.string().regex(constants_util_1.default.passwordRegex, constants_util_1.default.Messages.PASSWORD_FORMAT),
+            email: joi_1.default.string().email().required().messages({
+                'any.required': 'Email is required.',
+                'string.email': 'Email must be a valid email address.',
+                'string.base': 'Email must be a string.',
+            }),
+            password: joi_1.default.string()
+                .regex(constants_util_1.default.passwordRegex, constants_util_1.default.Messages.PASSWORD_FORMAT)
+                .required()
+                .messages({
+                'any.required': 'Password is required.',
+                'string.pattern.base': constants_util_1.default.Messages.PASSWORD_FORMAT,
+                'string.base': 'Password must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -46,15 +94,28 @@ class UserRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async addSenderIdentity(req, res, next) {
         const schema = joi_1.default.object({
-            from_email: joi_1.default.string().email().required(),
-            from_name: joi_1.default.string().required(),
-            address: joi_1.default.string().required(),
-            city: joi_1.default.string().required(),
+            from_email: joi_1.default.string().email().required().messages({
+                'any.required': 'From email is required.',
+                'string.email': 'From email must be a valid email address.',
+                'string.base': 'From email must be a string.',
+            }),
+            from_name: joi_1.default.string().required().messages({
+                'any.required': 'From name is required.',
+                'string.base': 'From name must be a string.',
+            }),
+            address: joi_1.default.string().required().messages({
+                'any.required': 'Address is required.',
+                'string.base': 'Address must be a string.',
+            }),
+            city: joi_1.default.string().required().messages({
+                'any.required': 'City is required.',
+                'string.base': 'City must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -63,12 +124,15 @@ class UserRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async verifySenderIdentity(req, res, next) {
         const schema = joi_1.default.object({
-            url: joi_1.default.string().required(),
+            url: joi_1.default.string().required().messages({
+                'any.required': 'URL is required.',
+                'string.base': 'URL must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -77,15 +141,26 @@ class UserRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async thirdPartySignIn(req, res, next) {
         const schema = joi_1.default.object({
-            name: joi_1.default.string().required(),
-            email: joi_1.default.string().email().required(),
-            platform: joi_1.default.string(),
-            phone: joi_1.default.string().allow(''),
+            name: joi_1.default.string().required().messages({
+                'any.required': 'Name is required.',
+                'string.base': 'Name must be a string.',
+            }),
+            email: joi_1.default.string().email().required().messages({
+                'any.required': 'Email is required.',
+                'string.email': 'Email must be a valid email address.',
+                'string.base': 'Email must be a string.',
+            }),
+            platform: joi_1.default.string().messages({
+                'string.base': 'Platform must be a string.',
+            }),
+            phone: joi_1.default.string().allow('').messages({
+                'string.base': 'Phone must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -94,7 +169,7 @@ class UserRequests {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
 }
