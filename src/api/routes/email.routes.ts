@@ -27,7 +27,6 @@ router.post(
 ); // not in current use
 
 router.post('/sendGridParseEmail', upload.any(), emailController.sendGridEmail);
-router.post('/sendGrid', upload.any(), emailController.sendGridEmail2);
 router.get('/getAllLinks', authorize.validateAuth, emailController.getAllLinks);
 router.delete(
   '/deleteLink/:id',

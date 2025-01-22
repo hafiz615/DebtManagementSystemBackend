@@ -41,18 +41,6 @@ class EmailController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.sendGridEmail2 = async (req, res) => {
-            try {
-                await this.emailService.sendGridEmail2(req);
-                return res.status(200).send('ok');
-            }
-            catch (error) {
-                console.log(error);
-                return res
-                    .status(constants_util_1.default.CODE.OK)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
-            }
-        };
         this.getAllLinks = async (req, res) => {
             try {
                 const response = await this.emailService.getAllLinks();
