@@ -949,7 +949,9 @@ class CaseService {
       );
     await creditorUtil.addBreakEven(creditors);
     data['percentageReceivableCommission'] = commisionPercentage[0];
-    data['percentageReceivableCommissionAmount'] = commisionPercentage[1];
+    data['maxProfitCommission'] = commisionPercentage[1];
+    data['percentageReceivableCommissionAmount'] = commisionPercentage[2];
+    data['totalCommission'] = debtor.totalCommission;
     data['creditorsContractDetailsSum'] =
       await this.calculateContractDetailsSum(creditors);
     data['creditors'] = creditors;
@@ -1399,14 +1401,14 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
-    if (req.body?.commission) {
-      if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-        await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-          weeklyCommission: req.body.commission,
-          updatedAt: commonUtil.getCurrentDate(),
-        });
-      }
-    }
+    // if (req.body?.commission) {
+    //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+    //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+    //       weeklyCommission: req.body.commission,
+    //       updatedAt: commonUtil.getCurrentDate(),
+    //     });
+    //   }
+    // }
     if (req.body.intervals && req.body?.intervals?.length) {
       findCase.intervals = req.body?.intervals;
       findCase.isExempt = req.body.isExempt;

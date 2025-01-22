@@ -121,11 +121,6 @@ class DebtorUtil {
             weeklyBudgetStrategy3: strategy3Budget,
             updatedAt: common_util_1.default.getCurrentDate(),
         };
-        // if (strategy1Key === 'strategy1Profit') {
-        //   filter['weeklyCommission'] = caseTemp.debtor.trueProfit * 0.2;
-        // } else {
-        //   filter['weeklyCommission'] = strategy1Budget * 0.2;
-        // }
         if (strategy1Key === 'strategy1Custom') {
             filter['strategy1BudgetCustom'] = strategy1Budget;
             if (!caseTemp?.debtor?.basicInformation?.weeklyBudget)
