@@ -19,6 +19,7 @@ export class Inbox {
   creditorCompanyName = '';
   negotiatorName = '';
   threadId = '';
+  previousMessages: string[] = [];
   attachments = Array<{key: ''; originalFileName: ''; url: ''}>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

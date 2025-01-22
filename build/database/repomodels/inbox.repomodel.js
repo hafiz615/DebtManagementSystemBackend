@@ -25,6 +25,7 @@ class Inbox {
         this.creditorCompanyName = '';
         this.negotiatorName = '';
         this.threadId = '';
+        this.previousMessages = [];
         this.attachments = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
