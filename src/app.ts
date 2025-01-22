@@ -94,6 +94,8 @@ class App {
     // );
     // const card = await moneyThumbUtil.getScoreCard(token, app.appid);
     // await moneyThumbUtil.getProfitMarginPerMonth(debtor, card);
+    // const caseRepo = new CaseRepository();
+    // await caseRepo.updateMany({'intervals.amount': {$gte: 0}}, {intervals: []});
     if (
       process.env.environment === 'prod' &&
       process.env.runPaynoteScript === 'true'

@@ -22,8 +22,7 @@ import paymentUtil from './payment.util';
 import {Request} from 'express';
 import mongoose from 'mongoose';
 import {AnyARecord} from 'dns';
-import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
-import {IPaymentLogging} from '../database/interfaces/paymentLogging.interface';
+// import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
 import {v4} from 'uuid';
 import axios from 'axios';
 import commonUtil from './common.util';
@@ -56,7 +55,6 @@ class CaseUtil {
   private caseRepository: CaseRepository;
   private debtorService: DebtorService;
   private creditorService: CreditorService;
-  private paymentLoggingRepository: PaymentLoggingRepository;
   private uploadUtil: UploadUtil;
   private strategyRepository: StrategyRepository;
   private caseHistoryRepository: CaseHistoryRepository;
@@ -69,7 +67,6 @@ class CaseUtil {
     this.caseRepository = new CaseRepository();
     this.debtorService = new DebtorService();
     this.creditorService = new CreditorService();
-    this.paymentLoggingRepository = new PaymentLoggingRepository();
     this.uploadUtil = new UploadUtil();
     this.strategyRepository = new StrategyRepository();
     this.caseHistoryRepository = new CaseHistoryRepository();
@@ -322,6 +319,7 @@ class CaseUtil {
     return cases;
   }
 
+  // not in use
   async createCase(body: any, name: string, id: string) {
     let contactIds = null;
     let debtor: IDebtor = null;
@@ -1747,6 +1745,11 @@ class CaseUtil {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
+    if (!result.data.getScoresAIForAllCreditors)
+      return [
+        false,
+        'Could not get justifications without UCC and Default risk score',
+      ];
 
     let settlementRange = result.data?.settlementRange?.settlement_range;
 

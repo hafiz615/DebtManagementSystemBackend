@@ -46,10 +46,9 @@ export class Debtor {
   extractedFields = [];
   totalCommission = 0;
   commissionPaid = 0;
-  weeklyCommission = 0;
-  weeklyCommissionPaid = false;
-  weeklyCommissionDate = '';
-  commissionPaymentId = '';
+  // weeklyCommission = 0;
+  // weeklyCommissionPaid = false;
+  // weeklyCommissionDate = '';
   commissionPercentage = 19;
   bulkUpload = false;
   weeklyBudgetUpdated = false;

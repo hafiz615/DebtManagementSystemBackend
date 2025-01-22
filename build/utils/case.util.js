@@ -19,7 +19,7 @@ const creditor_service_1 = __importDefault(require("../api/services/creditor.ser
 const case_repomodel_1 = require("../database/repomodels/case.repomodel");
 const constants_util_1 = __importDefault(require("./constants.util"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const paymentLogging_repository_1 = require("../api/repository/paymentLogging/paymentLogging.repository");
+// import {PaymentLoggingRepository} from '../api/repository/paymentLogging/paymentLogging.repository';
 const uuid_1 = require("uuid");
 const common_util_1 = __importDefault(require("./common.util"));
 const upload_util_1 = __importDefault(require("./upload.util"));
@@ -44,7 +44,6 @@ class CaseUtil {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.debtorService = new debtor_service_1.default();
         this.creditorService = new creditor_service_1.default();
-        this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.uploadUtil = new upload_util_1.default();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.caseHistoryRepository = new caseHistory_repository_1.CaseHistoryRepository();
@@ -234,6 +233,7 @@ class CaseUtil {
         });
         return cases;
     }
+    // not in use
     async createCase(body, name, id) {
         let contactIds = null;
         let debtor = null;
@@ -1524,6 +1524,11 @@ class CaseUtil {
             caseId: String(caseTemp._id),
             name: 'strategy_one',
         });
+        if (!result.data.getScoresAIForAllCreditors)
+            return [
+                false,
+                'Could not get justifications without UCC and Default risk score',
+            ];
         let settlementRange = result.data?.settlementRange?.settlement_range;
         if (settlementRange && Object.keys(settlementRange).length) {
             delete settlementRange.Summary;

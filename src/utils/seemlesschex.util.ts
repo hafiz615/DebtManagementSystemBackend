@@ -118,7 +118,6 @@ class SeemlesschexUtil {
     var data = {
       amount: amount,
       basic_verification: true,
-      fund_confirmation: true,
     };
     console.log('I am in createPaymentLink');
     console.log('URL: ', apiUrl);

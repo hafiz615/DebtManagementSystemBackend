@@ -58,8 +58,6 @@ class SeemlesschexService {
       {_id: transactionIds},
       {
         authorized: authorized,
-        captured: 'Pending',
-        status: 'Pending',
         debtorTransId: response.check.check_id,
         transactionType: transactionType,
         manualCommission: commission,

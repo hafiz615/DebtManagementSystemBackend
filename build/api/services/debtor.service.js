@@ -11,7 +11,6 @@ const url_1 = require("url");
 const payment_repository_1 = require("../repository/payment/payment.repository");
 const payment_service_1 = __importDefault(require("./payment.service"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
-const paymentLogging_repository_1 = require("../repository/paymentLogging/paymentLogging.repository");
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const upload_util_1 = __importDefault(require("../../utils/upload.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
@@ -33,6 +32,8 @@ class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
             const debtor = await this.debtorRepository.getById(req.params.id);
+            if (!debtor)
+                return [false, constants_util_1.default.notFoundMessage('debtor')];
             const token = await moneyThumb_util_1.default.authenticateUser();
             const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
             const accountDetails = debtor_util_1.default.getAccountDetails(card['accountslist'].data);
@@ -42,6 +43,8 @@ class DebtorService {
         };
         this.getDailyCashFlows = async (req) => {
             const debtor = await this.debtorRepository.getById(req.params.id);
+            if (!debtor)
+                return [false, constants_util_1.default.notFoundMessage('debtor')];
             const token = await moneyThumb_util_1.default.authenticateUser();
             const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
             const getDailyCashFlowsLastDate = debtor_util_1.default.getDailyCashFlowsLastDate(card['dailycashflow'].data);
@@ -148,7 +151,6 @@ class DebtorService {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.paymentService = new payment_service_1.default();
-        this.paymentLoggingRepository = new paymentLogging_repository_1.PaymentLoggingRepository();
         this.strategyRepository = new strategy_repository_1.StrategyRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
         this.userRepository = new user_repository_1.UserRepository();
@@ -549,7 +551,7 @@ class DebtorService {
             // );
             console.log(amount, 'amounttttt');
             if (amount) {
-                const commissionAmount = payment.amount - amount;
+                const commissionAmount = parseFloat((payment.amount - amount).toFixed(2));
                 await this.paymentRepository.updateById(payment._id, {
                     amount: commissionAmount,
                 });
@@ -562,11 +564,11 @@ class DebtorService {
                     $inc: { commissionPaid: payment.amount },
                 });
             }
-            if (!amount && payment.caseId !== null && payment.commision) {
-                await this.debtorRepository.updateById(payment.debtorId, {
-                    $inc: { commissionPaid: payment.commision },
-                });
-            }
+            // if (!amount && payment.caseId !== null && payment.commision) {
+            //   await this.debtorRepository.updateById(payment.debtorId, {
+            //     $inc: {commissionPaid: payment.commision},
+            //   });
+            // }
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
@@ -977,8 +979,8 @@ class DebtorService {
         }
         if (debtor.intervals && debtor.intervals.length)
             return [false, constants_util_1.default.alreadyExistsMessage('Debtor payment plan')];
-        if (debtor.weeklyCommission)
-            return [false, 'Weekly commission already settled'];
+        // if (debtor.weeklyCommission)
+        //   return [false, 'Weekly commission already settled'];
         // req.body.isExempt = false;
         const checkCasePayment = await case_util_1.default.checkCasePayment(req.body, debtor.totalCommission);
         if (!checkCasePayment[0])
@@ -1285,12 +1287,14 @@ class DebtorService {
         const result = await this.syncPaymentMethodRepository.getOne({
             syncId: req.params.id,
         });
-        return result ? [true, result.email] : [true, debtor.basicInformation.email];
+        return result
+            ? [true, result.email]
+            : [true, debtor.basicInformation.email];
     }
     async clientSync(req) {
         console.log(req.body);
         const platformExists = Object.values(index_1.paymentPlatform).includes(req.body?.platform);
-        console.log("platform", platformExists);
+        console.log('platform', platformExists);
         if (!platformExists)
             return [false, constants_util_1.default.Messages.INVALID_PLATFORM];
         const debtor = await this.debtorRepository.getById(req.params.id);

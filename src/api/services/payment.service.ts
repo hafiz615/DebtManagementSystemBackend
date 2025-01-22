@@ -1002,13 +1002,13 @@ class PaymentService {
         isDeleted: true,
       }
     );
-    const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
-      String(caseTemp.debtor),
-      {
-        weeklyCommission: 0,
-      }
-    );
-    if (!updateCase || !updatePayments || !updateDebtor)
+    // const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
+    //   String(caseTemp.debtor),
+    //   {
+    //     weeklyCommission: 0,
+    //   }
+    // );
+    if (!updateCase || !updatePayments)
       return [false, 'Failed to cancel payment plan'];
     return [true, 'Payment plan canceled successfully'];
   }
