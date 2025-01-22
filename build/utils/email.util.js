@@ -318,7 +318,6 @@ class EmailUtil {
                 // });
                 const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments);
                 console.log('Create New Inbox response when Response', res);
-                return res;
             }
         }
         else {

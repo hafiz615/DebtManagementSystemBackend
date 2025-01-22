@@ -514,7 +514,6 @@ class EmailUtil {
           uniqueAttachments
         );
         console.log('Create New Inbox response when Response', res);
-        return res;
       }
     } else {
       const res = await this.createNewInbox(
