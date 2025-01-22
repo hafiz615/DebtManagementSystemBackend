@@ -59,7 +59,9 @@ class InboxService {
             ? await inbox_utils_1.default.getAllInboxFilters(req)
             : { userId: reqTemp.id };
         filters['isDeleted'] = { $ne: true };
-        let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, undefined, undefined
+        let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
+            path: 'previousMessages',
+        }, undefined
         // Number(req.query.page),
         // Number(req.query.limit)
         );
