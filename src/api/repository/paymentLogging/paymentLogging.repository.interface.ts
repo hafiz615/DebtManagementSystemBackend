@@ -1,5 +1,5 @@
-import {IPaymentLogging} from '../../../database/interfaces/paymentLogging.interface';
-import {IBaseRepository} from '../base.repository.interface';
+// import {IPaymentLogging} from '../../../database/interfaces/paymentLogging.interface';
+// import {IBaseRepository} from '../base.repository.interface';
 
-export interface IPaymentLoggingRepository
-  extends IBaseRepository<IPaymentLogging> {}
+// export interface IPaymentLoggingRepository
+//   extends IBaseRepository<IPaymentLogging> {}

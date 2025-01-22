@@ -42,10 +42,9 @@ class Debtor {
         this.extractedFields = [];
         this.totalCommission = 0;
         this.commissionPaid = 0;
-        this.weeklyCommission = 0;
-        this.weeklyCommissionPaid = false;
-        this.weeklyCommissionDate = '';
-        this.commissionPaymentId = '';
+        // weeklyCommission = 0;
+        // weeklyCommissionPaid = false;
+        // weeklyCommissionDate = '';
         this.commissionPercentage = 19;
         this.bulkUpload = false;
         this.weeklyBudgetUpdated = false;

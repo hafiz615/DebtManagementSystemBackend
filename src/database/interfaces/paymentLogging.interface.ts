@@ -1,26 +1,26 @@
-import mongoose, {Document} from 'mongoose';
+// import mongoose, {Document} from 'mongoose';
 
-export interface IPaymentLogging extends Document {
-  caseId: mongoose.Schema.Types.ObjectId;
-  debtorId: string;
-  authorized: string;
-  captured: string;
-  status: string;
-  sendViaPaynote: string;
-  paynoteCheckId: string;
-  amount: number;
-  dueDate: string;
-  frequency: number;
-  intervalId: string;
-  failedReasonAuthorization: string;
-  failedReasonCaptured: string;
-  rescheduled: string;
-  debtorTransId: string;
-  retriesAuth: number;
-  retriesCapture: number;
-  timePeriod: string;
-  paymentReference: string;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// export interface IPaymentLogging extends Document {
+//   caseId: mongoose.Schema.Types.ObjectId;
+//   debtorId: string;
+//   authorized: string;
+//   captured: string;
+//   status: string;
+//   sendViaPaynote: string;
+//   paynoteCheckId: string;
+//   amount: number;
+//   dueDate: string;
+//   frequency: number;
+//   intervalId: string;
+//   failedReasonAuthorization: string;
+//   failedReasonCaptured: string;
+//   rescheduled: string;
+//   debtorTransId: string;
+//   retriesAuth: number;
+//   retriesCapture: number;
+//   timePeriod: string;
+//   paymentReference: string;
+//   isDeleted: boolean;
+//   createdAt: string;
+//   updatedAt: string;
+// }

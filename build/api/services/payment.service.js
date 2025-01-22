@@ -744,10 +744,13 @@ class PaymentService {
         const updatePayments = await this.paymentRepository.updateMany({ caseId: req.params.id, authorized: 'Pending' }, {
             isDeleted: true,
         });
-        const updateDebtor = await this.debtorReposiotry.updateById(String(caseTemp.debtor), {
-            weeklyCommission: 0,
-        });
-        if (!updateCase || !updatePayments || !updateDebtor)
+        // const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
+        //   String(caseTemp.debtor),
+        //   {
+        //     weeklyCommission: 0,
+        //   }
+        // );
+        if (!updateCase || !updatePayments)
             return [false, 'Failed to cancel payment plan'];
         return [true, 'Payment plan canceled successfully'];
     }

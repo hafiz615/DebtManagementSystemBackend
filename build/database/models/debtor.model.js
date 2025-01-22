@@ -143,22 +143,17 @@ const debtorSchema = new mongoose_1.Schema({
     commissionPaid: {
         type: Number,
     },
-    weeklyCommission: {
-        type: Number,
-    },
-    weeklyCommissionPaid: {
-        type: Boolean,
-        select: false,
-    },
-    weeklyCommissionDate: {
-        type: Date,
-        select: false,
-    },
-    commissionPaymentId: {
-        type: String,
-        // ref: 'Payments',
-        select: false,
-    },
+    // weeklyCommission: {
+    //   type: Number,
+    // },
+    // weeklyCommissionPaid: {
+    //   type: Boolean,
+    //   select: false,
+    // },
+    // weeklyCommissionDate: {
+    //   type: Date,
+    //   select: false,
+    // },
     logTrackingId: {
         type: String,
     },

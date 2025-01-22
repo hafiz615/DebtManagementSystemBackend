@@ -58,11 +58,10 @@ export interface IDebtor extends Document {
   // customerVaultId: string;
   totalCommission: number;
   commissionPaid: number;
-  weeklyCommission: number;
-  weeklyCommissionPaid: boolean;
-  weeklyCommissionDate: string;
+  // weeklyCommission: number;
+  // weeklyCommissionPaid: boolean;
+  // weeklyCommissionDate: string;
   commissionPercentage: number;
-  commissionPaymentId: string;
   bulkUpload: boolean;
   weeklyBudgetUpdated: boolean;
   strategy1MaxProfit: number;
