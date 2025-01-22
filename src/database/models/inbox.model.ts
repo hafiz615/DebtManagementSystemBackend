@@ -30,8 +30,14 @@ const inbox: Schema = new Schema({
     type: String,
   },
   threadId: {
-    type: String,
+    type: String, // Reference to the root thread
   },
+  previousMessages: [
+    {
+      type: mongoose.Schema.Types.ObjectId, // References to previous messages
+      ref: 'inbox',
+    },
+  ],
   userId: {
     type: String,
   },

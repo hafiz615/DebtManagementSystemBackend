@@ -41,6 +41,7 @@ class EmailService {
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
+    const threadId = reqTemp.query.threadId;
     // const reqTemp: any = req;
     const type = String(req.query.type);
     if (type !== 'email' && type !== 'sms' && type !== 'compose') {
@@ -59,6 +60,7 @@ class EmailService {
       req.body,
       type,
       reqTemp?.files?.files || [],
+      threadId,
       reqTemp.name
     );
   }
@@ -99,6 +101,16 @@ class EmailService {
       const threadId = this.extractThreadId(referencesHeader.toString());
       console.log('threadId: ', threadId);
 
+      // Split the text at "wrote:"
+      const testParts = text.split('wrote:');
+      const extractedText = testParts[0]?.trim() + ' wrote:';
+      console.log('Extracted Text:', extractedText);
+
+      const htmlText = parseData.textAsHtml;
+      const splitParts = htmlText.split(/(wrote:<\/p>)/);
+      const extractedHtml = splitParts[0] + (splitParts[1] || '');
+      console.log('extractedHtml: ', extractedHtml);
+
       let caseData = null;
       if (caseId) {
         console.log('caseId Check in caseID: ', caseId);
@@ -108,7 +120,7 @@ class EmailService {
             Subject: subject,
             From: from,
             To: to,
-            Content: parseData.textAsHtml,
+            Content: extractedHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
             Attachments: data,
@@ -129,8 +141,8 @@ class EmailService {
         from,
         to,
         subject,
-        text,
-        textAsHtml: parseData.textAsHtml,
+        extractedText,
+        textAsHtml: extractedHtml,
         cc: parseData.cc,
         attachments: data,
       };

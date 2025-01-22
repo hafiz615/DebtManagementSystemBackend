@@ -9,11 +9,28 @@ const joi_1 = __importDefault(require("joi"));
 class StatusValidate {
     async addTask(req, res, next) {
         const schema = joi_1.default.object({
-            dueDate: joi_1.default.date().required(),
-            assignee: joi_1.default.string().required(),
-            assigneeId: joi_1.default.string().required(),
-            title: joi_1.default.string().required(),
-            notes: joi_1.default.string(),
+            dueDate: joi_1.default.date().required().messages({
+                'any.required': 'Due date is required.',
+                'date.base': 'Due date must be a valid date.',
+            }),
+            assignee: joi_1.default.string().required().messages({
+                'any.required': 'Assignee is required.',
+                'string.base': 'Assignee must be a string.',
+                'string.empty': 'Assignee cannot be empty.',
+            }),
+            assigneeId: joi_1.default.string().required().messages({
+                'any.required': 'Assignee ID is required.',
+                'string.base': 'Assignee ID must be a string.',
+                'string.empty': 'Assignee ID cannot be empty.',
+            }),
+            title: joi_1.default.string().required().messages({
+                'any.required': 'Title is required.',
+                'string.base': 'Title must be a string.',
+                'string.empty': 'Title cannot be empty.',
+            }),
+            notes: joi_1.default.string().optional().allow('').messages({
+                'string.base': 'Notes must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -22,18 +39,37 @@ class StatusValidate {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async updateTask(req, res, next) {
         const schema = joi_1.default.object({
-            dueDate: joi_1.default.date().required(),
-            assignee: joi_1.default.string().required(),
-            assigneeId: joi_1.default.string().required(),
+            dueDate: joi_1.default.date().required().messages({
+                'any.required': 'Due date is required.',
+                'date.base': 'Due date must be a valid date.',
+            }),
+            assignee: joi_1.default.string().required().messages({
+                'any.required': 'Assignee is required.',
+                'string.base': 'Assignee must be a string.',
+                'string.empty': 'Assignee cannot be empty.',
+            }),
+            assigneeId: joi_1.default.string().required().messages({
+                'any.required': 'Assignee ID is required.',
+                'string.base': 'Assignee ID must be a string.',
+                'string.empty': 'Assignee ID cannot be empty.',
+            }),
             status: joi_1.default.string()
                 .valid('To do', 'On hold', 'Blocked', 'Completed')
-                .required(),
-            notes: joi_1.default.string(),
+                .required()
+                .messages({
+                'any.required': 'Status is required.',
+                'any.only': 'Status must be one of: To do, On hold, Blocked, or Completed.',
+                'string.base': 'Status must be a string.',
+                'string.empty': 'Status cannot be empty.',
+            }),
+            notes: joi_1.default.string().optional().allow('').messages({
+                'string.base': 'Notes must be a string.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -42,7 +78,7 @@ class StatusValidate {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
 }

@@ -9,11 +9,30 @@ const joi_1 = __importDefault(require("joi"));
 class CustomFieldRequest {
     async addCustomField(req, res, next) {
         const schema = joi_1.default.object({
-            name: joi_1.default.string().required(),
-            type: joi_1.default.string().valid('date', 'number', 'text').required(),
-            description: joi_1.default.string(),
-            target: joi_1.default.string().valid('case').required(),
-            shared: joi_1.default.boolean(),
+            name: joi_1.default.string().required().messages({
+                'string.base': 'The name must be a string.',
+                'string.empty': 'The name field cannot be empty.',
+                'any.required': 'The name field is required.',
+            }),
+            type: joi_1.default.string().valid('date', 'number', 'text').required().messages({
+                'string.base': 'The type must be a string.',
+                'string.empty': 'The type field cannot be empty.',
+                'any.required': 'The type field is required.',
+                'any.only': 'The type must be one of: date, number, or text.',
+            }),
+            description: joi_1.default.string().optional().allow('').messages({
+                'string.base': 'The description must be a string.',
+                'string.empty': 'The description field cannot be empty.',
+            }),
+            target: joi_1.default.string().valid('case').required().messages({
+                'string.base': 'The target must be a string.',
+                'string.empty': 'The target field cannot be empty.',
+                'any.required': 'The target field is required.',
+                'any.only': 'The target must be "case".',
+            }),
+            shared: joi_1.default.boolean().optional().messages({
+                'boolean.base': 'The shared field must be a boolean.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -22,7 +41,7 @@ class CustomFieldRequest {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
 }
