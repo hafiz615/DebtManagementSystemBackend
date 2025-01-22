@@ -37,8 +37,6 @@ class SeemlesschexService {
         await seemlesschex_util_1.default.saveCheckInfo(bv, fc, response, req.body.debtorId);
         await this.paymentRepository.updateMany({ _id: transactionIds }, {
             authorized: authorized,
-            captured: 'Pending',
-            status: 'Pending',
             debtorTransId: response.check.check_id,
             transactionType: transactionType,
             manualCommission: commission,

@@ -533,6 +533,7 @@ class CronJob {
             //   ''
             // );
         }
+        updateObjPayment['dueDate'] = payment.dueDate;
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
         if (Object.keys(updateObjPayment).length) {
@@ -625,11 +626,11 @@ class CronJob {
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
+            updateObjPayment['status'] = 'Pending';
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
                 // updateObjPayment['commission'] = commision;
-                updateObjPayment['status'] = 'Pending';
             }
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
@@ -644,6 +645,7 @@ class CronJob {
                 updateObjPayment['authorized'] = 'Success';
                 // updateObjPayment['status'] = 'Pending';
             }
+            updateObjPayment['status'] = 'Pending';
             updateObjPayment['captured'] = 'Failed';
             updateObjPayment['failedReasonCaptured'] = responseText;
             const interval = retryInterval.failedPayment;
@@ -671,10 +673,10 @@ class CronJob {
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
+            updateObjPayment['status'] = 'Pending';
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
-                updateObjPayment['status'] = 'Pending';
             }
             result = true;
             // emailUtil.sendEmailOrSmsByEvent(
@@ -703,6 +705,7 @@ class CronJob {
                 updateObjPayment['authorized'] = 'Success';
                 // updateObjPayment['status'] = 'Pending';
             }
+            updateObjPayment['status'] = 'Pending';
             updateObjPayment['captured'] = 'Failed';
             updateObjPayment['failedReasonCaptured'] = responseText;
             const interval = retryInterval.failedPayment;
