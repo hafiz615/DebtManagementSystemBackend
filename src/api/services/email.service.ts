@@ -41,6 +41,7 @@ class EmailService {
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
+    const threadId = reqTemp.query.threadId;
     // const reqTemp: any = req;
     const type = String(req.query.type);
     if (type !== 'email' && type !== 'sms' && type !== 'compose') {
@@ -59,6 +60,7 @@ class EmailService {
       req.body,
       type,
       reqTemp?.files?.files || [],
+      threadId,
       reqTemp.name
     );
   }

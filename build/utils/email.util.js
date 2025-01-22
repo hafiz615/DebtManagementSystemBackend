@@ -165,12 +165,18 @@ class EmailUtil {
             }
         }
     }
-    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, files, userName) {
+    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, files, threadId, userName) {
         let { from, sendTo, subject, content, cc, signedUrls } = body;
         if (typeof signedUrls === 'string') {
             signedUrls = JSON.parse(signedUrls);
         }
-        const threadId = (0, uuid_1.v4)();
+        let reqThreadId = null;
+        if (threadId) {
+            reqThreadId = threadId;
+        }
+        else {
+            threadId = (0, uuid_1.v4)();
+        }
         const allValues = await this.getValues(content);
         if (allValues.length) {
             let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, '', userId);
@@ -279,7 +285,12 @@ class EmailUtil {
                     cc: cc,
                     attachments: composeData,
                 };
-                const composeEmail = this.createInbox(null, 'sent', composeEmailData, threadId, userId, userName);
+                if (reqThreadId) {
+                    const composeEmail = await this.createInbox(null, 'received', composeEmailData, threadId, userId, userName);
+                }
+                else {
+                    const composeEmail = await this.createInbox(null, 'sent', composeEmailData, reqThreadId, userId, userName);
+                }
                 return resultCompose;
         }
         return [true, ''];
