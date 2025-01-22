@@ -99,6 +99,16 @@ class EmailService {
       const threadId = this.extractThreadId(referencesHeader.toString());
       console.log('threadId: ', threadId);
 
+      // Split the text at "wrote:"
+      const testParts = text.split('wrote:');
+      const extractedText = testParts[0]?.trim() + ' wrote:';
+      console.log('Extracted Text:', extractedText);
+
+      const htmlText = parseData.textAsHtml;
+      const splitParts = htmlText.split(/(wrote:<\/p>)/);
+      const extractedHtml = splitParts[0] + (splitParts[1] || '');
+      console.log('extractedHtml: ', extractedHtml);
+
       let caseData = null;
       if (caseId) {
         console.log('caseId Check in caseID: ', caseId);
@@ -108,7 +118,7 @@ class EmailService {
             Subject: subject,
             From: from,
             To: to,
-            Content: parseData.textAsHtml,
+            Content: extractedHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
             Attachments: data,
@@ -129,8 +139,8 @@ class EmailService {
         from,
         to,
         subject,
-        text,
-        textAsHtml: parseData.textAsHtml,
+        extractedText,
+        textAsHtml: extractedHtml,
         cc: parseData.cc,
         attachments: data,
       };
@@ -187,6 +197,57 @@ class EmailService {
           newDomainVerify as any
         );
       }
+      return true;
+    }
+    return true;
+  }
+
+  async sendGridEmail2(req: Request) {
+    const reqTemp: any = req;
+    const subject = req.body.subject;
+    const text = req.body.text;
+    const from = req.body.from;
+    const to = req.body.sendTo;
+    const attachments = req.body.attachments;
+    const threadId = req.body.threadId;
+
+    // Split the text at "wrote:"
+    const parts = text.split('wrote:');
+
+    // The first part will contain everything before "wrote:"
+    const extractedText = parts[0]?.trim() + ' wrote:';
+
+    console.log('Extracted Text:', extractedText);
+
+    const htmlText = req.body.textAsHtml;
+    const splitParts = htmlText.split(/(wrote:<\/p>)/);
+    const extractedHtml = splitParts[0] + (splitParts[1] || '');
+    console.log('extractedHtml: ', extractedHtml);
+
+    let caseData = null;
+
+    const emailData = {
+      from,
+      to,
+      subject,
+      text,
+      textAsHtml: text,
+      cc: [],
+      attachments: [],
+    };
+    if (threadId) {
+      console.log('threadId: ', threadId);
+      console.log('threadId: inside the thread ID ', threadId);
+
+      const notification = await emailUtil.createInbox(
+        caseData,
+        'received',
+        emailData,
+        threadId,
+        '669a779c67f346b4e2c73038',
+        'Admin'
+      );
+
       return true;
     }
     return true;

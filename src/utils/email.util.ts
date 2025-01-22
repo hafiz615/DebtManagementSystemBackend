@@ -457,11 +457,19 @@ class EmailUtil {
 
     if (type == 'received') {
       console.log('ABC');
-      const existingInbox = await this.inboxRepository.getOne<IInbox>({
-        threadId,
-        type,
-      });
-      if (!existingInbox) {
+      const existingInbox =
+        await this.inboxRepository.getAllWithoutPagination<IInbox>(
+          {
+            threadId,
+            type,
+          },
+          undefined,
+          undefined,
+          {_id: -1}
+        );
+
+      console.log('This is existing id', existingInbox[0]);
+      if (!existingInbox[0]) {
         const res = await this.createNewInbox(
           emailData,
           caseTemp,
@@ -472,10 +480,15 @@ class EmailUtil {
         );
         console.log('Create New Inbox response when Received', res);
       } else {
-        const existingAttachments = existingInbox.attachments || [];
+        const existingAttachments = existingInbox[0].attachments || [];
         const mergedAttachments = [
           ...existingAttachments,
           ...emailData.attachments,
+        ];
+
+        const previousMessages = [
+          existingInbox[0]._id,
+          ...existingInbox[0].previousMessages,
         ];
 
         // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
@@ -483,11 +496,25 @@ class EmailUtil {
           mergedAttachments,
           item => `${item.key}-${item.originalFileName}`
         );
-        await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
-          text: existingInbox.text + emailData.text,
-          textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
-          attachments: uniqueAttachments,
-        });
+
+        // await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
+        //   text: existingInbox.text + emailData.text,
+        //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
+        //   attachments: uniqueAttachments,
+        // });
+
+        const res = await this.createNewInbox(
+          emailData,
+          caseTemp,
+          type,
+          threadId,
+          userId,
+          userName,
+          previousMessages,
+          uniqueAttachments
+        );
+        console.log('Create New Inbox response when Response', res);
+        return res;
       }
     } else {
       const res = await this.createNewInbox(
@@ -534,7 +561,16 @@ class EmailUtil {
     return newNotification;
   }
 
-  async createNewInbox(emailData, caseTemp, type, threadId, userId, userName) {
+  async createNewInbox(
+    emailData,
+    caseTemp,
+    type,
+    threadId,
+    userId,
+    userName,
+    previousMessages?,
+    uniqueAttachments?
+  ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
@@ -557,11 +593,12 @@ class EmailUtil {
     newMessage.textAsHtml = emailData.textAsHtml;
     newMessage.to = emailData.to;
     newMessage.type = type;
-    newMessage.attachments = emailData.attachments;
+    newMessage.attachments = uniqueAttachments || emailData.attachments;
     newNotification.type = 'EMAIL';
     newMessage.threadId = threadId;
     newMessage.userId = userId;
     newMessage.userName = userName;
+    newMessage.previousMessages = previousMessages;
 
     return await this.inboxRepository.create<IInbox>(newMessage as any);
   }
