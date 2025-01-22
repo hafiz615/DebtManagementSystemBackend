@@ -11,6 +11,7 @@ class CustomFieldRequest {
         const schema = joi_1.default.object({
             name: joi_1.default.string().messages({
                 'string.base': 'Name must be a string.',
+                'string.empty': 'Name cannot be empty.',
             }),
             createdBy: joi_1.default.string().optional().messages({
                 'string.base': 'Created By must be a string.',

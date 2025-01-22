@@ -16,16 +16,19 @@ class StatusValidate {
             assignee: joi_1.default.string().required().messages({
                 'any.required': 'Assignee is required.',
                 'string.base': 'Assignee must be a string.',
+                'string.empty': 'Assignee cannot be empty.',
             }),
             assigneeId: joi_1.default.string().required().messages({
                 'any.required': 'Assignee ID is required.',
                 'string.base': 'Assignee ID must be a string.',
+                'string.empty': 'Assignee ID cannot be empty.',
             }),
             title: joi_1.default.string().required().messages({
                 'any.required': 'Title is required.',
                 'string.base': 'Title must be a string.',
+                'string.empty': 'Title cannot be empty.',
             }),
-            notes: joi_1.default.string().messages({
+            notes: joi_1.default.string().optional().allow('').messages({
                 'string.base': 'Notes must be a string.',
             }),
         });
@@ -48,10 +51,12 @@ class StatusValidate {
             assignee: joi_1.default.string().required().messages({
                 'any.required': 'Assignee is required.',
                 'string.base': 'Assignee must be a string.',
+                'string.empty': 'Assignee cannot be empty.',
             }),
             assigneeId: joi_1.default.string().required().messages({
                 'any.required': 'Assignee ID is required.',
                 'string.base': 'Assignee ID must be a string.',
+                'string.empty': 'Assignee ID cannot be empty.',
             }),
             status: joi_1.default.string()
                 .valid('To do', 'On hold', 'Blocked', 'Completed')
@@ -60,8 +65,9 @@ class StatusValidate {
                 'any.required': 'Status is required.',
                 'any.only': 'Status must be one of: To do, On hold, Blocked, or Completed.',
                 'string.base': 'Status must be a string.',
+                'string.empty': 'Status cannot be empty.',
             }),
-            notes: joi_1.default.string().messages({
+            notes: joi_1.default.string().optional().allow('').messages({
                 'string.base': 'Notes must be a string.',
             }),
         });

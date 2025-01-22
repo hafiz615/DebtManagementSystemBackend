@@ -14,6 +14,7 @@ class PaymentValidate {
     });
 
     const {error} = schema.validate(req.body);
+
     if (!error) {
       return next();
     } else {

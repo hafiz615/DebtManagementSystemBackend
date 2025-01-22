@@ -13,16 +13,19 @@ class StatusValidate {
       assignee: Joi.string().required().messages({
         'any.required': 'Assignee is required.',
         'string.base': 'Assignee must be a string.',
+        'string.empty': 'Assignee cannot be empty.',
       }),
       assigneeId: Joi.string().required().messages({
         'any.required': 'Assignee ID is required.',
         'string.base': 'Assignee ID must be a string.',
+        'string.empty': 'Assignee ID cannot be empty.',
       }),
       title: Joi.string().required().messages({
         'any.required': 'Title is required.',
         'string.base': 'Title must be a string.',
+        'string.empty': 'Title cannot be empty.',
       }),
-      notes: Joi.string().messages({
+      notes: Joi.string().optional().allow('').messages({
         'string.base': 'Notes must be a string.',
       }),
     });
@@ -46,10 +49,12 @@ class StatusValidate {
       assignee: Joi.string().required().messages({
         'any.required': 'Assignee is required.',
         'string.base': 'Assignee must be a string.',
+        'string.empty': 'Assignee cannot be empty.',
       }),
       assigneeId: Joi.string().required().messages({
         'any.required': 'Assignee ID is required.',
         'string.base': 'Assignee ID must be a string.',
+        'string.empty': 'Assignee ID cannot be empty.',
       }),
       status: Joi.string()
         .valid('To do', 'On hold', 'Blocked', 'Completed')
@@ -59,8 +64,9 @@ class StatusValidate {
           'any.only':
             'Status must be one of: To do, On hold, Blocked, or Completed.',
           'string.base': 'Status must be a string.',
+          'string.empty': 'Status cannot be empty.',
         }),
-      notes: Joi.string().messages({
+      notes: Joi.string().optional().allow('').messages({
         'string.base': 'Notes must be a string.',
       }),
     });

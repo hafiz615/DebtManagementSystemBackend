@@ -16,11 +16,13 @@ class CreditorRequests {
                     fullName: joi_1.default.string().required().messages({
                         'any.required': 'Full name is required.',
                         'string.empty': 'Full name cannot be empty.',
+                        'string.base': 'Full name must be a string.',
                     }),
                     email: joi_1.default.string().email().required().messages({
                         'any.required': 'Email is required.',
                         'string.empty': 'Email cannot be empty.',
                         'string.email': 'Invalid email format.',
+                        'string.base': 'Email must be a string.',
                     }),
                     phone: joi_1.default.string()
                         .pattern(/^\d{10}$/)
@@ -28,6 +30,7 @@ class CreditorRequests {
                         .messages({
                         'any.required': 'Phone number is required.',
                         'string.empty': 'Phone number cannot be empty.',
+                        'string.base': 'Phone number must be a string.',
                         'string.pattern.base': 'Phone number must be exactly 10 digits.',
                     }),
                 }),
@@ -35,6 +38,7 @@ class CreditorRequests {
                     companyName: joi_1.default.string().required().messages({
                         'any.required': 'Company name is required.',
                         'string.empty': 'Company name cannot be empty.',
+                        'string.base': 'Company name must be a string.',
                     }),
                     businessCategory: joi_1.default.string().allow('').messages({
                         'string.base': 'Business category must be a string.',
@@ -47,10 +51,12 @@ class CreditorRequests {
                     name: joi_1.default.string().required().messages({
                         'any.required': 'Contact name is required.',
                         'string.empty': 'Contact name cannot be empty.',
+                        'string.base': 'Contact name must be a string.',
                     }),
                     title: joi_1.default.string().required().messages({
                         'any.required': 'Contact title is required.',
                         'string.empty': 'Contact title cannot be empty.',
+                        'string.base': 'Contact title must be a string.',
                     }),
                     phone: joi_1.default.string()
                         .pattern(/^\d{10}$/)
@@ -58,12 +64,14 @@ class CreditorRequests {
                         .messages({
                         'any.required': 'Contact phone number is required.',
                         'string.empty': 'Contact phone number cannot be empty.',
+                        'string.base': 'Contact phone number must be a string.',
                         'string.pattern.base': 'Contact phone number must be 10 digits.',
                     }),
                     email: joi_1.default.string().email().required().messages({
                         'any.required': 'Contact email is required.',
                         'string.empty': 'Contact email cannot be empty.',
                         'string.email': 'Invalid contact email format.',
+                        'string.base': 'Contact email must be a string.',
                     }),
                     relationWithCreditor: joi_1.default.string().allow('').messages({
                         'string.base': 'Relation with creditor must be a string.',
@@ -177,11 +185,13 @@ class CreditorRequests {
                             fullName: joi_1.default.string().required().messages({
                                 'any.required': 'Creditor full name is required.',
                                 'string.empty': 'Creditor full name cannot be empty.',
+                                'string.base': 'Creditor full name must be a string.',
                             }),
                             email: joi_1.default.string().email().required().messages({
                                 'any.required': 'Creditor email is required.',
                                 'string.empty': 'Creditor email cannot be empty.',
                                 'string.email': 'Invalid creditor email format.',
+                                'string.base': 'Creditor email must be a string.',
                             }),
                             phone: joi_1.default.string()
                                 .pattern(/^\d{10}$/)
@@ -189,6 +199,7 @@ class CreditorRequests {
                                 .messages({
                                 'any.required': 'Creditor phone number is required.',
                                 'string.empty': 'Creditor phone number cannot be empty.',
+                                'string.base': 'Creditor phone number must be a string.',
                                 'string.pattern.base': 'Creditor phone number must be exactly 10 digits.',
                             }),
                         }),
@@ -196,6 +207,7 @@ class CreditorRequests {
                             companyName: joi_1.default.string().required().messages({
                                 'any.required': 'Creditor company name is required.',
                                 'string.empty': 'Creditor company name cannot be empty.',
+                                'string.base': 'Creditor company name must be a string.',
                             }),
                             businessCategory: joi_1.default.string().allow('').messages({
                                 'string.base': 'Creditor business category must be a string.',
@@ -206,10 +218,12 @@ class CreditorRequests {
                             name: joi_1.default.string().required().messages({
                                 'any.required': 'Contact name is required.',
                                 'string.empty': 'Contact name cannot be empty.',
+                                'string.base': 'Contact name must be a string.',
                             }),
                             title: joi_1.default.string().required().messages({
                                 'any.required': 'Contact title is required.',
                                 'string.empty': 'Contact title cannot be empty.',
+                                'string.base': 'Contact title must be a string.',
                             }),
                             phone: joi_1.default.string()
                                 .pattern(/^\d{10}$/)
@@ -217,12 +231,14 @@ class CreditorRequests {
                                 .messages({
                                 'any.required': 'Contact phone number is required.',
                                 'string.empty': 'Contact phone number cannot be empty.',
+                                'string.base': 'Contact phone number must be a string.',
                                 'string.pattern.base': 'Contact phone number must be exactly 10 digits.',
                             }),
                             email: joi_1.default.string().email().required().messages({
                                 'any.required': 'Contact email is required.',
                                 'string.empty': 'Contact email cannot be empty.',
                                 'string.email': 'Invalid contact email format.',
+                                'string.base': 'Contact email must be a string.',
                             }),
                             relationWithCreditor: joi_1.default.string().allow('').messages({
                                 'string.base': 'Relation with creditor must be a string.',
@@ -295,6 +311,7 @@ class CreditorRequests {
                 'any.required': 'Email is required.',
                 'string.empty': 'Email cannot be empty.',
                 'string.email': 'Invalid email format.',
+                'string.base': 'Email must be a string.',
             }),
         });
         const { error } = schema.validate(req.body);

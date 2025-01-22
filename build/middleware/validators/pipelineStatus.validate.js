@@ -11,12 +11,14 @@ class PipelineStatusValidate {
         const schema = joi_1.default.object({
             pipeline: joi_1.default.string().required().messages({
                 'string.base': 'Pipeline must be a string.',
+                'string.empty': 'Pipeline cannot be empty.',
                 'any.required': 'Pipeline is a required field.',
             }),
             status: joi_1.default.array()
                 .items(joi_1.default.object({
                 name: joi_1.default.string().required().messages({
                     'string.base': 'Status name must be a string.',
+                    'string.empty': 'Status name cannot be empty.',
                     'any.required': 'Status name is a required field.',
                 }),
                 type: joi_1.default.string()
@@ -24,6 +26,7 @@ class PipelineStatusValidate {
                     .required()
                     .messages({
                     'string.base': 'Status type must be a string.',
+                    'string.empty': 'Status type cannot be empty.',
                     'any.only': 'Status type must be one of Active, Won, or Lost.',
                     'any.required': 'Status type is a required field.',
                 }),
@@ -52,10 +55,12 @@ class PipelineStatusValidate {
         const schema = joi_1.default.object({
             name: joi_1.default.string().required().messages({
                 'string.base': 'Name must be a string.',
+                'string.empty': 'Name cannot be empty.',
                 'any.required': 'Name is a required field.',
             }),
             type: joi_1.default.string().valid('Active', 'Won', 'Lost').required().messages({
                 'string.base': 'Type must be a string.',
+                'string.empty': 'Type cannot be empty.',
                 'any.only': 'Type must be one of Active, Won, or Lost.',
                 'any.required': 'Type is a required field.',
             }),
@@ -75,10 +80,12 @@ class PipelineStatusValidate {
             original: joi_1.default.object({
                 name: joi_1.default.string().required().messages({
                     'string.base': 'Original name must be a string.',
+                    'string.empty': 'Original name cannot be empty.',
                     'any.required': 'Original name is a required field.',
                 }),
                 type: joi_1.default.string().valid('Active', 'Won', 'Lost').required().messages({
                     'string.base': 'Original type must be a string.',
+                    'string.empty': 'Original type cannot be empty.',
                     'any.only': 'Original type must be one of Active, Won, or Lost.',
                     'any.required': 'Original type is a required field.',
                 }),
@@ -91,10 +98,15 @@ class PipelineStatusValidate {
             update: joi_1.default.object({
                 name: joi_1.default.string().required().messages({
                     'string.base': 'Updated name must be a string.',
+                    'string.empty': 'Updated name cannot be empty.',
                     'any.required': 'Updated name is a required field.',
                 }),
-                type: joi_1.default.string().valid('Active', 'Won', 'Lost').required().messages({
+                type: joi_1.default.string()
+                    .valid('Active', 'Won', 'Lost')
+                    .required()
+                    .messages({
                     'string.base': 'Updated type must be a string.',
+                    'string.empty': 'Updated type cannot be empty.',
                     'any.only': 'Updated type must be one of Active, Won, or Lost.',
                     'any.required': 'Updated type is a required field.',
                 }),
@@ -120,10 +132,15 @@ class PipelineStatusValidate {
             original: joi_1.default.object({
                 name: joi_1.default.string().required().messages({
                     'string.base': 'Original name must be a string.',
+                    'string.empty': 'Original name cannot be empty.',
                     'any.required': 'Original name is a required field.',
                 }),
-                type: joi_1.default.string().valid('Active', 'Won', 'Lost').required().messages({
+                type: joi_1.default.string()
+                    .valid('Active', 'Won', 'Lost')
+                    .required()
+                    .messages({
                     'string.base': 'Original type must be a string.',
+                    'string.empty': 'Original type cannot be empty.',
                     'any.only': 'Original type must be one of Active, Won, or Lost.',
                     'any.required': 'Original type is a required field.',
                 }),
@@ -136,9 +153,11 @@ class PipelineStatusValidate {
             update: joi_1.default.object({
                 name: joi_1.default.string().messages({
                     'string.base': 'Updated name must be a string.',
+                    'string.empty': 'Updated name cannot be empty.',
                 }),
                 type: joi_1.default.string().valid('Active', 'Won', 'Lost').messages({
                     'string.base': 'Updated type must be a string.',
+                    'string.empty': 'Updated type cannot be empty.',
                     'any.only': 'Updated type must be one of Active, Won, or Lost.',
                 }),
             }).messages({

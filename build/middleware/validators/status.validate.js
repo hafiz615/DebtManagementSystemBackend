@@ -12,6 +12,7 @@ class StatusValidate {
             status: joi_1.default.string().required().messages({
                 'any.required': 'Status is required.',
                 'string.base': 'Status must be a string.',
+                'string.empty': 'Status cannot be an empty string.',
             }),
         });
         const { error } = schema.validate(req.body);
@@ -29,10 +30,12 @@ class StatusValidate {
             original: joi_1.default.string().required().messages({
                 'any.required': 'Original status is required.',
                 'string.base': 'Original status must be a string.',
+                'string.empty': 'Original status cannot be an empty string.',
             }),
             update: joi_1.default.string().required().messages({
                 'any.required': 'Updated status is required.',
                 'string.base': 'Updated status must be a string.',
+                'string.empty': 'Updated status cannot be an empty string.',
             }),
         });
         const { error } = schema.validate(req.body);
@@ -47,10 +50,15 @@ class StatusValidate {
     }
     async updateStatusArray(req, res, next) {
         const schema = joi_1.default.object({
-            status: joi_1.default.array().items(joi_1.default.string()).required().messages({
+            status: joi_1.default.array()
+                .items(joi_1.default.string().messages({
+                'string.base': 'Each status must be a string.',
+                'string.empty': 'Each status cannot be an empty string.',
+            }))
+                .required()
+                .messages({
                 'any.required': 'Status array is required.',
                 'array.base': 'Status must be an array.',
-                'string.base': 'Each status must be a string.',
             }),
         });
         const { error } = schema.validate(req.body);
@@ -68,10 +76,12 @@ class StatusValidate {
             original: joi_1.default.string().required().messages({
                 'any.required': 'Original status is required.',
                 'string.base': 'Original status must be a string.',
+                'string.empty': 'Original status cannot be an empty string.',
             }),
             update: joi_1.default.string().required().messages({
                 'any.required': 'Updated status is required.',
                 'string.base': 'Updated status must be a string.',
+                'string.empty': 'Updated status cannot be an empty string.',
             }),
         });
         const { error } = schema.validate(req.body);

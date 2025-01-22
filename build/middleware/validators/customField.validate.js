@@ -20,7 +20,7 @@ class CustomFieldRequest {
                 'any.required': 'The type field is required.',
                 'any.only': 'The type must be one of: date, number, or text.',
             }),
-            description: joi_1.default.string().optional().messages({
+            description: joi_1.default.string().optional().allow('').messages({
                 'string.base': 'The description must be a string.',
                 'string.empty': 'The description field cannot be empty.',
             }),
@@ -34,7 +34,7 @@ class CustomFieldRequest {
                 'boolean.base': 'The shared field must be a boolean.',
             }),
         });
-        const { error } = schema.validate(req.body, { abortEarly: false });
+        const { error } = schema.validate(req.body);
         if (!error) {
             return next();
         }

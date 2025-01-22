@@ -1745,6 +1745,11 @@ class CaseUtil {
       caseId: String(caseTemp._id),
       name: 'strategy_one',
     });
+    if (!result.data.getScoresAIForAllCreditors)
+      return [
+        false,
+        'Could not get justifications without UCC and Default risk score',
+      ];
 
     let settlementRange = result.data?.settlementRange?.settlement_range;
 

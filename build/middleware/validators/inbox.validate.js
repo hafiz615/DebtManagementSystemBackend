@@ -71,13 +71,15 @@ class InboxRequests {
             isRead: joi_1.default.boolean().required().messages({
                 'any.required': 'Read status is required.',
                 'boolean.base': 'Read status must be a boolean value.',
+                'boolean.empty': 'Read status cannot be empty.',
             }),
             isDeleted: joi_1.default.boolean().required().messages({
                 'any.required': 'Deleted status is required.',
                 'boolean.base': 'Deleted status must be a boolean value.',
+                'boolean.empty': 'Deleted status cannot be empty.',
             }),
         });
-        const { error } = schema.validate(req.body, { abortEarly: false });
+        const { error } = schema.validate(req.body);
         if (!error) {
             return next();
         }
@@ -97,7 +99,7 @@ class InboxRequests {
                 'string.hex': 'Message ID must be a valid hexadecimal string.',
             }),
         });
-        const { error } = schema.validate(req.params, { abortEarly: false });
+        const { error } = schema.validate(req.params);
         if (!error) {
             return next();
         }

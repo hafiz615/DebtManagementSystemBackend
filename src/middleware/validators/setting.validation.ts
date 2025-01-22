@@ -2,7 +2,6 @@ import {NextFunction, Request, Response} from 'express';
 import constants from '../../utils/constants.util';
 import responseHelper from '../../utils/responseHelper.util';
 import Joi from 'joi';
-import {values} from 'lodash';
 import {Events, User} from '../../enums';
 
 class SettingValidate {
@@ -12,7 +11,10 @@ class SettingValidate {
     next: NextFunction
   ) {
     const schema = Joi.object({
-      label: Joi.string().optional().allow('', null),
+      label: Joi.string().optional().allow('', null).messages({
+        'string.empty': 'Label cannot be empty.',
+        'string.base': 'Label must be a string.',
+      }),
       value: Joi.string()
         .valid(
           Events.case_details_update,
@@ -35,6 +37,7 @@ class SettingValidate {
         .messages({
           'any.required': 'Event value is required.',
           'any.only': 'Invalid event value.',
+          'string.base': 'Event value must be a string.',
         }),
       userPermission: Joi.array()
         .items(
@@ -51,20 +54,29 @@ class SettingValidate {
               .messages({
                 'any.required': 'Role is required.',
                 'any.only': 'Invalid role.',
+                'string.base': 'Role must be a string.',
+                'string.empty': 'Role cannot be empty.',
               }),
             sms_allowed: Joi.boolean().required().messages({
               'any.required': 'SMS permission is required.',
+              'boolean.base': 'SMS permission must be a boolean.',
             }),
             email_allowed: Joi.boolean().required().messages({
               'any.required': 'Email permission is required.',
+              'boolean.base': 'Email permission must be a boolean.',
             }),
-            sms_template: Joi.string().allow(''),
-            email_template: Joi.string().allow(''),
+            sms_template: Joi.string().allow('').messages({
+              'string.base': 'SMS template must be a string.',
+            }),
+            email_template: Joi.string().allow('').messages({
+              'string.base': 'Email template must be a string.',
+            }),
           })
         )
         .required()
         .messages({
           'any.required': 'User permission details are required.',
+          'array.base': 'User permission must be an array.',
         }),
     });
 
@@ -90,30 +102,38 @@ class SettingValidate {
             unit: Joi.string().valid('days', 'hours').required().messages({
               'any.required': 'Failed authorization unit is required.',
               'any.only': 'Invalid unit for failed authorization.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Failed authorization value is required.',
               'number.positive':
                 'Failed authorization value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
             maxRetry: Joi.number().positive().required().messages({
               'any.required': 'Max retry for failed authorization is required.',
               'number.positive': 'Max retry must be a positive number.',
+              'number.base': 'Max retry must be a number.',
             }),
           }),
           failedPayment: Joi.object({
             unit: Joi.string().valid('days', 'hours').required().messages({
               'any.required': 'Failed payment unit is required.',
               'any.only': 'Invalid unit for failed payment.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Failed payment value is required.',
               'number.positive':
                 'Failed payment value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
             maxRetry: Joi.number().positive().required().messages({
               'any.required': 'Max retry for failed payment is required.',
               'number.positive': 'Max retry must be a positive number.',
+              'number.base': 'Max retry must be a number.',
             }),
           }),
         }),
@@ -122,30 +142,39 @@ class SettingValidate {
             unit: Joi.string().valid('hours', 'days').required().messages({
               'any.required': 'Custom unit is required.',
               'any.only': 'Invalid unit for custom authorization interval.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Custom value is required.',
               'number.positive': 'Custom value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
           }),
           daily: Joi.object({
             unit: Joi.string().valid('hours', 'days').required().messages({
               'any.required': 'Daily unit is required.',
               'any.only': 'Invalid unit for daily authorization interval.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Daily value is required.',
               'number.positive': 'Daily value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
           }),
           weekly: Joi.object({
             unit: Joi.string().valid('hours', 'days').required().messages({
               'any.required': 'Weekly unit is required.',
               'any.only': 'Invalid unit for weekly authorization interval.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Weekly value is required.',
               'number.positive': 'Weekly value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
           }),
           fortnightly: Joi.object({
@@ -153,20 +182,26 @@ class SettingValidate {
               'any.required': 'Fortnightly unit is required.',
               'any.only':
                 'Invalid unit for fortnightly authorization interval.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Fortnightly value is required.',
               'number.positive': 'Fortnightly value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
           }),
           monthly: Joi.object({
             unit: Joi.string().valid('hours', 'days').required().messages({
               'any.required': 'Monthly unit is required.',
               'any.only': 'Invalid unit for monthly authorization interval.',
+              'string.base': 'Unit must be a string.',
+              'string.empty': 'Unit cannot be empty.',
             }),
             value: Joi.number().positive().required().messages({
               'any.required': 'Monthly value is required.',
               'number.positive': 'Monthly value must be a positive number.',
+              'number.base': 'Value must be a number.',
             }),
           }),
         }),
