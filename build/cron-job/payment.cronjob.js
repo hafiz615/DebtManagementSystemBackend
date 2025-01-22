@@ -424,6 +424,10 @@ class CronJob {
         for (const payment of payments) {
             const otherPayments = await payment_util_1.default.getOtherPayments(payment);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
+            if (payment.amount - totalAmount < 0) {
+                // we can send some email here.
+                return;
+            }
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             const accounts = debtor.accounts;
