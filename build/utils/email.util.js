@@ -622,7 +622,7 @@ class EmailUtil {
         }
         catch (error) {
             console.log(error);
-            return [false, error.response.errors[0].message];
+            return [false, 'Could not send email'];
         }
     }
     async sendSms(body, phone, from) {

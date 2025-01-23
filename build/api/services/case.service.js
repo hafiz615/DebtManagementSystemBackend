@@ -169,9 +169,20 @@ class CaseService {
                             constants_util_1.default.alreadyExistsMessage(`Creditor with companyName ${req.body.creditor.businessInformation.companyName}`),
                         ];
                     }
-                    req.body.creditor.updatedAt = common_util_1.default.getCurrentDate();
-                    await this.creditorRepository.updateById(req.body.creditor._id, req.body.creditor);
+                    // await this.creditorRepository.updateById<ICreditor>(
+                    //   req.body.creditor._id,
+                    //   req.body.creditor
+                    // );
                 }
+                const accountTitle = req.body.creditor.accountTitle;
+                console.log(getCreditor.accountTitleMapping);
+                if (getCreditor.accountTitle !== accountTitle) {
+                    console.log('i am here');
+                    req.body.creditor.accountTitleMapping =
+                        await creditor_util_1.default.getCreditorsMapping(getCreditor, req.params.id, accountTitle);
+                    console.log(req.body);
+                }
+                req.body.creditor.updatedAt = common_util_1.default.getCurrentDate();
                 await case_util_1.default.updateCreditor(req.body.creditor);
                 delete req.body.creditor;
             }
@@ -215,7 +226,7 @@ class CaseService {
             // if (req.body.intervals && req.body.intervals.length) {
             //   caseUtil.createPayment(caseUpdated);
             // }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             caseUpdated = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {
                 strategyOne_1: false,
@@ -262,7 +273,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
@@ -382,7 +393,7 @@ class CaseService {
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
                 await moneyThumb_util_1.default.saveData(moneyThumb.appid, moneyThumb.scoreCard, caseTemp.debtor);
-                caseTemp.debtor = await debtor_util_1.default.saveWeeklyBudget(caseTemp, body);
+                // caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
             }
             const debtor = caseTemp.debtor;
             creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);

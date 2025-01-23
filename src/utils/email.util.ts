@@ -945,7 +945,7 @@ class EmailUtil {
       return [true, `Your email is delivered successfully`];
     } catch (error: any) {
       console.log(error);
-      return [false, error.response.errors[0].message];
+      return [false, 'Could not send email'];
     }
   }
 
