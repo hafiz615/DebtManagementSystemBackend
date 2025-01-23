@@ -85,6 +85,38 @@ class CaseValidate {
       //     weeklyBudget: Joi.number().messages({
       //       'number.base': 'Weekly budget should be a number',
       //     }),
+      //   businessInformation: Joi.object({
+      //     companyName: Joi.string().required(),
+      //     EIN: Joi.string()
+      //       .pattern(/^\d{9}$/)
+      //       .required(),
+      //     businessCategory: Joi.string().required(),
+      //     description: Joi.string().allow(''),
+      //     country: Joi.string().required(),
+      //     state: Joi.string().required(),
+      //     city: Joi.string().required(),
+      //     zipCode: Joi.string().required(),
+      //     phone: Joi.string()
+      //       .pattern(/^\+\d{11}$/)
+      //       .required(),
+      //     address: Joi.string().required(),
+      //   }),
+      //   contacts: Joi.array().items(
+      //     Joi.object({
+      //       name: Joi.string().required(),
+      //       title: Joi.string().required(),
+      //       phone: Joi.string()
+      //         .pattern(/^\+\d{11}$/)
+      //         .required(),
+      //       email: Joi.string().email().required(),
+      //       relationWithDebtor: Joi.string().allow(''),
+      //       country: Joi.string().allow(''),
+      //       state: Joi.string().allow(''),
+      //       city: Joi.string().allow(''),
+      //       zipCode: Joi.string().allow(''),
+      //     })
+      //   ),
+      // }),
       //   }),
       // }),
       creditor: Joi.object({
@@ -120,6 +152,53 @@ class CaseValidate {
             'any.required': 'Business category is required',
           }),
         }),
+        contacts: Joi.array()
+          .items(
+            Joi.object({
+              name: Joi.string().required().messages({
+                'string.base': 'Name must be a string.',
+                'any.required': 'Name is required.',
+                'string.empty': 'Name cannot be empty.',
+              }),
+              title: Joi.string().required().messages({
+                'string.base': 'Title must be a string.',
+                'any.required': 'Title is required.',
+                'string.empty': 'Title cannot be empty.',
+              }),
+              phone: Joi.string()
+                .pattern(/^\d{10}$/)
+                .required()
+                .messages({
+                  'string.base': 'Phone number must be a string.',
+                  'any.required': 'Phone number is required.',
+                  'string.empty': 'Phone number cannot be empty.',
+                  'string.pattern.base':
+                    'Phone number must be exactly 10 digits.',
+                }),
+              email: Joi.string().email().required().messages({
+                'string.base': 'Email must be a string.',
+                'any.required': 'Email is required.',
+                'string.empty': 'Email cannot be empty.',
+                'string.email': 'Email must be a valid email address.',
+              }),
+              relationWithCreditor: Joi.string().allow('').messages({
+                'string.base': 'Relation with creditor must be a string.',
+              }),
+              state: Joi.string().allow('').messages({
+                'string.base': 'State must be a string.',
+              }),
+              city: Joi.string().allow('').messages({
+                'string.base': 'City must be a string.',
+              }),
+              zipCode: Joi.string().allow('').messages({
+                'string.base': 'Zip code must be a string.',
+              }),
+            })
+          )
+          .messages({
+            'array.base': 'Contacts must be an array.',
+            'array.includes': 'Each contact must be a valid object.',
+          }),
         notes: Joi.string().allow('').messages({
           'string.base': 'Notes should be a string',
         }),
@@ -348,33 +427,54 @@ class CaseValidate {
           .items(
             Joi.object({
               name: Joi.string().required().messages({
-                'string.base': 'name must be a string',
-                'string.empty': 'name cannot be empty',
-                'any.required': 'name is required',
+                'string.base': 'Name must be a string.',
+                'string.empty': 'Name is required and cannot be empty.',
+                'any.required': 'Name is a required field.',
               }),
               title: Joi.string().required().messages({
-                'string.base': 'title must be a string',
-                'string.empty': 'title cannot be empty',
-                'any.required': 'title is required',
+                'string.base': 'Title must be a string.',
+                'string.empty': 'Title is required and cannot be empty.',
+                'any.required': 'Title is a required field.',
               }),
               phone: Joi.string()
                 .pattern(/^\d{10}$/)
                 .required()
                 .messages({
-                  'string.base': 'contact phone must be a string',
-                  'string.empty': 'contact phone cannot be empty',
+                  'string.base': 'Phone must be a string.',
+                  'string.empty': 'Phone is required and cannot be empty.',
                   'string.pattern.base':
-                    'contact phone must be a 10-digit number',
-                  'any.required': 'contact phone is required',
+                    'Phone must be a valid 10-digit number.',
+                  'any.required': 'Phone is a required field.',
                 }),
               email: Joi.string().email().required().messages({
-                'string.base': 'contact email must be a string',
-                'string.email': 'contact email must be a valid email',
-                'any.required': 'contact email is required',
+                'string.base': 'Email must be a string.',
+                'string.empty': 'Email is required and cannot be empty.',
+                'string.email': 'Email must be a valid email address.',
+                'any.required': 'Email is a required field.',
+              }),
+              relationWithCreditor: Joi.string().allow('').messages({
+                'string.base': 'Relation with creditor must be a string.',
+              }),
+              state: Joi.string().allow('').messages({
+                'string.base': 'State must be a string.',
+              }),
+              city: Joi.string().allow('').messages({
+                'string.base': 'City must be a string.',
+              }),
+              zipCode: Joi.string().allow('').messages({
+                'string.base': 'Zip code must be a string.',
+              }),
+              _id: Joi.string().optional().messages({
+                'string.base': 'ID must be a string.',
               }),
             })
           )
-          .optional(),
+          .optional()
+          .messages({
+            'array.base': 'Contacts must be an array.',
+            'array.includes':
+              'Each contact must be a valid object with the required fields.',
+          }),
         notes: Joi.string().allow('').messages({
           'string.base': 'notes must be a string',
         }),
