@@ -226,7 +226,7 @@ class CaseService {
             // if (req.body.intervals && req.body.intervals.length) {
             //   caseUtil.createPayment(caseUpdated);
             // }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             caseUpdated = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             const allStrategyFalse = await this.caseRepository.updateById(caseUpdated._id, {
                 strategyOne_1: false,
@@ -273,7 +273,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             }
-            await this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
+            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, true, false);
             await case_util_1.default.addInHistory({
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'Case Updated',
