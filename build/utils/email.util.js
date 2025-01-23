@@ -244,7 +244,12 @@ class EmailUtil {
                         cc: cc,
                         attachments: uniqueAttachments,
                     };
-                    this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
+                    if (reqThreadId) {
+                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                    }
+                    else {
+                        this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
+                    }
                 }
                 return result;
             case 'sms':
@@ -313,7 +318,7 @@ class EmailUtil {
             else {
                 const existingAttachments = existingInbox[0].attachments || [];
                 const mergedAttachments = [
-                    ...existingAttachments,
+                    // ...existingAttachments,
                     ...emailData.attachments,
                 ];
                 const previousMessages = [
