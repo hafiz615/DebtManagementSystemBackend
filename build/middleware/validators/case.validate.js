@@ -219,7 +219,9 @@ class CaseValidate {
                         'number.base': 'Maximum value should be a number',
                     }),
                 }),
-            }),
+            })
+                .optional()
+                .allow(null),
             totalDebt: joi_1.default.number().strict().required().messages({
                 'number.base': 'Total debt should be a number',
                 'any.required': 'Total debt is required',
@@ -470,32 +472,32 @@ class CaseValidate {
                 notes: joi_1.default.string().allow('').messages({
                     'string.base': 'Notes must be a string.',
                 }),
+                creditorSecurityKey: joi_1.default.string().optional().allow('').messages({
+                    'string.base': 'Creditor security key must be a string.',
+                }),
+                paynoteSourceId: joi_1.default.string().optional().allow('').messages({
+                    'string.base': 'Paynote source ID must be a string.',
+                }),
+                paynoteUserId: joi_1.default.string().optional().allow('').messages({
+                    'string.base': 'Paynote user ID must be a string.',
+                }),
+                accountTitle: joi_1.default.string().optional().allow('', null).messages({
+                    'string.base': 'Account title must be a string.',
+                }),
+                lastFundedDate: joi_1.default.date().optional().allow('').messages({
+                    'date.base': 'Last funded date must be a valid date.',
+                }),
+                historicalRange: joi_1.default.object({
+                    minimum: joi_1.default.number().strict().optional().messages({
+                        'number.base': 'Minimum must be a number.',
+                    }),
+                    maximum: joi_1.default.number().strict().optional().messages({
+                        'number.base': 'Maximum must be a number.',
+                    }),
+                }),
             })
                 .optional()
                 .allow(null),
-            creditorSecurityKey: joi_1.default.string().optional().allow('').messages({
-                'string.base': 'Creditor security key must be a string.',
-            }),
-            paynoteSourceId: joi_1.default.string().optional().allow('').messages({
-                'string.base': 'Paynote source ID must be a string.',
-            }),
-            paynoteUserId: joi_1.default.string().optional().allow('').messages({
-                'string.base': 'Paynote user ID must be a string.',
-            }),
-            accountTitle: joi_1.default.string().optional().allow('', null).messages({
-                'string.base': 'Account title must be a string.',
-            }),
-            lastFundedDate: joi_1.default.date().optional().allow('').messages({
-                'date.base': 'Last funded date must be a valid date.',
-            }),
-            historicalRange: joi_1.default.object({
-                minimum: joi_1.default.number().strict().optional().messages({
-                    'number.base': 'Minimum must be a number.',
-                }),
-                maximum: joi_1.default.number().strict().optional().messages({
-                    'number.base': 'Maximum must be a number.',
-                }),
-            }),
             totalDebt: joi_1.default.number().strict().optional().messages({
                 'number.base': 'Total debt must be a number.',
             }),
@@ -521,9 +523,8 @@ class CaseValidate {
                 'boolean.base': 'Is exempt must be a boolean.',
             }),
             contractDetails: joi_1.default.object().optional().allow(null),
-            closeDate: joi_1.default.date().required().messages({
+            closeDate: joi_1.default.date().messages({
                 'date.base': 'Close date must be a valid date.',
-                'any.required': 'Close date is required.',
             }),
             status: joi_1.default.string().optional().messages({
                 'string.base': 'Status must be a string.',
@@ -755,24 +756,22 @@ class CaseValidate {
                 contractDetails: joi_1.default.object().optional().allow(null).messages({
                     'object.base': 'Contract details must be an object.',
                 }),
-                closeDate: joi_1.default.date().required().messages({
+                closeDate: joi_1.default.date().messages({
                     'date.base': 'Close date must be a valid date.',
-                    'any.required': 'Close date is required.',
                 }),
                 status: joi_1.default.string().optional().messages({
                     'string.base': 'Status must be a string.',
                 }),
-                notes: joi_1.default.string().required().messages({
+                notes: joi_1.default.string().messages({
                     'string.base': 'Notes must be a string.',
-                    'string.empty': 'Notes cannot be empty.',
                     'any.required': 'Notes are required.',
                 }),
-                chatId: joi_1.default.string().required().messages({
+                chatId: joi_1.default.string().messages({
                     'string.base': 'Chat ID must be a string.',
                     'string.empty': 'Chat ID cannot be empty.',
                     'any.required': 'Chat ID is required.',
                 }),
-                commisionPercentage: joi_1.default.number().strict().required().messages({
+                commisionPercentage: joi_1.default.number().strict().messages({
                     'number.base': 'Commission percentage must be a number.',
                     'any.required': 'Commission percentage is required.',
                 }),
