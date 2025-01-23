@@ -85,6 +85,38 @@ class CaseValidate {
       //     weeklyBudget: Joi.number().messages({
       //       'number.base': 'Weekly budget should be a number',
       //     }),
+      //   businessInformation: Joi.object({
+      //     companyName: Joi.string().required(),
+      //     EIN: Joi.string()
+      //       .pattern(/^\d{9}$/)
+      //       .required(),
+      //     businessCategory: Joi.string().required(),
+      //     description: Joi.string().allow(''),
+      //     country: Joi.string().required(),
+      //     state: Joi.string().required(),
+      //     city: Joi.string().required(),
+      //     zipCode: Joi.string().required(),
+      //     phone: Joi.string()
+      //       .pattern(/^\+\d{11}$/)
+      //       .required(),
+      //     address: Joi.string().required(),
+      //   }),
+      //   contacts: Joi.array().items(
+      //     Joi.object({
+      //       name: Joi.string().required(),
+      //       title: Joi.string().required(),
+      //       phone: Joi.string()
+      //         .pattern(/^\+\d{11}$/)
+      //         .required(),
+      //       email: Joi.string().email().required(),
+      //       relationWithDebtor: Joi.string().allow(''),
+      //       country: Joi.string().allow(''),
+      //       state: Joi.string().allow(''),
+      //       city: Joi.string().allow(''),
+      //       zipCode: Joi.string().allow(''),
+      //     })
+      //   ),
+      // }),
       //   }),
       // }),
       creditor: Joi.object({
@@ -120,6 +152,53 @@ class CaseValidate {
             'any.required': 'Business category is required',
           }),
         }),
+        contacts: Joi.array()
+          .items(
+            Joi.object({
+              name: Joi.string().required().messages({
+                'string.base': 'Name must be a string.',
+                'any.required': 'Name is required.',
+                'string.empty': 'Name cannot be empty.',
+              }),
+              title: Joi.string().required().messages({
+                'string.base': 'Title must be a string.',
+                'any.required': 'Title is required.',
+                'string.empty': 'Title cannot be empty.',
+              }),
+              phone: Joi.string()
+                .pattern(/^\d{10}$/)
+                .required()
+                .messages({
+                  'string.base': 'Phone number must be a string.',
+                  'any.required': 'Phone number is required.',
+                  'string.empty': 'Phone number cannot be empty.',
+                  'string.pattern.base':
+                    'Phone number must be exactly 10 digits.',
+                }),
+              email: Joi.string().email().required().messages({
+                'string.base': 'Email must be a string.',
+                'any.required': 'Email is required.',
+                'string.empty': 'Email cannot be empty.',
+                'string.email': 'Email must be a valid email address.',
+              }),
+              relationWithCreditor: Joi.string().allow('').messages({
+                'string.base': 'Relation with creditor must be a string.',
+              }),
+              state: Joi.string().allow('').messages({
+                'string.base': 'State must be a string.',
+              }),
+              city: Joi.string().allow('').messages({
+                'string.base': 'City must be a string.',
+              }),
+              zipCode: Joi.string().allow('').messages({
+                'string.base': 'Zip code must be a string.',
+              }),
+            })
+          )
+          .messages({
+            'array.base': 'Contacts must be an array.',
+            'array.includes': 'Each contact must be a valid object.',
+          }),
         notes: Joi.string().allow('').messages({
           'string.base': 'Notes should be a string',
         }),
@@ -299,137 +378,268 @@ class CaseValidate {
     const schema = Joi.object({
       creditor: Joi.object({
         aggression: Joi.number().optional().min(0).max(10).messages({
-          'number.base': 'aggression must be a number',
-          'number.min': 'aggression must be greater than or equal to 0',
-          'number.max': 'aggression must be less than or equal to 10',
+          'number.base': 'Aggression must be a number.',
+          'number.min': 'Aggression must be greater than or equal to 0.',
+          'number.max': 'Aggression must be less than or equal to 10.',
         }),
         _id: Joi.string().optional().allow('').messages({
-          'string.base': 'ID must be a string',
+          'string.base': 'Creditor ID must be a string.',
         }),
         paymentType: Joi.string().allow('').messages({
-          'string.base': 'paymentType must be a string',
+          'string.base': 'Payment type must be a string.',
         }),
         paymentToken: Joi.string().allow('').messages({
-          'string.base': 'paymentToken must be a string',
+          'string.base': 'Payment token must be a string.',
         }),
         basicInformation: Joi.object({
           fullName: Joi.string().required().messages({
-            'string.base': 'fullName must be a string',
-            'string.empty': 'fullName cannot be empty',
-            'any.required': 'fullName is required',
+            'string.base': 'Full name must be a string.',
+            'string.empty': 'Full name is required and cannot be empty.',
+            'any.required': 'Full name is a required field.',
           }),
           email: Joi.string().email().required().messages({
-            'string.base': 'email must be a string',
-            'string.empty': 'email cannot be empty',
-            'string.email': 'email must be a valid email',
-            'any.required': 'email is required',
+            'string.base': 'Email must be a string.',
+            'string.empty': 'Email is required and cannot be empty.',
+            'string.email': 'Email must be a valid email address.',
+            'any.required': 'Email is a required field.',
           }),
           phone: Joi.string()
             .pattern(/^\d{10}$/)
             .required()
             .messages({
-              'string.base': 'phone must be a string',
-              'string.empty': 'phone cannot be empty',
-              'string.pattern.base': 'phone must be a 10-digit number',
-              'any.required': 'phone is required',
+              'string.base': 'Phone must be a string.',
+              'string.empty': 'Phone is required and cannot be empty.',
+              'string.pattern.base': 'Phone must be a 10-digit number.',
+              'any.required': 'Phone is a required field.',
             }),
         }),
         businessInformation: Joi.object({
           companyName: Joi.string().required().messages({
-            'string.base': 'companyName must be a string',
-            'string.empty': 'companyName cannot be empty',
-            'any.required': 'companyName is required',
+            'string.base': 'Company name must be a string.',
+            'string.empty': 'Company name is required and cannot be empty.',
+            'any.required': 'Company name is a required field.',
           }),
           businessCategory: Joi.string().allow('').messages({
-            'string.base': 'businessCategory must be a string',
+            'string.base': 'Business category must be a string.',
           }),
         }),
         contacts: Joi.array()
           .items(
             Joi.object({
               name: Joi.string().required().messages({
-                'string.base': 'name must be a string',
-                'string.empty': 'name cannot be empty',
-                'any.required': 'name is required',
+                'string.base': 'Name must be a string.',
+                'string.empty': 'Name is required and cannot be empty.',
+                'any.required': 'Name is a required field.',
               }),
               title: Joi.string().required().messages({
-                'string.base': 'title must be a string',
-                'string.empty': 'title cannot be empty',
-                'any.required': 'title is required',
+                'string.base': 'Title must be a string.',
+                'string.empty': 'Title is required and cannot be empty.',
+                'any.required': 'Title is a required field.',
               }),
               phone: Joi.string()
                 .pattern(/^\d{10}$/)
                 .required()
                 .messages({
-                  'string.base': 'contact phone must be a string',
-                  'string.empty': 'contact phone cannot be empty',
+                  'string.base': 'Phone must be a string.',
+                  'string.empty': 'Phone is required and cannot be empty.',
                   'string.pattern.base':
-                    'contact phone must be a 10-digit number',
-                  'any.required': 'contact phone is required',
+                    'Phone must be a valid 10-digit number.',
+                  'any.required': 'Phone is a required field.',
                 }),
               email: Joi.string().email().required().messages({
-                'string.base': 'contact email must be a string',
-                'string.email': 'contact email must be a valid email',
-                'any.required': 'contact email is required',
+                'string.base': 'Email must be a string.',
+                'string.empty': 'Email is required and cannot be empty.',
+                'string.email': 'Email must be a valid email address.',
+                'any.required': 'Email is a required field.',
+              }),
+              relationWithCreditor: Joi.string().allow('').messages({
+                'string.base': 'Relation with creditor must be a string.',
+              }),
+              state: Joi.string().allow('').messages({
+                'string.base': 'State must be a string.',
+              }),
+              city: Joi.string().allow('').messages({
+                'string.base': 'City must be a string.',
+              }),
+              zipCode: Joi.string().allow('').messages({
+                'string.base': 'Zip code must be a string.',
+              }),
+              _id: Joi.string().optional().messages({
+                'string.base': 'Contact ID must be a string.',
               }),
             })
           )
-          .optional(),
+          .optional()
+          .messages({
+            'array.base': 'Contacts must be an array.',
+            'array.includes':
+              'Each contact must be a valid object with required fields.',
+          }),
         notes: Joi.string().allow('').messages({
-          'string.base': 'notes must be a string',
+          'string.base': 'Notes must be a string.',
         }),
       })
         .optional()
         .allow(null),
+      creditorSecurityKey: Joi.string().optional().allow('').messages({
+        'string.base': 'Creditor security key must be a string.',
+      }),
+      paynoteSourceId: Joi.string().optional().allow('').messages({
+        'string.base': 'Paynote source ID must be a string.',
+      }),
+      paynoteUserId: Joi.string().optional().allow('').messages({
+        'string.base': 'Paynote user ID must be a string.',
+      }),
+      accountTitle: Joi.string().optional().allow('', null).messages({
+        'string.base': 'Account title must be a string.',
+      }),
+      lastFundedDate: Joi.date().optional().allow('').messages({
+        'date.base': 'Last funded date must be a valid date.',
+      }),
+      historicalRange: Joi.object({
+        minimum: Joi.number().strict().optional().messages({
+          'number.base': 'Minimum must be a number.',
+        }),
+        maximum: Joi.number().strict().optional().messages({
+          'number.base': 'Maximum must be a number.',
+        }),
+      }),
       totalDebt: Joi.number().strict().optional().messages({
-        'number.base': 'totalDebt must be a number',
+        'number.base': 'Total debt must be a number.',
       }),
       lastPaymentDate: Joi.date().optional().allow('').messages({
-        'date.base': 'lastPaymentDate must be a valid date',
+        'date.base': 'Last payment date must be a valid date.',
       }),
       paidAmount: Joi.number().strict().optional().messages({
-        'number.base': 'paidAmount must be a number',
+        'number.base': 'Paid amount must be a number.',
       }),
       commission: Joi.number().strict().allow(0).messages({
-        'number.base': 'commission must be a number',
+        'number.base': 'Commission must be a number.',
       }),
       totalCommission: Joi.number().strict().allow(0).messages({
-        'number.base': 'totalCommission must be a number',
+        'number.base': 'Total commission must be a number.',
       }),
       remaining: Joi.number().strict().optional().messages({
-        'number.base': 'remaining must be a number',
+        'number.base': 'Remaining must be a number.',
       }),
       confidence: Joi.number().strict().messages({
-        'number.base': 'confidence must be a number',
+        'number.base': 'Confidence must be a number.',
       }),
       isExempt: Joi.boolean().optional().messages({
-        'boolean.base': 'isExempt must be a boolean',
+        'boolean.base': 'Is exempt must be a boolean.',
       }),
       contractDetails: Joi.object().optional().allow(null),
       closeDate: Joi.date().required().messages({
-        'date.base': 'closeDate must be a valid date',
-        'any.required': 'closeDate is required',
+        'date.base': 'Close date must be a valid date.',
+        'any.required': 'Close date is required.',
       }),
       status: Joi.string().optional().messages({
-        'string.base': 'status must be a string',
+        'string.base': 'Status must be a string.',
       }),
       notes: Joi.string().messages({
-        'string.base': 'notes must be a string',
+        'string.base': 'Notes must be a string.',
       }),
+
       chatId: Joi.string().messages({
-        'string.base': 'chatId must be a string',
+        'string.base': 'Chat ID must be a string.',
       }),
+
       feePayment: Joi.string()
         .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
         .optional()
         .allow('')
         .messages({
-          'string.base': 'feePayment must be a string',
-          'any.only': 'feePayment must be one of the valid options',
+          'string.base': 'Fee payment must be a string.',
+          'any.only':
+            'Fee payment must be one of the valid options: paidViaCash, toPay, or paidViaThirdParty.',
         }),
+
+      intervals: Joi.array()
+        .items(
+          Joi.object({
+            amount: Joi.number().strict().required().messages({
+              'number.base': 'Interval amount must be a number.',
+              'any.required': 'Interval amount is a required field.',
+            }),
+            startDate: Joi.date().required().messages({
+              'date.base': 'Start date must be a valid date.',
+              'any.required': 'Start date is a required field.',
+            }),
+            frequency: Joi.number().strict().optional().messages({
+              'number.base': 'Frequency must be a number.',
+            }),
+            timePeriod: Joi.string()
+              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+              .required()
+              .messages({
+                'string.base': 'Time period must be a string.',
+                'any.only':
+                  'Time period must be one of the valid options: Weekly, Monthly, Custom, Fortnightly, or Daily.',
+                'any.required': 'Time period is a required field.',
+              }),
+          })
+        )
+        .optional()
+        .messages({
+          'array.base': 'Intervals must be an array.',
+        }),
+
+      // Lawsuit fields
+      paymentFrequency: Joi.string().optional().allow('').messages({
+        'string.base': 'Payment frequency must be a string.',
+      }),
+
+      impliedInterestRate: Joi.number().strict().optional().messages({
+        'number.base': 'Implied interest rate must be a number.',
+      }),
+
+      averageInterestRate: Joi.number().strict().optional().messages({
+        'number.base': 'Average interest rate must be a number.',
+      }),
+
+      lawsuitFile: Joi.array()
+        .items(
+          Joi.object({
+            key: Joi.string().required().messages({
+              'string.base': 'File key must be a string.',
+              'any.required': 'File key is a required field.',
+            }),
+            originalFileName: Joi.string().required().messages({
+              'string.base': 'Original file name must be a string.',
+              'any.required': 'Original file name is a required field.',
+            }),
+            url: Joi.string().optional().allow('').messages({
+              'string.base': 'File URL must be a string.',
+            }),
+          })
+        )
+        .optional()
+        .messages({
+          'array.base': 'Lawsuit files must be an array.',
+        }),
+
+      hasLawsuits: Joi.boolean().optional().messages({
+        'boolean.base': 'Has lawsuits must be a boolean.',
+      }),
+
+      lawsuitCreditorTags: Joi.array()
+        .items(
+          Joi.string().messages({
+            'string.base': 'Each lawsuit creditor tag must be a string.',
+          })
+        )
+        .optional()
+        .messages({
+          'array.base': 'Lawsuit creditor tags must be an array.',
+        }),
+
+      dateServed: Joi.date().optional().messages({
+        'date.base': 'Date served must be a valid date.',
+      }),
     });
 
     const {error} = schema.validate(req.body);
+
     if (!error) {
       return next();
     } else {
