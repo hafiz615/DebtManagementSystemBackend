@@ -40,7 +40,6 @@ class SeemlesschexUtil {
             token: token,
             store: 'firstchoice.com',
             verify_before_save: true,
-            fund_confirmation: true,
             phone: debtor?.basicInformation?.phone,
         };
         console.log('I am in createCheck');
