@@ -327,12 +327,24 @@ class CaseService {
             ),
           ];
         }
-        req.body.creditor.updatedAt = commonUtil.getCurrentDate();
-        await this.creditorRepository.updateById<ICreditor>(
-          req.body.creditor._id,
-          req.body.creditor
-        );
+        // await this.creditorRepository.updateById<ICreditor>(
+        //   req.body.creditor._id,
+        //   req.body.creditor
+        // );
       }
+      const accountTitle = req.body.creditor.accountTitle;
+      console.log(getCreditor.accountTitleMapping);
+      if (getCreditor.accountTitle !== accountTitle) {
+        console.log('i am here');
+        req.body.creditor.accountTitleMapping =
+          await creditorUtil.getCreditorsMapping(
+            getCreditor,
+            req.params.id,
+            accountTitle
+          );
+        console.log(req.body);
+      }
+      req.body.creditor.updatedAt = commonUtil.getCurrentDate();
       await caseUtil.updateCreditor(req.body.creditor as ICreditor);
       delete req.body.creditor;
     }
@@ -677,7 +689,7 @@ class CaseService {
         moneyThumb.scoreCard,
         caseTemp.debtor
       );
-      caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
+      // caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
     }
     const debtor: any = caseTemp.debtor;
     creditors = await caseUtil.getAllCreditorsOfDebtor(debtor as any);

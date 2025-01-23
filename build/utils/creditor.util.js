@@ -251,6 +251,17 @@ class CreditorUtil {
             });
         }
     }
+    async getCreditorsMapping(creditor, caseId, accTitle) {
+        const accountTitleMapping = creditor.accountTitleMapping
+            ? creditor.accountTitleMapping
+            : [];
+        for (const accountTitle of accountTitleMapping) {
+            if (accountTitle.caseId === caseId) {
+                accountTitle.accountTitle = accTitle;
+            }
+        }
+        return accountTitleMapping;
+    }
 }
 exports.default = new CreditorUtil();
 //# sourceMappingURL=creditor.util.js.map
