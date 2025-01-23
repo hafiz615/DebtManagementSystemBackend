@@ -34,7 +34,9 @@ class InboxService {
       undefined,
       undefined,
       {createdAt: -1},
-      undefined,
+      {
+        path: 'previousMessages',
+      },
       undefined
       // Number(req.query.page),
       // Number(req.query.limit)

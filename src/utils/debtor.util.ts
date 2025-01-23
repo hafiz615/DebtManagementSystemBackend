@@ -23,6 +23,7 @@ class DebtorUtil {
     const strategy3Key = body.strategy3Choosen;
     const strategy1Budget = body[strategy1Key];
     let strategy3Budget = body[strategy3Key];
+    const strategy3BudgetTemp = body[strategy3Key];
     if (strategy3Key === 'strategy3Profit') {
       strategy3Budget = strategy3Budget;
     } else {
@@ -42,9 +43,9 @@ class DebtorUtil {
         filter['basicInformation.weeklyBudget'] = strategy1Budget;
     }
     if (strategy3Key === 'strategy3Custom') {
-      filter['strategy3BudgetCustom'] = strategy3Budget;
-      if (!caseTemp?.debtor?.profitMargin)
-        filter['profitMargin'] = strategy3Budget;
+      filter['strategy3BudgetCustom'] = strategy3BudgetTemp;
+      // if (!caseTemp?.debtor?.profitMargin)
+      //   filter['profitMargin'] = strategy3Budget;
     }
     await this.caseRepository.updateById<ICase>(caseTemp._id, {
       settlementRange: true,

@@ -295,5 +295,21 @@ class CreditorUtil {
       );
     }
   }
+
+  async getCreditorsMapping(
+    creditor: ICreditor,
+    caseId: string,
+    accTitle: string
+  ) {
+    const accountTitleMapping = creditor.accountTitleMapping
+      ? creditor.accountTitleMapping
+      : [];
+    for (const accountTitle of accountTitleMapping) {
+      if (accountTitle.caseId === caseId) {
+        accountTitle.accountTitle = accTitle;
+      }
+    }
+    return accountTitleMapping;
+  }
 }
 export default new CreditorUtil();

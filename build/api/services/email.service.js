@@ -43,6 +43,7 @@ class EmailService {
     }
     async sendSmsEmailDebtorCreditor(req) {
         const reqTemp = req;
+        const threadId = reqTemp.query.threadId;
         // const reqTemp: any = req;
         const type = String(req.query.type);
         if (type !== 'email' && type !== 'sms' && type !== 'compose') {
@@ -55,7 +56,7 @@ class EmailService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], reqTemp.name);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], threadId, reqTemp.name);
     }
     async sendGridEmail(req) {
         const reqTemp = req;
@@ -84,6 +85,14 @@ class EmailService {
             console.log('userName: ', userName);
             const threadId = this.extractThreadId(referencesHeader.toString());
             console.log('threadId: ', threadId);
+            // Split the text at "wrote:"
+            const testParts = text.split('wrote:');
+            const extractedText = testParts[0]?.trim() + ' wrote:';
+            console.log('Extracted Text:', extractedText);
+            const htmlText = parseData.textAsHtml;
+            const splitParts = htmlText.split(/(wrote:<\/p>)/);
+            const extractedHtml = splitParts[0] + (splitParts[1] || '');
+            console.log('extractedHtml: ', extractedHtml);
             let caseData = null;
             if (caseId) {
                 console.log('caseId Check in caseID: ', caseId);
@@ -91,7 +100,7 @@ class EmailService {
                     Subject: subject,
                     From: from,
                     To: to,
-                    Content: parseData.textAsHtml,
+                    Content: extractedHtml,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
                     Attachments: data,
@@ -105,8 +114,8 @@ class EmailService {
                 from,
                 to,
                 subject,
-                text,
-                textAsHtml: parseData.textAsHtml,
+                extractedText,
+                textAsHtml: extractedHtml,
                 cc: parseData.cc,
                 attachments: data,
             };

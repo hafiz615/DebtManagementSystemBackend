@@ -333,7 +333,7 @@ class DebtorController {
                 const response = await this.debtorService.getDailyCashFlows(req);
                 if (!response) {
                     return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .status(constants_util_1.default.CODE.OK)
                         .send(responseHelper_util_1.default.get4xxResponse(response));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
@@ -499,7 +499,7 @@ class DebtorController {
                 const response = await this.debtorService.getMcaAndFinancials(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .status(constants_util_1.default.CODE.OK)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({

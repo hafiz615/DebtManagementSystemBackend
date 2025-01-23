@@ -179,9 +179,9 @@ class MoneyThumbUtil {
             if (scoreCard['mcacompanies']) {
                 const mcaCompanies = scoreCard['mcacompanies'];
                 let totalWithdrawl = await this.getTotalWeeklyBudget(mcaCompanies, debtor);
-                if (!debtor.weeklyBudgetStrategy1) {
-                    filter['weeklyBudgetStrategy1'] = totalWithdrawl;
-                }
+                // if (!debtor.weeklyBudgetStrategy1) {
+                //   filter['weeklyBudgetStrategy1'] = totalWithdrawl;
+                // }
                 trueProfit = totalWithdrawl + weeklyProfit;
                 if (trueProfit > 0) {
                     filter['trueProfit'] = Math.round(trueProfit * 100) / 100;
@@ -195,8 +195,11 @@ class MoneyThumbUtil {
                 else {
                     filter['trueProfit'] = 0;
                     filter['strategy1MaxProfit'] = 0;
-                    if (debtor.weeklyBudgetStrategy1 <= 0) {
-                        filter['weeklyBudgetStrategy1'] = 0;
+                    if (!debtor.weeklyBudgetStrategy1) {
+                        if (debtor.basicInformation.weeklyBudget) {
+                            filter['weeklyBudgetStrategy1'] =
+                                debtor.basicInformation.weeklyBudget;
+                        }
                     }
                 }
             }
@@ -215,8 +218,6 @@ class MoneyThumbUtil {
             }
             else {
                 filter['strategy3MaxProfit'] = 0;
-                if (debtor.weeklyBudgetStrategy3 <= 0)
-                    filter['weeklyBudgetStrategy3'] = 0;
             }
             await this.debtorRepository.updateById(debtor._id, filter);
         }

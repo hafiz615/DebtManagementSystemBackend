@@ -9,14 +9,48 @@ const joi_1 = __importDefault(require("joi"));
 class SeemlesschexValidate {
     async createCheck(req, res, next) {
         const schema = joi_1.default.object({
-            transactionIds: joi_1.default.array().items(joi_1.default.string()).required(),
-            amount: joi_1.default.number().required(),
-            commission: joi_1.default.number().required(),
-            transactionDate: joi_1.default.date().required(),
-            transactionType: joi_1.default.string().valid('Wire', 'Check', 'Cash').required(),
-            referenceId: joi_1.default.string().allow(''),
-            data: joi_1.default.string().required(),
-            debtorId: joi_1.default.string().required(),
+            transactionIds: joi_1.default.array().items(joi_1.default.string().required().messages({
+                'any.required': 'Transaction IDs are required.',
+                'array.base': 'Transaction IDs must be an array.',
+                'string.empty': 'Transaction ID cannot be empty.',
+            })),
+            amount: joi_1.default.number().required().messages({
+                'any.required': 'Amount is required.',
+                'number.base': 'Amount must be a number.',
+                'number.empty': 'Amount cannot be empty.',
+            }),
+            commission: joi_1.default.number().required().messages({
+                'any.required': 'Commission is required.',
+                'number.base': 'Commission must be a number.',
+                'number.empty': 'Commission cannot be empty.',
+            }),
+            transactionDate: joi_1.default.date().required().messages({
+                'any.required': 'Transaction date is required.',
+                'date.base': 'Transaction date must be a valid date.',
+                'date.empty': 'Transaction date cannot be empty.',
+            }),
+            transactionType: joi_1.default.string()
+                .valid('Wire', 'Check', 'Cash')
+                .required()
+                .messages({
+                'any.required': 'Transaction type is required.',
+                'any.only': 'Transaction type must be one of [Wire, Check, Cash].',
+                'string.empty': 'Transaction type cannot be empty.',
+                'string.base': 'Transaction type must be a string.',
+            }),
+            referenceId: joi_1.default.string().allow('').messages({
+                'string.base': 'Reference ID must be a string.',
+            }),
+            data: joi_1.default.string().required().messages({
+                'any.required': 'Data is required.',
+                'string.base': 'Data must be a string.',
+                'string.empty': 'Data cannot be empty.',
+            }),
+            debtorId: joi_1.default.string().required().messages({
+                'any.required': 'Debtor ID is required.',
+                'string.base': 'Debtor ID must be a string.',
+                'string.empty': 'Debtor ID cannot be empty.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -25,17 +59,23 @@ class SeemlesschexValidate {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async createPaymentLink(req, res, next) {
         const schema = joi_1.default.object({
-            amount: joi_1.default.number().strict().required(),
+            amount: joi_1.default.number().strict().required().messages({
+                'any.required': 'Amount is required.',
+                'number.base': 'Amount must be a number.',
+                'number.empty': 'Amount cannot be empty.',
+            }),
             debtorId: joi_1.default.string()
                 .regex(/^[0-9a-fA-F]{24}$/) // Matches a valid MongoDB ObjectId
                 .required()
                 .messages({
-                'string.pattern.base': 'Debtor id is invalid',
+                'any.required': 'Debtor ID is required.',
+                'string.pattern.base': 'Debtor ID is invalid.',
+                'string.empty': 'Debtor ID cannot be empty.',
             }),
         });
         const { error } = schema.validate(req.body);
@@ -50,8 +90,16 @@ class SeemlesschexValidate {
     }
     async updateCheck(req, res, next) {
         const schema = joi_1.default.object({
-            data: joi_1.default.string().required(),
-            checkId: joi_1.default.string().required(),
+            data: joi_1.default.string().required().messages({
+                'any.required': 'Data is required.',
+                'string.base': 'Data must be a string.',
+                'string.empty': 'Data cannot be empty.',
+            }),
+            checkId: joi_1.default.string().required().messages({
+                'any.required': 'Check ID is required.',
+                'string.base': 'Check ID must be a string.',
+                'string.empty': 'Check ID cannot be empty.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -60,12 +108,16 @@ class SeemlesschexValidate {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
     async voidCheck(req, res, next) {
         const schema = joi_1.default.object({
-            checkId: joi_1.default.string().required(),
+            checkId: joi_1.default.string().required().messages({
+                'any.required': 'Check ID is required.',
+                'string.base': 'Check ID must be a string.',
+                'string.empty': 'Check ID cannot be empty.',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -74,7 +126,7 @@ class SeemlesschexValidate {
         else {
             return res
                 .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].context.label + constants_util_1.default.Messages.INVALID_FIELD));
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
 }
