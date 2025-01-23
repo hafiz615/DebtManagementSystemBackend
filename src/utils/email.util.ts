@@ -509,7 +509,7 @@ class EmailUtil {
       } else {
         const existingAttachments = existingInbox[0].attachments || [];
         const mergedAttachments = [
-          ...existingAttachments,
+          // ...existingAttachments,
           ...emailData.attachments,
         ];
 
