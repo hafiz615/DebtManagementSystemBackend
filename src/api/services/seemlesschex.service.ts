@@ -182,6 +182,7 @@ class SeemlesschexService {
 
   async statusChanged(req: Request) {
     const response = req.body;
+    console.log(response, 'response');
     const checkId = response.data.check_id;
     if (response?.data) {
       switch (response.event) {
