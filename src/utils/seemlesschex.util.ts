@@ -228,7 +228,7 @@ class SeemlesschexUtil {
     newCheck.basicVerification = bv?.error ? 'Fail' : 'Pass';
     newCheck.fundsConfirmation = fc?.error ? 'Fail' : 'Pass';
     newCheck.bvReason = bv?.error ? bv.message : '';
-    newCheck.fcReason = fc?.error ? fc.message : '';
+    // newCheck.fcReason = fc?.error ? fc.message : '';
     newCheck.debtorId = debtorId;
     await this.checkRepository.create<ICheck>(newCheck);
   }
@@ -279,7 +279,7 @@ class SeemlesschexUtil {
       basicVerification: bv?.error ? 'Fail' : 'Pass',
       fundsConfirmation: fc?.error ? 'Fail' : 'Pass',
       bvReason: bv?.error ? bv.message : '',
-      fcReason: fc?.error ? fc.message : '',
+      // fcReason: fc?.error ? fc.message : '',
     };
 
     await this.checkRepository.updateByOne<ICheck>({checkId: checkId}, data);

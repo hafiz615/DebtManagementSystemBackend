@@ -13,6 +13,8 @@ const localStorage_util_1 = __importDefault(require("./utils/localStorage.util")
 const setEnv_1 = require("./utils/setEnv");
 const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
 const paynote_util_1 = __importDefault(require("./utils/paynote.util"));
+const debtor_repository_1 = require("./api/repository/debtor/debtor.repository");
+const moneyThumb_util_1 = __importDefault(require("./utils/moneyThumb.util"));
 const socket_io_1 = require("socket.io");
 const http_1 = require("http");
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -58,16 +60,11 @@ class App {
         this.httpServer.listen(appPort, () => {
             console.log(`Server running at http://localhost:${appPort}/`);
         });
-        // const debtorRepo = new DebtorRepository();
-        // const token = await moneyThumbUtil.authenticateUser();
-        // const app = await moneyThumbUtil.createNewApp(
-        //   token,
-        //   'Smoke Studio & Mart LLC'
-        // );
-        // const debtor = await debtorRepo.getById<IDebtor>(
-        //   '67179c6b9f1cc6c8f4839b84'
-        // );
-        // const card = await moneyThumbUtil.getScoreCard(token, app.appid);
+        const debtorRepo = new debtor_repository_1.DebtorRepository();
+        const token = await moneyThumb_util_1.default.authenticateUser();
+        const app = await moneyThumb_util_1.default.createNewApp(token, 'Smoke Studio & Mart LLC');
+        const debtor = await debtorRepo.getById('67179c6b9f1cc6c8f4839b84');
+        const card = await moneyThumb_util_1.default.getScoreCard(token, app.appid);
         // await moneyThumbUtil.getProfitMarginPerMonth(debtor, card);
         // const caseRepo = new CaseRepository();
         // await caseRepo.updateMany({'intervals.amount': {$gte: 0}}, {intervals: []});

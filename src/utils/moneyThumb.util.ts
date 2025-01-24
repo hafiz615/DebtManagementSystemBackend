@@ -151,7 +151,7 @@ class MoneyThumbUtil {
           'Content-Type': 'multipart/form-data',
         },
       });
-      // console.log('Response Data', response.data['mcacompanies']);
+      console.log('Response Data', response.data['accountslist']);
       return response.data;
     } catch (error) {
       console.log(error);
@@ -541,18 +541,15 @@ class MoneyThumbUtil {
     );
 
     const totalUniqueMonths = uniqueMonths.size;
-    const creditors = await debtorUtil.getCreditorsMapping(debtor);
-    const creditorAccTitles = creditors.map(creditor => {
-      return creditor.creditorAccountTitle;
-    });
+    // const creditors = await debtorUtil.getCreditorsMapping(debtor);
+    // const creditorAccTitles = creditors.map(creditor => {
+    //   return creditor.creditorAccountTitle;
+    // });
     const monthlyMca = scoreCard['monthlymca'];
     let mcaPayments = 0;
     for (const mca of monthlyMca.data) {
       if (mca.month !== greatestMonthYear) continue;
-      if (
-        mca.month === greatestMonthYear &&
-        creditorAccTitles.includes(mca.lender)
-      ) {
+      if (mca.month === greatestMonthYear) {
         mcaPayments += Math.abs(parseFloat(mca.withdrawal_total));
       }
     }
@@ -576,7 +573,7 @@ class MoneyThumbUtil {
       amount = 0,
       averageMcaPayments = 0;
     for (const mca of mcacompanies.data) {
-      if (creditorAccTitles.includes(mca.lender) && mca.month === 'Totals') {
+      if (mca.month === 'Totals') {
         amount += Math.abs(parseFloat(mca.withdrawal_total));
       }
     }

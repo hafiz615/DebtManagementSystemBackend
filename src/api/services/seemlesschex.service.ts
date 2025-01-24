@@ -50,10 +50,11 @@ class SeemlesschexService {
     );
     if (response?.error) return [false, response.message];
     const bv = await seemlesschexUtil.checkBasicVerification(response);
-    const fc = await seemlesschexUtil.checkFundsVerification(response);
+    // const fc = await seemlesschexUtil.checkFundsVerification(response);
     let authorized = 'Success';
-    if (fc?.error || bv?.error) authorized = 'Failed';
-    await seemlesschexUtil.saveCheckInfo(bv, fc, response, req.body.debtorId);
+    // if (fc?.error || bv?.error) authorized = 'Failed'
+    if (bv?.error) authorized = 'Failed';
+    await seemlesschexUtil.saveCheckInfo(bv, null, response, req.body.debtorId);
     await this.paymentRepository.updateMany<IPayment>(
       {_id: transactionIds},
       {
@@ -101,10 +102,11 @@ class SeemlesschexService {
     );
     if (response?.error) return [false, response.message];
     const bv = await seemlesschexUtil.checkBasicVerification(response);
-    const fc = await seemlesschexUtil.checkFundsVerification(response);
+    // const fc = await seemlesschexUtil.checkFundsVerification(response);
     let authorized = 'Success';
-    if (bv?.error || fc?.error) authorized = 'Failed';
-    await seemlesschexUtil.updateCheckInfo(bv, fc, response, checkId);
+    // if (bv?.error || fc?.error) authorized = 'Failed';
+    if (bv?.error) authorized = 'Failed';
+    await seemlesschexUtil.updateCheckInfo(bv, null, response, checkId);
     await this.paymentRepository.updateMany<IPayment>(
       {debtorTransId: checkId},
       {

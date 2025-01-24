@@ -997,7 +997,10 @@ class PaymentService {
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(
-      {caseId: req.params.id, authorized: 'Pending'},
+      {
+        caseId: req.params.id,
+        $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
+      },
       {
         isDeleted: true,
       }
@@ -1024,7 +1027,11 @@ class PaymentService {
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(
-      {debtorId: req.params.id, authorized: 'Pending', caseId: {$eq: null}},
+      {
+        debtorId: req.params.id,
+        $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
+        caseId: {$eq: null},
+      },
       {
         isDeleted: true,
       }
