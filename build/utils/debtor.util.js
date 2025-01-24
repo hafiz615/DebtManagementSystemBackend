@@ -13,18 +13,30 @@ const email_util_1 = __importDefault(require("./email.util"));
 const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
 class DebtorUtil {
     constructor() {
-        this.getAccountDetails = (accountList) => {
+        this.getAccountDetails = accountList => {
             return accountList.reduce((acc, curr) => {
                 if (!acc[curr.account]) {
                     acc[curr.account] = [];
                 }
                 acc[curr.account].push({
+                    bankName: curr.bank_name,
+                    statementMonth: curr.statement_month,
                     startingBalance: curr.starting_balance,
-                    endingBalance: curr.ending_balance,
-                    statement_month: curr.statement_month,
+                    totalCredits: curr.total_credits,
+                    credits: curr['#_credits'], // Access using bracket notation
                     trueCredits: curr.true_credits,
-                    mcaWithholdPercent: curr.mca_withhold_percent,
-                    mcaNumber: curr["#_mca's"],
+                    trueCredits1: curr['#_true_credits'], // Access using bracket notation
+                    totalDebits: curr.total_debits,
+                    debits: curr['#_debits'], // Access using bracket notation
+                    endingBalance: curr.ending_balance,
+                    avgBalance: curr.avg_balance,
+                    avgTrueBalance: curr.avg_true_balance,
+                    daysNeg: curr.days_neg,
+                    ods: curr["#_od's"], // Access using bracket notation
+                    nsfs: curr["#_nsf's"], // Access using bracket notation
+                    lowDays: curr.low_days,
+                    mcas: curr["#_mca's"], // Access using bracket notation
+                    mcaWithoutHold: curr.mca_withhold_percent,
                 });
                 return acc;
             }, {});
