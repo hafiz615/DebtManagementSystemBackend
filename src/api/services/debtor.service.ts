@@ -69,18 +69,22 @@ class DebtorService {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const token = await moneyThumbUtil.authenticateUser();
-    const card = await moneyThumbUtil.getScoreCard(token, debtor.appid);
+    const {scoreCard} = await debtorUtil.getScoreCard(debtor);
     const accountDetails = debtorUtil.getAccountDetails(
-      card['accountslist'].data
+      scoreCard['accountslist'].data
     );
-    const withDrawalTotalForMonth = debtorUtil.getWithDrawalTotalForMonth(
-      card['monthlymca'].data
-    );
-    const updatedAccountDetails = debtorUtil.getUpdatedAccountDetails(
-      accountDetails,
-      withDrawalTotalForMonth
-    );
-    return updatedAccountDetails;
+    // const withDrawalTotalForMonth = debtorUtil.getWithDrawalTotalForMonth(
+    //   scoreCard['monthlymca'].data
+    // );
+    // const updatedAccountDetails = debtorUtil.getUpdatedAccountDetails(
+    //   accountDetails,
+    //   withDrawalTotalForMonth
+    // );
+    //return updatedAccountDetails;
+
+    console.log(accountDetails);
+
+    return accountDetails;
   };
 
   getDailyCashFlows = async (req: Request) => {
