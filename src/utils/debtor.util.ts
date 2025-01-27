@@ -645,9 +645,7 @@ class DebtorUtil {
         (parseFloat(curr.ending_balance) || 0)
       ).toFixed(2);
 
-      acc[key].mca = (
-        parseFloat(acc[key].mca) + (parseFloat(curr.mca_debits) || 0)
-      ).toFixed(2);
+      acc[key].mca = acc[key].mca + curr["#_mca's"] || 0;
 
       acc[key].mcaWithholdPercent = (
         parseFloat(acc[key].mcaWithholdPercent) +
