@@ -50,7 +50,8 @@ class DebtorService {
                 const ans = entry.trueCredits - entry.totalDebits;
                 const withdrawalTotal = withdrawalSumsByMonth[month] || 0;
                 entry.pf = (ans + withdrawalTotal).toFixed(2);
-                entry.mcaWithholdPercent = entry.mcaWithholdPercent / entry.count + '%';
+                entry.mcaWithholdPercent =
+                    Math.round(entry.mcaWithholdPercent / entry.count) + '%';
             });
             const result = debtor_util_1.default.getSortedAccountDetails(accountDetails);
             return result;
