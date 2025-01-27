@@ -84,9 +84,9 @@ class DebtorUtil {
                 acc[key].totalDebits = (parseFloat(acc[key].totalDebits) + (parseFloat(curr.total_debits) || 0)).toFixed(2);
                 acc[key].endingBalance = (parseFloat(acc[key].endingBalance) +
                     (parseFloat(curr.ending_balance) || 0)).toFixed(2);
-                acc[key].mca = acc[key].mca + curr["#_mca's"] || 0;
-                acc[key].mcaWithholdPercent = (parseFloat(acc[key].mcaWithholdPercent) +
-                    (parseFloat(curr.mca_withhold_percent.replace('%', '')) || 0)).toFixed(2);
+                acc[key].mca += parseFloat(curr["#_mca's"]) || 0;
+                acc[key].mcaWithholdPercent +=
+                    parseFloat(curr.mca_withhold_percent.replace('%', '')) || 0;
                 acc[key].withdrawalTotal = (parseFloat(acc[key].withdrawalTotal) +
                     (parseFloat(curr.total_atm_withdrawals) || 0)).toFixed(2);
                 acc[key].count += 1;
