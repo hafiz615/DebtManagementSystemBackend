@@ -33,6 +33,7 @@ router.get('/getFullProfitJustifications/:id', authorize_middleware_1.default.va
 router.post('/getExtractedFields/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getExtractedFields);
 router.post('/createMultipleDebtors', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.createMultipleDebtors, debtor_controller_1.default.createMultipleDebtors);
 router.get('/getStatementsSummary/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getStatementsSummary);
+router.get('/getStatementsSummaryWithPf/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getStatementsSummaryWithPf);
 router.get('/getDailyCashFlows/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDailyCashFlows);
 router.put('/updateDebtorBulk/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorBulk, debtor_controller_1.default.updateDebtorBulk);
 router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
@@ -50,7 +51,7 @@ router.post('/revertPayments/:id', authorize_middleware_1.default.validateAuth, 
 const uploadFields = upload.fields([
     { name: 'mcaDocuments' },
     { name: 'otherDocuments' },
-    { name: 'bankStatementDocuments' }
+    { name: 'bankStatementDocuments' },
 ]);
 router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.getExtractFieldsAndDebtor);
 router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);

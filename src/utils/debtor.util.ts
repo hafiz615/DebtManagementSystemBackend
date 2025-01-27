@@ -565,21 +565,102 @@ class DebtorUtil {
         statementMonth: curr.statement_month,
         startingBalance: curr.starting_balance,
         totalCredits: curr.total_credits,
-        credits: curr['#_credits'], // Access using bracket notation
+        credits: curr['#_credits'],
         trueCredits: curr.true_credits,
-        trueCredits1: curr['#_true_credits'], // Access using bracket notation
+        trueCredits1: curr['#_true_credits'],
         totalDebits: curr.total_debits,
-        debits: curr['#_debits'], // Access using bracket notation
+        debits: curr['#_debits'],
         endingBalance: curr.ending_balance,
         avgBalance: curr.avg_balance,
         avgTrueBalance: curr.avg_true_balance,
         daysNeg: curr.days_neg,
-        ods: curr["#_od's"], // Access using bracket notation
-        nsfs: curr["#_nsf's"], // Access using bracket notation
+        ods: curr["#_od's"],
+        nsfs: curr["#_nsf's"],
         lowDays: curr.low_days,
-        mcas: curr["#_mca's"], // Access using bracket notation
+        mcas: curr["#_mca's"],
         mcaWithoutHold: curr.mca_withhold_percent,
       });
+      return acc;
+    }, {});
+  };
+
+  getSortedAccountDetails = (data: any) => {
+    return Object.values(data)
+      .map((value: any) => {
+        const {count, ...rest} = value;
+        return rest;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.statementMonthAndYear).getTime() -
+          new Date(b.statementMonthAndYear).getTime()
+      );
+  };
+
+  withdrawalSumsByMonth = (data: any) => {
+    return data.reduce((acc: any, row: any) => {
+      const month = row.month;
+      const withdrawalTotal = parseFloat(row.withdrawal_total || 0);
+      if (!acc[month]) {
+        acc[month] = 0;
+      }
+      acc[month] += withdrawalTotal;
+      return acc;
+    }, {});
+  };
+
+  processAccountData = (data: any) => {
+    return data.reduce((acc: any, curr: any) => {
+      const key = `${curr.statement_month} ${curr.statement_year}`;
+      if (!acc[key]) {
+        acc[key] = {
+          statementMonthAndYear: key,
+          startingBalance: 0,
+          trueCredits: 0,
+          totalDebits: 0,
+          endingBalance: 0,
+          mca: 0,
+          mcaWithholdPercent: 0,
+          withdrawalTotal: 0,
+          pf: 0,
+          count: 0,
+        };
+      }
+
+      acc[key].startingBalance = (
+        parseFloat(acc[key].startingBalance) +
+        (parseFloat(curr.starting_balance) || 0)
+      ).toFixed(2);
+
+      acc[key].trueCredits = (
+        parseFloat(acc[key].trueCredits) + (parseFloat(curr.true_credits) || 0)
+      ).toFixed(2);
+
+      acc[key].totalDebits = (
+        parseFloat(acc[key].totalDebits) + (parseFloat(curr.total_debits) || 0)
+      ).toFixed(2);
+
+      acc[key].endingBalance = (
+        parseFloat(acc[key].endingBalance) +
+        (parseFloat(curr.ending_balance) || 0)
+      ).toFixed(2);
+
+      acc[key].mca = (
+        parseFloat(acc[key].mca) + (parseFloat(curr.mca_debits) || 0)
+      ).toFixed(2);
+
+      acc[key].mcaWithholdPercent = (
+        parseFloat(acc[key].mcaWithholdPercent) +
+        (parseFloat(curr.mca_withhold_percent.replace('%', '')) || 0)
+      ).toFixed(2);
+
+      acc[key].withdrawalTotal = (
+        parseFloat(acc[key].withdrawalTotal) +
+        (parseFloat(curr.total_atm_withdrawals) || 0)
+      ).toFixed(2);
+
+      acc[key].count += 1;
+
       return acc;
     }, {});
   };

@@ -68,23 +68,38 @@ class DebtorService {
   getStatementsSummary = async (req: Request) => {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('debtor')];
-    const token = await moneyThumbUtil.authenticateUser();
     const {scoreCard} = await debtorUtil.getScoreCard(debtor);
     const accountDetails = debtorUtil.getAccountDetails(
       scoreCard['accountslist'].data
     );
-    // const withDrawalTotalForMonth = debtorUtil.getWithDrawalTotalForMonth(
-    //   scoreCard['monthlymca'].data
-    // );
-    // const updatedAccountDetails = debtorUtil.getUpdatedAccountDetails(
-    //   accountDetails,
-    //   withDrawalTotalForMonth
-    // );
-    //return updatedAccountDetails;
-
-    console.log(accountDetails);
-
     return accountDetails;
+  };
+
+  getStatementsSummaryWithPf = async (req: Request) => {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
+
+    const {scoreCard} = await debtorUtil.getScoreCard(debtor);
+
+    const accountDetails = await debtorUtil.processAccountData(
+      scoreCard['accountslist'].data
+    );
+
+    const withdrawalSumsByMonth = await debtorUtil.withdrawalSumsByMonth(
+      scoreCard['monthlymca'].data
+    );
+
+    Object.keys(accountDetails).forEach(month => {
+      const entry = accountDetails[month];
+      const ans = entry.trueCredits - entry.totalDebits;
+      const withdrawalTotal = withdrawalSumsByMonth[month] || 0;
+      entry.pf = (ans + withdrawalTotal).toFixed(2);
+      entry.mcaWithholdPercent = entry.mcaWithholdPercent / entry.count + '%';
+    });
+
+    const result = debtorUtil.getSortedAccountDetails(accountDetails);
+
+    return result;
   };
 
   getDailyCashFlows = async (req: Request) => {
