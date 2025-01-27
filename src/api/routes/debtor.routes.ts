@@ -101,6 +101,12 @@ router.get(
 );
 
 router.get(
+  '/getStatementsSummaryWithPf/:id',
+  authorize.validateAuth,
+  debtorController.getStatementsSummaryWithPf
+);
+
+router.get(
   '/getDailyCashFlows/:id',
   authorize.validateAuth,
   debtorController.getDailyCashFlows
@@ -182,9 +188,9 @@ router.post(
 );
 // To Pass the Different Files in the Extracted Data
 const uploadFields = upload.fields([
-  { name: 'mcaDocuments' },          
-  { name: 'otherDocuments' },        
-  { name: 'bankStatementDocuments' } 
+  {name: 'mcaDocuments'},
+  {name: 'otherDocuments'},
+  {name: 'bankStatementDocuments'},
 ]);
 
 router.post(
@@ -198,15 +204,12 @@ router.get(
   debtorController.getDebtorExtractedFields
 );
 
-router.get(
-  '/getClientSyncEmail/:id',
-  debtorController.getClientSyncEmail
-)
+router.get('/getClientSyncEmail/:id', debtorController.getClientSyncEmail);
 
 router.post(
   '/clientSync/:id',
   debtorValidate.syncDebtorEmail,
   debtorController.clientSync
-)
+);
 
 export default router;
