@@ -226,7 +226,7 @@ class SeemlesschexUtil {
     newCheck.number = response.check.number;
     newCheck.status = response.check.status;
     newCheck.basicVerification = bv?.error ? 'Fail' : 'Pass';
-    newCheck.fundsConfirmation = fc?.error ? 'Fail' : 'Pass';
+    // newCheck.fundsConfirmation = fc?.error ? 'Fail' : 'Pass';
     newCheck.bvReason = bv?.error ? bv.message : '';
     // newCheck.fcReason = fc?.error ? fc.message : '';
     newCheck.debtorId = debtorId;
@@ -277,7 +277,7 @@ class SeemlesschexUtil {
     const data = {
       status: response.check.status,
       basicVerification: bv?.error ? 'Fail' : 'Pass',
-      fundsConfirmation: fc?.error ? 'Fail' : 'Pass',
+      // fundsConfirmation: fc?.error ? 'Fail' : 'Pass',
       bvReason: bv?.error ? bv.message : '',
       // fcReason: fc?.error ? fc.message : '',
     };
