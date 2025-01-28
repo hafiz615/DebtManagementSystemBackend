@@ -10,6 +10,7 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const seemlesschex_util_1 = __importDefault(require("../../utils/seemlesschex.util"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const check_repository_1 = require("../repository/check/check.repository");
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 dotenv_1.default.config();
 class SeemlesschexService {
     constructor() {
@@ -51,10 +52,10 @@ class SeemlesschexService {
         const debtor = await this.debtorRepository.getById(req.body.debtorId);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor on DMS')];
-        const response = await seemlesschex_util_1.default.createPaymentLink(req.body.amount);
-        if (response?.error)
-            return [false, response.message];
-        return [true, response.checkout_link];
+        const response = await debtor_util_1.default.createPaymentLinkOrNot(req.body.debtorId, req.body.amount);
+        if (!response[0])
+            return response;
+        return response;
     }
     async updateCheck(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);

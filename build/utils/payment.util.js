@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
 class PaymentUtil {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -325,6 +326,16 @@ class PaymentUtil {
         const resultDate = new Date(date);
         resultDate.setDate(resultDate.getDate() + daysToAdd);
         return resultDate;
+    }
+    async createPaymentDocForLink(amount, token, link, debtorId) {
+        const payment = new payment_repomodel_1.Payment();
+        payment.amount = amount;
+        payment.debtorTransId = token;
+        payment.paymentLink = link;
+        payment.status = 'Pending';
+        payment.debtorId = debtorId;
+        payment.transactionType = 'Link';
+        await this.paymentRepository.create(payment);
     }
 }
 exports.default = new PaymentUtil();

@@ -30,4 +30,5 @@ export interface IPayment extends Document {
   transactionType: string;
   paymentGateway: string;
   manualCommission: number;
+  paymentLink: string;
 }

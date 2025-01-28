@@ -13,6 +13,7 @@ import commonUtil from '../../utils/common.util';
 import {encrypt} from 'n-krypta';
 import {CheckRepository} from '../repository/check/check.repository';
 import {ICheck} from '../../database/interfaces/check.interface';
+import debtorUtil from '../../utils/debtor.util';
 dotenv.config();
 class SeemlesschexService {
   private paymentRepository: PaymentRepository;
@@ -75,9 +76,12 @@ class SeemlesschexService {
       req.body.debtorId
     );
     if (!debtor) return [false, constants.notFoundMessage('debtor on DMS')];
-    const response = await seemlesschexUtil.createPaymentLink(req.body.amount);
-    if (response?.error) return [false, response.message];
-    return [true, response.checkout_link];
+    const response = await debtorUtil.createPaymentLinkOrNot(
+      req.body.debtorId,
+      req.body.amount
+    );
+    if (!response[0]) return response;
+    return response;
   }
 
   async updateCheck(req: Request) {

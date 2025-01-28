@@ -11,6 +11,9 @@ const common_util_1 = __importDefault(require("./common.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
 const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
+const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const seemlesschex_util_1 = __importDefault(require("./seemlesschex.util"));
+const payment_util_1 = __importDefault(require("./payment.util"));
 class DebtorUtil {
     constructor() {
         this.getAccountDetails = accountList => {
@@ -166,6 +169,7 @@ class DebtorUtil {
         };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.paymentRepository = new payment_repository_1.PaymentRepository();
     }
     async saveWeeklyBudget(caseTemp, body) {
         const strategy1Key = body.strategy1Choosen;
@@ -577,6 +581,46 @@ class DebtorUtil {
             return weeklyCommission;
         let amountUp = sumTotalPaidWeekly - totalCommision;
         return weeklyCommission - amountUp;
+    }
+    async createPaymentLinkOrNot(debtorId, amount) {
+        const doc = await this.paymentRepository.getOne({
+            debtorId,
+            caseId: { $eq: null },
+            transactionType: 'Link',
+            isDeleted: { $ne: true },
+            status: { $ne: 'Success' },
+        });
+        if (doc && doc.status === 'Pending' && doc.amount === amount) {
+            return [
+                true,
+                {
+                    checkout_token: doc.debtorTransId,
+                    link: doc.paymentLink,
+                    amount: doc.amount,
+                },
+            ];
+        }
+        if ((doc &&
+            (doc.status === 'Pending' || doc.status === 'Failed') &&
+            doc.amount !== amount) ||
+            (doc && doc.status === 'Failed' && doc.amount === amount)) {
+            await seemlesschex_util_1.default.deletePaymentLink(doc.debtorTransId);
+            await this.paymentRepository.updateById(doc._id, {
+                isDeleted: true,
+            });
+        }
+        const response = await seemlesschex_util_1.default.createPaymentLink(amount);
+        if (response?.error)
+            return [false, response.message];
+        await payment_util_1.default.createPaymentDocForLink(amount, response.checkout_link.checkout_token, response.checkout_link.link, debtorId);
+        return [
+            true,
+            {
+                checkout_token: response.checkout_link.checkout_token,
+                link: response.checkout_link.link,
+                amount: response.checkout_link.amount,
+            },
+        ];
     }
 }
 exports.default = new DebtorUtil();

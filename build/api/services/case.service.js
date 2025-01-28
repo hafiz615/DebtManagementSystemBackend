@@ -936,7 +936,4 @@ class CaseService {
     }
 }
 exports.default = CaseService;
-function item(value, index, array) {
-    throw new Error('Function not implemented.');
-}
 //# sourceMappingURL=case.service.js.map
