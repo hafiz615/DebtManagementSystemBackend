@@ -36,7 +36,7 @@ class DebtorUtil {
                     nsfs: curr["#_nsf's"],
                     lowDays: curr.low_days,
                     mcas: curr["#_mca's"],
-                    mcaWithoutHold: curr.mca_withhold_percent,
+                    mcaWithholdPercent: curr.mca_withhold_percent,
                 });
                 return acc;
             }, {});
