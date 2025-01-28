@@ -30,4 +30,5 @@ export class Payment {
   transactionType = '';
   paymentGateway = '';
   manualCommission = 0;
+  paymentLink = '';
 }

@@ -2,6 +2,7 @@ import {Request} from 'express';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import commonUtil from './common.util';
 import {IPayment} from '../database/interfaces/payment.interface';
+import {Payment} from '../database/repomodels/payment.repomodel';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -444,6 +445,22 @@ class PaymentUtil {
     resultDate.setDate(resultDate.getDate() + daysToAdd);
 
     return resultDate;
+  }
+
+  async createPaymentDocForLink(
+    amount: number,
+    token: string,
+    link: string,
+    debtorId: string
+  ) {
+    const payment = new Payment();
+    payment.amount = amount;
+    payment.debtorTransId = token;
+    payment.paymentLink = link;
+    payment.status = 'Pending';
+    payment.debtorId = debtorId;
+    payment.transactionType = 'Link';
+    await this.paymentRepository.create<IPayment>(payment as any);
   }
 }
 export default new PaymentUtil();

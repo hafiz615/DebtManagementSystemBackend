@@ -680,6 +680,7 @@ class PaymentService {
         caseId: null,
         isDeleted: false,
         status: {$ne: 'Upcoming'},
+        transactionType: {$ne: 'Link'},
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway',
       undefined,
@@ -693,6 +694,7 @@ class PaymentService {
         caseId: null,
         isDeleted: false,
         status: 'Upcoming',
+        transactionType: {$ne: 'Link'},
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway',
       undefined,
@@ -1031,6 +1033,7 @@ class PaymentService {
         debtorId: req.params.id,
         $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
         caseId: {$eq: null},
+        transactionType: {$ne: 'Link'},
       },
       {
         isDeleted: true,
@@ -1065,6 +1068,26 @@ class PaymentService {
     }, {});
 
     return [true, groupedByTransId];
+  }
+
+  async updatePaymentLinkStatus(req: Request) {
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: req.params.token,
+    });
+    if (!payment) return [false, constants.notFoundMessage('payment link')];
+    await this.paymentRepository.updateByOne<IPayment>(
+      {debtorTransId: req.params.token},
+      {status: req.body.status}
+    );
+    return [true, []];
+  }
+
+  async getPaymentLinkStatus(req: Request) {
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: req.params.token,
+    });
+    if (!payment) return [true, constants.notFoundMessage('payment link')];
+    return [true, {status: payment.status}];
   }
 }
 

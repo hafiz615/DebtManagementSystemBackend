@@ -9,14 +9,20 @@ import commonUtil from './common.util';
 import creditorUtil from './creditor.util';
 import emailUtil from './email.util';
 import moneyThumbUtil from './moneyThumb.util';
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+import {IPayment} from '../database/interfaces/payment.interface';
+import seemlesschexUtil from './seemlesschex.util';
+import paymentUtil from './payment.util';
 
 class DebtorUtil {
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
+  private paymentRepository: PaymentRepository;
 
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
+    this.paymentRepository = new PaymentRepository();
   }
   async saveWeeklyBudget(caseTemp: any, body: any) {
     const strategy1Key = body.strategy1Choosen;
@@ -761,6 +767,53 @@ class DebtorUtil {
       return {day, percentage};
     });
   };
+
+  async createPaymentLinkOrNot(debtorId: string, amount: number) {
+    const doc = await this.paymentRepository.getOne<IPayment>({
+      debtorId,
+      caseId: {$eq: null},
+      transactionType: 'Link',
+      isDeleted: {$ne: true},
+      status: {$ne: 'Success'},
+    });
+    if (doc && doc.status === 'Pending' && doc.amount === amount) {
+      return [
+        true,
+        {
+          checkout_token: doc.debtorTransId,
+          link: doc.paymentLink,
+          amount: doc.amount,
+        },
+      ];
+    }
+    if (
+      (doc &&
+        (doc.status === 'Pending' || doc.status === 'Failed') &&
+        doc.amount !== amount) ||
+      (doc && doc.status === 'Failed' && doc.amount === amount)
+    ) {
+      await seemlesschexUtil.deletePaymentLink(doc.debtorTransId);
+      await this.paymentRepository.updateById<IPayment>(doc._id, {
+        isDeleted: true,
+      });
+    }
+    const response = await seemlesschexUtil.createPaymentLink(amount);
+    if (response?.error) return [false, response.message];
+    await paymentUtil.createPaymentDocForLink(
+      amount,
+      response.checkout_link.checkout_token,
+      response.checkout_link.link,
+      debtorId
+    );
+    return [
+      true,
+      {
+        checkout_token: response.checkout_link.checkout_token,
+        link: response.checkout_link.link,
+        amount: response.checkout_link.amount,
+      },
+    ];
+  }
 }
 
 export default new DebtorUtil();

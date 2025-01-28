@@ -131,6 +131,9 @@ const PaymentModel = new mongoose_1.Schema({
     manualCommission: {
         type: Number,
     },
+    paymentLink: {
+        type: String,
+    },
 });
 PaymentModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

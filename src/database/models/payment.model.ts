@@ -104,6 +104,9 @@ const PaymentModel: Schema = new Schema({
   manualCommission: {
     type: Number,
   },
+  paymentLink: {
+    type: String,
+  },
 });
 
 PaymentModel.pre('save', async function (next) {

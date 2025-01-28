@@ -25,6 +25,25 @@ class PaymentValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async updatePaymentLinkStatus(req, res, next) {
+        const schema = joi_1.default.object({
+            status: joi_1.default.string().valid('Success', 'Failed').required().messages({
+                'string.base': 'Status must be a string.',
+                'string.empty': 'Status cannot be empty.',
+                'any.only': 'Status must be one of Success or Failed.',
+                'any.required': 'Status is a required field.',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new PaymentValidate();
 //# sourceMappingURL=payment.validate.js.map
