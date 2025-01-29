@@ -36,6 +36,7 @@ class Payment {
         this.transactionType = '';
         this.paymentGateway = '';
         this.manualCommission = 0;
+        this.paymentLink = '';
     }
 }
 exports.Payment = Payment;

@@ -34,12 +34,27 @@ class DebtorService {
             const debtor = await this.debtorRepository.getById(req.params.id);
             if (!debtor)
                 return [false, constants_util_1.default.notFoundMessage('debtor')];
-            const token = await moneyThumb_util_1.default.authenticateUser();
-            const card = await moneyThumb_util_1.default.getScoreCard(token, debtor.appid);
-            const accountDetails = debtor_util_1.default.getAccountDetails(card['accountslist'].data);
-            const withDrawalTotalForMonth = debtor_util_1.default.getWithDrawalTotalForMonth(card['monthlymca'].data);
-            const updatedAccountDetails = debtor_util_1.default.getUpdatedAccountDetails(accountDetails, withDrawalTotalForMonth);
-            return updatedAccountDetails;
+            const { scoreCard } = await debtor_util_1.default.getScoreCard(debtor);
+            const accountDetails = debtor_util_1.default.getAccountDetails(scoreCard['accountslist'].data);
+            return accountDetails;
+        };
+        this.getStatementsSummaryWithPf = async (req) => {
+            const debtor = await this.debtorRepository.getById(req.params.id);
+            if (!debtor)
+                return [false, constants_util_1.default.notFoundMessage('debtor')];
+            const { scoreCard } = await debtor_util_1.default.getScoreCard(debtor);
+            const accountDetails = await debtor_util_1.default.processAccountData(scoreCard['accountslist'].data);
+            const withdrawalSumsByMonth = await debtor_util_1.default.withdrawalSumsByMonth(scoreCard['monthlymca'].data);
+            Object.keys(accountDetails).forEach(month => {
+                const entry = accountDetails[month];
+                const ans = entry.trueCredits - entry.totalDebits;
+                const withdrawalTotal = withdrawalSumsByMonth[month] || 0;
+                entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
+                entry.mcaWithholdPercent =
+                    Math.round(entry.mcaWithholdPercent / entry.count) + '%';
+            });
+            const result = debtor_util_1.default.getSortedAccountDetails(accountDetails);
+            return result;
         };
         this.getDailyCashFlows = async (req) => {
             const debtor = await this.debtorRepository.getById(req.params.id);

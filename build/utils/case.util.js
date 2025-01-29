@@ -426,12 +426,14 @@ class CaseUtil {
         }
     }
     async checkCasePayment(body, commission = 0) {
-        let isExempt = body?.isExempt ? body?.isExempt : true;
-        if (!isExempt &&
-            body.remaining &&
-            body.remaining !== body.totalDebt - body.paidAmount) {
-            return [false, constants_util_1.default.Messages.PAYMENT_CALCULATION_ERROR];
-        }
+        let isExempt = body?.isExempt;
+        // if (
+        //   !isExempt &&
+        //   body.remaining &&
+        //   body.remaining !== body.totalDebt - body.paidAmount
+        // ) {
+        //   return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
+        // }
         if (body && body.intervals && body.intervals.length && !isExempt) {
             let amount = 0;
             for (const interval of body.intervals) {
@@ -1445,16 +1447,20 @@ class CaseUtil {
             let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
             if (accountTitle && weekly_budget && creditor.remaining) {
-                data[`${accountTitle}`] = {
-                    total_debt: creditor.totalDebt,
-                    remaining_debt: creditor.remaining,
-                    weekly_budget: weekly_budget,
-                    principle_amount: amount,
-                };
+                if (creditor.remaining <= creditor.totalDebt &&
+                    amount <= creditor.totalDebt) {
+                    data[`${accountTitle}`] = {
+                        total_debt: creditor.totalDebt,
+                        remaining_debt: creditor.remaining,
+                        weekly_budget: weekly_budget,
+                        principle_amount: amount,
+                    };
+                }
             }
         }
-        if (!Object.keys(data).length)
-            data = [];
+        if (!Object.keys(data).length) {
+            return 'No creditor has valid data passed as inputs or found in moneythumb';
+        }
         console.log('I am in getScoresAIForSelectedCreditors');
         console.log('URL: ', url);
         console.log('Payload: ', data);
@@ -1850,7 +1856,7 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        const creditorNames = await this.getCreditorNamesAI(debtor.mcaDocuments, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor._id, extractedFields, caseId);
+        const creditorNames = await this.getCreditorNamesAI(debtor.bankStatementDocuments, global_1.AIAuth.auth_token, debtor.businessInformation.companyName, debtor._id, extractedFields, caseId);
         return creditorNames;
     }
     async getExtractionMCA(debtor) {
@@ -1858,6 +1864,8 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
+        if (!debtor.mcaDocuments.length)
+            return null;
         const extractedFields = await this.getExtractionMCA_AI(debtor.mcaDocuments, global_1.AIAuth.auth_token);
         return extractedFields;
     }
@@ -1866,6 +1874,8 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
+        if (!documents.length)
+            return 'No MCA found';
         const extractedFields = await this.getExtractionMCA_AIBuffer(documents, global_1.AIAuth.auth_token);
         return extractedFields;
     }
@@ -2046,16 +2056,20 @@ class CaseUtil {
             let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
             let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
             if (accountTitle && creditor.remaining && weekly_budget) {
-                data[`${accountTitle}`] = {
-                    total_debt: creditor.totalDebt,
-                    remaining_debt: creditor.remaining,
-                    weekly_budget: weekly_budget,
-                    principle_amount: amount,
-                };
+                if (creditor.remaining <= creditor.totalDebt &&
+                    amount <= creditor.totalDebt) {
+                    data[`${accountTitle}`] = {
+                        total_debt: creditor.totalDebt,
+                        remaining_debt: creditor.remaining,
+                        weekly_budget: weekly_budget,
+                        principle_amount: amount,
+                    };
+                }
             }
         }
-        if (!Object.keys(data).length)
-            data = [];
+        if (!Object.keys(data).length) {
+            return 'No creditor has valid data passed as inputs or found in moneythumb';
+        }
         console.log('I am in getScoresAIForAllCreditors');
         console.log('URL: ', url);
         console.log('Payload: ', data);

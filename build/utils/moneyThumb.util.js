@@ -138,15 +138,15 @@ class MoneyThumbUtil {
             appid: appId,
         };
         try {
-            console.log('I am in getScoreCard moneythumb');
-            console.log('URL: ', url);
-            console.log('Payload: ', data);
+            //  console.log('I am in getScoreCard moneythumb');
+            // console.log('URL: ', url);
+            //  console.log('Payload: ', data);
             const response = await axiosInstanceInterceptor_1.default.post(url, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            // console.log('Response Data', response.data['mcacompanies']);
+            // console.log('Response Data', response.data['accountslist']);
             return response.data;
         }
         catch (error) {
@@ -457,17 +457,16 @@ class MoneyThumbUtil {
         }
         const uniqueMonths = new Set(accounts.data.map(item => `${item.statement_month}-${item.statement_year}`));
         const totalUniqueMonths = uniqueMonths.size;
-        const creditors = await debtor_util_1.default.getCreditorsMapping(debtor);
-        const creditorAccTitles = creditors.map(creditor => {
-            return creditor.creditorAccountTitle;
-        });
+        // const creditors = await debtorUtil.getCreditorsMapping(debtor);
+        // const creditorAccTitles = creditors.map(creditor => {
+        //   return creditor.creditorAccountTitle;
+        // });
         const monthlyMca = scoreCard['monthlymca'];
         let mcaPayments = 0;
         for (const mca of monthlyMca.data) {
             if (mca.month !== greatestMonthYear)
                 continue;
-            if (mca.month === greatestMonthYear &&
-                creditorAccTitles.includes(mca.lender)) {
+            if (mca.month === greatestMonthYear) {
                 mcaPayments += Math.abs(parseFloat(mca.withdrawal_total));
             }
         }
@@ -479,7 +478,7 @@ class MoneyThumbUtil {
         const mcacompanies = scoreCard['mcacompanies'];
         let count = 0, amount = 0, averageMcaPayments = 0;
         for (const mca of mcacompanies.data) {
-            if (creditorAccTitles.includes(mca.lender) && mca.month === 'Totals') {
+            if (mca.month === 'Totals') {
                 amount += Math.abs(parseFloat(mca.withdrawal_total));
             }
         }

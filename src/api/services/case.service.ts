@@ -1452,6 +1452,3 @@ class CaseService {
 }
 
 export default CaseService;
-function item(value: ICase, index: number, array: ICase[]): unknown {
-  throw new Error('Function not implemented.');
-}

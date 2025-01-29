@@ -2,6 +2,8 @@ import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
 import seemlesschexController from '../controllers/seemlesschex/seemlesschex.controller';
 import seemlesschexValidate from '../../middleware/validators/seemlesschex.validate';
+import paymentValidate from '../../middleware/validators/payment.validate';
+import paymentController from '../controllers/payment/payment.controller';
 
 const router = Router();
 
@@ -36,6 +38,17 @@ router.get(
   '/getClientChecks/:id',
   authorize.validateAuth,
   seemlesschexController.getClientChecks
+);
+
+router.post(
+  '/update-payment-link-status/:token',
+  paymentValidate.updatePaymentLinkStatus,
+  paymentController.updatePaymentLinkStatus
+);
+
+router.get(
+  '/get-payment-link-status/:token',
+  paymentController.getPaymentLinkStatus
 );
 
 router.post('/statusChanged', seemlesschexController.statusChanged);

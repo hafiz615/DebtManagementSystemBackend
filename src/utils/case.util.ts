@@ -533,14 +533,14 @@ class CaseUtil {
     body: any,
     commission = 0
   ): Promise<[boolean, string]> {
-    let isExempt = body?.isExempt ? body?.isExempt : true;
-    if (
-      !isExempt &&
-      body.remaining &&
-      body.remaining !== body.totalDebt - body.paidAmount
-    ) {
-      return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
-    }
+    let isExempt = body?.isExempt;
+    // if (
+    //   !isExempt &&
+    //   body.remaining &&
+    //   body.remaining !== body.totalDebt - body.paidAmount
+    // ) {
+    //   return [false, constantsUtil.Messages.PAYMENT_CALCULATION_ERROR];
+    // }
     if (body && body.intervals && body.intervals.length && !isExempt) {
       let amount = 0;
       for (const interval of body.intervals) {
@@ -1655,15 +1655,22 @@ class CaseUtil {
       let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
       let amount = this.getCleanAmount(creditor?.contractDetails?.loan_amount);
       if (accountTitle && weekly_budget && creditor.remaining) {
-        data[`${accountTitle}`] = {
-          total_debt: creditor.totalDebt,
-          remaining_debt: creditor.remaining,
-          weekly_budget: weekly_budget,
-          principle_amount: amount,
-        };
+        if (
+          creditor.remaining <= creditor.totalDebt &&
+          amount <= creditor.totalDebt
+        ) {
+          data[`${accountTitle}`] = {
+            total_debt: creditor.totalDebt,
+            remaining_debt: creditor.remaining,
+            weekly_budget: weekly_budget,
+            principle_amount: amount,
+          };
+        }
       }
     }
-    if (!Object.keys(data).length) data = [];
+    if (!Object.keys(data).length) {
+      return 'No creditor has valid data passed as inputs or found in moneythumb';
+    }
     console.log('I am in getScoresAIForSelectedCreditors');
     console.log('URL: ', url);
     console.log('Payload: ', data);
@@ -2175,7 +2182,7 @@ class CaseUtil {
       await this.storeAuthToken('test', 'test');
     }
     const creditorNames = await this.getCreditorNamesAI(
-      debtor.mcaDocuments,
+      debtor.bankStatementDocuments,
       AIAuth.auth_token,
       debtor.businessInformation.companyName,
       debtor._id,
@@ -2192,6 +2199,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    if (!debtor.mcaDocuments.length) return null;
     const extractedFields = await this.getExtractionMCA_AI(
       debtor.mcaDocuments,
       AIAuth.auth_token
@@ -2206,6 +2214,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
+    if (!documents.length) return 'No MCA found';
     const extractedFields = await this.getExtractionMCA_AIBuffer(
       documents,
       AIAuth.auth_token
@@ -2434,15 +2443,22 @@ class CaseUtil {
       let weekly_budget = caseTemp.debtor.weeklyBudgetStrategy1;
       let amount = this.getCleanAmount(creditor.contractDetails.loan_amount);
       if (accountTitle && creditor.remaining && weekly_budget) {
-        data[`${accountTitle}`] = {
-          total_debt: creditor.totalDebt,
-          remaining_debt: creditor.remaining,
-          weekly_budget: weekly_budget,
-          principle_amount: amount,
-        };
+        if (
+          creditor.remaining <= creditor.totalDebt &&
+          amount <= creditor.totalDebt
+        ) {
+          data[`${accountTitle}`] = {
+            total_debt: creditor.totalDebt,
+            remaining_debt: creditor.remaining,
+            weekly_budget: weekly_budget,
+            principle_amount: amount,
+          };
+        }
       }
     }
-    if (!Object.keys(data).length) data = [];
+    if (!Object.keys(data).length) {
+      return 'No creditor has valid data passed as inputs or found in moneythumb';
+    }
     console.log('I am in getScoresAIForAllCreditors');
     console.log('URL: ', url);
     console.log('Payload: ', data);

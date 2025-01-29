@@ -478,6 +478,7 @@ class PaymentService {
             caseId: null,
             isDeleted: false,
             status: { $ne: 'Upcoming' },
+            transactionType: { $ne: 'Link' },
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway', undefined, { createdAt: -1 });
     }
     async getUpcomingCommissionPayments(page, limit) {
@@ -485,6 +486,7 @@ class PaymentService {
             caseId: null,
             isDeleted: false,
             status: 'Upcoming',
+            transactionType: { $ne: 'Link' },
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
     }
     async getUpcomingCommissionPaymentsCount() {
@@ -741,7 +743,10 @@ class PaymentService {
             intervals: [],
             isExempt: false,
         });
-        const updatePayments = await this.paymentRepository.updateMany({ caseId: req.params.id, authorized: 'Pending' }, {
+        const updatePayments = await this.paymentRepository.updateMany({
+            caseId: req.params.id,
+            $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
+        }, {
             isDeleted: true,
         });
         // const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
@@ -762,7 +767,12 @@ class PaymentService {
             intervals: [],
             isExempt: false,
         });
-        const updatePayments = await this.paymentRepository.updateMany({ debtorId: req.params.id, authorized: 'Pending', caseId: { $eq: null } }, {
+        const updatePayments = await this.paymentRepository.updateMany({
+            debtorId: req.params.id,
+            $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
+            caseId: { $eq: null },
+            transactionType: { $ne: 'Link' },
+        }, {
             isDeleted: true,
         });
         if (!updateDebtor || !updatePayments)
@@ -784,6 +794,23 @@ class PaymentService {
             return acc;
         }, {});
         return [true, groupedByTransId];
+    }
+    async updatePaymentLinkStatus(req) {
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: req.params.token,
+        });
+        if (!payment)
+            return [false, constants_util_1.default.notFoundMessage('payment link')];
+        await this.paymentRepository.updateByOne({ debtorTransId: req.params.token }, { status: req.body.status });
+        return [true, []];
+    }
+    async getPaymentLinkStatus(req) {
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: req.params.token,
+        });
+        if (!payment)
+            return [true, constants_util_1.default.notFoundMessage('payment link')];
+        return [true, { status: payment.status }];
     }
 }
 exports.default = PaymentService;

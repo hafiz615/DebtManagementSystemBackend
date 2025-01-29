@@ -10,6 +10,7 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const seemlesschex_util_1 = __importDefault(require("../../utils/seemlesschex.util"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const check_repository_1 = require("../repository/check/check.repository");
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 dotenv_1.default.config();
 class SeemlesschexService {
     constructor() {
@@ -30,11 +31,12 @@ class SeemlesschexService {
         if (response?.error)
             return [false, response.message];
         const bv = await seemlesschex_util_1.default.checkBasicVerification(response);
-        const fc = await seemlesschex_util_1.default.checkFundsVerification(response);
+        // const fc = await seemlesschexUtil.checkFundsVerification(response);
         let authorized = 'Success';
-        if (fc?.error || bv?.error)
+        // if (fc?.error || bv?.error) authorized = 'Failed'
+        if (bv?.error)
             authorized = 'Failed';
-        await seemlesschex_util_1.default.saveCheckInfo(bv, fc, response, req.body.debtorId);
+        await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, req.body.debtorId);
         await this.paymentRepository.updateMany({ _id: transactionIds }, {
             authorized: authorized,
             debtorTransId: response.check.check_id,
@@ -50,10 +52,10 @@ class SeemlesschexService {
         const debtor = await this.debtorRepository.getById(req.body.debtorId);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor on DMS')];
-        const response = await seemlesschex_util_1.default.createPaymentLink(req.body.amount);
-        if (response?.error)
-            return [false, response.message];
-        return [true, response.checkout_link];
+        const response = await debtor_util_1.default.createPaymentLinkOrNot(req.body.debtorId, req.body.amount);
+        if (!response[0])
+            return response;
+        return response;
     }
     async updateCheck(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
@@ -74,11 +76,12 @@ class SeemlesschexService {
         if (response?.error)
             return [false, response.message];
         const bv = await seemlesschex_util_1.default.checkBasicVerification(response);
-        const fc = await seemlesschex_util_1.default.checkFundsVerification(response);
+        // const fc = await seemlesschexUtil.checkFundsVerification(response);
         let authorized = 'Success';
-        if (bv?.error || fc?.error)
+        // if (bv?.error || fc?.error) authorized = 'Failed';
+        if (bv?.error)
             authorized = 'Failed';
-        await seemlesschex_util_1.default.updateCheckInfo(bv, fc, response, checkId);
+        await seemlesschex_util_1.default.updateCheckInfo(bv, null, response, checkId);
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             authorized: authorized,
             updatedAt: common_util_1.default.getCurrentDate(),

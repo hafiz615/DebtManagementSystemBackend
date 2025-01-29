@@ -11,21 +11,88 @@ const common_util_1 = __importDefault(require("./common.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
 const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
+const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const seemlesschex_util_1 = __importDefault(require("./seemlesschex.util"));
+const payment_util_1 = __importDefault(require("./payment.util"));
 class DebtorUtil {
     constructor() {
-        this.getAccountDetails = (accountList) => {
+        this.getAccountDetails = accountList => {
             return accountList.reduce((acc, curr) => {
                 if (!acc[curr.account]) {
                     acc[curr.account] = [];
                 }
                 acc[curr.account].push({
+                    bankName: curr.bank_name,
+                    statementMonth: curr.statement_month,
                     startingBalance: curr.starting_balance,
-                    endingBalance: curr.ending_balance,
-                    statement_month: curr.statement_month,
+                    totalCredits: curr.total_credits,
+                    credits: curr['#_credits'],
                     trueCredits: curr.true_credits,
+                    trueCredits1: curr['#_true_credits'],
+                    totalDebits: curr.total_debits,
+                    debits: curr['#_debits'],
+                    endingBalance: curr.ending_balance,
+                    avgBalance: curr.avg_balance,
+                    avgTrueBalance: curr.avg_true_balance,
+                    daysNeg: curr.days_neg,
+                    ods: curr["#_od's"],
+                    nsfs: curr["#_nsf's"],
+                    lowDays: curr.low_days,
+                    mcas: curr["#_mca's"],
                     mcaWithholdPercent: curr.mca_withhold_percent,
-                    mcaNumber: curr["#_mca's"],
                 });
+                return acc;
+            }, {});
+        };
+        this.getSortedAccountDetails = (data) => {
+            return Object.values(data)
+                .map((value) => {
+                const { count, ...rest } = value;
+                return rest;
+            })
+                .sort((a, b) => new Date(a.statementMonthAndYear).getTime() -
+                new Date(b.statementMonthAndYear).getTime());
+        };
+        this.withdrawalSumsByMonth = (data) => {
+            return data.reduce((acc, row) => {
+                const month = row.month;
+                const withdrawalTotal = parseFloat(row.withdrawal_total || 0);
+                if (!acc[month]) {
+                    acc[month] = 0;
+                }
+                acc[month] += withdrawalTotal;
+                return acc;
+            }, {});
+        };
+        this.processAccountData = (data) => {
+            return data.reduce((acc, curr) => {
+                const key = `${curr.statement_month} ${curr.statement_year}`;
+                if (!acc[key]) {
+                    acc[key] = {
+                        statementMonthAndYear: key,
+                        startingBalance: 0,
+                        trueCredits: 0,
+                        totalDebits: 0,
+                        endingBalance: 0,
+                        mca: 0,
+                        mcaWithholdPercent: 0,
+                        withdrawalTotal: 0,
+                        pf: 0,
+                        count: 0,
+                    };
+                }
+                acc[key].startingBalance = (parseFloat(acc[key].startingBalance) +
+                    (parseFloat(curr.starting_balance) || 0)).toFixed(2);
+                acc[key].trueCredits = (parseFloat(acc[key].trueCredits) + (parseFloat(curr.true_credits) || 0)).toFixed(2);
+                acc[key].totalDebits = (parseFloat(acc[key].totalDebits) + (parseFloat(curr.total_debits) || 0)).toFixed(2);
+                acc[key].endingBalance = (parseFloat(acc[key].endingBalance) +
+                    (parseFloat(curr.ending_balance) || 0)).toFixed(2);
+                acc[key].mca += parseFloat(curr["#_mca's"]) || 0;
+                acc[key].mcaWithholdPercent +=
+                    parseFloat(curr.mca_withhold_percent.replace('%', '')) || 0;
+                acc[key].withdrawalTotal = (parseFloat(acc[key].withdrawalTotal) +
+                    (parseFloat(curr.total_atm_withdrawals) || 0)).toFixed(2);
+                acc[key].count += 1;
                 return acc;
             }, {});
         };
@@ -102,6 +169,7 @@ class DebtorUtil {
         };
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.paymentRepository = new payment_repository_1.PaymentRepository();
     }
     async saveWeeklyBudget(caseTemp, body) {
         const strategy1Key = body.strategy1Choosen;
@@ -513,6 +581,46 @@ class DebtorUtil {
             return weeklyCommission;
         let amountUp = sumTotalPaidWeekly - totalCommision;
         return weeklyCommission - amountUp;
+    }
+    async createPaymentLinkOrNot(debtorId, amount) {
+        const doc = await this.paymentRepository.getOne({
+            debtorId,
+            caseId: { $eq: null },
+            transactionType: 'Link',
+            isDeleted: { $ne: true },
+            status: { $ne: 'Success' },
+        });
+        if (doc && doc.status === 'Pending' && doc.amount === amount) {
+            return [
+                true,
+                {
+                    checkout_token: doc.debtorTransId,
+                    link: doc.paymentLink,
+                    amount: doc.amount,
+                },
+            ];
+        }
+        if ((doc &&
+            (doc.status === 'Pending' || doc.status === 'Failed') &&
+            doc.amount !== amount) ||
+            (doc && doc.status === 'Failed' && doc.amount === amount)) {
+            await seemlesschex_util_1.default.deletePaymentLink(doc.debtorTransId);
+            await this.paymentRepository.updateById(doc._id, {
+                isDeleted: true,
+            });
+        }
+        const response = await seemlesschex_util_1.default.createPaymentLink(amount);
+        if (response?.error)
+            return [false, response.message];
+        await payment_util_1.default.createPaymentDocForLink(amount, response.checkout_link.checkout_token, response.checkout_link.link, debtorId);
+        return [
+            true,
+            {
+                checkout_token: response.checkout_link.checkout_token,
+                link: response.checkout_link.link,
+                amount: response.checkout_link.amount,
+            },
+        ];
     }
 }
 exports.default = new DebtorUtil();
