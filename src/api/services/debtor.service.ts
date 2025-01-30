@@ -88,11 +88,10 @@ class DebtorService {
     const withdrawalSumsByMonth = await debtorUtil.withdrawalSumsByMonth(
       scoreCard['monthlymca'].data
     );
-
     Object.keys(accountDetails).forEach(month => {
       const entry = accountDetails[month];
       const ans = entry.trueCredits - entry.totalDebits;
-      const withdrawalTotal = withdrawalSumsByMonth[month] || 0;
+      const withdrawalTotal = Math.abs(withdrawalSumsByMonth[month] || 0);
       entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
       entry.mcaWithholdPercent =
         Math.round(entry.mcaWithholdPercent / entry.count) + '%';
