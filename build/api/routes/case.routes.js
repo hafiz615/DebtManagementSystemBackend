@@ -42,5 +42,6 @@ router.post('/updateContractDetails/:id', authorize_middleware_1.default.validat
 router.delete('/deleteCreditor/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteCreditor);
 router.put('/updateCasePlan/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateCasePlan, case_controller_1.default.updateCasePlan);
 router.get('/getAllUserCases', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAllUserCases);
+router.post('/getScoresSettlementRangeDetails/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRangeDetails);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

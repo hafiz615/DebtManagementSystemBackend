@@ -158,8 +158,15 @@ router.put(
   caseController.updateCasePlan
 );
 
-router.get('/getAllUserCases',
+router.get(
+  '/getAllUserCases',
   authorize.validateAuth,
   caseController.getAllUserCases
-)
+);
+
+router.post(
+  '/getScoresSettlementRangeDetails/:id',
+  authorize.validateAuth,
+  caseController.getScoresSettlementRangeDetails
+);
 export default router;

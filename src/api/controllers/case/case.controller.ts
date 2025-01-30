@@ -677,7 +677,6 @@ class CaseController {
     }
   };
 
-
   getAllUserCases = async (req: Request, res: Response) => {
     try {
       const response = await this.caseService.getAllUserCases(req);
@@ -701,7 +700,41 @@ class CaseController {
     }
   };
 
-
+  getScoresSettlementRangeDetails = async (req: Request, res: Response) => {
+    try {
+      if (!req.query.all) {
+        return [false, 'Query param missing'];
+      }
+      let hardReload = 'false';
+      if (req.query.hardReload && req.query.hardReload === 'true')
+        hardReload = 'true';
+      const response = await this.caseService.getScoresSettlementRangeDetails(
+        String(req.query.all),
+        hardReload,
+        req.body,
+        req.params.id
+      );
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage(
+            'Scores and Settlement range '
+          ),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 }
 
 export default new CaseController();

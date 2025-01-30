@@ -14,6 +14,7 @@ const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
 const seemlesschex_util_1 = __importDefault(require("./seemlesschex.util"));
 const payment_util_1 = __importDefault(require("./payment.util"));
+const constants_util_1 = __importDefault(require("./constants.util"));
 class DebtorUtil {
     constructor() {
         this.getAccountDetails = accountList => {
@@ -621,6 +622,32 @@ class DebtorUtil {
                 amount: response.checkout_link.amount,
             },
         ];
+    }
+    async getStatementsSummary(id) {
+        const debtor = await this.debtorRepository.getById(id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const { scoreCard } = await this.getScoreCard(debtor);
+        const accountDetails = this.getAccountDetails(scoreCard['accountslist'].data);
+        return [true, accountDetails];
+    }
+    async getStatmentsSummaryWithPF(id) {
+        const debtor = await this.debtorRepository.getById(id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const { scoreCard } = await this.getScoreCard(debtor);
+        const accountDetails = await this.processAccountData(scoreCard['accountslist'].data);
+        const withdrawalSumsByMonth = await this.withdrawalSumsByMonth(scoreCard['monthlymca'].data);
+        Object.keys(accountDetails).forEach(month => {
+            const entry = accountDetails[month];
+            const ans = entry.trueCredits - entry.totalDebits;
+            const withdrawalTotal = Math.abs(withdrawalSumsByMonth[month] || 0);
+            entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
+            entry.mcaWithholdPercent =
+                Math.round(entry.mcaWithholdPercent / entry.count) + '%';
+        });
+        const result = this.getSortedAccountDetails(accountDetails);
+        return [true, result];
     }
 }
 exports.default = new DebtorUtil();

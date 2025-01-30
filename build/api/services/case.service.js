@@ -739,6 +739,140 @@ class CaseService {
             this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
         };
+        this.getScoresSettlementRangeDetails = async (all, hardReload, body, caseId) => {
+            console.log(caseId, 'llklklk');
+            const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [{ path: 'debtor' }]);
+            if (!caseTemp)
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            let getScores = null, creditorNames = null;
+            let creditors = null;
+            let settlementRange = null;
+            // let hardReload = 'false';
+            let data = {};
+            // if (req.query.hardReload && req.query.hardReload === 'true')
+            //   hardReload = 'true';
+            const moneyThumb = await debtor_util_1.default.getScoreCard(caseTemp.debtor);
+            if (hardReload === 'true') {
+                await this.caseRepository.updateById(caseTemp._id, {
+                    strategyTwo: false,
+                    strategyThree: false,
+                    justifications: false,
+                    lumpSumJustifications: false,
+                    fullProfitJustifications: false,
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                await moneyThumb_util_1.default.saveData(moneyThumb.appid, moneyThumb.scoreCard, caseTemp.debtor);
+                // caseTemp.debtor = await debtorUtil.saveWeeklyBudget(caseTemp, body);
+            }
+            const debtor = caseTemp.debtor;
+            creditors = await case_util_1.default.getAllCreditorsOfDebtor(debtor);
+            creditors = await creditor_util_1.default.checkCreditorsMapping(creditors);
+            creditors = Array.from(new Map(creditors.map(creditor => [creditor.creditorAccountTitle, creditor])).values());
+            const commisionPercentage = await creditor_util_1.default.addCreditorPercentagesAndGetPercentageCommission(creditors, debtor, moneyThumb.scoreCard);
+            await creditor_util_1.default.addBreakEven(creditors);
+            data['percentageReceivableCommission'] = commisionPercentage[0];
+            data['maxProfitCommission'] = commisionPercentage[1];
+            data['percentageReceivableCommissionAmount'] = commisionPercentage[2];
+            data['totalCommission'] = debtor.totalCommission;
+            data['creditorsContractDetailsSum'] =
+                await this.calculateContractDetailsSum(creditors);
+            const result = await this.strategyRepository.getOne({
+                caseId: String(caseTemp._id),
+                name: 'strategy_one',
+            });
+            data['creditors'] = creditors;
+            data['debtor'] = debtor;
+            // return [true, data];
+            const values = await moneyThumb_util_1.default.getMonthlyProfitValues(moneyThumb.scoreCard, debtor);
+            data['averageMonthlyProfitExcludingPayments'] =
+                values.averageMonthlyProfitExcludingPayments;
+            data['averageMonthlyProfitIncludingPayments'] =
+                values.averageMonthlyProfitIncludingPayments;
+            data['currentMonthlyProfitExcludingPayments'] =
+                values.currentMonthlyProfitExcludingPayments;
+            data['currentMonthlyProfitIncludingPayments'] =
+                values.currentMonthlyProfitIncludingPayments;
+            const mcaByMonth = await creditor_util_1.default.mcaByMonth(caseId);
+            data['mcaByMonth'] = !mcaByMonth[0] ? null : mcaByMonth[1];
+            const getStatementsSummary = await debtor_util_1.default.getStatementsSummary(String(debtor._id));
+            data['statementsSummary'] = !getStatementsSummary[0]
+                ? null
+                : getStatementsSummary[1];
+            const getStatmentsSummaryWithPF = await debtor_util_1.default.getStatmentsSummaryWithPF(String(debtor._id));
+            data['statmentsSummaryWithPF'] = !getStatmentsSummaryWithPF[0]
+                ? []
+                : getStatmentsSummaryWithPF[1];
+            if (hardReload !== 'true' &&
+                caseTemp.strategyOne_1 &&
+                result?.data?.creditorNames) {
+                creditorNames = result.data.creditorNames;
+                data['creditorNames'] = creditorNames;
+            }
+            if (hardReload === 'true') {
+                let extractedFieldsTemp = [];
+                if (!debtor?.extractedFields?.length) {
+                    const extractedFields = await case_util_1.default.getExtractionMCA(debtor);
+                    if (extractedFields) {
+                        this.debtorRepository.updateById(debtor._id, {
+                            extractedFields: extractedFields.extracted_fields,
+                            updatedAt: common_util_1.default.getCurrentDate(),
+                        });
+                        extractedFieldsTemp = extractedFields.extracted_fields;
+                    }
+                }
+                creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields ? debtor.extractedFields : extractedFieldsTemp, String(caseTemp._id));
+                data['creditorNames'] = creditorNames;
+                if (typeof creditorNames === 'string') {
+                    data['getScores'] = null;
+                    data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
+                    return [true, data];
+                }
+            }
+            if (all === 'true') {
+                if (hardReload !== 'true' &&
+                    caseTemp.strategyOne_2 &&
+                    result?.data?.getScoresAIForAllCreditors) {
+                    getScores = result.data.getScoresAIForAllCreditors;
+                    data['getScores'] = getScores;
+                }
+                else {
+                    getScores = await case_util_1.default.getScoresForAllCreditors(caseTemp, creditors, debtor.commissionPercentage);
+                    data['getScores'] = getScores;
+                    if (typeof getScores === 'string') {
+                        data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
+                        return [true, data];
+                    }
+                    data['debtor'] = await this.debtorRepository.getById(debtor._id);
+                }
+            }
+            else {
+                if (body.creditorNames.length) {
+                    const casesCreditors = await this.caseRepository.getAllWithoutPagination({ creditor: { $in: body.creditorNames }, debtor: debtor }, undefined, undefined, { _id: -1 }, ['creditor']);
+                    getScores = await case_util_1.default.getScores(caseTemp, casesCreditors, debtor.commissionPercentage);
+                    data['getScores'] = getScores;
+                    if (typeof getScores === 'string') {
+                        data['settlementRange'] = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
+                        return [true, data];
+                    }
+                    data['debtor'] = await this.debtorRepository.getById(debtor._id);
+                }
+            }
+            if (hardReload !== 'true' &&
+                caseTemp.strategyOne_3 &&
+                result?.data?.settlementRange) {
+                settlementRange = result.data.settlementRange;
+            }
+            else {
+                settlementRange = await case_util_1.default.getSettlementRange(caseTemp);
+                if (typeof settlementRange === 'string') {
+                    settlementRange = await moneyThumb_util_1.default.getSettlementValues(debtor, creditors, moneyThumb.scoreCard, caseId);
+                }
+            }
+            await creditor_util_1.default.addWeeklyTrueAmount(creditors, settlementRange);
+            await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId, true);
+            data['settlementRange'] = settlementRange;
+            return [true, data];
+        };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
