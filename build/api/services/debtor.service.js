@@ -45,10 +45,12 @@ class DebtorService {
             const { scoreCard } = await debtor_util_1.default.getScoreCard(debtor);
             const accountDetails = await debtor_util_1.default.processAccountData(scoreCard['accountslist'].data);
             const withdrawalSumsByMonth = await debtor_util_1.default.withdrawalSumsByMonth(scoreCard['monthlymca'].data);
+            console.log('monthly mca', scoreCard['monthlymca'].data);
+            console.log('withdrawalSumsByMonth', withdrawalSumsByMonth);
             Object.keys(accountDetails).forEach(month => {
                 const entry = accountDetails[month];
                 const ans = entry.trueCredits - entry.totalDebits;
-                const withdrawalTotal = withdrawalSumsByMonth[month] || 0;
+                const withdrawalTotal = Math.abs(withdrawalSumsByMonth[month] || 0);
                 entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
                 entry.mcaWithholdPercent =
                     Math.round(entry.mcaWithholdPercent / entry.count) + '%';
