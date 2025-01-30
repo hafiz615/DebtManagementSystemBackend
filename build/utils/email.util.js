@@ -596,6 +596,7 @@ class EmailUtil {
             const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
             headers['References'] = referenceHeader;
             headers['In-Reply-To'] = referenceHeader;
+            headers['Message-ID'] = referenceHeader;
             console.log('This is Reference: ', headers['References']);
         }
         if (bin === 'user') {
@@ -606,6 +607,7 @@ class EmailUtil {
             const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
             headers['References'] = referenceHeader;
             headers['In-Reply-To'] = referenceHeader;
+            headers['Message-ID'] = referenceHeader;
             console.log('This is Reference: ', headers['References']);
         }
         // const thread = `<threadId-${threadId}@yourdomain.com>`;
