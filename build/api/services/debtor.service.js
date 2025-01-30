@@ -31,32 +31,10 @@ const index_1 = require("../../enums/index");
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
-            const debtor = await this.debtorRepository.getById(req.params.id);
-            if (!debtor)
-                return [false, constants_util_1.default.notFoundMessage('debtor')];
-            const { scoreCard } = await debtor_util_1.default.getScoreCard(debtor);
-            const accountDetails = debtor_util_1.default.getAccountDetails(scoreCard['accountslist'].data);
-            return accountDetails;
+            return debtor_util_1.default.getStatementsSummary(req.params.id);
         };
         this.getStatementsSummaryWithPf = async (req) => {
-            const debtor = await this.debtorRepository.getById(req.params.id);
-            if (!debtor)
-                return [false, constants_util_1.default.notFoundMessage('debtor')];
-            const { scoreCard } = await debtor_util_1.default.getScoreCard(debtor);
-            const accountDetails = await debtor_util_1.default.processAccountData(scoreCard['accountslist'].data);
-            const withdrawalSumsByMonth = await debtor_util_1.default.withdrawalSumsByMonth(scoreCard['monthlymca'].data);
-            console.log('monthly mca', scoreCard['monthlymca'].data);
-            console.log('withdrawalSumsByMonth', withdrawalSumsByMonth);
-            Object.keys(accountDetails).forEach(month => {
-                const entry = accountDetails[month];
-                const ans = entry.trueCredits - entry.totalDebits;
-                const withdrawalTotal = Math.abs(withdrawalSumsByMonth[month] || 0);
-                entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
-                entry.mcaWithholdPercent =
-                    Math.round(entry.mcaWithholdPercent / entry.count) + '%';
-            });
-            const result = debtor_util_1.default.getSortedAccountDetails(accountDetails);
-            return result;
+            return debtor_util_1.default.getStatmentsSummaryWithPF(req.params.id);
         };
         this.getDailyCashFlows = async (req) => {
             const debtor = await this.debtorRepository.getById(req.params.id);

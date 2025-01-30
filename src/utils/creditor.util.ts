@@ -7,6 +7,9 @@ import {IDebtor} from '../database/interfaces/debtor.interface';
 import caseUtil from './case.util';
 import moneyThumbUtil from './moneyThumb.util';
 import {StrategyRepository} from '../api/repository/strategy/strategy.repository';
+import {ICase} from '../database/interfaces/case.interface';
+import constantsUtil from './constants.util';
+import debtorUtil from './debtor.util';
 
 class CreditorUtil {
   private creditorRepository: CreditorRepository;
@@ -310,6 +313,28 @@ class CreditorUtil {
       }
     }
     return accountTitleMapping;
+  }
+
+  async mcaByMonth(id: string) {
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
+    const scoreCard = await debtorUtil.getScoreCard(caseTemp.debtor);
+    const monthlyMca = scoreCard.scoreCard['monthlymca'];
+    if (!monthlyMca.data.length)
+      return [false, constantsUtil.notFoundMessage('monthly mca')];
+    const groupedByMonth = monthlyMca.data.reduce((acc, item) => {
+      if (!acc[item.month]) {
+        acc[item.month] = [];
+      }
+      acc[item.month].push(item);
+      return acc;
+    }, {});
+    return [true, groupedByMonth];
   }
 }
 export default new CreditorUtil();
