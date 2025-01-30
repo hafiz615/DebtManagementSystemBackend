@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import {SyncPaymentMethodRepository} from '../repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import {ISyncPaymentMethod} from '../../database/interfaces/syncPaymentMethod.interface';
 import debtorUtil from '../../utils/debtor.util';
+import creditorUtil from '../../utils/creditor.util';
 dotenv.config();
 
 class CreditorService {
@@ -423,33 +424,16 @@ class CreditorService {
       req.params.id
     );
     if (!creditor) return [false, constants.notFoundMessage('creditor')];
-    const result = await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
-      syncId: req.params.id,
-    });
+    const result =
+      await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
+        syncId: req.params.id,
+      });
     if (!result) return [true, creditor.basicInformation.email];
     return [true, result.email];
   }
 
   async mcaByMonth(req: Request) {
-    const caseTemp: any = await this.caseRepository.getById<ICase>(
-      req.params.id,
-      undefined,
-      undefined,
-      ['debtor']
-    );
-    if (!caseTemp) return [false, constants.notFoundMessage('case')];
-    const scoreCard = await debtorUtil.getScoreCard(caseTemp.debtor);
-    const monthlyMca = scoreCard.scoreCard['monthlymca'];
-    if (!monthlyMca.data.length)
-      return [false, constants.notFoundMessage('monthly mca')];
-    const groupedByMonth = monthlyMca.data.reduce((acc, item) => {
-      if (!acc[item.month]) {
-        acc[item.month] = [];
-      }
-      acc[item.month].push(item);
-      return acc;
-    }, {});
-    return [true, groupedByMonth];
+    return creditorUtil.mcaByMonth(req.params.id);
   }
 }
 

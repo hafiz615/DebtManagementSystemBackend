@@ -13,6 +13,7 @@ import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import {IPayment} from '../database/interfaces/payment.interface';
 import seemlesschexUtil from './seemlesschex.util';
 import paymentUtil from './payment.util';
+import constantsUtil from './constants.util';
 
 class DebtorUtil {
   private debtorRepository: DebtorRepository;
@@ -813,6 +814,43 @@ class DebtorUtil {
         amount: response.checkout_link.amount,
       },
     ];
+  }
+
+  async getStatementsSummary(id: string) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(id);
+    if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
+    const {scoreCard} = await this.getScoreCard(debtor);
+    const accountDetails = this.getAccountDetails(
+      scoreCard['accountslist'].data
+    );
+    return [true, accountDetails];
+  }
+
+  async getStatmentsSummaryWithPF(id: string) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(id);
+    if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
+
+    const {scoreCard} = await this.getScoreCard(debtor);
+
+    const accountDetails = await this.processAccountData(
+      scoreCard['accountslist'].data
+    );
+
+    const withdrawalSumsByMonth = await this.withdrawalSumsByMonth(
+      scoreCard['monthlymca'].data
+    );
+    Object.keys(accountDetails).forEach(month => {
+      const entry = accountDetails[month];
+      const ans = entry.trueCredits - entry.totalDebits;
+      const withdrawalTotal = Math.abs(withdrawalSumsByMonth[month] || 0);
+      entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
+      entry.mcaWithholdPercent =
+        Math.round(entry.mcaWithholdPercent / entry.count) + '%';
+    });
+
+    const result = this.getSortedAccountDetails(accountDetails);
+
+    return [true, result];
   }
 }
 

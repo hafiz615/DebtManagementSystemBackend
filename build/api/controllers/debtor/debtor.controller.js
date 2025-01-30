@@ -310,14 +310,14 @@ class DebtorController {
         this.getStatementsSummary = async (req, res) => {
             try {
                 const response = await this.debtorService.getStatementsSummary(req);
-                if (!response) {
+                if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
-                    data: response,
+                    data: response[1],
                     message: constants_util_1.default.successFoundMessage('Statements Summary'),
                 }));
             }
@@ -331,14 +331,14 @@ class DebtorController {
         this.getStatementsSummaryWithPf = async (req, res) => {
             try {
                 const response = await this.debtorService.getStatementsSummaryWithPf(req);
-                if (!response) {
+                if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
                         .send(responseHelper_util_1.default.get4xxResponse(response));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
-                    data: response,
+                    data: response[1],
                     message: constants_util_1.default.successFoundMessage('Statements Summary'),
                 }));
             }

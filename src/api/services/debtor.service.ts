@@ -66,40 +66,11 @@ class DebtorService {
   }
 
   getStatementsSummary = async (req: Request) => {
-    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
-    if (!debtor) return [false, constants.notFoundMessage('debtor')];
-    const {scoreCard} = await debtorUtil.getScoreCard(debtor);
-    const accountDetails = debtorUtil.getAccountDetails(
-      scoreCard['accountslist'].data
-    );
-    return accountDetails;
+    return debtorUtil.getStatementsSummary(req.params.id);
   };
 
   getStatementsSummaryWithPf = async (req: Request) => {
-    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
-    if (!debtor) return [false, constants.notFoundMessage('debtor')];
-
-    const {scoreCard} = await debtorUtil.getScoreCard(debtor);
-
-    const accountDetails = await debtorUtil.processAccountData(
-      scoreCard['accountslist'].data
-    );
-
-    const withdrawalSumsByMonth = await debtorUtil.withdrawalSumsByMonth(
-      scoreCard['monthlymca'].data
-    );
-    Object.keys(accountDetails).forEach(month => {
-      const entry = accountDetails[month];
-      const ans = entry.trueCredits - entry.totalDebits;
-      const withdrawalTotal = Math.abs(withdrawalSumsByMonth[month] || 0);
-      entry.profitMargin = (ans + withdrawalTotal).toFixed(2);
-      entry.mcaWithholdPercent =
-        Math.round(entry.mcaWithholdPercent / entry.count) + '%';
-    });
-
-    const result = debtorUtil.getSortedAccountDetails(accountDetails);
-
-    return result;
+    return debtorUtil.getStatmentsSummaryWithPF(req.params.id);
   };
 
   getDailyCashFlows = async (req: Request) => {

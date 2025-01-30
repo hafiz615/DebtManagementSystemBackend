@@ -10,6 +10,8 @@ const common_util_1 = __importDefault(require("./common.util"));
 const case_util_1 = __importDefault(require("./case.util"));
 const moneyThumb_util_1 = __importDefault(require("./moneyThumb.util"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
+const constants_util_1 = __importDefault(require("./constants.util"));
+const debtor_util_1 = __importDefault(require("./debtor.util"));
 class CreditorUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
@@ -261,6 +263,23 @@ class CreditorUtil {
             }
         }
         return accountTitleMapping;
+    }
+    async mcaByMonth(id) {
+        const caseTemp = await this.caseRepository.getById(id, undefined, undefined, ['debtor']);
+        if (!caseTemp)
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        const scoreCard = await debtor_util_1.default.getScoreCard(caseTemp.debtor);
+        const monthlyMca = scoreCard.scoreCard['monthlymca'];
+        if (!monthlyMca.data.length)
+            return [false, constants_util_1.default.notFoundMessage('monthly mca')];
+        const groupedByMonth = monthlyMca.data.reduce((acc, item) => {
+            if (!acc[item.month]) {
+                acc[item.month] = [];
+            }
+            acc[item.month].push(item);
+            return acc;
+        }, {});
+        return [true, groupedByMonth];
     }
 }
 exports.default = new CreditorUtil();
