@@ -241,6 +241,9 @@ class CaseService {
     findCase['amountDeliveredToCreditor'] = amountDelivered;
     findCase['amountNotDeliveredToCreditor'] = amountNotDelivered;
     findCase['pipelineStatus'] = pipelineStatus;
+    findCase['defaultNumber'] = await commonUtil.cleanPhoneNumber(
+      process.env.TWILIO_CALLER_ID
+    );
     return [true, findCase];
   };
 

@@ -29,4 +29,10 @@ router.post(
   callController.callerName
 );
 
+router.get(
+  '/twilio/getNumberMissedCalls',
+  authorize.validateAuth,
+  callController.getMissedCalls
+);
+
 export default router;

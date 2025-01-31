@@ -1003,6 +1003,15 @@ class CaseValidate {
                 subject: joi_1.default.string().optional().messages({
                     'string.base': 'Subject must be a string',
                 }),
+                from: joi_1.default.string()
+                    .pattern(/^\d{10}$/)
+                    .required()
+                    .messages({
+                    'string.empty': 'SendTo cannot be empty',
+                    'any.required': 'SendTo is a required field',
+                    'string.base': 'SendTo must be a string',
+                    'string.pattern.base': 'SendTo must be a valid 10-digit phone number',
+                }),
             });
         }
         const schema = object;
