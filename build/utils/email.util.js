@@ -42,7 +42,7 @@ class EmailUtil {
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.notificationRepository = new notification_repository_1.NotificationRepository();
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
-        this.client = (0, twilio_1.default)(process.env.twilioAccountSid, process.env.twilioAuthToken);
+        this.client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
         this.uploadUtil = new upload_util_1.default();
     }
@@ -141,7 +141,7 @@ class EmailUtil {
                     }
                     let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
                     if (phoneNumbers) {
-                        const fromNumber = process.env.twilioFromNumber;
+                        const fromNumber = user.twilioNo || process.env.TWILIO_CALLER_ID;
                         if (userPermission.role === 'Admin') {
                             for (const phone of phoneNumbers) {
                                 await this.sendSms(content, phone, fromNumber);
@@ -253,11 +253,10 @@ class EmailUtil {
                 }
                 return result;
             case 'sms':
-                const fromNumber = process.env.twilioFromNumber;
-                const smsResult = await this.sendSms(content, sendTo, fromNumber);
+                const smsResult = await this.sendSms(content, sendTo, from);
                 if (smsResult[0]) {
                     await case_util_1.default.addInHistory({
-                        From: fromNumber,
+                        From: from,
                         To: sendTo,
                         Content: content,
                         Time: time,
@@ -634,7 +633,7 @@ class EmailUtil {
         try {
             const result = await this.client.messages.create({
                 body: body,
-                from: from, //the phone number provided by Twillio
+                from: '+1' + from, //the phone number provided by Twillio
                 to: '+1' + phone, // your own phone number
             });
             if (result.sid) {
