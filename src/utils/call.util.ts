@@ -1,6 +1,7 @@
 import UploadUtil from './upload.util';
 import twilio from 'twilio';
 import OpenAI from 'openai';
+import {Twilio} from 'twilio';
 import dotenv from 'dotenv';
 import {DataCopier} from './dataCopier.util';
 import {ICall} from '../database/interfaces/call.interface';
@@ -11,14 +12,23 @@ import axiosInstance from './axiosInstanceInterceptor';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
 import {ICreditor} from '../database/interfaces/creditor.interface';
+import {CaseRepository} from '../api/repository/case/case.repository';
+import {ICase} from '../database/interfaces/case.interface';
 dotenv.config();
 
 class CallUtil {
+  private twilioClient: any;
   private callRepository: CallRepository;
+  private caseRepository: CaseRepository;
   private debtorRepository: DebtorRepository;
   private creditorRepository: CreditorRepository;
   private uploadUtil: UploadUtil;
   constructor() {
+    this.twilioClient = new Twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    this.caseRepository = new CaseRepository();
     this.uploadUtil = new UploadUtil();
     this.callRepository = new CallRepository();
     this.debtorRepository = new DebtorRepository();
@@ -159,7 +169,46 @@ class CallUtil {
         companyName: getCreditor.businessInformation.companyName,
       };
     }
-    return {};
+    return null;
+  }
+
+  async getMissedCalls(twilioNumber: string) {
+    let pageToken = null;
+    let allCalls = [];
+    do {
+      const calls = await this.twilioClient.calls.list({
+        to: twilioNumber,
+        status: 'no-answer',
+        pageSize: 100,
+        pageToken: pageToken,
+      });
+
+      const callsWithNames = await Promise.all(
+        calls.map(async (call: any) => {
+          const name = await this.getDebtorOrCreditorName(call.from);
+          let caseData = null;
+          if (name) {
+            caseData = await this.caseRepository.getOne<ICase>({
+              $or: [{debtor: name?.debtorId}, {creditor: name?.creditorId}],
+              isDeleted: {$ne: true},
+            });
+          }
+
+          return {
+            from: call.from,
+            companyName: name ? name.companyName : 'Unknown',
+            time: call.startTime,
+            caseId: caseData ? caseData._id.toString() : '',
+          };
+        })
+      );
+
+      allCalls = [...allCalls, ...callsWithNames];
+
+      pageToken = calls.nextPageUrl ? calls.nextPageToken : null;
+    } while (pageToken);
+
+    return allCalls;
   }
 }
 export default new CallUtil();
