@@ -17,5 +17,6 @@ router.get('/twilio/getIncomingCall/:callSid', call_controller_1.default.getInco
 router.post('/callSummary', call_controller_1.default.callSummary);
 router.patch('/updateCall/:callSid', authorize_middleware_1.default.validateAuth, call_controller_1.default.updateCall);
 router.post('/twilio/callerName', authorize_middleware_1.default.validateAuth, call_controller_1.default.callerName);
+router.get('/twilio/getNumberMissedCalls', authorize_middleware_1.default.validateAuth, call_controller_1.default.getMissedCalls);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map
