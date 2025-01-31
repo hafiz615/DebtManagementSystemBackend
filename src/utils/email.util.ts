@@ -67,8 +67,8 @@ class EmailUtil {
     this.notificationRepository = new NotificationRepository();
     this.notificationCountRepository = new NotificationCountRepository();
     this.client = twilio(
-      process.env.twilioAccountSid,
-      process.env.twilioAuthToken
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
     );
     clientSendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
     this.uploadUtil = new UploadUtil();
@@ -206,7 +206,7 @@ class EmailUtil {
           }
           let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
           if (phoneNumbers) {
-            const fromNumber = process.env.twilioFromNumber;
+            const fromNumber = user.twilioNo || process.env.TWILIO_CALLER_ID;
             if (userPermission.role === 'Admin') {
               for (const phone of phoneNumbers) {
                 await this.sendSms(content, phone, fromNumber);
@@ -383,12 +383,11 @@ class EmailUtil {
         }
         return result;
       case 'sms':
-        const fromNumber = process.env.twilioFromNumber;
-        const smsResult = await this.sendSms(content, sendTo, fromNumber);
+        const smsResult = await this.sendSms(content, sendTo, from);
         if (smsResult[0]) {
           await caseUtil.addInHistory(
             {
-              From: fromNumber,
+              From: from,
               To: sendTo,
               Content: content,
               Time: time,
@@ -969,7 +968,7 @@ class EmailUtil {
     try {
       const result = await this.client.messages.create({
         body: body,
-        from: from, //the phone number provided by Twillio
+        from: '+1' + from, //the phone number provided by Twillio
         to: '+1' + phone, // your own phone number
       });
       if (result.sid) {

@@ -127,6 +127,7 @@ class CaseService {
             findCase['amountDeliveredToCreditor'] = amountDelivered;
             findCase['amountNotDeliveredToCreditor'] = amountNotDelivered;
             findCase['pipelineStatus'] = pipelineStatus;
+            findCase['defaultNumber'] = await common_util_1.default.cleanPhoneNumber(process.env.TWILIO_CALLER_ID);
             return [true, findCase];
         };
         this.getAllUserCases = async (req) => {
