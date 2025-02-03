@@ -682,7 +682,7 @@ class CaseController {
       const response = await this.caseService.getAllUserCases(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.OK)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(

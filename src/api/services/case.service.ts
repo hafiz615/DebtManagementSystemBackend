@@ -287,8 +287,13 @@ class CaseService {
           {path: 'debtor', select: ['businessInformation.companyName']},
         ]
       );
+
+    if (findCases.length === 0) {
+      return [false, constantsUtil.notFoundMessage('Cases')];
+    }
     const groupedByDebtor = findCases.reduce((acc, caseItem: any) => {
-      const debtorCompanyName = caseItem.debtor.businessInformation.companyName;
+      const debtorCompanyName =
+        caseItem.debtor?.businessInformation?.companyName;
 
       if (!acc[debtorCompanyName]) {
         acc[debtorCompanyName] = [];
