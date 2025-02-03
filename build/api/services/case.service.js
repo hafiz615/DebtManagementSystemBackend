@@ -139,8 +139,11 @@ class CaseService {
                 },
                 { path: 'debtor', select: ['businessInformation.companyName'] },
             ]);
+            if (findCases.length === 0) {
+                return [false, constants_util_1.default.notFoundMessage('Cases')];
+            }
             const groupedByDebtor = findCases.reduce((acc, caseItem) => {
-                const debtorCompanyName = caseItem.debtor.businessInformation.companyName;
+                const debtorCompanyName = caseItem.debtor?.businessInformation?.companyName;
                 if (!acc[debtorCompanyName]) {
                     acc[debtorCompanyName] = [];
                 }
