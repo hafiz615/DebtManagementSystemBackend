@@ -271,31 +271,39 @@ class CaseService {
     return getPayments.reduce((sum, obj) => sum + obj.amount, 0);
   }
 
-  getAllUserCases = async (
-    req: Request
-  ): Promise<[boolean, ICase[] | string]> => {
+  getAllUserCases = async (req: Request): Promise<any> => {
     const reqTemp: any = req;
-    try {
-      const findCases: ICase[] =
-        await this.caseRepository.getAllWithoutPagination<ICase>(
-          {caseOwnerId: reqTemp.id},
-          undefined,
-          undefined,
-          undefined,
+    const findCases: ICase[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        {caseOwnerId: reqTemp.id},
+        undefined,
+        undefined,
+        undefined,
+        [
           {
             path: 'creditor',
             select: ['businessInformation.companyName'],
-          }
-        );
-      const filteredData: any = findCases.map((item: any) => ({
-        caseId: item._id,
-        creditorCompanyName: item.creditor?.businessInformation?.companyName,
-      }));
-      return [true, filteredData];
-    } catch (error) {
-      console.error('Error fetching user cases:', error);
-      return [false, 'Error fetching user cases'];
-    }
+          },
+          {path: 'debtor', select: ['businessInformation.companyName']},
+        ]
+      );
+    const groupedByDebtor = findCases.reduce((acc, caseItem: any) => {
+      const debtorCompanyName = caseItem.debtor.businessInformation.companyName;
+
+      if (!acc[debtorCompanyName]) {
+        acc[debtorCompanyName] = [];
+      }
+
+      acc[debtorCompanyName].push({
+        caseId: caseItem._id.toString(),
+        creditorCompanyName:
+          caseItem.creditor?.businessInformation?.companyName,
+      });
+
+      return acc;
+    }, {});
+
+    return [true, groupedByDebtor];
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
