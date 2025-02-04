@@ -7,6 +7,7 @@ const upload_util_1 = __importDefault(require("./upload.util"));
 const twilio_1 = __importDefault(require("twilio"));
 const openai_1 = __importDefault(require("openai"));
 const twilio_2 = require("twilio");
+const common_util_1 = __importDefault(require("./common.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const call_repomodel_1 = require("../database/repomodels/call.repomodel");
 const call_repository_1 = require("../api/repository/call/call.repository");
@@ -152,7 +153,8 @@ class CallUtil {
                 pageToken: pageToken,
             });
             const callsWithNames = await Promise.all(calls.map(async (call) => {
-                const name = await this.getDebtorOrCreditorName(call.from);
+                const number = await common_util_1.default.cleanPhoneNumber(call.from);
+                const name = await this.getDebtorOrCreditorName(number);
                 let caseData = null;
                 if (name) {
                     caseData = await this.caseRepository.getOne({
@@ -161,7 +163,7 @@ class CallUtil {
                     });
                 }
                 return {
-                    from: call.from,
+                    from: number,
                     companyName: name ? name.companyName : 'Unknown',
                     time: call.startTime,
                     caseId: caseData ? caseData._id.toString() : '',
