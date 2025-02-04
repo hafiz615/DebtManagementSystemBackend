@@ -55,6 +55,9 @@ const inbox: Schema = new Schema({
   type: {
     type: String,
   },
+  medium: {
+    type: String,
+  },
   debtorCompanyName: {
     type: String,
   },

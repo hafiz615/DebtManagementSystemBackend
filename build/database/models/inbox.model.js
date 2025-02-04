@@ -82,6 +82,9 @@ const inbox = new mongoose_1.Schema({
     type: {
         type: String,
     },
+    medium: {
+        type: String,
+    },
     debtorCompanyName: {
         type: String,
     },
