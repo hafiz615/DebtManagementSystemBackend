@@ -255,8 +255,8 @@ class EmailUtil {
             case 'sms':
                 const smsResult = await this.sendSms(content, sendTo, from);
                 const smsData = {
-                    from: '+1' + from,
-                    to: '+1' + sendTo,
+                    from: from,
+                    to: sendTo,
                     text: content,
                     textAsHtml: content,
                 };
