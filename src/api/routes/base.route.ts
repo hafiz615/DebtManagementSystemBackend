@@ -17,10 +17,11 @@ import bulkUploadRouter from './bulkUpload.route';
 import inboxRouter from './inbox.routes';
 import notificationRouter from './notification.routes';
 import seemlesschexRouter from './seemlesschex.route';
-
+import smsRouter from './sms.routes';
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
   app.use('/api/v1/case', caseRouter);
+  app.use('/api/v1/sms', smsRouter);
   app.use('/api/v1/call', callRouter);
   app.use('/api/v1/upload', uploadFileRouter);
   app.use('/api/v1/debtor', debtorRouter);
