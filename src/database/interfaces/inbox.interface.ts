@@ -17,6 +17,7 @@ export interface IInbox extends Document {
   isDeleted: boolean;
   isRead: boolean;
   type: string;
+  medium: string;
   debtorCompanyName: string;
   creditorCompnayName: string;
   negotiatorName: string;

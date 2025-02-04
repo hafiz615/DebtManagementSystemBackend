@@ -1007,10 +1007,10 @@ class CaseValidate {
                     .pattern(/^\d{10}$/)
                     .required()
                     .messages({
-                    'string.empty': 'SendTo cannot be empty',
-                    'any.required': 'SendTo is a required field',
-                    'string.base': 'SendTo must be a string',
-                    'string.pattern.base': 'SendTo must be a valid 10-digit phone number',
+                    'string.empty': 'from cannot be empty',
+                    'any.required': 'from is a required field',
+                    'string.base': 'from must be a string',
+                    'string.pattern.base': 'from must be a valid 10-digit phone number',
                 }),
             });
         }

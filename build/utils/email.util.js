@@ -245,15 +245,26 @@ class EmailUtil {
                         attachments: uniqueAttachments,
                     };
                     if (reqThreadId) {
-                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL');
                     }
                     else {
-                        this.createInbox(caseData, 'sent', emailData, threadId, userId, userName);
+                        this.createInbox(caseData, 'sent', emailData, threadId, userId, userName, 'EMAIL');
                     }
                 }
                 return result;
             case 'sms':
                 const smsResult = await this.sendSms(content, sendTo, from);
+                const smsData = {
+                    from: '+1' + from,
+                    to: '+1' + sendTo,
+                    text: content,
+                    textAsHtml: content,
+                };
+                const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
+                    { path: 'debtor', select: ['businessInformation.companyName'] },
+                    { path: 'creditor', select: ['businessInformation.companyName'] },
+                ]);
+                this.createNewInbox(smsData, caseData, 'sent', threadId, userId, userName, null, null, 'SMS');
                 if (smsResult[0]) {
                     await case_util_1.default.addInHistory({
                         From: from,
@@ -290,16 +301,16 @@ class EmailUtil {
                     attachments: composeData,
                 };
                 if (reqThreadId) {
-                    const composeEmail = await this.createInbox(null, 'received', composeEmailData, threadId, userId, userName);
+                    const composeEmail = await this.createInbox(null, 'received', composeEmailData, threadId, userId, userName, 'EMAIL');
                 }
                 else {
-                    const composeEmail = await this.createInbox(null, 'sent', composeEmailData, reqThreadId, userId, userName);
+                    const composeEmail = await this.createInbox(null, 'sent', composeEmailData, reqThreadId, userId, userName, 'EMAIL');
                 }
                 return resultCompose;
         }
         return [true, ''];
     }
-    async createInbox(caseTemp, type, emailData, threadId, userId, userName) {
+    async createInbox(caseTemp, type, emailData, threadId, userId, userName, medium) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -311,7 +322,7 @@ class EmailUtil {
             }, undefined, undefined, { _id: -1 });
             console.log('This is existing id', existingInbox[0]);
             if (!existingInbox[0]) {
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, null, null, medium);
                 console.log('Create New Inbox response when Received', res);
             }
             else {
@@ -331,12 +342,12 @@ class EmailUtil {
                 //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
                 //   attachments: uniqueAttachments,
                 // });
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments);
+                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
                 console.log('Create New Inbox response when Response', res);
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, null, null, medium);
             console.log('Create New Inbox response when Create', res);
             return res;
         }
@@ -361,7 +372,7 @@ class EmailUtil {
         await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;
     }
-    async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments) {
+    async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -383,8 +394,9 @@ class EmailUtil {
         newMessage.textAsHtml = emailData.textAsHtml;
         newMessage.to = emailData.to;
         newMessage.type = type;
+        newMessage.medium = medium;
         newMessage.attachments = uniqueAttachments || emailData.attachments;
-        newNotification.type = 'EMAIL';
+        newNotification.type = medium;
         newMessage.threadId = threadId;
         newMessage.userId = userId;
         newMessage.userName = userName;
