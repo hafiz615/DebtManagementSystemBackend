@@ -83,7 +83,7 @@ class SmsService {
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
     }
     formatText(text) {
-        return `SMS received for ${text}`;
+        return `SMS received from ${text}`;
     }
 }
 exports.default = SmsService;
