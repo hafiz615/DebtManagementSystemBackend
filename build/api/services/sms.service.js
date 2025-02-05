@@ -27,19 +27,23 @@ class SmsService {
             const { From, Body, SmsStatus, To } = req.body;
             const number = await common_util_1.default.cleanPhoneNumber(From);
             const name = await call_util_1.default.getDebtorOrCreditorName(number);
+            console.log('name', name);
             let caseData = name?.creditorId
                 ? await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
                     { path: 'creditor', select: ['businessInformation.companyName'] },
                 ])
                 : null;
+            console.log('caseData1', caseData);
             if (!caseData && name?.debtorId) {
                 const findCases = await this.caseRepository.getAllWithoutPagination({ debtor: name.debtorId, isDeleted: { $ne: true } }, undefined, undefined, undefined, [
                     { path: 'creditor', select: ['businessInformation.companyName'] },
                     { path: 'debtor', select: ['businessInformation.companyName'] },
                 ]);
+                console.log('findCases', findCases.length, findCases);
                 caseData = findCases.length === 1 ? findCases[0] : null;
             }
+            console.log('caseData2', caseData);
             const findUser = await this.userRepository.getOne({
                 twilioNo: To,
                 isDeleted: false,

@@ -47,7 +47,7 @@ class SmsService {
 
     const number = await commonUtil.cleanPhoneNumber(From);
     const name = await callUtil.getDebtorOrCreditorName(number);
-
+    console.log('name', name);
     let caseData: any = name?.creditorId
       ? await this.caseRepository.getOne<ICase>(
           {creditor: name.creditorId, isDeleted: {$ne: true}},
@@ -59,7 +59,7 @@ class SmsService {
           ]
         )
       : null;
-
+    console.log('caseData1', caseData);
     if (!caseData && name?.debtorId) {
       const findCases =
         await this.caseRepository.getAllWithoutPagination<ICase>(
@@ -72,8 +72,10 @@ class SmsService {
             {path: 'debtor', select: ['businessInformation.companyName']},
           ]
         );
+      console.log('findCases', findCases.length, findCases);
       caseData = findCases.length === 1 ? findCases[0] : null;
     }
+    console.log('caseData2', caseData);
     const findUser = await this.userRepository.getOne<IUser>({
       twilioNo: To,
       isDeleted: false,
