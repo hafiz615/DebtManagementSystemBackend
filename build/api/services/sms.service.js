@@ -45,8 +45,10 @@ class SmsService {
                 isDeleted: false,
             });
             const smsData = {
-                from: From,
-                to: To,
+                from: number,
+                to: process.env.environement === 'dev'
+                    ? To.replace(/^(\+92)/, '')
+                    : await common_util_1.default.cleanPhoneNumber(From),
                 text: Body,
                 textAsHtml: Body,
             };
@@ -63,7 +65,7 @@ class SmsService {
             const newNotification = new notification_repomodel_1.Notification();
             if (caseData) {
                 newNotification.caseId = caseData._id;
-                newNotification.text = email_util_1.default.formatText(name?.companyName);
+                newNotification.text = this.formatText(name?.companyName);
             }
             newNotification.type = 'SMS';
             await this.notificationRepository.create(newNotification);

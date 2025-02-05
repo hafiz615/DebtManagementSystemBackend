@@ -80,8 +80,11 @@ class SmsService {
     });
 
     const smsData = {
-      from: From,
-      to: To,
+      from: number,
+      to:
+        process.env.environement === 'dev'
+          ? To.replace(/^(\+92)/, '')
+          : await commonUtil.cleanPhoneNumber(From),
       text: Body,
       textAsHtml: Body,
     };
@@ -113,7 +116,7 @@ class SmsService {
     const newNotification = new Notification();
     if (caseData) {
       newNotification.caseId = caseData._id;
-      newNotification.text = emailUtil.formatText(name?.companyName);
+      newNotification.text = this.formatText(name?.companyName);
     }
     newNotification.type = 'SMS';
 
