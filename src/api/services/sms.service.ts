@@ -84,7 +84,7 @@ class SmsService {
       to:
         process.env.environement === 'dev'
           ? To.replace(/^(\+92)/, '')
-          : await commonUtil.cleanPhoneNumber(From),
+          : await commonUtil.cleanPhoneNumber(To),
       text: Body,
       textAsHtml: Body,
     };
@@ -105,7 +105,10 @@ class SmsService {
       await caseUtil.addInHistory(
         {
           From,
-          To,
+          To:
+            process.env.environement === 'dev'
+              ? To.replace(/^(\+92)/, '')
+              : await commonUtil.cleanPhoneNumber(To),
           Content: Body,
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'SMS',
