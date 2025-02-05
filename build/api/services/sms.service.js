@@ -3,13 +3,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const app_1 = __importDefault(require("../../app"));
 const call_util_1 = __importDefault(require("../../utils/call.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const notification_repomodel_1 = require("../../database/repomodels/notification.repomodel");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const user_repository_1 = require("../repository/user/user.repository");
 const uuid_1 = require("uuid");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
+const notification_repository_1 = require("../repository/notification/notification.repository");
+const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
 const MessagingResponse_1 = __importDefault(require("twilio/lib/twiml/MessagingResponse"));
 class SmsService {
     constructor() {
@@ -46,7 +50,7 @@ class SmsService {
                 text: Body,
                 textAsHtml: Body,
             };
-            const hello = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser?._id?.toString() || '', findUser?.name || '', null, null, 'SMS');
+            await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser?._id?.toString() || '', findUser?.name || '', null, null, 'SMS');
             if (caseData) {
                 await case_util_1.default.addInHistory({
                     From,
@@ -56,12 +60,32 @@ class SmsService {
                     Action: 'SMS',
                 }, caseData._id.toString());
             }
+            const newNotification = new notification_repomodel_1.Notification();
+            if (caseData) {
+                newNotification.caseId = caseData._id;
+                newNotification.text = email_util_1.default.formatText(name?.companyName);
+            }
+            newNotification.type = 'SMS';
+            await this.notificationRepository.create(newNotification);
+            const updatedCount = await this.notificationCountRepository.getOne({
+                type: 'SMS',
+            });
+            await this.notificationCountRepository.upsert({ type: 'SMS' }, { $inc: { count: 1 } });
+            app_1.default.socketInstance.emit('notifySms', {
+                notificationCount: updatedCount?.count || 0,
+                notification: newNotification,
+            });
             const twiml = new MessagingResponse_1.default();
             twiml.message('Message received successfully');
             return [true, twiml.toString()];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.userRepository = new user_repository_1.UserRepository();
+        this.notificationRepository = new notification_repository_1.NotificationRepository();
+        this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
+    }
+    formatText(text) {
+        return `SMS received for ${text}`;
     }
 }
 exports.default = SmsService;

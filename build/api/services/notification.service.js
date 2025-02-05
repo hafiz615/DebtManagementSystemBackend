@@ -18,19 +18,12 @@ class InboxService {
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
     }
     async getAllNotifications(req) {
-        // const filters = await notificationUtils.getAllnotificationFilters(req);
-        let notifications = await this.notificationRepository.getAll(undefined, undefined, undefined, { createdAt: -1 }, undefined, undefined
-        // Number(req.query.page),
-        // Number(req.query.limit)
-        );
-        // const formattedData =  inboxUtils.formatInboxData(inbox)
-        // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
+        let notifications = await this.notificationRepository.getAll({ type: req.body.type }, undefined, undefined, { createdAt: -1 }, undefined, undefined);
         if (!notifications.length) {
             return [false, constants_util_2.default.notFoundMessage('Notification')];
         }
-        await this.notificationCountRepository.updateMany({}, { count: 0 });
+        await this.notificationCountRepository.upsert({ type: req.body.type }, { $set: { count: 0 } });
         return [true, notifications];
-        // return [true, {inbox, totalCount}];
     }
     async markAsRead(id) {
         const notification = await this.notificationRepository.getById(id);
