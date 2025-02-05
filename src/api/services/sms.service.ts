@@ -121,18 +121,13 @@ class SmsService {
       newNotification as any
     );
 
-    const updatedCount =
-      await this.notificationCountRepository.getOne<INotificationCount>({
-        type: 'SMS',
-      });
+    const updatedCount: INotificationCount[] =
+      await this.notificationCountRepository.getAll({});
 
-    await this.notificationCountRepository.upsert(
-      {type: 'SMS'},
-      {$inc: {count: 1}}
-    );
+    await this.notificationCountRepository.upsert({}, {$inc: {count: 1}});
 
-    app.socketInstance.emit('notifySms', {
-      notificationCount: updatedCount?.count || 0,
+    app.socketInstance.emit('notify', {
+      notificationCount: updatedCount.length > 0 ? updatedCount[0].count : 0,
       notification: newNotification,
     });
 

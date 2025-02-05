@@ -22,7 +22,7 @@ class InboxService {
         if (!notifications.length) {
             return [false, constants_util_2.default.notFoundMessage('Notification')];
         }
-        await this.notificationCountRepository.upsert({ type: req.body.type }, { $set: { count: 0 } });
+        await this.notificationCountRepository.upsert({}, { $set: { count: 0 } });
         return [true, notifications];
     }
     async markAsRead(id) {
@@ -38,7 +38,7 @@ class InboxService {
         return [true, notification];
     }
     async getNotificationCount() {
-        const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+        const notificationCount = await this.notificationCountRepository.getAll({});
         if (!notificationCount) {
             return [false, constants_util_1.default.notFoundMessage('notification')];
         }

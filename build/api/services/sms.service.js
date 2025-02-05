@@ -67,12 +67,10 @@ class SmsService {
             }
             newNotification.type = 'SMS';
             await this.notificationRepository.create(newNotification);
-            const updatedCount = await this.notificationCountRepository.getOne({
-                type: 'SMS',
-            });
-            await this.notificationCountRepository.upsert({ type: 'SMS' }, { $inc: { count: 1 } });
-            app_1.default.socketInstance.emit('notifySms', {
-                notificationCount: updatedCount?.count || 0,
+            const updatedCount = await this.notificationCountRepository.getAll({});
+            await this.notificationCountRepository.upsert({}, { $inc: { count: 1 } });
+            app_1.default.socketInstance.emit('notify', {
+                notificationCount: updatedCount.length > 0 ? updatedCount[0].count : 0,
                 notification: newNotification,
             });
             const twiml = new MessagingResponse_1.default();

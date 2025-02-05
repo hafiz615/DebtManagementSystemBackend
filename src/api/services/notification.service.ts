@@ -35,10 +35,7 @@ class InboxService {
       return [false, constantsUtil.notFoundMessage('Notification')];
     }
 
-    await this.notificationCountRepository.upsert(
-      {type: req.body.type},
-      {$set: {count: 0}}
-    );
+    await this.notificationCountRepository.upsert({}, {$set: {count: 0}});
 
     return [true, notifications];
   }
@@ -62,13 +59,7 @@ class InboxService {
 
   async getNotificationCount() {
     const notificationCount: NotificationCount[] =
-      await this.notificationCountRepository.getAll(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      );
+      await this.notificationCountRepository.getAll({});
     if (!notificationCount) {
       return [false, constants.notFoundMessage('notification')];
     }
