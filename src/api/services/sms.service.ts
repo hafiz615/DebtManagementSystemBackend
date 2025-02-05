@@ -39,7 +39,7 @@ class SmsService {
   };
 
   formatText(text: String) {
-    return `SMS received for ${text}`;
+    return `SMS received from ${text}`;
   }
 
   receivedMessage = async (req: Request) => {
