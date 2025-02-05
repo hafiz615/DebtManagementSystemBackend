@@ -136,6 +136,7 @@ class InboxUtil {
         caseData.creditor.businessInformation.companyName;
       updateDraft.negotiatorName = caseData.negotiator;
     }
+    updateDraft.medium = 'EMAIL';
     const preparedDraft = DataCopier.copy(updateDraft, data);
     return preparedDraft;
   }
