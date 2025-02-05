@@ -55,6 +55,28 @@ class InboxController {
     }
   };
 
+  createDraft = async (req: Request, res: Response) => {
+    try {
+      const response = await this.inboxService.createDraft(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.CREATED).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.CREATED,
+          data: response[1],
+          message: constants.successCreatedMessage('Draft'),
+        })
+      );
+    } catch (error: any) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.message));
+    }
+  };
+
   deleteDraftEmail = async (req: Request, res: Response) => {
     try {
       const response = await this.inboxService.deleteDraftEmail(req);
@@ -112,7 +134,30 @@ class InboxController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Draft  Email'),
+          message: constants.successUpdateMessage('Draft Email'),
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  updateDraftSms = async (req: Request, res: Response) => {
+    try {
+      const response = await this.inboxService.updateDraftSms(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Draft Email'),
         })
       );
     } catch (error: any) {

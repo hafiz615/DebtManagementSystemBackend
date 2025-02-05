@@ -51,4 +51,22 @@ router.put(
   inboxController.updateDraftEmail
 );
 
+router.post(
+  '/createDraft',
+  authorize.validateAuth,
+  inboxController.createDraft
+);
+
+router.delete(
+  '/deleteDraft/:id',
+  authorize.validateAuth,
+  inboxController.deleteDraftEmail
+);
+
+router.put(
+  '/updateDraft/:id',
+  authorize.validateAuth,
+  inboxController.updateDraftSms
+);
+
 export default router;
