@@ -69,8 +69,8 @@ class SmsService {
             }
             newNotification.type = 'SMS';
             await this.notificationRepository.create(newNotification);
-            const updatedCount = await this.notificationCountRepository.getAll({});
             await this.notificationCountRepository.upsert({}, { $inc: { count: 1 } });
+            const updatedCount = await this.notificationCountRepository.getAll({});
             app_1.default.socketInstance.emit('notify', {
                 notificationCount: updatedCount.length > 0 ? updatedCount[0].count : 0,
                 notification: newNotification,
