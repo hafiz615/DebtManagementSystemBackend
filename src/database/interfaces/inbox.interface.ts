@@ -19,7 +19,7 @@ export interface IInbox extends Document {
   type: string;
   medium: string;
   debtorCompanyName: string;
-  creditorCompnayName: string;
+  creditorCompanyName: string;
   negotiatorName: string;
   attachments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   createdAt: string;

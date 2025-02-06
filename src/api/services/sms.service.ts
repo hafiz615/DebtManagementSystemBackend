@@ -7,27 +7,33 @@ import {NotificationCount} from '../../database/repomodels/notificationCount.rep
 import commonUtil from '../../utils/common.util';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
+import {InboxRepository} from '../repository/inbox/inbox.repository';
+import {IInbox} from '../../database/interfaces/inbox.interface';
+import {NotificationRepository} from '../repository/notification/notification.repository';
+import {INotification} from '../../database/interfaces/notification.interface';
 import {UserRepository} from '../repository/user/user.repository';
 import {IUser} from '../../database/interfaces/user.interface';
 import {v4} from 'uuid';
 import caseUtil from '../../utils/case.util';
-import {NotificationRepository} from '../repository/notification/notification.repository';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import MessagingResponse from 'twilio/lib/twiml/MessagingResponse';
-import {INotification} from '../../database/interfaces/notification.interface';
 import {INotificationCount} from '../../database/interfaces/notificationCount.interface';
+import {constant} from 'lodash';
+import constantsUtil from '../../utils/constants.util';
+
 class SmsService {
   private caseRepository: CaseRepository;
   private userRepository: UserRepository;
+  private inboxRepository: InboxRepository;
   private notificationRepository: NotificationRepository;
   private notificationCountRepository: NotificationCountRepository;
   constructor() {
     this.caseRepository = new CaseRepository();
     this.userRepository = new UserRepository();
+    this.inboxRepository = new InboxRepository();
     this.notificationRepository = new NotificationRepository();
     this.notificationCountRepository = new NotificationCountRepository();
   }
-
   receivedSmsFallback = async (req: Request) => {
     const twiml = new MessagingResponse();
     twiml.message(
@@ -48,6 +54,7 @@ class SmsService {
     const name = await callUtil.getDebtorOrCreditorName(number);
 
     let caseData: ICase = null;
+    const newNotification = new Notification();
 
     if (name?.creditorId) {
       caseData = await this.caseRepository.getOne<ICase>(
@@ -71,6 +78,7 @@ class SmsService {
             {path: 'debtor', select: ['businessInformation.companyName']},
           ]
         );
+      newNotification.debtorId = name?.debtorId;
       caseData = findCases.length === 1 ? findCases[0] : null;
     }
 
@@ -87,7 +95,7 @@ class SmsService {
       textAsHtml: Body,
     };
 
-    await emailUtil.createNewInbox(
+    const inbox = await emailUtil.createNewInbox(
       smsData,
       caseData,
       SmsStatus,
@@ -102,7 +110,7 @@ class SmsService {
     if (caseData) {
       await caseUtil.addInHistory(
         {
-          number,
+          From: number,
           To: cleanedTo,
           Content: Body,
           Time: new Date(commonUtil.getCurrentDate()),
@@ -111,11 +119,11 @@ class SmsService {
         caseData._id.toString()
       );
     }
-
-    const newNotification = new Notification();
     newNotification.caseId = caseData?._id.toString() || undefined;
     newNotification.text = this.formatText(name?.companyName || 'Unknown');
     newNotification.type = 'SMS';
+    newNotification.inboxId = inbox.id;
+    // newNotification;
 
     await this.notificationRepository.create<INotification>(
       newNotification as any
@@ -123,11 +131,11 @@ class SmsService {
 
     await this.notificationCountRepository.upsert({}, {$inc: {count: 1}});
 
-    const updatedCount: INotificationCount[] =
-      await this.notificationCountRepository.getAll({});
+    const updatedCount =
+      await this.notificationCountRepository.getOne<INotificationCount>({});
 
     app.socketInstance.emit('notify', {
-      notificationCount: updatedCount.length > 0 ? updatedCount[0].count : 0,
+      notificationCount: updatedCount?.count || 0,
       notification: newNotification,
     });
 
@@ -135,6 +143,56 @@ class SmsService {
     twiml.message('Message received successfully');
 
     return [true, twiml.toString()];
+  };
+
+  saveCaseDetailNotification = async (req: Request) => {
+    const reqTemp: any = req;
+    let {caseId, notificationId, inboxId} = req.body;
+
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      caseId,
+      undefined,
+      undefined,
+      [
+        {path: 'debtor', select: ['businessInformation.companyName']},
+        {path: 'creditor', select: ['businessInformation.companyName']},
+      ]
+    );
+
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('Case')];
+    }
+
+    console.log(caseTemp.creditor.businessInformation.companyName);
+    // return [true, 'successfull'];
+
+    const inboxTemp = await this.inboxRepository.updateById<IInbox>(inboxId, {
+      caseCode: caseTemp.caseCode,
+      caseId: caseId,
+      debtorCompanyName: caseTemp.debtor?.businessInformation?.companyName,
+      creditorCompanyName: caseTemp.creditor.businessInformation.companyName,
+      negotiatorName: caseTemp.negotiator,
+    });
+
+    const notificationTemp =
+      await this.notificationRepository.updateById<INotification>(
+        notificationId,
+        {
+          caseId: caseId,
+        }
+      );
+
+    await caseUtil.addInHistory(
+      {
+        From: inboxTemp.from,
+        To: inboxTemp.to,
+        Content: inboxTemp.text,
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'SMS',
+      },
+      caseTemp._id.toString()
+    );
+    return [true, 'Successfully save notification'];
   };
 }
 

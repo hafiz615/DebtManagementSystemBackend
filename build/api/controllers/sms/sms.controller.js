@@ -42,6 +42,26 @@ class SmsController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.saveCaseDetailNotification = async (req, res) => {
+            try {
+                const response = await this.smsService.saveCaseDetailNotification(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.OK)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Case linked successfully',
+                }));
+            }
+            catch (error) {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
+            }
+        };
         this.smsService = new sms_service_1.default();
     }
 }

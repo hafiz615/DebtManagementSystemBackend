@@ -132,7 +132,11 @@ class CaseService {
         };
         this.getAllUserCases = async (req) => {
             const reqTemp = req;
-            const findCases = await this.caseRepository.getAllWithoutPagination({ caseOwnerId: reqTemp.id }, undefined, undefined, undefined, [
+            const debtorId = req.query?.debtorId ? req.query.debtorId : null;
+            const filter = debtorId
+                ? { debtor: debtorId, isDeleted: false }
+                : { caseOwnerId: reqTemp.id, isDeleted: false };
+            const findCases = await this.caseRepository.getAllWithoutPagination(filter, undefined, undefined, undefined, [
                 {
                     path: 'creditor',
                     select: ['businessInformation.companyName'],
