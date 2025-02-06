@@ -7,7 +7,7 @@ import {NotificationRepository} from '../repository/notification/notification.re
 import {INotification} from '../../database/interfaces/notification.interface';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import {INotificationCount} from '../../database/interfaces/notificationCount.interface';
-import { NotificationCount } from '../../database/repomodels/notificationCount.repomodel';
+import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
 // import notificationUtils from '../../utils/notification.utils';
 dotenv.config();
 
@@ -22,29 +22,22 @@ class InboxService {
   }
 
   async getAllNotifications(req: Request) {
-    // const filters = await notificationUtils.getAllnotificationFilters(req);
     let notifications = await this.notificationRepository.getAll<INotification>(
-      undefined,
+      {type: req.body.type},
       undefined,
       undefined,
       {createdAt: -1},
       undefined,
       undefined
-      // Number(req.query.page),
-      // Number(req.query.limit)
     );
-    // const formattedData =  inboxUtils.formatInboxData(inbox)
-    // const totalCount = await this.inboxRepository.getCount<IInbox>(filters);
 
     if (!notifications.length) {
       return [false, constantsUtil.notFoundMessage('Notification')];
     }
-    await this.notificationCountRepository.updateMany<INotificationCount>(
-      {},
-      {count: 0}
-    );
+
+    await this.notificationCountRepository.upsert({}, {$set: {count: 0}});
+
     return [true, notifications];
-    // return [true, {inbox, totalCount}];
   }
 
   async markAsRead(id: string): Promise<[boolean, INotification | string]> {
@@ -66,14 +59,8 @@ class InboxService {
 
   async getNotificationCount() {
     const notificationCount: NotificationCount[] =
-    await this.notificationCountRepository.getAll(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    );
-    if (!notificationCount){
+      await this.notificationCountRepository.getAll({});
+    if (!notificationCount) {
       return [false, constants.notFoundMessage('notification')];
     }
     return [true, notificationCount[0].count];
