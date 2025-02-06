@@ -29,7 +29,6 @@ class SmsService {
   }
 
   receivedSmsFallback = async (req: Request) => {
-    console.log('Fallback triggered:', req.body);
     const twiml = new MessagingResponse();
     twiml.message(
       'We are experiencing issues. Please try again later or contact support.'
@@ -45,22 +44,22 @@ class SmsService {
   receivedMessage = async (req: Request) => {
     const {From, Body, SmsStatus, To} = req.body;
 
-    const number = await commonUtil.cleanPhoneNumber(From);
+    const number = await commonUtil.cleanPhoneNumberConditionally(From);
     const name = await callUtil.getDebtorOrCreditorName(number);
-    console.log('name', name);
-    let caseData: any = name?.creditorId
-      ? await this.caseRepository.getOne<ICase>(
-          {creditor: name.creditorId, isDeleted: {$ne: true}},
-          undefined,
-          undefined,
-          [
-            {path: 'debtor', select: ['businessInformation.companyName']},
-            {path: 'creditor', select: ['businessInformation.companyName']},
-          ]
-        )
-      : null;
-    console.log('caseData1', caseData);
-    if (!caseData && name?.debtorId) {
+
+    let caseData: ICase = null;
+
+    if (name?.creditorId) {
+      caseData = await this.caseRepository.getOne<ICase>(
+        {creditor: name.creditorId, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
+    } else if (name?.debtorId) {
       const findCases =
         await this.caseRepository.getAllWithoutPagination<ICase>(
           {debtor: name.debtorId, isDeleted: {$ne: true}},
@@ -72,10 +71,10 @@ class SmsService {
             {path: 'debtor', select: ['businessInformation.companyName']},
           ]
         );
-      console.log('findCases', findCases.length, findCases);
       caseData = findCases.length === 1 ? findCases[0] : null;
     }
-    console.log('caseData2', caseData);
+
+    const cleanedTo = await commonUtil.cleanPhoneNumber(To);
     const findUser = await this.userRepository.getOne<IUser>({
       twilioNo: To,
       isDeleted: false,
@@ -83,10 +82,7 @@ class SmsService {
 
     const smsData = {
       from: number,
-      to:
-        process.env.environement === 'dev'
-          ? To.replace(/^(\+92)/, '')
-          : await commonUtil.cleanPhoneNumber(To),
+      to: cleanedTo,
       text: Body,
       textAsHtml: Body,
     };
@@ -106,11 +102,8 @@ class SmsService {
     if (caseData) {
       await caseUtil.addInHistory(
         {
-          From,
-          To:
-            process.env.environement === 'dev'
-              ? To.replace(/^(\+92)/, '')
-              : await commonUtil.cleanPhoneNumber(To),
+          number,
+          To: cleanedTo,
           Content: Body,
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'SMS',
@@ -118,16 +111,16 @@ class SmsService {
         caseData._id.toString()
       );
     }
+
     const newNotification = new Notification();
-    if (caseData) {
-      newNotification.caseId = caseData._id;
-      newNotification.text = this.formatText(name?.companyName);
-    }
+    newNotification.caseId = caseData?._id.toString() || undefined;
+    newNotification.text = this.formatText(name?.companyName || 'Unknown');
     newNotification.type = 'SMS';
 
     await this.notificationRepository.create<INotification>(
       newNotification as any
     );
+
     await this.notificationCountRepository.upsert({}, {$inc: {count: 1}});
 
     const updatedCount: INotificationCount[] =

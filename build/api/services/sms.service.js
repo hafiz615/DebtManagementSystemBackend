@@ -18,61 +18,52 @@ const MessagingResponse_1 = __importDefault(require("twilio/lib/twiml/MessagingR
 class SmsService {
     constructor() {
         this.receivedSmsFallback = async (req) => {
-            console.log('Fallback triggered:', req.body);
             const twiml = new MessagingResponse_1.default();
             twiml.message('We are experiencing issues. Please try again later or contact support.');
             return [true, twiml.toString()];
         };
         this.receivedMessage = async (req) => {
             const { From, Body, SmsStatus, To } = req.body;
-            const number = await common_util_1.default.cleanPhoneNumber(From);
+            const number = await common_util_1.default.cleanPhoneNumberConditionally(From);
             const name = await call_util_1.default.getDebtorOrCreditorName(number);
-            console.log('name', name);
-            let caseData = name?.creditorId
-                ? await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [
+            let caseData = null;
+            if (name?.creditorId) {
+                caseData = await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
                     { path: 'creditor', select: ['businessInformation.companyName'] },
-                ])
-                : null;
-            console.log('caseData1', caseData);
-            if (!caseData && name?.debtorId) {
+                ]);
+            }
+            else if (name?.debtorId) {
                 const findCases = await this.caseRepository.getAllWithoutPagination({ debtor: name.debtorId, isDeleted: { $ne: true } }, undefined, undefined, undefined, [
                     { path: 'creditor', select: ['businessInformation.companyName'] },
                     { path: 'debtor', select: ['businessInformation.companyName'] },
                 ]);
-                console.log('findCases', findCases.length, findCases);
                 caseData = findCases.length === 1 ? findCases[0] : null;
             }
-            console.log('caseData2', caseData);
+            const cleanedTo = await common_util_1.default.cleanPhoneNumber(To);
             const findUser = await this.userRepository.getOne({
                 twilioNo: To,
                 isDeleted: false,
             });
             const smsData = {
                 from: number,
-                to: process.env.environement === 'dev'
-                    ? To.replace(/^(\+92)/, '')
-                    : await common_util_1.default.cleanPhoneNumber(To),
+                to: cleanedTo,
                 text: Body,
                 textAsHtml: Body,
             };
             await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser?._id?.toString() || '', findUser?.name || '', null, null, 'SMS');
             if (caseData) {
                 await case_util_1.default.addInHistory({
-                    From,
-                    To: process.env.environement === 'dev'
-                        ? To.replace(/^(\+92)/, '')
-                        : await common_util_1.default.cleanPhoneNumber(To),
+                    number,
+                    To: cleanedTo,
                     Content: Body,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'SMS',
                 }, caseData._id.toString());
             }
             const newNotification = new notification_repomodel_1.Notification();
-            if (caseData) {
-                newNotification.caseId = caseData._id;
-                newNotification.text = this.formatText(name?.companyName);
-            }
+            newNotification.caseId = caseData?._id.toString() || undefined;
+            newNotification.text = this.formatText(name?.companyName || 'Unknown');
             newNotification.type = 'SMS';
             await this.notificationRepository.create(newNotification);
             await this.notificationCountRepository.upsert({}, { $inc: { count: 1 } });
