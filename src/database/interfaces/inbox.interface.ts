@@ -17,8 +17,9 @@ export interface IInbox extends Document {
   isDeleted: boolean;
   isRead: boolean;
   type: string;
+  medium: string;
   debtorCompanyName: string;
-  creditorCompnayName: string;
+  creditorCompanyName: string;
   negotiatorName: string;
   attachments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   createdAt: string;

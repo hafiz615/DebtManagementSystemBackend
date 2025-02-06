@@ -2,6 +2,7 @@ import UploadUtil from './upload.util';
 import twilio from 'twilio';
 import OpenAI from 'openai';
 import {Twilio} from 'twilio';
+import commonUtil from './common.util';
 import dotenv from 'dotenv';
 import {DataCopier} from './dataCopier.util';
 import {ICall} from '../database/interfaces/call.interface';
@@ -185,7 +186,8 @@ class CallUtil {
 
       const callsWithNames = await Promise.all(
         calls.map(async (call: any) => {
-          const name = await this.getDebtorOrCreditorName(call.from);
+          const number = await commonUtil.cleanPhoneNumber(call.from);
+          const name = await this.getDebtorOrCreditorName(number);
           let caseData = null;
           if (name) {
             caseData = await this.caseRepository.getOne<ICase>({
@@ -195,7 +197,7 @@ class CallUtil {
           }
 
           return {
-            from: call.from,
+            from: number,
             companyName: name ? name.companyName : 'Unknown',
             time: call.startTime,
             caseId: caseData ? caseData._id.toString() : '',

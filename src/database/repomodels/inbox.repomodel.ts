@@ -14,6 +14,7 @@ export class Inbox {
   userName = '';
   isRead = false;
   type = 'draft';
+  medium: '';
   isDeleted = false;
   debtorCompanyName = '';
   creditorCompanyName = '';

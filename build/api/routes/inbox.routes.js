@@ -24,5 +24,8 @@ router.put('/markAsRead/:id', authorize_middleware_1.default.validateAuth, inbox
 router.post('/createEmailDraft', authorize_middleware_1.default.validateAuth, draftEmailFields, inbox_controller_1.default.createEmailDraft);
 router.delete('/deleteDraftEmail/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.deleteDraftEmail);
 router.put('/updateDraftEmail/:id', authorize_middleware_1.default.validateAuth, draftEmailFields, inbox_controller_1.default.updateDraftEmail);
+router.post('/createDraft', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.createDraft);
+router.delete('/deleteDraft/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.deleteDraftEmail);
+router.put('/updateDraft/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.updateDraftSms);
 exports.default = router;
 //# sourceMappingURL=inbox.routes.js.map

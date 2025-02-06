@@ -21,9 +21,11 @@ const bulkUpload_route_1 = __importDefault(require("./bulkUpload.route"));
 const inbox_routes_1 = __importDefault(require("./inbox.routes"));
 const notification_routes_1 = __importDefault(require("./notification.routes"));
 const seemlesschex_route_1 = __importDefault(require("./seemlesschex.route"));
+const sms_routes_1 = __importDefault(require("./sms.routes"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
     app.use('/api/v1/case', case_routes_1.default);
+    app.use('/api/v1/sms', sms_routes_1.default);
     app.use('/api/v1/call', call_routes_1.default);
     app.use('/api/v1/upload', upload_routes_1.default);
     app.use('/api/v1/debtor', debtor_routes_1.default);

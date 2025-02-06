@@ -368,7 +368,8 @@ class EmailUtil {
               emailData,
               threadId,
               userId,
-              userName
+              userName,
+              'EMAIL'
             );
           } else {
             this.createInbox(
@@ -377,13 +378,40 @@ class EmailUtil {
               emailData,
               threadId,
               userId,
-              userName
+              userName,
+              'EMAIL'
             );
           }
         }
         return result;
       case 'sms':
         const smsResult = await this.sendSms(content, sendTo, from);
+        const smsData = {
+          from: from,
+          to: sendTo,
+          text: content,
+          textAsHtml: content,
+        };
+        const caseData = await this.caseRepository.getById<ICase>(
+          caseId,
+          undefined,
+          undefined,
+          [
+            {path: 'debtor', select: ['businessInformation.companyName']},
+            {path: 'creditor', select: ['businessInformation.companyName']},
+          ]
+        );
+        this.createNewInbox(
+          smsData,
+          caseData,
+          'sent',
+          threadId,
+          userId,
+          userName,
+          null,
+          null,
+          'SMS'
+        );
         if (smsResult[0]) {
           await caseUtil.addInHistory(
             {
@@ -452,7 +480,8 @@ class EmailUtil {
             composeEmailData,
             threadId,
             userId,
-            userName
+            userName,
+            'EMAIL'
           );
         } else {
           const composeEmail = await this.createInbox(
@@ -461,7 +490,8 @@ class EmailUtil {
             composeEmailData,
             reqThreadId,
             userId,
-            userName
+            userName,
+            'EMAIL'
           );
         }
         return resultCompose;
@@ -475,7 +505,8 @@ class EmailUtil {
     emailData: any,
     threadId: any,
     userId?: string,
-    userName?: string
+    userName?: string,
+    medium?: string
   ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
@@ -502,7 +533,10 @@ class EmailUtil {
           type,
           threadId,
           userId,
-          userName
+          userName,
+          null,
+          null,
+          medium
         );
         console.log('Create New Inbox response when Received', res);
       } else {
@@ -537,7 +571,8 @@ class EmailUtil {
           userId,
           userName,
           previousMessages,
-          uniqueAttachments
+          uniqueAttachments,
+          medium
         );
         console.log('Create New Inbox response when Response', res);
       }
@@ -548,7 +583,10 @@ class EmailUtil {
         type,
         threadId,
         userId,
-        userName
+        userName,
+        null,
+        null,
+        medium
       );
       console.log('Create New Inbox response when Create', res);
       return res;
@@ -594,7 +632,8 @@ class EmailUtil {
     userId,
     userName,
     previousMessages?,
-    uniqueAttachments?
+    uniqueAttachments?,
+    medium?
   ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
@@ -618,8 +657,9 @@ class EmailUtil {
     newMessage.textAsHtml = emailData.textAsHtml;
     newMessage.to = emailData.to;
     newMessage.type = type;
+    newMessage.medium = medium;
     newMessage.attachments = uniqueAttachments || emailData.attachments;
-    newNotification.type = 'EMAIL';
+    newNotification.type = medium;
     newMessage.threadId = threadId;
     newMessage.userId = userId;
     newMessage.userName = userName;
@@ -966,10 +1006,12 @@ class EmailUtil {
 
   async sendSms(body: string, phone: string, from: string) {
     try {
+      const code = process.env.environment === 'prod' ? '+1' : '+92';
+      phone = code + phone;
       const result = await this.client.messages.create({
         body: body,
         from: '+1' + from, //the phone number provided by Twillio
-        to: '+1' + phone, // your own phone number
+        to: phone, // your own phone number
       });
       if (result.sid) {
         return [true, `Your sms is delivered successfully`];

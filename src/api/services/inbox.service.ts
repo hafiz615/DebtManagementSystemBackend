@@ -9,6 +9,8 @@ import inboxUtils from '../../utils/inbox.utils';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
 import commonUtil from '../../utils/common.util';
+import emailUtil from '../../utils/email.util';
+import {v4} from 'uuid';
 dotenv.config();
 
 class InboxService {
@@ -25,10 +27,13 @@ class InboxService {
   async getAllInboxes(req: Request) {
     const reqTemp: any = req;
     const type = req.query.type;
+    const medium = req.query.medium;
     const filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
       ? await inboxUtils.getAllInboxFilters(req)
       : {userId: reqTemp.id};
     filters['isDeleted'] = {$ne: true};
+    filters['medium'] = medium;
+
     let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
       filters,
       undefined,
@@ -157,6 +162,79 @@ class InboxService {
       return [false, constantsUtil.failureUpdateMessage('Draft')];
     }
 
+    return [true, updatedDraft];
+  };
+
+  async createDraft(req: Request) {
+    const reqTemp: any = req;
+    const threadId = v4();
+    let caseData = null;
+    let {from, sendTo, content} = req.body;
+    if (req.body.caseId) {
+      caseData = await this.caseRepository.getById<ICase>(
+        req.body.caseId,
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
+      if (!caseData) {
+        return [false, constantsUtil.notFoundMessage('Case')];
+      }
+    }
+
+    const smsData = {
+      from: from,
+      to: sendTo,
+      text: content,
+      textAsHtml: content,
+    };
+
+    emailUtil.createNewInbox(
+      smsData,
+      caseData,
+      'draft',
+      threadId,
+      reqTemp.id,
+      reqTemp.name,
+      null,
+      null,
+      'SMS'
+    );
+
+    return [true, `Draft created successfully`];
+  }
+
+  updateDraftSms = async (req: Request) => {
+    const reqTemp: any = req;
+
+    const {sendTo, from, content} = req.body;
+
+    const draftId = req.params.id;
+
+    // Find the draft first
+    const existingDraft = await this.inboxRepository.getOne<IInbox>({
+      _id: req.params.id,
+      isDeleted: false,
+    });
+
+    if (!existingDraft) {
+      return [false, constantsUtil.notFoundMessage('Draft')];
+    }
+
+    // Update the draft
+    const updatedDraft = await this.inboxRepository.updateById<IInbox>(
+      req.params.id,
+      {
+        to: sendTo,
+        from: from,
+        text: content,
+        textAsHtml: content,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
     return [true, updatedDraft];
   };
 }

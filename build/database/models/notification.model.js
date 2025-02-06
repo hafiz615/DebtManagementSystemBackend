@@ -38,6 +38,12 @@ const notification = new mongoose_1.Schema({
     caseId: {
         type: String,
     },
+    inboxId: {
+        type: String,
+    },
+    debtorId: {
+        type: String,
+    },
     type: {
         type: String,
     },

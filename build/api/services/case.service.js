@@ -132,21 +132,32 @@ class CaseService {
         };
         this.getAllUserCases = async (req) => {
             const reqTemp = req;
-            try {
-                const findCases = await this.caseRepository.getAllWithoutPagination({ caseOwnerId: reqTemp.id }, undefined, undefined, undefined, {
+            const debtorId = req.query?.debtorId ? req.query.debtorId : null;
+            const filter = debtorId
+                ? { debtor: debtorId, isDeleted: false }
+                : { caseOwnerId: reqTemp.id, isDeleted: false };
+            const findCases = await this.caseRepository.getAllWithoutPagination(filter, undefined, undefined, undefined, [
+                {
                     path: 'creditor',
                     select: ['businessInformation.companyName'],
+                },
+                { path: 'debtor', select: ['businessInformation.companyName'] },
+            ]);
+            if (findCases.length === 0) {
+                return [false, constants_util_1.default.notFoundMessage('Cases')];
+            }
+            const groupedByDebtor = findCases.reduce((acc, caseItem) => {
+                const debtorCompanyName = caseItem.debtor?.businessInformation?.companyName;
+                if (!acc[debtorCompanyName]) {
+                    acc[debtorCompanyName] = [];
+                }
+                acc[debtorCompanyName].push({
+                    caseId: caseItem._id.toString(),
+                    creditorCompanyName: caseItem.creditor?.businessInformation?.companyName,
                 });
-                const filteredData = findCases.map((item) => ({
-                    caseId: item._id,
-                    creditorCompanyName: item.creditor?.businessInformation?.companyName,
-                }));
-                return [true, filteredData];
-            }
-            catch (error) {
-                console.error('Error fetching user cases:', error);
-                return [false, 'Error fetching user cases'];
-            }
+                return acc;
+            }, {});
+            return [true, groupedByDebtor];
         };
         this.updateCase = async (req) => {
             let reqTemp = req;

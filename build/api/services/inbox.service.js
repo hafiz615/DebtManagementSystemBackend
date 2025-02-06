@@ -11,6 +11,8 @@ const inbox_repository_1 = require("../repository/inbox/inbox.repository");
 const inbox_utils_1 = __importDefault(require("../../utils/inbox.utils"));
 const case_repository_1 = require("../repository/case/case.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
+const email_util_1 = __importDefault(require("../../utils/email.util"));
+const uuid_1 = require("uuid");
 dotenv_1.default.config();
 class InboxService {
     constructor() {
@@ -48,6 +50,28 @@ class InboxService {
             }
             return [true, updatedDraft];
         };
+        this.updateDraftSms = async (req) => {
+            const reqTemp = req;
+            const { sendTo, from, content } = req.body;
+            const draftId = req.params.id;
+            // Find the draft first
+            const existingDraft = await this.inboxRepository.getOne({
+                _id: req.params.id,
+                isDeleted: false,
+            });
+            if (!existingDraft) {
+                return [false, constants_util_2.default.notFoundMessage('Draft')];
+            }
+            // Update the draft
+            const updatedDraft = await this.inboxRepository.updateById(req.params.id, {
+                to: sendTo,
+                from: from,
+                text: content,
+                textAsHtml: content,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            return [true, updatedDraft];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.userRepository = new user_repository_1.UserRepository();
@@ -55,10 +79,12 @@ class InboxService {
     async getAllInboxes(req) {
         const reqTemp = req;
         const type = req.query.type;
+        const medium = req.query.medium;
         const filters = Object.keys(await inbox_utils_1.default.getAllInboxFilters(req)).length
             ? await inbox_utils_1.default.getAllInboxFilters(req)
             : { userId: reqTemp.id };
         filters['isDeleted'] = { $ne: true };
+        filters['medium'] = medium;
         let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
             path: 'previousMessages',
         }, undefined
@@ -102,6 +128,29 @@ class InboxService {
             return [false, constants_util_2.default.failureAddMessage('draft')];
         }
         return [true, result];
+    }
+    async createDraft(req) {
+        const reqTemp = req;
+        const threadId = (0, uuid_1.v4)();
+        let caseData = null;
+        let { from, sendTo, content } = req.body;
+        if (req.body.caseId) {
+            caseData = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [
+                { path: 'debtor', select: ['businessInformation.companyName'] },
+                { path: 'creditor', select: ['businessInformation.companyName'] },
+            ]);
+            if (!caseData) {
+                return [false, constants_util_2.default.notFoundMessage('Case')];
+            }
+        }
+        const smsData = {
+            from: from,
+            to: sendTo,
+            text: content,
+            textAsHtml: content,
+        };
+        email_util_1.default.createNewInbox(smsData, caseData, 'draft', threadId, reqTemp.id, reqTemp.name, null, null, 'SMS');
+        return [true, `Draft created successfully`];
     }
 }
 exports.default = InboxService;
