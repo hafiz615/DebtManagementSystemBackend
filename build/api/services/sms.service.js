@@ -58,7 +58,7 @@ class SmsService {
             const inbox = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser?._id?.toString() || '', findUser?.name || '', null, null, 'SMS');
             if (caseData) {
                 await case_util_1.default.addInHistory({
-                    number,
+                    From: number,
                     To: cleanedTo,
                     Content: Body,
                     Time: new Date(common_util_1.default.getCurrentDate()),
@@ -103,6 +103,13 @@ class SmsService {
             const notificationTemp = await this.notificationRepository.updateById(notificationId, {
                 caseId: caseId,
             });
+            await case_util_1.default.addInHistory({
+                From: inboxTemp.from,
+                To: inboxTemp.to,
+                Content: inboxTemp.text,
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'SMS',
+            }, caseTemp._id.toString());
             return [true, 'Successfully save notification'];
         };
         this.caseRepository = new case_repository_1.CaseRepository();

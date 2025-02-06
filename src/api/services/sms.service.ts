@@ -110,7 +110,7 @@ class SmsService {
     if (caseData) {
       await caseUtil.addInHistory(
         {
-          number,
+          From: number,
           To: cleanedTo,
           Content: Body,
           Time: new Date(commonUtil.getCurrentDate()),
@@ -182,6 +182,16 @@ class SmsService {
         }
       );
 
+    await caseUtil.addInHistory(
+      {
+        From: inboxTemp.from,
+        To: inboxTemp.to,
+        Content: inboxTemp.text,
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'SMS',
+      },
+      caseTemp._id.toString()
+    );
     return [true, 'Successfully save notification'];
   };
 }

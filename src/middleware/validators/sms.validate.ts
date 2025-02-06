@@ -12,48 +12,30 @@ class SmsValidate {
   ) {
     const schema = Joi.object({
       caseId: Joi.string()
-        .custom((value, helpers) => {
-          if (!mongoose.Types.ObjectId.isValid(value)) {
-            return helpers.error('any.invalid');
-          }
-          return value;
-        })
+        .regex(/^[0-9a-fA-F]{24}$/) // Matches a valId MongoDB ObjectId
         .required()
         .messages({
-          'string.empty': 'caseId cannot be empty.',
-          'any.required': 'caseId is required.',
-          'string.base': 'caseId must be a string.',
-          'any.invalid': 'caseId must be a valid MongoDB ObjectId.',
+          'any.required': 'Case Id is required.',
+          'string.pattern.base': 'Case Id is invalid.',
+          'string.empty': 'Case Id cannot be empty.',
         }),
 
       notificationId: Joi.string()
-        .custom((value, helpers) => {
-          if (!mongoose.Types.ObjectId.isValid(value)) {
-            return helpers.error('any.invalid');
-          }
-          return value;
-        })
+        .regex(/^[0-9a-fA-F]{24}$/) // Matches a valId MongoDB ObjectId
         .required()
         .messages({
-          'string.empty': 'notificationId cannot be empty.',
-          'any.required': 'notificationId is required.',
-          'string.base': 'notificationId must be a string.',
-          'any.invalid': 'notificationId must be a valid MongoDB ObjectId.',
+          'any.required': 'Notification Id is required.',
+          'string.pattern.base': 'Notification Id is invalid.',
+          'string.empty': 'Notification Id cannot be empty.',
         }),
 
       inboxId: Joi.string()
-        .custom((value, helpers) => {
-          if (!mongoose.Types.ObjectId.isValid(value)) {
-            return helpers.error('any.invalid');
-          }
-          return value;
-        })
+        .regex(/^[0-9a-fA-F]{24}$/) // Matches a valId MongoDB ObjectId
         .required()
         .messages({
-          'string.empty': 'inboxId cannot be empty.',
-          'any.required': 'inboxId is required.',
-          'string.base': 'inboxId must be a string.',
-          'any.invalid': 'inboxId must be a valid MongoDB ObjectId.',
+          'any.required': 'Inbox Id is required.',
+          'string.pattern.base': 'Inbox Id is invalid.',
+          'string.empty': 'Inbox Id cannot be empty.',
         }),
     });
 
