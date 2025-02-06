@@ -273,9 +273,14 @@ class CaseService {
 
   getAllUserCases = async (req: Request): Promise<any> => {
     const reqTemp: any = req;
+    const debtorId = req.query?.debtorId ? req.query.debtorId : null;
+    const filter = debtorId
+      ? {debtor: debtorId, isDeleted: false}
+      : {caseOwnerId: reqTemp.id, isDeleted: false};
+
     const findCases: ICase[] =
       await this.caseRepository.getAllWithoutPagination<ICase>(
-        {caseOwnerId: reqTemp.id},
+        filter,
         undefined,
         undefined,
         undefined,

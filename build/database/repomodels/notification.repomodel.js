@@ -8,6 +8,8 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Notification {
     constructor() {
         this.caseId = '';
+        this.inboxId = '';
+        this.debtorId = '';
         this.type = '';
         this.text = '';
         this.isRead = false;
