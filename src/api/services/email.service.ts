@@ -77,6 +77,7 @@ class EmailService {
       ? parseData.to[0].text
       : parseData.to?.text;
     const attachments = parseData.attachments;
+    const cc = parseData.cc[0]?.text || '';
     const referencesHeader = parseData.headers.get('references');
     console.log('referencesHeader: ', referencesHeader);
     if (referencesHeader) {
@@ -121,6 +122,7 @@ class EmailService {
             Subject: subject,
             From: from,
             To: to,
+            CC: cc,
             Content: extractedHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
@@ -144,7 +146,7 @@ class EmailService {
         subject,
         extractedText,
         textAsHtml: extractedHtml,
-        cc: parseData.cc,
+        cc: cc,
         attachments: data,
       };
       if (threadId) {
