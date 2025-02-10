@@ -72,6 +72,25 @@ class InboxService {
             });
             return [true, updatedDraft];
         };
+        this.inboxStatus = async (req) => {
+            const reqTemp = req;
+            const { sendTo, from, content } = req.body;
+            const draftId = req.params.id;
+            // Find the draft first
+            const existingDraft = await this.inboxRepository.getOne({
+                _id: req.params.id,
+                isDeleted: false,
+            });
+            if (!existingDraft) {
+                return [false, constants_util_2.default.notFoundMessage('Inbox')];
+            }
+            // Update the draft
+            const updatedDraft = await this.inboxRepository.updateById(req.params.id, {
+                isComplete: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            return [true, updatedDraft];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.userRepository = new user_repository_1.UserRepository();
@@ -84,6 +103,7 @@ class InboxService {
             ? await inbox_utils_1.default.getAllInboxFilters(req)
             : { userId: reqTemp.id };
         filters['isDeleted'] = { $ne: true };
+        filters['isComplete'] = { $ne: true };
         filters['medium'] = medium;
         let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
             path: 'previousMessages',

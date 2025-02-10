@@ -21,6 +21,7 @@ class Inbox {
         this.isRead = false;
         this.type = 'draft';
         this.isDeleted = false;
+        this.isComplete = false;
         this.debtorCompanyName = '';
         this.creditorCompanyName = '';
         this.negotiatorName = '';
