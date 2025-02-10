@@ -15,10 +15,12 @@ const debtor_repository_1 = require("../api/repository/debtor/debtor.repository"
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const case_repository_1 = require("../api/repository/case/case.repository");
+const user_repository_1 = require("../api/repository/user/user.repository");
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
         this.twilioClient = new twilio_2.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        this.userRepository = new user_repository_1.UserRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.callRepository = new call_repository_1.CallRepository();
@@ -143,6 +145,10 @@ class CallUtil {
         return null;
     }
     async getMissedCalls(twilioNumber) {
+        let findUser = await this.userRepository.getOne({
+            twilioNo: twilioNumber,
+            isDeleted: false,
+        });
         let pageToken = null;
         let allCalls = [];
         do {
@@ -153,7 +159,8 @@ class CallUtil {
                 pageToken: pageToken,
             });
             const callsWithNames = await Promise.all(calls.map(async (call) => {
-                const number = await common_util_1.default.cleanPhoneNumber(call.from);
+                console.log('call', call);
+                const number = await common_util_1.default.cleanPhoneNumberConditionally(call.from);
                 const name = await this.getDebtorOrCreditorName(number);
                 let caseData = null;
                 if (name) {
@@ -166,6 +173,8 @@ class CallUtil {
                     from: number,
                     companyName: name ? name.companyName : 'Unknown',
                     time: call.startTime,
+                    recepientNumber: await common_util_1.default.cleanPhoneNumber(twilioNumber),
+                    recepientName: findUser?.name,
                     caseId: caseData ? caseData._id.toString() : '',
                 };
             }));
