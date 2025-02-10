@@ -29,6 +29,8 @@ const uuid_1 = require("uuid");
 const settings_repository_1 = require("../repository/setting/settings.repository");
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
+const call_util_1 = __importDefault(require("../../utils/call.util"));
+const call_repository_1 = require("../repository/call/call.repository");
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -131,20 +133,47 @@ class CaseService {
             return [true, findCase];
         };
         this.getAllUserCases = async (req) => {
-            const reqTemp = req;
-            const debtorId = req.query?.debtorId ? req.query.debtorId : null;
-            const filter = debtorId
-                ? { debtor: debtorId, isDeleted: false }
-                : { caseOwnerId: reqTemp.id, isDeleted: false };
-            const findCases = await this.caseRepository.getAllWithoutPagination(filter, undefined, undefined, undefined, [
-                {
-                    path: 'creditor',
-                    select: ['businessInformation.companyName'],
-                },
-                { path: 'debtor', select: ['businessInformation.companyName'] },
-            ]);
-            if (findCases.length === 0) {
-                return [false, constants_util_1.default.notFoundMessage('Cases')];
+            let findCases = [];
+            const { from, callSid } = req.body;
+            const number = await common_util_1.default.cleanPhoneNumberConditionally(from);
+            const name = await call_util_1.default.getDebtorOrCreditorName(number);
+            console.log(name);
+            let caseData = null;
+            if (name) {
+                if (name?.creditorId) {
+                    caseData = await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [
+                        { path: 'debtor', select: ['businessInformation.companyName'] },
+                        { path: 'creditor', select: ['businessInformation.companyName'] },
+                    ]);
+                }
+                else if (name?.debtorId) {
+                    findCases = await this.caseRepository.getAllWithoutPagination({ debtor: name.debtorId, isDeleted: { $ne: true } }, undefined, undefined, undefined, [
+                        { path: 'creditor', select: ['businessInformation.companyName'] },
+                        { path: 'debtor', select: ['businessInformation.companyName'] },
+                    ]);
+                    caseData = findCases.length === 1 ? findCases[0] : null;
+                }
+            }
+            else {
+                findCases = await this.caseRepository.getAllWithoutPagination(undefined, undefined, undefined, undefined, [
+                    {
+                        path: 'creditor',
+                        select: ['businessInformation.companyName'],
+                    },
+                    { path: 'debtor', select: ['businessInformation.companyName'] },
+                ]);
+            }
+            if (caseData) {
+                const parentCallSid = await call_util_1.default.fetchParentCallSid(callSid);
+                const result = await this.callRepository.updateByOne({ parentCallSid }, {
+                    caseId: caseData?._id?.toString(),
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                console.log(result);
+                if (!result) {
+                    return [false, constants_util_1.default.failureUpdateMessage('call')];
+                }
+                return [true, constants_util_1.default.successUpdateMessage('call')];
             }
             const groupedByDebtor = findCases.reduce((acc, caseItem) => {
                 const debtorCompanyName = caseItem.debtor?.businessInformation?.companyName;
@@ -887,6 +916,7 @@ class CaseService {
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.callRepository = new call_repository_1.CallRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();

@@ -49,6 +49,8 @@ import {ISettings} from '../../database/interfaces/settings.interface';
 import settingsUtil from '../../utils/settings.util';
 import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineStatus.repository';
 import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
+import callUtil from '../../utils/call.util';
+import {CallRepository} from '../repository/call/call.repository';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -56,6 +58,7 @@ const VoiceGrant = AccessToken.VoiceGrant;
 
 class CaseService {
   private twilioClient: any;
+  private callRepository: CallRepository;
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
   private targetCFRepository: TargetCFRepository;
@@ -77,6 +80,7 @@ class CaseService {
       process.env.TWILIO_AUTH_TOKEN
     );
     this.caseRepository = new CaseRepository();
+    this.callRepository = new CallRepository();
     this.uploadUtil = new UploadUtil();
     this.targetCFRepository = new TargetCFRepository();
     this.paymentRepository = new PaymentRepository();
@@ -272,15 +276,41 @@ class CaseService {
   }
 
   getAllUserCases = async (req: Request): Promise<any> => {
-    const reqTemp: any = req;
-    const debtorId = req.query?.debtorId ? req.query.debtorId : null;
-    const filter = debtorId
-      ? {debtor: debtorId, isDeleted: false}
-      : {caseOwnerId: reqTemp.id, isDeleted: false};
+    let findCases: ICase[] = [];
+    const {from, callSid} = req.body;
+    const number = await commonUtil.cleanPhoneNumberConditionally(from);
+    const name = await callUtil.getDebtorOrCreditorName(number);
+    console.log(name);
+    let caseData: ICase = null;
 
-    const findCases: ICase[] =
-      await this.caseRepository.getAllWithoutPagination<ICase>(
-        filter,
+    if (name) {
+      if (name?.creditorId) {
+        caseData = await this.caseRepository.getOne<ICase>(
+          {creditor: name.creditorId, isDeleted: {$ne: true}},
+          undefined,
+          undefined,
+          [
+            {path: 'debtor', select: ['businessInformation.companyName']},
+            {path: 'creditor', select: ['businessInformation.companyName']},
+          ]
+        );
+      } else if (name?.debtorId) {
+        findCases = await this.caseRepository.getAllWithoutPagination<ICase>(
+          {debtor: name.debtorId, isDeleted: {$ne: true}},
+          undefined,
+          undefined,
+          undefined,
+          [
+            {path: 'creditor', select: ['businessInformation.companyName']},
+            {path: 'debtor', select: ['businessInformation.companyName']},
+          ]
+        );
+
+        caseData = findCases.length === 1 ? findCases[0] : null;
+      }
+    } else {
+      findCases = await this.caseRepository.getAllWithoutPagination<ICase>(
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -292,10 +322,23 @@ class CaseService {
           {path: 'debtor', select: ['businessInformation.companyName']},
         ]
       );
-
-    if (findCases.length === 0) {
-      return [false, constantsUtil.notFoundMessage('Cases')];
     }
+    if (caseData) {
+      const parentCallSid = await callUtil.fetchParentCallSid(callSid);
+      const result = await this.callRepository.updateByOne(
+        {parentCallSid},
+        {
+          caseId: caseData?._id?.toString(),
+          updatedAt: commonUtil.getCurrentDate(),
+        }
+      );
+      console.log(result);
+      if (!result) {
+        return [false, constantsUtil.failureUpdateMessage('call')];
+      }
+      return [true, constantsUtil.successUpdateMessage('call')];
+    }
+
     const groupedByDebtor = findCases.reduce((acc, caseItem: any) => {
       const debtorCompanyName =
         caseItem.debtor?.businessInformation?.companyName;
