@@ -374,6 +374,11 @@ class CaseValidate {
     }
     async updateCase(req, res, next) {
         const schema = joi_1.default.object({
+            caseOwner: joi_1.default.string().optional().messages({
+                'any.required': 'Case Owner is required.',
+                'string.pattern.base': 'Case Owner is invalid.',
+                'string.empty': 'Case Owner cannot be empty.',
+            }),
             creditor: joi_1.default.object({
                 aggression: joi_1.default.number().optional().min(0).max(10).messages({
                     'number.base': 'Aggression must be a number.',
