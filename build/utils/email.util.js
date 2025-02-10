@@ -372,6 +372,9 @@ class EmailUtil {
                 });
             }
         }
+        else {
+            newNotificationCount.count = 1;
+        }
         newNotificationCount.userId = userId;
         await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;

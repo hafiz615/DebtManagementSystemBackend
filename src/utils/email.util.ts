@@ -618,6 +618,8 @@ class EmailUtil {
           count: currentCount?.count,
         });
       }
+    } else {
+      newNotificationCount.count = 1;
     }
     newNotificationCount.userId = userId;
     await this.notificationCountRepository.create<INotificationCount>(
