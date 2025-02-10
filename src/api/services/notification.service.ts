@@ -37,7 +37,7 @@ class InboxService {
     }
 
     await this.notificationCountRepository.upsert(
-      {userId: reqTemp.id},
+      {userId: reqTemp.id, type: req.body.type},
       {$set: {count: 0}}
     );
 

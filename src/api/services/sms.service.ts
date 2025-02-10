@@ -123,16 +123,23 @@ class SmsService {
     newNotification.text = this.formatText(name?.companyName || 'Unknown');
     newNotification.type = 'SMS';
     newNotification.inboxId = inbox.id;
-    // newNotification;
+    newNotification.userId = findUser?._id?.toString() || '';
 
     await this.notificationRepository.create<INotification>(
       newNotification as any
     );
+    let updatedCount;
 
-    await this.notificationCountRepository.upsert({}, {$inc: {count: 1}});
-
-    const updatedCount =
-      await this.notificationCountRepository.getOne<INotificationCount>({});
+    if (findUser) {
+      await this.notificationCountRepository.upsert(
+        {userId: findUser._id},
+        {$inc: {count: 1}}
+      );
+      updatedCount =
+        await this.notificationCountRepository.getOne<INotificationCount>({
+          userId: findUser._id,
+        });
+    }
 
     app.socketInstance.emit('notify', {
       notificationCount: updatedCount?.count || 0,

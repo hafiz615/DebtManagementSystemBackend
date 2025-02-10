@@ -23,7 +23,7 @@ class InboxService {
         if (!notifications.length) {
             return [false, constants_util_2.default.notFoundMessage('Notification')];
         }
-        await this.notificationCountRepository.upsert({ userId: reqTemp.id }, { $set: { count: 0 } });
+        await this.notificationCountRepository.upsert({ userId: reqTemp.id, type: req.body.type }, { $set: { count: 0 } });
         return [true, notifications];
     }
     async markAsRead(id) {
