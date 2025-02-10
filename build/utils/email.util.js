@@ -361,14 +361,16 @@ class EmailUtil {
         //   newNotification as any
         // );
         const currentCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
-        if (currentCount && currentCount.length < 1) {
-            newNotificationCount.count = 1;
-        }
-        else {
-            newNotificationCount.count = currentCount[0].count + 1;
-            await this.notificationCountRepository.delete({
-                count: currentCount[0].count,
-            });
+        if (currentCount) {
+            if (currentCount?.length < 1) {
+                newNotificationCount.count = 1;
+            }
+            else {
+                newNotificationCount.count = currentCount?.count + 1;
+                await this.notificationCountRepository.delete({
+                    count: currentCount?.count,
+                });
+            }
         }
         newNotificationCount.userId = userId;
         await this.notificationCountRepository.create(newNotificationCount);

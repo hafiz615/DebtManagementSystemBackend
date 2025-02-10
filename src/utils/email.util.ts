@@ -609,13 +609,15 @@ class EmailUtil {
       undefined,
       undefined
     );
-    if (currentCount && currentCount.length < 1) {
-      newNotificationCount.count = 1;
-    } else {
-      newNotificationCount.count = currentCount[0].count + 1;
-      await this.notificationCountRepository.delete<INotificationCount>({
-        count: currentCount[0].count,
-      });
+    if (currentCount) {
+      if (currentCount?.length < 1) {
+        newNotificationCount.count = 1;
+      } else {
+        newNotificationCount.count = currentCount?.count + 1;
+        await this.notificationCountRepository.delete<INotificationCount>({
+          count: currentCount?.count,
+        });
+      }
     }
     newNotificationCount.userId = userId;
     await this.notificationCountRepository.create<INotificationCount>(
