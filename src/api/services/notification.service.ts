@@ -23,7 +23,7 @@ class InboxService {
 
   async getAllNotifications(req: Request) {
     let notifications = await this.notificationRepository.getAll<INotification>(
-      {type: req.body.type},
+      {type: req.body.type, userId: req.body.userId},
       undefined,
       undefined,
       {createdAt: -1},
@@ -35,7 +35,10 @@ class InboxService {
       return [false, constantsUtil.notFoundMessage('Notification')];
     }
 
-    await this.notificationCountRepository.upsert({}, {$set: {count: 0}});
+    await this.notificationCountRepository.upsert(
+      {userId: req.body.userId},
+      {$set: {count: 0}}
+    );
 
     return [true, notifications];
   }
