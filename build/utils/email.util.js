@@ -361,7 +361,7 @@ class EmailUtil {
         //   newNotification as any
         // );
         const currentCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
-        if (currentCount.length < 1) {
+        if (currentCount && currentCount.length < 1) {
             newNotificationCount.count = 1;
         }
         else {

@@ -609,7 +609,7 @@ class EmailUtil {
       undefined,
       undefined
     );
-    if (currentCount.length < 1) {
+    if (currentCount && currentCount.length < 1) {
       newNotificationCount.count = 1;
     } else {
       newNotificationCount.count = currentCount[0].count + 1;
