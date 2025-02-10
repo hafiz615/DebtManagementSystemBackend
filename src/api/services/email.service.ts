@@ -165,16 +165,16 @@ class EmailService {
         await this.notificationRepository.create<INotification>(
           notification as any
         );
-        const notificationCount: NotificationCount[] =
-          await this.notificationCountRepository.getAll(
-            undefined,
+        const notificationCount: any =
+          await this.notificationCountRepository.getOne(
+            {userId: userId},
             undefined,
             undefined,
             undefined,
             undefined
           );
         app.socketInstance.emit('notify', {
-          notificationCount: notificationCount[0].count,
+          notificationCount: notificationCount.count,
           notification: notification,
         });
 

@@ -356,10 +356,11 @@ class EmailUtil {
             newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
         }
         newNotification.type = 'EMAIL';
+        newNotification.userId = userId;
         // await this.notificationRepository.create<INotification>(
         //   newNotification as any
         // );
-        const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
+        const currentCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
         if (currentCount.length < 1) {
             newNotificationCount.count = 1;
         }
@@ -369,6 +370,7 @@ class EmailUtil {
                 count: currentCount[0].count,
             });
         }
+        newNotificationCount.userId = userId;
         await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;
     }

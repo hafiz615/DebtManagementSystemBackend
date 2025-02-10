@@ -598,17 +598,17 @@ class EmailUtil {
       );
     }
     newNotification.type = 'EMAIL';
+    newNotification.userId = userId;
     // await this.notificationRepository.create<INotification>(
     //   newNotification as any
     // );
-    const currentCount: NotificationCount[] =
-      await this.notificationCountRepository.getAll(
-        {},
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      );
+    const currentCount: any = await this.notificationCountRepository.getOne(
+      {userId: userId},
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
     if (currentCount.length < 1) {
       newNotificationCount.count = 1;
     } else {
@@ -617,7 +617,7 @@ class EmailUtil {
         count: currentCount[0].count,
       });
     }
-
+    newNotificationCount.userId = userId;
     await this.notificationCountRepository.create<INotificationCount>(
       newNotificationCount as any
     );
