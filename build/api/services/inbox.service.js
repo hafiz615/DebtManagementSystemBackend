@@ -91,7 +91,17 @@ class InboxService {
         // Number(req.query.page),
         // Number(req.query.limit)
         );
-        const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
+        const updatedInbox = await Promise.all(inbox.map(async (inboxItem) => {
+            if (inboxItem.caseId) {
+                const caseData = await this.caseRepository.getById(inboxItem.caseId, undefined, undefined, ['debtor']);
+                return {
+                    ...inboxItem.toObject(),
+                    debtorId: caseData ? caseData.debtor._id : null,
+                };
+            }
+            return inboxItem;
+        }));
+        const formattedData = inbox_utils_1.default.formatInboxData(updatedInbox, reqTemp.name, type);
         if (!formattedData) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
