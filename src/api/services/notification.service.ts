@@ -22,8 +22,9 @@ class InboxService {
   }
 
   async getAllNotifications(req: Request) {
+    const reqTemp: any = req;
     let notifications = await this.notificationRepository.getAll<INotification>(
-      {type: req.body.type, userId: req.body.userId},
+      {type: req.body.type, userId: reqTemp.id},
       undefined,
       undefined,
       {createdAt: -1},
@@ -36,7 +37,7 @@ class InboxService {
     }
 
     await this.notificationCountRepository.upsert(
-      {userId: req.body.userId},
+      {userId: reqTemp.id},
       {$set: {count: 0}}
     );
 
