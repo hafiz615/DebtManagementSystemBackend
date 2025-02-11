@@ -240,31 +240,23 @@ class InboxService {
   };
 
   inboxStatus = async (req: Request) => {
-    const reqTemp: any = req;
-
-    const {sendTo, from, content} = req.body;
-
-    const draftId = req.params.id;
-
-    // Find the draft first
-    const existingDraft = await this.inboxRepository.getOne<IInbox>({
+    const existingInbox = await this.inboxRepository.getOne<IInbox>({
       _id: req.params.id,
       isDeleted: false,
     });
 
-    if (!existingDraft) {
+    if (!existingInbox) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
 
-    // Update the draft
-    const updatedDraft = await this.inboxRepository.updateById<IInbox>(
+    const updatedInbox = await this.inboxRepository.updateById<IInbox>(
       req.params.id,
       {
         isComplete: true,
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
-    return [true, updatedDraft];
+    return [true, updatedInbox];
   };
 }
 
