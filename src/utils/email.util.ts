@@ -615,14 +615,15 @@ class EmailUtil {
       } else {
         newNotificationCount.count = currentCount?.count + 1;
         await this.notificationCountRepository.delete<INotificationCount>({
-          count: currentCount?.count,
+          userId: userId,
         });
       }
     } else {
       newNotificationCount.count = 1;
     }
     newNotificationCount.userId = userId;
-    await this.notificationCountRepository.create<INotificationCount>(
+    await this.notificationCountRepository.upsert<INotificationCount>(
+      {userId: userId},
       newNotificationCount as any
     );
     return newNotification;

@@ -368,7 +368,7 @@ class EmailUtil {
             else {
                 newNotificationCount.count = currentCount?.count + 1;
                 await this.notificationCountRepository.delete({
-                    count: currentCount?.count,
+                    userId: userId,
                 });
             }
         }
@@ -376,7 +376,7 @@ class EmailUtil {
             newNotificationCount.count = 1;
         }
         newNotificationCount.userId = userId;
-        await this.notificationCountRepository.create(newNotificationCount);
+        await this.notificationCountRepository.upsert({ userId: userId }, newNotificationCount);
         return newNotification;
     }
     async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium) {

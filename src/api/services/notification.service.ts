@@ -36,8 +36,8 @@ class InboxService {
       return [false, constantsUtil.notFoundMessage('Notification')];
     }
 
-    await this.notificationCountRepository.upsert(
-      {userId: reqTemp.id, type: req.body.type},
+    await this.notificationCountRepository.upsert<INotificationCount>(
+      {userId: reqTemp.id},
       {$set: {count: 0}}
     );
 
@@ -61,13 +61,16 @@ class InboxService {
     return [true, notification];
   }
 
-  async getNotificationCount() {
-    const notificationCount: NotificationCount[] =
-      await this.notificationCountRepository.getAll({});
+  async getNotificationCount(req: Request) {
+    const reqTemp: any = req;
+    const notificationCount =
+      await this.notificationCountRepository.getOne<INotificationCount>({
+        userId: reqTemp.id,
+      });
     if (!notificationCount) {
       return [false, constants.notFoundMessage('notification')];
     }
-    return [true, notificationCount[0].count];
+    return [true, notificationCount.count];
   }
 }
 
