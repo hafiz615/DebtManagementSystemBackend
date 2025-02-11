@@ -109,6 +109,7 @@ class EmailService {
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
                     Attachments: data,
+                    Username: userName,
                 }, caseId);
                 caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -127,14 +128,14 @@ class EmailService {
             if (threadId) {
                 console.log('threadId: ', threadId);
                 console.log('threadId: inside the thread ID ', threadId);
-                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL');
                 if (!caseData) {
                     notification.text = email_util_1.default.formatText(userName);
                 }
                 await this.notificationRepository.create(notification);
-                const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+                const notificationCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
                 app_1.default.socketInstance.emit('notify', {
-                    notificationCount: notificationCount[0].count,
+                    notificationCount: notificationCount.count,
                     notification: notification,
                 });
                 return true;

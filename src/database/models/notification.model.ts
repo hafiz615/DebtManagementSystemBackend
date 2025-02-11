@@ -17,6 +17,9 @@ const notification: Schema = new Schema({
   debtorId: {
     type: String,
   },
+  userId: {
+    type: String,
+  },
   type: {
     type: String,
   },

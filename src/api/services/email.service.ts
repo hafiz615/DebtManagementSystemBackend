@@ -129,6 +129,7 @@ class EmailService {
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
             Attachments: data,
+            Username: userName,
           },
           caseId
         );
@@ -161,7 +162,8 @@ class EmailService {
           emailData,
           threadId,
           userId,
-          userName
+          userName,
+          'EMAIL'
         );
         if (!caseData) {
           notification.text = emailUtil.formatText(userName);
@@ -169,16 +171,16 @@ class EmailService {
         await this.notificationRepository.create<INotification>(
           notification as any
         );
-        const notificationCount: NotificationCount[] =
-          await this.notificationCountRepository.getAll(
-            undefined,
+        const notificationCount: any =
+          await this.notificationCountRepository.getOne(
+            {userId: userId},
             undefined,
             undefined,
             undefined,
             undefined
           );
         app.socketInstance.emit('notify', {
-          notificationCount: notificationCount[0].count,
+          notificationCount: notificationCount.count,
           notification: notification,
         });
 
