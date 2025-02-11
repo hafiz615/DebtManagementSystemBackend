@@ -333,7 +333,7 @@ class EmailUtil {
                 ];
                 const previousMessages = [
                     existingInbox[0]._id,
-                    ...existingInbox[0].previousMessages,
+                    ...existingInbox[0]?.previousMessages,
                 ];
                 // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
                 const uniqueAttachments = lodash_1.default.uniqBy(mergedAttachments, item => `${item.key}-${item.originalFileName}`);
@@ -347,7 +347,7 @@ class EmailUtil {
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, null, null, medium);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
             console.log('Create New Inbox response when Create', res);
             return res;
         }

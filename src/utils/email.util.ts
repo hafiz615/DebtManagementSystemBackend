@@ -550,7 +550,7 @@ class EmailUtil {
 
         const previousMessages = [
           existingInbox[0]._id,
-          ...existingInbox[0].previousMessages,
+          ...existingInbox[0]?.previousMessages,
         ];
 
         // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
@@ -586,7 +586,7 @@ class EmailUtil {
         threadId,
         userId,
         userName,
-        null,
+        [],
         null,
         medium
       );
