@@ -52,7 +52,30 @@ class InboxService {
       // Number(req.query.limit)
     );
 
-    const formattedData = inboxUtils.formatInboxData(inbox, reqTemp.name, type);
+    const updatedInbox = await Promise.all(
+      inbox.map(async inboxItem => {
+        if (inboxItem.caseId) {
+          const caseData: any = await this.caseRepository.getById<ICase>(
+            inboxItem.caseId,
+            undefined,
+            undefined,
+            ['debtor']
+          );
+
+          return {
+            ...inboxItem.toObject(),
+            debtorId: caseData ? caseData.debtor._id : null,
+          };
+        }
+        return inboxItem;
+      })
+    );
+
+    const formattedData = inboxUtils.formatInboxData(
+      updatedInbox,
+      reqTemp.name,
+      type
+    );
     if (!formattedData) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
