@@ -1109,6 +1109,9 @@ class CaseUtil {
                 $group: {
                     _id: { $toString: '$debtor._id' },
                     companyName: { $first: '$debtor.businessInformation.companyName' },
+                    clientName: { $first: '$debtor.basicInformation.fullName' }, // Add client name
+                    phoneNumber: { $first: '$debtor.basicInformation.phone' }, // Add phone number
+                    email: { $first: '$debtor.basicInformation.email' }, // Add email
                     totalCases: { $sum: 1 },
                     totalCreditors: { $addToSet: '$creditor' },
                     totalDebt: { $sum: '$totalDebt' },
@@ -1120,6 +1123,9 @@ class CaseUtil {
                     id: '$_id',
                     _id: 0,
                     companyName: 1,
+                    clientName: 1,
+                    phoneNumber: 1,
+                    email: 1,
                     totalCases: 1,
                     totalCreditors: { $size: '$totalCreditors' }, // Count unique creditors
                     totalDebt: 1,
@@ -1182,7 +1188,11 @@ class CaseUtil {
         // Helper function to apply text search
         const applyTextSearch = (client, text) => {
             const regex = new RegExp(text, 'i');
-            return regex.test(client.companyName) || regex.test(client.status);
+            return (regex.test(client.companyName) ||
+                regex.test(client.status) ||
+                (client.phoneNumber && regex.test(client.phoneNumber)) ||
+                (client.email && regex.test(client.email)) ||
+                (client.clientName && regex.test(client.clientName)));
         };
         // Helper function to apply numeric/date filters
         const applyFilters = (client, filters) => {
