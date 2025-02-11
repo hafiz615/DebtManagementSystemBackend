@@ -69,4 +69,10 @@ router.put(
   inboxController.updateDraftSms
 );
 
+router.put(
+  '/inboxStatus/:id',
+  authorize.validateAuth,
+  inboxController.inboxStatus
+);
+
 export default router;
