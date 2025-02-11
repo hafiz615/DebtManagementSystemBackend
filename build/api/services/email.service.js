@@ -123,7 +123,7 @@ class EmailService {
             if (threadId) {
                 console.log('threadId: ', threadId);
                 console.log('threadId: inside the thread ID ', threadId);
-                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL');
                 if (!caseData) {
                     notification.text = email_util_1.default.formatText(userName);
                 }

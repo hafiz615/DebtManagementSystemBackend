@@ -157,7 +157,8 @@ class EmailService {
           emailData,
           threadId,
           userId,
-          userName
+          userName,
+          'EMAIL'
         );
         if (!caseData) {
           notification.text = emailUtil.formatText(userName);
