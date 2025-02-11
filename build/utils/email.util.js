@@ -245,7 +245,7 @@ class EmailUtil {
                         attachments: uniqueAttachments,
                     };
                     if (reqThreadId) {
-                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL');
+                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL', true);
                     }
                     else {
                         this.createInbox(caseData, 'sent', emailData, threadId, userId, userName, 'EMAIL');
@@ -310,7 +310,7 @@ class EmailUtil {
         }
         return [true, ''];
     }
-    async createInbox(caseTemp, type, emailData, threadId, userId, userName, medium) {
+    async createInbox(caseTemp, type, emailData, threadId, userId, userName, medium, check) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -361,22 +361,24 @@ class EmailUtil {
         //   newNotification as any
         // );
         const currentCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
-        if (currentCount) {
-            if (currentCount?.length < 1) {
-                newNotificationCount.count = 1;
+        if (!check) {
+            if (currentCount) {
+                if (currentCount?.length < 1) {
+                    newNotificationCount.count = 1;
+                }
+                else {
+                    newNotificationCount.count = currentCount?.count + 1;
+                    await this.notificationCountRepository.delete({
+                        userId: userId,
+                    });
+                }
             }
             else {
-                newNotificationCount.count = currentCount?.count + 1;
-                await this.notificationCountRepository.delete({
-                    userId: userId,
-                });
+                newNotificationCount.count = 1;
             }
+            newNotificationCount.userId = userId;
+            await this.notificationCountRepository.upsert({ userId: userId }, newNotificationCount);
         }
-        else {
-            newNotificationCount.count = 1;
-        }
-        newNotificationCount.userId = userId;
-        await this.notificationCountRepository.upsert({ userId: userId }, newNotificationCount);
         return newNotification;
     }
     async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium) {

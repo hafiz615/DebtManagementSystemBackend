@@ -369,7 +369,8 @@ class EmailUtil {
               threadId,
               userId,
               userName,
-              'EMAIL'
+              'EMAIL',
+              true
             );
           } else {
             this.createInbox(
@@ -506,7 +507,8 @@ class EmailUtil {
     threadId: any,
     userId?: string,
     userName?: string,
-    medium?: string
+    medium?: string,
+    check?: boolean
   ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
@@ -609,23 +611,25 @@ class EmailUtil {
       undefined,
       undefined
     );
-    if (currentCount) {
-      if (currentCount?.length < 1) {
-        newNotificationCount.count = 1;
+    if (!check) {
+      if (currentCount) {
+        if (currentCount?.length < 1) {
+          newNotificationCount.count = 1;
+        } else {
+          newNotificationCount.count = currentCount?.count + 1;
+          await this.notificationCountRepository.delete<INotificationCount>({
+            userId: userId,
+          });
+        }
       } else {
-        newNotificationCount.count = currentCount?.count + 1;
-        await this.notificationCountRepository.delete<INotificationCount>({
-          userId: userId,
-        });
+        newNotificationCount.count = 1;
       }
-    } else {
-      newNotificationCount.count = 1;
+      newNotificationCount.userId = userId;
+      await this.notificationCountRepository.upsert<INotificationCount>(
+        {userId: userId},
+        newNotificationCount as any
+      );
     }
-    newNotificationCount.userId = userId;
-    await this.notificationCountRepository.upsert<INotificationCount>(
-      {userId: userId},
-      newNotificationCount as any
-    );
     return newNotification;
   }
 
