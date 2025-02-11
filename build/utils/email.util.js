@@ -362,22 +362,16 @@ class EmailUtil {
         // );
         const currentCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
         if (!check) {
-            if (currentCount) {
-                if (currentCount?.length < 1) {
-                    newNotificationCount.count = 1;
-                }
-                else {
-                    newNotificationCount.count = currentCount?.count + 1;
-                    await this.notificationCountRepository.delete({
-                        userId: userId,
-                    });
-                }
-            }
-            else {
-                newNotificationCount.count = 1;
-            }
             newNotificationCount.userId = userId;
-            await this.notificationCountRepository.upsert({ userId: userId }, newNotificationCount);
+            newNotificationCount.count = currentCount
+                ? (currentCount?.count || 0) + 1
+                : 1;
+            if (currentCount) {
+                await this.notificationCountRepository.delete({
+                    userId,
+                });
+            }
+            await this.notificationCountRepository.upsert({ userId }, newNotificationCount);
         }
         return newNotification;
     }

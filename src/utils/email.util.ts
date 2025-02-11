@@ -612,21 +612,19 @@ class EmailUtil {
       undefined
     );
     if (!check) {
-      if (currentCount) {
-        if (currentCount?.length < 1) {
-          newNotificationCount.count = 1;
-        } else {
-          newNotificationCount.count = currentCount?.count + 1;
-          await this.notificationCountRepository.delete<INotificationCount>({
-            userId: userId,
-          });
-        }
-      } else {
-        newNotificationCount.count = 1;
-      }
       newNotificationCount.userId = userId;
+      newNotificationCount.count = currentCount
+        ? (currentCount?.count || 0) + 1
+        : 1;
+
+      if (currentCount) {
+        await this.notificationCountRepository.delete<INotificationCount>({
+          userId,
+        });
+      }
+
       await this.notificationCountRepository.upsert<INotificationCount>(
-        {userId: userId},
+        {userId},
         newNotificationCount as any
       );
     }
