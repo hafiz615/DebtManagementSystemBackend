@@ -86,7 +86,7 @@ class InboxService {
                 return [false, constants_util_2.default.notFoundMessage('')];
             }
             const updatedInbox = await repositoryInstance.updateById(req.params.id, {
-                isComplete: true,
+                isCompleted: true,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, updatedInbox];
@@ -104,7 +104,7 @@ class InboxService {
             ? await inbox_utils_1.default.getAllInboxFilters(req)
             : { userId: reqTemp.id };
         filters['isDeleted'] = { $ne: true };
-        filters['isComplete'] = { $ne: true };
+        filters['isCompleted'] = { $ne: true };
         filters['medium'] = medium;
         let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
             path: 'previousMessages',

@@ -52,7 +52,7 @@ const inbox: Schema = new Schema({
     type: Boolean,
     default: false,
   },
-  isComplete: {
+  isCompleted: {
     type: Boolean,
     default: false,
   },

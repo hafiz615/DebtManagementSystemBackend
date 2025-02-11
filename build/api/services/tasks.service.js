@@ -108,7 +108,7 @@ class TasksService {
         try {
             const tasks = await this.tasksRepository.findAll({
                 isDeleted: false,
-                isComplete: false,
+                isCompleted: { $ne: true },
             });
             if (!tasks || tasks.length === 0) {
                 return [false, constants_util_1.default.failureFetchMessage('tasks')];

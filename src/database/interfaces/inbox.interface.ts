@@ -15,7 +15,7 @@ export interface IInbox extends Document {
   userId: string;
   userName: string;
   isDeleted: boolean;
-  isComplete: boolean;
+  isCompleted: boolean;
   isRead: boolean;
   type: string;
   medium: string;

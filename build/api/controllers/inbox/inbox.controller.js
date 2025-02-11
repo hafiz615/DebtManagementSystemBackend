@@ -163,7 +163,7 @@ class InboxController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
-                    message: constants_util_1.default.successUpdateMessage('Inbox Status'),
+                    message: constants_util_1.default.successUpdateMessage('Status'),
                 }));
             }
             catch (error) {

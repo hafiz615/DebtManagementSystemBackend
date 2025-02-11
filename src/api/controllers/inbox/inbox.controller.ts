@@ -180,7 +180,7 @@ class InboxController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: [],
-          message: constants.successUpdateMessage('Inbox Status'),
+          message: constants.successUpdateMessage('Status'),
         })
       );
     } catch (error: any) {

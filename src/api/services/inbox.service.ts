@@ -36,7 +36,7 @@ class InboxService {
       ? await inboxUtils.getAllInboxFilters(req)
       : {userId: reqTemp.id};
     filters['isDeleted'] = {$ne: true};
-    filters['isComplete'] = {$ne: true};
+    filters['isCompleted'] = {$ne: true};
     filters['medium'] = medium;
 
     let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
@@ -260,7 +260,7 @@ class InboxService {
     }
 
     const updatedInbox = await repositoryInstance.updateById(req.params.id, {
-      isComplete: true,
+      isCompleted: true,
       updatedAt: commonUtil.getCurrentDate(),
     });
     return [true, updatedInbox];

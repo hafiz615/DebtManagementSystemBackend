@@ -10,7 +10,7 @@ export interface ITasks extends Document {
   status: string;
   notes: string;
   isDeleted: boolean;
-  isComplete: boolean;
+  isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

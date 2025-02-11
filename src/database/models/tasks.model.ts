@@ -32,7 +32,7 @@ const tasksModel = new Schema({
   isDeleted: {
     type: Boolean,
   },
-  isComplete: {
+  isCompleted: {
     type: Boolean,
     default: false,
   },
