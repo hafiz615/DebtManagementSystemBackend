@@ -536,7 +536,7 @@ class EmailUtil {
           threadId,
           userId,
           userName,
-          null,
+          [],
           null,
           medium
         );

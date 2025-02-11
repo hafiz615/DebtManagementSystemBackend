@@ -322,7 +322,7 @@ class EmailUtil {
             }, undefined, undefined, { _id: -1 });
             console.log('This is existing id', existingInbox[0]);
             if (!existingInbox[0]) {
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, null, null, medium);
+                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
                 console.log('Create New Inbox response when Received', res);
             }
             else {
