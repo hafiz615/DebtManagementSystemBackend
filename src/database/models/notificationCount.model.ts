@@ -8,6 +8,9 @@ const notificationCount: Schema = new Schema({
   count: {
     type: Number,
   },
+  userId: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     required: true,

@@ -177,6 +177,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'EMAIL',
+                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -223,6 +224,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'SMS',
+                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -336,10 +338,12 @@ class EmailUtil {
               Subject: subject,
               From: from,
               To: sendTo,
+              CC: cc,
               Content: content,
               Time: time,
               Action: 'EMAIL',
               Attachments: uniqueAttachments,
+              Username: userName,
             },
             caseId
           );
@@ -369,7 +373,8 @@ class EmailUtil {
               threadId,
               userId,
               userName,
-              'EMAIL'
+              'EMAIL',
+              true
             );
           } else {
             this.createInbox(
@@ -420,6 +425,7 @@ class EmailUtil {
               Content: content,
               Time: time,
               Action: 'SMS',
+              Username: userName,
             },
             caseId
           );
@@ -506,7 +512,8 @@ class EmailUtil {
     threadId: any,
     userId?: string,
     userName?: string,
-    medium?: string
+    medium?: string,
+    check?: boolean
   ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
@@ -534,7 +541,7 @@ class EmailUtil {
           threadId,
           userId,
           userName,
-          null,
+          [],
           null,
           medium
         );
@@ -548,7 +555,7 @@ class EmailUtil {
 
         const previousMessages = [
           existingInbox[0]._id,
-          ...existingInbox[0].previousMessages,
+          ...existingInbox[0]?.previousMessages,
         ];
 
         // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
@@ -584,7 +591,7 @@ class EmailUtil {
         threadId,
         userId,
         userName,
-        null,
+        [],
         null,
         medium
       );
@@ -598,29 +605,34 @@ class EmailUtil {
       );
     }
     newNotification.type = 'EMAIL';
+    newNotification.userId = userId;
     // await this.notificationRepository.create<INotification>(
     //   newNotification as any
     // );
-    const currentCount: NotificationCount[] =
-      await this.notificationCountRepository.getAll(
-        {},
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      );
-    if (currentCount.length < 1) {
-      newNotificationCount.count = 1;
-    } else {
-      newNotificationCount.count = currentCount[0].count + 1;
-      await this.notificationCountRepository.delete<INotificationCount>({
-        count: currentCount[0].count,
-      });
-    }
-
-    await this.notificationCountRepository.create<INotificationCount>(
-      newNotificationCount as any
+    const currentCount: any = await this.notificationCountRepository.getOne(
+      {userId: userId},
+      undefined,
+      undefined,
+      undefined,
+      undefined
     );
+    if (!check) {
+      newNotificationCount.userId = userId;
+      newNotificationCount.count = currentCount
+        ? (currentCount?.count || 0) + 1
+        : 1;
+
+      if (currentCount) {
+        await this.notificationCountRepository.delete<INotificationCount>({
+          userId,
+        });
+      }
+
+      await this.notificationCountRepository.upsert<INotificationCount>(
+        {userId},
+        newNotificationCount as any
+      );
+    }
     return newNotification;
   }
 

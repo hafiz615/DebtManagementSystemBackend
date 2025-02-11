@@ -121,6 +121,7 @@ class EmailUtil {
                                 Content: content,
                                 Time: time,
                                 Action: 'EMAIL',
+                                Username: user?.name || '',
                             }, caseId);
                         }
                     }
@@ -158,6 +159,7 @@ class EmailUtil {
                                 Content: content,
                                 Time: time,
                                 Action: 'SMS',
+                                Username: user?.name || '',
                             }, caseId);
                         }
                     }
@@ -226,10 +228,12 @@ class EmailUtil {
                         Subject: subject,
                         From: from,
                         To: sendTo,
+                        CC: cc,
                         Content: content,
                         Time: time,
                         Action: 'EMAIL',
                         Attachments: uniqueAttachments,
+                        Username: userName,
                     }, caseId);
                     const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                         { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -245,7 +249,7 @@ class EmailUtil {
                         attachments: uniqueAttachments,
                     };
                     if (reqThreadId) {
-                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL');
+                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL', true);
                     }
                     else {
                         this.createInbox(caseData, 'sent', emailData, threadId, userId, userName, 'EMAIL');
@@ -272,6 +276,7 @@ class EmailUtil {
                         Content: content,
                         Time: time,
                         Action: 'SMS',
+                        Username: userName,
                     }, caseId);
                 }
                 return smsResult;
@@ -310,7 +315,7 @@ class EmailUtil {
         }
         return [true, ''];
     }
-    async createInbox(caseTemp, type, emailData, threadId, userId, userName, medium) {
+    async createInbox(caseTemp, type, emailData, threadId, userId, userName, medium, check) {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
@@ -322,7 +327,7 @@ class EmailUtil {
             }, undefined, undefined, { _id: -1 });
             console.log('This is existing id', existingInbox[0]);
             if (!existingInbox[0]) {
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, null, null, medium);
+                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
                 console.log('Create New Inbox response when Received', res);
             }
             else {
@@ -333,7 +338,7 @@ class EmailUtil {
                 ];
                 const previousMessages = [
                     existingInbox[0]._id,
-                    ...existingInbox[0].previousMessages,
+                    ...existingInbox[0]?.previousMessages,
                 ];
                 // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
                 const uniqueAttachments = lodash_1.default.uniqBy(mergedAttachments, item => `${item.key}-${item.originalFileName}`);
@@ -347,7 +352,7 @@ class EmailUtil {
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, null, null, medium);
+            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
             console.log('Create New Inbox response when Create', res);
             return res;
         }
@@ -356,20 +361,23 @@ class EmailUtil {
             newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
         }
         newNotification.type = 'EMAIL';
+        newNotification.userId = userId;
         // await this.notificationRepository.create<INotification>(
         //   newNotification as any
         // );
-        const currentCount = await this.notificationCountRepository.getAll({}, undefined, undefined, undefined, undefined);
-        if (currentCount.length < 1) {
-            newNotificationCount.count = 1;
+        const currentCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
+        if (!check) {
+            newNotificationCount.userId = userId;
+            newNotificationCount.count = currentCount
+                ? (currentCount?.count || 0) + 1
+                : 1;
+            if (currentCount) {
+                await this.notificationCountRepository.delete({
+                    userId,
+                });
+            }
+            await this.notificationCountRepository.upsert({ userId }, newNotificationCount);
         }
-        else {
-            newNotificationCount.count = currentCount[0].count + 1;
-            await this.notificationCountRepository.delete({
-                count: currentCount[0].count,
-            });
-        }
-        await this.notificationCountRepository.create(newNotificationCount);
         return newNotification;
     }
     async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium) {

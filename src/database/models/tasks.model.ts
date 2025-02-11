@@ -32,6 +32,10 @@ const tasksModel = new Schema({
   isDeleted: {
     type: Boolean,
   },
+  isCompleted: {
+    type: Boolean,
+    default: false,
+  },
   logTrackingId: {
     type: String,
   },

@@ -44,6 +44,9 @@ const notification = new mongoose_1.Schema({
     debtorId: {
         type: String,
     },
+    userId: {
+        type: String,
+    },
     type: {
         type: String,
     },

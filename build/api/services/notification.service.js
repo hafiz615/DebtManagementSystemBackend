@@ -18,11 +18,12 @@ class InboxService {
         this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
     }
     async getAllNotifications(req) {
-        let notifications = await this.notificationRepository.getAll({ type: req.body.type }, undefined, undefined, { createdAt: -1 }, undefined, undefined);
+        const reqTemp = req;
+        let notifications = await this.notificationRepository.getAll({ type: req.body.type, userId: reqTemp.id }, undefined, undefined, { createdAt: -1 }, undefined, undefined);
         if (!notifications.length) {
             return [false, constants_util_2.default.notFoundMessage('Notification')];
         }
-        await this.notificationCountRepository.upsert({}, { $set: { count: 0 } });
+        await this.notificationCountRepository.upsert({ userId: reqTemp.id }, { $set: { count: 0 } });
         return [true, notifications];
     }
     async markAsRead(id) {
@@ -37,12 +38,15 @@ class InboxService {
         }
         return [true, notification];
     }
-    async getNotificationCount() {
-        const notificationCount = await this.notificationCountRepository.getAll({});
+    async getNotificationCount(req) {
+        const reqTemp = req;
+        const notificationCount = await this.notificationCountRepository.getOne({
+            userId: reqTemp.id,
+        });
         if (!notificationCount) {
             return [false, constants_util_1.default.notFoundMessage('notification')];
         }
-        return [true, notificationCount[0].count];
+        return [true, notificationCount.count];
     }
 }
 exports.default = InboxService;

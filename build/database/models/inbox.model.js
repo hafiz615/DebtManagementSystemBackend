@@ -79,6 +79,10 @@ const inbox = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    isCompleted: {
+        type: Boolean,
+        default: false,
+    },
     type: {
         type: String,
     },
