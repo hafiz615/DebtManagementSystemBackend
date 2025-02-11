@@ -336,6 +336,7 @@ class EmailUtil {
               Subject: subject,
               From: from,
               To: sendTo,
+              CC: cc,
               Content: content,
               Time: time,
               Action: 'EMAIL',

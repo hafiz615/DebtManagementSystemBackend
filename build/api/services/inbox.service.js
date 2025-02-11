@@ -8,6 +8,7 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const inbox_repository_1 = require("../repository/inbox/inbox.repository");
+const tasks_repository_1 = require("../repository/tasks/tasks.repository");
 const inbox_utils_1 = __importDefault(require("../../utils/inbox.utils"));
 const case_repository_1 = require("../repository/case/case.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
@@ -72,9 +73,28 @@ class InboxService {
             });
             return [true, updatedDraft];
         };
+        this.inboxStatus = async (req) => {
+            const filter = req?.query?.task
+                ? { Repository: tasks_repository_1.TasksRepository }
+                : { Repository: inbox_repository_1.InboxRepository };
+            const repositoryInstance = new filter.Repository();
+            const existingInbox = await repositoryInstance.getOne({
+                _id: req.params.id,
+                isDeleted: false,
+            });
+            if (!existingInbox) {
+                return [false, constants_util_2.default.notFoundMessage('')];
+            }
+            const updatedInbox = await repositoryInstance.updateById(req.params.id, {
+                isCompleted: true,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            return [true, updatedInbox];
+        };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.inboxRepository = new inbox_repository_1.InboxRepository();
         this.userRepository = new user_repository_1.UserRepository();
+        this.taskRepository = new tasks_repository_1.TasksRepository();
     }
     async getAllInboxes(req) {
         const reqTemp = req;
@@ -84,6 +104,7 @@ class InboxService {
             ? await inbox_utils_1.default.getAllInboxFilters(req)
             : { userId: reqTemp.id };
         filters['isDeleted'] = { $ne: true };
+        filters['isCompleted'] = { $ne: true };
         filters['medium'] = medium;
         let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
             path: 'previousMessages',

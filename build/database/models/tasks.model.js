@@ -59,6 +59,10 @@ const tasksModel = new mongoose_1.Schema({
     isDeleted: {
         type: Boolean,
     },
+    isCompleted: {
+        type: Boolean,
+        default: false,
+    },
     logTrackingId: {
         type: String,
     },

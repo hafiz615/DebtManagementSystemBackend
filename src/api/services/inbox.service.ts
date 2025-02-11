@@ -5,6 +5,8 @@ import constantsUtil from '../../utils/constants.util';
 import dotenv from 'dotenv';
 import {InboxRepository} from '../repository/inbox/inbox.repository';
 import {IInbox} from '../../database/interfaces/inbox.interface';
+import {TasksRepository} from '../repository/tasks/tasks.repository';
+import {ITasks} from '../../database/interfaces/tasks.interface';
 import inboxUtils from '../../utils/inbox.utils';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
@@ -17,11 +19,13 @@ class InboxService {
   protected inboxRepository: InboxRepository;
   protected userRepository: UserRepository;
   protected caseRepository: CaseRepository;
+  protected taskRepository: TasksRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
     this.inboxRepository = new InboxRepository();
     this.userRepository = new UserRepository();
+    this.taskRepository = new TasksRepository();
   }
 
   async getAllInboxes(req: Request) {
@@ -32,6 +36,7 @@ class InboxService {
       ? await inboxUtils.getAllInboxFilters(req)
       : {userId: reqTemp.id};
     filters['isDeleted'] = {$ne: true};
+    filters['isCompleted'] = {$ne: true};
     filters['medium'] = medium;
 
     let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
@@ -259,6 +264,29 @@ class InboxService {
       }
     );
     return [true, updatedDraft];
+  };
+
+  inboxStatus = async (req: Request) => {
+    const filter = req?.query?.task
+      ? {Repository: TasksRepository}
+      : {Repository: InboxRepository};
+
+    const repositoryInstance = new filter.Repository();
+
+    const existingInbox = await repositoryInstance.getOne({
+      _id: req.params.id,
+      isDeleted: false,
+    });
+
+    if (!existingInbox) {
+      return [false, constantsUtil.notFoundMessage('')];
+    }
+
+    const updatedInbox = await repositoryInstance.updateById(req.params.id, {
+      isCompleted: true,
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+    return [true, updatedInbox];
   };
 }
 
