@@ -105,6 +105,7 @@ class EmailService {
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
                     Attachments: data,
+                    Username: userName,
                 }, caseId);
                 caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },

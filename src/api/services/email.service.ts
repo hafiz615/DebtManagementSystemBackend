@@ -125,6 +125,7 @@ class EmailService {
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
             Attachments: data,
+            Username: userName,
           },
           caseId
         );

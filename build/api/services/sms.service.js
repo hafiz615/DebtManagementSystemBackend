@@ -63,6 +63,7 @@ class SmsService {
                     Content: Body,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'SMS',
+                    Username: findUser?.name || '',
                 }, caseData._id.toString());
             }
             newNotification.caseId = caseData?._id.toString() || undefined;
@@ -115,6 +116,7 @@ class SmsService {
                 Content: inboxTemp.text,
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'SMS',
+                Username: reqTemp.name,
             }, caseTemp._id.toString());
             return [true, 'Successfully save notification'];
         };

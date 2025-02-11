@@ -115,6 +115,7 @@ class SmsService {
           Content: Body,
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'SMS',
+          Username: findUser?.name || '',
         },
         caseData._id.toString()
       );
@@ -196,6 +197,7 @@ class SmsService {
         Content: inboxTemp.text,
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'SMS',
+        Username: reqTemp.name,
       },
       caseTemp._id.toString()
     );

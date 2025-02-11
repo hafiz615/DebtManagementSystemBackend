@@ -121,6 +121,7 @@ class EmailUtil {
                                 Content: content,
                                 Time: time,
                                 Action: 'EMAIL',
+                                Username: user?.name || '',
                             }, caseId);
                         }
                     }
@@ -158,6 +159,7 @@ class EmailUtil {
                                 Content: content,
                                 Time: time,
                                 Action: 'SMS',
+                                Username: user?.name || '',
                             }, caseId);
                         }
                     }
@@ -230,6 +232,7 @@ class EmailUtil {
                         Time: time,
                         Action: 'EMAIL',
                         Attachments: uniqueAttachments,
+                        Username: userName,
                     }, caseId);
                     const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                         { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -272,6 +275,7 @@ class EmailUtil {
                         Content: content,
                         Time: time,
                         Action: 'SMS',
+                        Username: userName,
                     }, caseId);
                 }
                 return smsResult;

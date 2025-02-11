@@ -177,6 +177,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'EMAIL',
+                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -223,6 +224,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'SMS',
+                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -340,6 +342,7 @@ class EmailUtil {
               Time: time,
               Action: 'EMAIL',
               Attachments: uniqueAttachments,
+              Username: userName,
             },
             caseId
           );
@@ -421,6 +424,7 @@ class EmailUtil {
               Content: content,
               Time: time,
               Action: 'SMS',
+              Username: userName,
             },
             caseId
           );
