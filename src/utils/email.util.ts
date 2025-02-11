@@ -236,7 +236,7 @@ class EmailUtil {
   }
 
   async sendEmailSmsToDebtorCreditor(
-    caseId: string,
+    caseData: any,
     userId: string,
     body: any,
     type: string,
@@ -257,7 +257,7 @@ class EmailUtil {
     const allValues = await this.getValues(content);
     if (allValues.length) {
       let [user, debtor, creditor, caseTemp, payment] =
-        await this.initializeValues(caseId, '', userId);
+        await this.initializeValues(caseData._id, '', userId);
       let replacements = await this.getPopulatedObject(
         null,
         debtor,
@@ -322,7 +322,7 @@ class EmailUtil {
           content,
           cc,
           attachments,
-          caseId,
+          caseData._id,
           threadId,
           userId,
           userName
@@ -345,16 +345,7 @@ class EmailUtil {
               Attachments: uniqueAttachments,
               Username: userName,
             },
-            caseId
-          );
-          const caseData = await this.caseRepository.getById<ICase>(
-            caseId,
-            undefined,
-            undefined,
-            [
-              {path: 'debtor', select: ['businessInformation.companyName']},
-              {path: 'creditor', select: ['businessInformation.companyName']},
-            ]
+            caseData._id
           );
           const emailData = {
             from,
@@ -397,15 +388,6 @@ class EmailUtil {
           text: content,
           textAsHtml: content,
         };
-        const caseData = await this.caseRepository.getById<ICase>(
-          caseId,
-          undefined,
-          undefined,
-          [
-            {path: 'debtor', select: ['businessInformation.companyName']},
-            {path: 'creditor', select: ['businessInformation.companyName']},
-          ]
-        );
         this.createNewInbox(
           smsData,
           caseData,
@@ -427,7 +409,7 @@ class EmailUtil {
               Action: 'SMS',
               Username: userName,
             },
-            caseId
+            caseData._id
           );
         }
         return smsResult;
@@ -661,6 +643,7 @@ class EmailUtil {
       newNotification.caseId = String(caseTemp._id);
       newMessage.caseId = String(caseTemp._id);
       newNotification.text = this.formatText(caseTemp.caseCode);
+      newMessage.debtorId = String(caseTemp.debtor._id);
     }
     newMessage.cc = emailData.cc;
     newMessage.from = emailData.from;

@@ -49,13 +49,21 @@ class EmailService {
     }
     let caseTemp = null;
     if (type !== 'compose') {
-      caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+      caseTemp = await this.caseRepository.getById<ICase>(
+        req.params.id,
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
       if (!caseTemp) {
         return [false, constantsUtil.notFoundMessage('case')];
       }
     }
     return await emailUtil.sendEmailSmsToDebtorCreditor(
-      caseTemp ? String(caseTemp._id) : null,
+      caseTemp ? caseTemp : null,
       reqTemp.id,
       req.body,
       type,

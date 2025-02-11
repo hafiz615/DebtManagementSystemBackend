@@ -11,6 +11,7 @@ export class Inbox {
   caseCode = '';
   caseId = '';
   userId = '';
+  debtorId = '';
   userName = '';
   isRead = false;
   type = 'draft';

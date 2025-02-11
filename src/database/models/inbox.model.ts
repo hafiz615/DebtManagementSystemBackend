@@ -41,6 +41,9 @@ const inbox: Schema = new Schema({
   userId: {
     type: String,
   },
+  debtorId: {
+    type: String,
+  },
   userName: {
     type: String,
   },

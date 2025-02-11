@@ -167,7 +167,7 @@ class EmailUtil {
             }
         }
     }
-    async sendEmailSmsToDebtorCreditor(caseId, userId, body, type, files, threadId, userName) {
+    async sendEmailSmsToDebtorCreditor(caseData, userId, body, type, files, threadId, userName) {
         let { from, sendTo, subject, content, cc, signedUrls } = body;
         if (typeof signedUrls === 'string') {
             signedUrls = JSON.parse(signedUrls);
@@ -181,7 +181,7 @@ class EmailUtil {
         }
         const allValues = await this.getValues(content);
         if (allValues.length) {
-            let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, '', userId);
+            let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseData._id, '', userId);
             let replacements = await this.getPopulatedObject(null, debtor, creditor, caseTemp, user, payment, allValues);
             if (Object.keys(replacements).length) {
                 const nestedObject = await this.unflat(replacements);
@@ -220,7 +220,7 @@ class EmailUtil {
                         disposition: 'attachment',
                     });
                 });
-                const result = await this.sendEmail(sendTo, from, subject, content, cc, attachments, caseId, threadId, userId, userName);
+                const result = await this.sendEmail(sendTo, from, subject, content, cc, attachments, caseData._id, threadId, userId, userName);
                 const updatedData = [...data, ...signedUrls];
                 const uniqueAttachments = lodash_1.default.uniqBy(updatedData, item => `${item.key}-${item.originalFileName}`);
                 if (result[0]) {
@@ -234,11 +234,7 @@ class EmailUtil {
                         Action: 'EMAIL',
                         Attachments: uniqueAttachments,
                         Username: userName,
-                    }, caseId);
-                    const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
-                        { path: 'debtor', select: ['businessInformation.companyName'] },
-                        { path: 'creditor', select: ['businessInformation.companyName'] },
-                    ]);
+                    }, caseData._id);
                     const emailData = {
                         from,
                         to: sendTo,
@@ -264,10 +260,6 @@ class EmailUtil {
                     text: content,
                     textAsHtml: content,
                 };
-                const caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
-                    { path: 'debtor', select: ['businessInformation.companyName'] },
-                    { path: 'creditor', select: ['businessInformation.companyName'] },
-                ]);
                 this.createNewInbox(smsData, caseData, 'sent', threadId, userId, userName, null, null, 'SMS');
                 if (smsResult[0]) {
                     await case_util_1.default.addInHistory({
@@ -277,7 +269,7 @@ class EmailUtil {
                         Time: time,
                         Action: 'SMS',
                         Username: userName,
-                    }, caseId);
+                    }, caseData._id);
                 }
                 return smsResult;
             case 'compose':
@@ -394,6 +386,7 @@ class EmailUtil {
             newNotification.caseId = String(caseTemp._id);
             newMessage.caseId = String(caseTemp._id);
             newNotification.text = this.formatText(caseTemp.caseCode);
+            newMessage.debtorId = String(caseTemp.debtor._id);
         }
         newMessage.cc = emailData.cc;
         newMessage.from = emailData.from;
