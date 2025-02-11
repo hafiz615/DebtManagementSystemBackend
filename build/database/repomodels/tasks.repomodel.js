@@ -15,6 +15,7 @@ class Tasks {
         this.status = 'To do';
         this.notes = '';
         this.isDeleted = false;
+        this.isComplete = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

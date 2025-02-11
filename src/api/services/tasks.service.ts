@@ -126,6 +126,7 @@ class TasksService {
     try {
       const tasks = await this.tasksRepository.findAll<ITasks>({
         isDeleted: false,
+        isComplete: false,
       });
 
       if (!tasks || tasks.length === 0) {

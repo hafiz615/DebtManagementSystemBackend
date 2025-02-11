@@ -9,6 +9,7 @@ export class Tasks {
   status = 'To do';
   notes = '';
   isDeleted = false;
+  isComplete = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
