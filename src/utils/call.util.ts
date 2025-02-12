@@ -157,17 +157,17 @@ class CallUtil {
       'basicInformation.phone': number,
     });
 
-    if (getDebtor) {
-      return {
-        debtorId: getDebtor._id,
-        debtorName: getDebtor.basicInformation.fullName,
-        companyName: getDebtor.businessInformation.companyName,
-      };
-    } else if (getCreditor) {
+    if (getCreditor) {
       return {
         creditorId: getCreditor._id,
         creditorName: getCreditor.basicInformation.fullName,
         companyName: getCreditor.businessInformation.companyName,
+      };
+    } else if (getDebtor) {
+      return {
+        debtorId: getDebtor._id,
+        debtorName: getDebtor.basicInformation.fullName,
+        companyName: getDebtor.businessInformation.companyName,
       };
     }
     return null;
