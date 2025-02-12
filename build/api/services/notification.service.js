@@ -19,11 +19,27 @@ class InboxService {
     }
     async getAllNotifications(req) {
         const reqTemp = req;
-        let notifications = await this.notificationRepository.getAll({ type: req.body.type, userId: reqTemp.id }, undefined, undefined, { createdAt: -1 }, undefined, undefined);
-        if (!notifications.length) {
-            return [false, constants_util_2.default.notFoundMessage('Notification')];
+        const { type, status } = req.body;
+        const userId = reqTemp.id;
+        let notifications = null;
+        if (status) {
+            const updateField = type === 'EMAIL'
+                ? { emailCount: 0 }
+                : type === 'SMS'
+                    ? { smsCount: 0 }
+                    : {};
+            if (Object.keys(updateField).length) {
+                await this.notificationCountRepository.upsert({ userId }, { $set: updateField });
+                return [true, constants_util_1.default.successFoundMessage('Notification')];
+            }
         }
-        await this.notificationCountRepository.upsert({ userId: reqTemp.id }, { $set: { count: 0 } });
+        else {
+            notifications = await this.notificationRepository.getAll({ type: req.body.type, userId: reqTemp.id }, undefined, undefined, { createdAt: -1 }, undefined, undefined);
+            if (!notifications) {
+                return [false, constants_util_2.default.notFoundMessage('Notification')];
+            }
+            await this.notificationCountRepository.upsert({ userId }, { $set: { count: 0 } });
+        }
         return [true, notifications];
     }
     async markAsRead(id) {
@@ -46,7 +62,7 @@ class InboxService {
         if (!notificationCount) {
             return [false, constants_util_1.default.notFoundMessage('notification')];
         }
-        return [true, notificationCount.count];
+        return [true, notificationCount];
     }
 }
 exports.default = InboxService;
