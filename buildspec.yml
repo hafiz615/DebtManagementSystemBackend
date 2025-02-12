@@ -3,7 +3,8 @@ version: 0.2
 phases:
   install:
     commands:
-      - curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+      - curl -fsSL https://deb.nodesource.com/setup_18.x -o /tmp/nodesource_setup.sh
+      - sudo bash /tmp/nodesource_setup.sh
       - sudo apt-get install -y nodejs
   pre_build:
     commands:
