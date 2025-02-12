@@ -609,24 +609,18 @@ class EmailUtil {
     // await this.notificationRepository.create<INotification>(
     //   newNotification as any
     // );
-    const currentCount: any = await this.notificationCountRepository.getOne(
-      {userId: userId},
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    );
+    const currentCount: any = await this.notificationCountRepository.getOne({
+      userId: userId,
+    });
     if (!check) {
       newNotificationCount.userId = userId;
       newNotificationCount.count = currentCount
         ? (currentCount?.count || 0) + 1
         : 1;
 
-      if (currentCount) {
-        await this.notificationCountRepository.delete<INotificationCount>({
-          userId,
-        });
-      }
+      newNotificationCount.emailCount = currentCount
+        ? (currentCount?.emailCount || 0) + 1
+        : 1;
 
       await this.notificationCountRepository.upsert<INotificationCount>(
         {userId},
