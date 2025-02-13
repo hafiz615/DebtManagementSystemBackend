@@ -123,9 +123,6 @@ class CallUtil {
         const getCreditor = await this.creditorRepository.getOne({
             'basicInformation.phone': number,
         });
-        const getDebtor = await this.debtorRepository.getOne({
-            'basicInformation.phone': number,
-        });
         if (getCreditor) {
             return {
                 creditorId: getCreditor._id,
@@ -133,7 +130,10 @@ class CallUtil {
                 companyName: getCreditor.businessInformation.companyName,
             };
         }
-        else if (getDebtor) {
+        const getDebtor = await this.debtorRepository.getOne({
+            'basicInformation.phone': number,
+        });
+        if (getDebtor) {
             return {
                 debtorId: getDebtor._id,
                 debtorName: getDebtor.basicInformation.fullName,
