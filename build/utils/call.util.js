@@ -15,10 +15,12 @@ const debtor_repository_1 = require("../api/repository/debtor/debtor.repository"
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const case_repository_1 = require("../api/repository/case/case.repository");
+const user_repository_1 = require("../api/repository/user/user.repository");
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
         this.twilioClient = new twilio_2.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        this.userRepository = new user_repository_1.UserRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.uploadUtil = new upload_util_1.default();
         this.callRepository = new call_repository_1.CallRepository();
@@ -123,6 +125,13 @@ class CallUtil {
         const getCreditor = await this.creditorRepository.getOne({
             'basicInformation.phone': number,
         });
+        if (getCreditor) {
+            return {
+                creditorId: getCreditor._id,
+                creditorName: getCreditor.basicInformation.fullName,
+                companyName: getCreditor.businessInformation.companyName,
+            };
+        }
         const getDebtor = await this.debtorRepository.getOne({
             'basicInformation.phone': number,
         });
@@ -133,27 +142,25 @@ class CallUtil {
                 companyName: getDebtor.businessInformation.companyName,
             };
         }
-        else if (getCreditor) {
-            return {
-                creditorId: getCreditor._id,
-                creditorName: getCreditor.basicInformation.fullName,
-                companyName: getCreditor.businessInformation.companyName,
-            };
-        }
         return null;
     }
-    async getMissedCalls(twilioNumber) {
-        let pageToken = null;
+    async fetchCallsByStatus(twilioNumber, status) {
         let allCalls = [];
+        let pageToken = null;
+        let calls = [];
+        const findUser = await this.userRepository.getOne({
+            twilioNo: twilioNumber,
+            isDeleted: false,
+        });
         do {
-            const calls = await this.twilioClient.calls.list({
+            const response = await this.twilioClient.calls.list({
                 to: `client:${twilioNumber}`,
-                status: 'no-answer',
+                status,
                 pageSize: 100,
-                pageToken: pageToken,
+                pageToken,
             });
-            const callsWithNames = await Promise.all(calls.map(async (call) => {
-                const number = await common_util_1.default.cleanPhoneNumber(call.from);
+            const callsWithNames = await Promise.all(response.map(async (call) => {
+                const number = await common_util_1.default.cleanPhoneNumberConditionally(call.from);
                 const name = await this.getDebtorOrCreditorName(number);
                 let caseData = null;
                 if (name) {
@@ -165,13 +172,22 @@ class CallUtil {
                 return {
                     from: number,
                     companyName: name ? name.companyName : 'Unknown',
+                    status: call.status,
                     time: call.startTime,
+                    recepientNumber: await common_util_1.default.cleanPhoneNumber(twilioNumber),
+                    recepientName: findUser?.name,
                     caseId: caseData ? caseData._id.toString() : '',
                 };
             }));
-            allCalls = [...allCalls, ...callsWithNames];
-            pageToken = calls.nextPageUrl ? calls.nextPageToken : null;
+            calls = [...calls, ...callsWithNames];
+            pageToken = response.nextPageUrl ? response.nextPageToken : null;
         } while (pageToken);
+        return calls;
+    }
+    async getMissedCalls(twilioNumber) {
+        const noAnswerCalls = await this.fetchCallsByStatus(twilioNumber, 'no-answer');
+        const busyCalls = await this.fetchCallsByStatus(twilioNumber, 'busy');
+        const allCalls = [...noAnswerCalls, ...busyCalls];
         return allCalls;
     }
 }

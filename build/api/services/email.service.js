@@ -51,12 +51,15 @@ class EmailService {
         }
         let caseTemp = null;
         if (type !== 'compose') {
-            caseTemp = await this.caseRepository.getById(req.params.id);
+            caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [
+                { path: 'debtor', select: ['businessInformation.companyName'] },
+                { path: 'creditor', select: ['businessInformation.companyName'] },
+            ]);
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], threadId, reqTemp.name);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? caseTemp : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], threadId, reqTemp.name);
     }
     async sendGridEmail(req) {
         const reqTemp = req;
@@ -69,6 +72,9 @@ class EmailService {
         const to = Array.isArray(parseData.to)
             ? parseData.to[0].text
             : parseData.to?.text;
+        const cc = Array.isArray(parseData.cc)
+            ? parseData.cc[0].text
+            : parseData.cc?.text;
         const attachments = parseData.attachments;
         const referencesHeader = parseData.headers.get('references');
         console.log('referencesHeader: ', referencesHeader);
@@ -101,10 +107,12 @@ class EmailService {
                     Subject: subject,
                     From: from,
                     To: to,
+                    CC: cc,
                     Content: extractedHtml,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
                     Attachments: data,
+                    Username: userName,
                 }, caseId);
                 caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },
@@ -117,20 +125,22 @@ class EmailService {
                 subject,
                 extractedText,
                 textAsHtml: extractedHtml,
-                cc: parseData.cc,
+                cc: cc,
                 attachments: data,
             };
             if (threadId) {
                 console.log('threadId: ', threadId);
                 console.log('threadId: inside the thread ID ', threadId);
-                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName);
+                const notification = await email_util_1.default.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL');
                 if (!caseData) {
                     notification.text = email_util_1.default.formatText(userName);
                 }
                 await this.notificationRepository.create(notification);
-                const notificationCount = await this.notificationCountRepository.getAll(undefined, undefined, undefined, undefined, undefined);
+                const notificationCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
                 app_1.default.socketInstance.emit('notify', {
-                    notificationCount: notificationCount[0].count,
+                    notificationCount: notificationCount.count,
+                    type: 'EMAIL',
+                    emailCount: notificationCount.emailCount,
                     notification: notification,
                 });
                 return true;

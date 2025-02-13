@@ -58,7 +58,7 @@ class NotificationController {
 
   getCount = async (req: Request, res: Response) => {
     try {
-      const response = await this.notificationService.getNotificationCount();
+      const response = await this.notificationService.getNotificationCount(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)

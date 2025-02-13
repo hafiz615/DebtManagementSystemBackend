@@ -49,13 +49,21 @@ class EmailService {
     }
     let caseTemp = null;
     if (type !== 'compose') {
-      caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+      caseTemp = await this.caseRepository.getById<ICase>(
+        req.params.id,
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
       if (!caseTemp) {
         return [false, constantsUtil.notFoundMessage('case')];
       }
     }
     return await emailUtil.sendEmailSmsToDebtorCreditor(
-      caseTemp ? String(caseTemp._id) : null,
+      caseTemp ? caseTemp : null,
       reqTemp.id,
       req.body,
       type,
@@ -76,6 +84,9 @@ class EmailService {
     const to = Array.isArray(parseData.to)
       ? parseData.to[0].text
       : parseData.to?.text;
+    const cc = Array.isArray(parseData.cc)
+      ? parseData.cc[0].text
+      : parseData.cc?.text;
     const attachments = parseData.attachments;
     const referencesHeader = parseData.headers.get('references');
     console.log('referencesHeader: ', referencesHeader);
@@ -121,10 +132,12 @@ class EmailService {
             Subject: subject,
             From: from,
             To: to,
+            CC: cc,
             Content: extractedHtml,
             Time: new Date(commonUtil.getCurrentDate()),
             Action: 'EMAIL',
             Attachments: data,
+            Username: userName,
           },
           caseId
         );
@@ -144,7 +157,7 @@ class EmailService {
         subject,
         extractedText,
         textAsHtml: extractedHtml,
-        cc: parseData.cc,
+        cc: cc,
         attachments: data,
       };
       if (threadId) {
@@ -157,7 +170,8 @@ class EmailService {
           emailData,
           threadId,
           userId,
-          userName
+          userName,
+          'EMAIL'
         );
         if (!caseData) {
           notification.text = emailUtil.formatText(userName);
@@ -165,16 +179,18 @@ class EmailService {
         await this.notificationRepository.create<INotification>(
           notification as any
         );
-        const notificationCount: NotificationCount[] =
-          await this.notificationCountRepository.getAll(
-            undefined,
+        const notificationCount: any =
+          await this.notificationCountRepository.getOne(
+            {userId: userId},
             undefined,
             undefined,
             undefined,
             undefined
           );
         app.socketInstance.emit('notify', {
-          notificationCount: notificationCount[0].count,
+          notificationCount: notificationCount.count,
+          type: 'EMAIL',
+          emailCount: notificationCount.emailCount,
           notification: notification,
         });
 

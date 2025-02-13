@@ -37,5 +37,6 @@ router.get('/getVerifySenders/:id', authorize_middleware_1.default.validateAuth,
 router.post('/thirdPartySignIn', user_validate_1.default.thirdPartySignIn, user_controller_1.default.thirdPartySignIn);
 router.post('/addUserSender', authorize_middleware_1.default.validateAuth, user_validate_1.default.addSenderIdentity, user_controller_1.default.addUserSender);
 router.get('/getUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUsers);
+router.get('/usersByRole', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUsersByRole);
 exports.default = router;
 //# sourceMappingURL=user.routes.js.map

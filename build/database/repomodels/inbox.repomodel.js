@@ -17,10 +17,12 @@ class Inbox {
         this.caseCode = '';
         this.caseId = '';
         this.userId = '';
+        this.debtorId = '';
         this.userName = '';
         this.isRead = false;
         this.type = 'draft';
         this.isDeleted = false;
+        this.isCompleted = false;
         this.debtorCompanyName = '';
         this.creditorCompanyName = '';
         this.negotiatorName = '';

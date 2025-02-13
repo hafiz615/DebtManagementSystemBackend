@@ -1,7 +1,10 @@
 import {Document} from 'mongoose';
 
 export interface INotificationCount extends Document {
-  count: string;
+  userId: string;
+  count: number;
+  smsCount: number;
+  emailCount: number;
   createdAt: string;
   updatedAt: string;
 }

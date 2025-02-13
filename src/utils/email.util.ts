@@ -177,6 +177,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'EMAIL',
+                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -223,6 +224,7 @@ class EmailUtil {
                   Content: content,
                   Time: time,
                   Action: 'SMS',
+                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -234,7 +236,7 @@ class EmailUtil {
   }
 
   async sendEmailSmsToDebtorCreditor(
-    caseId: string,
+    caseData: any,
     userId: string,
     body: any,
     type: string,
@@ -255,7 +257,7 @@ class EmailUtil {
     const allValues = await this.getValues(content);
     if (allValues.length) {
       let [user, debtor, creditor, caseTemp, payment] =
-        await this.initializeValues(caseId, '', userId);
+        await this.initializeValues(caseData._id, '', userId);
       let replacements = await this.getPopulatedObject(
         null,
         debtor,
@@ -320,7 +322,7 @@ class EmailUtil {
           content,
           cc,
           attachments,
-          caseId,
+          caseData._id,
           threadId,
           userId,
           userName
@@ -336,21 +338,14 @@ class EmailUtil {
               Subject: subject,
               From: from,
               To: sendTo,
+              CC: cc,
               Content: content,
               Time: time,
               Action: 'EMAIL',
               Attachments: uniqueAttachments,
+              Username: userName,
             },
-            caseId
-          );
-          const caseData = await this.caseRepository.getById<ICase>(
-            caseId,
-            undefined,
-            undefined,
-            [
-              {path: 'debtor', select: ['businessInformation.companyName']},
-              {path: 'creditor', select: ['businessInformation.companyName']},
-            ]
+            caseData._id
           );
           const emailData = {
             from,
@@ -369,7 +364,8 @@ class EmailUtil {
               threadId,
               userId,
               userName,
-              'EMAIL'
+              'EMAIL',
+              true
             );
           } else {
             this.createInbox(
@@ -392,15 +388,6 @@ class EmailUtil {
           text: content,
           textAsHtml: content,
         };
-        const caseData = await this.caseRepository.getById<ICase>(
-          caseId,
-          undefined,
-          undefined,
-          [
-            {path: 'debtor', select: ['businessInformation.companyName']},
-            {path: 'creditor', select: ['businessInformation.companyName']},
-          ]
-        );
         this.createNewInbox(
           smsData,
           caseData,
@@ -420,8 +407,9 @@ class EmailUtil {
               Content: content,
               Time: time,
               Action: 'SMS',
+              Username: userName,
             },
-            caseId
+            caseData._id
           );
         }
         return smsResult;
@@ -506,7 +494,8 @@ class EmailUtil {
     threadId: any,
     userId?: string,
     userName?: string,
-    medium?: string
+    medium?: string,
+    check?: boolean
   ) {
     const newMessage = new Inbox();
     const newNotification = new Notification();
@@ -534,7 +523,7 @@ class EmailUtil {
           threadId,
           userId,
           userName,
-          null,
+          [],
           null,
           medium
         );
@@ -548,7 +537,7 @@ class EmailUtil {
 
         const previousMessages = [
           existingInbox[0]._id,
-          ...existingInbox[0].previousMessages,
+          ...existingInbox[0]?.previousMessages,
         ];
 
         // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
@@ -584,7 +573,7 @@ class EmailUtil {
         threadId,
         userId,
         userName,
-        null,
+        [],
         null,
         medium
       );
@@ -598,29 +587,28 @@ class EmailUtil {
       );
     }
     newNotification.type = 'EMAIL';
+    newNotification.userId = userId;
     // await this.notificationRepository.create<INotification>(
     //   newNotification as any
     // );
-    const currentCount: NotificationCount[] =
-      await this.notificationCountRepository.getAll(
-        {},
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      );
-    if (currentCount.length < 1) {
-      newNotificationCount.count = 1;
-    } else {
-      newNotificationCount.count = currentCount[0].count + 1;
-      await this.notificationCountRepository.delete<INotificationCount>({
-        count: currentCount[0].count,
-      });
-    }
+    const currentCount: any = await this.notificationCountRepository.getOne({
+      userId: userId,
+    });
+    if (!check) {
+      newNotificationCount.userId = userId;
+      newNotificationCount.count = currentCount
+        ? (currentCount?.count || 0) + 1
+        : 1;
 
-    await this.notificationCountRepository.create<INotificationCount>(
-      newNotificationCount as any
-    );
+      newNotificationCount.emailCount = currentCount
+        ? (currentCount?.emailCount || 0) + 1
+        : 1;
+
+      await this.notificationCountRepository.upsert<INotificationCount>(
+        {userId},
+        newNotificationCount as any
+      );
+    }
     return newNotification;
   }
 
@@ -649,6 +637,7 @@ class EmailUtil {
       newNotification.caseId = String(caseTemp._id);
       newMessage.caseId = String(caseTemp._id);
       newNotification.text = this.formatText(caseTemp.caseCode);
+      newMessage.debtorId = String(caseTemp.debtor._id);
     }
     newMessage.cc = emailData.cc;
     newMessage.from = emailData.from;

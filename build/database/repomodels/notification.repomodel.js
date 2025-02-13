@@ -10,6 +10,7 @@ class Notification {
         this.caseId = '';
         this.inboxId = '';
         this.debtorId = '';
+        this.userId = '';
         this.type = '';
         this.text = '';
         this.isRead = false;
