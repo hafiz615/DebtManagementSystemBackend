@@ -110,6 +110,32 @@ class UserService {
     return [true, user];
   }
 
+  async getUsersByRole(): Promise<[boolean, {[key: string]: string[]}]> {
+    const users: IUser[] = await this.userRepository.getAll({});
+
+    const predefinedRoles = [
+      'Negotiator',
+      'CSM',
+      'Payment Department',
+      'Manager',
+    ];
+
+    const usersByRole = users.reduce(
+      (acc: {[key: string]: string[]}, curr: IUser) => {
+        if (predefinedRoles.includes(curr.role)) {
+          acc[curr.role] = acc[curr.role] || [];
+          acc[curr.role].push(curr.email);
+        }
+        return acc;
+      },
+      Object.fromEntries(predefinedRoles.map(role => [role, []])) as {
+        [key: string]: string[];
+      }
+    );
+
+    return [true, usersByRole];
+  }
+
   async getUser(email: string): Promise<[boolean, IUser | string]> {
     const user = await this.userRepository.getOne<IUser>({email: email});
     if (!user) {

@@ -153,23 +153,26 @@ class CallUtil {
       'basicInformation.phone': number,
     });
 
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      'basicInformation.phone': number,
-    });
-
     if (getCreditor) {
       return {
         creditorId: getCreditor._id,
         creditorName: getCreditor.basicInformation.fullName,
         companyName: getCreditor.businessInformation.companyName,
       };
-    } else if (getDebtor) {
+    }
+
+    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
+      'basicInformation.phone': number,
+    });
+
+    if (getDebtor) {
       return {
         debtorId: getDebtor._id,
         debtorName: getDebtor.basicInformation.fullName,
         companyName: getDebtor.businessInformation.companyName,
       };
     }
+
     return null;
   }
 

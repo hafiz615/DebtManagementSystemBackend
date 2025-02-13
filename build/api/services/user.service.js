@@ -328,6 +328,23 @@ class UserService {
         }
         return [true, user];
     }
+    async getUsersByRole() {
+        const users = await this.userRepository.getAll({});
+        const predefinedRoles = [
+            'Negotiator',
+            'CSM',
+            'Payment Department',
+            'Manager',
+        ];
+        const usersByRole = users.reduce((acc, curr) => {
+            if (predefinedRoles.includes(curr.role)) {
+                acc[curr.role] = acc[curr.role] || [];
+                acc[curr.role].push(curr.email);
+            }
+            return acc;
+        }, Object.fromEntries(predefinedRoles.map(role => [role, []])));
+        return [true, usersByRole];
+    }
     async getUser(email) {
         const user = await this.userRepository.getOne({ email: email });
         if (!user) {
