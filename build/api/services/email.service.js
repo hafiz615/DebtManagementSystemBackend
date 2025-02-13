@@ -51,12 +51,15 @@ class EmailService {
         }
         let caseTemp = null;
         if (type !== 'compose') {
-            caseTemp = await this.caseRepository.getById(req.params.id);
+            caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [
+                { path: 'debtor', select: ['businessInformation.companyName'] },
+                { path: 'creditor', select: ['businessInformation.companyName'] },
+            ]);
             if (!caseTemp) {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             }
         }
-        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? String(caseTemp._id) : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], threadId, reqTemp.name);
+        return await email_util_1.default.sendEmailSmsToDebtorCreditor(caseTemp ? caseTemp : null, reqTemp.id, req.body, type, reqTemp?.files?.files || [], threadId, reqTemp.name);
     }
     async sendGridEmail(req) {
         const reqTemp = req;

@@ -68,6 +68,9 @@ const inbox = new mongoose_1.Schema({
     userId: {
         type: String,
     },
+    debtorId: {
+        type: String,
+    },
     userName: {
         type: String,
     },
