@@ -144,22 +144,22 @@ class CallUtil {
         }
         return null;
     }
-    async getMissedCalls(twilioNumber) {
-        let findUser = await this.userRepository.getOne({
+    async fetchCallsByStatus(twilioNumber, status) {
+        let allCalls = [];
+        let pageToken = null;
+        let calls = [];
+        const findUser = await this.userRepository.getOne({
             twilioNo: twilioNumber,
             isDeleted: false,
         });
-        let pageToken = null;
-        let allCalls = [];
         do {
-            const calls = await this.twilioClient.calls.list({
+            const response = await this.twilioClient.calls.list({
                 to: `client:${twilioNumber}`,
-                status: 'no-answer',
+                status,
                 pageSize: 100,
-                pageToken: pageToken,
+                pageToken,
             });
-            const callsWithNames = await Promise.all(calls.map(async (call) => {
-                console.log('call', call);
+            const callsWithNames = await Promise.all(response.map(async (call) => {
                 const number = await common_util_1.default.cleanPhoneNumberConditionally(call.from);
                 const name = await this.getDebtorOrCreditorName(number);
                 let caseData = null;
@@ -172,15 +172,22 @@ class CallUtil {
                 return {
                     from: number,
                     companyName: name ? name.companyName : 'Unknown',
+                    status: call.status,
                     time: call.startTime,
                     recepientNumber: await common_util_1.default.cleanPhoneNumber(twilioNumber),
                     recepientName: findUser?.name,
                     caseId: caseData ? caseData._id.toString() : '',
                 };
             }));
-            allCalls = [...allCalls, ...callsWithNames];
-            pageToken = calls.nextPageUrl ? calls.nextPageToken : null;
+            calls = [...calls, ...callsWithNames];
+            pageToken = response.nextPageUrl ? response.nextPageToken : null;
         } while (pageToken);
+        return calls;
+    }
+    async getMissedCalls(twilioNumber) {
+        const noAnswerCalls = await this.fetchCallsByStatus(twilioNumber, 'no-answer');
+        const busyCalls = await this.fetchCallsByStatus(twilioNumber, 'busy');
+        const allCalls = [...noAnswerCalls, ...busyCalls];
         return allCalls;
     }
 }
