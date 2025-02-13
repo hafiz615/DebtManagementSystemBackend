@@ -84,5 +84,10 @@ router.post(
 );
 
 router.get('/getUsers', authorize.validateAuth, userController.getUsers);
+router.get(
+  '/usersByRole',
+  authorize.validateAuth,
+  userController.getUsersByRole
+);
 
 export default router;

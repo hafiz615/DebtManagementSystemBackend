@@ -27,5 +27,6 @@ router.put('/updateDraftEmail/:id', authorize_middleware_1.default.validateAuth,
 router.post('/createDraft', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.createDraft);
 router.delete('/deleteDraft/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.deleteDraftEmail);
 router.put('/updateDraft/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.updateDraftSms);
+router.put('/inboxStatus/:id', authorize_middleware_1.default.validateAuth, inbox_controller_1.default.inboxStatus);
 exports.default = router;
 //# sourceMappingURL=inbox.routes.js.map

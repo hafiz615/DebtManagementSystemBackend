@@ -4,6 +4,7 @@ export class Notification {
   caseId = '';
   inboxId = '';
   debtorId = '';
+  userId = '';
   type = '';
   text = '';
   isRead = false;
