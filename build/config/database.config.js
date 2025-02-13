@@ -22,7 +22,7 @@ class Database {
         mongoose_1.default
             .connect(this.dbUri, options)
             .then(async (res) => {
-            console.log('connection established at ', this.dbUri);
+            console.log('connection established at');
             const settingsRepository = new settings_repository_1.SettingsRepository();
             const findSettings = await settingsRepository.getAllWithoutPagination();
             if (!findSettings.length) {

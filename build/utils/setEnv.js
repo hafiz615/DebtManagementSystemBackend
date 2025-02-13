@@ -16,7 +16,7 @@ class EnvSetup {
                 this.invitationLink = constants_util_1.default.ACCOUNT_INVITATION_BASE_LINK_DEV;
                 break;
             case 'prod':
-                this.dbURI = `mongodb://${process.env.dbUsername_Prod}:${process.env.dbPassword_Prod}@165.227.188.235:27017/debt-settlement?authSource=admin`;
+                this.dbURI = `mongodb://${process.env.dbUsername_Prod}:${process.env.dbPassword_Prod}@18.208.220.253:27017/debt-settlement?authSource=admin`;
                 this.invitationLink = constants_util_1.default.ACCOUNT_INVITATION_BASE_LINK;
                 break;
         }

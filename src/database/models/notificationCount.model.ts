@@ -8,6 +8,12 @@ const notificationCount: Schema = new Schema({
   count: {
     type: Number,
   },
+  smsCount: {
+    type: Number,
+  },
+  emailCount: {
+    type: Number,
+  },
   userId: {
     type: String,
   },

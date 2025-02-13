@@ -139,6 +139,8 @@ class EmailService {
                 const notificationCount = await this.notificationCountRepository.getOne({ userId: userId }, undefined, undefined, undefined, undefined);
                 app_1.default.socketInstance.emit('notify', {
                     notificationCount: notificationCount.count,
+                    type: 'EMAIL',
+                    emailCount: notificationCount.emailCount,
                     notification: notification,
                 });
                 return true;

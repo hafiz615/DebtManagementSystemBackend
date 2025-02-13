@@ -189,6 +189,8 @@ class EmailService {
           );
         app.socketInstance.emit('notify', {
           notificationCount: notificationCount.count,
+          type: 'EMAIL',
+          emailCount: notificationCount.emailCount,
           notification: notification,
         });
 
