@@ -55,8 +55,8 @@ class SmsController {
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
-          data: [],
-          message: 'Case linked successfully',
+          data: response[1],
+          message: response[1],
         })
       );
     } catch (error: any) {

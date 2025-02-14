@@ -55,7 +55,7 @@ class SmsService {
                 text: Body,
                 textAsHtml: Body,
             };
-            const inbox = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser?._id?.toString() || '', findUser?.name || '', null, null, 'SMS');
+            const inbox = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), String(findUser?._id) || '', findUser?.name || '', null, null, 'SMS');
             if (caseData) {
                 await case_util_1.default.addInHistory({
                     From: number,
@@ -64,13 +64,13 @@ class SmsService {
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'SMS',
                     Username: findUser?.name || '',
-                }, caseData._id.toString());
+                }, String(caseData._id));
             }
-            newNotification.caseId = caseData?._id.toString() || undefined;
+            newNotification.caseId = String(caseData?._id) || undefined;
             newNotification.text = this.formatText(name?.companyName || 'Unknown');
             newNotification.type = 'SMS';
             newNotification.inboxId = inbox.id;
-            newNotification.userId = findUser?._id?.toString() || '';
+            newNotification.userId = String(findUser?._id) || '';
             await this.notificationRepository.create(newNotification);
             let updatedCount;
             if (findUser) {
@@ -92,35 +92,64 @@ class SmsService {
         };
         this.saveCaseDetailNotification = async (req) => {
             const reqTemp = req;
-            let { caseId, notificationId, inboxId } = req.body;
-            const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [
+            const { caseIds, notificationId, inboxId } = req.body;
+            const inboxData = await this.inboxRepository.getById(inboxId);
+            const notificationData = await this.notificationRepository.getById(notificationId);
+            if (!inboxData || !notificationData) {
+                return [false, constants_util_1.default.notFoundMessage('Inbox or Notification')];
+            }
+            const allCases = await this.caseRepository.getAllWithoutPagination({ _id: { $in: caseIds } }, undefined, undefined, undefined, [
                 { path: 'debtor', select: ['businessInformation.companyName'] },
                 { path: 'creditor', select: ['businessInformation.companyName'] },
             ]);
-            if (!caseTemp) {
-                return [false, constants_util_1.default.notFoundMessage('Case')];
+            if (allCases.length === 0) {
+                return [false, constants_util_1.default.notFoundMessage('Cases')];
             }
-            console.log(caseTemp.creditor.businessInformation.companyName);
-            // return [true, 'successfull'];
-            const inboxTemp = await this.inboxRepository.updateById(inboxId, {
-                caseCode: caseTemp.caseCode,
-                caseId: caseId,
-                debtorCompanyName: caseTemp.debtor?.businessInformation?.companyName,
-                creditorCompanyName: caseTemp.creditor.businessInformation.companyName,
-                negotiatorName: caseTemp.negotiator,
+            const firstCase = allCases[0];
+            await this.inboxRepository.updateById(inboxId, {
+                caseCode: firstCase.caseCode,
+                caseId: String(firstCase._id),
+                debtorCompanyName: firstCase.debtor?.businessInformation?.companyName,
+                creditorCompanyName: firstCase.creditor?.businessInformation?.companyName,
+                negotiatorName: firstCase.negotiator,
             });
-            const notificationTemp = await this.notificationRepository.updateById(notificationId, {
-                caseId: caseId,
+            await this.notificationRepository.updateById(notificationId, {
+                text: this.formatText(firstCase.debtor?.businessInformation?.companyName),
+                ...(notificationData.debtorId && notificationData.debtorId !== ''
+                    ? {}
+                    : { debtorId: String(firstCase.debtor) }),
+                caseId: allCases.length === 1 ? String(firstCase._id) : '',
+                isLinked: true,
             });
             await case_util_1.default.addInHistory({
-                From: inboxTemp.from,
-                To: inboxTemp.to,
-                Content: inboxTemp.text,
+                From: inboxData?.from,
+                To: inboxData?.to,
+                Content: inboxData?.text,
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'SMS',
                 Username: reqTemp.name,
-            }, caseTemp._id.toString());
-            return [true, 'Successfully save notification'];
+            }, String(firstCase._id));
+            const { _id, ...inboxWithoutId } = inboxData;
+            const casesData = [];
+            for (const caseTemp of allCases.slice(1)) {
+                casesData.push({
+                    ...inboxWithoutId,
+                    caseCode: caseTemp.caseCode,
+                    caseId: String(caseTemp._id),
+                    debtorCompanyName: caseTemp.creditor?.businessInformation?.companyName,
+                    creditorCompanyName: caseTemp.creditor?.businessInformation?.companyName,
+                    negotiatorName: caseTemp.negotiator,
+                });
+                await case_util_1.default.addInHistory({
+                    From: inboxData?.from,
+                    To: inboxData?.to,
+                    Content: inboxData?.text,
+                    Time: new Date(common_util_1.default.getCurrentDate()),
+                    Action: 'SMS',
+                }, String(caseTemp._id));
+            }
+            await this.inboxRepository.createMany(casesData);
+            return [true, constants_util_1.default.successUpdateMessage('Inboxes')];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.userRepository = new user_repository_1.UserRepository();

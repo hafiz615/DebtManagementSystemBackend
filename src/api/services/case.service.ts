@@ -49,6 +49,8 @@ import {ISettings} from '../../database/interfaces/settings.interface';
 import settingsUtil from '../../utils/settings.util';
 import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineStatus.repository';
 import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
+import callUtil from '../../utils/call.util';
+import {CallRepository} from '../repository/call/call.repository';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -56,6 +58,7 @@ const VoiceGrant = AccessToken.VoiceGrant;
 
 class CaseService {
   private twilioClient: any;
+  private callRepository: CallRepository;
   private caseRepository: CaseRepository;
   private uploadUtil: UploadUtil;
   private targetCFRepository: TargetCFRepository;
@@ -77,6 +80,7 @@ class CaseService {
       process.env.TWILIO_AUTH_TOKEN
     );
     this.caseRepository = new CaseRepository();
+    this.callRepository = new CallRepository();
     this.uploadUtil = new UploadUtil();
     this.targetCFRepository = new TargetCFRepository();
     this.paymentRepository = new PaymentRepository();
@@ -272,12 +276,9 @@ class CaseService {
   }
 
   getAllUserCases = async (req: Request): Promise<any> => {
-    const reqTemp: any = req;
-    const debtorId = req.query?.debtorId ? req.query.debtorId : null;
-    const filter = debtorId
-      ? {debtor: debtorId, isDeleted: false}
-      : {caseOwnerId: reqTemp.id, isDeleted: false};
-
+    const debtorId = req.query?.debtorId as string | undefined;
+    const filter = {...(debtorId && {debtor: debtorId}), isDeleted: false};
+    console.log('filter:', filter);
     const findCases: ICase[] =
       await this.caseRepository.getAllWithoutPagination<ICase>(
         filter,
@@ -300,9 +301,7 @@ class CaseService {
       const debtorCompanyName =
         caseItem.debtor?.businessInformation?.companyName;
 
-      if (!acc[debtorCompanyName]) {
-        acc[debtorCompanyName] = [];
-      }
+      acc[debtorCompanyName] = acc[debtorCompanyName] || [];
 
       acc[debtorCompanyName].push({
         caseId: caseItem._id.toString(),

@@ -11,13 +11,23 @@ class SmsValidate {
     next: NextFunction
   ) {
     const schema = Joi.object({
-      caseId: Joi.string()
-        .regex(/^[0-9a-fA-F]{24}$/) // Matches a valId MongoDB ObjectId
+      caseIds: Joi.array()
+        .items(
+          Joi.string()
+            .regex(/^[0-9a-fA-F]{24}$/)
+            .required()
+            .messages({
+              'string.pattern.base':
+                'Each Case Id must be a valid MongoDB ObjectId.',
+              'string.empty': 'Each Case Id cannot be empty.',
+            })
+        )
+        .min(1) // Ensures at least one CaseId is provided
         .required()
         .messages({
-          'any.required': 'Case Id is required.',
-          'string.pattern.base': 'Case Id is invalid.',
-          'string.empty': 'Case Id cannot be empty.',
+          'array.base': 'Case Ids must be an array.',
+          'array.min': 'At least one Case Id is required.',
+          'any.required': 'Case Ids are required.',
         }),
 
       notificationId: Joi.string()

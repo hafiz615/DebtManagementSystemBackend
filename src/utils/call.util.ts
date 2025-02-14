@@ -238,7 +238,8 @@ class CallUtil {
     );
     const busyCalls = await this.fetchCallsByStatus(twilioNumber, 'busy');
 
-    const allCalls = [...noAnswerCalls, ...busyCalls];
+    const allCalls = {noAnswer: noAnswerCalls, busy: busyCalls};
+
     return allCalls;
   }
 }

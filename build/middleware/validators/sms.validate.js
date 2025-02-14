@@ -9,13 +9,20 @@ const joi_1 = __importDefault(require("joi"));
 class SmsValidate {
     async saveCaseDetailNotification(req, res, next) {
         const schema = joi_1.default.object({
-            caseId: joi_1.default.string()
-                .regex(/^[0-9a-fA-F]{24}$/) // Matches a valId MongoDB ObjectId
+            caseIds: joi_1.default.array()
+                .items(joi_1.default.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
                 .required()
                 .messages({
-                'any.required': 'Case Id is required.',
-                'string.pattern.base': 'Case Id is invalid.',
-                'string.empty': 'Case Id cannot be empty.',
+                'string.pattern.base': 'Each Case Id must be a valid MongoDB ObjectId.',
+                'string.empty': 'Each Case Id cannot be empty.',
+            }))
+                .min(1) // Ensures at least one CaseId is provided
+                .required()
+                .messages({
+                'array.base': 'Case Ids must be an array.',
+                'array.min': 'At least one Case Id is required.',
+                'any.required': 'Case Ids are required.',
             }),
             notificationId: joi_1.default.string()
                 .regex(/^[0-9a-fA-F]{24}$/) // Matches a valId MongoDB ObjectId
