@@ -158,7 +158,7 @@ router.put(
   caseController.updateCasePlan
 );
 
-router.post(
+router.get(
   '/getAllUserCases',
   authorize.validateAuth,
   caseController.getAllUserCases
