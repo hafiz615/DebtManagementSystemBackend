@@ -13,6 +13,7 @@ class Notification {
         this.userId = '';
         this.type = '';
         this.text = '';
+        this.isLinked = false;
         this.isRead = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

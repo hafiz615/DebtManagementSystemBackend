@@ -7,6 +7,7 @@ export class Notification {
   userId = '';
   type = '';
   text = '';
+  isLinked = false;
   isRead = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

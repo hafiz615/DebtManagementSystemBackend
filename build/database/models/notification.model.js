@@ -54,6 +54,10 @@ const notification = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    isLinked: {
+        type: Boolean,
+        default: false,
+    },
     createdAt: {
         type: Date,
         required: true,

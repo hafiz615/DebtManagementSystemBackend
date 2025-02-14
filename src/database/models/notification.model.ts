@@ -27,6 +27,10 @@ const notification: Schema = new Schema({
     type: Boolean,
     default: false,
   },
+  isLinked: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     required: true,

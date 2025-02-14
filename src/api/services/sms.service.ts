@@ -199,7 +199,8 @@ class SmsService {
         text: this.formatText(
           firstCase.debtor?.businessInformation?.companyName
         ),
-        caseId: firstCase._id.toString(),
+        caseId: allCases.length === 1 ? firstCase._id.toString() : '',
+        isLinked: true,
       }
     );
 
