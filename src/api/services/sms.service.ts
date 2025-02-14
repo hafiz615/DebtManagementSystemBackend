@@ -100,7 +100,7 @@ class SmsService {
       caseData,
       SmsStatus,
       v4(),
-      findUser?._id?.toString() || '',
+      String(findUser?._id) || '',
       findUser?.name || '',
       null,
       null,
@@ -117,14 +117,14 @@ class SmsService {
           Action: 'SMS',
           Username: findUser?.name || '',
         },
-        caseData._id.toString()
+        String(caseData._id)
       );
     }
-    newNotification.caseId = caseData?._id.toString() || undefined;
+    newNotification.caseId = String(caseData?._id) || undefined;
     newNotification.text = this.formatText(name?.companyName || 'Unknown');
     newNotification.type = 'SMS';
     newNotification.inboxId = inbox.id;
-    newNotification.userId = findUser?._id?.toString() || '';
+    newNotification.userId = String(findUser?._id) || '';
 
     await this.notificationRepository.create<INotification>(
       newNotification as any
@@ -187,7 +187,7 @@ class SmsService {
 
     await this.inboxRepository.updateById<IInbox>(inboxId, {
       caseCode: firstCase.caseCode,
-      caseId: firstCase._id.toString(),
+      caseId: String(firstCase._id),
       debtorCompanyName: firstCase.debtor?.businessInformation?.companyName,
       creditorCompanyName: firstCase.creditor?.businessInformation?.companyName,
       negotiatorName: firstCase.negotiator,
@@ -202,7 +202,7 @@ class SmsService {
         ...(notificationData.debtorId && notificationData.debtorId !== ''
           ? {}
           : {debtorId: String(firstCase.debtor)}),
-        caseId: allCases.length === 1 ? firstCase._id.toString() : '',
+        caseId: allCases.length === 1 ? String(firstCase._id) : '',
         isLinked: true,
       }
     );
@@ -216,16 +216,16 @@ class SmsService {
         Action: 'SMS',
         Username: reqTemp.name,
       },
-      firstCase._id.toString()
+      String(firstCase._id)
     );
 
     const {_id, ...inboxWithoutId} = inboxData;
 
     for (const caseTemp of allCases.slice(1)) {
-      const inboxCreation = await this.inboxRepository.create<IInbox>({
+      await this.inboxRepository.create<IInbox>({
         ...inboxWithoutId,
         caseCode: caseTemp.caseCode,
-        caseId: caseTemp._id.toString(),
+        caseId: String(caseTemp._id),
         debtorCompanyName: caseTemp.creditor?.businessInformation?.companyName,
         creditorCompanyName:
           caseTemp.creditor?.businessInformation?.companyName,
@@ -240,7 +240,7 @@ class SmsService {
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'SMS',
         },
-        caseTemp._id.toString()
+        String(caseTemp._id)
       );
     }
     return [true, 'Inbox successfully linked to the case.'];
