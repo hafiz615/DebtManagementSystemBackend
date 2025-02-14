@@ -1263,6 +1263,7 @@ class CaseService {
         Content: content,
         Time: time,
         Action: 'EMAIL',
+        Username: reqTemp.name,
       },
       caseId
     );

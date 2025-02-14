@@ -13,8 +13,10 @@ export interface IInbox extends Document {
   threadId: string;
   previousMessages: mongoose.Schema.Types.ObjectId[];
   userId: string;
+  debtorId: string;
   userName: string;
   isDeleted: boolean;
+  isCompleted: boolean;
   isRead: boolean;
   type: string;
   medium: string;

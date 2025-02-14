@@ -41,6 +41,9 @@ const inbox: Schema = new Schema({
   userId: {
     type: String,
   },
+  debtorId: {
+    type: String,
+  },
   userName: {
     type: String,
   },
@@ -49,6 +52,10 @@ const inbox: Schema = new Schema({
     default: false,
   },
   isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  isCompleted: {
     type: Boolean,
     default: false,
   },

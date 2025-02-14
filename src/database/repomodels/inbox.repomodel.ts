@@ -11,11 +11,13 @@ export class Inbox {
   caseCode = '';
   caseId = '';
   userId = '';
+  debtorId = '';
   userName = '';
   isRead = false;
   type = 'draft';
   medium: '';
   isDeleted = false;
+  isCompleted = false;
   debtorCompanyName = '';
   creditorCompanyName = '';
   negotiatorName = '';

@@ -20,7 +20,7 @@ export class Database {
     mongoose
       .connect(this.dbUri, options)
       .then(async res => {
-        console.log('connection established at ', this.dbUri);
+        console.log('connection established at');
         const settingsRepository = new SettingsRepository();
         const findSettings =
           await settingsRepository.getAllWithoutPagination<ISettings>();

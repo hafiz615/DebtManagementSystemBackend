@@ -4,6 +4,7 @@ export interface INotification extends Document {
   text: string;
   caseId: string;
   inboxId: string;
+  userId: string;
   debtorId: string;
   isRead: boolean;
   type: string;

@@ -68,6 +68,9 @@ const inbox = new mongoose_1.Schema({
     userId: {
         type: String,
     },
+    debtorId: {
+        type: String,
+    },
     userName: {
         type: String,
     },
@@ -76,6 +79,10 @@ const inbox = new mongoose_1.Schema({
         default: false,
     },
     isDeleted: {
+        type: Boolean,
+        default: false,
+    },
+    isCompleted: {
         type: Boolean,
         default: false,
     },
