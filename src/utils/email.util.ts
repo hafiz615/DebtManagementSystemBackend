@@ -257,7 +257,7 @@ class EmailUtil {
     const allValues = await this.getValues(content);
     if (allValues.length) {
       let [user, debtor, creditor, caseTemp, payment] =
-        await this.initializeValues(caseData._id, '', userId);
+        await this.initializeValues(caseData?._id, '', userId);
       let replacements = await this.getPopulatedObject(
         null,
         debtor,
