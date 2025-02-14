@@ -92,35 +92,58 @@ class SmsService {
         };
         this.saveCaseDetailNotification = async (req) => {
             const reqTemp = req;
-            let { caseId, notificationId, inboxId } = req.body;
-            const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [
+            const { caseIds, notificationId, inboxId } = req.body;
+            const inboxData = await this.inboxRepository.getById(inboxId);
+            const notificationData = await this.notificationRepository.getById(notificationId);
+            if (!inboxData || !notificationData) {
+                return [false, constants_util_1.default.notFoundMessage('Inbox or Notification')];
+            }
+            const allCases = await this.caseRepository.getAllWithoutPagination({ _id: { $in: caseIds } }, undefined, undefined, undefined, [
                 { path: 'debtor', select: ['businessInformation.companyName'] },
                 { path: 'creditor', select: ['businessInformation.companyName'] },
             ]);
-            if (!caseTemp) {
-                return [false, constants_util_1.default.notFoundMessage('Case')];
+            if (allCases.length === 0) {
+                return [false, constants_util_1.default.notFoundMessage('Cases')];
             }
-            console.log(caseTemp.creditor.businessInformation.companyName);
-            // return [true, 'successfull'];
-            const inboxTemp = await this.inboxRepository.updateById(inboxId, {
-                caseCode: caseTemp.caseCode,
-                caseId: caseId,
-                debtorCompanyName: caseTemp.debtor?.businessInformation?.companyName,
-                creditorCompanyName: caseTemp.creditor.businessInformation.companyName,
-                negotiatorName: caseTemp.negotiator,
+            const firstCase = allCases[0];
+            await this.inboxRepository.updateById(inboxId, {
+                caseCode: firstCase.caseCode,
+                caseId: firstCase._id.toString(),
+                debtorCompanyName: firstCase.debtor?.businessInformation?.companyName,
+                creditorCompanyName: firstCase.creditor?.businessInformation?.companyName,
+                negotiatorName: firstCase.negotiator,
             });
-            const notificationTemp = await this.notificationRepository.updateById(notificationId, {
-                caseId: caseId,
+            await this.notificationRepository.updateById(notificationId, {
+                text: this.formatText(firstCase.debtor?.businessInformation?.companyName),
+                caseId: firstCase._id.toString(),
             });
             await case_util_1.default.addInHistory({
-                From: inboxTemp.from,
-                To: inboxTemp.to,
-                Content: inboxTemp.text,
+                From: inboxData?.from,
+                To: inboxData?.to,
+                Content: inboxData?.text,
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'SMS',
                 Username: reqTemp.name,
-            }, caseTemp._id.toString());
-            return [true, 'Successfully save notification'];
+            }, firstCase._id.toString());
+            const { _id, ...inboxWithoutId } = inboxData;
+            for (const caseTemp of allCases.slice(1)) {
+                const inboxCreation = await this.inboxRepository.create({
+                    ...inboxWithoutId,
+                    caseCode: caseTemp.caseCode,
+                    caseId: caseTemp._id.toString(),
+                    debtorCompanyName: caseTemp.creditor?.businessInformation?.companyName,
+                    creditorCompanyName: caseTemp.creditor?.businessInformation?.companyName,
+                    negotiatorName: caseTemp.negotiator,
+                });
+                await case_util_1.default.addInHistory({
+                    From: inboxData?.from,
+                    To: inboxData?.to,
+                    Content: inboxData?.text,
+                    Time: new Date(common_util_1.default.getCurrentDate()),
+                    Action: 'SMS',
+                }, caseTemp._id.toString());
+            }
+            return [true, 'Inbox successfully linked to the case.'];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.userRepository = new user_repository_1.UserRepository();

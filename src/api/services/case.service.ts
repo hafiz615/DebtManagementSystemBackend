@@ -276,41 +276,12 @@ class CaseService {
   }
 
   getAllUserCases = async (req: Request): Promise<any> => {
-    let findCases: ICase[] = [];
-    const {from, callSid} = req.body;
-    const number = await commonUtil.cleanPhoneNumberConditionally(from);
-    const name = await callUtil.getDebtorOrCreditorName(number);
-    console.log(name);
-    let caseData: ICase = null;
-
-    if (name) {
-      if (name?.creditorId) {
-        caseData = await this.caseRepository.getOne<ICase>(
-          {creditor: name.creditorId, isDeleted: {$ne: true}},
-          undefined,
-          undefined,
-          [
-            {path: 'debtor', select: ['businessInformation.companyName']},
-            {path: 'creditor', select: ['businessInformation.companyName']},
-          ]
-        );
-      } else if (name?.debtorId) {
-        findCases = await this.caseRepository.getAllWithoutPagination<ICase>(
-          {debtor: name.debtorId, isDeleted: {$ne: true}},
-          undefined,
-          undefined,
-          undefined,
-          [
-            {path: 'creditor', select: ['businessInformation.companyName']},
-            {path: 'debtor', select: ['businessInformation.companyName']},
-          ]
-        );
-
-        caseData = findCases.length === 1 ? findCases[0] : null;
-      }
-    } else {
-      findCases = await this.caseRepository.getAllWithoutPagination<ICase>(
-        undefined,
+    const debtorId = req.query?.debtorId as string | undefined;
+    const filter = {...(debtorId && {debtor: debtorId}), isDeleted: false};
+    console.log('filter:', filter);
+    const findCases: ICase[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        filter,
         undefined,
         undefined,
         undefined,
@@ -322,30 +293,15 @@ class CaseService {
           {path: 'debtor', select: ['businessInformation.companyName']},
         ]
       );
-    }
-    if (caseData) {
-      const parentCallSid = await callUtil.fetchParentCallSid(callSid);
-      const result = await this.callRepository.updateByOne(
-        {parentCallSid},
-        {
-          caseId: caseData?._id?.toString(),
-          updatedAt: commonUtil.getCurrentDate(),
-        }
-      );
-      console.log(result);
-      if (!result) {
-        return [false, constantsUtil.failureUpdateMessage('call')];
-      }
-      return [true, constantsUtil.successUpdateMessage('call')];
-    }
 
+    if (findCases.length === 0) {
+      return [false, constantsUtil.notFoundMessage('Cases')];
+    }
     const groupedByDebtor = findCases.reduce((acc, caseItem: any) => {
       const debtorCompanyName =
         caseItem.debtor?.businessInformation?.companyName;
 
-      if (!acc[debtorCompanyName]) {
-        acc[debtorCompanyName] = [];
-      }
+      acc[debtorCompanyName] = acc[debtorCompanyName] || [];
 
       acc[debtorCompanyName].push({
         caseId: caseItem._id.toString(),

@@ -158,53 +158,88 @@ class SmsService {
 
   saveCaseDetailNotification = async (req: Request) => {
     const reqTemp: any = req;
-    let {caseId, notificationId, inboxId} = req.body;
+    const {caseIds, notificationId, inboxId} = req.body;
 
-    const caseTemp: any = await this.caseRepository.getById<ICase>(
-      caseId,
-      undefined,
-      undefined,
-      [
-        {path: 'debtor', select: ['businessInformation.companyName']},
-        {path: 'creditor', select: ['businessInformation.companyName']},
-      ]
-    );
-
-    if (!caseTemp) {
-      return [false, constantsUtil.notFoundMessage('Case')];
+    const inboxData: any = await this.inboxRepository.getById<IInbox>(inboxId);
+    const notificationData: any =
+      await this.notificationRepository.getById<INotification>(notificationId);
+    if (!inboxData || !notificationData) {
+      return [false, constantsUtil.notFoundMessage('Inbox or Notification')];
     }
 
-    console.log(caseTemp.creditor.businessInformation.companyName);
-    // return [true, 'successfull'];
+    const allCases: any[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        {_id: {$in: caseIds}},
+        undefined,
+        undefined,
+        undefined,
+        [
+          {path: 'debtor', select: ['businessInformation.companyName']},
+          {path: 'creditor', select: ['businessInformation.companyName']},
+        ]
+      );
 
-    const inboxTemp = await this.inboxRepository.updateById<IInbox>(inboxId, {
-      caseCode: caseTemp.caseCode,
-      caseId: caseId,
-      debtorCompanyName: caseTemp.debtor?.businessInformation?.companyName,
-      creditorCompanyName: caseTemp.creditor.businessInformation.companyName,
-      negotiatorName: caseTemp.negotiator,
+    if (allCases.length === 0) {
+      return [false, constantsUtil.notFoundMessage('Cases')];
+    }
+
+    const firstCase = allCases[0];
+
+    await this.inboxRepository.updateById<IInbox>(inboxId, {
+      caseCode: firstCase.caseCode,
+      caseId: firstCase._id.toString(),
+      debtorCompanyName: firstCase.debtor?.businessInformation?.companyName,
+      creditorCompanyName: firstCase.creditor?.businessInformation?.companyName,
+      negotiatorName: firstCase.negotiator,
     });
 
-    const notificationTemp =
-      await this.notificationRepository.updateById<INotification>(
-        notificationId,
-        {
-          caseId: caseId,
-        }
-      );
+    await this.notificationRepository.updateById<INotification>(
+      notificationId,
+      {
+        text: this.formatText(
+          firstCase.debtor?.businessInformation?.companyName
+        ),
+        caseId: firstCase._id.toString(),
+      }
+    );
 
     await caseUtil.addInHistory(
       {
-        From: inboxTemp.from,
-        To: inboxTemp.to,
-        Content: inboxTemp.text,
+        From: inboxData?.from,
+        To: inboxData?.to,
+        Content: inboxData?.text,
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'SMS',
         Username: reqTemp.name,
       },
-      caseTemp._id.toString()
+      firstCase._id.toString()
     );
-    return [true, 'Successfully save notification'];
+
+    const {_id, ...inboxWithoutId} = inboxData;
+
+    for (const caseTemp of allCases.slice(1)) {
+      const inboxCreation = await this.inboxRepository.create<IInbox>({
+        ...inboxWithoutId,
+        caseCode: caseTemp.caseCode,
+        caseId: caseTemp._id.toString(),
+        debtorCompanyName: caseTemp.creditor?.businessInformation?.companyName,
+        creditorCompanyName:
+          caseTemp.creditor?.businessInformation?.companyName,
+        negotiatorName: caseTemp.negotiator,
+      });
+
+      await caseUtil.addInHistory(
+        {
+          From: inboxData?.from,
+          To: inboxData?.to,
+          Content: inboxData?.text,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'SMS',
+        },
+        caseTemp._id.toString()
+      );
+    }
+    return [true, 'Inbox successfully linked to the case.'];
   };
 }
 
