@@ -130,8 +130,9 @@ class SmsService {
                 Username: reqTemp.name,
             }, String(firstCase._id));
             const { _id, ...inboxWithoutId } = inboxData;
+            const casesData = [];
             for (const caseTemp of allCases.slice(1)) {
-                await this.inboxRepository.create({
+                casesData.push({
                     ...inboxWithoutId,
                     caseCode: caseTemp.caseCode,
                     caseId: String(caseTemp._id),
@@ -147,6 +148,7 @@ class SmsService {
                     Action: 'SMS',
                 }, String(caseTemp._id));
             }
+            await this.inboxRepository.createMany(casesData);
             return [true, constants_util_1.default.successUpdateMessage('Inboxes')];
         };
         this.caseRepository = new case_repository_1.CaseRepository();

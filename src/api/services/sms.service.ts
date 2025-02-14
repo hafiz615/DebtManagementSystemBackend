@@ -220,9 +220,9 @@ class SmsService {
     );
 
     const {_id, ...inboxWithoutId} = inboxData;
-
+    const casesData = [];
     for (const caseTemp of allCases.slice(1)) {
-      await this.inboxRepository.create<IInbox>({
+      casesData.push({
         ...inboxWithoutId,
         caseCode: caseTemp.caseCode,
         caseId: String(caseTemp._id),
@@ -243,6 +243,7 @@ class SmsService {
         String(caseTemp._id)
       );
     }
+    await this.inboxRepository.createMany(casesData);
     return [true, constantsUtil.successUpdateMessage('Inboxes')];
   };
 }
