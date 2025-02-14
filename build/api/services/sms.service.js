@@ -147,7 +147,7 @@ class SmsService {
                     Action: 'SMS',
                 }, String(caseTemp._id));
             }
-            return [true, 'Inbox successfully linked to the case.'];
+            return [true, constants_util_1.default.successUpdateMessage('Inboxes')];
         };
         this.caseRepository = new case_repository_1.CaseRepository();
         this.userRepository = new user_repository_1.UserRepository();

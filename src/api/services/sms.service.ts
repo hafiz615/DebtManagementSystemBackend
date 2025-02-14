@@ -243,7 +243,7 @@ class SmsService {
         String(caseTemp._id)
       );
     }
-    return [true, 'Inbox successfully linked to the case.'];
+    return [true, constantsUtil.successUpdateMessage('Inboxes')];
   };
 }
 
