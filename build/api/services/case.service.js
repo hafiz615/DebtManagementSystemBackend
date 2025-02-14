@@ -29,6 +29,7 @@ const uuid_1 = require("uuid");
 const settings_repository_1 = require("../repository/setting/settings.repository");
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
+const call_repository_1 = require("../repository/call/call.repository");
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -131,11 +132,9 @@ class CaseService {
             return [true, findCase];
         };
         this.getAllUserCases = async (req) => {
-            const reqTemp = req;
-            const debtorId = req.query?.debtorId ? req.query.debtorId : null;
-            const filter = debtorId
-                ? { debtor: debtorId, isDeleted: false }
-                : { caseOwnerId: reqTemp.id, isDeleted: false };
+            const debtorId = req.query?.debtorId;
+            const filter = { ...(debtorId && { debtor: debtorId }), isDeleted: false };
+            console.log('filter:', filter);
             const findCases = await this.caseRepository.getAllWithoutPagination(filter, undefined, undefined, undefined, [
                 {
                     path: 'creditor',
@@ -148,9 +147,7 @@ class CaseService {
             }
             const groupedByDebtor = findCases.reduce((acc, caseItem) => {
                 const debtorCompanyName = caseItem.debtor?.businessInformation?.companyName;
-                if (!acc[debtorCompanyName]) {
-                    acc[debtorCompanyName] = [];
-                }
+                acc[debtorCompanyName] = acc[debtorCompanyName] || [];
                 acc[debtorCompanyName].push({
                     caseId: caseItem._id.toString(),
                     creditorCompanyName: caseItem.creditor?.businessInformation?.companyName,
@@ -887,6 +884,7 @@ class CaseService {
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.callRepository = new call_repository_1.CallRepository();
         this.uploadUtil = new upload_util_1.default();
         this.targetCFRepository = new targetCF_repository_1.TargetCFRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
