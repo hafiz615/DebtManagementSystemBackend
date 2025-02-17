@@ -120,7 +120,7 @@ class SmsService {
         String(caseData._id)
       );
     }
-    newNotification.caseId = String(caseData?._id) || undefined;
+    newNotification.caseId = String(caseData?._id) || '';
     newNotification.text = this.formatText(name?.companyName || 'Unknown');
     newNotification.type = 'SMS';
     newNotification.inboxId = inbox.id;
