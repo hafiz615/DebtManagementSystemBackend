@@ -55,7 +55,7 @@ class SmsService {
                 text: Body,
                 textAsHtml: Body,
             };
-            const inbox = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), String(findUser?._id) || '', findUser?.name || '', null, null, 'SMS');
+            const inbox = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser ? String(findUser?._id) : '', findUser ? findUser?.name : '', null, null, 'SMS');
             if (caseData) {
                 await case_util_1.default.addInHistory({
                     From: number,
@@ -66,11 +66,12 @@ class SmsService {
                     Username: findUser?.name || '',
                 }, String(caseData._id));
             }
-            newNotification.caseId = String(caseData?._id) || '';
+
+            newNotification.caseId = caseData ? String(caseData?._id) : '';
             newNotification.text = this.formatText(name?.companyName || 'Unknown');
             newNotification.type = 'SMS';
             newNotification.inboxId = inbox.id;
-            newNotification.userId = String(findUser?._id) || '';
+            newNotification.userId = findUser ? String(findUser?._id) : '';
             await this.notificationRepository.create(newNotification);
             let updatedCount;
             if (findUser) {

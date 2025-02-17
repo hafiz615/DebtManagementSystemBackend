@@ -101,27 +101,26 @@ class InboxService {
         const { all, medium, type } = req.query;
         let filters = { isDeleted: { $ne: true } };
         filters['medium'] = medium;
-        if (all) {
-            let inboxCount = await this.inboxRepository.getCount(filters);
-            let allInboxData = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
-            return [true, { allInboxData: allInboxData, totalCount: inboxCount }];
+        let inbox = {};
+        if (all === 'true') {
+            inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
         }
-        filters = Object.keys(await inbox_utils_1.default.getAllInboxFilters(req)).length
-            ? await inbox_utils_1.default.getAllInboxFilters(req)
-            : { userId: reqTemp.id };
-        filters['isCompleted'] = { $ne: true };
-        let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
-            path: 'previousMessages',
-        }, undefined
-        // Number(req.query.page),
-        // Number(req.query.limit)
-        );
+        else {
+            const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
+            filters = {
+                ...filters,
+                ...(Object.keys(inboxFilters).length
+                    ? inboxFilters
+                    : { userId: reqTemp.id }),
+                isCompleted: { $ne: true },
+            };
+            inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
+        }
         const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
         if (!formattedData) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
         return [true, formattedData];
-        // return [true, {inbox, totalCount}];
     }
     async markAsRead(id) {
         const inboxMessage = await this.inboxRepository.getById(id);

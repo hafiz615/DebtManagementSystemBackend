@@ -34,44 +34,40 @@ class InboxService {
     let filters: any = {isDeleted: {$ne: true}};
     filters['medium'] = medium;
 
-    if (all) {
-      let inboxCount = await this.inboxRepository.getCount<IInbox>(filters);
-      let allInboxData =
-        await this.inboxRepository.getAllWithoutPagination<IInbox>(
-          filters,
-          undefined,
-          undefined,
-          {createdAt: -1},
-          {path: 'previousMessages'}
-        );
+    let inbox = {};
+    if (all === 'true') {
+      inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
+        filters,
+        undefined,
+        undefined,
+        {createdAt: -1},
+        {path: 'previousMessages'}
+      );
+    } else {
+      const inboxFilters = await inboxUtils.getAllInboxFilters(req);
+      filters = {
+        ...filters,
+        ...(Object.keys(inboxFilters).length
+          ? inboxFilters
+          : {userId: reqTemp.id}),
+        isCompleted: {$ne: true},
+      };
 
-      return [true, {allInboxData: allInboxData, totalCount: inboxCount}];
+      inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
+        filters,
+        undefined,
+        undefined,
+        {createdAt: -1},
+        {path: 'previousMessages'}
+      );
     }
 
-    filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
-      ? await inboxUtils.getAllInboxFilters(req)
-      : {userId: reqTemp.id};
-    filters['isCompleted'] = {$ne: true};
-
-    let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
-      filters,
-      undefined,
-      undefined,
-      {createdAt: -1},
-      {
-        path: 'previousMessages',
-      },
-      undefined
-      // Number(req.query.page),
-      // Number(req.query.limit)
-    );
 
     const formattedData = inboxUtils.formatInboxData(inbox, reqTemp.name, type);
     if (!formattedData) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
     return [true, formattedData];
-    // return [true, {inbox, totalCount}];
   }
 
   async markAsRead(id: string): Promise<[boolean, IInbox | string]> {
