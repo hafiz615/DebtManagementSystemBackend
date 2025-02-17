@@ -30,34 +30,42 @@ class InboxService {
 
   async getAllInboxes(req: Request) {
     const reqTemp: any = req;
-    const type = req.query.type;
-    const medium = req.query.medium;
-    const filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
-      ? await inboxUtils.getAllInboxFilters(req)
-      : {userId: reqTemp.id};
-    filters['isDeleted'] = {$ne: true};
-    filters['isCompleted'] = {$ne: true};
+    const {all, medium, type} = req.query;
+    let filters: any = {isDeleted: {$ne: true}};
     filters['medium'] = medium;
+    let inbox = {};
+    if (all === 'true') {
+      inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
+        filters,
+        undefined,
+        undefined,
+        {createdAt: -1},
+        {path: 'previousMessages'}
+      );
+    } else {
+      const inboxFilters = await inboxUtils.getAllInboxFilters(req);
+      filters = {
+        ...filters,
+        ...(Object.keys(inboxFilters).length
+          ? inboxFilters
+          : {userId: reqTemp.id}),
+        isCompleted: {$ne: true},
+      };
 
-    let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
-      filters,
-      undefined,
-      undefined,
-      {createdAt: -1},
-      {
-        path: 'previousMessages',
-      },
-      undefined
-      // Number(req.query.page),
-      // Number(req.query.limit)
-    );
+      inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
+        filters,
+        undefined,
+        undefined,
+        {createdAt: -1},
+        {path: 'previousMessages'}
+      );
+    }
 
     const formattedData = inboxUtils.formatInboxData(inbox, reqTemp.name, type);
     if (!formattedData) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
     }
     return [true, formattedData];
-    // return [true, {inbox, totalCount}];
   }
 
   async markAsRead(id: string): Promise<[boolean, IInbox | string]> {

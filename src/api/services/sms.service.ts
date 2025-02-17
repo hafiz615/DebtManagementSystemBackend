@@ -100,8 +100,8 @@ class SmsService {
       caseData,
       SmsStatus,
       v4(),
-      String(findUser?._id) || '',
-      findUser?.name || '',
+      findUser ? String(findUser?._id) : '',
+      findUser ? findUser?.name : '',
       null,
       null,
       'SMS'
@@ -120,11 +120,11 @@ class SmsService {
         String(caseData._id)
       );
     }
-    newNotification.caseId = String(caseData?._id) || undefined;
+    newNotification.caseId = caseData ? String(caseData?._id) : '';
     newNotification.text = this.formatText(name?.companyName || 'Unknown');
     newNotification.type = 'SMS';
     newNotification.inboxId = inbox.id;
-    newNotification.userId = String(findUser?._id) || '';
+    newNotification.userId = findUser ? String(findUser?._id) : '';
 
     await this.notificationRepository.create<INotification>(
       newNotification as any
@@ -142,7 +142,6 @@ class SmsService {
           userId: findUser._id,
         });
     }
-
     app.socketInstance.emit('notify', {
       notificationCount: updatedCount?.count || 0,
       type: 'SMS',
