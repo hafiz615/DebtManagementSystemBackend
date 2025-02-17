@@ -33,6 +33,7 @@ class InboxService {
     const {all, medium, type} = req.query;
     let filters: any = {isDeleted: {$ne: true}};
     filters['medium'] = medium;
+
     let inbox = {};
     if (all === 'true') {
       inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
@@ -60,6 +61,7 @@ class InboxService {
         {path: 'previousMessages'}
       );
     }
+
 
     const formattedData = inboxUtils.formatInboxData(inbox, reqTemp.name, type);
     if (!formattedData) {

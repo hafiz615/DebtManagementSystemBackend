@@ -66,6 +66,7 @@ class SmsService {
                     Username: findUser?.name || '',
                 }, String(caseData._id));
             }
+
             newNotification.caseId = caseData ? String(caseData?._id) : '';
             newNotification.text = this.formatText(name?.companyName || 'Unknown');
             newNotification.type = 'SMS';
