@@ -66,7 +66,6 @@ class SmsService {
                     Username: findUser?.name || '',
                 }, String(caseData._id));
             }
-
             newNotification.caseId = caseData ? String(caseData?._id) : '';
             newNotification.text = this.formatText(name?.companyName || 'Unknown');
             newNotification.type = 'SMS';
@@ -118,7 +117,7 @@ class SmsService {
                 text: this.formatText(firstCase.debtor?.businessInformation?.companyName),
                 ...(notificationData.debtorId && notificationData.debtorId !== ''
                     ? {}
-                    : { debtorId: String(firstCase.debtor) }),
+                    : { debtorId: String(firstCase.debtor?._id) }),
                 caseId: allCases.length === 1 ? String(firstCase._id) : '',
                 isLinked: true,
             });

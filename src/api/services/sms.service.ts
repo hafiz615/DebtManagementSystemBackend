@@ -202,7 +202,7 @@ class SmsService {
         ),
         ...(notificationData.debtorId && notificationData.debtorId !== ''
           ? {}
-          : {debtorId: String(firstCase.debtor)}),
+          : {debtorId: String(firstCase.debtor?._id)}),
         caseId: allCases.length === 1 ? String(firstCase._id) : '',
         isLinked: true,
       }
