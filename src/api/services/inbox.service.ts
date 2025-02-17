@@ -30,14 +30,28 @@ class InboxService {
 
   async getAllInboxes(req: Request) {
     const reqTemp: any = req;
-    const type = req.query.type;
-    const medium = req.query.medium;
-    const filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
+    const {all, medium, type} = req.query;
+    let filters: any = {isDeleted: {$ne: true}};
+    filters['medium'] = medium;
+
+    if (all) {
+      let inboxCount = await this.inboxRepository.getCount<IInbox>(filters);
+      let allInboxData =
+        await this.inboxRepository.getAllWithoutPagination<IInbox>(
+          filters,
+          undefined,
+          undefined,
+          {createdAt: -1},
+          {path: 'previousMessages'}
+        );
+
+      return [true, {allInboxData: allInboxData, totalCount: inboxCount}];
+    }
+
+    filters = Object.keys(await inboxUtils.getAllInboxFilters(req)).length
       ? await inboxUtils.getAllInboxFilters(req)
       : {userId: reqTemp.id};
-    filters['isDeleted'] = {$ne: true};
     filters['isCompleted'] = {$ne: true};
-    filters['medium'] = medium;
 
     let inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
       filters,
