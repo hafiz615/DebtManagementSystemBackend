@@ -147,6 +147,8 @@ class CaseService {
             }
             const groupedByDebtor = findCases.reduce((acc, caseItem) => {
                 const debtorCompanyName = caseItem.debtor?.businessInformation?.companyName;
+                if (!debtorCompanyName)
+                    return acc;
                 acc[debtorCompanyName] = acc[debtorCompanyName] || [];
                 acc[debtorCompanyName].push({
                     caseId: caseItem._id.toString(),
