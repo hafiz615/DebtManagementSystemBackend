@@ -98,26 +98,29 @@ class InboxService {
     }
     async getAllInboxes(req) {
         const reqTemp = req;
-        const type = req.query.type;
-        const medium = req.query.medium;
-        const filters = Object.keys(await inbox_utils_1.default.getAllInboxFilters(req)).length
-            ? await inbox_utils_1.default.getAllInboxFilters(req)
-            : { userId: reqTemp.id };
-        filters['isDeleted'] = { $ne: true };
-        filters['isCompleted'] = { $ne: true };
+        const { all, medium, type } = req.query;
+        let filters = { isDeleted: { $ne: true } };
         filters['medium'] = medium;
-        let inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, {
-            path: 'previousMessages',
-        }, undefined
-        // Number(req.query.page),
-        // Number(req.query.limit)
-        );
+        let inbox = {};
+        if (all === 'true') {
+            inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
+        }
+        else {
+            const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
+            filters = {
+                ...filters,
+                ...(Object.keys(inboxFilters).length
+                    ? inboxFilters
+                    : { userId: reqTemp.id }),
+                isCompleted: { $ne: true },
+            };
+            inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
+        }
         const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
         if (!formattedData) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
         }
         return [true, formattedData];
-        // return [true, {inbox, totalCount}];
     }
     async markAsRead(id) {
         const inboxMessage = await this.inboxRepository.getById(id);
