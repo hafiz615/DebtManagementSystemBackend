@@ -85,7 +85,7 @@ class EmailService {
       ? parseData.to[0].text
       : parseData.to?.text;
     const cc = Array.isArray(parseData.cc)
-      ? [parseData.cc.map(item => item.text).join(', ')]
+      ? parseData.cc[0].text.split(',')
       : [];
     const attachments = parseData.attachments;
     const referencesHeader = parseData.headers.get('references');
