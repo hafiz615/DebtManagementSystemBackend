@@ -591,6 +591,11 @@ class EmailUtil {
     }
     async sendEmail(to, from, subject, content, cc, attachments, caseId, threadId, userId, userName) {
         let headers = {};
+        if (Array.isArray(cc) && cc.includes(String(to)))
+            return [
+                false,
+                "'To' email address should not be included in the CC list.",
+            ];
         const bin = await this.getVerifySender(from);
         console.log(bin);
         if (!bin[0])
