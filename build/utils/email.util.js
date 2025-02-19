@@ -591,8 +591,15 @@ class EmailUtil {
     }
     async sendEmail(to, from, subject, content, cc, attachments, caseId, threadId, userId, userName) {
         let headers = {};
+        if (Array.isArray(cc) && cc.includes(String(to)))
+            return [
+                false,
+                "'To' email address should not be included in the CC list.",
+            ];
         const bin = await this.getVerifySender(from);
         console.log(bin);
+        if (!bin[0])
+            return [false, bin[1]];
         if (bin === 'debtor' && caseId) {
             const caseTemp = await this.caseRepository.getById(caseId, '_id', undefined, {
                 path: 'debtor',
@@ -642,7 +649,7 @@ class EmailUtil {
             return [true, `Your email is delivered successfully`];
         }
         catch (error) {
-            console.log(error);
+            console.log(error.response.body.errors);
             return [false, 'Could not send email'];
         }
     }
@@ -713,15 +720,19 @@ class EmailUtil {
         let email = [];
         if (result[0]?.body?.results?.length) {
             email = result[0].body.results.filter(temp => {
+                // console.log('result[0].body.results: ', result[0].body.results);
                 return temp.from_email === data;
             });
         }
+        console.log('email: ', email);
+        if (!email?.length)
+            return [false, 'User is not present on Send Grid'];
         let bin = '';
-        if (email[0]?.nickname.includes('debtor'))
+        if (email[0]?.nickname.includes('debtor') && email[0]?.verified)
             bin = 'debtor';
-        if (!email[0]?.nickname.includes('debtor'))
+        if (!email[0]?.nickname.includes('debtor') && email[0]?.verified)
             bin = 'user';
-        return bin;
+        return bin ? bin : [false, 'User is not verified'];
     }
     async sendEmailIfDebtorGetsAdditionalDebt(cases, debtor, creditors) {
         const remaining = cases.reduce((sum, item) => sum + item.remaining, 0);
