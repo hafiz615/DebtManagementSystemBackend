@@ -102,7 +102,14 @@ class InboxService {
         let filters = { isDeleted: { $ne: true } };
         filters['medium'] = medium;
         let inbox = {};
-        if (all === 'true') {
+        if (all === 'all') {
+            inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
+        }
+        else if (all === 'completed') {
+            filters = {
+                ...filters,
+                isCompleted: true,
+            };
             inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
         }
         else {
@@ -116,6 +123,7 @@ class InboxService {
             };
             inbox = await this.inboxRepository.getAllWithoutPagination(filters, undefined, undefined, { createdAt: -1 }, { path: 'previousMessages' });
         }
+        console.log('length', Object.keys(inbox).length);
         const formattedData = inbox_utils_1.default.formatInboxData(inbox, reqTemp.name, type);
         if (!formattedData) {
             return [false, constants_util_2.default.notFoundMessage('Inbox')];
