@@ -105,7 +105,7 @@ class App {
     // await easypayUtil.syncClients('Easypay direct');
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
-    // paymentCronjob.startCronJob();
+    paymentCronjob.startCronJob();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
     // paymentCronjob.testPaynote();
