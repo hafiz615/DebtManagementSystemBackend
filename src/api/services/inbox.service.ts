@@ -35,7 +35,19 @@ class InboxService {
     filters['medium'] = medium;
 
     let inbox = {};
-    if (all === 'true') {
+    if (all === 'all') {
+      inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
+        filters,
+        undefined,
+        undefined,
+        {createdAt: -1},
+        {path: 'previousMessages'}
+      );
+    } else if (all === 'completed') {
+      filters = {
+        ...filters,
+        isCompleted: true,
+      };
       inbox = await this.inboxRepository.getAllWithoutPagination<IInbox>(
         filters,
         undefined,
@@ -61,8 +73,7 @@ class InboxService {
         {path: 'previousMessages'}
       );
     }
-
-
+    console.log('length', Object.keys(inbox).length);
     const formattedData = inboxUtils.formatInboxData(inbox, reqTemp.name, type);
     if (!formattedData) {
       return [false, constantsUtil.notFoundMessage('Inbox')];
