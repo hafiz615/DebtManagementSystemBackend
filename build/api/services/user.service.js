@@ -304,6 +304,7 @@ class UserService {
         return [true, updatedUser];
     }
     async signIn(email, password) {
+        console.log('i am in sign in');
         const userExist = await user_util_1.default.checkUserAndComparePassword(email.toLowerCase(), password);
         if (!userExist)
             return [false, constants_util_1.default.Messages.INVALID];

@@ -14,6 +14,7 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const upload_util_1 = __importDefault(require("../../utils/upload.util"));
 const strategy_repository_1 = require("../repository/strategy/strategy.repository");
+const email_util_1 = __importDefault(require("../../utils/email.util"));
 const bulkUpload_repository_1 = require("../repository/bulkUpload/bulkUpload.repository");
 const bulkUpload_repomodel_1 = require("../../database/repomodels/bulkUpload.repomodel");
 const payment_util_1 = __importDefault(require("../../utils/payment.util"));
@@ -457,21 +458,11 @@ class DebtorService {
             updateObjPayment['authorized'] = 'Success';
             // updateObjPayment['status'] = 'Pending';
             result = true;
-            // await emailUtil.sendEmailOrSmsByEvent(
-            //   'successful_authorization',
-            //   '',
-            //   paymentId,
-            //   ''
-            // );
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
         }
         else {
             updateObjPayment['failedReasonAuthorization'] = responseText;
-            // await emailUtil.sendEmailOrSmsByEvent(
-            //   'failed_authorization',
-            //   '',
-            //   paymentId,
-            //   ''
-            // );
+            await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
         }
         console.log(payments, 'paymentssssss');
         if (Object.keys(updateObjPayment).length) {
@@ -538,12 +529,7 @@ class DebtorService {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
             result = true;
-            // await emailUtil.sendEmailOrSmsByEvent(
-            //   'successful_payment',
-            //   '',
-            //   paymentId,
-            //   ''
-            // );
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_capture', '', paymentId, '');
             console.log(amount, 'amounttttt');
             if (amount) {
                 const commissionAmount = parseFloat((payment.amount - amount).toFixed(2));
@@ -567,12 +553,7 @@ class DebtorService {
         }
         else {
             updateObjPayment['failedReasonCaptured'] = responseText;
-            // await emailUtil.sendEmailOrSmsByEvent(
-            //   'failed_payment',
-            //   '',
-            //   paymentId,
-            //   ''
-            // );
+            await email_util_1.default.sendEmailOrSmsByEvent('failed_capture', '', paymentId, '');
         }
         if (Object.keys(updateObjPayment).length) {
             for (const payment of payments) {
@@ -662,16 +643,10 @@ class DebtorService {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
-        // const statements = caseTemp.debtor?.totalStatements;
-        // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
-        //   debtorUtil.percentageChangeEmail(
-        //     updatedDebtor.businessInformation.companyName,
-        //     String(updatedDebtor._id),
-        //     statements ? statements : 0,
-        //     caseTemp.debtor?.basicInformation?.fullName,
-        //     req.params.id
-        //   );
-        // }
+        const statements = caseTemp.debtor?.totalStatements;
+        if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
+            debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName, req.params.id);
+        }
         return [true, updatedDebtor];
     }
     async getExtractedFields(req) {
