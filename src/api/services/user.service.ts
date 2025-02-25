@@ -82,6 +82,7 @@ class UserService {
     email: string,
     password: string
   ): Promise<[boolean, {user: Partial<IUser>; token: string} | string]> {
+    console.log('i am in sign in');
     const userExist = await userUtil.checkUserAndComparePassword(
       email.toLowerCase(),
       password

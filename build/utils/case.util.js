@@ -32,6 +32,7 @@ const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHist
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
 const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
+const email_util_1 = __importDefault(require("./email.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
 const twilio_1 = __importDefault(require("twilio"));
 dotenv_1.default.config();
@@ -2207,13 +2208,9 @@ class CaseUtil {
                         'Created By': name,
                     }, caseCreated._id);
                 }
-                // if (getCreditorsEmail.length && createdCases.length) {
-                //   emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
-                //     createdCases,
-                //     debtor,
-                //     getCreditorsEmail
-                //   );
-                // }
+                if (getCreditorsEmail.length && createdCases.length) {
+                    email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
+                }
                 if (caseCreated?.intervals && caseCreated?.intervals?.length) {
                     await this.createPayment(caseCreated);
                 }

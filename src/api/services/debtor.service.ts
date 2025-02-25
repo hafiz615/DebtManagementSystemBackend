@@ -492,20 +492,20 @@ class DebtorService {
       updateObjPayment['authorized'] = 'Success';
       // updateObjPayment['status'] = 'Pending';
       result = true;
-      // await emailUtil.sendEmailOrSmsByEvent(
-      //   'successful_authorization',
-      //   '',
-      //   paymentId,
-      //   ''
-      // );
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_authorization',
+        '',
+        paymentId,
+        ''
+      );
     } else {
       updateObjPayment['failedReasonAuthorization'] = responseText;
-      // await emailUtil.sendEmailOrSmsByEvent(
-      //   'failed_authorization',
-      //   '',
-      //   paymentId,
-      //   ''
-      // );
+      await emailUtil.sendEmailOrSmsByEvent(
+        'failed_authorization',
+        '',
+        paymentId,
+        ''
+      );
     }
     console.log(payments, 'paymentssssss');
     if (Object.keys(updateObjPayment).length) {
@@ -589,12 +589,12 @@ class DebtorService {
         updateObjPayment['debtorTransId'] = transactionId;
       }
       result = true;
-      // await emailUtil.sendEmailOrSmsByEvent(
-      //   'successful_payment',
-      //   '',
-      //   paymentId,
-      //   ''
-      // );
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_capture',
+        '',
+        paymentId,
+        ''
+      );
       console.log(amount, 'amounttttt');
       if (amount) {
         const commissionAmount = parseFloat(
@@ -619,12 +619,12 @@ class DebtorService {
       // }
     } else {
       updateObjPayment['failedReasonCaptured'] = responseText;
-      // await emailUtil.sendEmailOrSmsByEvent(
-      //   'failed_payment',
-      //   '',
-      //   paymentId,
-      //   ''
-      // );
+      await emailUtil.sendEmailOrSmsByEvent(
+        'failed_capture',
+        '',
+        paymentId,
+        ''
+      );
     }
     if (Object.keys(updateObjPayment).length) {
       for (const payment of payments) {
@@ -758,16 +758,16 @@ class DebtorService {
         updatedDebtor.businessInformation.companyName
       )
     );
-    // const statements = caseTemp.debtor?.totalStatements;
-    // if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
-    //   debtorUtil.percentageChangeEmail(
-    //     updatedDebtor.businessInformation.companyName,
-    //     String(updatedDebtor._id),
-    //     statements ? statements : 0,
-    //     caseTemp.debtor?.basicInformation?.fullName,
-    //     req.params.id
-    //   );
-    // }
+    const statements = caseTemp.debtor?.totalStatements;
+    if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
+      debtorUtil.percentageChangeEmail(
+        updatedDebtor.businessInformation.companyName,
+        String(updatedDebtor._id),
+        statements ? statements : 0,
+        caseTemp.debtor?.basicInformation?.fullName,
+        req.params.id
+      );
+    }
     return [true, updatedDebtor];
   }
 
