@@ -25,5 +25,7 @@ router.get('/getNotificationConfiguration', authorize_middleware_1.default.valid
 router.get('/getSystemTemplate', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getSystemTemplate);
 router.get('/getCustomFields', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getCustomFields);
 router.get('/getTemplates', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getTemplates);
+router.post('/serviceFee', authorize_middleware_1.default.validateAuth, settings_controller_1.default.updateServiceFee);
+router.get('/serviceFee', authorize_middleware_1.default.validateAuth, settings_controller_1.default.getServiceFee);
 exports.default = router;
 //# sourceMappingURL=settings.routes.js.map

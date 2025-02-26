@@ -19,6 +19,8 @@ import {INotificationConfiguration} from '../../database/interfaces/notification
 import {NotificationConfiguration} from '../../database/repomodels/notificationConfiguration.repomodel';
 import {JustificationRepository} from '../repository/justification/justification.repository';
 import {IJustification} from '../../database/interfaces/justification.interface';
+import {ServiceFeeRepository} from '../repository/serviceFee/serviceFee.repository';
+import {IServiceFee} from '../../database/interfaces/serviceFee.interface';
 
 class SettingsService {
   private settingsRepository: SettingsRepository;
@@ -26,6 +28,7 @@ class SettingsService {
   private targetCFRepository: TargetCFRepository;
   private notificationConfigurationRepository: NotificationConfigurationRepository;
   private justificationRepository: JustificationRepository;
+  private serviceFeeRepository: ServiceFeeRepository;
 
   constructor() {
     this.settingsRepository = new SettingsRepository();
@@ -34,6 +37,7 @@ class SettingsService {
     this.notificationConfigurationRepository =
       new NotificationConfigurationRepository();
     this.justificationRepository = new JustificationRepository();
+    this.serviceFeeRepository = new ServiceFeeRepository();
   }
 
   async addSettings(
@@ -461,6 +465,37 @@ class SettingsService {
     data['emailTemplates'] = templates.emailTemplates;
     data['smsTemplates'] = templates.smsTemplates;
     return [true, templates];
+  }
+
+  async updateServiceFee(req: Request) {
+    const reqTemp: any = req;
+
+    const serviceFeeId =
+      await this.serviceFeeRepository.getAllWithoutPagination<IServiceFee>({});
+
+    const filter = serviceFeeId.length ? {_id: serviceFeeId[0]?._id} : {};
+
+    const serviceFee = await this.serviceFeeRepository.upsert<IServiceFee>(
+      filter,
+      {
+        serviceFee: reqTemp.body.serviceFee,
+        userId: reqTemp.id,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+
+    return serviceFee
+      ? [true, constants.successAddMessage('Service Fee')]
+      : [false, constants.failureAddMessage('Service Fee')];
+  }
+
+  async getServiceFee(req: Request) {
+    const reqTemp: any = req;
+
+    const serviceFee =
+      await this.serviceFeeRepository.getAllWithoutPagination<IServiceFee>({});
+
+    return serviceFee.length ? [true, serviceFee[0].serviceFee] : [true, 0];
   }
 }
 
