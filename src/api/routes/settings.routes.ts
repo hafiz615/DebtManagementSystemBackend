@@ -97,4 +97,16 @@ router.get(
   settingsController.getTemplates
 );
 
+router.post(
+  '/serviceFee',
+  authorize.validateAuth,
+  settingsController.updateServiceFee
+);
+
+router.get(
+  '/serviceFee',
+  authorize.validateAuth,
+  settingsController.getServiceFee
+);
+
 export default router;

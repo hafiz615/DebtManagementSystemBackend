@@ -1,0 +1,1 @@
+{"version":3,"file":"serviceFee.repomodel.js","sourceRoot":"","sources":["../../../src/database/repomodels/serviceFee.repomodel.ts"],"names":[],"mappings":";;;;;;AAAA,0EAAiD;AAEjD,MAAa,UAAU;IAAvB;QACE,eAAU,GAAG,CAAC,CAAC;QACf,WAAM,GAAG,EAAE,CAAC;QACZ,cAAS,GAAG,qBAAU,CAAC,cAAc,EAAE,CAAC;QACxC,cAAS,GAAG,qBAAU,CAAC,cAAc,EAAE,CAAC;IAC1C,CAAC;CAAA;AALD,gCAKC"}

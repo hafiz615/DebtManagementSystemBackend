@@ -15,6 +15,7 @@ const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const notificationConfiguration_repository_1 = require("../repository/notificationConfiguration/notificationConfiguration.repository");
 const notificationConfiguration_repomodel_1 = require("../../database/repomodels/notificationConfiguration.repomodel");
 const justification_repository_1 = require("../repository/justification/justification.repository");
+const serviceFee_repository_1 = require("../repository/serviceFee/serviceFee.repository");
 class SettingsService {
     constructor() {
         this.settingsRepository = new settings_repository_1.SettingsRepository();
@@ -23,6 +24,7 @@ class SettingsService {
         this.notificationConfigurationRepository =
             new notificationConfiguration_repository_1.NotificationConfigurationRepository();
         this.justificationRepository = new justification_repository_1.JustificationRepository();
+        this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
     }
     async addSettings(req, keyword) {
         let settigns = null;
@@ -343,6 +345,24 @@ class SettingsService {
         data['emailTemplates'] = templates.emailTemplates;
         data['smsTemplates'] = templates.smsTemplates;
         return [true, templates];
+    }
+    async updateServiceFee(req) {
+        const reqTemp = req;
+        const serviceFeeId = await this.serviceFeeRepository.getAllWithoutPagination({});
+        const filter = serviceFeeId.length ? { _id: serviceFeeId[0]?._id } : {};
+        const serviceFee = await this.serviceFeeRepository.upsert(filter, {
+            serviceFee: reqTemp.body.serviceFee,
+            userId: reqTemp.id,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return serviceFee
+            ? [true, constants_util_1.default.successAddMessage('Service Fee')]
+            : [false, constants_util_1.default.failureAddMessage('Service Fee')];
+    }
+    async getServiceFee(req) {
+        const reqTemp = req;
+        const serviceFee = await this.serviceFeeRepository.getAllWithoutPagination({});
+        return serviceFee.length ? [true, serviceFee[0].serviceFee] : [true, 0];
     }
 }
 exports.default = SettingsService;

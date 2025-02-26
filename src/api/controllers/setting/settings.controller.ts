@@ -10,6 +10,7 @@ import {Creditor} from '../../../database/repomodels/creditor.repomodel';
 import {NotificationConfiguration} from '../../../database/repomodels/notificationConfiguration.repomodel';
 import {Payment} from '../../../database/repomodels/payment.repomodel';
 import {User} from '../../../database/repomodels/user.repomodel';
+import constantsUtil from '../../../utils/constants.util';
 class SettingsController {
   protected settingsService: SettingsService;
 
@@ -524,6 +525,51 @@ class SettingsController {
           statusCode: constants.CODE.OK,
           data: response[1],
           message: constants.successFoundMessage('Templates'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+  updateServiceFee = async (req: Request, res: Response) => {
+    try {
+      const response = await this.settingsService.updateServiceFee(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successAddMessage('Service Fee'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getServiceFee = async (req: Request, res: Response) => {
+    try {
+      const response = await this.settingsService.getServiceFee(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Service Fee'),
         })
       );
     } catch (error) {
