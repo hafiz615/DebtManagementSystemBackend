@@ -126,6 +126,21 @@ router.post(
   debtorController.addDebtorAccount
 );
 
+router.post(
+  '/add-debtor-account/:id',
+  debtor.addDebtorAccount,
+  debtorController.addDebtorAccount
+);
+router.put(
+  '/update-debtor-account/:id',
+  debtor.updateDebtorAccount,
+  debtorController.updateDebtorAccount
+);
+router.delete(
+  '/delete-debtor-account/:id',
+  debtor.deleteDebtorAccount,
+  debtorController.deleteDebtorAccount
+);
 router.get(
   '/getDebtorSummery',
   authorize.validateAuth,
