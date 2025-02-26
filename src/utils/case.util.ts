@@ -2726,7 +2726,10 @@ class CaseUtil {
 
     if (email) params.email = email;
     const response = await axiosInstance.get(url, {params});
+    console.log('final params', params);
+    console.log('response data', response.data);
     const responseNum = new URLSearchParams(response.data).get('response');
+    console.log('responeNum', responseNum);
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(
         'customer_vault_id'
