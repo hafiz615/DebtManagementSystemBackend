@@ -2279,17 +2279,21 @@ class CaseUtil {
             return [false, createdCases];
         return [true, createdCases];
     }
-    async createVault(paymentToken, debtorName, platform) {
-        const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+    async createVault(paymentToken, platform, debtorName, email) {
         const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
         const url = urlSecurityKey.url;
         const params = {
             customer_vault: 'add_customer',
             security_key: urlSecurityKey.securityKey,
             payment_token: paymentToken,
-            first_name: names.firstName,
-            last_name: names.lastName,
         };
+        if (debtorName) {
+            const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+            params.first_name = names.firstName;
+            params.last_name = names.lastName;
+        }
+        if (email)
+            params.email = email;
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
@@ -2297,6 +2301,29 @@ class CaseUtil {
             return [true, customerVault];
         }
         return [false, 'Unable to create customer vault'];
+    }
+    async updateVault(customerVaultId, paymentToken, platform, debtorName, email) {
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
+        const params = {
+            customer_vault: 'update_customer',
+            security_key: urlSecurityKey.securityKey,
+            customer_vault_id: customerVaultId,
+            payment_token: paymentToken,
+        };
+        if (debtorName) {
+            const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+            params.first_name = names.firstName;
+            params.last_name = names.lastName;
+        }
+        if (email)
+            params.email = email;
+        const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+        const responseNum = new URLSearchParams(response.data).get('response');
+        if (responseNum === '1') {
+            return [true, 'Customer vault updated successfully'];
+        }
+        return [false, 'Unable to update customer vault'];
     }
     async getSettlementRangeSummery(data) {
         const result = { Summary: {} };

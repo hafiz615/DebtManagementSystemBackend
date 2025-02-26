@@ -720,10 +720,11 @@ class DebtorRequests {
         };
         this.addDebtorAccount = (req, res, next) => {
             const schema = joi_1.default.object({
-                paymentType: joi_1.default.string().required().messages({
+                paymentType: joi_1.default.string().valid('cc', 'ck').required().messages({
                     'string.base': 'Payment type must be a string',
                     'any.required': 'Payment type is required',
                     'string.empty': 'Payment type cannot be empty',
+                    'any.only': "Payment type must be either 'cc' or 'ck'",
                 }),
                 paymentToken: joi_1.default.string().required().messages({
                     'string.base': 'Payment token must be a string',
@@ -738,6 +739,62 @@ class DebtorRequests {
                     'any.required': 'Platform is required',
                     'any.only': "Platform must be either 'Easypay direct' or 'Seamlesschex merchant'",
                     'string.empty': 'Platform cannot be empty',
+                }),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            }
+        };
+        this.updateDebtorAccount = (req, res, next) => {
+            const schema = joi_1.default.object({
+                customerVaultId: joi_1.default.string().required().messages({
+                    'string.base': 'Customer vault id must be a string',
+                    'any.required': 'Customer vault id is required',
+                    'string.empty': 'Customer vault id cannot be empty',
+                }),
+                paymentType: joi_1.default.string().valid('cc', 'ck').required().messages({
+                    'string.base': 'Payment type must be a string',
+                    'any.required': 'Payment type is required',
+                    'string.empty': 'Payment type cannot be empty',
+                    'any.only': "Payment type must be either 'cc' or 'ck'",
+                }),
+                paymentToken: joi_1.default.string().required().messages({
+                    'string.base': 'Payment token must be a string',
+                    'any.required': 'Payment token is required',
+                    'string.empty': 'Payment token cannot be empty',
+                }),
+                platform: joi_1.default.string()
+                    .valid('Easypay direct', 'Seamlesschex merchant')
+                    .required()
+                    .messages({
+                    'string.base': 'Platform must be a string',
+                    'any.required': 'Platform is required',
+                    'any.only': "Platform must be either 'Easypay direct' or 'Seamlesschex merchant'",
+                    'string.empty': 'Platform cannot be empty',
+                }),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            }
+        };
+        this.deleteDebtorAccount = (req, res, next) => {
+            const schema = joi_1.default.object({
+                customerVaultId: joi_1.default.string().required().messages({
+                    'string.base': 'Customer vault id must be a string',
+                    'any.required': 'Customer vault id is required',
+                    'string.empty': 'Customer vault id cannot be empty',
                 }),
             });
             const { error } = schema.validate(req.body);

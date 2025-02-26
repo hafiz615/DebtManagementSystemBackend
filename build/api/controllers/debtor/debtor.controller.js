@@ -99,6 +99,27 @@ class DebtorController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.deleteDebtorAccount = async (req, res) => {
+            try {
+                const response = await this.debtorService.deleteDebtorAccount(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successDeleteMessage('Debtor Account'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.updateDebtorBulk = async (req, res) => {
             try {
                 const response = await this.debtorService.updateDebtorBulk(req);
@@ -464,6 +485,27 @@ class DebtorController {
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
                     message: response[1],
+                }));
+            }
+            catch (error) {
+                console.log('error', error.message);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.updateDebtorAccount = async (req, res) => {
+            try {
+                const response = await this.debtorService.updateDebtorAccount(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Debtor Account'),
                 }));
             }
             catch (error) {
