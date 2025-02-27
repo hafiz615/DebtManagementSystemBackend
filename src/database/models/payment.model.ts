@@ -107,10 +107,20 @@ const PaymentModel: Schema = new Schema({
   paymentLink: {
     type: String,
   },
+  debtorName: {
+    type: String,
+  },
 });
 
 PaymentModel.pre('save', async function (next) {
   this.logTrackingId = v4();
+  next();
+});
+
+PaymentModel.pre('insertMany', async function (next, docs) {
+  for (const doc of docs) {
+    doc.logTrackingId = v4();
+  }
   next();
 });
 

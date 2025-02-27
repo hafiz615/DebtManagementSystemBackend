@@ -31,4 +31,5 @@ export class Payment {
   paymentGateway = '';
   manualCommission = 0;
   paymentLink = '';
+  debtorName = '';
 }

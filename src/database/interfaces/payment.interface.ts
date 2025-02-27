@@ -31,4 +31,5 @@ export interface IPayment extends Document {
   paymentGateway: string;
   manualCommission: number;
   paymentLink: string;
+  debtorName: string;
 }

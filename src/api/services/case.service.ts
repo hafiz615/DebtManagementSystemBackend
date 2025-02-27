@@ -1456,6 +1456,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
     }
+    caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }

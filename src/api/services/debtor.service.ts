@@ -1299,6 +1299,7 @@ class DebtorService {
       isExempt: req.body.isExempt,
     });
     req.body.intervals = debtor.intervals;
+    req.body.debtorName = debtor.basicInformation.fullName;
     caseUtil.createPayment(req.body);
 
     return [true, constants.successAddMessage('Payment plan')];

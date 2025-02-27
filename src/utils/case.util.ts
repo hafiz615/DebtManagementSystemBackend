@@ -107,7 +107,7 @@ class CaseUtil {
     return `${fileName}-${Date.now()}${extension}`;
   }
 
-  async createPayment(data: ICase) {
+  async createPayment(data: any) {
     const payment = new Payment();
     const paymentsArray = [];
     let tempPayment = null;
@@ -120,7 +120,8 @@ class CaseUtil {
           payment,
           interval,
           0,
-          String(data.debtor)
+          String(data.debtor),
+          data.debtorName
         );
         paymentsArray.push(tempPayment);
       }
@@ -140,7 +141,8 @@ class CaseUtil {
             payment,
             interval,
             i,
-            String(data.debtor)
+            String(data.debtor),
+            data.debtorName
           );
           paymentsArray.push(tempPayment);
         }
@@ -220,7 +222,8 @@ class CaseUtil {
     payment: Payment,
     interval: any,
     frequency: number,
-    debtor: string
+    debtor: string,
+    debtorName: string
   ) {
     // const uuid = v4();
     payment.amount = interval.amount;
@@ -230,6 +233,7 @@ class CaseUtil {
     payment.timePeriod = interval.timePeriod;
     // payment.paymentReference = uuid;
     payment.debtorId = debtor;
+    payment.debtorName = debtorName;
     return {...payment};
   }
 
@@ -705,7 +709,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner',
+              caseOwner: '$negotiator',
               outstandingDebt: {
                 $subtract: [
                   '$totalDebt',
@@ -1077,7 +1081,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner',
+              caseOwner: '$negotiator',
               outstandingDebt: {
                 $subtract: ['$remaining', {$sum: '$payments.amount'}],
               },

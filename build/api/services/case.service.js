@@ -739,6 +739,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.failureUpdateMessage('case plan')];
             }
+            caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
             if (req.body.intervals && req.body.intervals.length) {
                 case_util_1.default.createPayment(caseUpdated);
             }

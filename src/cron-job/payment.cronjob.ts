@@ -97,129 +97,165 @@ class CronJob {
     await this.paynoteFailed(failedPayments);
   }
   startCronJob() {
-    cron.schedule('30 * * * *', async () => {
-      console.log('Running a task every zero of an hour');
-      await this.processPayments();
-    });
-
-    cron.schedule('0 * * * *', async () => {
-      console.log('Running a task every zero of an hour');
-      await this.processCommissionPayments();
-    });
-
-    cron.schedule('15 * * * *', async () => {
-      const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
-        {creditorPaymentsProceed: true},
-        '_id'
-      );
-      const caseIds = cases.map(caseTemp => {
-        return String(caseTemp._id);
-      });
-      const pendingPayments =
-        await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {
-            caseId: {$in: caseIds},
-            captured: 'Success',
-            sendViaPaynote: 'Pending',
-            isDeleted: false,
-          },
-          undefined,
-          undefined,
-          undefined,
-          {
-            path: 'caseId',
-            select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
-            populate: [
-              {
-                path: 'creditor',
-                select: [
-                  'paynoteSourceId',
-                  'paynoteUserId',
-                  'basicInformation.fullName',
-                  'businessInformation.companyName',
-                ],
-              },
-              {
-                path: 'debtor',
-                select: [
-                  '_id',
-                  'basicInformation.fullName',
-                  'businessInformation.companyName',
-                ],
-              },
-            ],
-          }
-        );
-      await this.paynotePending(pendingPayments);
-
-      const failedPayments =
-        await this.paymentRepository.getAllWithoutPagination<IPayment>(
-          {
-            captured: 'Success',
-            sendViaPaynote: 'Failed',
-            caseId: {$ne: null},
-            isDeleted: false,
-          },
-          undefined,
-          undefined,
-          undefined,
-          {
-            path: 'caseId',
-            select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
-            populate: [
-              {
-                path: 'creditor',
-                select: [
-                  'paynoteSourceId',
-                  'paynoteUserId',
-                  'basicInformation.fullName',
-                  'businessInformation.companyName',
-                ],
-              },
-              {
-                path: 'debtor',
-                select: [
-                  '_id',
-                  'basicInformation.fullName',
-                  'businessInformation.companyName',
-                ],
-              },
-            ],
-          }
-        );
-
-      await this.paynoteFailed(failedPayments);
-    });
-
-    cron.schedule('0 21 * * *', async () => {
-      const today = new Date(commonUtil.getCurrentDate());
-      const targetDate = new Date(commonUtil.getCurrentDate());
-      targetDate.setDate(today.getDate() + 2); // Add 2 days to the current date
-
-      // Set the targetDate to the start of the day (00:00:00) for comparison
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-
-      const payments: IPayment[] =
-        await this.paymentRepository.getAllWithoutPagination<IPayment>({
-          status: 'Upcoming',
-          caseId: {$ne: null},
-          dueDate: {
-            $gte: startOfDay,
-            $lte: endOfDay,
-          },
-          transactionType: {$nin: ['Wire', 'Check']},
-        });
-
-      for (const payment of payments) {
-        emailUtil.sendEmailOrSmsByEvent(
-          'upcoming_payment',
-          '',
-          payment._id,
-          ''
-        );
+    cron.schedule(
+      '0 4 * * *',
+      async () => {
+        console.log('Running a task in a day for 4am (UTC)');
+        await this.processCommissionPayments();
+        await this.processPayments();
+      },
+      {
+        timezone: 'America/New_York',
       }
-    });
+    );
+
+    cron.schedule(
+      '0 * * * *',
+      async () => {
+        console.log('Running a task every zero of an hour');
+        await this.processCommissionRetryPayments();
+        await this.processRetryPayments();
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
+
+    cron.schedule(
+      '0 15 * * *',
+      async () => {
+        const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+          {creditorPaymentsProceed: true},
+          '_id'
+        );
+        const caseIds = cases.map(caseTemp => {
+          return String(caseTemp._id);
+        });
+        const pendingPayments =
+          await this.paymentRepository.getAllWithoutPagination<IPayment>(
+            {
+              caseId: {$in: caseIds},
+              captured: 'Success',
+              sendViaPaynote: 'Pending',
+              isDeleted: false,
+            },
+            undefined,
+            undefined,
+            undefined,
+            {
+              path: 'caseId',
+              select: [
+                '_id',
+                'caseCode',
+                'remaining',
+                'creditorPaymentsProceed',
+              ],
+              populate: [
+                {
+                  path: 'creditor',
+                  select: [
+                    'paynoteSourceId',
+                    'paynoteUserId',
+                    'basicInformation.fullName',
+                    'businessInformation.companyName',
+                  ],
+                },
+                {
+                  path: 'debtor',
+                  select: [
+                    '_id',
+                    'basicInformation.fullName',
+                    'businessInformation.companyName',
+                  ],
+                },
+              ],
+            }
+          );
+        await this.paynotePending(pendingPayments);
+
+        const failedPayments =
+          await this.paymentRepository.getAllWithoutPagination<IPayment>(
+            {
+              captured: 'Success',
+              sendViaPaynote: 'Failed',
+              caseId: {$ne: null},
+              isDeleted: false,
+            },
+            undefined,
+            undefined,
+            undefined,
+            {
+              path: 'caseId',
+              select: [
+                '_id',
+                'caseCode',
+                'remaining',
+                'creditorPaymentsProceed',
+              ],
+              populate: [
+                {
+                  path: 'creditor',
+                  select: [
+                    'paynoteSourceId',
+                    'paynoteUserId',
+                    'basicInformation.fullName',
+                    'businessInformation.companyName',
+                  ],
+                },
+                {
+                  path: 'debtor',
+                  select: [
+                    '_id',
+                    'basicInformation.fullName',
+                    'businessInformation.companyName',
+                  ],
+                },
+              ],
+            }
+          );
+
+        await this.paynoteFailed(failedPayments);
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
+
+    cron.schedule(
+      '0 21 * * *',
+      async () => {
+        const today = new Date(commonUtil.getCurrentDate());
+        const targetDate = new Date(commonUtil.getCurrentDate());
+        targetDate.setDate(today.getDate() + 2); // Add 2 days to the current date
+
+        // Set the targetDate to the start of the day (00:00:00) for comparison
+        const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+
+        const payments: IPayment[] =
+          await this.paymentRepository.getAllWithoutPagination<IPayment>({
+            status: 'Upcoming',
+            caseId: {$ne: null},
+            dueDate: {
+              $gte: startOfDay,
+              $lte: endOfDay,
+            },
+            transactionType: {$nin: ['Wire', 'Check']},
+          });
+
+        for (const payment of payments) {
+          emailUtil.sendEmailOrSmsByEvent(
+            'upcoming_payment',
+            '',
+            payment._id,
+            ''
+          );
+        }
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
   }
 
   async paynotePending(payments: any) {
@@ -352,6 +388,12 @@ class CronJob {
       settings
     );
     await this.processCapture(pendingCaptureDocs, cronId, false, settings);
+  }
+
+  async processRetryPayments() {
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const cronId = uuidv4();
     const paymentsFailedAuthorized = await paymentUtil.getFailedAuthorized();
     const pendingFailedAuthDocs = await this.failedAuthorized(
       paymentsFailedAuthorized,
@@ -404,6 +446,13 @@ class CronJob {
       false,
       settings
     );
+  }
+
+  async processCommissionRetryPayments() {
+    // const payments: any = await paymentUtil.getAllCronJobPayments();
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const cronId = uuidv4();
     const paymentsFailedAuthorized =
       await paymentUtil.getFailedCommissionAuthorized();
     const pendingFailedAuthDocs = await this.failedAuthorized(
@@ -576,23 +625,27 @@ class CronJob {
           if (result) break;
         }
         if (account.paymentType === 'ck') {
-          const response = await this.paymentService.achCredit(
-            account.customerVaultId,
-            payment.amount,
-            account.platform
-          );
-          const result = await this.processCaptureResponse(
-            payment,
-            response,
-            retryPlus,
-            cronId,
-            settings,
-            'ck',
-            account.platform
-            // getCommission
-          );
-          if (retryPlus) retryPlus = false;
-          if (result) break;
+          await this.paymentRepository.updateById<IPayment>(payment._id, {
+            authorized: 'Success',
+          });
+          // const response = await this.paymentService.achCredit(
+          //   account.customerVaultId,
+          //   payment.amount,
+          //   account.platform
+          // );
+          // const result = await this.processCaptureResponse(
+          //   payment,
+          //   response,
+          //   retryPlus,
+          //   cronId,
+          //   settings,
+          //   'ck',
+          //   account.platform
+          //   // getCommission
+          // );
+          // if (retryPlus) retryPlus = false;
+          // if (result) break;
+          break;
         }
       }
     }
@@ -612,7 +665,12 @@ class CronJob {
         0
       );
       if (payment.amount - totalAmount < 0) {
-        // we can send some email here.
+        emailUtil.sendEmailOrSmsByEvent(
+          'failed_authorization',
+          '',
+          payment._id,
+          ''
+        );
         return;
       }
       const concatedPayments = otherPayments.concat(payment);
@@ -639,23 +697,30 @@ class CronJob {
           if (result) break;
         }
         if (account.paymentType === 'ck') {
-          const response = await this.paymentService.achCredit(
-            account.customerVaultId,
-            totalAmount,
-            account.platform
-          );
-          const result = await this.processCaptureCommissionResponse(
-            payment,
-            concatedPayments,
-            response,
-            retryPlus,
-            cronId,
-            settings,
-            'ck',
-            totalAmount
-          );
-          if (retryPlus) retryPlus = false;
-          if (result) break;
+          for (const payment of concatedPayments) {
+            await this.paymentRepository.updateById<IPayment>(payment._id, {
+              authorized: 'Success',
+              paymentReference: v4(),
+              paymentReferenceBool: true,
+            });
+          }
+          // const response = await this.paymentService.achCredit(
+          //   account.customerVaultId,
+          //   totalAmount,
+          //   account.platform
+          // );
+          // const result = await this.processCaptureCommissionResponse(
+          //   payment,
+          //   concatedPayments,
+          //   response,
+          //   retryPlus,
+          //   cronId,
+          //   settings,
+          //   'ck',
+          //   totalAmount
+          // );
+          // if (retryPlus) retryPlus = false;
+          // if (result) break;
         }
       }
     }
@@ -1020,9 +1085,9 @@ class CronJob {
       );
       if (amount) {
         const commissionAmount = payment.amount - amount;
-        await this.paymentRepository.updateById<IPayment>(payment._id, {
-          amount: commissionAmount,
-        });
+        // await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //   amount: commissionAmount,
+        // });
         await this.debtorRepository.updateById(payment.debtorId, {
           $inc: {commissionPaid: commissionAmount},
         });

@@ -71,15 +71,21 @@ class CronJob {
         await this.paynoteFailed(failedPayments);
     }
     startCronJob() {
-        node_cron_1.default.schedule('30 * * * *', async () => {
-            console.log('Running a task every zero of an hour');
+        node_cron_1.default.schedule('0 4 * * *', async () => {
+            console.log('Running a task in a day for 4am (UTC)');
+            await this.processCommissionPayments();
             await this.processPayments();
+        }, {
+            timezone: 'America/New_York',
         });
         node_cron_1.default.schedule('0 * * * *', async () => {
             console.log('Running a task every zero of an hour');
-            await this.processCommissionPayments();
+            await this.processCommissionRetryPayments();
+            await this.processRetryPayments();
+        }, {
+            timezone: 'America/New_York',
         });
-        node_cron_1.default.schedule('15 * * * *', async () => {
+        node_cron_1.default.schedule('0 15 * * *', async () => {
             const cases = await this.caseRepository.getAllWithoutPagination({ creditorPaymentsProceed: true }, '_id');
             const caseIds = cases.map(caseTemp => {
                 return String(caseTemp._id);
@@ -91,7 +97,12 @@ class CronJob {
                 isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+                select: [
+                    '_id',
+                    'caseCode',
+                    'remaining',
+                    'creditorPaymentsProceed',
+                ],
                 populate: [
                     {
                         path: 'creditor',
@@ -120,7 +131,12 @@ class CronJob {
                 isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+                select: [
+                    '_id',
+                    'caseCode',
+                    'remaining',
+                    'creditorPaymentsProceed',
+                ],
                 populate: [
                     {
                         path: 'creditor',
@@ -142,6 +158,8 @@ class CronJob {
                 ],
             });
             await this.paynoteFailed(failedPayments);
+        }, {
+            timezone: 'America/New_York',
         });
         node_cron_1.default.schedule('0 21 * * *', async () => {
             const today = new Date(common_util_1.default.getCurrentDate());
@@ -162,6 +180,8 @@ class CronJob {
             for (const payment of payments) {
                 email_util_1.default.sendEmailOrSmsByEvent('upcoming_payment', '', payment._id, '');
             }
+        }, {
+            timezone: 'America/New_York',
         });
     }
     async paynotePending(payments) {
@@ -250,6 +270,10 @@ class CronJob {
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
         await this.processCapture(pendingCaptureDocs, cronId, false, settings);
+    }
+    async processRetryPayments() {
+        const settings = await this.settingsRepository.getAllWithoutPagination();
+        const cronId = (0, uuid_1.v4)();
         const paymentsFailedAuthorized = await payment_util_1.default.getFailedAuthorized();
         const pendingFailedAuthDocs = await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
         await this.processAuthorized(pendingFailedAuthDocs, cronId, true, settings);
@@ -267,6 +291,11 @@ class CronJob {
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
         await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);
+    }
+    async processCommissionRetryPayments() {
+        // const payments: any = await paymentUtil.getAllCronJobPayments();
+        const settings = await this.settingsRepository.getAllWithoutPagination();
+        const cronId = (0, uuid_1.v4)();
         const paymentsFailedAuthorized = await payment_util_1.default.getFailedCommissionAuthorized();
         const pendingFailedAuthDocs = await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
         await this.processCommissionAuthorized(pendingFailedAuthDocs, cronId, true, settings);
@@ -388,14 +417,27 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform
-                    // getCommission
-                    );
-                    if (retryPlus)
-                        retryPlus = false;
-                    if (result)
-                        break;
+                    await this.paymentRepository.updateById(payment._id, {
+                        authorized: 'Success',
+                    });
+                    // const response = await this.paymentService.achCredit(
+                    //   account.customerVaultId,
+                    //   payment.amount,
+                    //   account.platform
+                    // );
+                    // const result = await this.processCaptureResponse(
+                    //   payment,
+                    //   response,
+                    //   retryPlus,
+                    //   cronId,
+                    //   settings,
+                    //   'ck',
+                    //   account.platform
+                    //   // getCommission
+                    // );
+                    // if (retryPlus) retryPlus = false;
+                    // if (result) break;
+                    break;
                 }
             }
         }
@@ -405,7 +447,7 @@ class CronJob {
             const otherPayments = await payment_util_1.default.getOtherPayments(payment);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
             if (payment.amount - totalAmount < 0) {
-                // we can send some email here.
+                email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
                 return;
             }
             const concatedPayments = otherPayments.concat(payment);
@@ -421,12 +463,30 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, totalAmount, account.platform);
-                    const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'ck', totalAmount);
-                    if (retryPlus)
-                        retryPlus = false;
-                    if (result)
-                        break;
+                    for (const payment of concatedPayments) {
+                        await this.paymentRepository.updateById(payment._id, {
+                            authorized: 'Success',
+                            paymentReference: (0, uuid_1.v4)(),
+                            paymentReferenceBool: true,
+                        });
+                    }
+                    // const response = await this.paymentService.achCredit(
+                    //   account.customerVaultId,
+                    //   totalAmount,
+                    //   account.platform
+                    // );
+                    // const result = await this.processCaptureCommissionResponse(
+                    //   payment,
+                    //   concatedPayments,
+                    //   response,
+                    //   retryPlus,
+                    //   cronId,
+                    //   settings,
+                    //   'ck',
+                    //   totalAmount
+                    // );
+                    // if (retryPlus) retryPlus = false;
+                    // if (result) break;
                 }
             }
         }
@@ -641,9 +701,9 @@ class CronJob {
             email_util_1.default.sendEmailOrSmsByEvent('successful_capture', '', payment._id, '');
             if (amount) {
                 const commissionAmount = payment.amount - amount;
-                await this.paymentRepository.updateById(payment._id, {
-                    amount: commissionAmount,
-                });
+                // await this.paymentRepository.updateById<IPayment>(payment._id, {
+                //   amount: commissionAmount,
+                // });
                 await this.debtorRepository.updateById(payment.debtorId, {
                     $inc: { commissionPaid: commissionAmount },
                 });

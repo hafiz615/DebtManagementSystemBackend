@@ -30,7 +30,7 @@ class PaymentService {
         let days = Number(req.query.days);
         let counts = {};
         let filters = {
-            caseId: { $ne: null },
+            caseId: { $eq: null },
             isDeleted: false,
         };
         let upcomingFilter = {};
@@ -70,12 +70,63 @@ class PaymentService {
                 paymentsObj[arrayName] = paymentsObj[arrayName]?.slice((page - 1) * limit, page * limit);
             }
         }
-        const successPayments = structuredClone(paymentsObj.successPayments);
-        for (const payment of successPayments) {
-            payment.transactionType = 'ACH';
-            payment.paymentGateway = 'Paynote';
+        // const successPayments = structuredClone(paymentsObj.successPayments);
+        // for (const payment of successPayments) {
+        //   payment.transactionType = 'ACH';
+        //   payment.paymentGateway = 'Paynote';
+        // }
+        // paymentsObj.successPayments = successPayments;
+        return [
+            true,
+            {
+                payments: paymentsObj,
+                counts: counts,
+            },
+        ];
+    }
+    async getCreditorSuccessfulPayments(req) {
+        let days = Number(req.query.days);
+        let counts = {};
+        let filters = {
+            caseId: { $ne: null },
+            isDeleted: false,
+        };
+        let upcomingFilter = {};
+        if (days) {
+            filters = await this.getDaysFilterPopulated(filters, days);
         }
-        paymentsObj.successPayments = successPayments;
+        const populatedFiltersResult = await this.populateFilterCreditorSuccessful({ ...filters }, req);
+        let page = populatedFiltersResult.page;
+        let limit = populatedFiltersResult.limit;
+        const finalFilters = populatedFiltersResult.filters;
+        const payments = await this.getAllPaymentsQuery(finalFilters, page, limit);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments, 'successPayments');
+        if (req.query.filters !== 'true' && req.query.search !== 'true') {
+            const count = await this.paymentRepository.getCount(finalFilters);
+            console.log(finalFilters, 'hehehehe');
+            counts['successPayments'] = count;
+        }
+        if (req.query.filters === 'true' || req.query.search === 'true') {
+            if (req.query.page && !isNaN(Number(req.query.page))) {
+                page = Number(req.query.page) ? Number(req.query.page) : page;
+            }
+            if (req.query.limit && !isNaN(Number(req.query.limit))) {
+                limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+            }
+            paymentsObj['successPayments'] =
+                await payment_util_1.default.searchAndFilterHomePayments(paymentsObj['successPayments'], req);
+            counts['successPayments'] = paymentsObj['successPayments']?.length;
+            paymentsObj['successPayments'] = paymentsObj['successPayments']?.slice((page - 1) * limit, page * limit);
+        }
+        // const successPayments = structuredClone(paymentsObj.successPayments);
+        // for (const payment of successPayments) {
+        //   payment.transactionType = 'ACH';
+        //   payment.paymentGateway = 'Paynote';
+        // }
+        // paymentsObj.successPayments = successPayments;
         return [
             true,
             {
@@ -94,16 +145,6 @@ class PaymentService {
         if (req.query.limit && !isNaN(Number(req.query.limit))) {
             limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
         }
-        // if (arrayName === 'default') {
-        //   // Check if pageNumber and pageSize are provided and valid
-        //   filters['$or'] = [
-        //     {captured: 'Failed'},
-        //     {authorized: 'Failed'},
-        //     {authorized: 'Success'},
-        //     {captured: 'Success'},
-        //     {status: 'Upcoming'},
-        //   ];
-        // }
         let filtersApply;
         if (req.query.filters === 'true') {
             page = 0;
@@ -131,9 +172,10 @@ class PaymentService {
                 case 'failedCaptures':
                     filters['captured'] = 'Failed';
                     break;
-                case 'successPayments':
-                    filters['sendViaPaynote'] = 'Success';
-                    break;
+                // case 'successPayments':
+                //   filters['sendViaPaynote'] = 'Success';
+                //   filters['caseId'] = {$ne: null};
+                //   break;
                 case 'successCaptures':
                     filters['captured'] = 'Success';
                     break;
@@ -153,6 +195,40 @@ class PaymentService {
                     break;
             }
         }
+        return { filters, page, limit };
+    }
+    async populateFilterCreditorSuccessful(filters, req) {
+        let page = 1;
+        let limit = 5;
+        if (req.query.page && !isNaN(Number(req.query.page))) {
+            page = Number(req.query.page) ? Number(req.query.page) : page;
+        }
+        if (req.query.limit && !isNaN(Number(req.query.limit))) {
+            limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+        }
+        let filtersApply;
+        if (req.query.filters === 'true') {
+            page = 0;
+            limit = 0;
+            filtersApply = req.body.filters;
+            if (filtersApply?.dueDate) {
+                filters['dueDate'] = {
+                    $gte: filtersApply.dueDate.start,
+                    $lte: filtersApply.dueDate.end,
+                };
+            }
+            if (filtersApply?.tryDate) {
+                filters['reschedule'] = {
+                    $gte: filtersApply.tryDate.start,
+                    $lte: filtersApply.tryDate.end,
+                };
+            }
+        }
+        if (req.query.search === 'true') {
+            page = 0;
+            limit = 0;
+        }
+        filters['sendViaPaynote'] = 'Success';
         return { filters, page, limit };
     }
     async getDaysFilterPopulated(filters, days) {
@@ -196,16 +272,21 @@ class PaymentService {
             if (Object.keys(upcomingFilter).length)
                 upcoming['dueDate'] = upcomingFilter;
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
-            const successPayments = { ...filters };
-            successPayments['sendViaPaynote'] = 'Success';
-            const getSuccessPayments = await this.getAllPaymentsQuery(successPayments, page, limit);
+            // const successPayments = {...filters};
+            // successPayments['sendViaPaynote'] = 'Success';
+            // successPayments['caseId'] = {$ne: null};
+            // const getSuccessPayments = await this.getAllPaymentsQuery(
+            //   successPayments,
+            //   page,
+            //   limit
+            // );
             const mergedArray = [
                 ...getFailedAuthPayments,
                 ...getFailedCapturePayments,
                 ...getSuccessAuthPayments,
                 ...getSuccessCapturePayments,
                 ...getUpcomingPayments,
-                ...getSuccessPayments,
+                // ...getSuccessPayments,
             ];
             return await this.getUniquePayments(mergedArray);
         }
@@ -222,13 +303,19 @@ class PaymentService {
         return Array.from(uniqueObjects.values());
     }
     async getAllPaymentsQuery(filters, page, limit) {
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status sendViaPaynote debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status sendViaPaynote debtorTransId transactionType paymentGateway debtorName', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: {
-                path: 'debtor',
-                select: ['basicInformation.fullName', 'basicInformation.SSID'],
-            },
+            populate: [
+                {
+                    path: 'debtor',
+                    select: ['basicInformation.fullName', 'basicInformation.SSID'],
+                },
+                {
+                    path: 'creditor',
+                    select: ['basicInformation.fullName'],
+                },
+            ],
         }, undefined, page, limit);
     }
     async getCountForAllPaymentsStatus(filters, upcomingFilter) {
@@ -243,18 +330,20 @@ class PaymentService {
         const upcoming = { ...filters };
         upcoming['status'] = 'Upcoming';
         upcoming['dueDate'] = upcomingFilter;
-        const successPaynote = { ...filters };
-        successPaynote['sendViaPaynote'] = 'Success';
+        // const successPaynote = {...filters};
+        // successPaynote['sendViaPaynote'] = 'Success';
+        // successPaynote['caseId'] = {$ne: null};
         const successAuthorizations = await this.paymentRepository.getCount(successAuth);
         const failedCaptures = await this.paymentRepository.getCount(failedCapture);
         const failedAuthorizations = await this.paymentRepository.getCount(failedAuth);
         const successCaptures = await this.paymentRepository.getCount(successCapture);
         console.log(upcoming, 'upcoming');
         const upcomingPayments = await this.paymentRepository.getCount(upcoming);
-        const successPayments = await this.paymentRepository.getCount(successPaynote);
+        // const successPayments =
+        //   await this.paymentRepository.getCount<IPayment>(successPaynote);
         return {
             failedAuthorizations: failedAuthorizations,
-            successPayments: successPayments,
+            // successPayments: successPayments,
             successAuthorizations: successAuthorizations,
             failedCaptures: failedCaptures,
             successCaptures: successCaptures,
@@ -433,7 +522,7 @@ class PaymentService {
                 { captured: 'Success' },
                 { captured: 'Failed' },
             ],
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [
@@ -453,7 +542,7 @@ class PaymentService {
             caseId: id,
             isDeleted: false,
             status: 'Upcoming',
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status debtorTransId transactionType paymentGateway', undefined, { createdAt: -1 }, {
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [
