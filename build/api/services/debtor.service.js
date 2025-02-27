@@ -770,7 +770,7 @@ class DebtorService {
             },
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        return [true, constants_util_1.default.successAddMessage('Debtor account details')];
+        return [true, { customerVaultId: customerVaultResponse[1] }];
     }
     async updateDebtorAccount(req) {
         const syncId = req.params.id;
@@ -789,24 +789,18 @@ class DebtorService {
                 updatedAt: common_util_1.default.getCurrentDate(),
             },
         });
-        return [
-            true,
-            constants_util_1.default.successAddMessage('Debtor account updated successfully'),
-        ];
+        return [true, constants_util_1.default.successUpdateMessage('Debtor account')];
     }
     async deleteDebtorAccount(req) {
         const { id } = req.params;
         const { customerVaultId } = req.body;
-        if (!customerVaultId) {
-            return [false, 'customerVaultId is required'];
-        }
         const updatedDebtor = await this.debtorRepository.updateById(id, {
             $pull: { accounts: { customerVaultId: customerVaultId } },
         });
         if (!updatedDebtor) {
             return [false, 'Debtor not found'];
         }
-        return [true, 'Account deleted successfully', updatedDebtor];
+        return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
     }
     async getDebtorSummery(req) {
         const reqTemp = req;
