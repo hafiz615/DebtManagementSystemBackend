@@ -71,15 +71,18 @@ class CronJob {
         await this.paynoteFailed(failedPayments);
     }
     startCronJob() {
-        node_cron_1.default.schedule('30 * * * *', async () => {
-            console.log('Running a task every zero of an hour');
-            await this.processPayments();
-        });
-        node_cron_1.default.schedule('0 * * * *', async () => {
-            console.log('Running a task every zero of an hour');
+        // cron.schedule('30 * * * *', async () => {
+        //   console.log('Running a task every zero of an hour');
+        //   await this.processPayments();
+        // });
+        node_cron_1.default.schedule('0 4 * * *', async () => {
+            console.log('Running cron job at 4 am');
             await this.processCommissionPayments();
+            await this.processPayments();
+        }, {
+            timezone: 'America/New_York',
         });
-        node_cron_1.default.schedule('15 * * * *', async () => {
+        node_cron_1.default.schedule('0 15 * * *', async () => {
             const cases = await this.caseRepository.getAllWithoutPagination({ creditorPaymentsProceed: true }, '_id');
             const caseIds = cases.map(caseTemp => {
                 return String(caseTemp._id);
@@ -91,7 +94,12 @@ class CronJob {
                 isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+                select: [
+                    '_id',
+                    'caseCode',
+                    'remaining',
+                    'creditorPaymentsProceed',
+                ],
                 populate: [
                     {
                         path: 'creditor',
@@ -120,7 +128,12 @@ class CronJob {
                 isDeleted: false,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
-                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+                select: [
+                    '_id',
+                    'caseCode',
+                    'remaining',
+                    'creditorPaymentsProceed',
+                ],
                 populate: [
                     {
                         path: 'creditor',
@@ -142,6 +155,8 @@ class CronJob {
                 ],
             });
             await this.paynoteFailed(failedPayments);
+        }, {
+            timezone: 'America/New_York',
         });
         node_cron_1.default.schedule('0 21 * * *', async () => {
             const today = new Date(common_util_1.default.getCurrentDate());
@@ -162,6 +177,8 @@ class CronJob {
             for (const payment of payments) {
                 email_util_1.default.sendEmailOrSmsByEvent('upcoming_payment', '', payment._id, '');
             }
+        }, {
+            timezone: 'America/New_York',
         });
     }
     async paynotePending(payments) {
