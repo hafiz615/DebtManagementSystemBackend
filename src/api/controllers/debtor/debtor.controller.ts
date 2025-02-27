@@ -109,7 +109,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Debtor'),
+          message: response[1],
         })
       );
     } catch (error) {
@@ -132,7 +132,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successDeleteMessage('Debtor Account'),
+          message: response[1],
         })
       );
     } catch (error) {
@@ -554,7 +554,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: response[1],
+          message: constants.successAddMessage('Debtor account details'),
         })
       );
     } catch (error) {

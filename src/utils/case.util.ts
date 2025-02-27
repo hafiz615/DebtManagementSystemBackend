@@ -2764,6 +2764,8 @@ class CaseUtil {
     }
     if (email) params.email = email;
     const response = await axiosInstance.get(url, {params});
+    console.log('final params update', params);
+    console.log('response data update', response.data);
 
     const responseNum = new URLSearchParams(response.data).get('response');
     if (responseNum === '1') {

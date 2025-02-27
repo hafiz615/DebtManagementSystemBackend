@@ -2322,6 +2322,8 @@ class CaseUtil {
         if (email)
             params.email = email;
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+        console.log('final params update', params);
+        console.log('response data update', response.data);
         const responseNum = new URLSearchParams(response.data).get('response');
         if (responseNum === '1') {
             return [true, 'Customer vault updated successfully'];
