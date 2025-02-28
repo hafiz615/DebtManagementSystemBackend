@@ -658,9 +658,9 @@ class CronJob {
             email_util_1.default.sendEmailOrSmsByEvent('successful_capture', '', payment._id, '');
             if (amount) {
                 const commissionAmount = payment.amount - amount;
-                await this.paymentRepository.updateById(payment._id, {
-                    amount: commissionAmount,
-                });
+                // await this.paymentRepository.updateById<IPayment>(payment._id, {
+                //   amount: commissionAmount,
+                // });
                 await this.debtorRepository.updateById(payment.debtorId, {
                     $inc: { commissionPaid: commissionAmount },
                 });

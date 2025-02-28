@@ -1049,9 +1049,9 @@ class CronJob {
       );
       if (amount) {
         const commissionAmount = payment.amount - amount;
-        await this.paymentRepository.updateById<IPayment>(payment._id, {
-          amount: commissionAmount,
-        });
+        // await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //   amount: commissionAmount,
+        // });
         await this.debtorRepository.updateById(payment.debtorId, {
           $inc: {commissionPaid: commissionAmount},
         });
