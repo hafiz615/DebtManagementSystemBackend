@@ -206,6 +206,7 @@ const uploadFields = upload.fields([
   {name: 'mcaDocuments'},
   {name: 'otherDocuments'},
   {name: 'bankStatementDocuments'},
+  {name: 'lawsuitDocuments'},
 ]);
 
 router.post(

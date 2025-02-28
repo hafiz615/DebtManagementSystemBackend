@@ -108,6 +108,13 @@ const debtorSchema: Schema = new Schema({
       url: {type: String; default: ''};
     }>,
   },
+  lawsuitDocuments: {
+    type: Array<{
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
+    }>,
+  },
   accounts: {
     type: Array<{
       paymentType: String;

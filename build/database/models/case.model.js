@@ -183,6 +183,12 @@ const caseModel = new mongoose_1.Schema({
     dateServed: {
         type: Date,
     },
+    serviceFee: {
+        type: Number,
+    },
+    legalFee: {
+        type: Number,
+    },
 });
 caseModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

@@ -1143,7 +1143,8 @@ class DebtorService {
             });
             if (!newFiles.mcaDocuments.length &&
                 !newFiles.bankStatementDocuments.length &&
-                !newFiles.otherDocuments.length) {
+                !newFiles.otherDocuments.length &&
+                !newFiles.lawsuitDocuments.length) {
                 return [
                     true,
                     {
@@ -1190,6 +1191,13 @@ class DebtorService {
                 ];
             }
         }
+        // const lawfirmData = (await LawfirmUtil.lawfirmData(reqTemp)) as ILawfirm;
+        // const createLawfirm = await LawfirmUtil.createLawfirm(lawfirmData);
+        // const attorneyData = (await AttorneyUtil.attorneyData(
+        //   reqTemp
+        // )) as IAttorney;
+        // attorneyData['lawfirmId'] = createLawfirm._id;
+        // const createAttorney = await AttorneyUtil.createAttorney(attorneyData);
         return await this.createDebtorForPortal(debtorBody, 'Debtor Portal');
     }
     async updateDebtorIdExist(debtor, files) {
@@ -1197,6 +1205,7 @@ class DebtorService {
             mcaDocuments: await this.getNewFiles(files.mcaDocuments, debtor.mcaDocuments),
             bankStatementDocuments: await this.getNewFiles(files.bankStatementDocuments, debtor.bankStatementDocuments),
             otherDocuments: await this.getNewFiles(files.otherDocuments, debtor.otherDocuments),
+            lawsuitDocuments: await this.getNewFiles(files.lawsuitDocuments, debtor.lawsuitDocuments),
         };
     }
     async getNewFiles(newFiles, existingFiles) {
@@ -1217,6 +1226,7 @@ class DebtorService {
         await uploadAndAppend('mcaDocuments', 'mcaDocuments');
         await uploadAndAppend('bankStatementDocuments', 'bankStatementDocuments');
         await uploadAndAppend('otherDocuments', 'otherDocuments');
+        await uploadAndAppend('lawsuitDocuments', 'lawsuitDocuments');
         return debtorBody;
     }
     async checkDebtor(id) {

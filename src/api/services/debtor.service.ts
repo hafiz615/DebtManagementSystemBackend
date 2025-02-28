@@ -22,6 +22,7 @@ import {IBulkUpload} from '../../database/interfaces/bulkUpload.interface';
 import {BulkUpload} from '../../database/repomodels/bulkUpload.repomodel';
 import {ICreditor} from '../../database/interfaces/creditor.interface';
 import paymentUtil from '../../utils/payment.util';
+import LawfirmUtil from '../../utils/lawfirm.util';
 import moneyThumbUtil from '../../utils/moneyThumb.util';
 import creditorUtil from '../../utils/creditor.util';
 import debtorUtil from '../../utils/debtor.util';
@@ -40,6 +41,9 @@ import {ISyncPaymentMethod} from '../../database/interfaces/syncPaymentMethod.in
 import easypayUtil from '../../utils/easypay.util';
 import {paymentPlatform} from '../../enums/index';
 import {platform} from 'os';
+import {ILawfirm} from '../../database/interfaces/lawfirm.interface';
+import AttorneyUtil from '../../utils/attorney.util';
+import {IAttorney} from '../../database/interfaces/attorney.interface';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -1495,7 +1499,8 @@ class DebtorService {
       if (
         !newFiles.mcaDocuments.length &&
         !newFiles.bankStatementDocuments.length &&
-        !newFiles.otherDocuments.length
+        !newFiles.otherDocuments.length &&
+        !newFiles.lawsuitDocuments.length
       ) {
         return [
           true,
@@ -1554,6 +1559,13 @@ class DebtorService {
         ];
       }
     }
+    // const lawfirmData = (await LawfirmUtil.lawfirmData(reqTemp)) as ILawfirm;
+    // const createLawfirm = await LawfirmUtil.createLawfirm(lawfirmData);
+    // const attorneyData = (await AttorneyUtil.attorneyData(
+    //   reqTemp
+    // )) as IAttorney;
+    // attorneyData['lawfirmId'] = createLawfirm._id;
+    // const createAttorney = await AttorneyUtil.createAttorney(attorneyData);
 
     return await this.createDebtorForPortal(debtorBody, 'Debtor Portal');
   }
@@ -1571,6 +1583,10 @@ class DebtorService {
       otherDocuments: await this.getNewFiles(
         files.otherDocuments,
         debtor.otherDocuments
+      ),
+      lawsuitDocuments: await this.getNewFiles(
+        files.lawsuitDocuments,
+        debtor.lawsuitDocuments
       ),
     };
   }
@@ -1600,6 +1616,7 @@ class DebtorService {
     await uploadAndAppend('mcaDocuments', 'mcaDocuments');
     await uploadAndAppend('bankStatementDocuments', 'bankStatementDocuments');
     await uploadAndAppend('otherDocuments', 'otherDocuments');
+    await uploadAndAppend('lawsuitDocuments', 'lawsuitDocuments');
 
     return debtorBody;
   }

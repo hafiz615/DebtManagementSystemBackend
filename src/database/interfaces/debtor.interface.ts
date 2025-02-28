@@ -47,6 +47,7 @@ export interface IDebtor extends Document {
   mcaDocuments: Array<IKeyFile>; // MCA's Document Field
   bankStatementDocuments: Array<IKeyFile>; // BankStatment Document Field
   otherDocuments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
+  lawsuitDocuments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   createdBy: string;
   accounts: Array<{
     paymentType: string;

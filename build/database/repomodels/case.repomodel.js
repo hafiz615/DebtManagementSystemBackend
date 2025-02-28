@@ -53,6 +53,8 @@ class Case {
         this.hasLawsuits = false; // Do you have lawsuits?
         this.lawsuitCreditorTags = Array(); // Creditor dropdown tags
         this.dateServed = ''; // Date served
+        this.serviceFee = 0;
+        this.legalFee = 0;
     }
 }
 exports.Case = Case;

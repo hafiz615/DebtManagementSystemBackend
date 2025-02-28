@@ -1193,5 +1193,48 @@ class CaseValidate {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  async updateCasePlan1(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      intervals: Joi.array()
+        .items(
+          Joi.object({
+            amount: Joi.number().strict().required().messages({
+              'any.required': 'Amount is required',
+              'number.base': 'Amount must be a valid number',
+            }),
+            startDate: Joi.date().required().messages({
+              'any.required': 'Start date is required',
+              'date.base': 'Start date must be a valid date',
+            }),
+            frequency: Joi.number().optional().messages({
+              'number.base': 'Frequency must be a valid number',
+            }),
+            timePeriod: Joi.string()
+              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+              .required()
+              .messages({
+                'any.required': 'Time period is required',
+                'string.base': 'Time period must be a string',
+                'string.empty': 'Time period cannot be empty',
+                'any.only':
+                  'Time period must be one of the following: Weekly, Monthly, Custom, Fortnightly, Daily',
+              }),
+          })
+        )
+        .optional()
+        .messages({
+          'array.base': 'Intervals must be an array',
+        }),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 export default new CaseValidate();
