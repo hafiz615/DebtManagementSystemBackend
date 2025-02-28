@@ -290,6 +290,7 @@ class CronJob {
         await this.processCommissionAuthorized(pendingAuthDocs, cronId, false, settings);
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
+        console.log(pendingCaptureDocs, 'pendingCaptureDocs');
         await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);
     }
     async processCommissionRetryPayments() {
@@ -503,7 +504,7 @@ class CronJob {
         const updateObjPayment = {};
         updateObjPayment['transactionType'] = 'CC';
         updateObjPayment['paymentGateway'] = platform;
-        updateObjPayment['authorizedDate'] = common_util_1.default.getCurrentDate();
+        updateObjPayment['authorizedDate'] = new Date(common_util_1.default.getCurrentDate()).setUTCHours(0, 0, 0, 0);
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
@@ -541,7 +542,7 @@ class CronJob {
         const updateObjPayment = {};
         updateObjPayment['transactionType'] = 'CC';
         updateObjPayment['paymentGateway'] = platform;
-        updateObjPayment['authorizedDate'] = common_util_1.default.getCurrentDate();
+        updateObjPayment['authorizedDate'] = new Date(common_util_1.default.getCurrentDate()).setUTCHours(0, 0, 0, 0);
         if (responseNum === '1') {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;

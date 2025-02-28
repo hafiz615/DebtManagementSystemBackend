@@ -440,6 +440,7 @@ class CronJob {
       cronId,
       settings
     );
+    console.log(pendingCaptureDocs, 'pendingCaptureDocs');
     await this.processCommissionCapture(
       pendingCaptureDocs,
       cronId,
@@ -745,7 +746,9 @@ class CronJob {
     const updateObjPayment = {};
     updateObjPayment['transactionType'] = 'CC';
     updateObjPayment['paymentGateway'] = platform;
-    updateObjPayment['authorizedDate'] = commonUtil.getCurrentDate();
+    updateObjPayment['authorizedDate'] = new Date(
+      commonUtil.getCurrentDate()
+    ).setUTCHours(0, 0, 0, 0);
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -809,7 +812,9 @@ class CronJob {
     const updateObjPayment = {};
     updateObjPayment['transactionType'] = 'CC';
     updateObjPayment['paymentGateway'] = platform;
-    updateObjPayment['authorizedDate'] = commonUtil.getCurrentDate();
+    updateObjPayment['authorizedDate'] = new Date(
+      commonUtil.getCurrentDate()
+    ).setUTCHours(0, 0, 0, 0);
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 

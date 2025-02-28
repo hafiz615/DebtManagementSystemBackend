@@ -34,6 +34,7 @@ class PaymentUtil {
             transactionId: obj.debtorTransId,
             sendViaPaynote: obj.sendViaPaynote,
             failedReasonPaynote: obj.failedReasonPaynote,
+            debtorId: obj.debtorId,
         }));
         return this.getFilteredPaymentsObj(transformedArray, arrayName);
     }
