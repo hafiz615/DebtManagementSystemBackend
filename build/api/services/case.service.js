@@ -751,6 +751,49 @@ class CaseService {
             this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
         };
+        this.updateCasePlan1 = async (req) => {
+            let reqTemp = req;
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase)
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            //const getDebtor = findCase.debtor;
+            if (req.body?.intervals &&
+                req.body?.intervals.length &&
+                findCase.intervals.length) {
+                return [false, 'Payment plan already exist!'];
+            }
+            // if (req.body?.commission) {
+            //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
+            //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
+            //       weeklyCommission: req.body.commission,
+            //       updatedAt: commonUtil.getCurrentDate(),
+            //     });
+            //   }
+            // }
+            // if (req.body.intervals && req.body?.intervals?.length) {
+            //   findCase.intervals = req.body?.intervals;
+            //   findCase.isExempt = req.body.isExempt;
+            //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
+            //   if (!checkCasePayment[0]) return checkCasePayment;
+            // }
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
+            let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.failureUpdateMessage('case plan')];
+            }
+            if (req.body.intervals && req.body.intervals.length) {
+                case_util_1.default.createPayment(caseUpdated);
+            }
+            await case_util_1.default.addInHistory({
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case Updated',
+                'Updated By': reqTemp.name,
+            }, caseUpdated._id);
+            // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            console.log('reqTemp', reqTemp.id);
+            this.sendCaseEmails('', findCase, caseUpdated, false, true);
+            return [true, caseUpdated];
+        };
         this.getScoresSettlementRangeDetails = async (all, hardReload, body, caseId) => {
             console.log(caseId, 'llklklk');
             const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, [{ path: 'debtor' }]);
