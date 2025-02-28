@@ -1213,13 +1213,13 @@ class CaseService {
     const time = new Date(commonUtil.getCurrentDate());
     await caseUtil.addInHistory(
       {
+        Username: reqTemp.name,
         Subject: subject,
         From: from,
         To: sendTo,
         Content: content,
         Time: time,
         Action: 'EMAIL',
-        Username: reqTemp.name,
       },
       caseId
     );
