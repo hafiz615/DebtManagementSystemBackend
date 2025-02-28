@@ -33,19 +33,20 @@ class PaymentService {
             caseId: { $eq: null },
             isDeleted: false,
         };
-        let upcomingFilter = {};
+        let upcomingFilter = null;
+        let dueDateFilter = null;
         if (days) {
-            filters = await this.getDaysFilterPopulated(filters, days);
+            dueDateFilter = await this.getDaysFilterDueDate(days);
             upcomingFilter = await this.getDaysFilterUpcoming(days);
         }
         if (arrayName === 'default') {
-            counts = await this.getCountForAllPaymentsStatus({ ...filters }, upcomingFilter);
+            counts = await this.getCountForAllPaymentsStatus({ ...filters }, upcomingFilter, dueDateFilter);
         }
-        const populatedFiltersResult = await this.populateFilterHomePayments({ ...filters }, req, upcomingFilter);
+        const populatedFiltersResult = await this.populateFilterHomePayments({ ...filters }, req, upcomingFilter, dueDateFilter);
         let page = populatedFiltersResult.page;
         let limit = populatedFiltersResult.limit;
         const finalFilters = populatedFiltersResult.filters;
-        const payments = await this.getAllPayments(req, finalFilters, page, limit, upcomingFilter);
+        const payments = await this.getAllPayments(req, finalFilters, page, limit, upcomingFilter, dueDateFilter);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -135,7 +136,7 @@ class PaymentService {
             },
         ];
     }
-    async populateFilterHomePayments(filters, req, upcomingFilter) {
+    async populateFilterHomePayments(filters, req, upcomingFilter, dueDateFilter) {
         let page = 1;
         let limit = 5;
         let arrayName = String(req.query.arrayName);
@@ -171,6 +172,8 @@ class PaymentService {
             switch (arrayName) {
                 case 'failedCaptures':
                     filters['captured'] = 'Failed';
+                    if (dueDateFilter)
+                        filters['dueDate'] = dueDateFilter;
                     break;
                 // case 'successPayments':
                 //   filters['sendViaPaynote'] = 'Success';
@@ -178,20 +181,28 @@ class PaymentService {
                 //   break;
                 case 'successCaptures':
                     filters['captured'] = 'Success';
+                    if (dueDateFilter)
+                        filters['dueDate'] = dueDateFilter;
                     break;
                 case 'failedAuthorizations':
                     filters['authorized'] = 'Failed';
+                    if (dueDateFilter)
+                        filters['authorizedDate'] = dueDateFilter;
                     break;
                 case 'successAuthorizations':
                     filters['authorized'] = 'Success';
+                    if (dueDateFilter)
+                        filters['authorizedDate'] = dueDateFilter;
                     break;
                 case 'upcomingPayments':
                     filters['status'] = 'Upcoming';
-                    if (Object.keys(upcomingFilter).length)
+                    if (upcomingFilter)
                         filters['dueDate'] = upcomingFilter;
                     break;
                 default:
                     filters['authorized'] = 'Failed';
+                    if (dueDateFilter)
+                        filters['dueDate'] = upcomingFilter;
                     break;
             }
         }
@@ -251,25 +262,44 @@ class PaymentService {
                 $lte: new Date(new Date(tillDate).setUTCHours(0, 0, 0, 0)),
             };
         }
-        return {};
+        return null;
     }
-    async getAllPayments(req, filters, page, limit, upcomingFilter) {
+    async getDaysFilterDueDate(days) {
+        if (days && (days === 3 || days === 5 || days === 7)) {
+            let currentDate = common_util_1.default.getCurrentDate();
+            const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
+            return {
+                $gte: new Date(new Date(startDate).setUTCHours(0, 0, 0, 0)),
+                $lte: new Date(new Date(currentDate).setUTCHours(0, 0, 0, 0)),
+            };
+        }
+        return null;
+    }
+    async getAllPayments(req, filters, page, limit, upcomingFilter, dueDateFilter) {
         if (String(req.query.arrayName) === 'default') {
             const failedAuth = { ...filters };
             failedAuth['authorized'] = 'Failed';
+            if (dueDateFilter)
+                failedAuth['authorizedDate'] = dueDateFilter;
             const getFailedAuthPayments = await this.getAllPaymentsQuery(failedAuth, page, limit);
             const failedCapture = { ...filters };
             failedCapture['captured'] = 'Failed';
+            if (dueDateFilter)
+                failedCapture['dueDate'] = dueDateFilter;
             const getFailedCapturePayments = await this.getAllPaymentsQuery(failedCapture, page, limit);
             const successAuth = { ...filters };
             successAuth['authorized'] = 'Success';
+            if (dueDateFilter)
+                successAuth['authorizedDate'] = dueDateFilter;
             const getSuccessAuthPayments = await this.getAllPaymentsQuery(successAuth, page, limit);
             const successCapture = { ...filters };
             successCapture['captured'] = 'Success';
+            if (dueDateFilter)
+                successCapture['dueDate'] = dueDateFilter;
             const getSuccessCapturePayments = await this.getAllPaymentsQuery(successCapture, page, limit);
             const upcoming = { ...filters };
             upcoming['status'] = 'Upcoming';
-            if (Object.keys(upcomingFilter).length)
+            if (upcomingFilter)
                 upcoming['dueDate'] = upcomingFilter;
             const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
             // const successPayments = {...filters};
@@ -318,15 +348,19 @@ class PaymentService {
             ],
         }, undefined, page, limit);
     }
-    async getCountForAllPaymentsStatus(filters, upcomingFilter) {
+    async getCountForAllPaymentsStatus(filters, upcomingFilter, dueDateFilter) {
         const failedAuth = { ...filters };
         failedAuth['authorized'] = 'Failed';
+        failedAuth['authorizedDate'] = dueDateFilter;
         const failedCapture = { ...filters };
         failedCapture['captured'] = 'Failed';
+        failedCapture['dueDate'] = dueDateFilter;
         const successAuth = { ...filters };
         successAuth['authorized'] = 'Success';
+        successAuth['authorizedDate'] = dueDateFilter;
         const successCapture = { ...filters };
         successCapture['captured'] = 'Success';
+        successCapture['dueDate'] = dueDateFilter;
         const upcoming = { ...filters };
         upcoming['status'] = 'Upcoming';
         upcoming['dueDate'] = upcomingFilter;

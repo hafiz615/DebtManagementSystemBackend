@@ -540,8 +540,8 @@ class EmailUtil {
             });
             payment = result;
             caseTemp = result.caseId;
-            debtor = result.caseId.debtor;
-            creditor = result.caseId.creditor;
+            debtor = result.caseId?.debtor;
+            creditor = result.caseId?.creditor;
         }
         if (userId) {
             user = await this.userRepository.getById(userId);

@@ -691,7 +691,8 @@ class CronJob {
             response,
             retryPlus,
             cronId,
-            settings
+            settings,
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -744,6 +745,7 @@ class CronJob {
     const updateObjPayment = {};
     updateObjPayment['transactionType'] = 'CC';
     updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['authorizedDate'] = commonUtil.getCurrentDate();
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -795,7 +797,8 @@ class CronJob {
     response: any,
     retryPlus: boolean,
     cronId: string,
-    settings: ISettings[]
+    settings: ISettings[],
+    platform: string
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -804,6 +807,9 @@ class CronJob {
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
+    updateObjPayment['transactionType'] = 'CC';
+    updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['authorizedDate'] = commonUtil.getCurrentDate();
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -957,7 +963,8 @@ class CronJob {
             cronId,
             settings,
             'cc',
-            totalAmount
+            totalAmount,
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -976,7 +983,8 @@ class CronJob {
             cronId,
             settings,
             'ck',
-            totalAmount
+            totalAmount,
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -1059,7 +1067,8 @@ class CronJob {
     cronId: string,
     settings: ISettings[],
     type: string,
-    amount: number
+    amount: number,
+    platform: string
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -1068,6 +1077,8 @@ class CronJob {
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
+    updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['transactionType'] = type === 'cc' ? 'CC' : 'ACH';
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';

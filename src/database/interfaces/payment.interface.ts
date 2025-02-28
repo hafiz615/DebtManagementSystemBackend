@@ -32,4 +32,5 @@ export interface IPayment extends Document {
   manualCommission: number;
   paymentLink: string;
   debtorName: string;
+  authorizedDate: string;
 }

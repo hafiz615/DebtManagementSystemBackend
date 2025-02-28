@@ -32,4 +32,5 @@ export class Payment {
   manualCommission = 0;
   paymentLink = '';
   debtorName = '';
+  authorizedDate = '';
 }

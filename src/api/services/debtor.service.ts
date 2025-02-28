@@ -600,9 +600,9 @@ class DebtorService {
         const commissionAmount = parseFloat(
           (payment.amount - amount).toFixed(2)
         );
-        await this.paymentRepository.updateById<IPayment>(payment._id, {
-          amount: commissionAmount,
-        });
+        // await this.paymentRepository.updateById<IPayment>(payment._id, {
+        //   amount: commissionAmount,
+        // });
         await this.debtorRepository.updateById(payment.debtorId, {
           $inc: {commissionPaid: commissionAmount},
         });
