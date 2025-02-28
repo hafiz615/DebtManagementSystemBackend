@@ -90,7 +90,7 @@ class CaseUtil {
   async createDebtor(data: IDebtor, createdBy: string) {
     const newDebtor = new Debtor();
     newDebtor.createdBy = createdBy;
-    const validatedDebtor = DataCopier.copy(newDebtor, data);
+    const validatedDebtor = DataCopier.copy(newDebtor, data as IDebtor);
     return await this.debtRepository.create<IDebtor>(validatedDebtor);
   }
 

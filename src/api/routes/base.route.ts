@@ -17,6 +17,7 @@ import bulkUploadRouter from './bulkUpload.route';
 import inboxRouter from './inbox.routes';
 import notificationRouter from './notification.routes';
 import seemlesschexRouter from './seemlesschex.route';
+import lawfirmRouter from './lawfirm.route';
 import smsRouter from './sms.routes';
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
@@ -38,4 +39,5 @@ export default function setup(app: Application) {
   app.use('/api/v1/inbox', inboxRouter);
   app.use('/api/v1/notification', notificationRouter);
   app.use('/api/v1/seemlesschex', seemlesschexRouter);
+  app.use('/api/v1/lawfirm', lawfirmRouter);
 }

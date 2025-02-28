@@ -51,8 +51,10 @@ export class Case {
   paymentFrequency = ''; // Payment frequency (text field)
   impliedInterestRate = 0; // Implied interest rate per creditor
   averageInterestRate = 0; // Average interest rate
-  lawsuitFile = Array<{ key: ''; originalFileName: ''; url: '' }>(); // Array of lawsuit file objects
+  lawsuitFile = Array<{key: ''; originalFileName: ''; url: ''}>(); // Array of lawsuit file objects
   hasLawsuits = false; // Do you have lawsuits?
   lawsuitCreditorTags = Array<string>(); // Creditor dropdown tags
   dateServed = ''; // Date served
+  serviceFee = 0;
+  legalFee = 0;
 }

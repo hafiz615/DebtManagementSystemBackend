@@ -39,6 +39,7 @@ class Debtor {
         this.mcaDocuments = Array();
         this.bankStatementDocuments = Array();
         this.otherDocuments = Array();
+        this.lawsuitDocuments = Array();
         this.extractedFields = [];
         this.totalCommission = 0;
         this.commissionPaid = 0;

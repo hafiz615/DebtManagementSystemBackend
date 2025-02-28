@@ -51,6 +51,7 @@ import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineSta
 import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
 import callUtil from '../../utils/call.util';
 import {CallRepository} from '../repository/call/call.repository';
+import lawsuitUtil from '../../utils/lawsuit.util';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -1470,6 +1471,53 @@ class CaseService {
     );
     this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     return [true, caseUpdated];
+  };
+
+  updateCasePlan1 = async (req: Request) => {
+    let reqTemp: any = req;
+    let findCase: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+    if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
+    //const getDebtor = findCase.debtor;
+    if (
+      req.body?.intervals &&
+      req.body?.intervals.length &&
+      findCase.intervals.length
+    ) {
+      return [false, 'Payment plan already exist!'];
+    }
+    const lawfirmTemp = await lawsuitUtil.lawsuitFormation(reqTemp, findCase);
+    let caseUpdated = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {
+        intervals: req.body.intervals,
+        serviceFee: req.body.serviceFee,
+        legalFee: req.body.legalFee,
+        updatedAt: new Date(commonUtil.getCurrentDate()),
+      }
+    );
+    if (!caseUpdated) {
+      return [false, constantsUtil.failureUpdateMessage('case plan')];
+    }
+    if (req.body.intervals && req.body.intervals.length) {
+      caseUtil.createPayment(caseUpdated);
+    }
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
+      },
+      caseUpdated._id
+    );
+    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    // console.log('reqTemp', reqTemp.id);
+    // this.sendCaseEmails('', findCase, caseUpdated, false, true);
+    return [true, []];
   };
 
   getScoresSettlementRangeDetails = async (

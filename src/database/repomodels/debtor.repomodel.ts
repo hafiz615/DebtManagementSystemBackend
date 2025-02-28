@@ -43,6 +43,7 @@ export class Debtor {
   mcaDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
   bankStatementDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
   otherDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
+  lawsuitDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
   extractedFields = [];
   totalCommission = 0;
   commissionPaid = 0;

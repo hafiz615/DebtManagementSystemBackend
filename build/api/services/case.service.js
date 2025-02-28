@@ -30,6 +30,7 @@ const settings_repository_1 = require("../repository/setting/settings.repository
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
 const call_repository_1 = require("../repository/call/call.repository");
+const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -750,6 +751,40 @@ class CaseService {
             }, caseUpdated._id);
             this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
+        };
+        this.updateCasePlan1 = async (req) => {
+            let reqTemp = req;
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            if (!findCase)
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            //const getDebtor = findCase.debtor;
+            if (req.body?.intervals &&
+                req.body?.intervals.length &&
+                findCase.intervals.length) {
+                return [false, 'Payment plan already exist!'];
+            }
+            const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(reqTemp, findCase);
+            let caseUpdated = await this.caseRepository.updateById(req.params.id, {
+                intervals: req.body.intervals,
+                serviceFee: req.body.serviceFee,
+                legalFee: req.body.legalFee,
+                updatedAt: new Date(common_util_1.default.getCurrentDate()),
+            });
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.failureUpdateMessage('case plan')];
+            }
+            if (req.body.intervals && req.body.intervals.length) {
+                case_util_1.default.createPayment(caseUpdated);
+            }
+            await case_util_1.default.addInHistory({
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case Updated',
+                'Updated By': reqTemp.name,
+            }, caseUpdated._id);
+            // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            // console.log('reqTemp', reqTemp.id);
+            // this.sendCaseEmails('', findCase, caseUpdated, false, true);
+            return [true, []];
         };
         this.getScoresSettlementRangeDetails = async (all, hardReload, body, caseId) => {
             console.log(caseId, 'llklklk');

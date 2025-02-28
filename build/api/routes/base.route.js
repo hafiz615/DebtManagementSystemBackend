@@ -21,6 +21,7 @@ const bulkUpload_route_1 = __importDefault(require("./bulkUpload.route"));
 const inbox_routes_1 = __importDefault(require("./inbox.routes"));
 const notification_routes_1 = __importDefault(require("./notification.routes"));
 const seemlesschex_route_1 = __importDefault(require("./seemlesschex.route"));
+const lawfirm_route_1 = __importDefault(require("./lawfirm.route"));
 const sms_routes_1 = __importDefault(require("./sms.routes"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
@@ -42,6 +43,7 @@ function setup(app) {
     app.use('/api/v1/inbox', inbox_routes_1.default);
     app.use('/api/v1/notification', notification_routes_1.default);
     app.use('/api/v1/seemlesschex', seemlesschex_route_1.default);
+    app.use('/api/v1/lawfirm', lawfirm_route_1.default);
 }
 exports.default = setup;
 //# sourceMappingURL=base.route.js.map
