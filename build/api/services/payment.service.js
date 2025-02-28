@@ -17,6 +17,8 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
+const case_util_1 = __importDefault(require("../../utils/case.util"));
+const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -915,7 +917,28 @@ class PaymentService {
         if (!payment)
             return [false, constants_util_1.default.notFoundMessage('payment link')];
         await this.paymentRepository.updateByOne({ debtorTransId: req.params.token }, { status: req.body.status });
-        return [true, []];
+        let results = null;
+        let caseIds = null;
+        if (req.body.status === 'Success') {
+            const debtor = await this.debtorReposiotry.getOne({
+                _id: payment.debtorId,
+            });
+            const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
+            const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(debtor.extractedFields, creditorNames);
+            for (const bin of caseTemp) {
+                bin['platform'] = true;
+                bin.creditor.platform = true;
+            }
+            results = await case_util_1.default.createCreditorsCases({ data: caseTemp }, '', '', payment.debtorId);
+            const caseList = Array.isArray(results[1]) ? results[1] : results;
+            caseIds = caseList.map(result => ({
+                caseId: result._id,
+                caseCode: result.caseCode,
+                debtorId: result.debtor,
+                creditorId: result.creditor,
+            }));
+        }
+        return [true, caseIds];
     }
     async getPaymentLinkStatus(req) {
         const payment = await this.paymentRepository.getOne({
