@@ -30,6 +30,7 @@ const settings_repository_1 = require("../repository/setting/settings.repository
 const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
 const call_repository_1 = require("../repository/call/call.repository");
+const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -762,22 +763,13 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
-            // if (req.body?.commission) {
-            //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-            //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-            //       weeklyCommission: req.body.commission,
-            //       updatedAt: commonUtil.getCurrentDate(),
-            //     });
-            //   }
-            // }
-            // if (req.body.intervals && req.body?.intervals?.length) {
-            //   findCase.intervals = req.body?.intervals;
-            //   findCase.isExempt = req.body.isExempt;
-            //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
-            //   if (!checkCasePayment[0]) return checkCasePayment;
-            // }
-            req.body.updatedAt = common_util_1.default.getCurrentDate();
-            let caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(reqTemp, findCase);
+            let caseUpdated = await this.caseRepository.updateById(req.params.id, {
+                intervals: req.body.intervals,
+                serviceFee: req.body.serviceFee,
+                legalFee: req.body.legalFee,
+                updatedAt: new Date(common_util_1.default.getCurrentDate()),
+            });
             if (!caseUpdated) {
                 return [false, constants_util_1.default.failureUpdateMessage('case plan')];
             }
@@ -790,9 +782,9 @@ class CaseService {
                 'Updated By': reqTemp.name,
             }, caseUpdated._id);
             // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
-            console.log('reqTemp', reqTemp.id);
-            this.sendCaseEmails('', findCase, caseUpdated, false, true);
-            return [true, caseUpdated];
+            // console.log('reqTemp', reqTemp.id);
+            // this.sendCaseEmails('', findCase, caseUpdated, false, true);
+            return [true, []];
         };
         this.getScoresSettlementRangeDetails = async (all, hardReload, body, caseId) => {
             console.log(caseId, 'llklklk');

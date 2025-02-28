@@ -150,9 +150,9 @@ const caseModel: Schema = new Schema({
   // Lawsuit Fields
   lawsuitFile: {
     type: Array<{
-      key: {type: String, required: true};
-      originalFileName: {type: String, required: true};
-      url: {type: String, default: ''};
+      key: {type: String; required: true};
+      originalFileName: {type: String; required: true};
+      url: {type: String; default: ''};
     }>,
   },
   hasLawsuits: {
@@ -160,12 +160,16 @@ const caseModel: Schema = new Schema({
   },
   lawsuitCreditorTags: {
     type: Array<String>, // Creditor dropdown tags
-  },  
-  dateServed: {
-    type: Date, 
   },
-
-
+  dateServed: {
+    type: Date,
+  },
+  serviceFee: {
+    type: Number,
+  },
+  legalFee: {
+    type: Number,
+  },
 });
 
 caseModel.pre('save', async function (next) {

@@ -68,5 +68,6 @@ export interface ICase extends Document {
   hasLawsuits: boolean; // Do you have lawsuits?
   lawsuitCreditorTags: Array<string>; // Creditor dropdown tags
   dateServed: string; // Date served
-
+  serviceFee: number;
+  legalFee: number;
 }

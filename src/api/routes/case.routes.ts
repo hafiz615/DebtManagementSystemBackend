@@ -160,7 +160,7 @@ router.put(
 
 router.put(
   '/update-case-plan/:id',
-  caseValidate.updateCasePlan1,
+  // caseValidate.updateCasePlan1,
   caseController.updateCasePlan1
 );
 

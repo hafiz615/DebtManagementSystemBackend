@@ -51,6 +51,7 @@ import {PipelineStatusRepository} from '../repository/pipelineStatus/pipelineSta
 import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interface';
 import callUtil from '../../utils/call.util';
 import {CallRepository} from '../repository/call/call.repository';
+import lawsuitUtil from '../../utils/lawsuit.util';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -1472,9 +1473,7 @@ class CaseService {
     return [true, caseUpdated];
   };
 
-  updateCasePlan1 = async (
-    req: Request
-  ): Promise<[boolean, ICase | string]> => {
+  updateCasePlan1 = async (req: Request) => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
@@ -1491,24 +1490,15 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
-    // if (req.body?.commission) {
-    //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-    //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-    //       weeklyCommission: req.body.commission,
-    //       updatedAt: commonUtil.getCurrentDate(),
-    //     });
-    //   }
-    // }
-    // if (req.body.intervals && req.body?.intervals?.length) {
-    //   findCase.intervals = req.body?.intervals;
-    //   findCase.isExempt = req.body.isExempt;
-    //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
-    //   if (!checkCasePayment[0]) return checkCasePayment;
-    // }
-    req.body.updatedAt = commonUtil.getCurrentDate();
+    const lawfirmTemp = await lawsuitUtil.lawsuitFormation(reqTemp, findCase);
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
-      req.body
+      {
+        intervals: req.body.intervals,
+        serviceFee: req.body.serviceFee,
+        legalFee: req.body.legalFee,
+        updatedAt: new Date(commonUtil.getCurrentDate()),
+      }
     );
     if (!caseUpdated) {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
@@ -1525,9 +1515,9 @@ class CaseService {
       caseUpdated._id
     );
     // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
-    console.log('reqTemp', reqTemp.id);
-    this.sendCaseEmails('', findCase, caseUpdated, false, true);
-    return [true, caseUpdated];
+    // console.log('reqTemp', reqTemp.id);
+    // this.sendCaseEmails('', findCase, caseUpdated, false, true);
+    return [true, []];
   };
 
   getScoresSettlementRangeDetails = async (

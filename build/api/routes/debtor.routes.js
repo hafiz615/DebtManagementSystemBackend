@@ -55,6 +55,7 @@ const uploadFields = upload.fields([
     { name: 'mcaDocuments' },
     { name: 'otherDocuments' },
     { name: 'bankStatementDocuments' },
+    { name: 'lawsuitDocuments' },
 ]);
 router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.getExtractFieldsAndDebtor);
 router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);

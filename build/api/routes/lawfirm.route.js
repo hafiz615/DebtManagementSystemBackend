@@ -1,0 +1,12 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authorize_middleware_1 = __importDefault(require("../../middleware/authorize.middleware"));
+const lawfirm_controller_1 = __importDefault(require("../controllers/lawfirm/lawfirm.controller"));
+const router = (0, express_1.Router)();
+router.post('/create/lawfirm/:id', authorize_middleware_1.default.validateAuth, lawfirm_controller_1.default.createLawfirm);
+exports.default = router;
+//# sourceMappingURL=lawfirm.route.js.map
