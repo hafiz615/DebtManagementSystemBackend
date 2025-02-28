@@ -739,6 +739,7 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.failureUpdateMessage('case plan')];
             }
+            caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
             if (req.body.intervals && req.body.intervals.length) {
                 case_util_1.default.createPayment(caseUpdated);
             }
@@ -1004,13 +1005,13 @@ class CaseService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const time = new Date(common_util_1.default.getCurrentDate());
         await case_util_1.default.addInHistory({
+            Username: reqTemp.name,
             Subject: subject,
             From: from,
             To: sendTo,
             Content: content,
             Time: time,
             Action: 'EMAIL',
-            Username: reqTemp.name,
         }, caseId);
         const emailData = {
             from,

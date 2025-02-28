@@ -37,6 +37,8 @@ class Payment {
         this.paymentGateway = '';
         this.manualCommission = 0;
         this.paymentLink = '';
+        this.debtorName = '';
+        this.authorizedDate = '';
     }
 }
 exports.Payment = Payment;

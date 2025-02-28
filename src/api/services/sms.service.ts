@@ -110,12 +110,12 @@ class SmsService {
     if (caseData) {
       await caseUtil.addInHistory(
         {
+          Username: findUser?.name || '',
           From: number,
           To: cleanedTo,
           Content: Body,
           Time: new Date(commonUtil.getCurrentDate()),
           Action: 'SMS',
-          Username: findUser?.name || '',
         },
         String(caseData._id)
       );
@@ -210,12 +210,12 @@ class SmsService {
 
     await caseUtil.addInHistory(
       {
+        Username: reqTemp.name,
         From: inboxData?.from,
         To: inboxData?.to,
         Content: inboxData?.text,
         Time: new Date(commonUtil.getCurrentDate()),
         Action: 'SMS',
-        Username: reqTemp.name,
       },
       String(firstCase._id)
     );
@@ -235,6 +235,7 @@ class SmsService {
 
       await caseUtil.addInHistory(
         {
+          Username: reqTemp.username,
           From: inboxData?.from,
           To: inboxData?.to,
           Content: inboxData?.text,

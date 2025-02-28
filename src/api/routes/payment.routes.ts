@@ -11,6 +11,12 @@ router.post(
   paymentController.getHomePayments
 );
 
+router.post(
+  '/getCreditorSuccessfulPayments',
+  authorize.validateAuth,
+  paymentController.getCreditorSuccessfulPayments
+);
+
 router.get(
   '/getCasePayments/:id',
   authorize.validateAuth,

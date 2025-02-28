@@ -752,11 +752,8 @@ class DebtorService {
         if (!getDebtor) {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
-        if (!getDebtor?.basicInformation?.fullName) {
-            return [false, 'Could not find debtor name'];
-        }
         const debtorName = getDebtor?.basicInformation?.fullName;
-        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, debtorName, req.body.platform);
+        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, req.body.platform, debtorName);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
         await this.debtorRepository.updateById(getDebtor._id, {
@@ -773,7 +770,37 @@ class DebtorService {
             },
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        return [true, constants_util_1.default.successAddMessage('Debtor account details')];
+        return [true, { customerVaultId: customerVaultResponse[1] }];
+    }
+    async updateDebtorAccount(req) {
+        const syncId = req.params.id;
+        const { customerVaultId, paymentToken, paymentType, platform } = req.body;
+        const getDebtor = await this.debtorRepository.getById(syncId);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const debtorName = getDebtor.basicInformation?.fullName;
+        const customerVaultResponse = await case_util_1.default.updateVault(customerVaultId, paymentToken, platform, debtorName);
+        if (!customerVaultResponse[0])
+            return customerVaultResponse;
+        await this.debtorRepository.updateByOne({ 'accounts.customerVaultId': customerVaultId }, {
+            $set: {
+                'accounts.$.paymentType': paymentType,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            },
+        });
+        return [true, constants_util_1.default.successUpdateMessage('Debtor account')];
+    }
+    async deleteDebtorAccount(req) {
+        const { id } = req.params;
+        const { customerVaultId } = req.body;
+        const updatedDebtor = await this.debtorRepository.updateById(id, {
+            $pull: { accounts: { customerVaultId: customerVaultId } },
+        });
+        if (!updatedDebtor) {
+            return [false, 'Debtor not found'];
+        }
+        return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
     }
     async getDebtorSummery(req) {
         const reqTemp = req;
@@ -962,6 +989,7 @@ class DebtorService {
             isExempt: req.body.isExempt,
         });
         req.body.intervals = debtor.intervals;
+        req.body.debtorName = debtor.basicInformation.fullName;
         case_util_1.default.createPayment(req.body);
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }

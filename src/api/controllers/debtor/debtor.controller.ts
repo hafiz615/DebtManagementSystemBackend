@@ -109,7 +109,30 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Debtor'),
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  deleteDebtorAccount = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.deleteDebtorAccount(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: response[1],
         })
       );
     } catch (error) {
@@ -531,7 +554,30 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: response[1],
+          message: constants.successAddMessage('Debtor account details'),
+        })
+      );
+    } catch (error) {
+      console.log('error', error.message);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  updateDebtorAccount = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.updateDebtorAccount(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Debtor Account'),
         })
       );
     } catch (error) {

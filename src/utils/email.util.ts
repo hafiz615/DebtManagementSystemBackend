@@ -171,13 +171,13 @@ class EmailUtil {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
                 {
+                  Username: user?.name || '',
                   Subject: template.subject,
                   From: from,
                   To: emails,
                   Content: content,
                   Time: time,
                   Action: 'EMAIL',
-                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -219,12 +219,12 @@ class EmailUtil {
               const time = new Date(commonUtil.getCurrentDate());
               await caseUtil.addInHistory(
                 {
+                  Username: user?.name || '',
                   From: fromNumber,
                   To: phoneNumbers,
                   Content: content,
                   Time: time,
                   Action: 'SMS',
-                  Username: user?.name || '',
                 },
                 caseId
               );
@@ -335,6 +335,7 @@ class EmailUtil {
         if (result[0]) {
           await caseUtil.addInHistory(
             {
+              Username: userName,
               Subject: subject,
               From: from,
               To: sendTo,
@@ -343,7 +344,6 @@ class EmailUtil {
               Time: time,
               Action: 'EMAIL',
               Attachments: uniqueAttachments,
-              Username: userName,
             },
             caseData._id
           );
@@ -402,12 +402,12 @@ class EmailUtil {
         if (smsResult[0]) {
           await caseUtil.addInHistory(
             {
+              Username: userName,
               From: from,
               To: sendTo,
               Content: content,
               Time: time,
               Action: 'SMS',
-              Username: userName,
             },
             caseData._id
           );
@@ -846,8 +846,8 @@ class EmailUtil {
       );
       payment = result;
       caseTemp = result.caseId;
-      debtor = result.caseId.debtor;
-      creditor = result.caseId.creditor;
+      debtor = result.caseId?.debtor;
+      creditor = result.caseId?.creditor;
     }
     if (userId) {
       user = await this.userRepository.getById<IUser>(userId);

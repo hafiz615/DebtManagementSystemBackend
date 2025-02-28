@@ -58,12 +58,12 @@ class SmsService {
             const inbox = await email_util_1.default.createNewInbox(smsData, caseData, SmsStatus, (0, uuid_1.v4)(), findUser ? String(findUser?._id) : '', findUser ? findUser?.name : '', null, null, 'SMS');
             if (caseData) {
                 await case_util_1.default.addInHistory({
+                    Username: findUser?.name || '',
                     From: number,
                     To: cleanedTo,
                     Content: Body,
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'SMS',
-                    Username: findUser?.name || '',
                 }, String(caseData._id));
             }
             newNotification.caseId = caseData ? String(caseData?._id) : '';
@@ -122,12 +122,12 @@ class SmsService {
                 isLinked: true,
             });
             await case_util_1.default.addInHistory({
+                Username: reqTemp.name,
                 From: inboxData?.from,
                 To: inboxData?.to,
                 Content: inboxData?.text,
                 Time: new Date(common_util_1.default.getCurrentDate()),
                 Action: 'SMS',
-                Username: reqTemp.name,
             }, String(firstCase._id));
             const { _id, ...inboxWithoutId } = inboxData;
             const casesData = [];
@@ -141,6 +141,7 @@ class SmsService {
                     negotiatorName: caseTemp.negotiator,
                 });
                 await case_util_1.default.addInHistory({
+                    Username: reqTemp.username,
                     From: inboxData?.from,
                     To: inboxData?.to,
                     Content: inboxData?.text,

@@ -107,7 +107,7 @@ class CaseUtil {
     return `${fileName}-${Date.now()}${extension}`;
   }
 
-  async createPayment(data: ICase) {
+  async createPayment(data: any) {
     const payment = new Payment();
     const paymentsArray = [];
     let tempPayment = null;
@@ -120,7 +120,8 @@ class CaseUtil {
           payment,
           interval,
           0,
-          String(data.debtor)
+          String(data.debtor),
+          data.debtorName
         );
         paymentsArray.push(tempPayment);
       }
@@ -140,7 +141,8 @@ class CaseUtil {
             payment,
             interval,
             i,
-            String(data.debtor)
+            String(data.debtor),
+            data.debtorName
           );
           paymentsArray.push(tempPayment);
         }
@@ -220,7 +222,8 @@ class CaseUtil {
     payment: Payment,
     interval: any,
     frequency: number,
-    debtor: string
+    debtor: string,
+    debtorName: string
   ) {
     // const uuid = v4();
     payment.amount = interval.amount;
@@ -230,6 +233,7 @@ class CaseUtil {
     payment.timePeriod = interval.timePeriod;
     // payment.paymentReference = uuid;
     payment.debtorId = debtor;
+    payment.debtorName = debtorName;
     return {...payment};
   }
 
@@ -705,7 +709,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner',
+              caseOwner: '$negotiator',
               outstandingDebt: {
                 $subtract: [
                   '$totalDebt',
@@ -1077,7 +1081,7 @@ class CaseUtil {
                   date: {$ifNull: ['$upcomingPayment.dueDate', null]},
                 },
               },
-              caseOwner: '$caseOwner',
+              caseOwner: '$negotiator',
               outstandingDebt: {
                 $subtract: ['$remaining', {$sum: '$payments.amount'}],
               },
@@ -2706,22 +2710,30 @@ class CaseUtil {
 
   async createVault(
     paymentToken: string,
-    debtorName: string,
-    platform: string
+    platform: string,
+    debtorName?: string,
+    email?: string
   ): Promise<[boolean, string]> {
-    const names = await commonUtil.getFirstAndLastNameByFullName(debtorName);
     const urlSecurityKey =
       await commonUtil.getUrlAndSecurityKeyPlatform(platform);
     const url = urlSecurityKey.url;
-    const params = {
+    const params: any = {
       customer_vault: 'add_customer',
       security_key: urlSecurityKey.securityKey,
       payment_token: paymentToken,
-      first_name: names.firstName,
-      last_name: names.lastName,
     };
+    if (debtorName) {
+      const names = await commonUtil.getFirstAndLastNameByFullName(debtorName);
+      params.first_name = names.firstName;
+      params.last_name = names.lastName;
+    }
+
+    if (email) params.email = email;
     const response = await axiosInstance.get(url, {params});
+    console.log('final params', params);
+    console.log('response data', response.data);
     const responseNum = new URLSearchParams(response.data).get('response');
+    console.log('responeNum', responseNum);
     if (responseNum === '1') {
       const customerVault = new URLSearchParams(response.data).get(
         'customer_vault_id'
@@ -2729,6 +2741,42 @@ class CaseUtil {
       return [true, customerVault];
     }
     return [false, 'Unable to create customer vault'];
+  }
+
+  async updateVault(
+    customerVaultId: string,
+    paymentToken: string,
+    platform: string,
+    debtorName?: string,
+    email?: string
+  ): Promise<[boolean, string]> {
+    const urlSecurityKey =
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
+
+    const params: any = {
+      customer_vault: 'update_customer',
+      security_key: urlSecurityKey.securityKey,
+      customer_vault_id: customerVaultId,
+      payment_token: paymentToken,
+    };
+
+    if (debtorName) {
+      const names = await commonUtil.getFirstAndLastNameByFullName(debtorName);
+      params.first_name = names.firstName;
+      params.last_name = names.lastName;
+    }
+    if (email) params.email = email;
+    const response = await axiosInstance.get(url, {params});
+    console.log('final params update', params);
+    console.log('response data update', response.data);
+
+    const responseNum = new URLSearchParams(response.data).get('response');
+    if (responseNum === '1') {
+      return [true, 'Customer vault updated successfully'];
+    }
+
+    return [false, 'Unable to update customer vault'];
   }
 
   async getSettlementRangeSummery(

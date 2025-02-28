@@ -97,17 +97,24 @@ class CronJob {
     await this.paynoteFailed(failedPayments);
   }
   startCronJob() {
-    // cron.schedule('30 * * * *', async () => {
-    //   console.log('Running a task every zero of an hour');
-    //   await this.processPayments();
-    // });
-
     cron.schedule(
       '0 4 * * *',
       async () => {
-        console.log('Running cron job at 4 am');
+        console.log('Running a task in a day for 4am (UTC)');
         await this.processCommissionPayments();
         await this.processPayments();
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
+
+    cron.schedule(
+      '0 * * * *',
+      async () => {
+        console.log('Running a task every zero of an hour');
+        await this.processCommissionRetryPayments();
+        await this.processRetryPayments();
       },
       {
         timezone: 'America/New_York',
@@ -381,6 +388,12 @@ class CronJob {
       settings
     );
     await this.processCapture(pendingCaptureDocs, cronId, false, settings);
+  }
+
+  async processRetryPayments() {
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const cronId = uuidv4();
     const paymentsFailedAuthorized = await paymentUtil.getFailedAuthorized();
     const pendingFailedAuthDocs = await this.failedAuthorized(
       paymentsFailedAuthorized,
@@ -427,12 +440,20 @@ class CronJob {
       cronId,
       settings
     );
+    console.log(pendingCaptureDocs, 'pendingCaptureDocs');
     await this.processCommissionCapture(
       pendingCaptureDocs,
       cronId,
       false,
       settings
     );
+  }
+
+  async processCommissionRetryPayments() {
+    // const payments: any = await paymentUtil.getAllCronJobPayments();
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const cronId = uuidv4();
     const paymentsFailedAuthorized =
       await paymentUtil.getFailedCommissionAuthorized();
     const pendingFailedAuthDocs = await this.failedAuthorized(
@@ -605,23 +626,27 @@ class CronJob {
           if (result) break;
         }
         if (account.paymentType === 'ck') {
-          const response = await this.paymentService.achCredit(
-            account.customerVaultId,
-            payment.amount,
-            account.platform
-          );
-          const result = await this.processCaptureResponse(
-            payment,
-            response,
-            retryPlus,
-            cronId,
-            settings,
-            'ck',
-            account.platform
-            // getCommission
-          );
-          if (retryPlus) retryPlus = false;
-          if (result) break;
+          await this.paymentRepository.updateById<IPayment>(payment._id, {
+            authorized: 'Success',
+          });
+          // const response = await this.paymentService.achCredit(
+          //   account.customerVaultId,
+          //   payment.amount,
+          //   account.platform
+          // );
+          // const result = await this.processCaptureResponse(
+          //   payment,
+          //   response,
+          //   retryPlus,
+          //   cronId,
+          //   settings,
+          //   'ck',
+          //   account.platform
+          //   // getCommission
+          // );
+          // if (retryPlus) retryPlus = false;
+          // if (result) break;
+          break;
         }
       }
     }
@@ -641,7 +666,12 @@ class CronJob {
         0
       );
       if (payment.amount - totalAmount < 0) {
-        // we can send some email here.
+        emailUtil.sendEmailOrSmsByEvent(
+          'failed_authorization',
+          '',
+          payment._id,
+          ''
+        );
         return;
       }
       const concatedPayments = otherPayments.concat(payment);
@@ -662,29 +692,37 @@ class CronJob {
             response,
             retryPlus,
             cronId,
-            settings
+            settings,
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
         }
         if (account.paymentType === 'ck') {
-          const response = await this.paymentService.achCredit(
-            account.customerVaultId,
-            totalAmount,
-            account.platform
-          );
-          const result = await this.processCaptureCommissionResponse(
-            payment,
-            concatedPayments,
-            response,
-            retryPlus,
-            cronId,
-            settings,
-            'ck',
-            totalAmount
-          );
-          if (retryPlus) retryPlus = false;
-          if (result) break;
+          for (const payment of concatedPayments) {
+            await this.paymentRepository.updateById<IPayment>(payment._id, {
+              authorized: 'Success',
+              paymentReference: v4(),
+              paymentReferenceBool: true,
+            });
+          }
+          // const response = await this.paymentService.achCredit(
+          //   account.customerVaultId,
+          //   totalAmount,
+          //   account.platform
+          // );
+          // const result = await this.processCaptureCommissionResponse(
+          //   payment,
+          //   concatedPayments,
+          //   response,
+          //   retryPlus,
+          //   cronId,
+          //   settings,
+          //   'ck',
+          //   totalAmount
+          // );
+          // if (retryPlus) retryPlus = false;
+          // if (result) break;
         }
       }
     }
@@ -708,6 +746,9 @@ class CronJob {
     const updateObjPayment = {};
     updateObjPayment['transactionType'] = 'CC';
     updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['authorizedDate'] = new Date(
+      commonUtil.getCurrentDate()
+    ).setUTCHours(0, 0, 0, 0);
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -759,7 +800,8 @@ class CronJob {
     response: any,
     retryPlus: boolean,
     cronId: string,
-    settings: ISettings[]
+    settings: ISettings[],
+    platform: string
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -768,6 +810,11 @@ class CronJob {
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
+    updateObjPayment['transactionType'] = 'CC';
+    updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['authorizedDate'] = new Date(
+      commonUtil.getCurrentDate()
+    ).setUTCHours(0, 0, 0, 0);
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -921,7 +968,8 @@ class CronJob {
             cronId,
             settings,
             'cc',
-            totalAmount
+            totalAmount,
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -940,7 +988,8 @@ class CronJob {
             cronId,
             settings,
             'ck',
-            totalAmount
+            totalAmount,
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -1023,7 +1072,8 @@ class CronJob {
     cronId: string,
     settings: ISettings[],
     type: string,
-    amount: number
+    amount: number,
+    platform: string
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -1032,6 +1082,8 @@ class CronJob {
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
+    updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['transactionType'] = type === 'cc' ? 'CC' : 'ACH';
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';

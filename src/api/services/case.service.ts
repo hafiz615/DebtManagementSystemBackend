@@ -1213,13 +1213,13 @@ class CaseService {
     const time = new Date(commonUtil.getCurrentDate());
     await caseUtil.addInHistory(
       {
+        Username: reqTemp.name,
         Subject: subject,
         From: from,
         To: sendTo,
         Content: content,
         Time: time,
         Action: 'EMAIL',
-        Username: reqTemp.name,
       },
       caseId
     );
@@ -1456,6 +1456,7 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
     }
+    caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }

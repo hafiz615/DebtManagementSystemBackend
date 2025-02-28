@@ -12,9 +12,11 @@ class PaymentUtil {
             status: obj.status,
             caseOwner: obj.caseId?.caseOwner ? obj.caseId.caseOwner : '',
             totalDebt: obj.caseId?.totalDebt ? obj.caseId.totalDebt : 0,
-            fullName: obj.caseId?.debtor
-                ? obj.caseId.debtor.basicInformation.fullName
-                : '',
+            fullName: obj.debtorName
+                ? obj.debtorName
+                : obj.caseId?.debtor
+                    ? obj.caseId.debtor.basicInformation.fullName
+                    : '',
             creditorName: obj.caseId?.creditor
                 ? obj.caseId.creditor.basicInformation.fullName
                 : '',
@@ -31,6 +33,8 @@ class PaymentUtil {
             paymentGateway: obj.paymentGateway ? obj.paymentGateway : '',
             transactionId: obj.debtorTransId,
             sendViaPaynote: obj.sendViaPaynote,
+            failedReasonPaynote: obj.failedReasonPaynote,
+            debtorId: obj.debtorId,
         }));
         return this.getFilteredPaymentsObj(transformedArray, arrayName);
     }
@@ -303,6 +307,7 @@ class PaymentUtil {
             debtorId: debtorId,
             caseId: { $ne: null },
             authorized: { $ne: 'Success' },
+            transactionType: { $nin: ['Wire', 'Check'] },
             isDeleted: false,
             dueDate: {
                 $gte: new Date(payment.dueDate),

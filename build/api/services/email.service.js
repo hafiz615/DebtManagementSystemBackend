@@ -104,6 +104,7 @@ class EmailService {
             if (caseId) {
                 console.log('caseId Check in caseID: ', caseId);
                 await case_util_1.default.addInHistory({
+                    Username: userName,
                     Subject: subject,
                     From: from,
                     To: to,
@@ -112,7 +113,6 @@ class EmailService {
                     Time: new Date(common_util_1.default.getCurrentDate()),
                     Action: 'EMAIL',
                     Attachments: data,
-                    Username: userName,
                 }, caseId);
                 caseData = await this.caseRepository.getById(caseId, undefined, undefined, [
                     { path: 'debtor', select: ['businessInformation.companyName'] },

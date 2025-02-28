@@ -87,7 +87,7 @@ class CaseUtil {
         for (const interval of data.intervals) {
             if (interval.frequency === 0) {
                 payment.dueDate = interval.startDate;
-                tempPayment = await this.populatePayment(data._id, payment, interval, 0, String(data.debtor));
+                tempPayment = await this.populatePayment(data._id, payment, interval, 0, String(data.debtor), data.debtorName);
                 paymentsArray.push(tempPayment);
             }
             if (interval.frequency != 0) {
@@ -98,7 +98,7 @@ class CaseUtil {
                     else {
                         payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i - 1);
                     }
-                    tempPayment = await this.populatePayment(data._id, payment, interval, i, String(data.debtor));
+                    tempPayment = await this.populatePayment(data._id, payment, interval, i, String(data.debtor), data.debtorName);
                     paymentsArray.push(tempPayment);
                 }
             }
@@ -160,7 +160,7 @@ class CaseUtil {
         }
         return currentDate.toString();
     }
-    async populatePayment(caseId, payment, interval, frequency, debtor) {
+    async populatePayment(caseId, payment, interval, frequency, debtor, debtorName) {
         // const uuid = v4();
         payment.amount = interval.amount;
         payment.frequency = frequency;
@@ -169,6 +169,7 @@ class CaseUtil {
         payment.timePeriod = interval.timePeriod;
         // payment.paymentReference = uuid;
         payment.debtorId = debtor;
+        payment.debtorName = debtorName;
         return { ...payment };
     }
     async getCaseCode() {
@@ -598,7 +599,7 @@ class CaseUtil {
                                     date: { $ifNull: ['$upcomingPayment.dueDate', null] },
                                 },
                             },
-                            caseOwner: '$caseOwner',
+                            caseOwner: '$negotiator',
                             outstandingDebt: {
                                 $subtract: [
                                     '$totalDebt',
@@ -925,7 +926,7 @@ class CaseUtil {
                                     date: { $ifNull: ['$upcomingPayment.dueDate', null] },
                                 },
                             },
-                            caseOwner: '$caseOwner',
+                            caseOwner: '$negotiator',
                             outstandingDebt: {
                                 $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
@@ -2279,24 +2280,56 @@ class CaseUtil {
             return [false, createdCases];
         return [true, createdCases];
     }
-    async createVault(paymentToken, debtorName, platform) {
-        const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+    async createVault(paymentToken, platform, debtorName, email) {
         const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
         const url = urlSecurityKey.url;
         const params = {
             customer_vault: 'add_customer',
             security_key: urlSecurityKey.securityKey,
             payment_token: paymentToken,
-            first_name: names.firstName,
-            last_name: names.lastName,
         };
+        if (debtorName) {
+            const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+            params.first_name = names.firstName;
+            params.last_name = names.lastName;
+        }
+        if (email)
+            params.email = email;
         const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+        console.log('final params', params);
+        console.log('response data', response.data);
         const responseNum = new URLSearchParams(response.data).get('response');
+        console.log('responeNum', responseNum);
         if (responseNum === '1') {
             const customerVault = new URLSearchParams(response.data).get('customer_vault_id');
             return [true, customerVault];
         }
         return [false, 'Unable to create customer vault'];
+    }
+    async updateVault(customerVaultId, paymentToken, platform, debtorName, email) {
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
+        const params = {
+            customer_vault: 'update_customer',
+            security_key: urlSecurityKey.securityKey,
+            customer_vault_id: customerVaultId,
+            payment_token: paymentToken,
+        };
+        if (debtorName) {
+            const names = await common_util_1.default.getFirstAndLastNameByFullName(debtorName);
+            params.first_name = names.firstName;
+            params.last_name = names.lastName;
+        }
+        if (email)
+            params.email = email;
+        const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+        console.log('final params update', params);
+        console.log('response data update', response.data);
+        const responseNum = new URLSearchParams(response.data).get('response');
+        if (responseNum === '1') {
+            return [true, 'Customer vault updated successfully'];
+        }
+        return [false, 'Unable to update customer vault'];
     }
     async getSettlementRangeSummery(data) {
         const result = { Summary: {} };

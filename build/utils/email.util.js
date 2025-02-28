@@ -115,13 +115,13 @@ class EmailUtil {
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
+                                Username: user?.name || '',
                                 Subject: template.subject,
                                 From: from,
                                 To: emails,
                                 Content: content,
                                 Time: time,
                                 Action: 'EMAIL',
-                                Username: user?.name || '',
                             }, caseId);
                         }
                     }
@@ -154,12 +154,12 @@ class EmailUtil {
                         if (caseId) {
                             const time = new Date(common_util_1.default.getCurrentDate());
                             await case_util_1.default.addInHistory({
+                                Username: user?.name || '',
                                 From: fromNumber,
                                 To: phoneNumbers,
                                 Content: content,
                                 Time: time,
                                 Action: 'SMS',
-                                Username: user?.name || '',
                             }, caseId);
                         }
                     }
@@ -225,6 +225,7 @@ class EmailUtil {
                 const uniqueAttachments = lodash_1.default.uniqBy(updatedData, item => `${item.key}-${item.originalFileName}`);
                 if (result[0]) {
                     await case_util_1.default.addInHistory({
+                        Username: userName,
                         Subject: subject,
                         From: from,
                         To: sendTo,
@@ -233,7 +234,6 @@ class EmailUtil {
                         Time: time,
                         Action: 'EMAIL',
                         Attachments: uniqueAttachments,
-                        Username: userName,
                     }, caseData._id);
                     const emailData = {
                         from,
@@ -263,12 +263,12 @@ class EmailUtil {
                 this.createNewInbox(smsData, caseData, 'sent', threadId, userId, userName, null, null, 'SMS');
                 if (smsResult[0]) {
                     await case_util_1.default.addInHistory({
+                        Username: userName,
                         From: from,
                         To: sendTo,
                         Content: content,
                         Time: time,
                         Action: 'SMS',
-                        Username: userName,
                     }, caseData._id);
                 }
                 return smsResult;
@@ -540,8 +540,8 @@ class EmailUtil {
             });
             payment = result;
             caseTemp = result.caseId;
-            debtor = result.caseId.debtor;
-            creditor = result.caseId.creditor;
+            debtor = result.caseId?.debtor;
+            creditor = result.caseId?.creditor;
         }
         if (userId) {
             user = await this.userRepository.getById(userId);

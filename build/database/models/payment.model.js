@@ -134,9 +134,21 @@ const PaymentModel = new mongoose_1.Schema({
     paymentLink: {
         type: String,
     },
+    debtorName: {
+        type: String,
+    },
+    authorizedDate: {
+        type: Date,
+    },
 });
 PaymentModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();
+    next();
+});
+PaymentModel.pre('insertMany', async function (next, docs) {
+    for (const doc of docs) {
+        doc.logTrackingId = (0, uuid_1.v4)();
+    }
     next();
 });
 // Middleware for logging updates
