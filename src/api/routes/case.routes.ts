@@ -158,6 +158,12 @@ router.put(
   caseController.updateCasePlan
 );
 
+router.put(
+  '/update-case-plan/:id',
+  caseValidate.updateCasePlan1,
+  caseController.updateCasePlan1
+);
+
 router.get(
   '/getAllUserCases',
   authorize.validateAuth,

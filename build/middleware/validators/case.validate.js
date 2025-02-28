@@ -1137,6 +1137,46 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async updateCasePlan1(req, res, next) {
+        const schema = joi_1.default.object({
+            intervals: joi_1.default.array()
+                .items(joi_1.default.object({
+                amount: joi_1.default.number().strict().required().messages({
+                    'any.required': 'Amount is required',
+                    'number.base': 'Amount must be a valid number',
+                }),
+                startDate: joi_1.default.date().required().messages({
+                    'any.required': 'Start date is required',
+                    'date.base': 'Start date must be a valid date',
+                }),
+                frequency: joi_1.default.number().optional().messages({
+                    'number.base': 'Frequency must be a valid number',
+                }),
+                timePeriod: joi_1.default.string()
+                    .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+                    .required()
+                    .messages({
+                    'any.required': 'Time period is required',
+                    'string.base': 'Time period must be a string',
+                    'string.empty': 'Time period cannot be empty',
+                    'any.only': 'Time period must be one of the following: Weekly, Monthly, Custom, Fortnightly, Daily',
+                }),
+            }))
+                .optional()
+                .messages({
+                'array.base': 'Intervals must be an array',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new CaseValidate();
 //# sourceMappingURL=case.validate.js.map

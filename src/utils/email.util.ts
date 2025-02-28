@@ -207,7 +207,7 @@ class EmailUtil {
           }
           let phoneNumbers = await this.getPhone(caseTemp, userPermission.role);
           if (phoneNumbers) {
-            const fromNumber = user.twilioNo || process.env.TWILIO_CALLER_ID;
+            const fromNumber = user?.twilioNo || process.env.TWILIO_CALLER_ID;
             if (userPermission.role === 'Admin') {
               for (const phone of phoneNumbers) {
                 await this.sendSms(content, phone, fromNumber);
