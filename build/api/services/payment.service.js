@@ -49,10 +49,13 @@ class PaymentService {
         let limit = populatedFiltersResult.limit;
         const finalFilters = populatedFiltersResult.filters;
         const payments = await this.getAllPayments(req, finalFilters, page, limit, upcomingFilter, dueDateFilter);
-        if (!payments.length) {
-            return [false, constants_util_1.default.notFoundMessage('Payments')];
-        }
-        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments, arrayName);
+        // if (!payments.length) {
+        //   return [false, constants.notFoundMessage('Payments')];
+        // }
+        // const paymentsObj = await paymentUtil.getFilteredPayments(
+        //   payments,
+        //   arrayName
+        // );
         if (arrayName !== 'default' &&
             req.query.filters !== 'true' &&
             req.query.search !== 'true') {
@@ -67,10 +70,10 @@ class PaymentService {
             if (req.query.limit && !isNaN(Number(req.query.limit))) {
                 limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
             }
-            if (paymentsObj[arrayName]) {
-                paymentsObj[arrayName] = await payment_util_1.default.searchAndFilterHomePayments(paymentsObj[arrayName], req);
-                counts[arrayName] = paymentsObj[arrayName]?.length;
-                paymentsObj[arrayName] = paymentsObj[arrayName]?.slice((page - 1) * limit, page * limit);
+            if (payments[arrayName]) {
+                payments[arrayName] = await payment_util_1.default.searchAndFilterHomePayments(payments[arrayName], req);
+                counts[arrayName] = payments[arrayName]?.length;
+                payments[arrayName] = payments[arrayName]?.slice((page - 1) * limit, page * limit);
             }
         }
         // const successPayments = structuredClone(paymentsObj.successPayments);
@@ -82,7 +85,7 @@ class PaymentService {
         return [
             true,
             {
-                payments: paymentsObj,
+                payments: payments,
                 counts: counts,
             },
         ];
@@ -125,10 +128,10 @@ class PaymentService {
             paymentsObj['successPayments'] = paymentsObj['successPayments']?.slice((page - 1) * limit, page * limit);
         }
         // const successPayments = structuredClone(paymentsObj.successPayments);
-        // for (const payment of successPayments) {
-        //   payment.transactionType = 'ACH';
-        //   payment.paymentGateway = 'Paynote';
-        // }
+        for (const payment of paymentsObj.successPayments) {
+            payment.transactionType = 'ACH';
+            payment.paymentGateway = 'Paynote';
+        }
         // paymentsObj.successPayments = successPayments;
         return [
             true,
@@ -278,32 +281,34 @@ class PaymentService {
         return null;
     }
     async getAllPayments(req, filters, page, limit, upcomingFilter, dueDateFilter) {
-        if (String(req.query.arrayName) === 'default') {
+        let failedCaptures = [], successCaptures = [], successPayments = [], failedAuthorizations = [], successAuthorizations = [], upcomingPayments = [];
+        const arrayName = String(req.query.arrayName);
+        if (arrayName === 'default') {
             const failedAuth = { ...filters };
             failedAuth['authorized'] = 'Failed';
             if (dueDateFilter)
                 failedAuth['authorizedDate'] = dueDateFilter;
-            const getFailedAuthPayments = await this.getAllPaymentsQuery(failedAuth, page, limit);
+            failedAuthorizations = await this.getAllPaymentsQuery(failedAuth, page, limit);
             const failedCapture = { ...filters };
             failedCapture['captured'] = 'Failed';
             if (dueDateFilter)
                 failedCapture['dueDate'] = dueDateFilter;
-            const getFailedCapturePayments = await this.getAllPaymentsQuery(failedCapture, page, limit);
+            failedCaptures = await this.getAllPaymentsQuery(failedCapture, page, limit);
             const successAuth = { ...filters };
             successAuth['authorized'] = 'Success';
             if (dueDateFilter)
                 successAuth['authorizedDate'] = dueDateFilter;
-            const getSuccessAuthPayments = await this.getAllPaymentsQuery(successAuth, page, limit);
+            successAuthorizations = await this.getAllPaymentsQuery(successAuth, page, limit);
             const successCapture = { ...filters };
             successCapture['captured'] = 'Success';
             if (dueDateFilter)
                 successCapture['dueDate'] = dueDateFilter;
-            const getSuccessCapturePayments = await this.getAllPaymentsQuery(successCapture, page, limit);
+            successCaptures = await this.getAllPaymentsQuery(successCapture, page, limit);
             const upcoming = { ...filters };
             upcoming['status'] = 'Upcoming';
             if (upcomingFilter)
                 upcoming['dueDate'] = upcomingFilter;
-            const getUpcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
+            upcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
             // const successPayments = {...filters};
             // successPayments['sendViaPaynote'] = 'Success';
             // successPayments['caseId'] = {$ne: null};
@@ -312,17 +317,25 @@ class PaymentService {
             //   page,
             //   limit
             // );
-            const mergedArray = [
-                ...getFailedAuthPayments,
-                ...getFailedCapturePayments,
-                ...getSuccessAuthPayments,
-                ...getSuccessCapturePayments,
-                ...getUpcomingPayments,
-                // ...getSuccessPayments,
-            ];
-            return await this.getUniquePayments(mergedArray);
+            // const mergedArray = [
+            //   ...getFailedAuthPayments,
+            //   ...getFailedCapturePayments,
+            //   ...getSuccessAuthPayments,
+            //   ...getSuccessCapturePayments,
+            //   ...getUpcomingPayments,
+            //   // ...getSuccessPayments,
+            // ];
+            return {
+                failedCaptures: failedCaptures,
+                successPayments: successPayments,
+                failedAuthorizations: failedAuthorizations,
+                successAuthorizations: successAuthorizations,
+                upcomingPayments: upcomingPayments,
+                successCaptures: successCaptures,
+            };
+            // return await this.getUniquePayments(mergedArray);
         }
-        return await this.getAllPaymentsQuery(filters, page, limit);
+        return { [arrayName]: await this.getAllPaymentsQuery(filters, page, limit) };
     }
     async getUniquePayments(payments) {
         const uniqueObjects = payments.reduce((acc, current) => {
