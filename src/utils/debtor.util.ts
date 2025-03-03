@@ -1,5 +1,6 @@
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import easyPayDirectSeamlessUtil from './easyPayDirectSeemless';
 import {ICase} from '../database/interfaces/case.interface';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import axiosInstance from './axiosInstanceInterceptor';
@@ -800,11 +801,11 @@ class DebtorUtil {
     }
     const response = await seemlesschexUtil.createPaymentLink(amount);
     if (response?.error) return [false, response.message];
-    await paymentUtil.createPaymentDocForLink(
+    await paymentUtil.createPaymentDoc(
       amount,
       response.checkout_link.checkout_token,
-      response.checkout_link.link,
-      debtorId
+      debtorId,
+      response.checkout_link.link
     );
     return [
       true,
@@ -812,6 +813,64 @@ class DebtorUtil {
         checkout_token: response.checkout_link.checkout_token,
         link: response.checkout_link.link,
         amount: response.checkout_link.amount,
+      },
+    ];
+  }
+
+  async createPaymentInvoice(
+    platform: string,
+    debtorId: string,
+    amount: number,
+    email: string,
+    debtorName?: string
+  ) {
+    const doc = await this.paymentRepository.getOne<IPayment>({
+      debtorId,
+      caseId: {$eq: null},
+      transactionType: 'Invoice',
+      isDeleted: {$ne: true},
+      status: {$ne: 'Success'},
+    });
+    if (doc && doc.status === 'Pending' && doc.amount === amount) {
+      await easyPayDirectSeamlessUtil.sendInvoice(platform, doc.debtorTransId);
+      return [
+        true,
+        {
+          customerInvoiceId: doc.debtorTransId,
+          amount: doc.amount,
+        },
+      ];
+    }
+    if (
+      (doc &&
+        (doc.status === 'Pending' || doc.status === 'Failed') &&
+        doc.amount !== amount) ||
+      (doc && doc.status === 'Failed' && doc.amount === amount)
+    ) {
+      await easyPayDirectSeamlessUtil.closeInvoice(platform, doc.debtorTransId);
+      await this.paymentRepository.updateById<IPayment>(doc._id, {
+        isDeleted: true,
+      });
+    }
+
+    const customerVaultResponse = await easyPayDirectSeamlessUtil.addInvoice(
+      platform,
+      amount,
+      email,
+      debtorName
+    );
+    if (!customerVaultResponse[0]) return customerVaultResponse;
+
+    await paymentUtil.createPaymentDoc(
+      amount,
+      customerVaultResponse[1],
+      debtorId
+    );
+    return [
+      true,
+      {
+        customerInvoiceId: customerVaultResponse[1],
+        amount: amount,
       },
     ];
   }

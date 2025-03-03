@@ -46,6 +46,18 @@ router.post(
   paymentController.updatePaymentLinkStatus
 );
 
+router.post(
+  '/update-invoice-status/:token',
+  paymentValidate.updatePaymentLinkStatus,
+  paymentController.updatePaymentInvoiceStatus
+);
+
+router.post(
+  '/update-payment-status/:token',
+  paymentValidate.updatePaymentLinkStatus,
+  paymentController.updatePaymentLinkStatus
+);
+
 router.get(
   '/get-payment-link-status/:token',
   paymentController.getPaymentLinkStatus
