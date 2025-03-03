@@ -1,0 +1,1 @@
+{"version":3,"file":"fee.repomodel.js","sourceRoot":"","sources":["../../../src/database/repomodels/fee.repomodel.ts"],"names":[],"mappings":";;;;;;AAAA,0EAAiD;AAEjD,MAAa,GAAG;IAAhB;QACE,QAAG,GAAG,CAAC,CAAC;QACR,SAAI,GAAG,EAAE,CAAC;QACV,WAAM,GAAG,EAAE,CAAC;QACZ,cAAS,GAAG,qBAAU,CAAC,cAAc,EAAE,CAAC;QACxC,cAAS,GAAG,qBAAU,CAAC,cAAc,EAAE,CAAC;IAC1C,CAAC;CAAA;AAND,kBAMC"}

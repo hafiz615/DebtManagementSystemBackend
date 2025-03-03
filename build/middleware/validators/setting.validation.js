@@ -187,6 +187,30 @@ class SettingValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async validateFee(req, res, next) {
+        const schema = joi_1.default.object({
+            type: joi_1.default.string().valid('legalFee', 'serviceFee').required().messages({
+                'any.required': 'Fee type is required.',
+                'string.base': 'Fee type must be a string.',
+                'string.empty': 'Fee type cannot be an empty string.',
+                'any.only': 'Fee type is invalid',
+            }),
+            fee: joi_1.default.number().positive().required().messages({
+                'any.required': 'Fee is required.',
+                'number.positive': 'Fee must be a positive number.',
+                'number.base': 'Fee must be a number.',
+            }),
+        });
+        const { error } = schema.validate({ ...req.query, ...req.body });
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new SettingValidate();
 //# sourceMappingURL=setting.validation.js.map

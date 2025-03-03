@@ -435,9 +435,9 @@ class SettingsController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.updateServiceFee = async (req, res) => {
+        this.updateFee = async (req, res) => {
             try {
-                const response = await this.settingsService.updateServiceFee(req);
+                const response = await this.settingsService.updateFee(req);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
@@ -446,7 +446,7 @@ class SettingsController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
-                    message: constants_util_1.default.successAddMessage('Service Fee'),
+                    message: constants_util_1.default.successUpdateMessage('Fee'),
                 }));
             }
             catch (error) {
@@ -456,9 +456,9 @@ class SettingsController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.getServiceFee = async (req, res) => {
+        this.getFee = async (req, res) => {
             try {
-                const response = await this.settingsService.getServiceFee(req);
+                const response = await this.settingsService.getFee(req);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
@@ -467,7 +467,7 @@ class SettingsController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
-                    message: constants_util_1.default.successFoundMessage('Service Fee'),
+                    message: constants_util_1.default.successFoundMessage('Fee'),
                 }));
             }
             catch (error) {
