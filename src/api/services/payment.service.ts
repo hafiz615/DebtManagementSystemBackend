@@ -64,7 +64,7 @@ class PaymentService {
     let page = populatedFiltersResult.page;
     let limit = populatedFiltersResult.limit;
     const finalFilters = populatedFiltersResult.filters;
-    const payments: IPayment[] = await this.getAllPayments(
+    const payments = await this.getAllPayments(
       req,
       finalFilters,
       page,
@@ -72,13 +72,13 @@ class PaymentService {
       upcomingFilter,
       dueDateFilter
     );
-    if (!payments.length) {
-      return [false, constants.notFoundMessage('Payments')];
-    }
-    const paymentsObj = await paymentUtil.getFilteredPayments(
-      payments,
-      arrayName
-    );
+    // if (!payments.length) {
+    //   return [false, constants.notFoundMessage('Payments')];
+    // }
+    // const paymentsObj = await paymentUtil.getFilteredPayments(
+    //   payments,
+    //   arrayName
+    // );
     if (
       arrayName !== 'default' &&
       req.query.filters !== 'true' &&
@@ -98,13 +98,13 @@ class PaymentService {
       if (req.query.limit && !isNaN(Number(req.query.limit))) {
         limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
       }
-      if (paymentsObj[arrayName]) {
-        paymentsObj[arrayName] = await paymentUtil.searchAndFilterHomePayments(
-          paymentsObj[arrayName],
+      if (payments[arrayName]) {
+        payments[arrayName] = await paymentUtil.searchAndFilterHomePayments(
+          payments[arrayName],
           req
         );
-        counts[arrayName] = paymentsObj[arrayName]?.length;
-        paymentsObj[arrayName] = paymentsObj[arrayName]?.slice(
+        counts[arrayName] = payments[arrayName]?.length;
+        payments[arrayName] = payments[arrayName]?.slice(
           (page - 1) * limit,
           page * limit
         );
@@ -119,7 +119,7 @@ class PaymentService {
     return [
       true,
       {
-        payments: paymentsObj,
+        payments: payments,
         counts: counts,
       },
     ];
@@ -183,10 +183,10 @@ class PaymentService {
       );
     }
     // const successPayments = structuredClone(paymentsObj.successPayments);
-    // for (const payment of successPayments) {
-    //   payment.transactionType = 'ACH';
-    //   payment.paymentGateway = 'Paynote';
-    // }
+    for (const payment of paymentsObj.successPayments) {
+      payment.transactionType = 'ACH';
+      payment.paymentGateway = 'Paynote';
+    }
     // paymentsObj.successPayments = successPayments;
     return [
       true,
@@ -354,11 +354,18 @@ class PaymentService {
     upcomingFilter: any,
     dueDateFilter: any
   ) {
-    if (String(req.query.arrayName) === 'default') {
+    let failedCaptures = [],
+      successCaptures = [],
+      successPayments = [],
+      failedAuthorizations = [],
+      successAuthorizations = [],
+      upcomingPayments = [];
+    const arrayName = String(req.query.arrayName);
+    if (arrayName === 'default') {
       const failedAuth = {...filters};
       failedAuth['authorized'] = 'Failed';
       if (dueDateFilter) failedAuth['authorizedDate'] = dueDateFilter;
-      const getFailedAuthPayments = await this.getAllPaymentsQuery(
+      failedAuthorizations = await this.getAllPaymentsQuery(
         failedAuth,
         page,
         limit
@@ -366,7 +373,7 @@ class PaymentService {
       const failedCapture = {...filters};
       failedCapture['captured'] = 'Failed';
       if (dueDateFilter) failedCapture['dueDate'] = dueDateFilter;
-      const getFailedCapturePayments = await this.getAllPaymentsQuery(
+      failedCaptures = await this.getAllPaymentsQuery(
         failedCapture,
         page,
         limit
@@ -374,7 +381,7 @@ class PaymentService {
       const successAuth = {...filters};
       successAuth['authorized'] = 'Success';
       if (dueDateFilter) successAuth['authorizedDate'] = dueDateFilter;
-      const getSuccessAuthPayments = await this.getAllPaymentsQuery(
+      successAuthorizations = await this.getAllPaymentsQuery(
         successAuth,
         page,
         limit
@@ -382,7 +389,7 @@ class PaymentService {
       const successCapture = {...filters};
       successCapture['captured'] = 'Success';
       if (dueDateFilter) successCapture['dueDate'] = dueDateFilter;
-      const getSuccessCapturePayments = await this.getAllPaymentsQuery(
+      successCaptures = await this.getAllPaymentsQuery(
         successCapture,
         page,
         limit
@@ -390,11 +397,7 @@ class PaymentService {
       const upcoming = {...filters};
       upcoming['status'] = 'Upcoming';
       if (upcomingFilter) upcoming['dueDate'] = upcomingFilter;
-      const getUpcomingPayments = await this.getAllPaymentsQuery(
-        upcoming,
-        page,
-        limit
-      );
+      upcomingPayments = await this.getAllPaymentsQuery(upcoming, page, limit);
 
       // const successPayments = {...filters};
       // successPayments['sendViaPaynote'] = 'Success';
@@ -405,17 +408,25 @@ class PaymentService {
       //   limit
       // );
 
-      const mergedArray = [
-        ...getFailedAuthPayments,
-        ...getFailedCapturePayments,
-        ...getSuccessAuthPayments,
-        ...getSuccessCapturePayments,
-        ...getUpcomingPayments,
-        // ...getSuccessPayments,
-      ];
-      return await this.getUniquePayments(mergedArray);
+      // const mergedArray = [
+      //   ...getFailedAuthPayments,
+      //   ...getFailedCapturePayments,
+      //   ...getSuccessAuthPayments,
+      //   ...getSuccessCapturePayments,
+      //   ...getUpcomingPayments,
+      //   // ...getSuccessPayments,
+      // ];
+      return {
+        failedCaptures: failedCaptures,
+        successPayments: successPayments,
+        failedAuthorizations: failedAuthorizations,
+        successAuthorizations: successAuthorizations,
+        upcomingPayments: upcomingPayments,
+        successCaptures: successCaptures,
+      };
+      // return await this.getUniquePayments(mergedArray);
     }
-    return await this.getAllPaymentsQuery(filters, page, limit);
+    return {[arrayName]: await this.getAllPaymentsQuery(filters, page, limit)};
   }
 
   async getUniquePayments(payments: IPayment[]) {
