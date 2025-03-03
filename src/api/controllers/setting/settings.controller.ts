@@ -534,9 +534,9 @@ class SettingsController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
-  updateServiceFee = async (req: Request, res: Response) => {
+  updateFee = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.updateServiceFee(req);
+      const response = await this.settingsService.updateFee(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -546,7 +546,7 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successAddMessage('Service Fee'),
+          message: constants.successUpdateMessage('Fee'),
         })
       );
     } catch (error) {
@@ -557,9 +557,9 @@ class SettingsController {
     }
   };
 
-  getServiceFee = async (req: Request, res: Response) => {
+  getFee = async (req: Request, res: Response) => {
     try {
-      const response = await this.settingsService.getServiceFee(req);
+      const response = await this.settingsService.getFee(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -569,7 +569,7 @@ class SettingsController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Service Fee'),
+          message: constants.successFoundMessage('Fee'),
         })
       );
     } catch (error) {

@@ -1,7 +1,8 @@
 import {Document} from 'mongoose';
 
-export interface IServiceFee extends Document {
-  serviceFee: number;
+export interface IFee extends Document {
+  type: string;
+  fee: number;
   userId: string;
   createdAt: Date;
   updatedAt: Date;

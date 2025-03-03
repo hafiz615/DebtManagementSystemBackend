@@ -1,13 +1,14 @@
 import mongoose, {Schema} from 'mongoose';
-import {IServiceFee} from '../interfaces/serviceFee.interface';
+import {IFee} from '../interfaces/serviceFee.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
 
-const serviceFeeModel: Schema = new Schema({
-  serviceFee: {
+const feeModel: Schema = new Schema({
+  fee: {
     type: Number,
   },
+  type: String,
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',
@@ -22,7 +23,7 @@ const serviceFeeModel: Schema = new Schema({
   },
 });
 
-serviceFeeModel.pre('save', async function (next) {
+feeModel.pre('save', async function (next) {
   this.logTrackingId = v4();
   next();
 });
@@ -67,15 +68,12 @@ const logUpdatePost = async function (doc) {
   });
 };
 
-serviceFeeModel.pre('findOneAndUpdate', logUpdate);
-serviceFeeModel.pre('updateMany', logUpdate);
-serviceFeeModel.pre('updateOne', logUpdate);
+feeModel.pre('findOneAndUpdate', logUpdate);
+feeModel.pre('updateMany', logUpdate);
+feeModel.pre('updateOne', logUpdate);
 
-serviceFeeModel.post('findOneAndUpdate', logUpdatePost);
-serviceFeeModel.post('updateMany', logUpdatePost);
-serviceFeeModel.post('updateOne', logUpdatePost);
+feeModel.post('findOneAndUpdate', logUpdatePost);
+feeModel.post('updateMany', logUpdatePost);
+feeModel.post('updateOne', logUpdatePost);
 
-export const ServiceFee = mongoose.model<IServiceFee>(
-  'ServiceFees',
-  serviceFeeModel
-);
+export const Fee = mongoose.model<IFee>('fee', feeModel);
