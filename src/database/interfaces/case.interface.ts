@@ -70,4 +70,6 @@ export interface ICase extends Document {
   dateServed: string; // Date served
   serviceFee: number;
   legalFee: number;
+  affiliateLink: string;
+  affiliateEmail: string;
 }

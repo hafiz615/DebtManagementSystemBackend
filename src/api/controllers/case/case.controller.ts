@@ -133,7 +133,7 @@ class CaseController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Case Affiliation'),
+          message: response[1],
         })
       );
     } catch (error: any) {

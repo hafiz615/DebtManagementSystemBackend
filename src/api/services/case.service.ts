@@ -339,7 +339,7 @@ class CaseService {
       },
       caseUpdated._id
     );
-    return [true, caseUpdated];
+    return [true, constantsUtil.successUpdateMessage('Case Affiliation')];
   };
 
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {

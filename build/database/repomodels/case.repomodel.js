@@ -55,6 +55,8 @@ class Case {
         this.dateServed = ''; // Date served
         this.serviceFee = 0;
         this.legalFee = 0;
+        this.affiliateLink = '';
+        this.affiliateEmail = '';
     }
 }
 exports.Case = Case;

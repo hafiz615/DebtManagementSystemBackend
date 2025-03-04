@@ -174,7 +174,7 @@ class CaseService {
                 Action: 'Case Updated',
                 'Updated By': reqTemp.name,
             }, caseUpdated._id);
-            return [true, caseUpdated];
+            return [true, constants_util_1.default.successUpdateMessage('Case Affiliation')];
         };
         this.updateCase = async (req) => {
             let reqTemp = req;
