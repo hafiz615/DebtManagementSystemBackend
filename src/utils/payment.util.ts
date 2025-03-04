@@ -457,6 +457,7 @@ class PaymentUtil {
     amount: number,
     token: string,
     debtorId: string,
+    debtorName?: string,
     link?: string
   ) {
     const payment = new Payment();
@@ -465,7 +466,9 @@ class PaymentUtil {
     if (link) payment.paymentLink = link;
     payment.status = 'Pending';
     payment.debtorId = debtorId;
+    if (debtorName) payment.debtorName = debtorName; // Assign debtorName if provided
     payment.transactionType = link ? 'Link' : 'Invoice';
+
     const hello = await this.paymentRepository.create<IPayment>(payment as any);
     console.log('hello', hello);
   }

@@ -770,7 +770,11 @@ class DebtorUtil {
     });
   };
 
-  async createPaymentLinkOrNot(debtorId: string, amount: number) {
+  async createPaymentLinkOrNot(
+    debtorId: string,
+    amount: number,
+    debtorName?: string
+  ) {
     const doc = await this.paymentRepository.getOne<IPayment>({
       debtorId,
       caseId: {$eq: null},
@@ -805,6 +809,7 @@ class DebtorUtil {
       amount,
       response.checkout_link.checkout_token,
       debtorId,
+      debtorName,
       response.checkout_link.link
     );
     return [
@@ -864,7 +869,8 @@ class DebtorUtil {
     await paymentUtil.createPaymentDoc(
       amount,
       customerVaultResponse[1],
-      debtorId
+      debtorId,
+      debtorName
     );
     return [
       true,

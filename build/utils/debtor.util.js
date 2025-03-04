@@ -584,7 +584,7 @@ class DebtorUtil {
         let amountUp = sumTotalPaidWeekly - totalCommision;
         return weeklyCommission - amountUp;
     }
-    async createPaymentLinkOrNot(debtorId, amount) {
+    async createPaymentLinkOrNot(debtorId, amount, debtorName) {
         const doc = await this.paymentRepository.getOne({
             debtorId,
             caseId: { $eq: null },
@@ -614,7 +614,7 @@ class DebtorUtil {
         const response = await seemlesschex_util_1.default.createPaymentLink(amount);
         if (response?.error)
             return [false, response.message];
-        await payment_util_1.default.createPaymentDoc(amount, response.checkout_link.checkout_token, debtorId, response.checkout_link.link);
+        await payment_util_1.default.createPaymentDoc(amount, response.checkout_link.checkout_token, debtorId, debtorName, response.checkout_link.link);
         return [
             true,
             {
@@ -654,7 +654,7 @@ class DebtorUtil {
         const customerVaultResponse = await easyPayDirectSeemless_1.default.addInvoice(platform, amount, email, debtorName);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
-        await payment_util_1.default.createPaymentDoc(amount, customerVaultResponse[1], debtorId);
+        await payment_util_1.default.createPaymentDoc(amount, customerVaultResponse[1], debtorId, debtorName);
         return [
             true,
             {
