@@ -1177,6 +1177,29 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async updateCaseAffiliation(req, res, next) {
+        const schema = joi_1.default.object({
+            affiliateLink: joi_1.default.string().required().messages({
+                'string.empty': 'Affilate link cannot be empty.',
+                'string.base': 'Affilate link should be a string',
+                'any.required': 'Affilate link is required',
+            }),
+            affiliateEmail: joi_1.default.string().email().required().messages({
+                'string.base': 'Affiliate email should be a string',
+                'string.email': 'Affiliate email should be a valid email address',
+                'any.required': 'Affiliate email is required',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new CaseValidate();
 //# sourceMappingURL=case.validate.js.map

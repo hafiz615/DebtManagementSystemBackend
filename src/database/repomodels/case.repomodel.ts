@@ -57,4 +57,6 @@ export class Case {
   dateServed = ''; // Date served
   serviceFee = 0;
   legalFee = 0;
+  affiliateLink = '';
+  affiliateEmail = '';
 }

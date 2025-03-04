@@ -316,6 +316,32 @@ class CaseService {
     return [true, groupedByDebtor];
   };
 
+  updateCaseAffiliation = async (
+    req: Request
+  ): Promise<[boolean, ICase | string]> => {
+    let reqTemp: any = req;
+    let findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
+    req.body.updatedAt = commonUtil.getCurrentDate();
+    const caseUpdated = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      req.body
+    );
+    if (!caseUpdated) {
+      return [false, constantsUtil.failureUpdateMessage('Case Affiliation')];
+    }
+
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
+      },
+      caseUpdated._id
+    );
+    return [true, constantsUtil.successUpdateMessage('Case Affiliation')];
+  };
+
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
