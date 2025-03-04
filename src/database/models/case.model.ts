@@ -170,6 +170,12 @@ const caseModel: Schema = new Schema({
   legalFee: {
     type: Number,
   },
+  affiliateLink: {
+    type: String,
+  },
+  affiliateEmail: {
+    type: String,
+  }
 });
 
 caseModel.pre('save', async function (next) {

@@ -159,6 +159,23 @@ class CaseService {
             }, {});
             return [true, groupedByDebtor];
         };
+        this.updateCaseAffiliation = async (req) => {
+            let reqTemp = req;
+            let findCase = await this.caseRepository.getById(req.params.id);
+            if (!findCase)
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            req.body.updatedAt = common_util_1.default.getCurrentDate();
+            const caseUpdated = await this.caseRepository.updateById(req.params.id, req.body);
+            if (!caseUpdated) {
+                return [false, constants_util_1.default.failureUpdateMessage('Case Affiliation')];
+            }
+            await case_util_1.default.addInHistory({
+                Time: new Date(common_util_1.default.getCurrentDate()),
+                Action: 'Case Updated',
+                'Updated By': reqTemp.name,
+            }, caseUpdated._id);
+            return [true, caseUpdated];
+        };
         this.updateCase = async (req) => {
             let reqTemp = req;
             let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);

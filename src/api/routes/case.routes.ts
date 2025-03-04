@@ -22,6 +22,14 @@ router.put(
   caseValidate.updateCase,
   caseController.updateCase
 );
+
+router.put(
+  '/updateCaseAffiliation/:id',
+  authorize.validateAuth,
+  caseValidate.updateCaseAffiliation,
+  caseController.updateCaseAffiliation
+);
+
 router.put(
   '/updateCaseAbout/:id',
   authorize.validateAuth,
