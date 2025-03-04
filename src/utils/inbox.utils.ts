@@ -137,6 +137,7 @@ class InboxUtil {
       updateDraft.negotiatorName = caseData.negotiator;
     }
     updateDraft.medium = 'EMAIL';
+    data.cc = JSON.parse(data.cc);
     const preparedDraft = DataCopier.copy(updateDraft, data);
     return preparedDraft;
   }
