@@ -611,6 +611,30 @@ class CaseController {
     }
   };
 
+  affiliateCasesFinancialSummary = async (req: Request, res: Response) => {
+    try {
+      const response =
+        await this.caseService.affiliateCasesFinancialSummary(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Affiliate cases payment'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   deleteFile = async (req: Request, res: Response) => {
     try {
       const response = await this.caseService.deleteFile(req);

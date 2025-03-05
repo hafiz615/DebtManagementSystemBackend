@@ -189,4 +189,9 @@ router.post(
   authorize.validateAuth,
   caseController.getScoresSettlementRangeDetails
 );
+
+router.post(
+  '/affiliate-cases-financial-summary',
+  caseController.affiliateCasesFinancialSummary
+);
 export default router;
