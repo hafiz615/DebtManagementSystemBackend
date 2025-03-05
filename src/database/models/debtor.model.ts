@@ -134,6 +134,9 @@ const debtorSchema: Schema = new Schema({
   extractedFields: {
     type: Schema.Types.Mixed,
   },
+  lawsuitFields: {
+    type: Schema.Types.Mixed,
+  },
   totalCommission: {
     type: Number,
   },

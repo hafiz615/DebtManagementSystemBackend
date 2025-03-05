@@ -14,6 +14,10 @@ export class Attorney {
   isDeleted = false;
   attorneyFee = 0;
   platform = false;
+  paynoteUserId = '';
+  paynoteSourceId = '';
+  paynoteSourceVerified = false;
+  paynoteUserFound = false;
   logTrackingId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

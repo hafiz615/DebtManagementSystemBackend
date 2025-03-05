@@ -14,6 +14,10 @@ export interface IAttorney extends Document {
   isDeleted: boolean;
   attorneyFee: number;
   platform: boolean;
+  paynoteUserId: string;
+  paynoteSourceId: string;
+  paynoteSourceVerified: boolean;
+  paynoteUserFound: boolean;
   logTrackingId: string;
   createdAt: Date;
   updatedAt: Date;

@@ -34,6 +34,9 @@ const lawsuitModel: Schema = new Schema({
   lawsuitPaidCount: {
     type: Number,
   },
+  lawsuitReceiveAmount: {
+    type: Number,
+  },
   lawsuitReceiveCount: {
     type: Number,
   },
@@ -51,6 +54,9 @@ const lawsuitModel: Schema = new Schema({
   },
   lawsuitDate: {
     type: Date,
+  },
+  balance: {
+    type: Number,
   },
   createdAt: {
     type: Date,

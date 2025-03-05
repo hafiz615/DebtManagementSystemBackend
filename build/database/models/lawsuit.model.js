@@ -61,6 +61,9 @@ const lawsuitModel = new mongoose_1.Schema({
     lawsuitPaidCount: {
         type: Number,
     },
+    lawsuitReceiveAmount: {
+        type: Number,
+    },
     lawsuitReceiveCount: {
         type: Number,
     },
@@ -78,6 +81,9 @@ const lawsuitModel = new mongoose_1.Schema({
     },
     lawsuitDate: {
         type: Date,
+    },
+    balance: {
+        type: Number,
     },
     createdAt: {
         type: Date,

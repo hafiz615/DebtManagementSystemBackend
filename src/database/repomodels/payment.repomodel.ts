@@ -33,4 +33,6 @@ export class Payment {
   paymentLink = '';
   debtorName = '';
   authorizedDate = '';
+  serviceFee = 0;
+  legalFee = 0;
 }

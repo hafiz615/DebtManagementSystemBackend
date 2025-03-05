@@ -33,4 +33,6 @@ export interface IPayment extends Document {
   paymentLink: string;
   debtorName: string;
   authorizedDate: string;
+  serviceFee: number;
+  legalFee: number;
 }

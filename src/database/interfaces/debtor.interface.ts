@@ -56,6 +56,7 @@ export interface IDebtor extends Document {
   }>;
   // paymentType: string;
   extractedFields: any;
+  lawsuitFields: any;
   // customerVaultId: string;
   totalCommission: number;
   commissionPaid: number;

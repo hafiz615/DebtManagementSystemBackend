@@ -235,7 +235,7 @@ class SmsService {
 
       await caseUtil.addInHistory(
         {
-          Username: reqTemp.username,
+          Username: reqTemp.name,
           From: inboxData?.from,
           To: inboxData?.to,
           Content: inboxData?.text,

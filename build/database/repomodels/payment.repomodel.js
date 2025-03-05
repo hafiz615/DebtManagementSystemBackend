@@ -39,6 +39,8 @@ class Payment {
         this.paymentLink = '';
         this.debtorName = '';
         this.authorizedDate = '';
+        this.serviceFee = 0;
+        this.legalFee = 0;
     }
 }
 exports.Payment = Payment;
