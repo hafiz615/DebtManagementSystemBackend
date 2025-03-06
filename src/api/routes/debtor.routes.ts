@@ -233,4 +233,10 @@ router.get(
   debtorController.clientFinancialSummary
 );
 
+router.post(
+  '/create-invoice',
+  debtor.addDebtorInvoice,
+  debtorController.addDebtorInvoice
+);
+
 export default router;

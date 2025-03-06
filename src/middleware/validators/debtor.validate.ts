@@ -159,6 +159,44 @@ class DebtorRequests {
     }
   };
 
+  async addDebtorInvoice(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      amount: Joi.number().strict().required().messages({
+        'any.required': 'Amount is required.',
+        'number.base': 'Amount must be a number.',
+        'number.empty': 'Amount cannot be empty.',
+      }),
+      id: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/) // Matches a valid MongoDB ObjectId
+        .required()
+        .messages({
+          'any.required': 'Debtor ID is required.',
+          'string.pattern.base': 'Debtor ID is invalid.',
+          'string.empty': 'Debtor ID cannot be empty.',
+        }),
+      platform: Joi.string().required().messages({
+        'string.base': 'Platform must be a string',
+        'string.empty': 'Platform cannot be empty',
+        'any.required': 'Platform is required',
+      }),
+      email: Joi.string().email().required().messages({
+        'string.base': 'Email must be a string',
+        'string.empty': 'Email cannot be empty',
+        'string.email': 'Email must be a valid email address',
+        'any.required': 'Email is required',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
+
   createDebtor = (req: Request | any, res: Response, next: NextFunction) => {
     const schema = Joi.object({
       documents: Joi.array().items(

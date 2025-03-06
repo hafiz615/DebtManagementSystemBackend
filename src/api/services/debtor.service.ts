@@ -1759,6 +1759,23 @@ class DebtorService {
 
     return [true, {debtBalance: totalRemaining, paymentHistory: getPayments}];
   }
+
+  async addDebtorInvoice(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(req.body.id);
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    const debtorName = getDebtor?.basicInformation?.fullName;
+    const response = await debtorUtil.createPaymentInvoice(
+      req.body.platform,
+      req.body.id,
+      req.body.amount,
+      req.body.email,
+      debtorName
+    );
+    if (!response[0]) return response;
+    return response;
+  }
 }
 
 export default DebtorService;
