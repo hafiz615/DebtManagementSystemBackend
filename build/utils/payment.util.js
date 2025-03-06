@@ -38,6 +38,31 @@ class PaymentUtil {
         }));
         return this.getFilteredPaymentsObj(transformedArray, arrayName);
     }
+    async getFilteredPaymentsCreditor(payments) {
+        let transformedArray = payments.map(obj => ({
+            id: String(obj._id),
+            status: obj.status,
+            caseOwner: obj.caseId?.caseOwner ? obj.caseId.caseOwner : '',
+            totalDebt: obj.caseId?.totalDebt ? obj.caseId.totalDebt : 0,
+            debtorName: obj.debtorName,
+            creditorName: obj.creditorName,
+            // SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
+            authorized: obj.authorized,
+            captured: obj.captured,
+            amount: obj.amount,
+            dueDate: obj.dueDate,
+            failedReasonAuthorization: obj.failedReasonAuthorization,
+            failedReasonCaptured: obj.failedReasonCaptured,
+            tryDate: obj.rescheduled,
+            caseId: obj?.caseId?._id ? String(obj.caseId._id) : '',
+            transactionType: 'ACH',
+            paymentGateway: 'Paynote',
+            sendViaPaynote: obj.sendViaPaynote,
+            failedReasonPaynote: obj.failedReasonPaynote,
+            debtorId: obj.debtorId,
+        }));
+        return transformedArray;
+    }
     async getFilteredPaymentsObj(transformedArray, arrayName) {
         let failedCaptures = [], successCaptures = [], successPayments = [], failedAuthorizations = [], successAuthorizations = [], upcomingPayments = [];
         switch (arrayName) {

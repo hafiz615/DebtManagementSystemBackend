@@ -33,4 +33,5 @@ export class Payment {
   paymentLink = '';
   debtorName = '';
   authorizedDate = '';
+  creditorName = '';
 }

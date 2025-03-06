@@ -739,10 +739,11 @@ class CaseService {
         };
         this.updateCasePlan = async (req) => {
             let reqTemp = req;
-            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'creditor', select: 'basicInformation.fullName' }, 'debtor']);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             const getDebtor = findCase.debtor;
+            const creditor = findCase.creditor;
             if (req.body?.intervals &&
                 req.body?.intervals.length &&
                 findCase.intervals.length) {
@@ -769,6 +770,7 @@ class CaseService {
                 return [false, constants_util_1.default.failureUpdateMessage('case plan')];
             }
             caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
+            caseUpdated['creditorName'] = creditor.basicInformation.fullName;
             if (req.body.intervals && req.body.intervals.length) {
                 case_util_1.default.createPayment(caseUpdated);
             }
@@ -777,7 +779,7 @@ class CaseService {
                 Action: 'Case Updated',
                 'Updated By': reqTemp.name,
             }, caseUpdated._id);
-            this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+            // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
         };
         this.updateCasePlan1 = async (req) => {
@@ -785,7 +787,8 @@ class CaseService {
             let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
-            //const getDebtor = findCase.debtor;
+            const getDebtor = findCase.debtor;
+            const creditor = findCase.creditor;
             if (req.body?.intervals &&
                 req.body?.intervals.length &&
                 findCase.intervals.length) {
@@ -801,6 +804,8 @@ class CaseService {
             if (!caseUpdated) {
                 return [false, constants_util_1.default.failureUpdateMessage('case plan')];
             }
+            caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
+            caseUpdated['creditorName'] = creditor.basicInformation.fullName;
             if (req.body.intervals && req.body.intervals.length) {
                 case_util_1.default.createPayment(caseUpdated);
             }
