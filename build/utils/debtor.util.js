@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const case_repository_1 = require("../api/repository/case/case.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
-const easyPayDirectSeemless_1 = __importDefault(require("./easyPayDirectSeemless"));
+const easyPayDirectSeamless_1 = __importDefault(require("./easyPayDirectSeamless"));
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
@@ -633,11 +633,11 @@ class DebtorUtil {
             status: { $ne: 'Success' },
         });
         if (doc && doc.status === 'Pending' && doc.amount === amount) {
-            await easyPayDirectSeemless_1.default.sendInvoice(platform, doc.debtorTransId);
+            await easyPayDirectSeamless_1.default.sendInvoice(platform, doc.debtorTransId);
             return [
                 true,
                 {
-                    customerInvoiceId: doc.debtorTransId,
+                    invoiceId: doc.debtorTransId,
                     amount: doc.amount,
                 },
             ];
@@ -646,19 +646,19 @@ class DebtorUtil {
             (doc.status === 'Pending' || doc.status === 'Failed') &&
             doc.amount !== amount) ||
             (doc && doc.status === 'Failed' && doc.amount === amount)) {
-            await easyPayDirectSeemless_1.default.closeInvoice(platform, doc.debtorTransId);
+            await easyPayDirectSeamless_1.default.closeInvoice(platform, doc.debtorTransId);
             await this.paymentRepository.updateById(doc._id, {
                 isDeleted: true,
             });
         }
-        const customerVaultResponse = await easyPayDirectSeemless_1.default.addInvoice(platform, amount, email, debtorName);
+        const customerVaultResponse = await easyPayDirectSeamless_1.default.addInvoice(platform, amount, email);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
         await payment_util_1.default.createPaymentDoc(amount, customerVaultResponse[1], debtorId, debtorName);
         return [
             true,
             {
-                customerInvoiceId: customerVaultResponse[1],
+                invoiceId: customerVaultResponse[1],
                 amount: amount,
             },
         ];

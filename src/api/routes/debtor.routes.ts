@@ -143,7 +143,7 @@ router.delete(
 );
 
 router.post(
-  '/add-debtor-invoice',
+  '/create-invoice',
   debtor.addDebtorInvoice,
   debtorController.addDebtorInvoice
 );

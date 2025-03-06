@@ -554,7 +554,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successAddMessage('Debtor Invoice details'),
+          message: constants.successAddMessage('Invoice details'),
         })
       );
     } catch (error) {

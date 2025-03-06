@@ -484,7 +484,7 @@ class DebtorController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
-                    message: constants_util_1.default.successAddMessage('Debtor Invoice details'),
+                    message: constants_util_1.default.successAddMessage('Invoice details'),
                 }));
             }
             catch (error) {

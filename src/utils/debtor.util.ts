@@ -1,6 +1,6 @@
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
-import easyPayDirectSeamlessUtil from './easyPayDirectSeemless';
+import easyPayDirectSeamlessUtil from './easyPayDirectSeamless';
 import {ICase} from '../database/interfaces/case.interface';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import axiosInstance from './axiosInstanceInterceptor';
@@ -841,7 +841,7 @@ class DebtorUtil {
       return [
         true,
         {
-          customerInvoiceId: doc.debtorTransId,
+          invoiceId: doc.debtorTransId,
           amount: doc.amount,
         },
       ];
@@ -861,8 +861,7 @@ class DebtorUtil {
     const customerVaultResponse = await easyPayDirectSeamlessUtil.addInvoice(
       platform,
       amount,
-      email,
-      debtorName
+      email
     );
     if (!customerVaultResponse[0]) return customerVaultResponse;
 
@@ -875,7 +874,7 @@ class DebtorUtil {
     return [
       true,
       {
-        customerInvoiceId: customerVaultResponse[1],
+        invoiceId: customerVaultResponse[1],
         amount: amount,
       },
     ];

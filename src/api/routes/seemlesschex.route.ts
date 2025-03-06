@@ -48,16 +48,11 @@ router.post(
 
 router.post(
   '/update-invoice-status/:token',
-  paymentValidate.updatePaymentLinkStatus,
+  paymentValidate.updatePaymentInvoiceStatus,
   paymentController.updatePaymentInvoiceStatus
 );
 
-router.post(
-  '/update-payment-status/:token',
-  paymentValidate.updatePaymentLinkStatus,
-  paymentController.updatePaymentLinkStatus
-);
-
+router.get('/get-invoice-status/:token', paymentController.getInvoiceStatus);
 router.get(
   '/get-payment-link-status/:token',
   paymentController.getPaymentLinkStatus
