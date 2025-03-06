@@ -1729,6 +1729,36 @@ class DebtorService {
     }
     return checkClientExist;
   }
+
+  async clientFinancialSummary(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+
+    if (!getDebtor) return [false, constants.notFoundMessage('Client')];
+
+    const cases: ICase[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        {debtor: req.params.id, isDeleted: false},
+        'remaining'
+      );
+
+    const totalRemaining = cases.reduce(
+      (sum: any, caseItem: any) => sum + (caseItem.remaining || 0),
+      0
+    );
+
+    const getPayments: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: req.params.id,
+          isDeleted: false,
+        },
+        'authorized captured amount dueDate transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture'
+      );
+
+    return [true, {debtBalance: totalRemaining, paymentHistory: getPayments}];
+  }
 }
 
 export default DebtorService;

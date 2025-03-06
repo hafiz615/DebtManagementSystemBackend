@@ -228,4 +228,9 @@ router.post(
   debtorController.clientSync
 );
 
+router.get(
+  '/client-financial-summary/:id',
+  debtorController.clientFinancialSummary
+);
+
 export default router;
