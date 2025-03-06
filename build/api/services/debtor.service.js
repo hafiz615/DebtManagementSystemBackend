@@ -805,13 +805,13 @@ class DebtorService {
     async clientFinancialSummary(req) {
         const getDebtor = await this.debtorRepository.getById(req.params.id);
         if (!getDebtor)
-            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+            return [false, constants_util_1.default.notFoundMessage('Client')];
         const cases = await this.caseRepository.getAllWithoutPagination({ debtor: req.params.id, isDeleted: false }, 'remaining');
         const totalRemaining = cases.reduce((sum, caseItem) => sum + (caseItem.remaining || 0), 0);
         const getPayments = await this.paymentRepository.getAllWithoutPagination({
             debtorId: req.params.id,
             isDeleted: false,
-        }, 'authorized captured status amount frequency dueDate debtorTransId transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture retriesPaynote paymentLink');
+        }, 'authorized captured amount dueDate transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture');
         return [true, { debtBalance: totalRemaining, paymentHistory: getPayments }];
     }
     async getDebtorSummery(req) {

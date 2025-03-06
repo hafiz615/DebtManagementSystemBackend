@@ -1058,7 +1058,7 @@ class DebtorService {
       req.params.id
     );
 
-    if (!getDebtor) return [false, constants.notFoundMessage('Debtor')];
+    if (!getDebtor) return [false, constants.notFoundMessage('Client')];
 
     const cases: ICase[] =
       await this.caseRepository.getAllWithoutPagination<ICase>(
@@ -1077,7 +1077,7 @@ class DebtorService {
           debtorId: req.params.id,
           isDeleted: false,
         },
-        'authorized captured status amount frequency dueDate debtorTransId transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture retriesPaynote paymentLink'
+        'authorized captured amount dueDate transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture'
       );
 
     return [true, {debtBalance: totalRemaining, paymentHistory: getPayments}];
