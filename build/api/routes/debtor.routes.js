@@ -61,6 +61,5 @@ router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.get
 router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);
 router.get('/getClientSyncEmail/:id', debtor_controller_1.default.getClientSyncEmail);
 router.post('/clientSync/:id', debtor_validate_2.default.syncDebtorEmail, debtor_controller_1.default.clientSync);
-router.get('/client-financial-summary/:id', debtor_controller_1.default.clientFinancialSummary);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map
