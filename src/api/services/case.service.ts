@@ -1472,10 +1472,11 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      ['debtor']
+      [{path: 'creditor', select: 'basicInformation.fullName'}, 'debtor']
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;
+    const creditor = findCase.creditor;
     if (
       req.body?.intervals &&
       req.body?.intervals.length &&
@@ -1506,6 +1507,7 @@ class CaseService {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
     }
     caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
+    caseUpdated['creditorName'] = creditor.basicInformation.fullName;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }
@@ -1517,7 +1519,7 @@ class CaseService {
       },
       caseUpdated._id
     );
-    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     return [true, caseUpdated];
   };
 
@@ -1530,7 +1532,8 @@ class CaseService {
       ['debtor']
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
-    //const getDebtor = findCase.debtor;
+    const getDebtor = findCase.debtor;
+    const creditor = findCase.creditor;
     if (
       req.body?.intervals &&
       req.body?.intervals.length &&
@@ -1551,6 +1554,8 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
     }
+    caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
+    caseUpdated['creditorName'] = creditor.basicInformation.fullName;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }

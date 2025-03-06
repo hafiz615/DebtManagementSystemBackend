@@ -1304,6 +1304,7 @@ class DebtorService {
     });
     req.body.intervals = debtor.intervals;
     req.body.debtorName = debtor.basicInformation.fullName;
+    req.body.creditorName = '';
     caseUtil.createPayment(req.body);
 
     return [true, constants.successAddMessage('Payment plan')];

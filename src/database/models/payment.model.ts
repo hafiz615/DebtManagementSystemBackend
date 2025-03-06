@@ -113,6 +113,7 @@ const PaymentModel: Schema = new Schema({
   authorizedDate: {
     type: Date,
   },
+  creditorName: String,
 });
 
 PaymentModel.pre('save', async function (next) {
