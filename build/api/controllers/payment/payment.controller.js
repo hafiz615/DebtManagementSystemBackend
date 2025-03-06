@@ -286,27 +286,6 @@ class PaymentController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.updatePaymentInvoiceStatus = async (req, res) => {
-            try {
-                const response = await this.paymentService.updatePaymentInvoiceStatus(req);
-                if (!response[0]) {
-                    return res
-                        .status(constants_util_1.default.CODE.OK)
-                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
-                }
-                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                    statusCode: constants_util_1.default.CODE.OK,
-                    data: response[1],
-                    message: constants_util_1.default.successUpdateMessage('Invoice status'),
-                }));
-            }
-            catch (error) {
-                console.log(error);
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
-            }
-        };
         this.updatePaymentLinkStatus = async (req, res) => {
             try {
                 const response = await this.paymentService.updatePaymentLinkStatus(req);
@@ -340,27 +319,6 @@ class PaymentController {
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
                     message: constants_util_1.default.successFoundMessage('Payment status'),
-                }));
-            }
-            catch (error) {
-                console.log(error);
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
-            }
-        };
-        this.getInvoiceStatus = async (req, res) => {
-            try {
-                const response = await this.paymentService.getPaymentLinkStatus(req);
-                if (!response[0]) {
-                    return res
-                        .status(constants_util_1.default.CODE.OK)
-                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
-                }
-                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
-                    statusCode: constants_util_1.default.CODE.OK,
-                    data: response[1],
-                    message: constants_util_1.default.successFoundMessage('Invoice status'),
                 }));
             }
             catch (error) {

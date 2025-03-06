@@ -40,7 +40,6 @@ router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth
 router.post('/add-debtor-account/:id', debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
 router.put('/update-debtor-account/:id', debtor_validate_1.default.updateDebtorAccount, debtor_controller_1.default.updateDebtorAccount);
 router.delete('/delete-debtor-account/:id', debtor_validate_1.default.deleteDebtorAccount, debtor_controller_1.default.deleteDebtorAccount);
-router.post('/create-invoice', debtor_validate_1.default.addDebtorInvoice, debtor_controller_1.default.addDebtorInvoice);
 router.get('/getDebtorSummery', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorSummery);
 router.post('/saveWeeklyBudgetValues/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.saveWeeklyBudgetValues, debtor_controller_1.default.saveWeeklyBudgetValues);
 router.post('/getMcaAndFinancials', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getMcaAndFinancials);
@@ -62,5 +61,6 @@ router.post('/get-extracted-data', uploadFields, debtor_controller_1.default.get
 router.get('/get-debtor-extracted-data/:id', debtor_controller_1.default.getDebtorExtractedFields);
 router.get('/getClientSyncEmail/:id', debtor_controller_1.default.getClientSyncEmail);
 router.post('/clientSync/:id', debtor_validate_2.default.syncDebtorEmail, debtor_controller_1.default.clientSync);
+router.get('/client-financial-summary/:id', debtor_controller_1.default.clientFinancialSummary);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

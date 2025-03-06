@@ -332,19 +332,15 @@ class PaymentUtil {
         resultDate.setDate(resultDate.getDate() + daysToAdd);
         return resultDate;
     }
-    async createPaymentDoc(amount, token, debtorId, debtorName, link) {
+    async createPaymentDocForLink(amount, token, link, debtorId) {
         const payment = new payment_repomodel_1.Payment();
         payment.amount = amount;
         payment.debtorTransId = token;
-        if (link)
-            payment.paymentLink = link;
+        payment.paymentLink = link;
         payment.status = 'Pending';
         payment.debtorId = debtorId;
-        if (debtorName)
-            payment.debtorName = debtorName; // Assign debtorName if provided
-        payment.transactionType = link ? 'Link' : 'Invoice';
-        const hello = await this.paymentRepository.create(payment);
-        console.log('hello', hello);
+        payment.transactionType = 'Link';
+        await this.paymentRepository.create(payment);
     }
 }
 exports.default = new PaymentUtil();

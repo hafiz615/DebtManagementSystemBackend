@@ -960,36 +960,6 @@ class PaymentService {
         }
         return [true, caseIds];
     }
-    async updatePaymentInvoiceStatus(req) {
-        const payment = await this.paymentRepository.getOne({
-            debtorTransId: req.params.token,
-        });
-        if (!payment)
-            return [false, constants_util_1.default.notFoundMessage('payment Invoice')];
-        await this.paymentRepository.updateByOne({ debtorTransId: req.params.token }, { status: req.body.status });
-        let results = null;
-        let caseIds = null;
-        if (req.body.status === 'Success') {
-            const debtor = await this.debtorReposiotry.getOne({
-                _id: payment.debtorId,
-            });
-            const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
-            const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(debtor.extractedFields, creditorNames);
-            for (const bin of caseTemp) {
-                bin['platform'] = true;
-                bin.creditor.platform = true;
-            }
-            results = await case_util_1.default.createCreditorsCases({ data: caseTemp }, '', '', payment.debtorId);
-            const caseList = Array.isArray(results[1]) ? results[1] : results;
-            caseIds = caseList.map(result => ({
-                caseId: result._id,
-                caseCode: result.caseCode,
-                debtorId: result.debtor,
-                creditorId: result.creditor,
-            }));
-        }
-        return [true, caseIds];
-    }
     async getPaymentLinkStatus(req) {
         const payment = await this.paymentRepository.getOne({
             debtorTransId: req.params.token,

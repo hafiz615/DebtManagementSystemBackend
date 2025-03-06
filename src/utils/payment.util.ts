@@ -459,24 +459,20 @@ class PaymentUtil {
     return resultDate;
   }
 
-  async createPaymentDoc(
+  async createPaymentDocForLink(
     amount: number,
     token: string,
-    debtorId: string,
-    debtorName?: string,
-    link?: string
+    link: string,
+    debtorId: string
   ) {
     const payment = new Payment();
     payment.amount = amount;
     payment.debtorTransId = token;
-    if (link) payment.paymentLink = link;
+    payment.paymentLink = link;
     payment.status = 'Pending';
     payment.debtorId = debtorId;
-    if (debtorName) payment.debtorName = debtorName; // Assign debtorName if provided
-    payment.transactionType = link ? 'Link' : 'Invoice';
-
-    const hello = await this.paymentRepository.create<IPayment>(payment as any);
-    console.log('hello', hello);
+    payment.transactionType = 'Link';
+    await this.paymentRepository.create<IPayment>(payment as any);
   }
 }
 export default new PaymentUtil();

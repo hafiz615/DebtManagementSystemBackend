@@ -78,8 +78,7 @@ class SeemlesschexService {
     if (!debtor) return [false, constants.notFoundMessage('debtor on DMS')];
     const response = await debtorUtil.createPaymentLinkOrNot(
       req.body.debtorId,
-      req.body.amount,
-      debtor?.basicInformation?.fullName
+      req.body.amount
     );
     if (!response[0]) return response;
     return response;

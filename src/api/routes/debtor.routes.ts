@@ -141,12 +141,6 @@ router.delete(
   debtor.deleteDebtorAccount,
   debtorController.deleteDebtorAccount
 );
-
-router.post(
-  '/create-invoice',
-  debtor.addDebtorInvoice,
-  debtorController.addDebtorInvoice
-);
 router.get(
   '/getDebtorSummery',
   authorize.validateAuth,
@@ -234,4 +228,8 @@ router.post(
   debtorController.clientSync
 );
 
+router.get(
+  '/client-financial-summary/:id',
+  debtorController.clientFinancialSummary
+);
 export default router;
