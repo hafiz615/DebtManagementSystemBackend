@@ -16,6 +16,8 @@ router.post('/updateCheck/:id', authorize_middleware_1.default.validateAuth, see
 router.delete('/voidCheck/:id', authorize_middleware_1.default.validateAuth, seemlesschex_validate_1.default.voidCheck, seemlesschex_controller_1.default.voidCheck);
 router.get('/getClientChecks/:id', authorize_middleware_1.default.validateAuth, seemlesschex_controller_1.default.getClientChecks);
 router.post('/update-payment-link-status/:token', payment_validate_1.default.updatePaymentLinkStatus, payment_controller_1.default.updatePaymentLinkStatus);
+router.post('/update-invoice-status/:token', payment_validate_1.default.updatePaymentInvoiceStatus, payment_controller_1.default.updatePaymentInvoiceStatus);
+router.get('/get-invoice-status/:token', payment_controller_1.default.getInvoiceStatus);
 router.get('/get-payment-link-status/:token', payment_controller_1.default.getPaymentLinkStatus);
 router.post('/statusChanged', seemlesschex_controller_1.default.statusChanged);
 exports.default = router;
