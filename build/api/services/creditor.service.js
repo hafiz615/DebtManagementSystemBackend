@@ -260,7 +260,7 @@ class CreditorService {
         const creditor = await this.creditorRepository.getById(req.params.id);
         if (!creditor)
             return [false, constants_util_1.default.notFoundMessage('creditor')];
-        const result = await paynote_util_1.default.createCustomer(creditor);
+        const result = await paynote_util_1.default.createCustomer(creditor._id, creditor.basicInformation.fullName, creditor.basicInformation.email, new creditor_repository_1.CreditorRepository());
         console.log(result);
         if (result.error) {
             let message = '';
@@ -293,10 +293,12 @@ class CreditorService {
         const word = req.query.pause === 'true' ? 'resumed' : 'paused';
         return [true, `Funds transfer ${word} successfully`];
     }
-    async syncPaynoteCreditor(req) {
-        const creditor = await this.creditorRepository.getById(req.params.id);
-        if (!creditor)
-            return [false, constants_util_1.default.notFoundMessage('creditor')];
+    async syncPaynote(req) {
+        const reqTemp = req;
+        const type = reqTemp.query.type;
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user)
+            return [false, constants_util_1.default.notFoundMessage('user')];
         const email = req.body.email.toLowerCase();
         let page = 1;
         let limit = 100;
@@ -307,13 +309,16 @@ class CreditorService {
         }
         const resultSync = await paynote_util_1.default.processSyncCreditorPaynote(result.list.data, email);
         if (resultSync[0]) {
-            await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
-            await paynote_util_1.default.upsertCreditorPaynoteEmail(req.params.id, email);
+            await paynote_util_1.default.updateSyncObject(resultSync[1], req.params.id, user.model);
+            await paynote_util_1.default.upsertPaynoteEmail(req.params.id, email);
             return resultSync;
         }
         const lastPage = result.list.last_page;
         if (lastPage === page) {
-            await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
+            user.model;
+            user.model;
+            user.model;
+            await paynote_util_1.default.updateSyncObject(resultSync[1], req.params.id, user.model);
             return resultSync;
         }
         let returnValue = null;
@@ -326,27 +331,30 @@ class CreditorService {
                 }
                 const resultSync = await paynote_util_1.default.processSyncCreditorPaynote(result.list.data, email);
                 if (resultSync[0]) {
-                    await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
-                    await paynote_util_1.default.upsertCreditorPaynoteEmail(req.params.id, email);
+                    await paynote_util_1.default.updateSyncObject(resultSync[1], req.params.id, user.model);
+                    await paynote_util_1.default.upsertPaynoteEmail(req.params.id, email);
                     return resultSync;
                 }
                 if (!resultSync[0] && i === lastPage) {
-                    await paynote_util_1.default.updateSyncCreditorObject(resultSync[1], req.params.id);
+                    await paynote_util_1.default.updateSyncObject(resultSync[1], req.params.id, user.model);
                     returnValue = [false, 'Could not found user in paynote'];
                 }
             }
             return returnValue;
         }
     }
-    async getCreditorSyncEmail(req) {
-        const creditor = await this.creditorRepository.getById(req.params.id);
-        if (!creditor)
-            return [false, constants_util_1.default.notFoundMessage('creditor')];
+    async getSyncEmail(req) {
+        const reqTemp = req;
+        const type = reqTemp.query.type;
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user)
+            return [false, constants_util_1.default.notFoundMessage('user')];
+        const email = await common_util_1.default.getUserDetails(user.obj);
         const result = await this.syncPaymentMethodRepository.getOne({
             syncId: req.params.id,
         });
         if (!result)
-            return [true, creditor.basicInformation.email];
+            return [true, email];
         return [true, result.email];
     }
     async mcaByMonth(req) {

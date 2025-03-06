@@ -12,7 +12,8 @@ export class Database {
     this.connectDb();
   }
   private connectDb(): void {
-    console.log(this.dbUri);
+    // console.log(this.dbUri);
+    console.log('connection establishing...');
     const options = {
       retryWrites: true,
       autoIndex: true, // build indexes true or false
@@ -20,7 +21,7 @@ export class Database {
     mongoose
       .connect(this.dbUri, options)
       .then(async res => {
-        console.log('connection established at');
+        console.log('connection established with Database');
         const settingsRepository = new SettingsRepository();
         const findSettings =
           await settingsRepository.getAllWithoutPagination<ISettings>();

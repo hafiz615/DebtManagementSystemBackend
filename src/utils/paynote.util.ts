@@ -15,29 +15,34 @@ class PaynoteUtil {
     this.creditorRepository = new CreditorRepository();
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
   }
-  async createCustomer(creditor: ICreditor) {
-    if (!creditor.basicInformation?.fullName)
+  async createCustomer(
+    id: string,
+    name: string,
+    email: string,
+    modelRepository: any
+  ) {
+    if (!name)
       return {
         error: true,
-        message: constantsUtil.notFoundMessage('creditor name'),
+        message: constantsUtil.notFoundMessage('name'),
       };
-    const creditorNames = creditor.basicInformation?.fullName?.split(' ');
-    if (!creditor?.basicInformation?.email)
+    const userNames = name.split(' ');
+    if (!email)
       return {
         error: true,
-        message: constantsUtil.notFoundMessage('creditor email'),
+        message: constantsUtil.notFoundMessage('email'),
       };
     let lastName = '';
-    if (!creditorNames[1]) {
-      lastName = creditorNames[0];
+    if (!userNames[1]) {
+      lastName = userNames[0];
     } else {
-      lastName = creditorNames.slice(1).join(' ');
+      lastName = userNames.slice(1).join(' ');
     }
     const apiUrl = `${process.env.paynoteUrl}/user`;
     var data = {
-      firstName: creditorNames[0],
+      firstName: userNames[0],
       lastName: lastName,
-      email: creditor.basicInformation.email,
+      email: email,
     };
     console.log('I am in createCustomer');
     console.log('URL: ', apiUrl);
@@ -50,7 +55,7 @@ class PaynoteUtil {
         },
       });
       if (response.data?.success) {
-        this.creditorRepository.updateById<ICreditor>(creditor._id, {
+        await modelRepository.updateById(id, {
           paynoteUserId: response.data?.user?.user_id,
         });
       }
@@ -403,13 +408,13 @@ class PaynoteUtil {
     return [true, update];
   }
 
-  async updateSyncCreditorObject(data: any, creditorId: string) {
-    await this.creditorRepository.updateById(creditorId, data);
+  async updateSyncObject(data: any, creditorId: string, modelRepository: any) {
+    await modelRepository.updateById(creditorId, data);
   }
 
-  async upsertCreditorPaynoteEmail(creditorId: string, email: string) {
+  async upsertPaynoteEmail(id: string, email: string) {
     await this.syncPaymentMethodRepository.upsert(
-      {syncId: creditorId},
+      {syncId: id},
       {
         email: email,
         platform: 'Paynote',

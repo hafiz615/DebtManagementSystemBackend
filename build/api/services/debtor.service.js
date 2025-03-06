@@ -756,6 +756,17 @@ class DebtorService {
         }
         return [true, constants_util_1.default.successAddMessage('Debtors')];
     }
+    async addDebtorInvoice(req) {
+        const getDebtor = await this.debtorRepository.getById(req.body.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const debtorName = getDebtor?.basicInformation?.fullName;
+        const response = await debtor_util_1.default.createPaymentInvoice(req.body.platform, req.body.id, req.body.amount, req.body.email, debtorName);
+        if (!response[0])
+            return response;
+        return response;
+    }
     async addDebtorAccount(req) {
         const getDebtor = await this.debtorRepository.getById(req.params.id);
         if (!getDebtor) {

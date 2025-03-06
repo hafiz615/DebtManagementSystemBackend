@@ -2590,7 +2590,12 @@ class CaseUtil {
       });
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
-        await paynoteUtil.createCustomer(creditor);
+        await paynoteUtil.createCustomer(
+          creditor._id,
+          creditor.basicInformation.fullName,
+          creditor.basicInformation.email,
+          new CreditorRepository()
+        );
       }
       if (getCreditor) {
         body.updatedAt = commonUtil.getCurrentDate();

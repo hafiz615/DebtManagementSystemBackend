@@ -6,11 +6,45 @@ import {decrypt} from 'n-krypta';
 import dotnev from 'dotenv';
 import {paymentPlatform} from '../enums';
 import mime from 'mime-types';
+import {CreditorRepository} from '../api/repository/creditor/creditor.repository';
+import {AttorneyRepository} from '../api/repository/attorney/attorney.repository';
+import {ICreditor} from '../database/interfaces/creditor.interface';
+import {IAttorney} from '../database/interfaces/attorney.interface';
 dotnev.config();
 class CommonUtil {
+  private creditorRepository: CreditorRepository;
+  private attorneyRepository: AttorneyRepository;
+
+  constructor() {
+    this.creditorRepository = new CreditorRepository();
+    this.attorneyRepository = new AttorneyRepository();
+  }
   getCurrentDate() {
     let date = new Date().toUTCString();
     return date;
+  }
+  async getUserByType(id: string, type: string) {
+    switch (type) {
+      case 'creditor':
+        return {
+          obj: await this.creditorRepository.getById<ICreditor>(id),
+          model: new CreditorRepository(),
+        };
+      case 'attorney':
+        return {
+          obj: await this.attorneyRepository.getById<IAttorney>(id),
+          model: new AttorneyRepository(),
+        };
+      default:
+        return null;
+    }
+  }
+
+  async getUserDetails(data: any) {
+    return {
+      name: data?.basicInformation?.fullName || data?.name,
+      email: data?.basicInformation?.email || data?.email,
+    };
   }
 
   async hashPassword(password: string) {

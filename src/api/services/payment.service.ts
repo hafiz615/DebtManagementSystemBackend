@@ -20,18 +20,22 @@ import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {IDebtor} from '../../database/interfaces/debtor.interface';
 import caseUtil from '../../utils/case.util';
 import googleDriveUtil from '../../utils/googleDrive.util';
+import {IAttorney} from '../../database/interfaces/attorney.interface';
+import {AttorneyRepository} from '../repository/attorney/attorney.repository';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
   private creditorReposiotry: CreditorRepository;
   private debtorReposiotry: DebtorRepository;
+  private attorneyReposiotry: AttorneyRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.caseRepository = new CaseRepository();
     this.creditorReposiotry = new CreditorRepository();
     this.debtorReposiotry = new DebtorRepository();
+    this.attorneyReposiotry = new AttorneyRepository();
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
@@ -975,19 +979,25 @@ class PaymentService {
     }
   }
 
-  async addACHDetailsCreditor(req: Request) {
-    const creditor = await this.creditorReposiotry.getById<ICreditor>(
-      req.params.id
-    );
-    if (!creditor) return [false, constants.notFoundMessage('creditor')];
-
+  async addACHDetails(req: Request) {
+    const reqTemp: any = req;
+    const type = reqTemp.query.type;
+    const user: any = await commonUtil.getUserByType(req.params.id, type);
+    if (!user) return [false, constants.notFoundMessage('user')];
+    const {name, email}: any = await commonUtil.getUserDetails(user.obj);
+    if (!user.obj.paynoteUserId) {
+      await paynoteUtil.createCustomer(user.obj._id, name, email, user.model);
+    }
     const data = req.body.data;
     const paymentObj = commonUtil.getDecryptedData(data);
-    if (!creditor.paynoteUserId)
-      return [false, 'User is not added in paynote!'];
+    const updatedUser: any = await commonUtil.getUserByType(
+      req.params.id,
+      type
+    );
+
     const fundingSource = await paynoteUtil.addFundingSource(
       paymentObj,
-      creditor.paynoteUserId
+      updatedUser.obj.paynoteUserId
     );
     if (fundingSource?.error) {
       let message = '';
@@ -1228,6 +1238,55 @@ class PaymentService {
       debtorTransId: req.params.token,
     });
     if (!payment) return [false, constants.notFoundMessage('payment link')];
+    await this.paymentRepository.updateByOne<IPayment>(
+      {debtorTransId: req.params.token},
+      {status: req.body.status}
+    );
+    let results = null;
+    let caseIds = null;
+    if (req.body.status === 'Success') {
+      const debtor = await this.debtorReposiotry.getOne<IDebtor>({
+        _id: payment.debtorId,
+      });
+
+      const creditorNames = await caseUtil.getCreditorNames(
+        debtor,
+        debtor.extractedFields
+      );
+
+      const caseTemp = await googleDriveUtil.mapCreditorsCases(
+        debtor.extractedFields,
+        creditorNames
+      );
+
+      for (const bin of caseTemp) {
+        bin['platform'] = true;
+        bin.creditor.platform = true;
+      }
+
+      results = await caseUtil.createCreditorsCases(
+        {data: caseTemp},
+        '',
+        '',
+        payment.debtorId
+      );
+      const caseList = Array.isArray(results[1]) ? results[1] : results;
+      caseIds = caseList.map(result => ({
+        caseId: result._id,
+        caseCode: result.caseCode,
+        debtorId: result.debtor,
+        creditorId: result.creditor,
+      }));
+    }
+
+    return [true, caseIds];
+  }
+
+  async updatePaymentInvoiceStatus(req: Request) {
+    const payment: any = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: req.params.token,
+    });
+    if (!payment) return [false, constants.notFoundMessage('payment Invoice')];
     await this.paymentRepository.updateByOne<IPayment>(
       {debtorTransId: req.params.token},
       {status: req.body.status}

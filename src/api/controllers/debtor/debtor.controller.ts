@@ -542,6 +542,29 @@ class DebtorController {
     }
   };
 
+  addDebtorInvoice = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.addDebtorInvoice(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successAddMessage('Invoice details'),
+        })
+      );
+    } catch (error) {
+      console.log('error', error.message);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   addDebtorAccount = async (req: Request, res: Response) => {
     try {
       const response = await this.debtorService.addDebtorAccount(req);
