@@ -244,7 +244,7 @@ class CreditorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: 'Creditor email returned successfully!',
+          message: 'Email returned successfully!',
         })
       );
     } catch (error) {

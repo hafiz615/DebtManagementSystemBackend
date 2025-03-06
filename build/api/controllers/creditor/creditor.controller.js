@@ -212,7 +212,7 @@ class CreditorController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
-                    message: 'Creditor email returned successfully!',
+                    message: 'Email returned successfully!',
                 }));
             }
             catch (error) {
