@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const case_repository_1 = require("../api/repository/case/case.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
-const easyPayDirectSeamless_1 = __importDefault(require("./easyPayDirectSeamless"));
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
@@ -584,7 +583,7 @@ class DebtorUtil {
         let amountUp = sumTotalPaidWeekly - totalCommision;
         return weeklyCommission - amountUp;
     }
-    async createPaymentLinkOrNot(debtorId, amount, debtorName) {
+    async createPaymentLinkOrNot(debtorId, amount) {
         const doc = await this.paymentRepository.getOne({
             debtorId,
             caseId: { $eq: null },
@@ -614,52 +613,13 @@ class DebtorUtil {
         const response = await seemlesschex_util_1.default.createPaymentLink(amount);
         if (response?.error)
             return [false, response.message];
-        await payment_util_1.default.createPaymentDoc(amount, response.checkout_link.checkout_token, debtorId, debtorName, response.checkout_link.link);
+        await payment_util_1.default.createPaymentDocForLink(amount, response.checkout_link.checkout_token, response.checkout_link.link, debtorId);
         return [
             true,
             {
                 checkout_token: response.checkout_link.checkout_token,
                 link: response.checkout_link.link,
                 amount: response.checkout_link.amount,
-            },
-        ];
-    }
-    async createPaymentInvoice(platform, debtorId, amount, email, debtorName) {
-        const doc = await this.paymentRepository.getOne({
-            debtorId,
-            caseId: { $eq: null },
-            transactionType: 'Invoice',
-            isDeleted: { $ne: true },
-            status: { $ne: 'Success' },
-        });
-        if (doc && doc.status === 'Pending' && doc.amount === amount) {
-            await easyPayDirectSeamless_1.default.sendInvoice(platform, doc.debtorTransId);
-            return [
-                true,
-                {
-                    invoiceId: doc.debtorTransId,
-                    amount: doc.amount,
-                },
-            ];
-        }
-        if ((doc &&
-            (doc.status === 'Pending' || doc.status === 'Failed') &&
-            doc.amount !== amount) ||
-            (doc && doc.status === 'Failed' && doc.amount === amount)) {
-            await easyPayDirectSeamless_1.default.closeInvoice(platform, doc.debtorTransId);
-            await this.paymentRepository.updateById(doc._id, {
-                isDeleted: true,
-            });
-        }
-        const customerVaultResponse = await easyPayDirectSeamless_1.default.addInvoice(platform, amount, email);
-        if (!customerVaultResponse[0])
-            return customerVaultResponse;
-        await payment_util_1.default.createPaymentDoc(amount, customerVaultResponse[1], debtorId, debtorName);
-        return [
-            true,
-            {
-                invoiceId: customerVaultResponse[1],
-                amount: amount,
             },
         ];
     }

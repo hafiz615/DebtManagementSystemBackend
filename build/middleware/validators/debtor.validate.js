@@ -1031,43 +1031,6 @@ class DebtorRequests {
             }
         };
     }
-    async addDebtorInvoice(req, res, next) {
-        const schema = joi_1.default.object({
-            amount: joi_1.default.number().strict().required().messages({
-                'any.required': 'Amount is required.',
-                'number.base': 'Amount must be a number.',
-                'number.empty': 'Amount cannot be empty.',
-            }),
-            id: joi_1.default.string()
-                .regex(/^[0-9a-fA-F]{24}$/) // Matches a valid MongoDB ObjectId
-                .required()
-                .messages({
-                'any.required': 'Debtor ID is required.',
-                'string.pattern.base': 'Debtor ID is invalid.',
-                'string.empty': 'Debtor ID cannot be empty.',
-            }),
-            platform: joi_1.default.string().required().messages({
-                'string.base': 'Platform must be a string',
-                'string.empty': 'Platform cannot be empty',
-                'any.required': 'Platform is required',
-            }),
-            email: joi_1.default.string().email().required().messages({
-                'string.base': 'Email must be a string',
-                'string.empty': 'Email cannot be empty',
-                'string.email': 'Email must be a valid email address',
-                'any.required': 'Email is required',
-            }),
-        });
-        const { error } = schema.validate(req.body);
-        if (!error) {
-            return next();
-        }
-        else {
-            return res
-                .status(constants_util_1.default.CODE.BAD_REQUEST)
-                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
-        }
-    }
 }
 exports.default = new DebtorRequests();
 //# sourceMappingURL=debtor.validate.js.map
