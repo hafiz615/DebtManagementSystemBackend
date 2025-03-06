@@ -18,5 +18,7 @@ router.get('/getClientChecks/:id', authorize_middleware_1.default.validateAuth, 
 router.post('/update-payment-link-status/:token', payment_validate_1.default.updatePaymentLinkStatus, payment_controller_1.default.updatePaymentLinkStatus);
 router.get('/get-payment-link-status/:token', payment_controller_1.default.getPaymentLinkStatus);
 router.post('/statusChanged', seemlesschex_controller_1.default.statusChanged);
+router.post('/update-invoice-status/:token', payment_validate_1.default.updatePaymentInvoiceStatus, payment_controller_1.default.updatePaymentInvoiceStatus);
+router.get('/get-invoice-status/:token', payment_controller_1.default.getInvoiceStatus);
 exports.default = router;
 //# sourceMappingURL=seemlesschex.route.js.map

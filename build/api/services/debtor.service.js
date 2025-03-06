@@ -1329,6 +1329,17 @@ class DebtorService {
         }, 'authorized captured amount dueDate transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture');
         return [true, { debtBalance: totalRemaining, paymentHistory: getPayments }];
     }
+    async addDebtorInvoice(req) {
+        const getDebtor = await this.debtorRepository.getById(req.body.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const debtorName = getDebtor?.basicInformation?.fullName;
+        const response = await debtor_util_1.default.createPaymentInvoice(req.body.platform, req.body.id, req.body.amount, req.body.email, debtorName);
+        if (!response[0])
+            return response;
+        return response;
+    }
 }
 exports.default = DebtorService;
 //# sourceMappingURL=debtor.service.js.map
