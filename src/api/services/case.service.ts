@@ -665,7 +665,7 @@ class CaseService {
     );
 
     if (cases.length === 0)
-      return [false, constantsUtil.notFoundMessage(cases)];
+      return [false, constantsUtil.notFoundMessage('affiliate cases')];
 
     const debtors = cases.map((caseItem: ICase) => String(caseItem.debtor));
     const paymentsHistory: IPayment[] =
@@ -674,7 +674,7 @@ class CaseService {
           debtorId: {$in: debtors},
           isDeleted: false,
         },
-        'authorized captured status amount frequency dueDate debtorTransId transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture retriesPaynote paymentLink'
+        'authorized captured  amount dueDate  transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture'
       );
 
     return [true, {paymentsHistory}];

@@ -378,12 +378,12 @@ class CaseService {
         this.affiliateCasesFinancialSummary = async (req) => {
             const cases = await this.caseRepository.getAllWithoutPagination({ affiliateEmail: req.body.affiliateId }, 'debtor');
             if (cases.length === 0)
-                return [false, constants_util_1.default.notFoundMessage(cases)];
+                return [false, constants_util_1.default.notFoundMessage('affiliate cases')];
             const debtors = cases.map((caseItem) => String(caseItem.debtor));
             const paymentsHistory = await this.paymentRepository.getAllWithoutPagination({
                 debtorId: { $in: debtors },
                 isDeleted: false,
-            }, 'authorized captured status amount frequency dueDate debtorTransId transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture retriesPaynote paymentLink');
+            }, 'authorized captured  amount dueDate  transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture');
             return [true, { paymentsHistory }];
         };
         this.getSettlementRange = async (req) => {
