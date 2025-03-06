@@ -890,6 +890,29 @@ class DebtorController {
     }
   };
 
+  clientFinancialSummary = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.clientFinancialSummary(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Client Financial Summary'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   clientSync = async (req: Request, res: Response) => {
     try {
       const response = await this.debtorService.clientSync(req);
