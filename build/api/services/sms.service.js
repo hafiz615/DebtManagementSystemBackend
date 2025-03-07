@@ -141,7 +141,7 @@ class SmsService {
                     negotiatorName: caseTemp.negotiator,
                 });
                 await case_util_1.default.addInHistory({
-                    Username: reqTemp.username,
+                    Username: reqTemp.name,
                     From: inboxData?.from,
                     To: inboxData?.to,
                     Content: inboxData?.text,

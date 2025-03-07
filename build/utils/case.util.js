@@ -1892,6 +1892,16 @@ class CaseUtil {
         const extractedFields = await this.getExtractionMCA_AIBuffer(documents, global_1.AIAuth.auth_token);
         return extractedFields;
     }
+    async getExtractionLawsuitBuffer(documents) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        if (!documents.length)
+            return 'No Lawsuit found';
+        const extractedFields = await this.getExtractionLawsiut(documents, global_1.AIAuth.auth_token);
+        return extractedFields;
+    }
     async findMCASubStr(str) {
         const regex = /(mca|contract)/i;
         const match = str.match(regex);
@@ -1948,6 +1958,33 @@ class CaseUtil {
                 });
             }
             console.log('I am in getExtractionMCA_AIBuffer');
+            console.log('URL: ', url);
+            console.log('Payload: ', form);
+            const response = await axiosInstanceInterceptor_1.default.post(url, form, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    ...form.getHeaders(),
+                },
+            });
+            return response.data.error ? response.data.error : response.data;
+        }
+        catch (error) {
+            console.log(error.message);
+            return error.message;
+        }
+    }
+    async getExtractionLawsiut(documents, token) {
+        const url = `${process.env.baseUrlAI}extract-lawsuit-details`;
+        try {
+            const form = new form_data_1.default();
+            for (let doc of documents) {
+                form.append('documents', doc.buffer, {
+                    filename: doc.originalname,
+                    contentType: 'application/pdf',
+                });
+            }
+            console.log('I am in getExtractionLawsuit');
             console.log('URL: ', url);
             console.log('Payload: ', form);
             const response = await axiosInstanceInterceptor_1.default.post(url, form, {
@@ -2147,7 +2184,7 @@ class CaseUtil {
             });
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
-                await paynote_util_1.default.createCustomer(creditor);
+                await paynote_util_1.default.createCustomer(creditor._id, creditor.basicInformation.fullName, creditor.basicInformation.email, new creditor_repository_1.CreditorRepository());
             }
             if (getCreditor) {
                 body.updatedAt = common_util_1.default.getCurrentDate();

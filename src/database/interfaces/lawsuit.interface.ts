@@ -9,12 +9,14 @@ export interface ILawsuit extends Document {
   lawsuitStatus: boolean;
   lawsuitPaidAmount: number;
   lawsuitPaidCount: number;
+  lawsuitReceiveAmount: number;
   lawsuitReceiveCount: number;
   lawfirmCompanyName: string;
   defendentCompanyName: string;
   plantiffCompanyName: string;
   logTrackingId: string;
   lawsuitDate: Date;
+  balance: number;
   createdAt: Date;
   updatedAt: Date;
 }

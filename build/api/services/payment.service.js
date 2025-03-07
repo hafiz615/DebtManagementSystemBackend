@@ -19,6 +19,7 @@ const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
+const attorney_repository_1 = require("../repository/attorney/attorney.repository");
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -26,6 +27,7 @@ class PaymentService {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.creditorReposiotry = new creditor_repository_1.CreditorRepository();
         this.debtorReposiotry = new debtor_repository_1.DebtorRepository();
+        this.attorneyReposiotry = new attorney_repository_1.AttorneyRepository();
     }
     async getHomePayments(req) {
         let arrayName = String(req.query.arrayName);
@@ -753,15 +755,20 @@ class PaymentService {
             }
         }
     }
-    async addACHDetailsCreditor(req) {
-        const creditor = await this.creditorReposiotry.getById(req.params.id);
-        if (!creditor)
-            return [false, constants_util_1.default.notFoundMessage('creditor')];
+    async addACHDetails(req) {
+        const reqTemp = req;
+        const type = 'creditor';
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user)
+            return [false, constants_util_1.default.notFoundMessage('user')];
+        const { name, email } = await common_util_1.default.getUserDetails(user.obj);
+        if (!user.obj.paynoteUserId) {
+            await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model);
+        }
         const data = req.body.data;
         const paymentObj = common_util_1.default.getDecryptedData(data);
-        if (!creditor.paynoteUserId)
-            return [false, 'User is not added in paynote!'];
-        const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);
+        const updatedUser = await common_util_1.default.getUserByType(req.params.id, type);
+        const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, updatedUser.obj.paynoteUserId);
         if (fundingSource?.error) {
             let message = '';
             if (fundingSource?.messages) {

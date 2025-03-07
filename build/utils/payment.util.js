@@ -338,7 +338,7 @@ class PaymentUtil {
                 $gte: new Date(payment.dueDate),
                 $lt: nextDate,
             },
-        });
+        }, undefined, undefined, undefined, ['caseId']);
         return payments;
     }
     async addDaysBasedOnPeriod(date, timePeriod) {

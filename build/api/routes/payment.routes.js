@@ -13,7 +13,7 @@ router.post('/getCreditorSuccessfulPayments', authorize_middleware_1.default.val
 router.post('/creditorUpcomingPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCreditorUpcomingPayments);
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
 router.get('/getAllUpcomingPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getAllUpcomingPayments);
-router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetailsCreditor, payment_controller_1.default.addACHDetailsCreditor);
+router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
 router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
 router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceCommission);

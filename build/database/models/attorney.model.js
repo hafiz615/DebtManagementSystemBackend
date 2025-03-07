@@ -73,6 +73,18 @@ const attorneyModel = new mongoose_1.Schema({
     platform: {
         type: Boolean,
     },
+    paynoteUserId: {
+        type: String,
+    },
+    paynoteSourceId: {
+        type: String,
+    },
+    paynoteSourceVerified: {
+        type: Boolean,
+    },
+    paynoteUserFound: {
+        type: Boolean,
+    },
     logTrackingId: {
         type: String,
     },

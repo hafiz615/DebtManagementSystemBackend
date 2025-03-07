@@ -305,7 +305,7 @@ class CreditorRequests {
             }
         };
     }
-    async syncCreditorEmail(req, res, next) {
+    async syncEmail(req, res, next) {
         const schema = joi_1.default.object({
             email: joi_1.default.string().email().required().messages({
                 'any.required': 'Email is required.',

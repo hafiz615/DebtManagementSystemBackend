@@ -209,9 +209,9 @@ class CreditorController {
     }
   };
 
-  syncPaynoteCreditor = async (req: Request, res: Response) => {
+  syncPaynote = async (req: Request, res: Response) => {
     try {
-      const response = await this.creditorService.syncPaynoteCreditor(req);
+      const response = await this.creditorService.syncPaynote(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -221,7 +221,7 @@ class CreditorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: [],
-          message: 'Creditor synced successfully!',
+          message: 'User synced successfully!',
         })
       );
     } catch (error) {
@@ -232,9 +232,9 @@ class CreditorController {
     }
   };
 
-  getCreditorSyncEmail = async (req: Request, res: Response) => {
+  getSyncEmail = async (req: Request, res: Response) => {
     try {
-      const response = await this.creditorService.getCreditorSyncEmail(req);
+      const response = await this.creditorService.getSyncEmail(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -244,7 +244,7 @@ class CreditorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: 'Creditor email returned successfully!',
+          message: 'Email returned successfully!',
         })
       );
     } catch (error) {

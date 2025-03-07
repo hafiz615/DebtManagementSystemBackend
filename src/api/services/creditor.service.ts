@@ -324,7 +324,12 @@ class CreditorService {
       req.params.id
     );
     if (!creditor) return [false, constants.notFoundMessage('creditor')];
-    const result = await paynoteUtil.createCustomer(creditor);
+    const result = await paynoteUtil.createCustomer(
+      creditor._id,
+      creditor.basicInformation.fullName,
+      creditor.basicInformation.email,
+      new CreditorRepository()
+    );
     console.log(result);
     if (result.error) {
       let message = '';
@@ -359,11 +364,11 @@ class CreditorService {
     return [true, `Funds transfer ${word} successfully`];
   }
 
-  async syncPaynoteCreditor(req: Request) {
-    const creditor = await this.creditorRepository.getById<ICreditor>(
-      req.params.id
-    );
-    if (!creditor) return [false, constants.notFoundMessage('creditor')];
+  async syncPaynote(req: Request) {
+    const reqTemp: any = req;
+    const type = 'creditor';
+    const user: any = await commonUtil.getUserByType(req.params.id, type);
+    if (!user) return [false, constants.notFoundMessage('user')];
     const email = req.body.email.toLowerCase();
     let page = 1;
     let limit = 100;
@@ -377,14 +382,25 @@ class CreditorService {
       email
     );
     if (resultSync[0]) {
-      await paynoteUtil.updateSyncCreditorObject(resultSync[1], req.params.id);
-      await paynoteUtil.upsertCreditorPaynoteEmail(req.params.id, email);
+      await paynoteUtil.updateSyncObject(
+        resultSync[1],
+        req.params.id,
+        user.model
+      );
+      await paynoteUtil.upsertPaynoteEmail(req.params.id, email);
       return resultSync;
     }
 
     const lastPage = result.list.last_page;
     if (lastPage === page) {
-      await paynoteUtil.updateSyncCreditorObject(resultSync[1], req.params.id);
+      user.model;
+      user.model;
+      user.model;
+      await paynoteUtil.updateSyncObject(
+        resultSync[1],
+        req.params.id,
+        user.model
+      );
       return resultSync;
     }
     let returnValue = null;
@@ -400,17 +416,19 @@ class CreditorService {
           email
         );
         if (resultSync[0]) {
-          await paynoteUtil.updateSyncCreditorObject(
+          await paynoteUtil.updateSyncObject(
             resultSync[1],
-            req.params.id
+            req.params.id,
+            user.model
           );
-          await paynoteUtil.upsertCreditorPaynoteEmail(req.params.id, email);
+          await paynoteUtil.upsertPaynoteEmail(req.params.id, email);
           return resultSync;
         }
         if (!resultSync[0] && i === lastPage) {
-          await paynoteUtil.updateSyncCreditorObject(
+          await paynoteUtil.updateSyncObject(
             resultSync[1],
-            req.params.id
+            req.params.id,
+            user.model
           );
           returnValue = [false, 'Could not found user in paynote'];
         }
@@ -419,16 +437,17 @@ class CreditorService {
     }
   }
 
-  async getCreditorSyncEmail(req: Request) {
-    const creditor = await this.creditorRepository.getById<ICreditor>(
-      req.params.id
-    );
-    if (!creditor) return [false, constants.notFoundMessage('creditor')];
+  async getSyncEmail(req: Request) {
+    const reqTemp: any = req;
+    const type = 'creditor';
+    const user: any = await commonUtil.getUserByType(req.params.id, type);
+    if (!user) return [false, constants.notFoundMessage('user')];
+    const email = await commonUtil.getUserDetails(user.obj);
     const result =
       await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
         syncId: req.params.id,
       });
-    if (!result) return [true, creditor.basicInformation.email];
+    if (!result) return [true, email];
     return [true, result.email];
   }
 

@@ -4,7 +4,7 @@ import responseHelper from '../../utils/responseHelper.util';
 import Joi from 'joi';
 
 class PaymentValidate {
-  async addACHDetailsCreditor(req: Request, res: Response, next: NextFunction) {
+  async addACHDetails(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       data: Joi.string().required().messages({
         'string.base': 'Data must be a string.',

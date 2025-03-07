@@ -15,11 +15,13 @@ class Lawsuit {
         this.lawsuitStatus = false;
         this.lawsuitPaidAmount = 0;
         this.lawsuitPaidCount = 0;
+        this.lawsuitReceiveAmount = 0;
         this.lawsuitReceiveCount = 0;
         this.lawfirmCompanyName = '';
         this.defendentCompanyName = '';
         this.plantiffCompanyName = '';
         this.logTrackingId = '';
+        this.balance = 0;
         this.lawsuitDate = common_util_1.default.getCurrentDate();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

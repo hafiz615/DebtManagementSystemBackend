@@ -2242,6 +2242,21 @@ class CaseUtil {
     return extractedFields;
   }
 
+  async getExtractionLawsuitBuffer(documents: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    if (!documents.length) return 'No Lawsuit found';
+    const extractedFields = await this.getExtractionLawsiut(
+      documents,
+      AIAuth.auth_token
+    );
+    return extractedFields;
+  }
+
   async findMCASubStr(str: string) {
     const regex = /(mca|contract)/i;
     const match = str.match(regex);
@@ -2298,6 +2313,32 @@ class CaseUtil {
         });
       }
       console.log('I am in getExtractionMCA_AIBuffer');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      return response.data.error ? response.data.error : response.data;
+    } catch (error) {
+      console.log(error.message);
+      return error.message;
+    }
+  }
+  async getExtractionLawsiut(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-lawsuit-details`;
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        form.append('documents', doc.buffer, {
+          filename: doc.originalname,
+          contentType: 'application/pdf',
+        });
+      }
+      console.log('I am in getExtractionLawsuit');
       console.log('URL: ', url);
       console.log('Payload: ', form);
       const response = await axiosInstance.post(url, form, {
@@ -2553,7 +2594,12 @@ class CaseUtil {
       });
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
-        await paynoteUtil.createCustomer(creditor);
+        await paynoteUtil.createCustomer(
+          creditor._id,
+          creditor.basicInformation.fullName,
+          creditor.basicInformation.email,
+          new CreditorRepository()
+        );
       }
       if (getCreditor) {
         body.updatedAt = commonUtil.getCurrentDate();

@@ -29,6 +29,8 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
 const index_1 = require("../../enums/index");
+const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
+const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -411,10 +413,12 @@ class DebtorService {
     }
     async retryAuth(paymentId) {
         let result = false;
-        let payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        let payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId' });
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
+        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
         if (payment.authorized === 'Success') {
             return [false, 'Payment already authorized'];
         }
@@ -456,6 +460,8 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
+            updateObjPayment['serviceFee'] = serviceFeeAmount;
+            updateObjPayment['legalFee'] = legalFeeAmount;
             // updateObjPayment['status'] = 'Pending';
             result = true;
             await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
@@ -483,6 +489,8 @@ class DebtorService {
         if (payment.captured === 'Success') {
             return [false, 'Payment already captured'];
         }
+        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
         let payments = [];
         let debtor = null;
         if (payment.caseId)
@@ -525,6 +533,7 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
+            lawsuit_util_1.default.updatePaymentLawsuit(payment);
             if (!payment.debtorTransId) {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
@@ -1110,6 +1119,7 @@ class DebtorService {
         let debtorBody = [];
         if (!debtorId) {
             const extractedFields = await case_util_1.default.getExtractionMCABuffer(files.mcaDocuments);
+            const lawsuitFields = await case_util_1.default.getExtractionLawsuitBuffer(files.lawsuitDocuments);
             if (typeof extractedFields === 'string')
                 return [false, extractedFields];
             debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
@@ -1128,6 +1138,9 @@ class DebtorService {
                     },
                 ];
             }
+            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitFields);
+            await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
+            debtorBody['lawsuitFields'] = [lawsuitFields.result];
             debtorBody['extractedFields'] = extractedFields.extracted_fields;
             debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
         }
@@ -1156,24 +1169,19 @@ class DebtorService {
                     },
                 ];
             }
+            if (newFiles.lawsuitDocuments && newFiles.lawsuitDocuments.length) {
+                const lawsuitFieldsNewFiles = await case_util_1.default.getExtractionLawsuitBuffer(files.lawsuitDocuments);
+                debtorExist[1].lawsuitFields.push(...[lawsuitFieldsNewFiles.result]);
+            }
             // Process MCA documents if any new ones exist
             if (newFiles.mcaDocuments && newFiles.mcaDocuments.length) {
                 const extractedFieldsForNewFiles = await case_util_1.default.getExtractionMCABuffer(newFiles.mcaDocuments);
-                if (typeof extractedFieldsForNewFiles === 'string') {
-                    return [
-                        true,
-                        {
-                            debtorId: String(debtorExist[1]._id),
-                            extractedFields: debtorExist[1].extractedFields,
-                            newMca,
-                            previousMca,
-                        },
-                    ];
+                if (typeof extractedFieldsForNewFiles !== 'string') {
+                    debtorExist[1].extractedFields.push(...extractedFieldsForNewFiles.extracted_fields);
+                    newMca = newFiles.mcaDocuments.map(obj => {
+                        return obj.originalname;
+                    });
                 }
-                debtorExist[1].extractedFields.push(...extractedFieldsForNewFiles.extracted_fields);
-                newMca = newFiles.mcaDocuments.map(obj => {
-                    return obj.originalname;
-                });
             }
             // Upload and assign new files to debtorBody
             const updatedDebtorBody = await this.uploadAndAssignFiles(newFiles, debtorExist[1]);

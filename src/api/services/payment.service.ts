@@ -20,18 +20,22 @@ import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {IDebtor} from '../../database/interfaces/debtor.interface';
 import caseUtil from '../../utils/case.util';
 import googleDriveUtil from '../../utils/googleDrive.util';
+import {IAttorney} from '../../database/interfaces/attorney.interface';
+import {AttorneyRepository} from '../repository/attorney/attorney.repository';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
   private creditorReposiotry: CreditorRepository;
   private debtorReposiotry: DebtorRepository;
+  private attorneyReposiotry: AttorneyRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.caseRepository = new CaseRepository();
     this.creditorReposiotry = new CreditorRepository();
     this.debtorReposiotry = new DebtorRepository();
+    this.attorneyReposiotry = new AttorneyRepository();
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
@@ -1010,19 +1014,25 @@ class PaymentService {
     }
   }
 
-  async addACHDetailsCreditor(req: Request) {
-    const creditor = await this.creditorReposiotry.getById<ICreditor>(
-      req.params.id
-    );
-    if (!creditor) return [false, constants.notFoundMessage('creditor')];
-
+  async addACHDetails(req: Request) {
+    const reqTemp: any = req;
+    const type = 'creditor';
+    const user: any = await commonUtil.getUserByType(req.params.id, type);
+    if (!user) return [false, constants.notFoundMessage('user')];
+    const {name, email}: any = await commonUtil.getUserDetails(user.obj);
+    if (!user.obj.paynoteUserId) {
+      await paynoteUtil.createCustomer(user.obj._id, name, email, user.model);
+    }
     const data = req.body.data;
     const paymentObj = commonUtil.getDecryptedData(data);
-    if (!creditor.paynoteUserId)
-      return [false, 'User is not added in paynote!'];
+    const updatedUser: any = await commonUtil.getUserByType(
+      req.params.id,
+      type
+    );
+
     const fundingSource = await paynoteUtil.addFundingSource(
       paymentObj,
-      creditor.paynoteUserId
+      updatedUser.obj.paynoteUserId
     );
     if (fundingSource?.error) {
       let message = '';

@@ -445,17 +445,23 @@ class PaymentUtil {
       payment.timePeriod
     );
     const payments =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>({
-        debtorId: debtorId,
-        caseId: {$ne: null},
-        authorized: {$ne: 'Success'},
-        transactionType: {$nin: ['Wire', 'Check']},
-        isDeleted: false,
-        dueDate: {
-          $gte: new Date(payment.dueDate),
-          $lt: nextDate,
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: debtorId,
+          caseId: {$ne: null},
+          authorized: {$ne: 'Success'},
+          transactionType: {$nin: ['Wire', 'Check']},
+          isDeleted: false,
+          dueDate: {
+            $gte: new Date(payment.dueDate),
+            $lt: nextDate,
+          },
         },
-      });
+        undefined,
+        undefined,
+        undefined,
+        ['caseId']
+      );
     return payments;
   }
 

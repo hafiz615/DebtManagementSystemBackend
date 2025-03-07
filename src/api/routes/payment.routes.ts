@@ -38,8 +38,8 @@ router.get(
 router.post(
   '/addACHDetailsCreditor/:id',
   authorize.validateAuth,
-  paymentValidate.addACHDetailsCreditor,
-  paymentController.addACHDetailsCreditor
+  paymentValidate.addACHDetails,
+  paymentController.addACHDetails
 );
 
 router.get(
