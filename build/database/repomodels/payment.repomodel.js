@@ -41,6 +41,7 @@ class Payment {
         this.authorizedDate = '';
         this.serviceFee = 0;
         this.legalFee = 0;
+        this.creditorName = '';
     }
 }
 exports.Payment = Payment;

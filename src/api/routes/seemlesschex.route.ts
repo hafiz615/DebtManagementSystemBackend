@@ -52,4 +52,12 @@ router.get(
 );
 
 router.post('/statusChanged', seemlesschexController.statusChanged);
+
+router.post(
+  '/update-invoice-status/:token',
+  paymentValidate.updatePaymentInvoiceStatus,
+  paymentController.updatePaymentInvoiceStatus
+);
+
+router.get('/get-invoice-status/:token', paymentController.getInvoiceStatus);
 export default router;

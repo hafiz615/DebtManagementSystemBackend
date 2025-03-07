@@ -999,6 +999,7 @@ class DebtorService {
         });
         req.body.intervals = debtor.intervals;
         req.body.debtorName = debtor.basicInformation.fullName;
+        req.body.creditorName = '';
         case_util_1.default.createPayment(req.body);
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
@@ -1324,6 +1325,29 @@ class DebtorService {
             await easypay_util_1.default.upsertDebtorEasyPayEmail(req.params.id, email, req.body.platform, checkClientExist[1]['userIds']);
         }
         return checkClientExist;
+    }
+    async clientFinancialSummary(req) {
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor)
+            return [false, constants_util_1.default.notFoundMessage('Client')];
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: req.params.id, isDeleted: false }, 'remaining');
+        const totalRemaining = cases.reduce((sum, caseItem) => sum + (caseItem.remaining || 0), 0);
+        const getPayments = await this.paymentRepository.getAllWithoutPagination({
+            debtorId: req.params.id,
+            isDeleted: false,
+        }, 'authorized captured amount dueDate transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture');
+        return [true, { debtBalance: totalRemaining, paymentHistory: getPayments }];
+    }
+    async addDebtorInvoice(req) {
+        const getDebtor = await this.debtorRepository.getById(req.body.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const debtorName = getDebtor?.basicInformation?.fullName;
+        const response = await debtor_util_1.default.createPaymentInvoice(req.body.platform, req.body.id, req.body.amount, req.body.email, debtorName);
+        if (!response[0])
+            return response;
+        return response;
     }
 }
 exports.default = DebtorService;

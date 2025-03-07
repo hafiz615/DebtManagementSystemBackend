@@ -119,6 +119,7 @@ const PaymentModel: Schema = new Schema({
   legalFee: {
     type: Number,
   },
+  creditorName: String,
 });
 
 PaymentModel.pre('save', async function (next) {

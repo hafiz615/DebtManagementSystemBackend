@@ -45,6 +45,33 @@ class PaymentUtil {
     return this.getFilteredPaymentsObj(transformedArray, arrayName);
   }
 
+  async getFilteredPaymentsCreditor(payments: any) {
+    let transformedArray = payments.map(obj => ({
+      id: String(obj._id),
+      status: obj.status,
+      caseOwner: obj.caseId?.caseOwner ? obj.caseId.caseOwner : '',
+      totalDebt: obj.caseId?.totalDebt ? obj.caseId.totalDebt : 0,
+      debtorName: obj.debtorName,
+      creditorName: obj.creditorName,
+      // SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
+      authorized: obj.authorized,
+      captured: obj.captured,
+      amount: obj.amount,
+      dueDate: obj.dueDate,
+      failedReasonAuthorization: obj.failedReasonAuthorization,
+      failedReasonCaptured: obj.failedReasonCaptured,
+      tryDate: obj.rescheduled,
+      caseId: obj?.caseId?._id ? String(obj.caseId._id) : '',
+      transactionType: 'ACH',
+      paymentGateway: 'Paynote',
+      sendViaPaynote: obj.sendViaPaynote,
+      failedReasonPaynote: obj.failedReasonPaynote,
+      debtorId: obj.debtorId,
+    }));
+
+    return transformedArray;
+  }
+
   async getFilteredPaymentsObj(transformedArray: any, arrayName: string) {
     let failedCaptures = [],
       successCaptures = [],
@@ -459,20 +486,24 @@ class PaymentUtil {
     return resultDate;
   }
 
-  async createPaymentDocForLink(
+  async createPaymentDoc(
     amount: number,
     token: string,
-    link: string,
-    debtorId: string
+    debtorId: string,
+    debtorName?: string,
+    link?: string
   ) {
     const payment = new Payment();
     payment.amount = amount;
     payment.debtorTransId = token;
-    payment.paymentLink = link;
+    if (link) payment.paymentLink = link;
     payment.status = 'Pending';
     payment.debtorId = debtorId;
-    payment.transactionType = 'Link';
-    await this.paymentRepository.create<IPayment>(payment as any);
+    if (debtorName) payment.debtorName = debtorName;
+    payment.transactionType = link ? 'Link' : 'Invoice';
+
+    const hello = await this.paymentRepository.create<IPayment>(payment as any);
+    console.log('hello', hello);
   }
 }
 export default new PaymentUtil();

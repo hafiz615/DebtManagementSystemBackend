@@ -35,4 +35,5 @@ export class Payment {
   authorizedDate = '';
   serviceFee = 0;
   legalFee = 0;
+  creditorName = '';
 }

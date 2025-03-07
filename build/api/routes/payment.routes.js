@@ -10,6 +10,7 @@ const payment_validate_1 = __importDefault(require("../../middleware/validators/
 const router = (0, express_1.Router)();
 router.post('/getHomePayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getHomePayments);
 router.post('/getCreditorSuccessfulPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCreditorSuccessfulPayments);
+router.post('/creditorUpcomingPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCreditorUpcomingPayments);
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
 router.get('/getAllUpcomingPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getAllUpcomingPayments);
 router.post('/addACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
