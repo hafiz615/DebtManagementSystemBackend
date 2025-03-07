@@ -757,7 +757,7 @@ class PaymentService {
     }
     async addACHDetails(req) {
         const reqTemp = req;
-        const type = reqTemp.query.type;
+        const type = 'creditor';
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user)
             return [false, constants_util_1.default.notFoundMessage('user')];

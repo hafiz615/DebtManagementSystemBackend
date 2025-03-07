@@ -49,14 +49,14 @@ router.post(
 );
 
 router.post(
-  '/syncPaynote/:id',
+  '/syncPaynoteCreditor/:id',
   authorize.validateAuth,
   creditorValidate.syncEmail,
   creditorController.syncPaynote
 );
 
 router.get(
-  '/getSyncEmail/:id',
+  '/getCreditorSyncEmail/:id',
   authorize.validateAuth,
   creditorController.getSyncEmail
 );
