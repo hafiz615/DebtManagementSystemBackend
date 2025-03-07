@@ -189,6 +189,12 @@ const caseModel = new mongoose_1.Schema({
     legalFee: {
         type: Number,
     },
+    affiliateLink: {
+        type: String,
+    },
+    affiliateEmail: {
+        type: String,
+    }
 });
 caseModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

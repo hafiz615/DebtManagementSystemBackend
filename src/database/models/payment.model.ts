@@ -113,6 +113,13 @@ const PaymentModel: Schema = new Schema({
   authorizedDate: {
     type: Date,
   },
+  serviceFee: {
+    type: Number,
+  },
+  legalFee: {
+    type: Number,
+  },
+  creditorName: String,
 });
 
 PaymentModel.pre('save', async function (next) {

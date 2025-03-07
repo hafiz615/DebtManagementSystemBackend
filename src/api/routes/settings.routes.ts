@@ -98,15 +98,12 @@ router.get(
 );
 
 router.post(
-  '/serviceFee',
+  '/fee',
   authorize.validateAuth,
-  settingsController.updateServiceFee
+  settingValidate.validateFee,
+  settingsController.updateFee
 );
 
-router.get(
-  '/serviceFee',
-  authorize.validateAuth,
-  settingsController.getServiceFee
-);
+router.get('/fee', authorize.validateAuth, settingsController.getFee);
 
 export default router;

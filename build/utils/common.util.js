@@ -10,11 +10,39 @@ const n_krypta_1 = require("n-krypta");
 const dotenv_1 = __importDefault(require("dotenv"));
 const enums_1 = require("../enums");
 const mime_types_1 = __importDefault(require("mime-types"));
+const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
+const attorney_repository_1 = require("../api/repository/attorney/attorney.repository");
 dotenv_1.default.config();
 class CommonUtil {
+    constructor() {
+        this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.attorneyRepository = new attorney_repository_1.AttorneyRepository();
+    }
     getCurrentDate() {
         let date = new Date().toUTCString();
         return date;
+    }
+    async getUserByType(id, type) {
+        switch (type) {
+            case 'creditor':
+                return {
+                    obj: await this.creditorRepository.getById(id),
+                    model: new creditor_repository_1.CreditorRepository(),
+                };
+            case 'attorney':
+                return {
+                    obj: await this.attorneyRepository.getById(id),
+                    model: new attorney_repository_1.AttorneyRepository(),
+                };
+            default:
+                return null;
+        }
+    }
+    async getUserDetails(data) {
+        return {
+            name: data?.basicInformation?.fullName || data?.name,
+            email: data?.basicInformation?.email || data?.email,
+        };
     }
     async hashPassword(password) {
         const salt = await bcryptjs_1.default.genSalt(10);

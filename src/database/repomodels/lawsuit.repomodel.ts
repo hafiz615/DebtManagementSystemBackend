@@ -9,11 +9,13 @@ export class Lawsuit {
   lawsuitStatus = false;
   lawsuitPaidAmount = 0;
   lawsuitPaidCount = 0;
+  lawsuitReceiveAmount = 0;
   lawsuitReceiveCount = 0;
   lawfirmCompanyName = '';
   defendentCompanyName = '';
   plantiffCompanyName = '';
   logTrackingId = '';
+  balance = 0;
   lawsuitDate = commonUtil.getCurrentDate();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

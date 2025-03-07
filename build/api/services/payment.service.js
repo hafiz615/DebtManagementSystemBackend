@@ -19,6 +19,7 @@ const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
+const attorney_repository_1 = require("../repository/attorney/attorney.repository");
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -26,6 +27,7 @@ class PaymentService {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.creditorReposiotry = new creditor_repository_1.CreditorRepository();
         this.debtorReposiotry = new debtor_repository_1.DebtorRepository();
+        this.attorneyReposiotry = new attorney_repository_1.AttorneyRepository();
     }
     async getHomePayments(req) {
         let arrayName = String(req.query.arrayName);
@@ -97,19 +99,22 @@ class PaymentService {
             caseId: { $ne: null },
             isDeleted: false,
         };
-        let upcomingFilter = {};
         if (days) {
             filters = await this.getDaysFilterPopulated(filters, days);
         }
-        const populatedFiltersResult = await this.populateFilterCreditorSuccessful({ ...filters }, req);
+        const populatedFiltersResult = await this.populateFilterCreditor({ ...filters }, req, 'sendViaPaynote', 'Success');
         let page = populatedFiltersResult.page;
         let limit = populatedFiltersResult.limit;
         const finalFilters = populatedFiltersResult.filters;
-        const payments = await this.getAllPaymentsQuery(finalFilters, page, limit);
+        let payments = await this.getAllPaymentsQuery(finalFilters, page, limit);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
-        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments, 'successPayments');
+        // const paymentsObj = await paymentUtil.getFilteredPayments(
+        //   payments,
+        //   'successPayments'
+        // );
+        payments = await payment_util_1.default.getFilteredPaymentsCreditor(payments);
         if (req.query.filters !== 'true' && req.query.search !== 'true') {
             const count = await this.paymentRepository.getCount(finalFilters);
             console.log(finalFilters, 'hehehehe');
@@ -122,21 +127,63 @@ class PaymentService {
             if (req.query.limit && !isNaN(Number(req.query.limit))) {
                 limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
             }
-            paymentsObj['successPayments'] =
-                await payment_util_1.default.searchAndFilterHomePayments(paymentsObj['successPayments'], req);
-            counts['successPayments'] = paymentsObj['successPayments']?.length;
-            paymentsObj['successPayments'] = paymentsObj['successPayments']?.slice((page - 1) * limit, page * limit);
+            payments = await payment_util_1.default.searchAndFilterHomePayments(payments, req);
+            counts['successPayments'] = payments?.length;
+            payments = payments?.slice((page - 1) * limit, page * limit);
         }
         // const successPayments = structuredClone(paymentsObj.successPayments);
-        for (const payment of paymentsObj.successPayments) {
-            payment.transactionType = 'ACH';
-            payment.paymentGateway = 'Paynote';
-        }
         // paymentsObj.successPayments = successPayments;
         return [
             true,
             {
-                payments: paymentsObj,
+                payments: payments,
+                counts: counts,
+            },
+        ];
+    }
+    async getCreditorUpcomingPayments(req) {
+        let days = Number(req.query.days);
+        let counts = {};
+        let filters = {
+            caseId: { $ne: null },
+            isDeleted: false,
+        };
+        if (days) {
+            let upcomingFilter = await this.getDaysFilterUpcoming(days);
+            filters['dueDate'] = upcomingFilter;
+        }
+        const populatedFiltersResult = await this.populateFilterCreditor({ ...filters }, req, 'status', 'Upcoming');
+        let page = populatedFiltersResult.page;
+        let limit = populatedFiltersResult.limit;
+        const finalFilters = populatedFiltersResult.filters;
+        let payments = await this.getAllPaymentsQuery(finalFilters, page, limit);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        // const paymentsObj = await paymentUtil.getFilteredPayments(
+        //   payments,
+        //   'successPayments'
+        // );
+        payments = await payment_util_1.default.getFilteredPaymentsCreditor(payments);
+        if (req.query.filters !== 'true' && req.query.search !== 'true') {
+            const count = await this.paymentRepository.getCount(finalFilters);
+            counts['creditorUpcomingPayments'] = count;
+        }
+        if (req.query.filters === 'true' || req.query.search === 'true') {
+            if (req.query.page && !isNaN(Number(req.query.page))) {
+                page = Number(req.query.page) ? Number(req.query.page) : page;
+            }
+            if (req.query.limit && !isNaN(Number(req.query.limit))) {
+                limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+            }
+            payments = await payment_util_1.default.searchAndFilterHomePayments(payments, req);
+            counts['creditorUpcomingPayments'] = payments?.length;
+            payments = payments?.slice((page - 1) * limit, page * limit);
+        }
+        return [
+            true,
+            {
+                payments: payments,
                 counts: counts,
             },
         ];
@@ -213,7 +260,7 @@ class PaymentService {
         }
         return { filters, page, limit };
     }
-    async populateFilterCreditorSuccessful(filters, req) {
+    async populateFilterCreditor(filters, req, name, status) {
         let page = 1;
         let limit = 5;
         if (req.query.page && !isNaN(Number(req.query.page))) {
@@ -244,7 +291,7 @@ class PaymentService {
             page = 0;
             limit = 0;
         }
-        filters['sendViaPaynote'] = 'Success';
+        filters[name] = status;
         return { filters, page, limit };
     }
     async getDaysFilterPopulated(filters, days) {
@@ -348,19 +395,9 @@ class PaymentService {
         return Array.from(uniqueObjects.values());
     }
     async getAllPaymentsQuery(filters, page, limit) {
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status sendViaPaynote debtorTransId transactionType paymentGateway debtorName debtorId', undefined, { createdAt: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status sendViaPaynote debtorTransId transactionType paymentGateway debtorName debtorId creditorName', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: [
-                {
-                    path: 'debtor',
-                    select: ['basicInformation.fullName', 'basicInformation.SSID'],
-                },
-                {
-                    path: 'creditor',
-                    select: ['basicInformation.fullName'],
-                },
-            ],
         }, undefined, page, limit);
     }
     async getCountForAllPaymentsStatus(filters, upcomingFilter, dueDateFilter) {
@@ -473,12 +510,15 @@ class PaymentService {
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
-        const paymentsObj = await payment_util_1.default.getFilteredPayments(payments, 'default');
+        // const paymentsObj = await paymentUtil.getFilteredPayments(
+        //   payments,
+        //   'default'
+        // );
         return [
             true,
             {
                 transactions: {
-                    upcomingPayments: paymentsObj.upcomingPayments,
+                    upcomingPayments: payments,
                     totalCount: paymentsCount,
                 },
             },
@@ -538,20 +578,7 @@ class PaymentService {
             caseId: { $ne: null },
             isDeleted: false,
             status: 'Upcoming',
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status', undefined, { createdAt: -1 }, {
-            path: 'caseId',
-            select: ['_id', 'caseOwner', 'totalDebt'],
-            populate: [
-                {
-                    path: 'debtor',
-                    select: ['basicInformation.fullName', 'basicInformation.SSID'],
-                },
-                {
-                    path: 'creditor',
-                    select: ['basicInformation.fullName'],
-                },
-            ],
-        }, undefined, page, limit);
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
     }
     async getAllPaymentsByDebtorCount(id) {
         return await this.paymentRepository.getCount({
@@ -728,15 +755,20 @@ class PaymentService {
             }
         }
     }
-    async addACHDetailsCreditor(req) {
-        const creditor = await this.creditorReposiotry.getById(req.params.id);
-        if (!creditor)
-            return [false, constants_util_1.default.notFoundMessage('creditor')];
+    async addACHDetails(req) {
+        const reqTemp = req;
+        const type = 'creditor';
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user)
+            return [false, constants_util_1.default.notFoundMessage('user')];
+        const { name, email } = await common_util_1.default.getUserDetails(user.obj);
+        if (!user.obj.paynoteUserId) {
+            await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model);
+        }
         const data = req.body.data;
         const paymentObj = common_util_1.default.getDecryptedData(data);
-        if (!creditor.paynoteUserId)
-            return [false, 'User is not added in paynote!'];
-        const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, creditor.paynoteUserId);
+        const updatedUser = await common_util_1.default.getUserByType(req.params.id, type);
+        const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, updatedUser.obj.paynoteUserId);
         if (fundingSource?.error) {
             let message = '';
             if (fundingSource?.messages) {
@@ -960,6 +992,36 @@ class PaymentService {
         if (!payment)
             return [true, constants_util_1.default.notFoundMessage('payment link')];
         return [true, { status: payment.status }];
+    }
+    async updatePaymentInvoiceStatus(req) {
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: req.params.token,
+        });
+        if (!payment)
+            return [false, constants_util_1.default.notFoundMessage('payment Invoice')];
+        await this.paymentRepository.updateByOne({ debtorTransId: req.params.token }, { status: req.body.status });
+        let results = null;
+        let caseIds = null;
+        if (req.body.status === 'Success') {
+            const debtor = await this.debtorReposiotry.getOne({
+                _id: payment.debtorId,
+            });
+            const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
+            const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(debtor.extractedFields, creditorNames);
+            for (const bin of caseTemp) {
+                bin['platform'] = true;
+                bin.creditor.platform = true;
+            }
+            results = await case_util_1.default.createCreditorsCases({ data: caseTemp }, '', '', payment.debtorId);
+            const caseList = Array.isArray(results[1]) ? results[1] : results;
+            caseIds = caseList.map(result => ({
+                caseId: result._id,
+                caseCode: result.caseCode,
+                debtorId: result.debtor,
+                creditorId: result.creditor,
+            }));
+        }
+        return [true, caseIds];
     }
 }
 exports.default = PaymentService;

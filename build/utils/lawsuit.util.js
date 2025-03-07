@@ -13,6 +13,8 @@ const lawfirm_util_1 = __importDefault(require("./lawfirm.util"));
 const lawfirm_repository_1 = require("../api/repository/lawfirm/lawfirm.repository");
 const attorney_repository_1 = require("../api/repository/attorney/attorney.repository");
 const attorney_util_1 = __importDefault(require("./attorney.util"));
+const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class LawsuitUtil {
     constructor() {
@@ -21,6 +23,7 @@ class LawsuitUtil {
         this.attorneyRepository = new attorney_repository_1.AttorneyRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
     }
     async lawsuitFormation(req, caseData) {
         const { lawsuit, attorney } = req.body;
@@ -54,6 +57,7 @@ class LawsuitUtil {
             defendentCompanyName: lawsuit.defendentCompanyName,
             plantiffCompanyName: lawsuit.plantiffCompanyName,
             lawsuitDate: lawsuit.startDate,
+            balance: lawsuit.balance,
         };
         const lawsuitTemp = await this.createLawsuit(lawsuitData);
         return lawsuitTemp ? [true, lawsuitTemp] : false;
@@ -63,14 +67,34 @@ class LawsuitUtil {
         const validatedLawsuit = dataCopier_util_1.DataCopier.copy(newLawsuit, data);
         return await this.lawsuitRepository.create(validatedLawsuit);
     }
-    async updateLegalFee(payments) {
+    async updateFee(payments) {
         for (const payment of payments) {
             const updateObjPayment = {};
             if (payment.caseId) {
-                updateObjPayment['legalFee'] = await this.getLegalFee(payment.caseId);
+                const fee = await this.getLegalFee(payment.caseId);
+                updateObjPayment['legalFee'] = fee;
+                updateObjPayment['serviceFee'] = await this.getServiceFee(payment.caseId);
+                updateObjPayment['updatedAt'] = common_util_1.default.getCurrentDate();
                 await this.paymentRepository.updateById(payment._id, updateObjPayment);
+                this.updateLawsuitFee(fee, payment.caseId.debtor, payment.caseId.creditor);
             }
         }
+    }
+    async updatePaymentLawsuit(payments) {
+        for (const payment of payments) {
+            if (payment.caseId) {
+                const fee = await this.getLegalFee(payment.caseId);
+                this.updateLawsuitFee(fee, payment.caseId.debtor, payment.caseId.creditor);
+            }
+        }
+    }
+    async updateLawsuitFee(fee, debtorId, creditorId) {
+        await this.lawsuitRepository.updateByOne({ creditorId, debtorId }, {
+            $inc: {
+                lawsuitReceiveAmount: fee,
+                lawsuitReceiveCount: 1,
+            },
+        });
     }
     async getTotalLegalFee(payments) {
         let totalLegalFee = 0;
@@ -81,19 +105,41 @@ class LawsuitUtil {
         }
         return totalLegalFee;
     }
+    async getTotalServiceFee(payments) {
+        let totalServiceFee = 0;
+        for (const payment of payments) {
+            if (payment.caseId) {
+                totalServiceFee += await this.getServiceFee(payment.caseId);
+            }
+        }
+        return totalServiceFee;
+    }
     async getLegalFee(caseId) {
         const caseData = await this.caseRepository.getById(caseId);
+        if (caseData.legalFee !== 0) {
+            return caseData.legalFee;
+        }
         const lawsuitData = await this.lawsuitRepository.getOne({
             debtorId: caseData.debtor,
             creditorId: caseData.creditor,
-        }, undefined, undefined, [
-            { path: 'lawfirmId', select: ['lawfirmFee'] },
-            { path: 'attorneyId', select: ['attorneyFee'] },
-        ]);
-        const legalFee = lawsuitData
-            ? lawsuitData.attorneyId?.attorneyFee
-            : lawsuitData.lawfirmId?.lawfirmFee;
-        return legalFee;
+        });
+        let legalFee = null;
+        if (lawsuitData && lawsuitData.lawsuitStatus) {
+            legalFee = await this.serviceFeeRepository.getOne({
+                type: 'legalFee',
+            });
+        }
+        return legalFee ? legalFee.fee : 0;
+    }
+    async getServiceFee(caseId) {
+        const caseData = await this.caseRepository.getById(caseId);
+        if (caseData.serviceFee !== 0) {
+            return caseData.serviceFee;
+        }
+        const serviceFee = await this.serviceFeeRepository.getOne({
+            type: 'serviceFee',
+        });
+        return serviceFee ? serviceFee.fee : 0;
     }
 }
 exports.default = new LawsuitUtil();

@@ -17,6 +17,27 @@ class LawfirmUtil {
     return await this.lawfirmRepository.create<ILawfirm>(validatedLawfirm);
   }
 
+  async upsertLawfirm(data: any) {
+    const newLawfirm = new Lawfirm();
+    const validatedLawfirm = DataCopier.copy(newLawfirm, data as ILawfirm);
+    return await this.lawfirmRepository.upsert<ILawfirm>(
+      {lawfirmCompanyName: data.lawfirmCompanyName},
+      validatedLawfirm
+    );
+  }
+
+  async lawfirmDetails(data: any) {
+    return {
+      lawfirmCompanyName: data.result.lawfirmCompanyName,
+      email: data.result.email,
+      phone: data.result.phone,
+      address: data.result.address,
+      city: data.result.city,
+      state: data.result.state,
+      EIN: data.result.EIN,
+    };
+  }
+
   async lawfirmData(req: any) {
     return {
       name: req.body['lawfirm.name'],

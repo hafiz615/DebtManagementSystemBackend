@@ -140,6 +140,13 @@ const PaymentModel = new mongoose_1.Schema({
     authorizedDate: {
         type: Date,
     },
+    serviceFee: {
+        type: Number,
+    },
+    legalFee: {
+        type: Number,
+    },
+    creditorName: String,
 });
 PaymentModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

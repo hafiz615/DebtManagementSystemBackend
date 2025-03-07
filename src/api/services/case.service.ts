@@ -316,6 +316,32 @@ class CaseService {
     return [true, groupedByDebtor];
   };
 
+  updateCaseAffiliation = async (
+    req: Request
+  ): Promise<[boolean, ICase | string]> => {
+    let reqTemp: any = req;
+    let findCase = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
+    req.body.updatedAt = commonUtil.getCurrentDate();
+    const caseUpdated = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      req.body
+    );
+    if (!caseUpdated) {
+      return [false, constantsUtil.failureUpdateMessage('Case Affiliation')];
+    }
+
+    await caseUtil.addInHistory(
+      {
+        Time: new Date(commonUtil.getCurrentDate()),
+        Action: 'Case Updated',
+        'Updated By': reqTemp.name,
+      },
+      caseUpdated._id
+    );
+    return [true, constantsUtil.successUpdateMessage('Case Affiliation')];
+  };
+
   updateCase = async (req: Request): Promise<[boolean, ICase | string]> => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
@@ -630,6 +656,28 @@ class CaseService {
       );
     }
     return getScores;
+  };
+
+  affiliateCasesFinancialSummary = async (req: Request) => {
+    const cases: any = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {affiliateEmail: req.body.affiliateId},
+      'debtor'
+    );
+
+    if (cases.length === 0)
+      return [false, constantsUtil.notFoundMessage('affiliate cases')];
+
+    const debtors = cases.map((caseItem: ICase) => String(caseItem.debtor));
+    const paymentsHistory: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: {$in: debtors},
+          isDeleted: false,
+        },
+        'authorized captured  amount dueDate  transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture'
+      );
+
+    return [true, {paymentsHistory}];
   };
 
   getSettlementRange = async (
@@ -1424,10 +1472,11 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      ['debtor']
+      [{path: 'creditor', select: 'basicInformation.fullName'}, 'debtor']
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;
+    const creditor = findCase.creditor;
     if (
       req.body?.intervals &&
       req.body?.intervals.length &&
@@ -1458,6 +1507,7 @@ class CaseService {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
     }
     caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
+    caseUpdated['creditorName'] = creditor.basicInformation.fullName;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }
@@ -1469,7 +1519,7 @@ class CaseService {
       },
       caseUpdated._id
     );
-    this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
+    // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
     return [true, caseUpdated];
   };
 
@@ -1482,7 +1532,8 @@ class CaseService {
       ['debtor']
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
-    //const getDebtor = findCase.debtor;
+    const getDebtor = findCase.debtor;
+    const creditor = findCase.creditor;
     if (
       req.body?.intervals &&
       req.body?.intervals.length &&
@@ -1503,6 +1554,8 @@ class CaseService {
     if (!caseUpdated) {
       return [false, constantsUtil.failureUpdateMessage('case plan')];
     }
+    caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
+    caseUpdated['creditorName'] = creditor.basicInformation.fullName;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }

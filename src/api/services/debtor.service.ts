@@ -44,6 +44,8 @@ import {platform} from 'os';
 import {ILawfirm} from '../../database/interfaces/lawfirm.interface';
 import AttorneyUtil from '../../utils/attorney.util';
 import {IAttorney} from '../../database/interfaces/attorney.interface';
+import lawsuitUtil from '../../utils/lawsuit.util';
+import lawfirmUtil from '../../utils/lawfirm.util';
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -444,11 +446,13 @@ class DebtorService {
       paymentId,
       undefined,
       undefined,
-      {path: 'caseId', populate: [{path: 'debtor'}]}
+      {path: 'caseId'}
     );
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
+    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     if (payment.authorized === 'Success') {
       return [false, 'Payment already authorized'];
     }
@@ -494,6 +498,8 @@ class DebtorService {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
+      updateObjPayment['serviceFee'] = serviceFeeAmount;
+      updateObjPayment['legalFee'] = legalFeeAmount;
       // updateObjPayment['status'] = 'Pending';
       result = true;
       await emailUtil.sendEmailOrSmsByEvent(
@@ -538,6 +544,8 @@ class DebtorService {
     if (payment.captured === 'Success') {
       return [false, 'Payment already captured'];
     }
+    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     let payments: IPayment[] = [];
     let debtor = null;
     if (payment.caseId) debtor = payment.caseId.debtor;
@@ -589,6 +597,7 @@ class DebtorService {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
       updateObjPayment['status'] = 'Pending';
+      lawsuitUtil.updatePaymentLawsuit(payment);
       if (!payment.debtorTransId) {
         updateObjPayment['debtorTransId'] = transactionId;
       }
@@ -1304,6 +1313,7 @@ class DebtorService {
     });
     req.body.intervals = debtor.intervals;
     req.body.debtorName = debtor.basicInformation.fullName;
+    req.body.creditorName = '';
     caseUtil.createPayment(req.body);
 
     return [true, constants.successAddMessage('Payment plan')];
@@ -1461,6 +1471,9 @@ class DebtorService {
       const extractedFields = await caseUtil.getExtractionMCABuffer(
         files.mcaDocuments
       );
+      const lawsuitFields = await caseUtil.getExtractionLawsuitBuffer(
+        files.lawsuitDocuments
+      );
       if (typeof extractedFields === 'string') return [false, extractedFields];
 
       debtorBody = await debtorUtil.mapDebtor(extractedFields.extracted_fields);
@@ -1483,6 +1496,9 @@ class DebtorService {
           },
         ];
       }
+      const lawfirmTemp = await lawfirmUtil.lawfirmDetails(lawsuitFields);
+      await lawfirmUtil.upsertLawfirm(lawfirmTemp);
+      debtorBody['lawsuitFields'] = [lawsuitFields.result];
       debtorBody['extractedFields'] = extractedFields.extracted_fields;
       debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
     } else {
@@ -1512,27 +1528,25 @@ class DebtorService {
           },
         ];
       }
+      if (newFiles.lawsuitDocuments && newFiles.lawsuitDocuments.length) {
+        const lawsuitFieldsNewFiles = await caseUtil.getExtractionLawsuitBuffer(
+          files.lawsuitDocuments
+        );
+        debtorExist[1].lawsuitFields.push(...[lawsuitFieldsNewFiles.result]);
+      }
+
       // Process MCA documents if any new ones exist
       if (newFiles.mcaDocuments && newFiles.mcaDocuments.length) {
         const extractedFieldsForNewFiles =
           await caseUtil.getExtractionMCABuffer(newFiles.mcaDocuments);
-        if (typeof extractedFieldsForNewFiles === 'string') {
-          return [
-            true,
-            {
-              debtorId: String(debtorExist[1]._id),
-              extractedFields: debtorExist[1].extractedFields,
-              newMca,
-              previousMca,
-            },
-          ];
+        if (typeof extractedFieldsForNewFiles !== 'string') {
+          debtorExist[1].extractedFields.push(
+            ...extractedFieldsForNewFiles.extracted_fields
+          );
+          newMca = newFiles.mcaDocuments.map(obj => {
+            return obj.originalname;
+          });
         }
-        debtorExist[1].extractedFields.push(
-          ...extractedFieldsForNewFiles.extracted_fields
-        );
-        newMca = newFiles.mcaDocuments.map(obj => {
-          return obj.originalname;
-        });
       }
       // Upload and assign new files to debtorBody
       const updatedDebtorBody = await this.uploadAndAssignFiles(
@@ -1728,6 +1742,53 @@ class DebtorService {
       );
     }
     return checkClientExist;
+  }
+
+  async clientFinancialSummary(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+
+    if (!getDebtor) return [false, constants.notFoundMessage('Client')];
+
+    const cases: ICase[] =
+      await this.caseRepository.getAllWithoutPagination<ICase>(
+        {debtor: req.params.id, isDeleted: false},
+        'remaining'
+      );
+
+    const totalRemaining = cases.reduce(
+      (sum: any, caseItem: any) => sum + (caseItem.remaining || 0),
+      0
+    );
+
+    const getPayments: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: req.params.id,
+          isDeleted: false,
+        },
+        'authorized captured amount dueDate transactionType paymentGateway debtorName timePeriod retriesAuth retriesCapture'
+      );
+
+    return [true, {debtBalance: totalRemaining, paymentHistory: getPayments}];
+  }
+
+  async addDebtorInvoice(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(req.body.id);
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    const debtorName = getDebtor?.basicInformation?.fullName;
+    const response = await debtorUtil.createPaymentInvoice(
+      req.body.platform,
+      req.body.id,
+      req.body.amount,
+      req.body.email,
+      debtorName
+    );
+    if (!response[0]) return response;
+    return response;
   }
 }
 

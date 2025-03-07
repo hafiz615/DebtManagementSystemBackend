@@ -13,10 +13,6 @@ export class Lawfirm {
   isDeleted = false;
   lawfirmFee = 0;
   platform = false;
-  paynoteUserId = '';
-  paynoteSourceId = '';
-  paynoteSourceVerified = false;
-  paynoteUserFound = false;
   logTrackingId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

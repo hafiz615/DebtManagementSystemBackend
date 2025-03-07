@@ -137,6 +137,9 @@ const debtorSchema = new mongoose_1.Schema({
     extractedFields: {
         type: mongoose_1.Schema.Types.Mixed,
     },
+    lawsuitFields: {
+        type: mongoose_1.Schema.Types.Mixed,
+    },
     totalCommission: {
         type: Number,
     },

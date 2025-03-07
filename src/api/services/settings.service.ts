@@ -20,7 +20,7 @@ import {NotificationConfiguration} from '../../database/repomodels/notificationC
 import {JustificationRepository} from '../repository/justification/justification.repository';
 import {IJustification} from '../../database/interfaces/justification.interface';
 import {ServiceFeeRepository} from '../repository/serviceFee/serviceFee.repository';
-import {IServiceFee} from '../../database/interfaces/serviceFee.interface';
+import {IFee} from '../../database/interfaces/serviceFee.interface';
 
 class SettingsService {
   private settingsRepository: SettingsRepository;
@@ -467,35 +467,36 @@ class SettingsService {
     return [true, templates];
   }
 
-  async updateServiceFee(req: Request) {
+  async updateFee(req: Request) {
     const reqTemp: any = req;
+    const type = req.query.type;
+    // const serviceFeeId =
+    //   await this.serviceFeeRepository.getAllWithoutPagination<IServiceFee>({});
 
-    const serviceFeeId =
-      await this.serviceFeeRepository.getAllWithoutPagination<IServiceFee>({});
+    // const filter = serviceFeeId.length ? {_id: serviceFeeId[0]?._id} : {};
 
-    const filter = serviceFeeId.length ? {_id: serviceFeeId[0]?._id} : {};
-
-    const serviceFee = await this.serviceFeeRepository.upsert<IServiceFee>(
-      filter,
+    const fee = await this.serviceFeeRepository.upsert<IFee>(
+      {type},
       {
-        serviceFee: reqTemp.body.serviceFee,
+        fee: reqTemp.body.fee,
         userId: reqTemp.id,
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
 
-    return serviceFee
-      ? [true, constants.successAddMessage('Service Fee')]
-      : [false, constants.failureAddMessage('Service Fee')];
+    return fee ? [true, []] : [false, constants.failureUpdateMessage('fee')];
   }
 
-  async getServiceFee(req: Request) {
-    const reqTemp: any = req;
+  async getFee(req: Request) {
+    const result =
+      await this.serviceFeeRepository.getAllWithoutPagination<IFee>({});
 
-    const serviceFee =
-      await this.serviceFeeRepository.getAllWithoutPagination<IServiceFee>({});
+    let feeObj = {};
+    for (const fee of result) {
+      feeObj[fee.type] = fee.fee;
+    }
 
-    return serviceFee.length ? [true, serviceFee[0].serviceFee] : [true, 0];
+    return Object.keys(feeObj).length ? [true, feeObj] : [true, null];
   }
 }
 

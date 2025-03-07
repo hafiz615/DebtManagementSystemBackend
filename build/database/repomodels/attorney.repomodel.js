@@ -20,6 +20,10 @@ class Attorney {
         this.isDeleted = false;
         this.attorneyFee = 0;
         this.platform = false;
+        this.paynoteUserId = '';
+        this.paynoteSourceId = '';
+        this.paynoteSourceVerified = false;
+        this.paynoteUserFound = false;
         this.logTrackingId = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

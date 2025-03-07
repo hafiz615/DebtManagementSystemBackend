@@ -346,23 +346,26 @@ class SettingsService {
         data['smsTemplates'] = templates.smsTemplates;
         return [true, templates];
     }
-    async updateServiceFee(req) {
+    async updateFee(req) {
         const reqTemp = req;
-        const serviceFeeId = await this.serviceFeeRepository.getAllWithoutPagination({});
-        const filter = serviceFeeId.length ? { _id: serviceFeeId[0]?._id } : {};
-        const serviceFee = await this.serviceFeeRepository.upsert(filter, {
-            serviceFee: reqTemp.body.serviceFee,
+        const type = req.query.type;
+        // const serviceFeeId =
+        //   await this.serviceFeeRepository.getAllWithoutPagination<IServiceFee>({});
+        // const filter = serviceFeeId.length ? {_id: serviceFeeId[0]?._id} : {};
+        const fee = await this.serviceFeeRepository.upsert({ type }, {
+            fee: reqTemp.body.fee,
             userId: reqTemp.id,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        return serviceFee
-            ? [true, constants_util_1.default.successAddMessage('Service Fee')]
-            : [false, constants_util_1.default.failureAddMessage('Service Fee')];
+        return fee ? [true, []] : [false, constants_util_1.default.failureUpdateMessage('fee')];
     }
-    async getServiceFee(req) {
-        const reqTemp = req;
-        const serviceFee = await this.serviceFeeRepository.getAllWithoutPagination({});
-        return serviceFee.length ? [true, serviceFee[0].serviceFee] : [true, 0];
+    async getFee(req) {
+        const result = await this.serviceFeeRepository.getAllWithoutPagination({});
+        let feeObj = {};
+        for (const fee of result) {
+            feeObj[fee.type] = fee.fee;
+        }
+        return Object.keys(feeObj).length ? [true, feeObj] : [true, null];
     }
 }
 exports.default = SettingsService;

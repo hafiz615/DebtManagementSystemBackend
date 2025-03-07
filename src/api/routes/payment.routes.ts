@@ -17,6 +17,12 @@ router.post(
   paymentController.getCreditorSuccessfulPayments
 );
 
+router.post(
+  '/creditorUpcomingPayments',
+  authorize.validateAuth,
+  paymentController.getCreditorUpcomingPayments
+);
+
 router.get(
   '/getCasePayments/:id',
   authorize.validateAuth,
@@ -32,8 +38,8 @@ router.get(
 router.post(
   '/addACHDetailsCreditor/:id',
   authorize.validateAuth,
-  paymentValidate.addACHDetailsCreditor,
-  paymentController.addACHDetailsCreditor
+  paymentValidate.addACHDetails,
+  paymentController.addACHDetails
 );
 
 router.get(

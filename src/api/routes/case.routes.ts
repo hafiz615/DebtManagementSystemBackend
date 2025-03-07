@@ -22,6 +22,20 @@ router.put(
   caseValidate.updateCase,
   caseController.updateCase
 );
+
+// router.put(
+//   '/updateCaseAffiliation/:id',
+//   authorize.validateAuth,
+//   caseValidate.updateCaseAffiliation,
+//   caseController.updateCaseAffiliation
+// );
+
+router.put(
+  '/update-case-affiliation/:id',
+  caseValidate.updateCaseAffiliation,
+  caseController.updateCaseAffiliation
+);
+
 router.put(
   '/updateCaseAbout/:id',
   authorize.validateAuth,
@@ -174,5 +188,10 @@ router.post(
   '/getScoresSettlementRangeDetails/:id',
   authorize.validateAuth,
   caseController.getScoresSettlementRangeDetails
+);
+
+router.post(
+  '/affiliate-cases-financial-summary',
+  caseController.affiliateCasesFinancialSummary
 );
 export default router;
