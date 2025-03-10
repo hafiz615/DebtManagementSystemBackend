@@ -1,10 +1,6 @@
 import mongoose, {Document} from 'mongoose';
-export interface IInterval {
-  amount: number;
-  startDate: string;
-  frequency: number;
-  timePeriod: string;
-}
+import {IInterval} from './case.interface';
+
 export interface ILawsuit extends Document {
   lawfirmId: mongoose.Schema.Types.ObjectId;
   attorneyId: mongoose.Schema.Types.ObjectId;
