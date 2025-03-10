@@ -22,20 +22,25 @@ import caseUtil from '../../utils/case.util';
 import googleDriveUtil from '../../utils/googleDrive.util';
 import {IAttorney} from '../../database/interfaces/attorney.interface';
 import {AttorneyRepository} from '../repository/attorney/attorney.repository';
+import {LawfirmRepository} from '../repository/lawfirm/lawfirm.repository';
+import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
+import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
   private caseRepository: CaseRepository;
   private creditorReposiotry: CreditorRepository;
-  private debtorReposiotry: DebtorRepository;
+  private debtorRepository: DebtorRepository;
   private attorneyReposiotry: AttorneyRepository;
+  private lawsuitRepository: LawsuitRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.caseRepository = new CaseRepository();
     this.creditorReposiotry = new CreditorRepository();
-    this.debtorReposiotry = new DebtorRepository();
+    this.debtorRepository = new DebtorRepository();
     this.attorneyReposiotry = new AttorneyRepository();
+    this.lawsuitRepository = new LawsuitRepository();
   }
 
   async getHomePayments(req: Request): Promise<[boolean, {} | string]> {
@@ -668,7 +673,7 @@ class PaymentService {
   }
 
   async getAllUpcomingPayments(req: Request): Promise<[boolean, {} | string]> {
-    const debtor = await this.debtorReposiotry.getById<IDebtor>(req.params.id);
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('case')];
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const payments: IPayment[] = await this.getAllPaymentsByDebtor(
@@ -1217,9 +1222,9 @@ class PaymentService {
   }
 
   async cancelDebtorPaymentPlan(req: Request) {
-    const debtor = await this.debtorReposiotry.getById<IDebtor>(req.params.id);
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('debtor')];
-    const updateDebtor = await this.debtorReposiotry.updateById<ICase>(
+    const updateDebtor = await this.debtorRepository.updateById<ICase>(
       req.params.id,
       {
         intervals: [],
@@ -1280,7 +1285,7 @@ class PaymentService {
     let results = null;
     let caseIds = null;
     if (req.body.status === 'Success') {
-      const debtor = await this.debtorReposiotry.getOne<IDebtor>({
+      const debtor = await this.debtorRepository.getOne<IDebtor>({
         _id: payment.debtorId,
       });
 
@@ -1337,7 +1342,7 @@ class PaymentService {
     let results = null;
     let caseIds = null;
     if (req.body.status === 'Success') {
-      const debtor = await this.debtorReposiotry.getOne<IDebtor>({
+      const debtor = await this.debtorRepository.getOne<IDebtor>({
         _id: payment.debtorId,
       });
 
@@ -1372,6 +1377,48 @@ class PaymentService {
     }
 
     return [true, caseIds];
+  }
+
+  async addPaymentPlan(req: Request) {
+    let lawsuit = await this.lawsuitRepository.getOne<ILawsuit>({
+      attorneyId: req.params.id,
+    });
+    if (!lawsuit) {
+      return [false, constants.notFoundMessage('Attorney')];
+    }
+    if (lawsuit.intervals && lawsuit.intervals.length)
+      return [false, constants.alreadyExistsMessage('Attorney payment plan')];
+    let findCase: any = await this.caseRepository.getById<ICase>(
+      req.body.caseId,
+      undefined,
+      undefined,
+      [{path: 'creditor'}, {path: 'debtor'}]
+    );
+
+    if (!findCase) {
+      return [false, constants.notFoundMessage('Case')];
+    }
+
+    req.body._id = req.body.caseId;
+    req.body.debtor = findCase.debtor._id;
+    req.body.attorneyId = req.params.id;
+    lawsuit = await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        attorneyId: req.params.id,
+        debtorId: findCase.debtor,
+        creditorId: findCase.creditor._id,
+      },
+      {
+        intervals: req.body.intervals,
+        isExempt: req.body.isExempt,
+      }
+    );
+    req.body.intervals = lawsuit.intervals;
+    req.body.debtorName = findCase.debtor.basicInformation.fullName;
+    req.body.creditorName = findCase.creditor.basicInformation.fullName;
+    caseUtil.createPayment(req.body);
+
+    return [true, constants.successAddMessage('Payment plan')];
   }
 }
 

@@ -58,6 +58,17 @@ const lawsuitModel: Schema = new Schema({
   balance: {
     type: Number,
   },
+  intervals: {
+    type: [
+      {
+        amount: {type: Number, required: true},
+        startDate: {type: Date, required: true},
+        frequency: {type: Number, default: 0},
+        timePeriod: {type: String, required: true},
+      },
+    ],
+  },
+  isExempt: Boolean,
   createdAt: {
     type: Date,
   },

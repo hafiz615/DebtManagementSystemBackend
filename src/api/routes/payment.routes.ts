@@ -89,4 +89,10 @@ router.get(
   authorize.validateAuth,
   paymentController.getRelatedPayments
 );
+
+router.post(
+  '/addAttorneyPaymentPlan/:id',
+  authorize.validateAuth,
+  paymentController.addPaymentPlan
+);
 export default router;

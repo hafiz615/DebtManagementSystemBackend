@@ -20,14 +20,16 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const case_util_1 = __importDefault(require("../../utils/case.util"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
 const attorney_repository_1 = require("../repository/attorney/attorney.repository");
+const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.creditorReposiotry = new creditor_repository_1.CreditorRepository();
-        this.debtorReposiotry = new debtor_repository_1.DebtorRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.attorneyReposiotry = new attorney_repository_1.AttorneyRepository();
+        this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
     }
     async getHomePayments(req) {
         let arrayName = String(req.query.arrayName);
@@ -501,7 +503,7 @@ class PaymentService {
         ];
     }
     async getAllUpcomingPayments(req) {
-        const debtor = await this.debtorReposiotry.getById(req.params.id);
+        const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('case')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
@@ -920,10 +922,10 @@ class PaymentService {
         return [true, 'Payment plan canceled successfully'];
     }
     async cancelDebtorPaymentPlan(req) {
-        const debtor = await this.debtorReposiotry.getById(req.params.id);
+        const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
-        const updateDebtor = await this.debtorReposiotry.updateById(req.params.id, {
+        const updateDebtor = await this.debtorRepository.updateById(req.params.id, {
             intervals: [],
             isExempt: false,
         });
@@ -965,7 +967,7 @@ class PaymentService {
         let results = null;
         let caseIds = null;
         if (req.body.status === 'Success') {
-            const debtor = await this.debtorReposiotry.getOne({
+            const debtor = await this.debtorRepository.getOne({
                 _id: payment.debtorId,
             });
             const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
@@ -1003,7 +1005,7 @@ class PaymentService {
         let results = null;
         let caseIds = null;
         if (req.body.status === 'Success') {
-            const debtor = await this.debtorReposiotry.getOne({
+            const debtor = await this.debtorRepository.getOne({
                 _id: payment.debtorId,
             });
             const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
@@ -1022,6 +1024,36 @@ class PaymentService {
             }));
         }
         return [true, caseIds];
+    }
+    async addPaymentPlan(req) {
+        let lawsuit = await this.lawsuitRepository.getOne({
+            attorneyId: req.params.id,
+        });
+        if (!lawsuit) {
+            return [false, constants_util_1.default.notFoundMessage('Attorney')];
+        }
+        if (lawsuit.intervals && lawsuit.intervals.length)
+            return [false, constants_util_1.default.alreadyExistsMessage('Attorney payment plan')];
+        let findCase = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
+        if (!findCase) {
+            return [false, constants_util_1.default.notFoundMessage('Case')];
+        }
+        req.body._id = req.body.caseId;
+        req.body.debtor = findCase.debtor._id;
+        req.body.attorneyId = req.params.id;
+        lawsuit = await this.lawsuitRepository.updateByOne({
+            attorneyId: req.params.id,
+            debtorId: findCase.debtor,
+            creditorId: findCase.creditor._id,
+        }, {
+            intervals: req.body.intervals,
+            isExempt: req.body.isExempt,
+        });
+        req.body.intervals = lawsuit.intervals;
+        req.body.debtorName = findCase.debtor.basicInformation.fullName;
+        req.body.creditorName = findCase.creditor.basicInformation.fullName;
+        case_util_1.default.createPayment(req.body);
+        return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
 }
 exports.default = PaymentService;
