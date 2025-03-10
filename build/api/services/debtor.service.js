@@ -599,8 +599,13 @@ class DebtorService {
         //     customerVaultId: customerVaultResponse[1],
         //   });
         // }
+        const lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(body.lawsuitDocuments);
+        if (!lawsuitExtractedFields) {
+            return [false, constants_util_2.default.notFoundMessage('extrcated data')];
+        }
         if (!getDebtor) {
             // if (account.length) body.accounts = account;
+            body.lawsuitFields = [lawsuitExtractedFields.result];
             if (body.basicInformation.weeklyBudget) {
                 body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
             }
@@ -610,6 +615,9 @@ class DebtorService {
             // if (account.length) body.accounts = getDebtor.accounts.concat(account);
             // if (!req.body.basicInformation?.weeklyBudget)
             //   req.body.basicInformation.weeklyBudget = 1;
+            body.lawsuitFields = getDebtor?.lawsuitFields
+                ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
+                : [lawsuitExtractedFields.result];
             body.updatedAt = common_util_1.default.getCurrentDate();
             // if (body?.documents && body?.documents?.length)
             //   body.documents = getDebtor.documents.concat(body.documents);
@@ -618,6 +626,8 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
+        const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitExtractedFields.result);
+        await lawfirm_util_1.default.createLawfirm(lawfirmTemp);
         moneyThumb_util_1.default.run(debtor, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, body.extractedFields);
         return [true, { debtor, creditorNames }];

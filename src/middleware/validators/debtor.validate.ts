@@ -247,6 +247,19 @@ class DebtorRequests {
           }),
         })
       ),
+
+      lawsuitDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required().messages({
+            'any.required': 'Lawsuit Document Key is a required field.',
+            'string.empty': 'Lawsuit Document Key cannot be empty.',
+          }),
+          originalFileName: Joi.string().required().messages({
+            'any.required': 'Original File Name is a required field.',
+            'string.empty': 'Original File Name cannot be empty.',
+          }),
+        })
+      ),
       paymentType: Joi.string().allow('').messages({
         'string.base': 'Payment type must be a string.',
       }),

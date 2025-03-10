@@ -1893,6 +1893,16 @@ class CaseUtil {
         const extractedFields = await this.getExtractionMCA_AIBuffer(documents, global_1.AIAuth.auth_token);
         return extractedFields;
     }
+    async getExtractionLawsuit(documents) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        if (!documents.length)
+            return null;
+        const extractedFields = await this.getExtractionLawsuit_AI(documents, global_1.AIAuth.auth_token);
+        return extractedFields;
+    }
     async getExtractionLawsuitBuffer(documents) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
@@ -2000,6 +2010,43 @@ class CaseUtil {
         catch (error) {
             console.log(error.message);
             return error.message;
+        }
+    }
+    async getExtractionLawsuit_AI(documents, token) {
+        const url = `${process.env.baseUrlAI}extract-lawsuit-details`;
+        try {
+            const form = new form_data_1.default();
+            for (let doc of documents) {
+                if (await this.findCsvSubStr(doc.originalFileName)) {
+                    continue;
+                }
+                const contents = await this.uploadUtil.getPdfBytesFromS3(doc.key);
+                form.append('documents', Buffer.from(contents), {
+                    filename: doc.originalFileName,
+                    contentType: 'application/pdf',
+                });
+            }
+            form.getLength((err, length) => {
+                if (err)
+                    return null;
+            });
+            console.log('FormData:', form);
+            console.log('Headers:', form.getHeaders());
+            console.log('I am in getExtractionLawsuit_AI');
+            console.log('URL: ', url);
+            console.log('Payload: ', form);
+            const response = await axiosInstanceInterceptor_1.default.post(url, form, {
+                headers: {
+                    accept: 'application/json',
+                    token: token,
+                    ...form.getHeaders(),
+                },
+            });
+            return response.data.error ? null : response.data;
+        }
+        catch (error) {
+            console.log(error);
+            return null;
         }
     }
     async getScores(caseTemp, creditors, comm) {

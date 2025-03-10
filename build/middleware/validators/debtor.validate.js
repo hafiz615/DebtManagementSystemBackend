@@ -203,6 +203,16 @@ class DebtorRequests {
                         'string.empty': 'Original File Name cannot be empty.',
                     }),
                 })),
+                lawsuitDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required().messages({
+                        'any.required': 'Lawsuit Document Key is a required field.',
+                        'string.empty': 'Lawsuit Document Key cannot be empty.',
+                    }),
+                    originalFileName: joi_1.default.string().required().messages({
+                        'any.required': 'Original File Name is a required field.',
+                        'string.empty': 'Original File Name cannot be empty.',
+                    }),
+                })),
                 paymentType: joi_1.default.string().allow('').messages({
                     'string.base': 'Payment type must be a string.',
                 }),
