@@ -16,6 +16,13 @@ export class Lawsuit {
   plantiffCompanyName = '';
   logTrackingId = '';
   balance = 0;
+  intervals = Array<{
+    amount: 0;
+    startDate: '';
+    frequency: 0;
+    timePeriod: '';
+  }>();
+  isExempt = false;
   lawsuitDate = commonUtil.getCurrentDate();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

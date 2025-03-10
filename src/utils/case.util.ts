@@ -122,7 +122,8 @@ class CaseUtil {
           0,
           String(data.debtor),
           data.debtorName,
-          data.creditorName
+          data.creditorName,
+          data.attorneyId
         );
         paymentsArray.push(tempPayment);
       }
@@ -144,7 +145,8 @@ class CaseUtil {
             i,
             String(data.debtor),
             data.debtorName,
-            data.creditorName
+            data.creditorName,
+            data.attorneyId
           );
           paymentsArray.push(tempPayment);
         }
@@ -226,7 +228,8 @@ class CaseUtil {
     frequency: number,
     debtor: string,
     debtorName: string,
-    creditorName: string
+    creditorName: string,
+    attorneyId: string
   ) {
     // const uuid = v4();
     payment.amount = interval.amount;
@@ -238,6 +241,7 @@ class CaseUtil {
     payment.debtorId = debtor;
     payment.debtorName = debtorName;
     payment.creditorName = creditorName;
+    payment.attorneyId = attorneyId;
     return {...payment};
   }
 
