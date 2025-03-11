@@ -988,6 +988,23 @@ class DebtorRequests {
                     .messages({
                     'array.base': 'Bank statement documents must be an array',
                 }),
+                lawsuitDocuments: joi_1.default.array()
+                    .items(joi_1.default.object({
+                    key: joi_1.default.string().required().messages({
+                        'string.base': 'Lawsuit document key must be a string',
+                        'string.empty': 'Lawsuit document key cannot be empty',
+                        'any.required': 'Lawsuit document key is required',
+                    }),
+                    originalFileName: joi_1.default.string().required().messages({
+                        'string.base': 'Original file name must be a string',
+                        'string.empty': 'Original file name cannot be empty',
+                        'any.required': 'Original file name is required',
+                    }),
+                }))
+                    .optional()
+                    .messages({
+                    'array.base': 'Lawsuit document documents must be an array',
+                }),
                 otherDocuments: joi_1.default.array()
                     .items(joi_1.default.object({
                     key: joi_1.default.string().required().messages({
