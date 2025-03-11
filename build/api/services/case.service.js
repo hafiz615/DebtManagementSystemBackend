@@ -782,7 +782,7 @@ class CaseService {
             // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
         };
-        this.updateCasePlan1 = async (req) => {
+        this.updateCasePlanDebtorPortal = async (req) => {
             let reqTemp = req;
             let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
             if (!findCase)

@@ -9,23 +9,18 @@ const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository")
 const payment_repository_1 = require("../repository/payment/payment.repository");
 class AttorneyService {
     constructor() {
-        this.getLawSuitBalanceSummary = async (req) => {
-            const getCase = await this.caseRepository.getById(req.body.caseId, 'debtor creditor');
+        this.getLawsuitDetails = async (req) => {
+            const getCase = await this.caseRepository.getById(req.params.id, 'debtor creditor');
             if (!getCase)
                 return [false, constants_util_1.default.notFoundMessage('Case')];
             const lawSuitBalanceSummary = await this.lawsuitRepository.getOne({
-                attorneyId: req.params.id,
                 debtorId: getCase.debtor,
                 creditorId: getCase.creditor,
-            });
-            const lawSuit = lawSuitBalanceSummary
-                ? {
-                    lawSuitId: lawSuitBalanceSummary._id,
-                    balance: lawSuitBalanceSummary.balance,
-                    receivedBalance: lawSuitBalanceSummary.lawsuitReceiveAmount,
-                }
-                : null;
-            return [true, lawSuit];
+            }, undefined, undefined, { path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound' });
+            if (!lawSuitBalanceSummary)
+                return [true, null];
+            const { attorneyId, ...lawsuitData } = lawSuitBalanceSummary;
+            return [true, { lawSuit: lawsuitData, attorney: attorneyId }];
         };
         this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
         this.caseRepository = new case_repository_1.CaseRepository();

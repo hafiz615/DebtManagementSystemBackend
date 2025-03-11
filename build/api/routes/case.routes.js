@@ -48,9 +48,7 @@ router.delete('/deleteFile/:id', authorize_middleware_1.default.validateAuth, ca
 router.post('/updateContractDetails/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateContractDetails, case_controller_1.default.updateContractDetails);
 router.delete('/deleteCreditor/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteCreditor);
 router.put('/updateCasePlan/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateCasePlan, case_controller_1.default.updateCasePlan);
-router.put('/update-case-plan/:id', 
-// caseValidate.updateCasePlan1,
-case_controller_1.default.updateCasePlan1);
+router.put('/update-case-plan/:id', case_controller_1.default.updateCasePlanDebtorPortal);
 router.get('/getAllUserCases', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAllUserCases);
 router.post('/getScoresSettlementRangeDetails/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRangeDetails);
 router.post('/affiliate-cases-financial-summary', case_controller_1.default.affiliateCasesFinancialSummary);
