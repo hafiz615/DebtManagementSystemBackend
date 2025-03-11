@@ -23,7 +23,7 @@ class AttorneyService {
                     balance: lawSuitBalanceSummary.balance,
                     receivedBalance: lawSuitBalanceSummary.lawsuitReceiveAmount,
                 }
-                : {};
+                : null;
             return [true, lawSuit];
         };
         this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
