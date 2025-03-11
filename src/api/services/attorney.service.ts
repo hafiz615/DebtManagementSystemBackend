@@ -57,6 +57,7 @@ class AttorneyService {
       },
       {
         intervals: [],
+        isExempt: false,
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(

@@ -41,6 +41,7 @@ class AttorneyService {
             creditorId: getCase.creditor,
         }, {
             intervals: [],
+            isExempt: false,
         });
         const updatePayments = await this.paymentRepository.updateMany({
             caseId: req.body.caseId,

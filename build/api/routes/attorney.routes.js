@@ -8,7 +8,7 @@ const authorize_middleware_1 = __importDefault(require("../../middleware/authori
 const attorney_validate_1 = __importDefault(require("../../middleware/validators/attorney.validate"));
 const attorney_controller_1 = __importDefault(require("../controllers/attorney/attorney.controller"));
 const router = (0, express_1.Router)();
-router.post('/getLawSuitBalanceSummary/:id', authorize_middleware_1.default.validateAuth, attorney_validate_1.default.getLawSuitBalanceSummary, attorney_controller_1.default.getLawSuitBalanceSummary);
-router.post('/cancelLawSuitPaymentPlan/:id', authorize_middleware_1.default.validateAuth, attorney_validate_1.default.cancelLawSuitPaymentPlan, attorney_controller_1.default.cancelLawSuitPaymentPlan);
+router.post('/getLawSuitBalanceSummary/:id', authorize_middleware_1.default.validateAuth, attorney_validate_1.default.validateCaseId, attorney_controller_1.default.getLawSuitBalanceSummary);
+router.post('/cancelLawSuitPaymentPlan/:id', authorize_middleware_1.default.validateAuth, attorney_validate_1.default.validateCaseId, attorney_controller_1.default.cancelLawSuitPaymentPlan);
 exports.default = router;
 //# sourceMappingURL=attorney.routes.js.map
