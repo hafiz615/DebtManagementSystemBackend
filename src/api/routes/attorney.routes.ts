@@ -10,4 +10,11 @@ router.post(
   attorneyController.getLawSuitBalanceSummary
 );
 
+router.post(
+  '/cancelLawSuitPaymentPlan/:id',
+  authorize.validateAuth,
+  attorneyValidate.cancelLawSuitPaymentPlan,
+  attorneyController.cancelLawSuitPaymentPlan
+);
+
 export default router;
