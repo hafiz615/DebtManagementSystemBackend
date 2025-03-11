@@ -724,9 +724,9 @@ class CaseController {
     }
   };
 
-  updatePaymentCasePlan = async (req: Request, res: Response) => {
+  updateCasePlanDebtorPortal = async (req: Request, res: Response) => {
     try {
-      const response = await this.caseService.updatePaymentCasePlan(req);
+      const response = await this.caseService.updateCasePlanDebtorPortal(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)

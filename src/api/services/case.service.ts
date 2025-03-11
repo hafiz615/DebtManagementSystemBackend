@@ -1523,7 +1523,7 @@ class CaseService {
     return [true, caseUpdated];
   };
 
-  updatePaymentCasePlan = async (req: Request) => {
+  updateCasePlanDebtorPortal = async (req: Request) => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
