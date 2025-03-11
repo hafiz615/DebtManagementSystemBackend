@@ -9,7 +9,7 @@ const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const joi_1 = __importDefault(require("joi"));
 dotenv_1.default.config();
 class CaseValidate {
-    async getLawSuitBalanceSummary(req, res, next) {
+    async validateCaseId(req, res, next) {
         const schema = joi_1.default.object({
             caseId: joi_1.default.string().required().messages({
                 'any.required': 'Case ID is required.',

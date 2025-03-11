@@ -6,8 +6,15 @@ const router = Router();
 router.post(
   '/getLawSuitBalanceSummary/:id',
   authorize.validateAuth,
-  attorneyValidate.getLawSuitBalanceSummary,
+  attorneyValidate.validateCaseId,
   attorneyController.getLawSuitBalanceSummary
+);
+
+router.post(
+  '/cancelLawSuitPaymentPlan/:id',
+  authorize.validateAuth,
+  attorneyValidate.validateCaseId,
+  attorneyController.cancelLawSuitPaymentPlan
 );
 
 export default router;

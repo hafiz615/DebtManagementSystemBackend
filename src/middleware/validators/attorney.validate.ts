@@ -7,11 +7,7 @@ import Joi from 'joi';
 dotenv.config();
 
 class CaseValidate {
-  async getLawSuitBalanceSummary(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  async validateCaseId(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       caseId: Joi.string().required().messages({
         'any.required': 'Case ID is required.',
