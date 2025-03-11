@@ -794,6 +794,7 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
+            reqTemp['platform'] = true;
             const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(reqTemp, findCase);
             let caseUpdated = await this.caseRepository.updateById(req.params.id, {
                 intervals: req.body.intervals,

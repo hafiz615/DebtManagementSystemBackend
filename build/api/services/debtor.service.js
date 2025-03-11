@@ -586,64 +586,68 @@ class DebtorService {
             ],
         });
         let debtor = null;
-        // let account = [];
-        // if (body.paymentToken && body.paymentType) {
-        //   const customerVaultResponse = await caseUtil.createVault(
-        //     body.paymentToken,
-        //     debtor?.basicInformation?.fullName
-        //   );
-        //   if (!customerVaultResponse[0]) return customerVaultResponse;
-        //   // req.body.customerVaultId = customerVaultResponse[1];
-        //   account.push({
-        //     paymentType: body.paymentType,
-        //     customerVaultId: customerVaultResponse[1],
-        //   });
-        // }
+        let lawsuitExtractedFields = {};
         if (!getDebtor) {
-            // if (account.length) body.accounts = account;
             if (body.basicInformation.weeklyBudget) {
                 body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
             }
+            lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(body?.lawsuitDocuments);
+            body.lawsuitFields = [lawsuitExtractedFields.result];
             debtor = await case_util_1.default.createDebtor(body, id);
         }
-        if (getDebtor) {
-            // if (account.length) body.accounts = getDebtor.accounts.concat(account);
-            // if (!req.body.basicInformation?.weeklyBudget)
-            //   req.body.basicInformation.weeklyBudget = 1;
+        else {
+            const newFiles = await this.updateDebtorIdExist(getDebtor, body);
+            if (newFiles?.lawsuitDocuments.length) {
+                lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(newFiles?.lawsuitDocuments);
+            }
+            if (newFiles?.lawsuitDocuments.length) {
+                body.lawsuitDocuments = getDebtor?.lawsuitDocuments
+                    ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
+                    : newFiles.lawsuitDocuments;
+                body.lawsuitFields = getDebtor?.lawsuitFields
+                    ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
+                    : [lawsuitExtractedFields.result];
+            }
             body.updatedAt = common_util_1.default.getCurrentDate();
-            // if (body?.documents && body?.documents?.length)
-            //   body.documents = getDebtor.documents.concat(body.documents);
             debtor = await this.debtorRepository.updateById(getDebtor._id, body);
         }
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
+        }
+        if (lawsuitExtractedFields?.result) {
+            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitExtractedFields);
+            await lawfirm_util_1.default.createLawfirm(lawfirmTemp);
         }
         moneyThumb_util_1.default.run(debtor, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, body.extractedFields);
         return [true, { debtor, creditorNames }];
     }
     async addDocumentsToDebtor(req) {
-        // if (!req.body.extractedFields) {
-        //   return [false, 'Extracted fields are missing'];
-        // }
         const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
         if (!caseTemp) {
             return [false, constants_util_1.default.notFoundMessage('case')];
         }
-        const updatedDebtor = await this.debtorRepository.updateById(caseTemp.debtor._id, {
+        const files = {
+            lawsuitDocuments: req.body.lawsuitDocuments,
+        };
+        let lawsuitExtractedFields = [];
+        const newFiles = await this.updateDebtorIdExist(caseTemp.debtor, files);
+        if (newFiles?.lawsuitDocuments.length) {
+            lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(newFiles?.lawsuitDocuments);
+        }
+        const updateData = {
             $push: {
-                mcaDocuments: {
-                    $each: req.body.mcaDocuments,
-                },
-                bankStatementDocuments: {
-                    $each: req.body.bankStatementDocuments,
-                },
-                otherDocuments: {
-                    $each: req.body.otherDocuments,
-                },
+                mcaDocuments: { $each: newFiles.mcaDocuments },
+                bankStatementDocuments: { $each: newFiles.bankStatementDocuments },
+                otherDocuments: { $each: newFiles.otherDocuments },
+                lawsuitDocuments: { $each: newFiles.lawsuitDocuments },
             },
             updatedAt: common_util_1.default.getCurrentDate(),
-        });
+        };
+        if (lawsuitExtractedFields?.result) {
+            updateData.$push.lawsuitFields = { $each: [lawsuitExtractedFields.result] };
+        }
+        const updatedDebtor = await this.debtorRepository.updateById(caseTemp.debtor._id, updateData);
         if (!updatedDebtor) {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
         }
@@ -1218,10 +1222,12 @@ class DebtorService {
         };
     }
     async getNewFiles(newFiles, existingFiles) {
-        if (!newFiles || newFiles.length === 0)
+        if (!newFiles || !newFiles.length)
             return [];
-        const existingKeys = existingFiles?.map((doc) => doc.originalFileName);
-        return newFiles.filter((file) => !existingKeys.includes(file.originalname));
+        const existingKeys = existingFiles?.length
+            ? existingFiles?.map((doc) => doc?.originalFileName || doc?.originalname)
+            : [];
+        return newFiles.filter((file) => !existingKeys.includes(file?.originalname || file?.originalFileName));
     }
     async uploadAndAssignFiles(files, debtorBody) {
         const uploadAndAppend = async (fileKey, debtorKey) => {

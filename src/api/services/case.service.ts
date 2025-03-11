@@ -1541,6 +1541,7 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
+    reqTemp['platform'] = true;
     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(reqTemp, findCase);
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,

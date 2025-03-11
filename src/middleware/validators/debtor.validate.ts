@@ -247,6 +247,19 @@ class DebtorRequests {
           }),
         })
       ),
+
+      lawsuitDocuments: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required().messages({
+            'any.required': 'Lawsuit Document Key is a required field.',
+            'string.empty': 'Lawsuit Document Key cannot be empty.',
+          }),
+          originalFileName: Joi.string().required().messages({
+            'any.required': 'Original File Name is a required field.',
+            'string.empty': 'Original File Name cannot be empty.',
+          }),
+        })
+      ),
       paymentType: Joi.string().allow('').messages({
         'string.base': 'Payment type must be a string.',
       }),
@@ -1103,6 +1116,26 @@ class DebtorRequests {
         .optional()
         .messages({
           'array.base': 'Bank statement documents must be an array',
+        }),
+
+      lawsuitDocuments: Joi.array()
+        .items(
+          Joi.object({
+            key: Joi.string().required().messages({
+              'string.base': 'Lawsuit document key must be a string',
+              'string.empty': 'Lawsuit document key cannot be empty',
+              'any.required': 'Lawsuit document key is required',
+            }),
+            originalFileName: Joi.string().required().messages({
+              'string.base': 'Original file name must be a string',
+              'string.empty': 'Original file name cannot be empty',
+              'any.required': 'Original file name is required',
+            }),
+          })
+        )
+        .optional()
+        .messages({
+          'array.base': 'Lawsuit document documents must be an array',
         }),
 
       otherDocuments: Joi.array()

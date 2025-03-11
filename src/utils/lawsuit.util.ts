@@ -45,6 +45,7 @@ class LawsuitUtil {
     if (!lawfirmExist) {
       createdLawfirm = await lawfirmUtil.createLawfirm({
         lawfirmCompanyName: lawsuit.lawfirmCompanyName,
+        platform: req.body.platform,
         userId: null,
       });
     }
@@ -53,6 +54,7 @@ class LawsuitUtil {
     const attorneyExist = await this.attorneyRepository.getOne<IAttorney>({
       SSN: attorney.SSN,
     });
+    attorney.platform = req.body.platform;
     attorney.lawfirmId = lawfirmId;
     if (!attorneyExist) {
       createdAttorney = await attorneyUtil.createAttorney(attorney);

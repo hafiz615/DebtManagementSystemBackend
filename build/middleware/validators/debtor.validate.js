@@ -203,6 +203,16 @@ class DebtorRequests {
                         'string.empty': 'Original File Name cannot be empty.',
                     }),
                 })),
+                lawsuitDocuments: joi_1.default.array().items(joi_1.default.object({
+                    key: joi_1.default.string().required().messages({
+                        'any.required': 'Lawsuit Document Key is a required field.',
+                        'string.empty': 'Lawsuit Document Key cannot be empty.',
+                    }),
+                    originalFileName: joi_1.default.string().required().messages({
+                        'any.required': 'Original File Name is a required field.',
+                        'string.empty': 'Original File Name cannot be empty.',
+                    }),
+                })),
                 paymentType: joi_1.default.string().allow('').messages({
                     'string.base': 'Payment type must be a string.',
                 }),
@@ -977,6 +987,23 @@ class DebtorRequests {
                     .optional()
                     .messages({
                     'array.base': 'Bank statement documents must be an array',
+                }),
+                lawsuitDocuments: joi_1.default.array()
+                    .items(joi_1.default.object({
+                    key: joi_1.default.string().required().messages({
+                        'string.base': 'Lawsuit document key must be a string',
+                        'string.empty': 'Lawsuit document key cannot be empty',
+                        'any.required': 'Lawsuit document key is required',
+                    }),
+                    originalFileName: joi_1.default.string().required().messages({
+                        'string.base': 'Original file name must be a string',
+                        'string.empty': 'Original file name cannot be empty',
+                        'any.required': 'Original file name is required',
+                    }),
+                }))
+                    .optional()
+                    .messages({
+                    'array.base': 'Lawsuit document documents must be an array',
                 }),
                 otherDocuments: joi_1.default.array()
                     .items(joi_1.default.object({
