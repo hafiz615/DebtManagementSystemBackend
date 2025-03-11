@@ -23,8 +23,10 @@ const notification_routes_1 = __importDefault(require("./notification.routes"));
 const seemlesschex_route_1 = __importDefault(require("./seemlesschex.route"));
 const lawfirm_route_1 = __importDefault(require("./lawfirm.route"));
 const sms_routes_1 = __importDefault(require("./sms.routes"));
+const attorney_routes_1 = __importDefault(require("./attorney.routes"));
 function setup(app) {
     app.use('/api/v1/user', user_routes_1.default);
+    app.use('/api/v1/attorney', attorney_routes_1.default);
     app.use('/api/v1/case', case_routes_1.default);
     app.use('/api/v1/sms', sms_routes_1.default);
     app.use('/api/v1/call', call_routes_1.default);
