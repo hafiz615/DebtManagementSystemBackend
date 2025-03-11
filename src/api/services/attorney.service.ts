@@ -16,30 +16,28 @@ class AttorneyService {
     this.paymentRepository = new PaymentRepository();
   }
 
-  getLawSuitBalanceSummary = async (req: Request) => {
+  getLawsuitDetails = async (req: Request) => {
     const getCase: ICase = await this.caseRepository.getById<ICase>(
-      req.body.caseId,
+      req.params.id,
       'debtor creditor'
     );
     if (!getCase) return [false, constants.notFoundMessage('Case')];
 
     const lawSuitBalanceSummary = await this.lawsuitRepository.getOne<ILawsuit>(
       {
-        attorneyId: req.params.id,
         debtorId: getCase.debtor,
         creditorId: getCase.creditor,
-      }
+      },
+      undefined,
+      undefined,
+      {path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound'}
     );
 
-    const lawSuit = lawSuitBalanceSummary
-      ? {
-          lawSuitId: lawSuitBalanceSummary._id,
-          balance: lawSuitBalanceSummary.balance,
-          receivedBalance: lawSuitBalanceSummary.lawsuitReceiveAmount,
-        }
-      : null;
+    if (!lawSuitBalanceSummary) return [true, null];
 
-    return [true, lawSuit];
+    const {attorneyId, ...lawsuitData} = lawSuitBalanceSummary;
+
+    return [true, {lawSuit: lawsuitData, attorney: attorneyId}];
   };
 
   async cancelLawSuitPaymentPlan(req: Request) {

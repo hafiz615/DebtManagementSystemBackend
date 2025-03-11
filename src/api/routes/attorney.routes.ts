@@ -4,10 +4,9 @@ import attorneyValidate from '../../middleware/validators/attorney.validate';
 import attorneyController from '../controllers/attorney/attorney.controller';
 const router = Router();
 router.post(
-  '/getLawSuitBalanceSummary/:id',
+  '/getLawsuitDetails/:id',
   authorize.validateAuth,
-  attorneyValidate.validateCaseId,
-  attorneyController.getLawSuitBalanceSummary
+  attorneyController.getLawsuitDetails
 );
 
 router.post(

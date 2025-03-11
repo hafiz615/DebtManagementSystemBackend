@@ -10,9 +10,9 @@ class AttorneyController {
     this.attorneyService = new AttorneyService();
   }
 
-  getLawSuitBalanceSummary = async (req: Request, res: Response) => {
+  getLawsuitDetails = async (req: Request, res: Response) => {
     try {
-      const response = await this.attorneyService.getLawSuitBalanceSummary(req);
+      const response = await this.attorneyService.getLawsuitDetails(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.OK)

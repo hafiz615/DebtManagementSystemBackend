@@ -8,9 +8,9 @@ const responseHelper_util_1 = __importDefault(require("../../../utils/responseHe
 const attorney_service_1 = __importDefault(require("../../services/attorney.service"));
 class AttorneyController {
     constructor() {
-        this.getLawSuitBalanceSummary = async (req, res) => {
+        this.getLawsuitDetails = async (req, res) => {
             try {
-                const response = await this.attorneyService.getLawSuitBalanceSummary(req);
+                const response = await this.attorneyService.getLawsuitDetails(req);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.OK)
