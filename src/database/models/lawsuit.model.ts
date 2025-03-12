@@ -58,7 +58,7 @@ const lawsuitModel: Schema = new Schema({
   balance: {
     type: Number,
   },
-  creditorPaymentsProceed: {
+  attorneyPaymentsProceed: {
     type: Boolean,
   },
   intervals: {

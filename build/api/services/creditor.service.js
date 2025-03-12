@@ -290,10 +290,11 @@ class CreditorService {
         const caseTemp = await this.caseRepository.getById(id, 'debtor creditor');
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
-        const updateFields = { creditorPaymentsProceed: pause };
         const updateResult = type === 'attorney'
-            ? await this.lawsuitRepository.updateByOne({ debtorId: caseTemp.debtor, creditorId: caseTemp.creditor }, updateFields)
-            : await this.caseRepository.updateById(id, updateFields);
+            ? await this.lawsuitRepository.updateByOne({ debtorId: caseTemp.debtor, creditorId: caseTemp.creditor }, { attorneyPaymentsProceed: pause })
+            : await this.caseRepository.updateById(id, {
+                creditorPaymentsProceed: pause,
+            });
         if (!updateResult)
             return [false, constants_util_1.default.failureUpdateMessage('payments')];
         const word = pause === 'true' ? 'resumed' : 'paused';

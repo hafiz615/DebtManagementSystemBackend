@@ -18,7 +18,7 @@ export interface ILawsuit extends Document {
   logTrackingId: string;
   lawsuitDate: Date;
   balance: number;
-  creditorPaymentsProceed: boolean;
+  attorneyPaymentsProceed: boolean;
   intervals: Array<IInterval>;
   isExempt: boolean;
   createdAt: Date;

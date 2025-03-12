@@ -366,14 +366,15 @@ class CreditorService {
       'debtor creditor'
     );
     if (!caseTemp) return [false, constants.notFoundMessage('case')];
-    const updateFields = {creditorPaymentsProceed: pause};
     const updateResult =
       type === 'attorney'
         ? await this.lawsuitRepository.updateByOne<ILawsuit>(
             {debtorId: caseTemp.debtor, creditorId: caseTemp.creditor},
-            updateFields
+            {attorneyPaymentsProceed: pause}
           )
-        : await this.caseRepository.updateById<ICase>(id, updateFields);
+        : await this.caseRepository.updateById<ICase>(id, {
+            creditorPaymentsProceed: pause,
+          });
 
     if (!updateResult)
       return [false, constants.failureUpdateMessage('payments')];
