@@ -64,6 +64,27 @@ class LawsuitUtil {
         const lawsuitTemp = await this.createLawsuit(lawsuitData);
         return lawsuitTemp ? [true, lawsuitTemp] : false;
     }
+    async lawsuitDetails(lawsuitFields) {
+        return {
+            body: {
+                attorney: {
+                    name: lawsuitFields?.attorney_name || '',
+                    phone: lawsuitFields?.attorney_telephone || '',
+                    address: lawsuitFields.attorney_address || '',
+                    city: lawsuitFields.attorney_city || '',
+                    SSN: lawsuitFields.attorney_SSN || '',
+                    state: lawsuitFields.attorney_state || '',
+                },
+                lawsuit: {
+                    balance: lawsuitFields.balance || '',
+                    startDate: lawsuitFields.document_date || '',
+                    defendentCompanyName: lawsuitFields.defendant_company || '',
+                    plantiffCompanyName: lawsuitFields.plaintiff_company || '',
+                    lawfirmCompanyName: lawsuitFields.lawfirmCompanyName || '',
+                },
+            },
+        };
+    }
     async createLawsuit(data) {
         const newLawsuit = new lawsuit_repomodel_1.Lawsuit();
         const validatedLawsuit = dataCopier_util_1.DataCopier.copy(newLawsuit, data);

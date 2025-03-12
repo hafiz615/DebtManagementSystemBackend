@@ -302,7 +302,7 @@ class CreditorService {
     }
     async syncPaynote(req) {
         const reqTemp = req;
-        const type = 'creditor';
+        const type = reqTemp.query.type;
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user)
             return [false, constants_util_1.default.notFoundMessage('user')];
@@ -352,7 +352,7 @@ class CreditorService {
     }
     async getSyncEmail(req) {
         const reqTemp = req;
-        const type = 'creditor';
+        const type = reqTemp.query.type;
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user)
             return [false, constants_util_1.default.notFoundMessage('user')];

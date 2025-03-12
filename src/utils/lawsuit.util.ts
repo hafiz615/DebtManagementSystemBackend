@@ -79,6 +79,28 @@ class LawsuitUtil {
     return lawsuitTemp ? [true, lawsuitTemp] : false;
   }
 
+  async lawsuitDetails(lawsuitFields: any) {
+    return {
+      body: {
+        attorney: {
+          name: lawsuitFields?.attorney_name || '',
+          phone: lawsuitFields?.attorney_telephone || '',
+          address: lawsuitFields.attorney_address || '',
+          city: lawsuitFields.attorney_city || '',
+          SSN: lawsuitFields.attorney_SSN || '',
+          state: lawsuitFields.attorney_state || '',
+        },
+        lawsuit: {
+          balance: lawsuitFields.balance || '',
+          startDate: lawsuitFields.document_date || '',
+          defendentCompanyName: lawsuitFields.defendant_company || '',
+          plantiffCompanyName: lawsuitFields.plaintiff_company || '',
+          lawfirmCompanyName: lawsuitFields.lawfirmCompanyName || '',
+        },
+      },
+    };
+  }
+
   async createLawsuit(data: any) {
     const newLawsuit = new Lawsuit();
     const validatedLawsuit = DataCopier.copy(newLawsuit, data as ILawsuit);

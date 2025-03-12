@@ -1472,7 +1472,13 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      [{path: 'creditor', select: 'basicInformation.fullName'}, 'debtor']
+      [
+        {
+          path: 'creditor',
+          select: 'basicInformation.fullName businessInformation.companyName',
+        },
+        'debtor',
+      ]
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;
@@ -1484,6 +1490,23 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
+    const lawsuitFields =
+      findCase.debtor.lawsuitFields?.find(
+        lawsuit =>
+          lawsuit.plaintiff_company ===
+            findCase.creditor.businessInformation.companyName &&
+          lawsuit.defendant_company ===
+            findCase.debtor.businessInformation.companyName
+      ) || null;
+
+    if (lawsuitFields) {
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(lawsuitFields);
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        findCase
+      );
+    }
+
     // if (req.body?.commission) {
     //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
     //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
