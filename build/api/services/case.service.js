@@ -759,8 +759,9 @@ class CaseService {
                 findCase.creditor.businessInformation.companyName &&
                 lawsuit.defendant_company ===
                     findCase.debtor.businessInformation.companyName) || null;
+            lawsuitFields['userId'] = reqTemp.id;
             if (lawsuitFields) {
-                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields);
+                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, req.body?.intervals);
                 const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
             }
             // if (req.body?.commission) {
@@ -798,7 +799,7 @@ class CaseService {
         };
         this.updateCasePlanDebtorPortal = async (req) => {
             let reqTemp = req;
-            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['creditor', 'debtor']);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             const getDebtor = findCase.debtor;
