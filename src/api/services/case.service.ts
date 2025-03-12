@@ -1498,9 +1498,13 @@ class CaseService {
           lawsuit.defendant_company ===
             findCase.debtor.businessInformation.companyName
       ) || null;
+    lawsuitFields['userId'] = reqTemp.id;
 
     if (lawsuitFields) {
-      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(lawsuitFields);
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+        lawsuitFields,
+        req.body?.intervals
+      );
       const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
         lawsuitDetails,
         findCase
@@ -1552,7 +1556,7 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      ['debtor']
+      ['creditor', 'debtor']
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;

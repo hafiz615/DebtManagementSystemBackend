@@ -46,7 +46,7 @@ class LawsuitUtil {
       createdLawfirm = await lawfirmUtil.createLawfirm({
         lawfirmCompanyName: lawsuit.lawfirmCompanyName,
         platform: req.body.platform,
-        userId: null,
+        userId: lawsuit?.userId || null,
       });
     }
     const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
@@ -66,20 +66,20 @@ class LawsuitUtil {
       attorneyId: attorneyId,
       lawfirmId: lawfirmId,
       debtorId: caseData.debtor,
-      userId: null,
       creditorId: caseData.creditor,
       lawfirmCompanyName: lawsuit.lawfirmCompanyName,
       defendentCompanyName: lawsuit.defendentCompanyName,
       plantiffCompanyName: lawsuit.plantiffCompanyName,
       lawsuitDate: lawsuit.startDate,
       balance: lawsuit.balance,
+      userId: lawsuit?.userId || null,
     };
     const lawsuitTemp = await this.createLawsuit(lawsuitData);
 
     return lawsuitTemp ? [true, lawsuitTemp] : false;
   }
 
-  async lawsuitDetails(lawsuitFields: any) {
+  async lawsuitDetails(lawsuitFields: any, interval: any) {
     return {
       body: {
         attorney: {
@@ -89,6 +89,7 @@ class LawsuitUtil {
           city: lawsuitFields.attorney_city || '',
           SSN: lawsuitFields.attorney_SSN || '',
           state: lawsuitFields.attorney_state || '',
+          userId: lawsuitFields?.userId || '',
         },
         lawsuit: {
           balance: lawsuitFields.balance || '',
@@ -96,6 +97,7 @@ class LawsuitUtil {
           defendentCompanyName: lawsuitFields.defendant_company || '',
           plantiffCompanyName: lawsuitFields.plaintiff_company || '',
           lawfirmCompanyName: lawsuitFields.lawfirmCompanyName || '',
+          userId: lawsuitFields?.userId || '',
         },
       },
     };
