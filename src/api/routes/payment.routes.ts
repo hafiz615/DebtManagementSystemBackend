@@ -36,7 +36,7 @@ router.get(
 );
 
 router.post(
-  '/addACHDetailsCreditor/:id',
+  '/addACHDetails/:id',
   authorize.validateAuth,
   paymentValidate.addACHDetails,
   paymentController.addACHDetails
