@@ -24,6 +24,7 @@ class Lawsuit {
         this.balance = 0;
         this.intervals = Array();
         this.isExempt = false;
+        this.attorneyPaymentsProceed = false;
         this.lawsuitDate = common_util_1.default.getCurrentDate();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

@@ -85,6 +85,9 @@ const lawsuitModel = new mongoose_1.Schema({
     balance: {
         type: Number,
     },
+    attorneyPaymentsProceed: {
+        type: Boolean,
+    },
     intervals: {
         type: [
             {

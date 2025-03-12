@@ -23,6 +23,7 @@ export class Lawsuit {
     timePeriod: '';
   }>();
   isExempt = false;
+  attorneyPaymentsProceed = false;
   lawsuitDate = commonUtil.getCurrentDate();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
