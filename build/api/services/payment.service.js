@@ -761,7 +761,7 @@ class PaymentService {
         const reqTemp = req;
         const type = reqTemp.query.type;
         const user = await common_util_1.default.getUserByType(req.params.id, type);
-        if (!user)
+        if (!user.obj)
             return [false, constants_util_1.default.notFoundMessage('user')];
         const { name, email } = await common_util_1.default.getUserDetails(user.obj);
         if (!user.obj.paynoteUserId) {

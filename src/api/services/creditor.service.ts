@@ -466,7 +466,7 @@ class CreditorService {
       await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
         syncId: req.params.id,
       });
-    if (!result) return [true, email];
+    if (!result) return [true, email.email];
     return [true, result.email];
   }
 

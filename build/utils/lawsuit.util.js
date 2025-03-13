@@ -77,7 +77,7 @@ class LawsuitUtil {
                     userId: lawsuitFields?.userId || '',
                 },
                 lawsuit: {
-                    balance: lawsuitFields.balance || '',
+                    balance: lawsuitFields.balance || 0,
                     startDate: lawsuitFields.document_date || '',
                     defendentCompanyName: lawsuitFields.defendant_company || '',
                     plantiffCompanyName: lawsuitFields.plaintiff_company || '',

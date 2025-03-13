@@ -361,7 +361,7 @@ class CreditorService {
             syncId: req.params.id,
         });
         if (!result)
-            return [true, email];
+            return [true, email.email];
         return [true, result.email];
     }
     async mcaByMonth(req) {
