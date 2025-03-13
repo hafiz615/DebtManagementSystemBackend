@@ -84,7 +84,9 @@ class LawsuitUtil {
       body: {
         attorney: {
           name: lawsuitFields?.attorney_name || '',
-          phone: lawsuitFields?.attorney_telephone || '',
+          phone: await commonUtil.cleanPhoneNumber(
+            lawsuitFields?.attorney_telephone
+          ),
           address: lawsuitFields.attorney_address || '',
           city: lawsuitFields.attorney_city || '',
           SSN: lawsuitFields.attorney_SSN || '',
