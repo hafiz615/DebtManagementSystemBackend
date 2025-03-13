@@ -19,6 +19,7 @@ router.post(
 router.put(
   '/updateAttorney/:id',
   authorize.validateAuth,
+  attorneyValidate.updateAttorney,
   attorneyController.updateAttorney
 );
 
