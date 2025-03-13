@@ -6,7 +6,11 @@ import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
 import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 import {PaymentRepository} from '../repository/payment/payment.repository';
 import {IPayment} from '../../database/interfaces/payment.interface';
+import {AttorneyRepository} from '../repository/attorney/attorney.repository';
+import {IAttorney} from '../../database/interfaces/attorney.interface';
+import commonUtil from '../../utils/common.util';
 class AttorneyService {
+  private attorneyRepository: AttorneyRepository;
   private lawsuitRepository: LawsuitRepository;
   private caseRepository: CaseRepository;
   private paymentRepository: PaymentRepository;
@@ -14,6 +18,7 @@ class AttorneyService {
     this.lawsuitRepository = new LawsuitRepository();
     this.caseRepository = new CaseRepository();
     this.paymentRepository = new PaymentRepository();
+    this.attorneyRepository = new AttorneyRepository();
   }
 
   getLawsuitDetails = async (req: Request) => {
@@ -40,6 +45,18 @@ class AttorneyService {
     return [true, {lawSuit: lawsuitData, attorney: attorneyId}];
   };
 
+  updateAttorney = async (req: Request) => {
+    const updateData = {...req.body, updatedAt: commonUtil.getCurrentDate()};
+    const attorney = await this.attorneyRepository.updateById<IAttorney>(
+      req.params.id,
+      updateData
+    );
+
+    if (!attorney) {
+      return [false, constants.notFoundMessage('Attorney')];
+    }
+    return [true, attorney];
+  };
   async cancelLawSuitPaymentPlan(req: Request) {
     const getCase: ICase = await this.caseRepository.getById<ICase>(
       req.body.caseId,

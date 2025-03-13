@@ -16,4 +16,10 @@ router.post(
   attorneyController.cancelLawSuitPaymentPlan
 );
 
+router.put(
+  '/updateAttorney/:id',
+  authorize.validateAuth,
+  attorneyController.updateAttorney
+);
+
 export default router;
