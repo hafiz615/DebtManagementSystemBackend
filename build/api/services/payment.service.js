@@ -992,7 +992,7 @@ class PaymentService {
             debtorTransId: req.params.token,
         });
         if (!payment)
-            return [true, constants_util_1.default.notFoundMessage('payment link')];
+            return [false, constants_util_1.default.notFoundMessage('status')];
         return [true, { status: payment.status }];
     }
     async updatePaymentInvoiceStatus(req) {

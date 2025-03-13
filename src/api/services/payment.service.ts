@@ -1326,7 +1326,7 @@ class PaymentService {
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: req.params.token,
     });
-    if (!payment) return [true, constants.notFoundMessage('payment link')];
+    if (!payment) return [false, constants.notFoundMessage('status')];
     return [true, {status: payment.status}];
   }
 

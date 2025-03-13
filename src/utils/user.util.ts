@@ -44,10 +44,10 @@ class UserUtil {
     const filters = {isDeleted: false, isPlatform: {$ne: true}};
     switch (reqTemp.role) {
       case 'Super User':
-        filters['role'] = {$ne: 'Super User'};
+        filters['role'] = {$nin: ['Super User', 'Dipan']};
         break;
       default:
-        filters['role'] = {$nin: ['Admin', 'Super User']};
+        filters['role'] = {$nin: ['Admin', 'Super User', 'Dipan']};
         break;
     }
     if (req.query.search === 'true') {
