@@ -765,7 +765,10 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('user')];
         const { name, email } = await common_util_1.default.getUserDetails(user.obj);
         if (!user.obj.paynoteUserId) {
-            await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model);
+            const data = await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model);
+            if (data.error)
+                return [false, data.message];
+            console.log('data: ', data);
         }
         const data = req.body.data;
         const paymentObj = common_util_1.default.getDecryptedData(data);
