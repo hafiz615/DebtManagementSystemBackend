@@ -32,6 +32,28 @@ class AttorneyController {
     }
   };
 
+  updateAttorney = async (req: Request, res: Response) => {
+    try {
+      const response = await this.attorneyService.updateAttorney(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Attorney'),
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
   cancelLawSuitPaymentPlan = async (req: Request, res: Response) => {
     try {
       const response = await this.attorneyService.cancelLawSuitPaymentPlan(req);
