@@ -45,7 +45,7 @@ class Authorize {
             const token = req.headers.authorization.split(' ')[1];
             if (token) {
                 // verifies secret and checks exp
-                return jwt.verify(token, process.env.jwtKey, async function (err, decoded) {
+                return jwt.verify(token, process.env.jwtKey, async (err, decoded) => {
                     if (err || typeof decoded === 'string') {
                         return res
                             .status(constants_util_1.default.CODE.UNAUTHORIZED)
@@ -60,6 +60,12 @@ class Authorize {
                     req.id = String(exists._id);
                     req.email = exists.email.toLowerCase();
                     req.role = exists.role;
+                    const checkDipanRole = this.validateDipanRole(req.role, req.originalUrl);
+                    if (!checkDipanRole) {
+                        return res
+                            .status(constants_util_1.default.CODE.FORBIDDEN)
+                            .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.ROLE_ACCESS));
+                    }
                     req.sessionId = decoded?.sessionId;
                     req.name = exists.name;
                     req.twilioNo = exists.twilioNo;
@@ -87,6 +93,28 @@ class Authorize {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.ROLE_ACCESS));
             }
             return next();
+        };
+        this.validateDipanRole = (role, path) => {
+            if (role === 'Dipan') {
+                const allowedPaths = [
+                    '/api/v1/debtor/add-debtor-account',
+                    '/api/v1/debtor/update-debtor-account',
+                    '/api/v1/debtor/delete-debtor-account',
+                    '/api/v1/debtor/get-extracted-data',
+                    '/api/v1/debtor/get-debtor-extracted-data',
+                    '/api/v1/debtor/client-financial-summary',
+                    '/api/v1/debtor/create-invoice',
+                    '/api/v1/seemlesschex/update-payment-link-status',
+                    '/api/v1/seemlesschex/get-payment-link-status',
+                    '/api/v1/seemlesschex/update-invoice-status',
+                    '/api/v1/seemlesschex/get-invoice-status',
+                ];
+                const findPath = allowedPaths.find(allowedPath => path.startsWith(allowedPath));
+                if (findPath)
+                    return true;
+                return false;
+            }
+            return true;
         };
     }
     validateVerifyToken(token) {

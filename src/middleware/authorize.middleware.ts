@@ -26,7 +26,7 @@ class Authorize {
       return jwt.verify(
         token,
         process.env.jwtKey!,
-        async function (err: any, decoded: any) {
+        async (err: any, decoded: any) => {
           if (err || typeof decoded === 'string') {
             return res
               .status(constants.CODE.UNAUTHORIZED)
@@ -53,6 +53,17 @@ class Authorize {
           req.id = String(exists._id);
           req.email = exists.email.toLowerCase();
           req.role = exists.role;
+          const checkDipanRole = this.validateDipanRole(
+            req.role,
+            req.originalUrl
+          );
+          if (!checkDipanRole) {
+            return res
+              .status(constants.CODE.FORBIDDEN)
+              .send(
+                responseHelper.get4xxResponse(constants.Messages.ROLE_ACCESS)
+              );
+          }
           req.sessionId = decoded?.sessionId;
           req.name = exists.name;
           req.twilioNo = exists.twilioNo;
@@ -100,6 +111,32 @@ class Authorize {
         .send(responseHelper.get4xxResponse(constants.Messages.ROLE_ACCESS));
     }
     return next();
+  };
+
+  validateDipanRole = (role: string, path: string) => {
+    if (role === 'Dipan') {
+      const allowedPaths = [
+        '/api/v1/debtor/add-debtor-account',
+        '/api/v1/debtor/update-debtor-account',
+        '/api/v1/debtor/delete-debtor-account',
+        '/api/v1/debtor/get-extracted-data',
+        '/api/v1/debtor/get-debtor-extracted-data',
+        '/api/v1/debtor/client-financial-summary',
+        '/api/v1/debtor/create-invoice',
+        '/api/v1/seemlesschex/update-payment-link-status',
+        '/api/v1/seemlesschex/get-payment-link-status',
+        '/api/v1/seemlesschex/update-invoice-status',
+        '/api/v1/seemlesschex/get-invoice-status',
+      ];
+
+      const findPath = allowedPaths.find(allowedPath =>
+        path.startsWith(allowedPath)
+      );
+
+      if (findPath) return true;
+      return false;
+    }
+    return true;
   };
 }
 
