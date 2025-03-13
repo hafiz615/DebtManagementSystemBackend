@@ -50,9 +50,9 @@ class LawsuitUtil {
       });
     }
     const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
-
+    attorney.phone = await commonUtil.cleanPhoneNumber(attorney.phone);
     const attorneyExist = await this.attorneyRepository.getOne<IAttorney>({
-      SSN: attorney.SSN,
+      phone: attorney.phone,
     });
     attorney.platform = req.body.platform;
     attorney.lawfirmId = lawfirmId;

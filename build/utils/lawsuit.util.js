@@ -40,8 +40,9 @@ class LawsuitUtil {
             });
         }
         const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
+        attorney.phone = await common_util_1.default.cleanPhoneNumber(attorney.phone);
         const attorneyExist = await this.attorneyRepository.getOne({
-            SSN: attorney.SSN,
+            phone: attorney.phone,
         });
         attorney.platform = req.body.platform;
         attorney.lawfirmId = lawfirmId;
