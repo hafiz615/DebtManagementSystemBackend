@@ -759,8 +759,8 @@ class CaseService {
                 findCase.creditor.businessInformation.companyName &&
                 lawsuit.defendant_company ===
                     findCase.debtor.businessInformation.companyName) || null;
-            lawsuitFields['userId'] = reqTemp.id;
             if (lawsuitFields) {
+                lawsuitFields['userId'] = reqTemp.id;
                 const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, req.body?.intervals);
                 const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
             }
