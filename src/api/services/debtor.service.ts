@@ -721,7 +721,7 @@ class DebtorService {
       const lawfirmTemp = await lawfirmUtil.lawfirmDetails(
         lawsuitExtractedFields
       );
-      await lawfirmUtil.createLawfirm(lawfirmTemp);
+      await lawfirmUtil.upsertLawfirm(lawfirmTemp);
     }
     moneyThumbUtil.run(
       debtor,

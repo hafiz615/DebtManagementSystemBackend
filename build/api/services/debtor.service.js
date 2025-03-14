@@ -616,7 +616,7 @@ class DebtorService {
         }
         if (lawsuitExtractedFields?.result) {
             const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitExtractedFields);
-            await lawfirm_util_1.default.createLawfirm(lawfirmTemp);
+            await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
         }
         moneyThumb_util_1.default.run(debtor, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
         const creditorNames = await case_util_1.default.getCreditorNames(debtor, body.extractedFields);

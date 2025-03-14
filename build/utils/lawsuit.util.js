@@ -59,7 +59,7 @@ class LawsuitUtil {
             defendentCompanyName: lawsuit.defendentCompanyName,
             plantiffCompanyName: lawsuit.plantiffCompanyName,
             lawsuitDate: lawsuit.startDate,
-            balance: lawsuit.balance,
+            balance: lawsuit?.balance || lawsuit?.Balance,
             userId: lawsuit?.userId || null,
         };
         const lawsuitTemp = await this.createLawsuit(lawsuitData);
@@ -78,7 +78,7 @@ class LawsuitUtil {
                     userId: lawsuitFields?.userId || '',
                 },
                 lawsuit: {
-                    balance: lawsuitFields.balance || 0,
+                    balance: lawsuitFields?.balance || lawsuitFields?.Balance || 0,
                     startDate: lawsuitFields.document_date || '',
                     defendentCompanyName: lawsuitFields.defendant_company || '',
                     plantiffCompanyName: lawsuitFields.plaintiff_company || '',
