@@ -35,14 +35,20 @@ class AttorneyService {
       },
       undefined,
       undefined,
-      {path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound'}
+      [
+        {path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound'},
+        {path: 'lawfirmId'},
+      ]
     );
 
     if (!lawSuitBalanceSummary) return [true, null];
 
-    const {attorneyId, ...lawsuitData} = lawSuitBalanceSummary;
+    const {attorneyId, lawfirmId, ...lawsuitData} = lawSuitBalanceSummary;
 
-    return [true, {lawSuit: lawsuitData, attorney: attorneyId}];
+    return [
+      true,
+      {lawSuit: lawsuitData, attorney: attorneyId, lawfirm: lawfirmId},
+    ];
   };
 
   updateAttorney = async (req: Request) => {
