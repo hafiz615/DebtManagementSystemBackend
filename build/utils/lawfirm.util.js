@@ -7,6 +7,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const lawfirm_repository_1 = require("../api/repository/lawfirm/lawfirm.repository");
 const lawfirm_repomodel_1 = require("../database/repomodels/lawfirm.repomodel");
 const dataCopier_util_1 = require("./dataCopier.util");
+const common_util_1 = __importDefault(require("./common.util"));
 dotenv_1.default.config();
 class LawfirmUtil {
     constructor() {
@@ -26,7 +27,7 @@ class LawfirmUtil {
         return {
             lawfirmCompanyName: data.result.lawfirmCompanyName,
             email: data.result.email,
-            phone: data.result.phone,
+            phone: await common_util_1.default.cleanPhoneNumber(data.result.phone),
             address: data.result.address,
             city: data.result.city,
             state: data.result.state,
