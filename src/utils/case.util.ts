@@ -122,7 +122,8 @@ class CaseUtil {
           0,
           String(data.debtor),
           data.debtorName,
-          data.creditorName
+          data.creditorName,
+          data.attorneyId
         );
         paymentsArray.push(tempPayment);
       }
@@ -144,7 +145,8 @@ class CaseUtil {
             i,
             String(data.debtor),
             data.debtorName,
-            data.creditorName
+            data.creditorName,
+            data.attorneyId
           );
           paymentsArray.push(tempPayment);
         }
@@ -226,7 +228,8 @@ class CaseUtil {
     frequency: number,
     debtor: string,
     debtorName: string,
-    creditorName: string
+    creditorName: string,
+    attorneyId: string
   ) {
     // const uuid = v4();
     payment.amount = interval.amount;
@@ -238,6 +241,7 @@ class CaseUtil {
     payment.debtorId = debtor;
     payment.debtorName = debtorName;
     payment.creditorName = creditorName;
+    payment.attorneyId = attorneyId;
     return {...payment};
   }
 
@@ -2242,6 +2246,21 @@ class CaseUtil {
     return extractedFields;
   }
 
+  async getExtractionLawsuit(documents: any) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    if (!documents.length) return null;
+    const extractedFields = await this.getExtractionLawsuit_AI(
+      documents,
+      AIAuth.auth_token
+    );
+    return extractedFields;
+  }
+
   async getExtractionLawsuitBuffer(documents: any) {
     if (
       !AIAuth.auth_token ||
@@ -2352,6 +2371,43 @@ class CaseUtil {
     } catch (error) {
       console.log(error.message);
       return error.message;
+    }
+  }
+
+  async getExtractionLawsuit_AI(documents: any, token: string) {
+    const url = `${process.env.baseUrlAI}extract-lawsuit-details`;
+
+    try {
+      const form = new FormData();
+      for (let doc of documents) {
+        if (await this.findCsvSubStr(doc.originalFileName)) {
+          continue;
+        }
+        const contents = await this.uploadUtil.getPdfBytesFromS3(doc.key);
+        form.append('documents', Buffer.from(contents), {
+          filename: doc.originalFileName,
+          contentType: 'application/pdf',
+        });
+      }
+      form.getLength((err, length) => {
+        if (err) return null;
+      });
+      console.log('FormData:', form);
+      console.log('Headers:', form.getHeaders());
+      console.log('I am in getExtractionLawsuit_AI');
+      console.log('URL: ', url);
+      console.log('Payload: ', form);
+      const response = await axiosInstance.post(url, form, {
+        headers: {
+          accept: 'application/json',
+          token: token,
+          ...form.getHeaders(),
+        },
+      });
+      return response.data.error ? null : response.data;
+    } catch (error) {
+      console.log(error);
+      return null;
     }
   }
 

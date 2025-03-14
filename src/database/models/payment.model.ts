@@ -9,6 +9,10 @@ const PaymentModel: Schema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Cases',
   },
+  attorneyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Attorneys',
+  },
   authorized: {
     type: String,
     default: 'Pending',

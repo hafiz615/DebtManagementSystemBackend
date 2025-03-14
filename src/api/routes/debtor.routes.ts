@@ -128,16 +128,19 @@ router.post(
 
 router.post(
   '/add-debtor-account/:id',
+  authorize.validateAuth,
   debtor.addDebtorAccount,
   debtorController.addDebtorAccount
 );
 router.put(
   '/update-debtor-account/:id',
+  authorize.validateAuth,
   debtor.updateDebtorAccount,
   debtorController.updateDebtorAccount
 );
 router.delete(
   '/delete-debtor-account/:id',
+  authorize.validateAuth,
   debtor.deleteDebtorAccount,
   debtorController.deleteDebtorAccount
 );
@@ -211,12 +214,14 @@ const uploadFields = upload.fields([
 
 router.post(
   '/get-extracted-data',
+  authorize.validateAuth,
   uploadFields,
   debtorController.getExtractFieldsAndDebtor
 );
 
 router.get(
   '/get-debtor-extracted-data/:id',
+  authorize.validateAuth,
   debtorController.getDebtorExtractedFields
 );
 
@@ -230,11 +235,13 @@ router.post(
 
 router.get(
   '/client-financial-summary/:id',
+  authorize.validateAuth,
   debtorController.clientFinancialSummary
 );
 
 router.post(
   '/create-invoice',
+  authorize.validateAuth,
   debtor.addDebtorInvoice,
   debtorController.addDebtorInvoice
 );

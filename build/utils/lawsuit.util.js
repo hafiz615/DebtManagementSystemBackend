@@ -35,13 +35,16 @@ class LawsuitUtil {
         if (!lawfirmExist) {
             createdLawfirm = await lawfirm_util_1.default.createLawfirm({
                 lawfirmCompanyName: lawsuit.lawfirmCompanyName,
-                userId: null,
+                platform: req.body.platform,
+                userId: lawsuit?.userId || null,
             });
         }
         const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
+        attorney.phone = await common_util_1.default.cleanPhoneNumber(attorney.phone);
         const attorneyExist = await this.attorneyRepository.getOne({
-            SSN: attorney.SSN,
+            phone: attorney.phone,
         });
+        attorney.platform = req.body.platform;
         attorney.lawfirmId = lawfirmId;
         if (!attorneyExist) {
             createdAttorney = await attorney_util_1.default.createAttorney(attorney);
@@ -51,16 +54,39 @@ class LawsuitUtil {
             attorneyId: attorneyId,
             lawfirmId: lawfirmId,
             debtorId: caseData.debtor,
-            userId: null,
             creditorId: caseData.creditor,
             lawfirmCompanyName: lawsuit.lawfirmCompanyName,
             defendentCompanyName: lawsuit.defendentCompanyName,
             plantiffCompanyName: lawsuit.plantiffCompanyName,
             lawsuitDate: lawsuit.startDate,
-            balance: lawsuit.balance,
+            balance: lawsuit?.balance || lawsuit?.Balance,
+            userId: lawsuit?.userId || null,
         };
         const lawsuitTemp = await this.createLawsuit(lawsuitData);
         return lawsuitTemp ? [true, lawsuitTemp] : false;
+    }
+    async lawsuitDetails(lawsuitFields, interval) {
+        return {
+            body: {
+                attorney: {
+                    name: lawsuitFields?.attorney_name || '',
+                    phone: await common_util_1.default.cleanPhoneNumber(lawsuitFields?.attorney_telephone),
+                    address: lawsuitFields.attorney_address || '',
+                    city: lawsuitFields.attorney_city || '',
+                    SSN: lawsuitFields.attorney_SSN || '',
+                    state: lawsuitFields.attorney_state || '',
+                    userId: lawsuitFields?.userId || '',
+                },
+                lawsuit: {
+                    balance: lawsuitFields?.balance || lawsuitFields?.Balance || 0,
+                    startDate: lawsuitFields.document_date || '',
+                    defendentCompanyName: lawsuitFields.defendant_company || '',
+                    plantiffCompanyName: lawsuitFields.plaintiff_company || '',
+                    lawfirmCompanyName: lawsuitFields.lawfirmCompanyName || '',
+                    userId: lawsuitFields?.userId || '',
+                },
+            },
+        };
     }
     async createLawsuit(data) {
         const newLawsuit = new lawsuit_repomodel_1.Lawsuit();

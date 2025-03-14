@@ -17,6 +17,7 @@ const email_util_1 = __importDefault(require("../utils/email.util"));
 const payment_service_1 = __importDefault(require("../api/services/payment.service"));
 const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_util_1 = __importDefault(require("../utils/creditor.util"));
+const lawsuit_repository_1 = require("../api/repository/lawsuit/lawsuit.repository");
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -24,6 +25,7 @@ class CronJob {
         this.paymentService = new payment_service_1.default();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
     }
     async testCron() {
         let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
@@ -57,7 +59,7 @@ class CronJob {
             select: ['_id', 'caseCode'],
             populate: ['creditor'],
         });
-        await this.paynotePending(pendingPayments);
+        await this.paynotePending(pendingPayments, true);
         const failedPayments = await this.paymentRepository.getAllWithoutPagination({
             captured: 'Success',
             sendViaPaynote: 'Failed',
@@ -68,7 +70,7 @@ class CronJob {
             select: ['_id', 'caseCode'],
             populate: ['creditor'],
         });
-        await this.paynoteFailed(failedPayments);
+        await this.paynoteFailed(failedPayments, true);
     }
     startCronJob() {
         node_cron_1.default.schedule('0 4 * * *', async () => {
@@ -95,6 +97,7 @@ class CronJob {
                 captured: 'Success',
                 sendViaPaynote: 'Pending',
                 isDeleted: false,
+                attorneyId: null,
             }, undefined, undefined, undefined, {
                 path: 'caseId',
                 select: [
@@ -123,7 +126,7 @@ class CronJob {
                     },
                 ],
             });
-            await this.paynotePending(pendingPayments);
+            await this.paynotePending(pendingPayments, true);
             const failedPayments = await this.paymentRepository.getAllWithoutPagination({
                 captured: 'Success',
                 sendViaPaynote: 'Failed',
@@ -157,7 +160,91 @@ class CronJob {
                     },
                 ],
             });
-            await this.paynoteFailed(failedPayments);
+            await this.paynoteFailed(failedPayments, true);
+            // const lawsuits =
+            //   await this.lawsuitRepository.getAllWithoutPagination<ILawsuit>({
+            //     attorneyPaymentsProceed: true,
+            //   });
+            // const attorneyIds = lawsuits.map(lawsuit => {
+            //   return String(lawsuit.attorneyId);
+            // });
+            // const pendingAttorneyPayments =
+            //   await this.paymentRepository.getAllWithoutPagination<IPayment>(
+            //     {
+            //       attorneyId: {$in: attorneyIds},
+            //       captured: 'Success',
+            //       sendViaPaynote: 'Pending',
+            //       isDeleted: false,
+            //     },
+            //     undefined,
+            //     undefined,
+            //     undefined,
+            //     [
+            //       {
+            //         path: 'caseId',
+            //         select: [
+            //           '_id',
+            //           'caseCode',
+            //           'remaining',
+            //           'creditorPaymentsProceed',
+            //         ],
+            //         populate: [
+            //           {
+            //             path: 'debtor',
+            //             select: [
+            //               '_id',
+            //               'basicInformation.fullName',
+            //               'businessInformation.companyName',
+            //             ],
+            //           },
+            //         ],
+            //       },
+            //       {
+            //         path: 'attorneyId',
+            //         select: ['paynoteUserId', 'name'],
+            //       },
+            //     ]
+            //   );
+            // await this.paynotePending(pendingAttorneyPayments, false);
+            // const failedAttorneyPayments =
+            //   await this.paymentRepository.getAllWithoutPagination<IPayment>(
+            //     {
+            //       captured: 'Success',
+            //       sendViaPaynote: 'Failed',
+            //       caseId: {$ne: null},
+            //       isDeleted: false,
+            //       attorneyId: {$ne: null},
+            //     },
+            //     undefined,
+            //     undefined,
+            //     undefined,
+            //     [
+            //       {
+            //         path: 'caseId',
+            //         select: [
+            //           '_id',
+            //           'caseCode',
+            //           'remaining',
+            //           'creditorPaymentsProceed',
+            //         ],
+            //         populate: [
+            //           {
+            //             path: 'debtor',
+            //             select: [
+            //               '_id',
+            //               'basicInformation.fullName',
+            //               'businessInformation.companyName',
+            //             ],
+            //           },
+            //         ],
+            //       },
+            //       {
+            //         path: 'attorneyId',
+            //         select: ['paynoteUserId', 'name'],
+            //       },
+            //     ]
+            //   );
+            // await this.paynoteFailed(failedAttorneyPayments, false);
         }, {
             timezone: 'America/New_York',
         });
@@ -184,15 +271,17 @@ class CronJob {
             timezone: 'America/New_York',
         });
     }
-    async paynotePending(payments) {
+    async paynotePending(payments, creditor) {
         const retryPaynoteInterval = {
             unit: 'days',
             value: 1,
             maxRetry: 2,
         };
-        await this.processPaynotePayments(payments, false, retryPaynoteInterval);
+        creditor
+            ? await this.processPaynotePayments(payments, false, retryPaynoteInterval)
+            : await this.processPaynoteAttorneyPayments(payments, false, retryPaynoteInterval);
     }
-    async paynoteFailed(payments) {
+    async paynoteFailed(payments, creditor) {
         const retryPaynoteInterval = {
             unit: 'days',
             value: 1,
@@ -204,7 +293,9 @@ class CronJob {
         const failedPaynote = filterPaymentWithRetries.filter((payment) => {
             return this.retry(payment.rescheduled);
         });
-        await this.processPaynotePayments(failedPaynote, true, retryPaynoteInterval);
+        creditor
+            ? await this.processPaynotePayments(failedPaynote, true, retryPaynoteInterval)
+            : await this.processPaynoteAttorneyPayments(failedPaynote, true, retryPaynoteInterval);
     }
     async processPaynotePayments(payments, retryPlus, interval) {
         for (const payment of payments) {
@@ -258,6 +349,53 @@ class CronJob {
                     const creditors = await creditor_util_1.default.getCreditorsEmailForDebtor(String(payment.caseId.debtor._id), String(payment.caseId.creditor._id));
                     email_util_1.default.sendEmailIfDebtorPaysDebt(payment.caseId, payment.caseId.debtor, creditors);
                 }
+            }
+        }
+    }
+    async processPaynoteAttorneyPayments(payments, retryPlus, interval) {
+        for (const payment of payments) {
+            if (payment.attorneyId.paynoteUserId) {
+                // const paynoteCustomer = await paynoteUtil.getCustomer(
+                //   payment.caseId.creditor
+                // );
+                // console.log(paynoteCustomer);
+                // if (paynoteCustomer.error) continue;
+                // if (paynoteCustomer.user.status === 'unverified') continue;
+                const paymentResult = await paynote_util_1.default.sendPayment(payment);
+                if (paymentResult?.message === 'Server Error')
+                    break;
+                console.log(paymentResult);
+                if (paymentResult.error) {
+                    console.log('Send Email');
+                    let message = '';
+                    if (paymentResult?.messages) {
+                        message = paymentResult.messages[0];
+                    }
+                    else {
+                        message = paymentResult.message;
+                    }
+                    console.log(message, 'message');
+                    const retry = payment.retriesAuth + 1;
+                    const value = interval.value * retry;
+                    const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
+                    let retries = payment.retriesAuth;
+                    if (retryPlus)
+                        retries += 1;
+                    await this.paymentRepository.updateById(payment._id, {
+                        sendViaPaynote: 'Failed',
+                        rescheduled: retryDate,
+                        retriesPaynote: retries,
+                        failedReasonPaynote: message,
+                    });
+                    email_util_1.default.sendEmailOrSmsByEvent('failed_payment', '', payment._id, '');
+                    continue;
+                }
+                email_util_1.default.sendEmailOrSmsByEvent('successful_payment', '', payment._id, '');
+                await this.paymentRepository.updateById(payment._id, {
+                    paynoteCheckId: paymentResult.check.check_id,
+                    sendViaPaynote: 'Success',
+                    status: 'Success',
+                });
             }
         }
     }

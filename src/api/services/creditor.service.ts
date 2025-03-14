@@ -17,6 +17,8 @@ import {SyncPaymentMethodRepository} from '../repository/ISyncPaymentMethod/sync
 import {ISyncPaymentMethod} from '../../database/interfaces/syncPaymentMethod.interface';
 import debtorUtil from '../../utils/debtor.util';
 import creditorUtil from '../../utils/creditor.util';
+import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
+import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 dotenv.config();
 
 class CreditorService {
@@ -24,9 +26,11 @@ class CreditorService {
   private caseRepository: CaseRepository;
   private bulkUploadRepository: BulkUploadRepository;
   private syncPaymentMethodRepository: SyncPaymentMethodRepository;
+  private lawsuitRepository: LawsuitRepository;
 
   constructor() {
     this.creditorRepository = new CreditorRepository();
+    this.lawsuitRepository = new LawsuitRepository();
     this.caseRepository = new CaseRepository();
     this.bulkUploadRepository = new BulkUploadRepository();
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
@@ -348,25 +352,40 @@ class CreditorService {
   }
 
   async pausePayments(req: Request) {
-    if (req.query.pause !== 'true' && req.query.pause !== 'false') {
-      return [false, 'Query param missing!'];
+    const {pause, type} = req.query;
+    const {id} = req.params;
+    if (
+      (pause !== 'true' && pause !== 'false') ||
+      (type !== 'attorney' && type !== 'creditor')
+    ) {
+      return [false, 'Query param missing or invalid!'];
     }
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
-    if (!caseTemp) return [false, constants.notFoundMessage('creditor')];
-    const updateCase = await this.caseRepository.updateById<ICase>(
-      req.params.id,
-      {
-        creditorPaymentsProceed: req.query.pause,
-      }
+
+    const caseTemp: ICase = await this.caseRepository.getById<ICase>(
+      id,
+      'debtor creditor'
     );
-    if (!updateCase) return [false, constants.failureUpdateMessage('payments')];
-    const word = req.query.pause === 'true' ? 'resumed' : 'paused';
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const updateResult =
+      type === 'attorney'
+        ? await this.lawsuitRepository.updateByOne<ILawsuit>(
+            {debtorId: caseTemp.debtor, creditorId: caseTemp.creditor},
+            {attorneyPaymentsProceed: pause}
+          )
+        : await this.caseRepository.updateById<ICase>(id, {
+            creditorPaymentsProceed: pause,
+          });
+
+    if (!updateResult)
+      return [false, constants.failureUpdateMessage('payments')];
+
+    const word = pause === 'true' ? 'resumed' : 'paused';
     return [true, `Funds transfer ${word} successfully`];
   }
 
   async syncPaynote(req: Request) {
     const reqTemp: any = req;
-    const type = 'creditor';
+    const type = reqTemp.query.type;
     const user: any = await commonUtil.getUserByType(req.params.id, type);
     if (!user) return [false, constants.notFoundMessage('user')];
     const email = req.body.email.toLowerCase();
@@ -439,7 +458,7 @@ class CreditorService {
 
   async getSyncEmail(req: Request) {
     const reqTemp: any = req;
-    const type = 'creditor';
+    const type = reqTemp.query.type;
     const user: any = await commonUtil.getUserByType(req.params.id, type);
     if (!user) return [false, constants.notFoundMessage('user')];
     const email = await commonUtil.getUserDetails(user.obj);
@@ -447,7 +466,7 @@ class CreditorService {
       await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
         syncId: req.params.id,
       });
-    if (!result) return [true, email];
+    if (!result) return [true, email.email];
     return [true, result.email];
   }
 

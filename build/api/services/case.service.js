@@ -739,7 +739,13 @@ class CaseService {
         };
         this.updateCasePlan = async (req) => {
             let reqTemp = req;
-            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'creditor', select: 'basicInformation.fullName' }, 'debtor']);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, [
+                {
+                    path: 'creditor',
+                    select: 'basicInformation.fullName businessInformation.companyName',
+                },
+                'debtor',
+            ]);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             const getDebtor = findCase.debtor;
@@ -748,6 +754,15 @@ class CaseService {
                 req.body?.intervals.length &&
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
+            }
+            const lawsuitFields = findCase.debtor.lawsuitFields?.find(lawsuit => lawsuit.plaintiff_company ===
+                findCase.creditor.businessInformation.companyName &&
+                lawsuit.defendant_company ===
+                    findCase.debtor.businessInformation.companyName) || null;
+            lawsuitFields['userId'] = reqTemp.id;
+            if (lawsuitFields) {
+                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, req.body?.intervals);
+                const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
             }
             // if (req.body?.commission) {
             //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
@@ -782,9 +797,9 @@ class CaseService {
             // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
             return [true, caseUpdated];
         };
-        this.updateCasePlan1 = async (req) => {
+        this.updateCasePlanDebtorPortal = async (req) => {
             let reqTemp = req;
-            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+            let findCase = await this.caseRepository.getById(req.params.id, undefined, undefined, ['creditor', 'debtor']);
             if (!findCase)
                 return [false, constants_util_1.default.notFoundMessage('case')];
             const getDebtor = findCase.debtor;
@@ -794,6 +809,7 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
+            reqTemp['platform'] = true;
             const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(reqTemp, findCase);
             let caseUpdated = await this.caseRepository.updateById(req.params.id, {
                 intervals: req.body.intervals,

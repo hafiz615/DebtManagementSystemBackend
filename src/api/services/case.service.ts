@@ -1472,7 +1472,13 @@ class CaseService {
       req.params.id,
       undefined,
       undefined,
-      [{path: 'creditor', select: 'basicInformation.fullName'}, 'debtor']
+      [
+        {
+          path: 'creditor',
+          select: 'basicInformation.fullName businessInformation.companyName',
+        },
+        'debtor',
+      ]
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;
@@ -1484,6 +1490,27 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
+    const lawsuitFields =
+      findCase.debtor.lawsuitFields?.find(
+        lawsuit =>
+          lawsuit.plaintiff_company ===
+            findCase.creditor.businessInformation.companyName &&
+          lawsuit.defendant_company ===
+            findCase.debtor.businessInformation.companyName
+      ) || null;
+    lawsuitFields['userId'] = reqTemp.id;
+
+    if (lawsuitFields) {
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+        lawsuitFields,
+        req.body?.intervals
+      );
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        findCase
+      );
+    }
+
     // if (req.body?.commission) {
     //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
     //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
@@ -1523,13 +1550,13 @@ class CaseService {
     return [true, caseUpdated];
   };
 
-  updateCasePlan1 = async (req: Request) => {
+  updateCasePlanDebtorPortal = async (req: Request) => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
-      ['debtor']
+      ['creditor', 'debtor']
     );
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;
@@ -1541,6 +1568,7 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
+    reqTemp['platform'] = true;
     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(reqTemp, findCase);
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,

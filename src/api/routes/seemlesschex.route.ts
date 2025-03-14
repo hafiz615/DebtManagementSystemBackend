@@ -42,12 +42,14 @@ router.get(
 
 router.post(
   '/update-payment-link-status/:token',
+  authorize.validateAuth,
   paymentValidate.updatePaymentLinkStatus,
   paymentController.updatePaymentLinkStatus
 );
 
 router.get(
   '/get-payment-link-status/:token',
+  authorize.validateAuth,
   paymentController.getPaymentLinkStatus
 );
 
@@ -55,9 +57,14 @@ router.post('/statusChanged', seemlesschexController.statusChanged);
 
 router.post(
   '/update-invoice-status/:token',
+  authorize.validateAuth,
   paymentValidate.updatePaymentInvoiceStatus,
   paymentController.updatePaymentInvoiceStatus
 );
 
-router.get('/get-invoice-status/:token', paymentController.getInvoiceStatus);
+router.get(
+  '/get-invoice-status/:token',
+  authorize.validateAuth,
+  paymentController.getInvoiceStatus
+);
 export default router;

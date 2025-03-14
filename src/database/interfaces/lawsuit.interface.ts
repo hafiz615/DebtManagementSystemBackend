@@ -1,4 +1,5 @@
 import mongoose, {Document} from 'mongoose';
+import {IInterval} from './case.interface';
 
 export interface ILawsuit extends Document {
   lawfirmId: mongoose.Schema.Types.ObjectId;
@@ -17,6 +18,9 @@ export interface ILawsuit extends Document {
   logTrackingId: string;
   lawsuitDate: Date;
   balance: number;
+  attorneyPaymentsProceed: boolean;
+  intervals: Array<IInterval>;
+  isExempt: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

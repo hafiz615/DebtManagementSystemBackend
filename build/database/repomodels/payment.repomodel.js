@@ -8,6 +8,7 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Payment {
     constructor() {
         this.caseId = null;
+        this.attorneyId = null;
         this.debtorId = '';
         this.authorized = 'Pending';
         this.captured = 'Pending';

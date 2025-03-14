@@ -36,7 +36,7 @@ router.get(
 );
 
 router.post(
-  '/addACHDetailsCreditor/:id',
+  '/addACHDetails/:id',
   authorize.validateAuth,
   paymentValidate.addACHDetails,
   paymentController.addACHDetails
@@ -88,5 +88,11 @@ router.get(
   '/getRelatedPayments/:id',
   authorize.validateAuth,
   paymentController.getRelatedPayments
+);
+
+router.post(
+  '/addAttorneyPaymentPlan/:id',
+  authorize.validateAuth,
+  paymentController.addPaymentPlan
 );
 export default router;

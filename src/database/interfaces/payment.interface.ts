@@ -2,6 +2,7 @@ import mongoose, {Document} from 'mongoose';
 
 export interface IPayment extends Document {
   caseId: mongoose.Schema.Types.ObjectId;
+  attorneyId: mongoose.Schema.Types.ObjectId;
   debtorId: string;
   authorized: string;
   captured: string;

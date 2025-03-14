@@ -3,6 +3,7 @@ import {LawfirmRepository} from '../api/repository/lawfirm/lawfirm.repository';
 import {ILawfirm} from '../database/interfaces/lawfirm.interface';
 import {Lawfirm} from '../database/repomodels/lawfirm.repomodel';
 import {DataCopier} from './dataCopier.util';
+import commonUtil from './common.util';
 dotenv.config();
 class LawfirmUtil {
   private lawfirmRepository: LawfirmRepository;
@@ -30,7 +31,7 @@ class LawfirmUtil {
     return {
       lawfirmCompanyName: data.result.lawfirmCompanyName,
       email: data.result.email,
-      phone: data.result.phone,
+      phone: await commonUtil.cleanPhoneNumber(data.result.phone),
       address: data.result.address,
       city: data.result.city,
       state: data.result.state,

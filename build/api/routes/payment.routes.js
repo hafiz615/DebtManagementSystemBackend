@@ -13,7 +13,7 @@ router.post('/getCreditorSuccessfulPayments', authorize_middleware_1.default.val
 router.post('/creditorUpcomingPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCreditorUpcomingPayments);
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
 router.get('/getAllUpcomingPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getAllUpcomingPayments);
-router.post('/addACHDetailsCreditor/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
+router.post('/addACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
 router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
 router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceCommission);
@@ -22,5 +22,6 @@ router.get('/cancelCasePaymentPlan/:id', authorize_middleware_1.default.validate
 router.get('/cancelDebtorPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelDebtorPaymentPlan);
 router.get('/getCommissionPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCommissionPayments);
 router.get('/getRelatedPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getRelatedPayments);
+router.post('/addAttorneyPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.addPaymentPlan);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

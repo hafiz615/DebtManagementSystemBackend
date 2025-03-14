@@ -15,10 +15,12 @@ const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const creditor_util_1 = __importDefault(require("../../utils/creditor.util"));
+const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
 dotenv_1.default.config();
 class CreditorService {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.bulkUploadRepository = new bulkUpload_repository_1.BulkUploadRepository();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
@@ -279,23 +281,28 @@ class CreditorService {
         return [true, 'Customer added successfully'];
     }
     async pausePayments(req) {
-        if (req.query.pause !== 'true' && req.query.pause !== 'false') {
-            return [false, 'Query param missing!'];
+        const { pause, type } = req.query;
+        const { id } = req.params;
+        if ((pause !== 'true' && pause !== 'false') ||
+            (type !== 'attorney' && type !== 'creditor')) {
+            return [false, 'Query param missing or invalid!'];
         }
-        const caseTemp = await this.caseRepository.getById(req.params.id);
+        const caseTemp = await this.caseRepository.getById(id, 'debtor creditor');
         if (!caseTemp)
-            return [false, constants_util_1.default.notFoundMessage('creditor')];
-        const updateCase = await this.caseRepository.updateById(req.params.id, {
-            creditorPaymentsProceed: req.query.pause,
-        });
-        if (!updateCase)
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        const updateResult = type === 'attorney'
+            ? await this.lawsuitRepository.updateByOne({ debtorId: caseTemp.debtor, creditorId: caseTemp.creditor }, { attorneyPaymentsProceed: pause })
+            : await this.caseRepository.updateById(id, {
+                creditorPaymentsProceed: pause,
+            });
+        if (!updateResult)
             return [false, constants_util_1.default.failureUpdateMessage('payments')];
-        const word = req.query.pause === 'true' ? 'resumed' : 'paused';
+        const word = pause === 'true' ? 'resumed' : 'paused';
         return [true, `Funds transfer ${word} successfully`];
     }
     async syncPaynote(req) {
         const reqTemp = req;
-        const type = 'creditor';
+        const type = reqTemp.query.type;
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user)
             return [false, constants_util_1.default.notFoundMessage('user')];
@@ -345,7 +352,7 @@ class CreditorService {
     }
     async getSyncEmail(req) {
         const reqTemp = req;
-        const type = 'creditor';
+        const type = reqTemp.query.type;
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user)
             return [false, constants_util_1.default.notFoundMessage('user')];
@@ -354,7 +361,7 @@ class CreditorService {
             syncId: req.params.id,
         });
         if (!result)
-            return [true, email];
+            return [true, email.email];
         return [true, result.email];
     }
     async mcaByMonth(req) {
