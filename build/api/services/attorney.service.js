@@ -18,11 +18,17 @@ class AttorneyService {
             const lawSuitBalanceSummary = await this.lawsuitRepository.getOne({
                 debtorId: getCase.debtor,
                 creditorId: getCase.creditor,
-            }, undefined, undefined, { path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound' });
+            }, undefined, undefined, [
+                { path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound' },
+                { path: 'lawfirmId' },
+            ]);
             if (!lawSuitBalanceSummary)
                 return [true, null];
-            const { attorneyId, ...lawsuitData } = lawSuitBalanceSummary;
-            return [true, { lawSuit: lawsuitData, attorney: attorneyId }];
+            const { attorneyId, lawfirmId, ...lawsuitData } = lawSuitBalanceSummary;
+            return [
+                true,
+                { lawSuit: lawsuitData, attorney: attorneyId, lawfirm: lawfirmId },
+            ];
         };
         this.updateAttorney = async (req) => {
             const updateData = { ...req.body, updatedAt: common_util_1.default.getCurrentDate() };
