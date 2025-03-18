@@ -1489,26 +1489,27 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
-    const lawsuitFields =
-      findCase.debtor.lawsuitFields?.find(
-        lawsuit =>
-          lawsuit.plaintiff_company ===
-            findCase.creditor.businessInformation.companyName &&
-          lawsuit.defendant_company ===
-            findCase.debtor.businessInformation.companyName
-      ) || null;
 
-    if (lawsuitFields) {
-      lawsuitFields['userId'] = reqTemp.id;
+    if (!findCase.lawsuitExist) {
+      const lawsuitFields =
+        findCase.debtor.lawsuitFields?.find(
+          lawsuit =>
+            lawsuit.plaintiff_company ===
+              findCase.creditor.businessInformation.companyName &&
+            lawsuit.defendant_company ===
+              findCase.debtor.businessInformation.companyName
+        ) || null;
 
-      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
-        lawsuitFields,
-        req.body?.intervals
-      );
-      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
-        lawsuitDetails,
-        findCase
-      );
+      if (lawsuitFields) {
+        const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+          lawsuitFields,
+          reqTemp.id
+        );
+        const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+          lawsuitDetails,
+          findCase
+        );
+      }
     }
 
     // if (req.body?.commission) {
@@ -1569,13 +1570,31 @@ class CaseService {
       return [false, 'Payment plan already exist!'];
     }
     reqTemp['platform'] = true;
-    const lawfirmTemp = await lawsuitUtil.lawsuitFormation(reqTemp, findCase);
+    if (
+      !findCase.lawsuitExist &&
+      reqTemp.body.attorney &&
+      reqTemp.body.lawsuit
+    ) {
+      const lawsuitFields = {
+        ...req.body.lawsuit,
+        ...req.body.attorney,
+      };
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetailsDebtorPortal(
+        lawsuitFields,
+        reqTemp.id
+      );
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        findCase
+      );
+    }
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       {
         intervals: req.body.intervals,
         serviceFee: req.body.serviceFee,
         legalFee: req.body.legalFee,
+        lawsuitExist: true,
         updatedAt: new Date(commonUtil.getCurrentDate()),
       }
     );

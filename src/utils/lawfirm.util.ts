@@ -4,6 +4,7 @@ import {ILawfirm} from '../database/interfaces/lawfirm.interface';
 import {Lawfirm} from '../database/repomodels/lawfirm.repomodel';
 import {DataCopier} from './dataCopier.util';
 import commonUtil from './common.util';
+import {v4} from 'uuid';
 dotenv.config();
 class LawfirmUtil {
   private lawfirmRepository: LawfirmRepository;
@@ -21,9 +22,13 @@ class LawfirmUtil {
   async upsertLawfirm(data: any) {
     const newLawfirm = new Lawfirm();
     const validatedLawfirm = DataCopier.copy(newLawfirm, data as ILawfirm);
+
     return await this.lawfirmRepository.upsert<ILawfirm>(
       {lawfirmCompanyName: data.lawfirmCompanyName},
-      validatedLawfirm
+      {
+        $setOnInsert: {logTrackingId: v4()},
+        $set: {...validatedLawfirm, updatedAt: new Date()},
+      }
     );
   }
 

@@ -8,6 +8,7 @@ const lawfirm_repository_1 = require("../api/repository/lawfirm/lawfirm.reposito
 const lawfirm_repomodel_1 = require("../database/repomodels/lawfirm.repomodel");
 const dataCopier_util_1 = require("./dataCopier.util");
 const common_util_1 = __importDefault(require("./common.util"));
+const uuid_1 = require("uuid");
 dotenv_1.default.config();
 class LawfirmUtil {
     constructor() {
@@ -21,7 +22,10 @@ class LawfirmUtil {
     async upsertLawfirm(data) {
         const newLawfirm = new lawfirm_repomodel_1.Lawfirm();
         const validatedLawfirm = dataCopier_util_1.DataCopier.copy(newLawfirm, data);
-        return await this.lawfirmRepository.upsert({ lawfirmCompanyName: data.lawfirmCompanyName }, validatedLawfirm);
+        return await this.lawfirmRepository.upsert({ lawfirmCompanyName: data.lawfirmCompanyName }, {
+            $setOnInsert: { logTrackingId: (0, uuid_1.v4)() },
+            $set: { ...validatedLawfirm, updatedAt: new Date() },
+        });
     }
     async lawfirmDetails(data) {
         return {

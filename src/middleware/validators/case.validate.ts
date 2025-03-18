@@ -860,40 +860,83 @@ class CaseValidate {
           averageInterestRate: Joi.number().strict().optional().messages({
             'number.base': 'Average interest rate must be a number.',
           }),
-          lawsuitFile: Joi.array()
-            .items(
-              Joi.object({
-                key: Joi.string().required().messages({
-                  'string.empty': 'Key cannot be empty.',
-                  'string.base': 'Key must be a string.',
-                  'any.required': 'Key is required.',
-                }),
-                originalFileName: Joi.string().required().messages({
-                  'string.empty': 'Original file name cannot be empty.',
-                  'string.base': 'Original file name must be a string.',
-                  'any.required': 'Original file name is required.',
-                }),
-                url: Joi.string().optional().allow('').messages({
-                  'string.base': 'URL must be a string.',
-                }),
-              })
-            )
-            .optional()
-            .messages({
-              'array.base': 'Lawsuit files must be an array.',
+          lawsuitExist: Joi.boolean().optional(),
+
+          lawsuit: Joi.when('lawsuitExist', {
+            is: true,
+            then: Joi.object({
+              balance: Joi.number().required().messages({
+                'number.base': 'Lawsuit balance must be a number.',
+                'any.required': 'Lawsuit balance is required.',
+              }),
+              document_date: Joi.date().required().messages({
+                'date.base': 'Document date must be a valid date.',
+                'any.required': 'Document date is required.',
+              }),
             }),
-          hasLawsuits: Joi.boolean().optional().messages({
-            'boolean.base': 'Has lawsuits must be a boolean.',
+            otherwise: Joi.optional().strip(),
           }),
-          lawsuitCreditorTags: Joi.array()
-            .items(Joi.string())
-            .optional()
-            .messages({
-              'array.base':
-                'Lawsuit creditor tags must be an array of strings.',
+
+          lawfirm: Joi.when('lawsuitExist', {
+            is: true,
+            then: Joi.object({
+              lawfirmCompanyName: Joi.string().required().messages({
+                'string.base': 'Lawfirm company name must be a string.',
+                'any.required': 'Lawfirm company name is required.',
+              }),
+              email: Joi.string().email().required().messages({
+                'string.email': 'Lawfirm email must be a valid email address.',
+                'any.required': 'Lawfirm email is required.',
+              }),
+              phone: Joi.string()
+                .pattern(/^\d{10}$/)
+                .required()
+                .messages({
+                  'string.pattern.base':
+                    'Lawfirm phone number must be exactly 10 digits.',
+                  'any.required': 'Lawfirm phone is required.',
+                }),
+              address: Joi.string().required().messages({
+                'string.base': 'Lawfirm address must be a string.',
+                'any.required': 'Lawfirm address is required.',
+              }),
+              city: Joi.string().required().messages({
+                'string.base': 'Lawfirm city must be a string.',
+                'any.required': 'Lawfirm city is required.',
+              }),
+              state: Joi.string().required().messages({
+                'string.base': 'Lawfirm state must be a string.',
+                'any.required': 'Lawfirm state is required.',
+              }),
+              EIN: Joi.string().required().messages({
+                'string.base': 'Lawfirm EIN must be a string.',
+                'any.required': 'Lawfirm EIN is required.',
+              }),
             }),
-          dateServed: Joi.date().optional().messages({
-            'date.base': 'Date served must be a valid date.',
+            otherwise: Joi.optional().strip(),
+          }),
+
+          attorney: Joi.when('lawsuitExist', {
+            is: true,
+            then: Joi.object({
+              name: Joi.string().required().messages({
+                'string.base': 'Attorney name must be a string.',
+                'any.required': 'Attorney name is required.',
+              }),
+              email: Joi.string().email().required().messages({
+                'string.email': 'Attorney email must be a valid email address.',
+                'any.required': 'Attorney email is required.',
+              }),
+              phone: Joi.string()
+                .pattern(/^\d{10}$/)
+                .required()
+                .messages({
+                  'string.pattern.base':
+                    'Attorney phone number must be exactly 10 digits.',
+                  'any.required': 'Attorney phone is required.',
+                }),
+            }),
+            otherwise: Joi.optional().strip(),
           }),
         })
       ),

@@ -755,14 +755,15 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
-            const lawsuitFields = findCase.debtor.lawsuitFields?.find(lawsuit => lawsuit.plaintiff_company ===
-                findCase.creditor.businessInformation.companyName &&
-                lawsuit.defendant_company ===
-                    findCase.debtor.businessInformation.companyName) || null;
-            if (lawsuitFields) {
-                lawsuitFields['userId'] = reqTemp.id;
-                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, req.body?.intervals);
-                const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
+            if (!findCase.lawsuitExist) {
+                const lawsuitFields = findCase.debtor.lawsuitFields?.find(lawsuit => lawsuit.plaintiff_company ===
+                    findCase.creditor.businessInformation.companyName &&
+                    lawsuit.defendant_company ===
+                        findCase.debtor.businessInformation.companyName) || null;
+                if (lawsuitFields) {
+                    const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
+                    const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
+                }
             }
             // if (req.body?.commission) {
             //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
@@ -810,11 +811,21 @@ class CaseService {
                 return [false, 'Payment plan already exist!'];
             }
             reqTemp['platform'] = true;
-            const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(reqTemp, findCase);
+            if (!findCase.lawsuitExist &&
+                reqTemp.body.attorney &&
+                reqTemp.body.lawsuit) {
+                const lawsuitFields = {
+                    ...req.body.lawsuit,
+                    ...req.body.attorney,
+                };
+                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetailsDebtorPortal(lawsuitFields, reqTemp.id);
+                const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
+            }
             let caseUpdated = await this.caseRepository.updateById(req.params.id, {
                 intervals: req.body.intervals,
                 serviceFee: req.body.serviceFee,
                 legalFee: req.body.legalFee,
+                lawsuitExist: true,
                 updatedAt: new Date(common_util_1.default.getCurrentDate()),
             });
             if (!caseUpdated) {

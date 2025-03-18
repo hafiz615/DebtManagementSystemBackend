@@ -821,37 +821,78 @@ class CaseValidate {
                 averageInterestRate: joi_1.default.number().strict().optional().messages({
                     'number.base': 'Average interest rate must be a number.',
                 }),
-                lawsuitFile: joi_1.default.array()
-                    .items(joi_1.default.object({
-                    key: joi_1.default.string().required().messages({
-                        'string.empty': 'Key cannot be empty.',
-                        'string.base': 'Key must be a string.',
-                        'any.required': 'Key is required.',
+                lawsuitExist: joi_1.default.boolean().optional(),
+                lawsuit: joi_1.default.when('lawsuitExist', {
+                    is: true,
+                    then: joi_1.default.object({
+                        balance: joi_1.default.number().required().messages({
+                            'number.base': 'Lawsuit balance must be a number.',
+                            'any.required': 'Lawsuit balance is required.',
+                        }),
+                        document_date: joi_1.default.date().required().messages({
+                            'date.base': 'Document date must be a valid date.',
+                            'any.required': 'Document date is required.',
+                        }),
                     }),
-                    originalFileName: joi_1.default.string().required().messages({
-                        'string.empty': 'Original file name cannot be empty.',
-                        'string.base': 'Original file name must be a string.',
-                        'any.required': 'Original file name is required.',
+                    otherwise: joi_1.default.optional().strip(),
+                }),
+                lawfirm: joi_1.default.when('lawsuitExist', {
+                    is: true,
+                    then: joi_1.default.object({
+                        lawfirmCompanyName: joi_1.default.string().required().messages({
+                            'string.base': 'Lawfirm company name must be a string.',
+                            'any.required': 'Lawfirm company name is required.',
+                        }),
+                        email: joi_1.default.string().email().required().messages({
+                            'string.email': 'Lawfirm email must be a valid email address.',
+                            'any.required': 'Lawfirm email is required.',
+                        }),
+                        phone: joi_1.default.string()
+                            .pattern(/^\d{10}$/)
+                            .required()
+                            .messages({
+                            'string.pattern.base': 'Lawfirm phone number must be exactly 10 digits.',
+                            'any.required': 'Lawfirm phone is required.',
+                        }),
+                        address: joi_1.default.string().required().messages({
+                            'string.base': 'Lawfirm address must be a string.',
+                            'any.required': 'Lawfirm address is required.',
+                        }),
+                        city: joi_1.default.string().required().messages({
+                            'string.base': 'Lawfirm city must be a string.',
+                            'any.required': 'Lawfirm city is required.',
+                        }),
+                        state: joi_1.default.string().required().messages({
+                            'string.base': 'Lawfirm state must be a string.',
+                            'any.required': 'Lawfirm state is required.',
+                        }),
+                        EIN: joi_1.default.string().required().messages({
+                            'string.base': 'Lawfirm EIN must be a string.',
+                            'any.required': 'Lawfirm EIN is required.',
+                        }),
                     }),
-                    url: joi_1.default.string().optional().allow('').messages({
-                        'string.base': 'URL must be a string.',
+                    otherwise: joi_1.default.optional().strip(),
+                }),
+                attorney: joi_1.default.when('lawsuitExist', {
+                    is: true,
+                    then: joi_1.default.object({
+                        name: joi_1.default.string().required().messages({
+                            'string.base': 'Attorney name must be a string.',
+                            'any.required': 'Attorney name is required.',
+                        }),
+                        email: joi_1.default.string().email().required().messages({
+                            'string.email': 'Attorney email must be a valid email address.',
+                            'any.required': 'Attorney email is required.',
+                        }),
+                        phone: joi_1.default.string()
+                            .pattern(/^\d{10}$/)
+                            .required()
+                            .messages({
+                            'string.pattern.base': 'Attorney phone number must be exactly 10 digits.',
+                            'any.required': 'Attorney phone is required.',
+                        }),
                     }),
-                }))
-                    .optional()
-                    .messages({
-                    'array.base': 'Lawsuit files must be an array.',
-                }),
-                hasLawsuits: joi_1.default.boolean().optional().messages({
-                    'boolean.base': 'Has lawsuits must be a boolean.',
-                }),
-                lawsuitCreditorTags: joi_1.default.array()
-                    .items(joi_1.default.string())
-                    .optional()
-                    .messages({
-                    'array.base': 'Lawsuit creditor tags must be an array of strings.',
-                }),
-                dateServed: joi_1.default.date().optional().messages({
-                    'date.base': 'Date served must be a valid date.',
+                    otherwise: joi_1.default.optional().strip(),
                 }),
             })),
         });

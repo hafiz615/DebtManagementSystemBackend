@@ -175,7 +175,10 @@ const caseModel: Schema = new Schema({
   },
   affiliateEmail: {
     type: String,
-  }
+  },
+  lawsuitExist: {
+    type: Boolean,
+  },
 });
 
 caseModel.pre('save', async function (next) {
