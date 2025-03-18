@@ -172,7 +172,11 @@ router.put(
   caseController.updateCasePlan
 );
 
-router.put('/update-case-plan/:id', caseController.updateCasePlanDebtorPortal);
+router.put(
+  '/update-case-plan/:id',
+  authorize.validateAuth,
+  caseController.updateCasePlanDebtorPortal
+);
 
 router.get(
   '/getAllUserCases',

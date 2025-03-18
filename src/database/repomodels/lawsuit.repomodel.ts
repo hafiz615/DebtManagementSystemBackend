@@ -6,7 +6,7 @@ export class Lawsuit {
   debtorId = null;
   userId = null;
   creditorId = null;
-  lawsuitStatus = false;
+  lawsuitResolved = false;
   lawsuitPaidAmount = 0;
   lawsuitPaidCount = 0;
   lawsuitReceiveAmount = 0;

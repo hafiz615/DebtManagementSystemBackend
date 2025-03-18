@@ -72,4 +72,5 @@ export interface ICase extends Document {
   legalFee: number;
   affiliateLink: string;
   affiliateEmail: string;
+  lawsuitExist: boolean;
 }

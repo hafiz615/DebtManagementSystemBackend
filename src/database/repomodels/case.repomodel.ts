@@ -59,4 +59,5 @@ export class Case {
   legalFee = 0;
   affiliateLink = '';
   affiliateEmail = '';
+  lawsuitExist = false;
 }

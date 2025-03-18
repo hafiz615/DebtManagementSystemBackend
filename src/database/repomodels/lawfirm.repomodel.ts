@@ -13,7 +13,6 @@ export class Lawfirm {
   isDeleted = false;
   lawfirmFee = 0;
   platform = false;
-  logTrackingId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

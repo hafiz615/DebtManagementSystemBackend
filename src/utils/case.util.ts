@@ -45,6 +45,7 @@ import debtorUtil from './debtor.util';
 import {IStrategy} from '../database/interfaces/strategy.interface';
 import {paymentPlatform} from '../enums';
 import twilio from 'twilio';
+import lawsuitUtil from './lawsuit.util';
 
 dotenv.config();
 class CaseUtil {
@@ -2702,6 +2703,21 @@ class CaseUtil {
         // if (!caseCreated) {
         //   return [false, constantsUtil.failureAddMessage('case')];
         // }
+        if (body?.lawsuitExist) {
+          const lawsuitFields = {
+            ...body.lawsuit,
+            ...body.lawfirm,
+            ...body.attorney,
+          };
+          const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+            lawsuitFields,
+            id
+          );
+          const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+            lawsuitDetails,
+            caseCreated
+          );
+        }
         if (caseCreated) {
           createdCases.push(caseCreated);
           const accountTitles = creditor.accountTitleMapping;
