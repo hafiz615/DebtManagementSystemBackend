@@ -1067,6 +1067,33 @@ class PaymentService {
     return [true, constants.successAddMessage('ACH details')];
   }
 
+  async updateACHDetails(req: Request) {
+    const reqTemp: any = req;
+    const type = reqTemp.query.type;
+
+    const user: any = await commonUtil.getUserByType(req.params.id, type);
+    if (!user.obj) return [false, constants.notFoundMessage(`${type}`)];
+    const data = req.body.data;
+    const paymentObj = commonUtil.getDecryptedData(data);
+
+    const fundingSource = await paynoteUtil.updateFundingSource(
+      paymentObj,
+      user.obj.paynoteUserId,
+      user.obj.paynoteSourceId
+    );
+
+    if (fundingSource?.error) {
+      let message = '';
+      if (fundingSource?.messages) {
+        message = fundingSource.messages[0];
+      } else {
+        message = fundingSource.message;
+      }
+      return [false, message];
+    }
+    return [true, constants.successUpdateMessage('ACH details')];
+  }
+
   async sendPaymentPaynote(req: Request) {
     const paymentId = req.params.id;
     const payment: any = await this.paymentRepository.getById<IPayment>(

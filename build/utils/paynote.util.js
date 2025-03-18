@@ -218,9 +218,10 @@ class PaynoteUtil {
             return error?.response?.data;
         }
     }
-    async updateFundingSource(data, userId) {
+    async updateFundingSource(data, userId, sourceId) {
         const apiUrl = `${process.env.paynoteUrl}/funding-source/update`;
         data['user_id'] = userId;
+        data['source_id'] = sourceId;
         console.log('I am in updateFundingSource');
         console.log('URL: ', apiUrl);
         console.log('Payload: ', data);
