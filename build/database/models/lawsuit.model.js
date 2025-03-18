@@ -52,7 +52,7 @@ const lawsuitModel = new mongoose_1.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'Creditors',
     },
-    lawsuitStatus: {
+    lawsuitResolved: {
         type: Boolean,
     },
     lawsuitPaidAmount: {

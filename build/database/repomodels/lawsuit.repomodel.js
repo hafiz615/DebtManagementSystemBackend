@@ -12,7 +12,7 @@ class Lawsuit {
         this.debtorId = null;
         this.userId = null;
         this.creditorId = null;
-        this.lawsuitStatus = false;
+        this.lawsuitResolved = false;
         this.lawsuitPaidAmount = 0;
         this.lawsuitPaidCount = 0;
         this.lawsuitReceiveAmount = 0;
