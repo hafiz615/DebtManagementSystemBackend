@@ -1260,18 +1260,17 @@ class CaseService {
     );
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     const time = new Date(commonUtil.getCurrentDate());
-    await caseUtil.addInHistory(
-      {
-        Username: reqTemp.name,
-        Subject: subject,
-        From: from,
-        To: sendTo,
-        Content: content,
-        Time: time,
-        Action: 'EMAIL',
-      },
-      caseId
-    );
+    const historyObj = {
+      Username: reqTemp.name,
+      Subject: subject,
+      From: from,
+      To: sendTo,
+      Content: content,
+      Time: time,
+      Action: 'EMAIL',
+    };
+    if (cc.length) historyObj['CC'] = cc;
+    await caseUtil.addInHistory(historyObj, caseId);
     const emailData = {
       from,
       to: sendTo,

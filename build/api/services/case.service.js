@@ -1088,7 +1088,7 @@ class CaseService {
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
         const time = new Date(common_util_1.default.getCurrentDate());
-        await case_util_1.default.addInHistory({
+        const historyObj = {
             Username: reqTemp.name,
             Subject: subject,
             From: from,
@@ -1096,7 +1096,10 @@ class CaseService {
             Content: content,
             Time: time,
             Action: 'EMAIL',
-        }, caseId);
+        };
+        if (cc.length)
+            historyObj['CC'] = cc;
+        await case_util_1.default.addInHistory(historyObj, caseId);
         const emailData = {
             from,
             to: sendTo,

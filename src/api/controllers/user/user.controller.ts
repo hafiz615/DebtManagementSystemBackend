@@ -608,6 +608,138 @@ class UserController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
+
+  getSignatures = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.getSignatures(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.OK)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Signatures'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  addSignature = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.addSignature(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successAddMessage('Signature'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  updateSignature = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.updateSignature(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Signature'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  deleteSignature = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.deleteSignature(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successDeleteMessage('Signature'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  updateSignatureStatus = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.updateSignatureStatus(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Signature'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getUserActiveSignature = async (req: Request, res: Response) => {
+    try {
+      const response = await this.userService.getUserActiveSignature(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.OK)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Signature'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 }
 
 export default new UserController();

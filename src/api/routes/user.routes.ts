@@ -90,4 +90,43 @@ router.get(
   userController.getUsersByRole
 );
 
+router.get(
+  '/getSignatures',
+  authorize.validateAuth,
+  userController.getSignatures
+);
+
+router.post(
+  '/addSignature',
+  authorize.validateAuth,
+  userValidate.signature,
+  userController.addSignature
+);
+
+router.post(
+  '/updateSignature/:id',
+  authorize.validateAuth,
+  userValidate.signature,
+  userController.updateSignature
+);
+
+router.delete(
+  '/deleteSignature/:id',
+  authorize.validateAuth,
+  userController.deleteSignature
+);
+
+router.post(
+  '/updateSignatureStatus/:id',
+  authorize.validateAuth,
+  userValidate.updateSignatureStatus,
+  userController.updateSignatureStatus
+);
+
+router.get(
+  '/getUserActiveSignature',
+  authorize.validateAuth,
+  userController.getUserActiveSignature
+);
+
 export default router;
