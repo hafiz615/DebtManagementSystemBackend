@@ -192,5 +192,42 @@ class UserRequests {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  async signature(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      signature: Joi.string().required().messages({
+        'string.empty': 'Signature cannot be empty.',
+        'any.required': 'Signature is required.',
+        'string.base': 'Signature must be a string.',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
+
+  async updateSignatureStatus(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      active: Joi.boolean().required().messages({
+        'any.required': 'Active field is required',
+        'boolean.base': 'Active must be a boolean value',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 export default new UserRequests();
