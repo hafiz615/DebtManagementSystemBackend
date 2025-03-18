@@ -26,7 +26,8 @@ class SmsService {
         };
         this.receivedMessage = async (req) => {
             const { From, Body, SmsStatus, To } = req.body;
-            const number = await common_util_1.default.cleanPhoneNumberConditionally(From);
+            console.log(req.body, 'req.body');
+            const number = await common_util_1.default.cleanPhoneNumber(From);
             const name = await call_util_1.default.getDebtorOrCreditorName(number);
             let caseData = null;
             const newNotification = new notification_repomodel_1.Notification();
@@ -80,6 +81,7 @@ class SmsService {
                         userId: findUser._id,
                     });
             }
+            console.log('new notification', newNotification, updatedCount?.count || 0);
             app_1.default.socketInstance.emit('notify', {
                 notificationCount: updatedCount?.count || 0,
                 type: 'SMS',

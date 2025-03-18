@@ -1001,12 +1001,12 @@ class EmailUtil {
 
   async sendSms(body: string, phone: string, from: string) {
     try {
-      const code = process.env.environment === 'prod' ? '+1' : '+92';
-      phone = code + phone;
+      //const code = process.env.environment === 'prod' ? '+1' : '+92';
+      //phone = code + phone;
       const result = await this.client.messages.create({
         body: body,
         from: '+1' + from, //the phone number provided by Twillio
-        to: phone, // your own phone number
+        to: '+1' + phone, // your own phone number
       });
       if (result.sid) {
         return [true, `Your sms is delivered successfully`];

@@ -50,7 +50,9 @@ class SmsService {
   receivedMessage = async (req: Request) => {
     const {From, Body, SmsStatus, To} = req.body;
 
-    const number = await commonUtil.cleanPhoneNumberConditionally(From);
+    console.log(req.body, 'req.body');
+
+    const number = await commonUtil.cleanPhoneNumber(From);
     const name = await callUtil.getDebtorOrCreditorName(number);
 
     let caseData: ICase = null;
@@ -144,6 +146,8 @@ class SmsService {
           userId: findUser._id,
         });
     }
+
+    console.log('new notification', newNotification, updatedCount?.count || 0);
     app.socketInstance.emit('notify', {
       notificationCount: updatedCount?.count || 0,
       type: 'SMS',
