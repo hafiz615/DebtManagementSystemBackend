@@ -223,10 +223,10 @@ class PaynoteUtil {
     }
   }
 
-  async updateFundingSource(data: any, userId: string, sourceId: string) {
+  async updateFundingSource(data: any, user: any) {
     const apiUrl = `${process.env.paynoteUrl}/funding-source/update`;
-    data['user_id'] = userId;
-    data['source_id'] = sourceId;
+    data['user_id'] = user.obj.paynoteUserId;
+    data['source_id'] = user.obj.paynoteSourceId; // ADD BACK THIS LINE
     console.log('I am in updateFundingSource');
     console.log('URL: ', apiUrl);
     console.log('Payload: ', data);
@@ -237,9 +237,12 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
+      await user.model.updateById(user.obj._id, {
+        paynoteSourceId: response.data?.funding_source?.source_id,
+      });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error?.response?.data;
     }
   }
 
@@ -261,7 +264,7 @@ class PaynoteUtil {
       });
       return response.data;
     } catch (error) {
-      return error.message;
+      return error;
     }
   }
 

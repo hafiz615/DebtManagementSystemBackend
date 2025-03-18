@@ -1078,8 +1078,7 @@ class PaymentService {
 
     const fundingSource = await paynoteUtil.updateFundingSource(
       paymentObj,
-      user.obj.paynoteUserId,
-      user.obj.paynoteSourceId
+      user
     );
 
     if (fundingSource?.error) {

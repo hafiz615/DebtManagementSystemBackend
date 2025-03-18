@@ -803,7 +803,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage(`${type}`)];
         const data = req.body.data;
         const paymentObj = common_util_1.default.getDecryptedData(data);
-        const fundingSource = await paynote_util_1.default.updateFundingSource(paymentObj, user.obj.paynoteUserId, user.obj.paynoteSourceId);
+        const fundingSource = await paynote_util_1.default.updateFundingSource(paymentObj, user);
         if (fundingSource?.error) {
             let message = '';
             if (fundingSource?.messages) {
