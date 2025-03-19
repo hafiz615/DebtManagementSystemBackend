@@ -35,4 +35,13 @@ router.get(
   callController.getMissedCalls
 );
 
+router.post('/twilio/voiceMail', callController.voiceMail);
+router.post('/twilio/voiceMailRecording', callController.voiceMailRecording);
+
+router.get(
+  '/getVoiceMails',
+  authorize.validateAuth,
+  callController.getVoiceMails
+);
+
 export default router;

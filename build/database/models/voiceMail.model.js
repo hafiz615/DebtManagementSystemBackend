@@ -26,33 +26,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Call = void 0;
+exports.VoiceMail = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
-const callSchema = new mongoose_1.Schema({
+const voiceMailSchema = new mongoose_1.Schema({
     callSid: { type: String },
-    caseId: { type: String },
-    callerName: { type: String },
-    accountSid: { type: String },
     callTo: { type: String },
     callFrom: { type: String },
-    callStartTime: { type: Date },
-    callDirection: { type: String },
-    callDuration: { type: String },
-    callStatus: { type: String },
     callRecordingSid: { type: String },
     transcriptUrl: { type: String },
-    type: { type: String, default: 'Call' },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true },
 });
 // Automatically update `updatedAt` field
-callSchema.pre('save', function (next) {
+voiceMailSchema.pre('save', function (next) {
     this.updatedAt = new Date();
     next();
 });
-callSchema.pre('findOneAndUpdate', function (next) {
+voiceMailSchema.pre('findOneAndUpdate', function (next) {
     this.set({ updatedAt: new Date() });
     next();
 });
@@ -92,7 +84,7 @@ const logUpdatePost = async function (doc) {
     });
 };
 // Add hooks for logging
-callSchema.pre('findOneAndUpdate', logUpdate);
-callSchema.post('findOneAndUpdate', logUpdatePost);
-exports.Call = mongoose_1.default.model('Call', callSchema);
-//# sourceMappingURL=call.model.js.map
+voiceMailSchema.pre('findOneAndUpdate', logUpdate);
+voiceMailSchema.post('findOneAndUpdate', logUpdatePost);
+exports.VoiceMail = mongoose_1.default.model('VoiceMail', voiceMailSchema);
+//# sourceMappingURL=voiceMail.model.js.map

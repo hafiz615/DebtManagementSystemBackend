@@ -1,18 +1,19 @@
-import { Document } from 'mongoose';
+import {Document} from 'mongoose';
 
 export interface ICall extends Document {
-    callSid: string ;
-    caseId: string;
-    callerName: string;
-    accountSid: string;
-    callTo: string;
-    callFrom: string;
-    callStartTime: string;
-    callDirection: string;
-    callDuration: string ;
-    callStatus: string;
-    callRecordingSid: string;
-    transcriptUrl: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }
+  callSid: string;
+  caseId: string;
+  callerName: string;
+  accountSid: string;
+  callTo: string;
+  callFrom: string;
+  callStartTime: string;
+  callDirection: string;
+  callDuration: string;
+  callStatus: string;
+  callRecordingSid: string;
+  type: string;
+  transcriptUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
