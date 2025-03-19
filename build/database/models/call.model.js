@@ -43,6 +43,7 @@ const callSchema = new mongoose_1.Schema({
     callStatus: { type: String },
     callRecordingSid: { type: String },
     transcriptUrl: { type: String },
+    type: { type: String, default: 'Call' },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true },
 });
@@ -86,7 +87,7 @@ const logUpdatePost = async function (doc) {
         url,
         method,
     });
-    logEntry.save().catch((err) => {
+    logEntry.save().catch(err => {
         console.error('Error saving log entry:', err);
     });
 };

@@ -1,33 +1,43 @@
 import {Request} from 'express';
 import callUtil from './call.util';
 import dotenv from 'dotenv';
-import {IVoiceMail} from '../database/interfaces/voiceMail.interface';
-import {VoiceMail} from '../database/repomodels/voiceMail.repomodel';
-import {VoiceMailRepository} from '../api/repository/voiceMail/voiceMail.repository';
+import {Call} from '../database/repomodels/call.repomodel';
+import {CallRepository} from '../api/repository/call/call.repository';
 import commonUtil from './common.util';
+import {ICall} from '../database/interfaces/call.interface';
 dotenv.config();
 
 class VoiceMailUtil {
-  private voiceMailRepository: VoiceMailRepository;
+  private callRepository: CallRepository;
 
   constructor() {
-    this.voiceMailRepository = new VoiceMailRepository();
+    this.callRepository = new CallRepository();
   }
 
   async createVoiceMail(data: any) {
-    const newVoiceMail = new VoiceMail();
-    const {CallSid, To, From, RecordingSid} = data;
-
+    const newVoiceMail = new Call();
+    const {
+      CaseId,
+      CallSid,
+      AccountSid,
+      To,
+      CallStatus,
+      Direction,
+      From,
+      RecordingSid,
+    } = data;
+    newVoiceMail.accountSid = AccountSid;
     newVoiceMail.callSid = CallSid;
     newVoiceMail.callTo = To;
+    newVoiceMail.callStatus = CallStatus;
+    newVoiceMail.callDirection = Direction;
     newVoiceMail.callFrom = From;
     newVoiceMail.callRecordingSid = RecordingSid;
+    newVoiceMail.type = 'Voice Mail';
     await callUtil.fetchRecording(RecordingSid);
     const transcriptUrl: any = await callUtil.createTranscript(RecordingSid);
     newVoiceMail.transcriptUrl = transcriptUrl;
-    return await this.voiceMailRepository.create<IVoiceMail>(
-      newVoiceMail as any
-    );
+    return await this.callRepository.create<ICall>(newVoiceMail as any);
   }
 
   async getVoiceMails(req: Request) {
@@ -36,8 +46,8 @@ class VoiceMailUtil {
     console.log('hello from number', identity);
 
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
-    const voiceMails = await this.voiceMailRepository.getAll<IVoiceMail>(
-      {callTo: identity},
+    const voiceMails = await this.callRepository.getAll<ICall>(
+      {callTo: identity, type: 'Voice Mail'},
       undefined,
       undefined,
       {createdAt: -1},
@@ -46,8 +56,9 @@ class VoiceMailUtil {
       pageLimit.page,
       pageLimit.limit
     );
-    const voiceMailCount = await this.voiceMailRepository.getCount<IVoiceMail>({
+    const voiceMailCount = await this.callRepository.getCount<ICall>({
       callTo: identity,
+      type: 'Voice Mail',
     });
 
     return {voiceMails, voiceMailCount};
