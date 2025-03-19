@@ -18,10 +18,7 @@ class AttorneyService {
             const lawSuitBalanceSummary = await this.lawsuitRepository.getOne({
                 debtorId: getCase.debtor,
                 creditorId: getCase.creditor,
-            }, undefined, undefined, [
-                { path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound' },
-                { path: 'lawfirmId' },
-            ]);
+            }, undefined, undefined, ['attorneyId', 'lawfirmId']);
             if (!lawSuitBalanceSummary)
                 return [true, null];
             const { attorneyId, lawfirmId, ...lawsuitData } = lawSuitBalanceSummary;

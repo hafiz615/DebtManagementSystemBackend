@@ -35,10 +35,7 @@ class AttorneyService {
       },
       undefined,
       undefined,
-      [
-        {path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound'},
-        {path: 'lawfirmId'},
-      ]
+      ['attorneyId', 'lawfirmId']
     );
 
     if (!lawSuitBalanceSummary) return [true, null];

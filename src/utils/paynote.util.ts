@@ -57,6 +57,7 @@ class PaynoteUtil {
       if (response.data?.success) {
         await modelRepository.updateById(id, {
           paynoteUserId: response.data?.user?.user_id,
+          paynoteUserFound: true,
         });
       }
       return response.data;
