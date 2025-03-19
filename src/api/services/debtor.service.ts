@@ -687,10 +687,12 @@ class DebtorService {
       if (body.basicInformation.weeklyBudget) {
         body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
       }
-      lawsuitExtractedFields = await caseUtil.getExtractionLawsuit(
-        body?.lawsuitDocuments
-      );
-      body.lawsuitFields = [lawsuitExtractedFields.result];
+      if (body?.lawsuitDocuments.length) {
+        lawsuitExtractedFields = await caseUtil.getExtractionLawsuit(
+          body?.lawsuitDocuments
+        );
+        body.lawsuitFields = [lawsuitExtractedFields.result];
+      }
       debtor = await caseUtil.createDebtor(body, id);
     } else {
       const newFiles = await this.updateDebtorIdExist(getDebtor, body);
