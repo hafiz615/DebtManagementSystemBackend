@@ -1055,10 +1055,11 @@ class PaymentService {
       }
       return [false, message];
     }
-    // const sourceId = fundingSource.funding_source.source_id;
-    // this.creditorReposiotry.updateById(creditor._id, {
-    //   paynoteSourceId: fundingSource.funding_source.source_id,
-    // });
+    const sourceId = fundingSource.funding_source.source_id;
+    user.model.updateById(user.obj._id, {
+      paynoteSourceId: fundingSource.funding_source.source_id,
+      paynoteSourceVerified: true,
+    });
     // paynoteUtil.initiateFundingSourceVerifcation(
     //   sourceId,
     //   creditor.paynoteUserId
