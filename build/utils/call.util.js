@@ -28,6 +28,7 @@ class CallUtil {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
     async fetchRecording(recordingSid) {
+        recordingSid = 'REa4355ba17366530c887853d814a06a7d';
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
         const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
@@ -110,6 +111,7 @@ class CallUtil {
         return response.choices[0].message.content;
     }
     async createTranscript(recordingSID) {
+        recordingSID = 'REa4355ba17366530c887853d814a06a7d';
         const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         const transcript = await client.intelligence.v2.transcripts.create({
             channel: {
@@ -119,6 +121,7 @@ class CallUtil {
             },
             serviceSid: process.env.TWILIO_Service_SID,
         });
+        console.log('transcript', transcript);
         return transcript.links.sentences;
     }
     async getDebtorOrCreditorName(number) {

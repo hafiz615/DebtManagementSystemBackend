@@ -16,16 +16,8 @@ class VoiceMailUtil {
 
   async createVoiceMail(data: any) {
     const newVoiceMail = new Call();
-    const {
-      CaseId,
-      CallSid,
-      AccountSid,
-      To,
-      CallStatus,
-      Direction,
-      From,
-      RecordingSid,
-    } = data;
+    const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
+      data;
     newVoiceMail.accountSid = AccountSid;
     newVoiceMail.callSid = CallSid;
     newVoiceMail.callTo = To;

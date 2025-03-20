@@ -259,7 +259,7 @@ class CallController {
       res.type('text/xml');
       return res.status(constants.CODE.OK).send(response[1]);
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error voice mail', error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
@@ -304,7 +304,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error voice mail recording', error.message);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
