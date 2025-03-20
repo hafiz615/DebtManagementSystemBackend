@@ -835,6 +835,8 @@ class CaseValidate {
                         }),
                     }),
                     otherwise: joi_1.default.optional().strip(),
+                }).messages({
+                    'string.pattern.base': 'lawsuit must be an object.',
                 }),
                 lawfirm: joi_1.default.when('lawsuitExist', {
                     is: true,
@@ -843,10 +845,14 @@ class CaseValidate {
                             'string.base': 'Lawfirm company name must be a string.',
                             'any.required': 'Lawfirm company name is required.',
                         }),
-                        email: joi_1.default.string().email().required().messages({
+                        email: joi_1.default.string()
+                            .email()
+                            .required()
+                            .messages({
                             'string.email': 'Lawfirm email must be a valid email address.',
                             'any.required': 'Lawfirm email is required.',
-                        }),
+                        })
+                            .optional(),
                         phone: joi_1.default.string()
                             .pattern(/^\d{10}$/)
                             .required()
@@ -854,45 +860,60 @@ class CaseValidate {
                             'string.pattern.base': 'Lawfirm phone number must be exactly 10 digits.',
                             'any.required': 'Lawfirm phone is required.',
                         }),
-                        address: joi_1.default.string().required().messages({
+                        address: joi_1.default.string().messages({
                             'string.base': 'Lawfirm address must be a string.',
                             'any.required': 'Lawfirm address is required.',
                         }),
-                        city: joi_1.default.string().required().messages({
+                        city: joi_1.default.string().messages({
                             'string.base': 'Lawfirm city must be a string.',
                             'any.required': 'Lawfirm city is required.',
                         }),
-                        state: joi_1.default.string().required().messages({
+                        state: joi_1.default.string().messages({
                             'string.base': 'Lawfirm state must be a string.',
                             'any.required': 'Lawfirm state is required.',
                         }),
-                        EIN: joi_1.default.string().required().messages({
+                        EIN: joi_1.default.string().messages({
                             'string.base': 'Lawfirm EIN must be a string.',
                             'any.required': 'Lawfirm EIN is required.',
                         }),
                     }),
                     otherwise: joi_1.default.optional().strip(),
+                }).messages({
+                    'string.pattern.base': 'lawfirm must be an object.',
                 }),
                 attorney: joi_1.default.when('lawsuitExist', {
                     is: true,
                     then: joi_1.default.object({
-                        name: joi_1.default.string().required().messages({
+                        attorney_name: joi_1.default.string().required().messages({
                             'string.base': 'Attorney name must be a string.',
                             'any.required': 'Attorney name is required.',
                         }),
-                        email: joi_1.default.string().email().required().messages({
-                            'string.email': 'Attorney email must be a valid email address.',
-                            'any.required': 'Attorney email is required.',
-                        }),
-                        phone: joi_1.default.string()
+                        attorney_telephone: joi_1.default.string()
                             .pattern(/^\d{10}$/)
                             .required()
                             .messages({
                             'string.pattern.base': 'Attorney phone number must be exactly 10 digits.',
-                            'any.required': 'Attorney phone is required.',
+                            'any.required': 'Attorney telephone is required.',
+                        }),
+                        attorney_address: joi_1.default.string().messages({
+                            'string.base': 'Attorney address must be a string.',
+                            'any.required': 'Attorney address is required.',
+                        }),
+                        attorney_city: joi_1.default.string().messages({
+                            'string.base': 'Attorney city must be a string.',
+                            'any.required': 'Attorney city is required.',
+                        }),
+                        attorney_state: joi_1.default.string().messages({
+                            'string.length': 'Attorney state must be a string.',
+                            'any.required': 'Attorney state is required.',
+                        }),
+                        attorney_SSN: joi_1.default.string().pattern(/^\d+$/).messages({
+                            'string.pattern.base': 'Attorney SSN must be number.',
                         }),
                     }),
                     otherwise: joi_1.default.optional().strip(),
+                }).messages({
+                    'string.pattern.base': 'attorney must be an object.',
                 }),
             })),
         });
