@@ -240,6 +240,7 @@ class CallController {
                 return res.status(constants_util_1.default.CODE.OK).send(response[1]);
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
@@ -280,6 +281,7 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
