@@ -27,54 +27,61 @@ class CallUtil {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
+    async fetchRecordingWithRetry(recordingSid, maxRetries = 5, delayMs = 5000) {
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`Attempt ${attempt}: Checking recording status...`);
+            const metadataResponse = await axiosInstanceInterceptor_1.default.get(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`, {
+                headers: {
+                    Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+                },
+            });
+            const status = metadataResponse.data.status;
+            console.log(`Recording status: ${status}`);
+            if (status === 'completed') {
+                // Download the media
+                const mediaUrl = `https://api.twilio.com${metadataResponse.data.uri.replace('.json', '.mp3')}`;
+                const recordingResponse = await axiosInstanceInterceptor_1.default.get(mediaUrl, {
+                    headers: {
+                        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+                    },
+                    responseType: 'arraybuffer',
+                });
+                if (recordingResponse.status === 200) {
+                    const buffer = Buffer.from(recordingResponse.data);
+                    const fileName = `${recordingSid}.mp3`;
+                    await this.uploadUtil.callUploadFile(fileName, buffer);
+                    console.log('File uploaded successfully to S3');
+                    return 'File uploaded to S3';
+                }
+            }
+            // Wait before retrying
+            if (attempt < maxRetries) {
+                console.log(`Recording not ready. Waiting ${delayMs}ms before retrying...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+            else {
+                console.log('Max retries reached. Recording still processing.');
+                throw new Error('Recording not ready yet.');
+            }
+        }
+        return null;
+    }
     async fetchRecording(recordingSid) {
         console.log(recordingSid, 'recordingSid');
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
-        const authToken = process.env.TWILIO_AUTH_TOKEN;
-        let metadataResponse;
-        try {
-            // Step 1: Fetch Metadata
-            metadataResponse = await axiosInstanceInterceptor_1.default.get(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`, {
-                headers: {
-                    Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
-                },
-            });
-            console.log('Metadata:', metadataResponse.data);
-        }
-        catch (error) {
-            console.error('Error fetching metadata:', {
-                message: error.message,
-                code: error.code,
-                responseStatus: error.response?.status,
-                responseData: error.response?.data,
-            });
-            throw new Error(`Failed to fetch recording metadata: ${error.message}`);
-        }
-        // Step 2: Get media URL
-        const mediaUrl = `https://api.twilio.com${metadataResponse.data.uri.replace('.json', '')}`;
-        console.log('Media URL:', mediaUrl);
-        let mediaResponse;
-        try {
-            // Step 3: Fetch actual media
-            mediaResponse = await axiosInstanceInterceptor_1.default.get(mediaUrl, {
-                headers: {
-                    Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
-                },
-                responseType: 'arraybuffer',
-            });
-            console.log(mediaResponse.status, 'media response status');
-        }
-        catch (error) {
-            console.error('Error fetching media:', {
-                message: error.message,
-                code: error.code,
-                responseStatus: error.response?.status,
-                responseData: error.response?.data,
-            });
-            throw new Error(`Failed to fetch media: ${error.message}`);
-        }
-        if (mediaResponse.status === 200) {
-            const buffer = Buffer.from(mediaResponse.data);
+        const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+        console.log('recordingUrl', recordingUrl);
+        const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
+            headers: {
+                Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+            },
+            responseType: 'arraybuffer',
+        });
+        console.log(response, 'response');
+        if (response.status === 200) {
+            const buffer = Buffer.from(response.data);
             const fileName = `${recordingSid}`;
             await this.uploadUtil.callUploadFile(fileName, buffer);
             return 'File uploaded to S3';
