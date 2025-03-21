@@ -30,30 +30,51 @@ class CallUtil {
     async fetchRecording(recordingSid) {
         console.log(recordingSid, 'recordingSid');
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
-        const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
-        console.log('recordingUrl', recordingUrl);
-        console.log('process.env.twilioAuthToken', process.env.TWILIO_AUTH_TOKEN);
-        let response;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        let metadataResponse;
         try {
-            response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
+            // Step 1: Fetch Metadata
+            metadataResponse = await axiosInstanceInterceptor_1.default.get(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`, {
                 headers: {
-                    Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+                    Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
                 },
-                responseType: 'arraybuffer',
             });
-            console.log(response.status, 'response status');
+            console.log('Metadata:', metadataResponse.data);
         }
         catch (error) {
-            console.error('Error fetching recording:', {
+            console.error('Error fetching metadata:', {
                 message: error.message,
                 code: error.code,
                 responseStatus: error.response?.status,
                 responseData: error.response?.data,
             });
-            throw new Error(`Failed to fetch recording: ${error.message}`);
+            throw new Error(`Failed to fetch recording metadata: ${error.message}`);
         }
-        if (response.status === 200) {
-            const buffer = Buffer.from(response.data);
+        // Step 2: Get media URL
+        const mediaUrl = `https://api.twilio.com${metadataResponse.data.uri.replace('.json', '')}`;
+        console.log('Media URL:', mediaUrl);
+        let mediaResponse;
+        try {
+            // Step 3: Fetch actual media
+            mediaResponse = await axiosInstanceInterceptor_1.default.get(mediaUrl, {
+                headers: {
+                    Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+                },
+                responseType: 'arraybuffer',
+            });
+            console.log(mediaResponse.status, 'media response status');
+        }
+        catch (error) {
+            console.error('Error fetching media:', {
+                message: error.message,
+                code: error.code,
+                responseStatus: error.response?.status,
+                responseData: error.response?.data,
+            });
+            throw new Error(`Failed to fetch media: ${error.message}`);
+        }
+        if (mediaResponse.status === 200) {
+            const buffer = Buffer.from(mediaResponse.data);
             const fileName = `${recordingSid}`;
             await this.uploadUtil.callUploadFile(fileName, buffer);
             return 'File uploaded to S3';
