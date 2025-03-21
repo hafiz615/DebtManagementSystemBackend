@@ -1525,6 +1525,7 @@ class CaseService {
           lawsuitDetails,
           findCase
         );
+        if (lawfirmTemp) req.body.lawsuitExist = true;
       }
     }
 

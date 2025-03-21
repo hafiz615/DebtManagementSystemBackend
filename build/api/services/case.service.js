@@ -772,6 +772,8 @@ class CaseService {
                 if (lawsuitFields) {
                     const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
                     const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
+                    if (lawfirmTemp)
+                        req.body.lawsuitExist = true;
                 }
             }
             // if (req.body?.commission) {
