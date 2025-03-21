@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const call_util_1 = __importDefault(require("./call.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const call_repomodel_1 = require("../database/repomodels/call.repomodel");
 const call_repository_1 = require("../api/repository/call/call.repository");
@@ -25,9 +24,9 @@ class VoiceMailUtil {
         newVoiceMail.callFrom = From;
         newVoiceMail.callRecordingSid = RecordingSid;
         newVoiceMail.type = 'Voice Mail';
-        await call_util_1.default.fetchRecordingWithRetry(RecordingSid);
-        const transcriptUrl = await call_util_1.default.createTranscript(RecordingSid);
-        newVoiceMail.transcriptUrl = transcriptUrl;
+        // await callUtil.fetchRecordingWithRetry(RecordingSid);
+        // const transcriptUrl: any = await callUtil.createTranscript(RecordingSid);
+        // newVoiceMail.transcriptUrl = transcriptUrl;
         return await this.callRepository.create(newVoiceMail);
     }
     async getVoiceMails(req) {

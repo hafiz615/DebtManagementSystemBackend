@@ -27,9 +27,9 @@ class VoiceMailUtil {
     newVoiceMail.callFrom = From;
     newVoiceMail.callRecordingSid = RecordingSid;
     newVoiceMail.type = 'Voice Mail';
-    await callUtil.fetchRecordingWithRetry(RecordingSid);
-    const transcriptUrl: any = await callUtil.createTranscript(RecordingSid);
-    newVoiceMail.transcriptUrl = transcriptUrl;
+    // await callUtil.fetchRecordingWithRetry(RecordingSid);
+    // const transcriptUrl: any = await callUtil.createTranscript(RecordingSid);
+    // newVoiceMail.transcriptUrl = transcriptUrl;
     return await this.callRepository.create<ICall>(newVoiceMail as any);
   }
 
