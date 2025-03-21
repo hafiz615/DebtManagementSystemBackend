@@ -719,7 +719,8 @@ class DebtorService {
     }
     if (lawsuitExtractedFields?.result) {
       const lawfirmTemp = await lawfirmUtil.lawfirmDetails(
-        lawsuitExtractedFields
+        lawsuitExtractedFields,
+        id
       );
       await lawfirmUtil.upsertLawfirm(lawfirmTemp);
     }
@@ -1515,7 +1516,10 @@ class DebtorService {
           },
         ];
       }
-      const lawfirmTemp = await lawfirmUtil.lawfirmDetails(lawsuitFields);
+      const lawfirmTemp = await lawfirmUtil.lawfirmDetails(
+        lawsuitFields,
+        reqTemp.id
+      );
       await lawfirmUtil.upsertLawfirm(lawfirmTemp);
       debtorBody['lawsuitFields'] = [lawsuitFields.result];
       debtorBody['extractedFields'] = extractedFields.extracted_fields;

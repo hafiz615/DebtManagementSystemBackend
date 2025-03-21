@@ -234,6 +234,15 @@ class CaseService {
             //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
             //   if (!checkCasePayment[0]) return checkCasePayment;
             // }
+            if (!findCase.lawsuitExist && req.body?.lawsuitExist) {
+                const lawsuitFields = {
+                    ...req.body.lawsuit,
+                    ...req.body.lawfirm,
+                    ...req.body.attorney,
+                };
+                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
+                const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
+            }
             req.body.updatedAt = common_util_1.default.getCurrentDate();
             if (req.body.paidAmount && req.body.paidAmount > 0) {
                 req.body.remaining = req.body.totalDebt - req.body.paidAmount;

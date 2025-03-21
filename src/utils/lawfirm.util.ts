@@ -32,7 +32,7 @@ class LawfirmUtil {
     );
   }
 
-  async lawfirmDetails(data: any) {
+  async lawfirmDetails(data: any, id: string) {
     return {
       lawfirmCompanyName: data.result.lawfirmCompanyName,
       email: data.result.email,
@@ -41,6 +41,7 @@ class LawfirmUtil {
       city: data.result.city,
       state: data.result.state,
       EIN: data.result.EIN,
+      userId: id,
     };
   }
 

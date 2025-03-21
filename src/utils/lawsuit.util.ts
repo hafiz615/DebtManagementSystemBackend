@@ -38,52 +38,32 @@ class LawsuitUtil {
     const {lawsuit, attorney, lawfirm} = req.body;
     const id = lawsuit?.userId;
 
-    const lawfirmExist = await this.lawfirmRepository.getOne<ILawfirm>({
-      $or: [
-        {lawfirmCompanyName: lawsuit.lawfirmCompanyName},
-        {lawfirmCompanyName: lawfirm.lawfirmCompanyName},
-      ],
-    });
-    let createdLawfirm = null;
-    let createdAttorney = null;
+    const newLawfirm = lawsuit?.lawfirmCompanyName
+      ? {
+          lawfirmCompanyName: lawsuit.lawfirmCompanyName,
+          platform: req.body.platform,
+          userId: id,
+        }
+      : lawfirm
+        ? {...lawfirm, platform: req.body.platform, userId: id}
+        : null;
 
-    if (!lawfirmExist) {
-      const newLawfirm = lawsuit?.lawfirmCompanyName
-        ? {
-            lawfirmCompanyName: lawsuit.lawfirmCompanyName,
-            platform: req.body.platform,
-            userId: id,
-          }
-        : lawfirm
-          ? {...lawfirm, platform: req.body.platform, userId: id}
-          : null;
-
-      createdLawfirm = await lawfirmUtil.upsertLawfirm({
-        ...newLawfirm,
-      });
-    }
-    const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
-
-    const attorneyExist = await this.attorneyRepository.getOne<IAttorney>({
-      phone: attorney.phone,
+    const lawfirmTemp = await lawfirmUtil.upsertLawfirm({
+      ...newLawfirm,
     });
 
-    if (!attorneyExist) {
-      createdAttorney = await attorneyUtil.createAttorney({
-        ...attorney,
-        platform: req.body.platform,
-        userId: id,
-        lawfirmId: lawfirmId,
-      });
-    }
-
-    const attorneyId = attorneyExist ? attorneyExist._id : createdAttorney._id;
+    const attorneyTemp = await attorneyUtil.upsertAttorney({
+      ...attorney,
+      platform: req.body.platform,
+      userId: id,
+      lawfirmId: lawfirmTemp.id,
+    });
 
     const lawsuitInfo = this.lawsuitInfo(
       lawsuit,
       caseData,
-      attorneyId,
-      lawfirmId,
+      attorneyTemp._id,
+      lawfirmTemp._id,
       id
     );
 
