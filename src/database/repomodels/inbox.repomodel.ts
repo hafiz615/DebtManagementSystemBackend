@@ -20,6 +20,7 @@ export class Inbox {
   isCompleted = false;
   debtorCompanyName = '';
   creditorCompanyName = '';
+  senderName = '';
   negotiatorName = '';
   threadId = '';
   previousMessages: string[] = [];

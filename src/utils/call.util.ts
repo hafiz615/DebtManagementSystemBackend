@@ -163,7 +163,7 @@ class CallUtil {
     if (getCreditor) {
       return {
         creditorId: getCreditor._id,
-        creditorName: getCreditor.basicInformation.fullName,
+        fullName: getCreditor.basicInformation.fullName,
         companyName: getCreditor.businessInformation.companyName,
       };
     }
@@ -175,7 +175,7 @@ class CallUtil {
     if (getDebtor) {
       return {
         debtorId: getDebtor._id,
-        debtorName: getDebtor.basicInformation.fullName,
+        fullName: getDebtor.basicInformation.fullName,
         companyName: getDebtor.businessInformation.companyName,
       };
     }

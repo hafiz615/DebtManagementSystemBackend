@@ -25,6 +25,7 @@ class Inbox {
         this.isCompleted = false;
         this.debtorCompanyName = '';
         this.creditorCompanyName = '';
+        this.senderName = '';
         this.negotiatorName = '';
         this.threadId = '';
         this.previousMessages = [];

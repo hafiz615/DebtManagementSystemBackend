@@ -372,10 +372,8 @@ class EmailUtil {
         }
         return newNotification;
     }
-    async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium) {
+    async createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium, senderFullName) {
         const newMessage = new inbox_repomodel_1.Inbox();
-        const newNotification = new notification_repomodel_1.Notification();
-        const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
         if (caseTemp) {
             newMessage.caseCode = caseTemp.caseCode;
             newMessage.creditorCompanyName =
@@ -383,9 +381,7 @@ class EmailUtil {
             newMessage.debtorCompanyName =
                 caseTemp.debtor.businessInformation.companyName;
             newMessage.negotiatorName = caseTemp.negotiator;
-            newNotification.caseId = String(caseTemp._id);
             newMessage.caseId = String(caseTemp._id);
-            newNotification.text = this.formatText(caseTemp.caseCode);
             newMessage.debtorId = String(caseTemp.debtor._id);
         }
         newMessage.cc = emailData.cc;
@@ -393,11 +389,12 @@ class EmailUtil {
         newMessage.subject = emailData.subject;
         newMessage.text = emailData.text;
         newMessage.textAsHtml = emailData.textAsHtml;
+        if (senderFullName)
+            newMessage.senderName = senderFullName;
         newMessage.to = emailData.to;
         newMessage.type = type;
         newMessage.medium = medium;
         newMessage.attachments = uniqueAttachments || emailData.attachments;
-        newNotification.type = medium;
         newMessage.threadId = threadId;
         newMessage.userId = userId;
         newMessage.userName = userName;

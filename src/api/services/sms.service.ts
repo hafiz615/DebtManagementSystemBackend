@@ -106,7 +106,8 @@ class SmsService {
       findUser ? findUser?.name : '',
       null,
       null,
-      'SMS'
+      'SMS',
+      name ? name.fullName : ''
     );
 
     if (caseData) {
