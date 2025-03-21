@@ -41,7 +41,6 @@ class CallUtil {
   }
 
   async fetchRecording(recordingSid: string) {
-    recordingSid = 'REa4355ba17366530c887853d814a06a7d';
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
 

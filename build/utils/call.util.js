@@ -28,7 +28,6 @@ class CallUtil {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
     async fetchRecording(recordingSid) {
-        recordingSid = 'REa4355ba17366530c887853d814a06a7d';
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
         const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
