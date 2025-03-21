@@ -296,6 +296,7 @@ class CallController {
           .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response[1]));
       }
+      res.type('text/xml');
       return res.status(constants.CODE.CREATED).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.CREATED,
@@ -319,6 +320,7 @@ class CallController {
           .status(constants.CODE.BAD_REQUEST)
           .send(responseHelper.get4xxResponse(response));
       }
+      res.type('text/xml');
       return res.status(constants.CODE.CREATED).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.CREATED,
