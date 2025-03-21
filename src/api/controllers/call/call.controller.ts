@@ -289,26 +289,29 @@ class CallController {
   };
 
   voiceMailRecording = async (req: Request, res: Response) => {
+    const VoiceResponse = require('twilio').twiml.VoiceResponse;
+    let twiml = new VoiceResponse();
     try {
       const response = await this.callService.voiceMailRecording(req);
+
       if (!response[0]) {
-        return res
-          .status(constants.CODE.BAD_REQUEST)
-          .send(responseHelper.get4xxResponse(response[1]));
+        twiml.say(
+          'We encountered an issue saving your voicemail. Please try again later.'
+        );
+
+        res.type('text/xml');
+        return res.status(200).send(twiml.toString());
       }
+
       res.type('text/xml');
-      return res.status(constants.CODE.CREATED).send(
-        responseHelper.get2xxResponse({
-          statusCode: constants.CODE.CREATED,
-          data: response[1],
-          message: response[1],
-        })
-      );
+      return res.status(200).send(response[1]);
     } catch (error) {
-      console.log('error voice mail recording', error.message);
-      return res
-        .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+      console.log('Error in voiceMailRecording:', error.message);
+
+      twiml.say('We encountered an error. Please try again later.');
+
+      res.type('text/xml');
+      return res.status(200).send(twiml.toString());
     }
   };
 
