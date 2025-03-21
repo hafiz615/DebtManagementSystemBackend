@@ -31,7 +31,7 @@ class CallUtil {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const authToken = process.env.TWILIO_AUTH_TOKEN;
         const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`;
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 2; i++) {
             // Max 10 retries
             const response = await axiosInstanceInterceptor_1.default.get(url, {
                 headers: {
@@ -45,7 +45,7 @@ class CallUtil {
                 return true;
             }
             console.log('Recording still processing, retrying...');
-            await new Promise(resolve => setTimeout(resolve, 3000)); // wait 3 sec
+            await new Promise(resolve => setTimeout(resolve, 30000)); // wait 3 sec
         }
         console.log('Recording not ready after retries.');
         return false;
