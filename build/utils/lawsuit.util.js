@@ -28,42 +28,25 @@ class LawsuitUtil {
     async lawsuitFormation(req, caseData) {
         const { lawsuit, attorney, lawfirm } = req.body;
         const id = lawsuit?.userId;
-        const lawfirmExist = await this.lawfirmRepository.getOne({
-            $or: [
-                { lawfirmCompanyName: lawsuit.lawfirmCompanyName },
-                { lawfirmCompanyName: lawfirm.lawfirmCompanyName },
-            ],
-        });
-        let createdLawfirm = null;
-        let createdAttorney = null;
-        if (!lawfirmExist) {
-            const newLawfirm = lawsuit?.lawfirmCompanyName
-                ? {
-                    lawfirmCompanyName: lawsuit.lawfirmCompanyName,
-                    platform: req.body.platform,
-                    userId: id,
-                }
-                : lawfirm
-                    ? { ...lawfirm, platform: req.body.platform, userId: id }
-                    : null;
-            createdLawfirm = await lawfirm_util_1.default.upsertLawfirm({
-                ...newLawfirm,
-            });
-        }
-        const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
-        const attorneyExist = await this.attorneyRepository.getOne({
-            phone: attorney.phone,
-        });
-        if (!attorneyExist) {
-            createdAttorney = await attorney_util_1.default.createAttorney({
-                ...attorney,
+        const newLawfirm = lawsuit?.lawfirmCompanyName
+            ? {
+                lawfirmCompanyName: lawsuit.lawfirmCompanyName,
                 platform: req.body.platform,
                 userId: id,
-                lawfirmId: lawfirmId,
-            });
-        }
-        const attorneyId = attorneyExist ? attorneyExist._id : createdAttorney._id;
-        const lawsuitInfo = this.lawsuitInfo(lawsuit, caseData, attorneyId, lawfirmId, id);
+            }
+            : lawfirm
+                ? { ...lawfirm, platform: req.body.platform, userId: id }
+                : null;
+        const lawfirmTemp = await lawfirm_util_1.default.upsertLawfirm({
+            ...newLawfirm,
+        });
+        const attorneyTemp = await attorney_util_1.default.upsertAttorney({
+            ...attorney,
+            platform: req.body.platform,
+            userId: id,
+            lawfirmId: lawfirmTemp.id,
+        });
+        const lawsuitInfo = this.lawsuitInfo(lawsuit, caseData, attorneyTemp._id, lawfirmTemp._id, id);
         const lawsuitTemp = await this.createLawsuit(lawsuitInfo);
         return lawsuitTemp ? [true, lawsuitTemp] : false;
     }

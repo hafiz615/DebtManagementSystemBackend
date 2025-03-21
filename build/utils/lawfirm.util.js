@@ -27,7 +27,7 @@ class LawfirmUtil {
             $set: { ...validatedLawfirm, updatedAt: new Date() },
         });
     }
-    async lawfirmDetails(data) {
+    async lawfirmDetails(data, id) {
         return {
             lawfirmCompanyName: data.result.lawfirmCompanyName,
             email: data.result.email,
@@ -36,6 +36,7 @@ class LawfirmUtil {
             city: data.result.city,
             state: data.result.state,
             EIN: data.result.EIN,
+            userId: id,
         };
     }
     async lawfirmData(req) {
