@@ -46,7 +46,7 @@ class CallUtil {
 
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`;
 
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 10; i++) {
       // Max 10 retries
       const response = await axiosInstance.get(url, {
         headers: {
