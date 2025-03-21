@@ -86,7 +86,6 @@ class CallUtil {
       },
       responseType: 'arraybuffer',
     });
-    console.log(response, 'response');
     if (response.status === 200) {
       const buffer = Buffer.from(response.data);
       const fileName = `${recordingSid}`;

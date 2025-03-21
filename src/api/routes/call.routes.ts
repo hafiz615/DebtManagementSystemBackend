@@ -44,4 +44,9 @@ router.get(
   callController.getVoiceMails
 );
 
+router.post(
+  '/twilio/voice-mail-recording-status',
+  callController.voiceMailRecordingStatus
+);
+
 export default router;
