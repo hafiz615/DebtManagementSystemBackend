@@ -44,6 +44,8 @@ class CallUtil {
     console.log(recordingSid, 'recordingSid');
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+    console.log('recordingUrl', recordingUrl);
+    console.log('process.env.twilioAuthToken', process.env.TWILIO_AUTH_TOKEN);
 
     const response = await axiosInstance.get(recordingUrl, {
       headers: {
