@@ -33,13 +33,25 @@ class CallUtil {
         const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
         console.log('recordingUrl', recordingUrl);
         console.log('process.env.twilioAuthToken', process.env.TWILIO_AUTH_TOKEN);
-        const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
-            headers: {
-                Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
-            },
-            responseType: 'arraybuffer',
-        });
-        console.log(response, 'response');
+        let response;
+        try {
+            response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
+                headers: {
+                    Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+                },
+                responseType: 'arraybuffer',
+            });
+            console.log(response.status, 'response status');
+        }
+        catch (error) {
+            console.error('Error fetching recording:', {
+                message: error.message,
+                code: error.code,
+                responseStatus: error.response?.status,
+                responseData: error.response?.data,
+            });
+            throw new Error(`Failed to fetch recording: ${error.message}`);
+        }
         if (response.status === 200) {
             const buffer = Buffer.from(response.data);
             const fileName = `${recordingSid}`;

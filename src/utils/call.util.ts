@@ -47,15 +47,26 @@ class CallUtil {
     console.log('recordingUrl', recordingUrl);
     console.log('process.env.twilioAuthToken', process.env.TWILIO_AUTH_TOKEN);
 
-    const response = await axiosInstance.get(recordingUrl, {
-      headers: {
-        Authorization: `Basic ${Buffer.from(
-          `${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`
-        ).toString('base64')}`,
-      },
-      responseType: 'arraybuffer',
-    });
-    console.log(response, 'response');
+    let response;
+    try {
+      response = await axiosInstance.get(recordingUrl, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(
+            `${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`
+          ).toString('base64')}`,
+        },
+        responseType: 'arraybuffer',
+      });
+      console.log(response.status, 'response status');
+    } catch (error: any) {
+      console.error('Error fetching recording:', {
+        message: error.message,
+        code: error.code,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data,
+      });
+      throw new Error(`Failed to fetch recording: ${error.message}`);
+    }
     if (response.status === 200) {
       const buffer = Buffer.from(response.data);
       const fileName = `${recordingSid}`;
