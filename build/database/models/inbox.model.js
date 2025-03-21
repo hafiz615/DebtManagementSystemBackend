@@ -50,6 +50,9 @@ const inbox = new mongoose_1.Schema({
     textAsHtml: {
         type: String,
     },
+    senderName: {
+        type: String,
+    },
     caseCode: {
         type: String,
     },
