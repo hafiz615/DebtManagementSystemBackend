@@ -41,6 +41,7 @@ class CallUtil {
   }
 
   async fetchRecording(recordingSid: string) {
+    console.log(recordingSid, 'recordingSid');
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
 
@@ -52,6 +53,7 @@ class CallUtil {
       },
       responseType: 'arraybuffer',
     });
+    console.log(response, 'response');
     if (response.status === 200) {
       const buffer = Buffer.from(response.data);
       const fileName = `${recordingSid}`;
@@ -137,7 +139,7 @@ class CallUtil {
   }
 
   async createTranscript(recordingSID: string) {
-    recordingSID = 'REa4355ba17366530c887853d814a06a7d';
+    console.log(recordingSID, 'recordingSid');
     const client = twilio(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN

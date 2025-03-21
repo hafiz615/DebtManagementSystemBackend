@@ -16,6 +16,7 @@ class VoiceMailUtil {
 
   async createVoiceMail(data: any) {
     const newVoiceMail = new Call();
+    console.log(data, 'data');
     const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
       data;
     newVoiceMail.accountSid = AccountSid;
