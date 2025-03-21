@@ -40,67 +40,38 @@ class CallUtil {
     this.creditorRepository = new CreditorRepository();
   }
 
-  async fetchRecordingWithRetry(
-    recordingSid: string,
-    maxRetries = 5,
-    delayMs = 5000
-  ) {
+  async pollRecordingStatus(recordingSid: string) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      console.log(`Attempt ${attempt}: Checking recording status...`);
-      const metadataResponse = await axiosInstance.get(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`,
-        {
-          headers: {
-            Authorization: `Basic ${Buffer.from(
-              `${accountSid}:${authToken}`
-            ).toString('base64')}`,
-          },
-        }
-      );
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`;
 
-      const status = metadataResponse.data.status;
+    for (let i = 0; i < 10; i++) {
+      // Max 10 retries
+      const response = await axiosInstance.get(url, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(
+            `${accountSid}:${authToken}`
+          ).toString('base64')}`,
+        },
+      });
+
+      const status = response.data.status;
       console.log(`Recording status: ${status}`);
 
       if (status === 'completed') {
-        // Download the media
-        const mediaUrl = `https://api.twilio.com${metadataResponse.data.uri.replace(
-          '.json',
-          '.mp3'
-        )}`;
-        const recordingResponse = await axiosInstance.get(mediaUrl, {
-          headers: {
-            Authorization: `Basic ${Buffer.from(
-              `${accountSid}:${authToken}`
-            ).toString('base64')}`,
-          },
-          responseType: 'arraybuffer',
-        });
-
-        if (recordingResponse.status === 200) {
-          const buffer = Buffer.from(recordingResponse.data);
-          const fileName = `${recordingSid}.mp3`;
-          await this.uploadUtil.callUploadFile(fileName, buffer);
-          console.log('File uploaded successfully to S3');
-          return 'File uploaded to S3';
-        }
+        console.log('Recording is ready to download.');
+        return true;
       }
 
-      // Wait before retrying
-      if (attempt < maxRetries) {
-        console.log(
-          `Recording not ready. Waiting ${delayMs}ms before retrying...`
-        );
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      } else {
-        console.log('Max retries reached. Recording still processing.');
-        throw new Error('Recording not ready yet.');
-      }
+      console.log('Recording still processing, retrying...');
+      await new Promise(resolve => setTimeout(resolve, 3000)); // wait 3 sec
     }
-    return null;
+
+    console.log('Recording not ready after retries.');
+    return false;
   }
+
   async fetchRecording(recordingSid: string) {
     console.log(recordingSid, 'recordingSid');
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -116,6 +87,32 @@ class CallUtil {
       responseType: 'arraybuffer',
     });
     console.log(response, 'response');
+    if (response.status === 200) {
+      const buffer = Buffer.from(response.data);
+      const fileName = `${recordingSid}`;
+      await this.uploadUtil.callUploadFile(fileName, buffer);
+      return 'File uploaded to S3';
+    }
+    return null;
+  }
+  async fetchRecordingWithRetry(recordingSid: string) {
+    const isReady = await this.pollRecordingStatus(recordingSid);
+    if (!isReady) {
+      throw new Error('Recording is still processing after retries.');
+    }
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+
+    const response = await axiosInstance.get(recordingUrl, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(
+          `${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`
+        ).toString('base64')}`,
+        responseType: 'arraybuffer',
+      },
+    });
+
     if (response.status === 200) {
       const buffer = Buffer.from(response.data);
       const fileName = `${recordingSid}`;
