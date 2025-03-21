@@ -633,28 +633,23 @@ class CaseValidate {
             'string.pattern.base':
               'lawfirm PhoneNo must must be between 10 digits.',
             'any.required': 'lawfirm PhoneNo is a required field.',
-            'string.empty': 'lawfirm PhoneNo cannot be empty',
           }),
-        address: Joi.string().optional().messages({
+        address: Joi.string().optional().allow('').messages({
           'string.base': 'lawfirm Address must be a string.',
           'any.required': 'lawfirm Address is a required field.',
-          'string.empty': 'lawfirm Address cannot be empty',
         }),
-        city: Joi.string().optional().messages({
+        city: Joi.string().optional().allow('').messages({
           'string.base': 'lawfirm City must be a string.',
           'any.required': 'lawfirm City is a required field.',
-          'string.empty': 'lawfirm City cannot be empty',
         }),
-        state: Joi.string().optional().messages({
+        state: Joi.string().optional().allow('').messages({
           'string.base': 'lawfirm State must be a string.',
           'any.required': 'lawfirm State is a required field.',
-          'string.empty': 'lawfirm State cannot be empty',
         }),
-        EIN: Joi.string().pattern(/^\d+$/).optional().messages({
+        EIN: Joi.string().pattern(/^\d+$/).optional().allow('').messages({
           'string.base': 'lawfirm EIN must be a string.',
           'string.pattern.base': 'lawfirm EIN must contain only digits.',
           'any.required': 'lawfirm EIN is a required field.',
-          'string.empty': 'lawfirm EIN cannot be empty',
         }),
       })
         .optional()
@@ -678,31 +673,28 @@ class CaseValidate {
             'any.required': 'Attorney PhoneNo is a required field.',
             'string.empty': 'Attorney PhoneNo cannot be empty',
           }),
-        attorney_address: Joi.string().optional().messages({
+        attorney_address: Joi.string().optional().allow('').messages({
           'string.base': 'Attorney address must be a string.',
           'any.required': 'Attorney address is a required field.',
-          'string.empty': 'Attorney address cannot be empty',
         }),
-        attorney_city: Joi.string().optional().messages({
+        attorney_city: Joi.string().optional().allow('').messages({
           'string.base': 'Attorney city must be a string.',
           'any.required': 'Attorney city is a required field.',
-          'string.empty': 'Attorney city cannot be empty',
         }),
         attorney_SSN: Joi.string()
           .pattern(/^[0-9]{8,11}$/)
           .optional()
+          .allow('')
           .messages({
             'string.base': 'Attorney SSN must be a string of numbers.',
             'string.pattern.base':
               'Attorney SSN must be between 8 to 11 digits.',
-            'string.empty': 'Attorney SSN cannot be empty',
           }),
-        attorney_state: Joi.string().optional().messages({
+        attorney_state: Joi.string().optional().allow('').messages({
           'string.base': 'Attorney state must be a string.',
           'string.length':
             'Attorney state must be a 2-letter abbreviation (e.g., NY).',
           'any.required': 'Attorney state is a required field.',
-          'string.empty': 'Attorney state cannot be empty',
         }),
       })
         .required()
@@ -1025,28 +1017,23 @@ class CaseValidate {
                 'string.pattern.base':
                   'lawfirm PhoneNo must must be between 10 digits.',
                 'any.required': 'lawfirm PhoneNo is a required field.',
-                'string.empty': 'lawfirm PhoneNo cannot be empty',
               }),
-            address: Joi.string().optional().messages({
+            address: Joi.string().optional().allow('').messages({
               'string.base': 'lawfirm Address must be a string.',
               'any.required': 'lawfirm Address is a required field.',
-              'string.empty': 'lawfirm Address cannot be empty',
             }),
-            city: Joi.string().optional().messages({
+            city: Joi.string().optional().allow('').messages({
               'string.base': 'lawfirm City must be a string.',
               'any.required': 'lawfirm City is a required field.',
-              'string.empty': 'lawfirm City cannot be empty',
             }),
-            state: Joi.string().optional().messages({
+            state: Joi.string().optional().allow('').messages({
               'string.base': 'lawfirm State must be a string.',
               'any.required': 'lawfirm State is a required field.',
-              'string.empty': 'lawfirm State cannot be empty',
             }),
-            EIN: Joi.string().pattern(/^\d+$/).optional().messages({
+            EIN: Joi.string().pattern(/^\d+$/).optional().allow('').messages({
               'string.base': 'lawfirm EIN must be a string.',
               'string.pattern.base': 'lawfirm EIN must contain only digits.',
               'any.required': 'lawfirm EIN is a required field.',
-              'string.empty': 'lawfirm EIN cannot be empty',
             }),
           })
             .optional()
@@ -1070,31 +1057,28 @@ class CaseValidate {
                 'any.required': 'Attorney PhoneNo is a required field.',
                 'string.empty': 'Attorney PhoneNo cannot be empty',
               }),
-            attorney_address: Joi.string().optional().messages({
+            attorney_address: Joi.string().optional().allow('').messages({
               'string.base': 'Attorney address must be a string.',
               'any.required': 'Attorney address is a required field.',
-              'string.empty': 'Attorney address cannot be empty',
             }),
-            attorney_city: Joi.string().optional().messages({
+            attorney_city: Joi.string().optional().allow('').messages({
               'string.base': 'Attorney city must be a string.',
               'any.required': 'Attorney city is a required field.',
-              'string.empty': 'Attorney city cannot be empty',
             }),
             attorney_SSN: Joi.string()
               .pattern(/^[0-9]{8,11}$/)
               .optional()
+              .allow('')
               .messages({
                 'string.base': 'Attorney SSN must be a string of numbers.',
                 'string.pattern.base':
                   'Attorney SSN must be between 8 to 11 digits.',
-                'string.empty': 'Attorney SSN cannot be empty',
               }),
-            attorney_state: Joi.string().optional().messages({
+            attorney_state: Joi.string().optional().allow('').messages({
               'string.base': 'Attorney state must be a string.',
               'string.length':
                 'Attorney state must be a 2-letter abbreviation (e.g., NY).',
               'any.required': 'Attorney state is a required field.',
-              'string.empty': 'Attorney state cannot be empty',
             }),
           })
             .required()
