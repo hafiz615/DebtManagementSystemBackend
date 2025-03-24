@@ -34,7 +34,7 @@ class VoiceMailUtil {
         const reqTemp = req;
         const identity = reqTemp.twilioNo || process.env.TWILIO_CALLER_ID;
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
-        const voiceMails = await this.callRepository.getAll({ callTo: identity, type: 'Voice Mail' }, undefined, undefined, { createdAt: -1 }, undefined, true, pageLimit.page, pageLimit.limit);
+        const voiceMails = await this.callRepository.getAll({ callTo: identity, type: 'Voice Mail', isDeleted: { $ne: true } }, undefined, undefined, { createdAt: -1 }, undefined, true, pageLimit.page, pageLimit.limit);
         const voiceMailCount = await this.callRepository.getCount({
             callTo: identity,
             type: 'Voice Mail',

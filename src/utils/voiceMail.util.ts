@@ -38,7 +38,7 @@ class VoiceMailUtil {
 
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const voiceMails = await this.callRepository.getAll<ICall>(
-      {callTo: identity, type: 'Voice Mail'},
+      {callTo: identity, type: 'Voice Mail', isDeleted: {$ne: true}},
       undefined,
       undefined,
       {createdAt: -1},
