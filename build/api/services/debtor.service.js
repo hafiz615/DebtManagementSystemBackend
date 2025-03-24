@@ -591,8 +591,10 @@ class DebtorService {
             if (body.basicInformation.weeklyBudget) {
                 body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
             }
-            lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(body?.lawsuitDocuments);
-            body.lawsuitFields = [lawsuitExtractedFields.result];
+            if (body?.lawsuitDocuments?.length) {
+                lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(body?.lawsuitDocuments);
+                body.lawsuitFields = [lawsuitExtractedFields.result];
+            }
             debtor = await case_util_1.default.createDebtor(body, id);
         }
         else {

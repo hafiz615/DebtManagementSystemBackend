@@ -4,329 +4,329 @@ import responseHelper from '../../utils/responseHelper.util';
 import Joi from 'joi';
 
 class CaseValidate {
-  async validateCase(req: Request, res: Response, next: NextFunction) {
-    const schema = Joi.object({
-      // Example custom validation for the documents field
-      // documents: Joi.array().items(
-      //   Joi.object({
-      //     key: Joi.string().required().messages({
-      //       'string.base': 'Key should be a string',
-      //       'any.required': 'Key is required'
-      //     }),
-      //     originalFileName: Joi.string().required().messages({
-      //       'string.base': 'Original file name should be a string',
-      //       'any.required': 'Original file name is required'
-      //     }),
-      //   }).optional()
-      // ),
-      // debtor: Joi.object({
-      //   basicInformation: Joi.object({
-      //     fullName: Joi.string().required().messages({
-      //       'string.empty': 'Full name cannot be empty.',
-      //       'string.base': 'Full name should be a string',
-      //       'any.required': 'Full name is required',
-      //     }),
-      //     email: Joi.string().email().required().messages({
-      //       'string.base': 'Email should be a string',
-      //       'string.email': 'Email should be a valid email address',
-      //       'any.required': 'Email is required',
-      //     }),
-      //     SSID: Joi.string()
-      //       .pattern(/^\d{9}$/)
-      //       .required()
-      //       .messages({
-      //         'string.base': 'SSID should be a string',
-      //         'string.pattern.base': 'SSID should be a valid 9-digit number',
-      //         'any.required': 'SSID is required',
-      //       }),
-      //     country: Joi.string().required().messages({
-      //       'string.empty': 'Country cannot be empty.',
-      //       'string.base': 'Country should be a string',
-      //       'any.required': 'Country is required',
-      //     }),
-      //     state: Joi.string().required().messages({
-      //       'string.empty': 'State cannot be empty.',
-      //       'string.base': 'State should be a string',
-      //       'any.required': 'State is required',
-      //     }),
-      //     status: Joi.string()
-      //       .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
-      //       .required()
-      //       .messages({
-      //         'string.base': 'Status should be a string',
-      //         'any.required': 'Status is required',
-      //         'any.only':
-      //           'Status must be one of the following: Customer, On hold, Canceled, Declared Bankrupcy',
-      //       }),
-      //     city: Joi.string().required().messages({
-      //       'string.empty': 'City cannot be empty.',
-      //       'string.base': 'City should be a string',
-      //       'any.required': 'City is required',
-      //     }),
-      //     zipCode: Joi.string().required().messages({
-      //       'string.empty': 'Zip cannot be empty.',
-      //       'string.base': 'Zip Code should be a string',
-      //       'any.required': 'Zip Code is required',
-      //     }),
-      //     phone: Joi.string()
-      //       .pattern(/^\+\d{11}$/)
-      //       .required()
-      //       .messages({
-      //         'string.base': 'Phone should be a string',
-      //         'string.pattern.base':
-      //           'Phone should be a valid phone number (e.g., +12345678901)',
-      //         'any.required': 'Phone is required',
-      //       }),
-      //     address: Joi.string().required().messages({
-      //       'string.empty': 'Address cannot be empty.',
-      //       'string.base': 'Address should be a string',
-      //       'any.required': 'Address is required',
-      //     }),
-      //     weeklyBudget: Joi.number().messages({
-      //       'number.base': 'Weekly budget should be a number',
-      //     }),
-      //   businessInformation: Joi.object({
-      //     companyName: Joi.string().required(),
-      //     EIN: Joi.string()
-      //       .pattern(/^\d{9}$/)
-      //       .required(),
-      //     businessCategory: Joi.string().required(),
-      //     description: Joi.string().allow(''),
-      //     country: Joi.string().required(),
-      //     state: Joi.string().required(),
-      //     city: Joi.string().required(),
-      //     zipCode: Joi.string().required(),
-      //     phone: Joi.string()
-      //       .pattern(/^\+\d{11}$/)
-      //       .required(),
-      //     address: Joi.string().required(),
-      //   }),
-      //   contacts: Joi.array().items(
-      //     Joi.object({
-      //       name: Joi.string().required(),
-      //       title: Joi.string().required(),
-      //       phone: Joi.string()
-      //         .pattern(/^\+\d{11}$/)
-      //         .required(),
-      //       email: Joi.string().email().required(),
-      //       relationWithDebtor: Joi.string().allow(''),
-      //       country: Joi.string().allow(''),
-      //       state: Joi.string().allow(''),
-      //       city: Joi.string().allow(''),
-      //       zipCode: Joi.string().allow(''),
-      //     })
-      //   ),
-      // }),
-      //   }),
-      // }),
-      creditor: Joi.object({
-        basicInformation: Joi.object({
-          fullName: Joi.string().required().messages({
-            'string.empty': 'Full name cannot be empty.',
-            'string.base': 'Full name should be a string',
-            'any.required': 'Full name is required',
-          }),
-          email: Joi.string().email().required().messages({
-            'string.base': 'Email should be a string',
-            'string.email': 'Email should be a valid email address',
-            'any.required': 'Email is required',
-          }),
-          phone: Joi.string()
-            .pattern(/^\d{10}$/)
-            .required()
-            .messages({
-              'string.base': 'Phone should be a string',
-              'string.pattern.base': 'Phone should be a valid 10-digit number',
-              'any.required': 'Phone is required',
-            }),
-        }),
-        businessInformation: Joi.object({
-          companyName: Joi.string().required().messages({
-            'string.empty': 'Company cannot be empty.',
-            'string.base': 'Company name should be a string',
-            'any.required': 'Company name is required',
-          }),
-          businessCategory: Joi.string().required().messages({
-            'string.empty': 'Bussiness category cannot be empty.',
-            'string.base': 'Business category should be a string',
-            'any.required': 'Business category is required',
-          }),
-        }),
-        contacts: Joi.array()
-          .items(
-            Joi.object({
-              name: Joi.string().required().messages({
-                'string.base': 'Name must be a string.',
-                'any.required': 'Name is required.',
-                'string.empty': 'Name cannot be empty.',
-              }),
-              title: Joi.string().required().messages({
-                'string.base': 'Title must be a string.',
-                'any.required': 'Title is required.',
-                'string.empty': 'Title cannot be empty.',
-              }),
-              phone: Joi.string()
-                .pattern(/^\d{10}$/)
-                .required()
-                .messages({
-                  'string.base': 'Phone number must be a string.',
-                  'any.required': 'Phone number is required.',
-                  'string.empty': 'Phone number cannot be empty.',
-                  'string.pattern.base':
-                    'Phone number must be exactly 10 digits.',
-                }),
-              email: Joi.string().email().required().messages({
-                'string.base': 'Email must be a string.',
-                'any.required': 'Email is required.',
-                'string.empty': 'Email cannot be empty.',
-                'string.email': 'Email must be a valid email address.',
-              }),
-              relationWithCreditor: Joi.string().allow('').messages({
-                'string.base': 'Relation with creditor must be a string.',
-              }),
-              state: Joi.string().allow('').messages({
-                'string.base': 'State must be a string.',
-              }),
-              city: Joi.string().allow('').messages({
-                'string.base': 'City must be a string.',
-              }),
-              zipCode: Joi.string().allow('').messages({
-                'string.base': 'Zip code must be a string.',
-              }),
-            })
-          )
-          .messages({
-            'array.base': 'Contacts must be an array.',
-            'array.includes': 'Each contact must be a valid object.',
-          }),
-        notes: Joi.string().allow('').messages({
-          'string.base': 'Notes should be a string',
-        }),
-        creditorSecurityKey: Joi.string().allow('').messages({
-          'string.base': 'Creditor security key should be a string',
-        }),
-        accountTitle: Joi.string().optional().allow('', null).messages({
-          'string.base': 'Account title should be a string',
-        }),
-        lastFundedDate: Joi.date().optional().messages({
-          'date.base': 'Last funded date should be a valid date',
-        }),
-        historicalRange: Joi.object({
-          minimum: Joi.number().strict().optional().messages({
-            'number.base': 'Minimum value should be a number',
-          }),
-          maximum: Joi.number().strict().optional().messages({
-            'number.base': 'Maximum value should be a number',
-          }),
-        }),
-      })
-        .optional()
-        .allow(null),
-      totalDebt: Joi.number().strict().required().messages({
-        'number.base': 'Total debt should be a number',
-        'any.required': 'Total debt is required',
-      }),
-      lastPaymentDate: Joi.date().messages({
-        'date.base': 'Last payment date should be a valid date',
-      }),
-      paidAmount: Joi.number().strict().required().messages({
-        'number.empty': 'Paid amount cannot be empty',
-        'number.base': 'Paid amount should be a number',
-        'any.required': 'Paid amount is required',
-      }),
-      remaining: Joi.number().strict().required().messages({
-        'number.empty': 'Remaining amount cannot be empty.',
-        'number.base': 'Remaining amount should be a number',
-        'any.required': 'Remaining amount is required',
-      }),
-      confidence: Joi.number().strict().messages({
-        'number.base': 'Confidence should be a number',
-      }),
-      closeDate: Joi.date().messages({
-        'date.base': 'Close date should be a valid date',
-      }),
-      paymentToken: Joi.string().allow('').messages({
-        'string.base': 'Payment token should be a string',
-      }),
-      paymentType: Joi.string().valid('cc', 'ck').allow('').messages({
-        'string.base': 'Payment type should be a string',
-        'any.only': 'Payment type must be one of the following: cc, ck',
-      }),
-      status: Joi.string().required().messages({
-        'string.empty': 'Status cannot be empty.',
-        'string.base': 'Status should be a string',
-        'any.required': 'Status is required',
-      }),
-      notes: Joi.string().messages({
-        'string.base': 'Notes should be a string',
-      }),
-      chatId: Joi.string().messages({
-        'string.base': 'Chat ID should be a string',
-      }),
-      feePayment: Joi.string()
-        .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
-        .messages({
-          'string.base': 'Fee payment should be a string',
-          'any.only':
-            'Fee payment must be one of the following: paidViaCash, toPay, paidViaThirdParty',
-        }),
-      intervals: Joi.array()
-        .items(
-          Joi.object({
-            amount: Joi.number().strict().required().messages({
-              'number.empty': 'Amount cannot be empty',
-              'number.base': 'Amount should be a number',
-              'any.required': 'Amount is required',
-            }),
-            startDate: Joi.date().required().messages({
-              'date.base': 'Start date should be a valid date',
-              'any.required': 'Start date is required',
-            }),
-            frequency: Joi.number().optional().messages({
-              'number.base': 'Frequency should be a number',
-            }),
-            timePeriod: Joi.string()
-              .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
-              .required()
-              .messages({
-                'string.base': 'Time period should be a string',
-                'any.required': 'Time period is required',
-                'any.only':
-                  'Time period must be one of the following: Weekly, Monthly, Custom, Fortnightly, Daily',
-              }),
-          })
-        )
-        .optional(),
-    });
+  // async validateCase(req: Request, res: Response, next: NextFunction) {
+  //   const schema = Joi.object({
+  //     // Example custom validation for the documents field
+  //     // documents: Joi.array().items(
+  //     //   Joi.object({
+  //     //     key: Joi.string().required().messages({
+  //     //       'string.base': 'Key should be a string',
+  //     //       'any.required': 'Key is required'
+  //     //     }),
+  //     //     originalFileName: Joi.string().required().messages({
+  //     //       'string.base': 'Original file name should be a string',
+  //     //       'any.required': 'Original file name is required'
+  //     //     }),
+  //     //   }).optional()
+  //     // ),
+  //     // debtor: Joi.object({
+  //     //   basicInformation: Joi.object({
+  //     //     fullName: Joi.string().required().messages({
+  //     //       'string.empty': 'Full name cannot be empty.',
+  //     //       'string.base': 'Full name should be a string',
+  //     //       'any.required': 'Full name is required',
+  //     //     }),
+  //     //     email: Joi.string().email().required().messages({
+  //     //       'string.base': 'Email should be a string',
+  //     //       'string.email': 'Email should be a valid email address',
+  //     //       'any.required': 'Email is required',
+  //     //     }),
+  //     //     SSID: Joi.string()
+  //     //       .pattern(/^\d{9}$/)
+  //     //       .required()
+  //     //       .messages({
+  //     //         'string.base': 'SSID should be a string',
+  //     //         'string.pattern.base': 'SSID should be a valid 9-digit number',
+  //     //         'any.required': 'SSID is required',
+  //     //       }),
+  //     //     country: Joi.string().required().messages({
+  //     //       'string.empty': 'Country cannot be empty.',
+  //     //       'string.base': 'Country should be a string',
+  //     //       'any.required': 'Country is required',
+  //     //     }),
+  //     //     state: Joi.string().required().messages({
+  //     //       'string.empty': 'State cannot be empty.',
+  //     //       'string.base': 'State should be a string',
+  //     //       'any.required': 'State is required',
+  //     //     }),
+  //     //     status: Joi.string()
+  //     //       .valid('Customer', 'On hold', 'Canceled', 'Declared Bankrupcy')
+  //     //       .required()
+  //     //       .messages({
+  //     //         'string.base': 'Status should be a string',
+  //     //         'any.required': 'Status is required',
+  //     //         'any.only':
+  //     //           'Status must be one of the following: Customer, On hold, Canceled, Declared Bankrupcy',
+  //     //       }),
+  //     //     city: Joi.string().required().messages({
+  //     //       'string.empty': 'City cannot be empty.',
+  //     //       'string.base': 'City should be a string',
+  //     //       'any.required': 'City is required',
+  //     //     }),
+  //     //     zipCode: Joi.string().required().messages({
+  //     //       'string.empty': 'Zip cannot be empty.',
+  //     //       'string.base': 'Zip Code should be a string',
+  //     //       'any.required': 'Zip Code is required',
+  //     //     }),
+  //     //     phone: Joi.string()
+  //     //       .pattern(/^\+\d{11}$/)
+  //     //       .required()
+  //     //       .messages({
+  //     //         'string.base': 'Phone should be a string',
+  //     //         'string.pattern.base':
+  //     //           'Phone should be a valid phone number (e.g., +12345678901)',
+  //     //         'any.required': 'Phone is required',
+  //     //       }),
+  //     //     address: Joi.string().required().messages({
+  //     //       'string.empty': 'Address cannot be empty.',
+  //     //       'string.base': 'Address should be a string',
+  //     //       'any.required': 'Address is required',
+  //     //     }),
+  //     //     weeklyBudget: Joi.number().messages({
+  //     //       'number.base': 'Weekly budget should be a number',
+  //     //     }),
+  //     //   businessInformation: Joi.object({
+  //     //     companyName: Joi.string().required(),
+  //     //     EIN: Joi.string()
+  //     //       .pattern(/^\d{9}$/)
+  //     //       .required(),
+  //     //     businessCategory: Joi.string().required(),
+  //     //     description: Joi.string().allow(''),
+  //     //     country: Joi.string().required(),
+  //     //     state: Joi.string().required(),
+  //     //     city: Joi.string().required(),
+  //     //     zipCode: Joi.string().required(),
+  //     //     phone: Joi.string()
+  //     //       .pattern(/^\+\d{11}$/)
+  //     //       .required(),
+  //     //     address: Joi.string().required(),
+  //     //   }),
+  //     //   contacts: Joi.array().items(
+  //     //     Joi.object({
+  //     //       name: Joi.string().required(),
+  //     //       title: Joi.string().required(),
+  //     //       phone: Joi.string()
+  //     //         .pattern(/^\+\d{11}$/)
+  //     //         .required(),
+  //     //       email: Joi.string().email().required(),
+  //     //       relationWithDebtor: Joi.string().allow(''),
+  //     //       country: Joi.string().allow(''),
+  //     //       state: Joi.string().allow(''),
+  //     //       city: Joi.string().allow(''),
+  //     //       zipCode: Joi.string().allow(''),
+  //     //     })
+  //     //   ),
+  //     // }),
+  //     //   }),
+  //     // }),
+  //     creditor: Joi.object({
+  //       basicInformation: Joi.object({
+  //         fullName: Joi.string().required().messages({
+  //           'string.empty': 'Full name cannot be empty.',
+  //           'string.base': 'Full name should be a string',
+  //           'any.required': 'Full name is required',
+  //         }),
+  //         email: Joi.string().email().required().messages({
+  //           'string.base': 'Email should be a string',
+  //           'string.email': 'Email should be a valid email address',
+  //           'any.required': 'Email is required',
+  //         }),
+  //         phone: Joi.string()
+  //           .pattern(/^\d{10}$/)
+  //           .required()
+  //           .messages({
+  //             'string.base': 'Phone should be a string',
+  //             'string.pattern.base': 'Phone should be a valid 10-digit number',
+  //             'any.required': 'Phone is required',
+  //           }),
+  //       }),
+  //       businessInformation: Joi.object({
+  //         companyName: Joi.string().required().messages({
+  //           'string.empty': 'Company cannot be empty.',
+  //           'string.base': 'Company name should be a string',
+  //           'any.required': 'Company name is required',
+  //         }),
+  //         businessCategory: Joi.string().required().messages({
+  //           'string.empty': 'Bussiness category cannot be empty.',
+  //           'string.base': 'Business category should be a string',
+  //           'any.required': 'Business category is required',
+  //         }),
+  //       }),
+  //       contacts: Joi.array()
+  //         .items(
+  //           Joi.object({
+  //             name: Joi.string().required().messages({
+  //               'string.base': 'Name must be a string.',
+  //               'any.required': 'Name is required.',
+  //               'string.empty': 'Name cannot be empty.',
+  //             }),
+  //             title: Joi.string().required().messages({
+  //               'string.base': 'Title must be a string.',
+  //               'any.required': 'Title is required.',
+  //               'string.empty': 'Title cannot be empty.',
+  //             }),
+  //             phone: Joi.string()
+  //               .pattern(/^\d{10}$/)
+  //               .required()
+  //               .messages({
+  //                 'string.base': 'Phone number must be a string.',
+  //                 'any.required': 'Phone number is required.',
+  //                 'string.empty': 'Phone number cannot be empty.',
+  //                 'string.pattern.base':
+  //                   'Phone number must be exactly 10 digits.',
+  //               }),
+  //             email: Joi.string().email().required().messages({
+  //               'string.base': 'Email must be a string.',
+  //               'any.required': 'Email is required.',
+  //               'string.empty': 'Email cannot be empty.',
+  //               'string.email': 'Email must be a valid email address.',
+  //             }),
+  //             relationWithCreditor: Joi.string().allow('').messages({
+  //               'string.base': 'Relation with creditor must be a string.',
+  //             }),
+  //             state: Joi.string().allow('').messages({
+  //               'string.base': 'State must be a string.',
+  //             }),
+  //             city: Joi.string().allow('').messages({
+  //               'string.base': 'City must be a string.',
+  //             }),
+  //             zipCode: Joi.string().allow('').messages({
+  //               'string.base': 'Zip code must be a string.',
+  //             }),
+  //           })
+  //         )
+  //         .messages({
+  //           'array.base': 'Contacts must be an array.',
+  //           'array.includes': 'Each contact must be a valid object.',
+  //         }),
+  //       notes: Joi.string().allow('').messages({
+  //         'string.base': 'Notes should be a string',
+  //       }),
+  //       creditorSecurityKey: Joi.string().allow('').messages({
+  //         'string.base': 'Creditor security key should be a string',
+  //       }),
+  //       accountTitle: Joi.string().optional().allow('', null).messages({
+  //         'string.base': 'Account title should be a string',
+  //       }),
+  //       lastFundedDate: Joi.date().optional().messages({
+  //         'date.base': 'Last funded date should be a valid date',
+  //       }),
+  //       historicalRange: Joi.object({
+  //         minimum: Joi.number().strict().optional().messages({
+  //           'number.base': 'Minimum value should be a number',
+  //         }),
+  //         maximum: Joi.number().strict().optional().messages({
+  //           'number.base': 'Maximum value should be a number',
+  //         }),
+  //       }),
+  //     })
+  //       .optional()
+  //       .allow(null),
+  //     totalDebt: Joi.number().strict().required().messages({
+  //       'number.base': 'Total debt should be a number',
+  //       'any.required': 'Total debt is required',
+  //     }),
+  //     lastPaymentDate: Joi.date().messages({
+  //       'date.base': 'Last payment date should be a valid date',
+  //     }),
+  //     paidAmount: Joi.number().strict().required().messages({
+  //       'number.empty': 'Paid amount cannot be empty',
+  //       'number.base': 'Paid amount should be a number',
+  //       'any.required': 'Paid amount is required',
+  //     }),
+  //     remaining: Joi.number().strict().required().messages({
+  //       'number.empty': 'Remaining amount cannot be empty.',
+  //       'number.base': 'Remaining amount should be a number',
+  //       'any.required': 'Remaining amount is required',
+  //     }),
+  //     confidence: Joi.number().strict().messages({
+  //       'number.base': 'Confidence should be a number',
+  //     }),
+  //     closeDate: Joi.date().messages({
+  //       'date.base': 'Close date should be a valid date',
+  //     }),
+  //     paymentToken: Joi.string().allow('').messages({
+  //       'string.base': 'Payment token should be a string',
+  //     }),
+  //     paymentType: Joi.string().valid('cc', 'ck').allow('').messages({
+  //       'string.base': 'Payment type should be a string',
+  //       'any.only': 'Payment type must be one of the following: cc, ck',
+  //     }),
+  //     status: Joi.string().required().messages({
+  //       'string.empty': 'Status cannot be empty.',
+  //       'string.base': 'Status should be a string',
+  //       'any.required': 'Status is required',
+  //     }),
+  //     notes: Joi.string().messages({
+  //       'string.base': 'Notes should be a string',
+  //     }),
+  //     chatId: Joi.string().messages({
+  //       'string.base': 'Chat ID should be a string',
+  //     }),
+  //     feePayment: Joi.string()
+  //       .valid('paidViaCash', 'toPay', 'paidViaThirdParty')
+  //       .messages({
+  //         'string.base': 'Fee payment should be a string',
+  //         'any.only':
+  //           'Fee payment must be one of the following: paidViaCash, toPay, paidViaThirdParty',
+  //       }),
+  //     intervals: Joi.array()
+  //       .items(
+  //         Joi.object({
+  //           amount: Joi.number().strict().required().messages({
+  //             'number.empty': 'Amount cannot be empty',
+  //             'number.base': 'Amount should be a number',
+  //             'any.required': 'Amount is required',
+  //           }),
+  //           startDate: Joi.date().required().messages({
+  //             'date.base': 'Start date should be a valid date',
+  //             'any.required': 'Start date is required',
+  //           }),
+  //           frequency: Joi.number().optional().messages({
+  //             'number.base': 'Frequency should be a number',
+  //           }),
+  //           timePeriod: Joi.string()
+  //             .valid('Weekly', 'Monthly', 'Custom', 'Fortnightly', 'Daily')
+  //             .required()
+  //             .messages({
+  //               'string.base': 'Time period should be a string',
+  //               'any.required': 'Time period is required',
+  //               'any.only':
+  //                 'Time period must be one of the following: Weekly, Monthly, Custom, Fortnightly, Daily',
+  //             }),
+  //         })
+  //       )
+  //       .optional(),
+  //   });
 
-    // Handling bulk case validation
-    if (req.query.bulk === 'true') {
-      const cases = req.body.cases;
-      if (Array.isArray(cases)) {
-        for (const tempCase of cases) {
-          const {error} = schema.validate(tempCase);
-          if (error) {
-            return res
-              .status(constants.CODE.BAD_REQUEST)
-              .send(responseHelper.get4xxResponse(error.details[0].message));
-          }
-        }
-      } else {
-        return res
-          .status(constants.CODE.BAD_REQUEST)
-          .send(responseHelper.get4xxResponse('Please provide cases array'));
-      }
-      return next();
-    }
-    const {error} = schema.validate(req.body);
-    if (!error) {
-      return next();
-    } else {
-      return res
-        .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.details[0].message));
-    }
-  }
+  //   // Handling bulk case validation
+  //   if (req.query.bulk === 'true') {
+  //     const cases = req.body.cases;
+  //     if (Array.isArray(cases)) {
+  //       for (const tempCase of cases) {
+  //         const {error} = schema.validate(tempCase);
+  //         if (error) {
+  //           return res
+  //             .status(constants.CODE.BAD_REQUEST)
+  //             .send(responseHelper.get4xxResponse(error.details[0].message));
+  //         }
+  //       }
+  //     } else {
+  //       return res
+  //         .status(constants.CODE.BAD_REQUEST)
+  //         .send(responseHelper.get4xxResponse('Please provide cases array'));
+  //     }
+  //     return next();
+  //   }
+  //   const {error} = schema.validate(req.body);
+  //   if (!error) {
+  //     return next();
+  //   } else {
+  //     return res
+  //       .status(constants.CODE.BAD_REQUEST)
+  //       .send(responseHelper.get4xxResponse(error.details[0].message));
+  //   }
+  // }
 
   async validateCaseAbout(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
@@ -453,11 +453,9 @@ class CaseValidate {
                     'Phone must be a valid 10-digit number.',
                   'any.required': 'Phone is a required field.',
                 }),
-              email: Joi.string().email().required().messages({
+              email: Joi.string().email().allow('').messages({
                 'string.base': 'Email must be a string.',
-                'string.empty': 'Email is required and cannot be empty.',
                 'string.email': 'Email must be a valid email address.',
-                'any.required': 'Email is a required field.',
               }),
               relationWithCreditor: Joi.string().allow('').messages({
                 'string.base': 'Relation with creditor must be a string.',
@@ -842,11 +840,9 @@ class CaseValidate {
                       'Phone number must be exactly 10 digits.',
                     'any.required': 'Phone number is required.',
                   }),
-                email: Joi.string().email().required().messages({
+                email: Joi.string().email().allow('').messages({
                   'string.base': 'Email must be a string.',
-                  'string.empty': 'Email cannot be empty.',
                   'string.email': 'Email must be a valid email address.',
-                  'any.required': 'Email is required.',
                 }),
                 relationWithCreditor: Joi.string().allow('').messages({
                   'string.base': 'Relation with creditor must be a string.',
