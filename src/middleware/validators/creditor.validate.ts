@@ -68,9 +68,7 @@ class CreditorRequests {
             'string.base': 'Contact phone number must be a string.',
             'string.pattern.base': 'Contact phone number must be 10 digits.',
           }),
-        email: Joi.string().email().required().messages({
-          'any.required': 'Contact email is required.',
-          'string.empty': 'Contact email cannot be empty.',
+        email: Joi.string().email().allow('').messages({
           'string.email': 'Invalid contact email format.',
           'string.base': 'Contact email must be a string.',
         }),
@@ -245,9 +243,7 @@ class CreditorRequests {
                         'string.pattern.base':
                           'Contact phone number must be exactly 10 digits.',
                       }),
-                    email: Joi.string().email().required().messages({
-                      'any.required': 'Contact email is required.',
-                      'string.empty': 'Contact email cannot be empty.',
+                    email: Joi.string().email().allow('').messages({
                       'string.email': 'Invalid contact email format.',
                       'string.base': 'Contact email must be a string.',
                     }),
