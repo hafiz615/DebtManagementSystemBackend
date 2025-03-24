@@ -86,21 +86,8 @@ class CommonUtil {
     return cleanedNumber;
   }
 
-  async cleanPhoneNumberConditionally(phoneNumber: string) {
-    const phoneNumberCode = phoneNumber.startsWith('+92')
-      ? '+92'
-      : phoneNumber.startsWith('92')
-        ? '92'
-        : '';
-
-    if (
-      process.env.environment === 'dev' &&
-      (phoneNumberCode === '+92' || phoneNumberCode === '92')
-    ) {
-      return phoneNumber.replace(/^(\+?92)/, '');
-    } else {
-      return this.cleanPhoneNumber(phoneNumber);
-    }
+  async extractLastTenDigits(num: string) {
+    return num.replace(/\D/g, '').slice(-10);
   }
 
   async removeDashesAndRoundBrackets(data: string) {

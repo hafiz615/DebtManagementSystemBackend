@@ -261,9 +261,7 @@ class CallUtil {
 
       const callsWithNames = await Promise.all(
         response.map(async (call: any) => {
-          const number = await commonUtil.cleanPhoneNumberConditionally(
-            call.from
-          );
+          const number = await commonUtil.extractLastTenDigits(call.from);
           const name = await this.getDebtorOrCreditorName(number);
           let caseData = null;
 

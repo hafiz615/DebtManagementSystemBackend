@@ -15,6 +15,10 @@ const callSchema: Schema = new Schema({
   callDirection: {type: String},
   callDuration: {type: String},
   callStatus: {type: String},
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
   callRecordingSid: {type: String},
   transcriptUrl: {type: String},
   type: {type: String, default: 'Call'},

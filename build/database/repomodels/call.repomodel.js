@@ -18,6 +18,7 @@ class Call {
         this.callDuration = '';
         this.callStatus = '';
         this.callRecordingSid = '';
+        this.isDeleted = false;
         this.transcriptUrl = '';
         this.type = 'Call';
         this.createdAt = common_util_1.default.getCurrentDate();
