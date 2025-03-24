@@ -49,4 +49,10 @@ router.post(
   callController.voiceMailRecordingStatus
 );
 
+router.delete(
+  '/deleteCall/:id',
+  authorize.validateAuth,
+  callController.deleteCall
+);
+
 export default router;

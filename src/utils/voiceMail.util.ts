@@ -16,9 +16,11 @@ class VoiceMailUtil {
 
   async createVoiceMail(data: any) {
     const newVoiceMail = new Call();
-    console.log(data, 'data');
     const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
       data;
+    const number = await commonUtil.cleanedNumber(From);
+    const name = await callUtil.getDebtorOrCreditorName(number);
+    if (name) newVoiceMail.callerName = name.fullName;
     newVoiceMail.accountSid = AccountSid;
     newVoiceMail.callSid = CallSid;
     newVoiceMail.callTo = To;
@@ -27,16 +29,12 @@ class VoiceMailUtil {
     newVoiceMail.callFrom = From;
     newVoiceMail.callRecordingSid = RecordingSid;
     newVoiceMail.type = 'Voice Mail';
-    // await callUtil.fetchRecordingWithRetry(RecordingSid);
-    // const transcriptUrl: any = await callUtil.createTranscript(RecordingSid);
-    // newVoiceMail.transcriptUrl = transcriptUrl;
     return await this.callRepository.create<ICall>(newVoiceMail as any);
   }
 
   async getVoiceMails(req: Request) {
     const reqTemp: any = req;
     const identity = reqTemp.twilioNo || process.env.TWILIO_CALLER_ID;
-    console.log('hello from number', identity);
 
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const voiceMails = await this.callRepository.getAll<ICall>(

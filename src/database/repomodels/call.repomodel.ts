@@ -12,6 +12,7 @@ export class Call {
   callDuration = '';
   callStatus = '';
   callRecordingSid = '';
+  isDeleted = false;
   transcriptUrl = '';
   type = 'Call';
   createdAt = commonUtil.getCurrentDate();

@@ -12,6 +12,7 @@ export interface ICall extends Document {
   callDuration: string;
   callStatus: string;
   callRecordingSid: string;
+  isDeleted: boolean;
   type: string;
   transcriptUrl: string;
   createdAt: Date;
