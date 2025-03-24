@@ -223,7 +223,7 @@ class CronJob {
 
         // const lawsuits =
         //   await this.lawsuitRepository.getAllWithoutPagination<ILawsuit>({
-        //     attorneyPaymentsProceed: true,
+        //     paymentsProceed: true,
         //   });
         // const attorneyIds = lawsuits.map(lawsuit => {
         //   return String(lawsuit.attorneyId);
