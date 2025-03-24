@@ -208,7 +208,7 @@ class CallUtil {
                 pageToken,
             });
             const callsWithNames = await Promise.all(response.map(async (call) => {
-                const number = await common_util_1.default.cleanedNumber(call.from);
+                const number = await common_util_1.default.extractLastTenDigits(call.from);
                 const name = await this.getDebtorOrCreditorName(number);
                 let caseData = null;
                 if (name) {

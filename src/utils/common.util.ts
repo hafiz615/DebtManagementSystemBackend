@@ -86,7 +86,7 @@ class CommonUtil {
     return cleanedNumber;
   }
 
-  async cleanedNumber(num: string) {
+  async extractLastTenDigits(num: string) {
     return num.replace(/\D/g, '').slice(-10);
   }
 

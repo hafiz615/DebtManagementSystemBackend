@@ -16,7 +16,7 @@ class VoiceMailUtil {
     async createVoiceMail(data) {
         const newVoiceMail = new call_repomodel_1.Call();
         const { CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid } = data;
-        const number = await common_util_1.default.cleanedNumber(From);
+        const number = await common_util_1.default.extractLastTenDigits(From);
         const name = await call_util_1.default.getDebtorOrCreditorName(number);
         if (name)
             newVoiceMail.callerName = name.fullName;

@@ -78,7 +78,7 @@ class CommonUtil {
         }
         return cleanedNumber;
     }
-    async cleanedNumber(num) {
+    async extractLastTenDigits(num) {
         return num.replace(/\D/g, '').slice(-10);
     }
     async removeDashesAndRoundBrackets(data) {

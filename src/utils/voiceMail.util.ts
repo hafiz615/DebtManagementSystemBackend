@@ -18,7 +18,7 @@ class VoiceMailUtil {
     const newVoiceMail = new Call();
     const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
       data;
-    const number = await commonUtil.cleanedNumber(From);
+    const number = await commonUtil.extractLastTenDigits(From);
     const name = await callUtil.getDebtorOrCreditorName(number);
     if (name) newVoiceMail.callerName = name.fullName;
     newVoiceMail.accountSid = AccountSid;
