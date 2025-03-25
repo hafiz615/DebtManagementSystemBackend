@@ -100,7 +100,7 @@ class CommonUtil {
   }
 
   extractAmount(feeString: string) {
-    const match = feeString.match(/(\d+(\.\d+)?)/);
+    const match = feeString ? feeString.match(/(\d+(\.\d+)?)/) : false;
     if (match) {
       return parseFloat(match[0]);
     }
