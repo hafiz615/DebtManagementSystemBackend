@@ -89,7 +89,7 @@ class CommonUtil {
         return num.replace(/\D/g, '').slice(-10);
     }
     extractAmount(feeString) {
-        const match = feeString.match(/(\d+(\.\d+)?)/);
+        const match = feeString ? feeString.match(/(\d+(\.\d+)?)/) : false;
         if (match) {
             return parseFloat(match[0]);
         }
