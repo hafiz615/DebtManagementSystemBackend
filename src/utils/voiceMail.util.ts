@@ -15,9 +15,15 @@ class VoiceMailUtil {
   }
 
   async createVoiceMail(data: any) {
-    const newVoiceMail = new Call();
     const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
       data;
+    const findCall = await this.callRepository.getOne<ICall>({
+      callSid: CallSid,
+    });
+    console.log('voice mail call', findCall);
+    const newVoiceMail = new Call();
+    // const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
+    //   data;
     const number = await commonUtil.extractLastTenDigits(From);
     const name = await callUtil.getDebtorOrCreditorName(number);
     if (name) newVoiceMail.callerName = name.fullName;
