@@ -105,34 +105,37 @@ class CallUtil {
         }
         return null;
     }
-    async createCall(data, userName, callerId) {
+    async createCall(data, user, callerId, debtorId, creditorId) {
         const newCall = new call_repomodel_1.Call();
         const { CaseId, CallSid, AccountSid, To, CallStatus, Direction } = data;
         newCall.caseId = CaseId;
+        newCall.debtorId = debtorId;
+        newCall.creditorId = creditorId;
         newCall.callSid = CallSid;
-        (newCall.callerName = userName), (newCall.accountSid = AccountSid);
+        if (user) {
+            newCall.callerName = user.name;
+            newCall.userId = String(user._id);
+        }
+        newCall.accountSid = AccountSid;
         newCall.callTo = To;
         (newCall.callDirection = Direction),
             (newCall.callFrom = callerId),
             (newCall.callStatus = CallStatus);
         return await this.callRepository.create(newCall);
     }
-    async createIncomingCall(data, userName, callerId) {
+    async createIncomingCall(data, user, callerId) {
         const { CallSid, AccountSid, CallStatus, From, Direction } = data;
         console.log('data', data);
         console.log(callerId);
-        console.log('userName', userName);
-        const getDebtor = await this.debtorRepository.getOne({
-            $or: [
-                { 'basicInformation.phone': data.from },
-                { 'businessInformation.phone': data.from },
-            ],
-        });
-        const newCall = new call_repomodel_1.Call();
+        let newCall = new call_repomodel_1.Call();
         newCall.callSid = CallSid;
-        (newCall.callerName = userName), (newCall.accountSid = AccountSid);
+        newCall.accountSid = AccountSid;
         newCall.callTo = callerId;
-        (newCall.callDirection = Direction),
+        if (user) {
+            newCall.callerName = user.name;
+            newCall.userId = String(user._id);
+        }
+        (newCall = newCall.callDirection = Direction),
             (newCall.callFrom = From),
             (newCall.callStatus = CallStatus);
         return await this.callRepository.create(newCall);

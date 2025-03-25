@@ -141,12 +141,24 @@ class CallUtil {
     return null;
   }
 
-  async createCall(data: any, userName: string, callerId: string) {
+  async createCall(
+    data: any,
+    user: any,
+    callerId: string,
+    debtorId: string,
+    creditorId: string
+  ) {
     const newCall = new Call();
     const {CaseId, CallSid, AccountSid, To, CallStatus, Direction} = data;
     newCall.caseId = CaseId;
+    newCall.debtorId = debtorId;
+    newCall.creditorId = creditorId;
     newCall.callSid = CallSid;
-    (newCall.callerName = userName), (newCall.accountSid = AccountSid);
+    if (user) {
+      newCall.callerName = user.name;
+      newCall.userId = String(user._id);
+    }
+    newCall.accountSid = AccountSid;
     newCall.callTo = To;
     (newCall.callDirection = Direction),
       (newCall.callFrom = callerId),
@@ -154,23 +166,22 @@ class CallUtil {
     return await this.callRepository.create<ICall>(newCall as any);
   }
 
-  async createIncomingCall(data: any, userName: string, callerId: string) {
+  async createIncomingCall(data: any, user: any, callerId: string) {
     const {CallSid, AccountSid, CallStatus, From, Direction} = data;
     console.log('data', data);
     console.log(callerId);
-    console.log('userName', userName);
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      $or: [
-        {'basicInformation.phone': data.from},
-        {'businessInformation.phone': data.from},
-      ],
-    });
-    const newCall = new Call();
+
+    let newCall = new Call();
 
     newCall.callSid = CallSid;
-    (newCall.callerName = userName), (newCall.accountSid = AccountSid);
+
+    newCall.accountSid = AccountSid;
     newCall.callTo = callerId;
-    (newCall.callDirection = Direction),
+    if (user) {
+      newCall.callerName = user.name;
+      newCall.userId = String(user._id);
+    }
+    (newCall = newCall.callDirection = Direction),
       (newCall.callFrom = From),
       (newCall.callStatus = CallStatus);
     return await this.callRepository.create<ICall>(newCall as any);
