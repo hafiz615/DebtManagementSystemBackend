@@ -40,7 +40,7 @@ class CallController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successUpdateMessage('Call'),
+          message: response[1],
         })
       );
     } catch (error: any) {
@@ -350,7 +350,7 @@ class CallController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successDeleteMessage('Call'),
+          message: constants.successDeleteMessage('Voice Mail'),
         })
       );
     } catch (error) {
