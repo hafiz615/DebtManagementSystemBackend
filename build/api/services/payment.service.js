@@ -1051,18 +1051,18 @@ class PaymentService {
         return [true, caseIds];
     }
     async addPaymentPlan(req) {
-        let lawsuit = await this.lawsuitRepository.getOne({
-            attorneyId: req.params.id,
-        });
-        if (!lawsuit) {
-            return [false, constants_util_1.default.notFoundMessage('Attorney')];
-        }
-        if (lawsuit.intervals && lawsuit.intervals.length)
-            return [false, constants_util_1.default.alreadyExistsMessage('Attorney payment plan')];
         let findCase = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
         if (!findCase) {
             return [false, constants_util_1.default.notFoundMessage('Case')];
         }
+        let lawsuit = await this.lawsuitRepository.getOne({
+            attorneyId: req.params.id,
+        });
+        if (!lawsuit) {
+            return [false, constants_util_1.default.notFoundMessage('Lawsuit')];
+        }
+        if (lawsuit.intervals && lawsuit.intervals.length)
+            return [false, constants_util_1.default.alreadyExistsMessage('Payment plan')];
         req.body._id = req.body.caseId;
         req.body.debtor = findCase.debtor._id;
         req.body.attorneyId = req.params.id;
