@@ -591,8 +591,9 @@ class UserService {
         return [true, { user, token: token }];
     }
     async addUserSender(req) {
+        const email = req.body.from_email.toLowerCase();
         const findUser = await this.userRepository.getOne({
-            email: req.body.from_email,
+            email: email,
             isActive: true,
         });
         if (!findUser)
@@ -602,8 +603,8 @@ class UserService {
             ];
         const reqTemp = req;
         const data = {
-            from_email: req.body.from_email,
-            reply_to: req.body.from_email,
+            from_email: email,
+            reply_to: email,
             from_name: req.body.from_name,
             address: req.body.address,
             city: req.body.city,
