@@ -594,7 +594,7 @@ class CaseValidate {
                     'string.empty': 'Document date cannot be empty',
                 }),
             })
-                .required()
+                .optional()
                 .messages({
                 'object.base': 'Lawsuit must be an object.',
             }),
@@ -610,12 +610,10 @@ class CaseValidate {
                     'any.required': 'Lawfirm Email is a required field.',
                     'string.empty': 'Lawfirm Email cannot be empty',
                 }),
-                phone: joi_1.default.string()
-                    .pattern(/^\d{10}$/)
-                    .required()
-                    .messages({
+                phone: joi_1.default.string().required().messages({
                     'string.base': 'lawfirm PhoneNo must be a string.',
-                    'string.pattern.base': 'lawfirm PhoneNo must must be between 10 digits.',
+                    // 'string.pattern.base':
+                    //   'lawfirm PhoneNo must must be between 10 digits.',
                     'any.required': 'lawfirm PhoneNo is a required field.',
                 }),
                 address: joi_1.default.string().optional().allow('').messages({
@@ -646,12 +644,9 @@ class CaseValidate {
                     'any.required': 'Attorney name is a required field.',
                     'string.empty': 'Attorney name cannot be empty',
                 }),
-                attorney_telephone: joi_1.default.string()
-                    .pattern(/^\d{10}$/)
-                    .required()
-                    .messages({
+                attorney_telephone: joi_1.default.string().required().messages({
                     'string.base': 'Attorney PhoneNo must be a string of numbers.',
-                    'string.pattern.base': 'Attorney PhoneNo must be between 10 digits.',
+                    // 'string.pattern.base': 'Attorney PhoneNo must be between 10 digits.',
                     'any.required': 'Attorney PhoneNo is a required field.',
                     'string.empty': 'Attorney PhoneNo cannot be empty',
                 }),
@@ -677,7 +672,7 @@ class CaseValidate {
                     'any.required': 'Attorney state is a required field.',
                 }),
             })
-                .required()
+                .optional()
                 .messages({
                 'object.base': 'Attorney must be an object.',
             }),
@@ -943,7 +938,7 @@ class CaseValidate {
                         'string.empty': 'Document date cannot be empty',
                     }),
                 })
-                    .required()
+                    .optional()
                     .messages({
                     'object.base': 'Lawsuit must be an object.',
                 }),
@@ -960,11 +955,12 @@ class CaseValidate {
                         'string.empty': 'Lawfirm Email cannot be empty',
                     }),
                     phone: joi_1.default.string()
-                        .pattern(/^\d{10}$/)
+                        // .pattern(/^\d{10}$/)
                         .required()
                         .messages({
                         'string.base': 'lawfirm PhoneNo must be a string.',
-                        'string.pattern.base': 'lawfirm PhoneNo must must be between 10 digits.',
+                        // 'string.pattern.base':
+                        //   'lawfirm PhoneNo must must be between 10 digits.',
                         'any.required': 'lawfirm PhoneNo is a required field.',
                     }),
                     address: joi_1.default.string().optional().allow('').messages({
@@ -996,11 +992,12 @@ class CaseValidate {
                         'string.empty': 'Attorney name cannot be empty',
                     }),
                     attorney_telephone: joi_1.default.string()
-                        .pattern(/^\d{10}$/)
+                        // .pattern(/^\d{10}$/)
                         .required()
                         .messages({
                         'string.base': 'Attorney PhoneNo must be a string of numbers.',
-                        'string.pattern.base': 'Attorney PhoneNo must be between 10 digits.',
+                        // 'string.pattern.base':
+                        //   'Attorney PhoneNo must be between 10 digits.',
                         'any.required': 'Attorney PhoneNo is a required field.',
                         'string.empty': 'Attorney PhoneNo cannot be empty',
                     }),
@@ -1026,7 +1023,7 @@ class CaseValidate {
                         'any.required': 'Attorney state is a required field.',
                     }),
                 })
-                    .required()
+                    .optional()
                     .messages({
                     'object.base': 'Attorney must be an object.',
                 }),

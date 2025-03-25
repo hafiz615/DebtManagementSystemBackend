@@ -14,22 +14,41 @@ class VoiceMailUtil {
     this.callRepository = new CallRepository();
   }
 
-  async createVoiceMail(data: any) {
-    const newVoiceMail = new Call();
-    const {CallSid, AccountSid, To, CallStatus, Direction, From, RecordingSid} =
-      data;
+  async updateVoiceMail(data: any) {
+    const {CallSid, To, CallStatus, From, RecordingSid} = data;
+
+    const findCall = await this.callRepository.getOne<ICall>({
+      callSid: CallSid,
+    });
+    if (!findCall) {
+      console.error(`Call not found for CallSid: ${CallSid}`);
+      return null;
+    }
+
+    console.log('Voice mail call found:', findCall);
+
     const number = await commonUtil.extractLastTenDigits(From);
     const name = await callUtil.getDebtorOrCreditorName(number);
-    if (name) newVoiceMail.callerName = name.fullName;
-    newVoiceMail.accountSid = AccountSid;
-    newVoiceMail.callSid = CallSid;
-    newVoiceMail.callTo = To;
-    newVoiceMail.callStatus = CallStatus;
-    newVoiceMail.callDirection = Direction;
-    newVoiceMail.callFrom = From;
-    newVoiceMail.callRecordingSid = RecordingSid;
-    newVoiceMail.type = 'Voice Mail';
-    return await this.callRepository.create<ICall>(newVoiceMail as any);
+
+    const updatedData: any = {
+      callTo: To,
+      callStatus: CallStatus,
+      callFrom: From,
+      callRecordingSid: RecordingSid,
+      type: 'Voice Mail',
+      updatedAt: commonUtil.getCurrentDate(),
+    };
+
+    if (name) {
+      updatedData.callerName = name.fullName;
+    }
+
+    const result = await this.callRepository.updateByOne(
+      {callSid: CallSid},
+      updatedData
+    );
+
+    return result;
   }
 
   async getVoiceMails(req: Request) {
