@@ -131,10 +131,9 @@ class DebtorRequests {
                         'string.pattern.base': 'Contact Phone number must be a 10-digit number.',
                         'string.empty': 'Contact Phone number cannot be empty.',
                     }),
-                    email: joi_1.default.string().email().required().messages({
-                        'any.required': 'Contact Email is a required field.',
+                    email: joi_1.default.string().email().allow('').messages({
                         'string.email': 'Contact Email must be a valid email address.',
-                        'string.empty': 'Contact Email cannot be empty.',
+                        'string.base': 'Contact Email must be a string.',
                     }),
                     relationWithDebtor: joi_1.default.string().allow('').messages({
                         'string.base': 'Relation with debtor must be a string.',
@@ -333,10 +332,9 @@ class DebtorRequests {
                         'string.pattern.base': 'Contact Phone number must be a 10-digit number.',
                         'string.empty': 'Contact Phone number cannot be empty.',
                     }),
-                    email: joi_1.default.string().email().required().messages({
-                        'any.required': 'Contact Email is a required field.',
+                    email: joi_1.default.string().email().allow('').messages({
                         'string.email': 'Contact Email must be a valid email address.',
-                        'string.empty': 'Contact Email cannot be empty.',
+                        'string.base': 'Contact Email must be a string.',
                     }),
                     relationWithDebtor: joi_1.default.string().allow('').messages({
                         'string.base': 'Relation with debtor must be a string.',
@@ -557,10 +555,9 @@ class DebtorRequests {
                         'any.required': 'Contact phone number is required',
                         'string.empty': 'Contact phone number cannot be empty',
                     }),
-                    email: joi_1.default.string().email().required().messages({
+                    email: joi_1.default.string().email().allow('').messages({
                         'string.email': 'Contact email must be a valid email address',
-                        'any.required': 'Contact email is required',
-                        'string.empty': 'Contact email cannot be empty',
+                        'string.base': 'Contact email must be a string value',
                     }),
                     relationWithDebtor: joi_1.default.string().allow('').messages({
                         'string.base': 'Relation with debtor must be a string',
@@ -692,10 +689,9 @@ class DebtorRequests {
                             'any.required': 'Contact phone is required',
                             'string.empty': 'Contact phone cannot be empty',
                         }),
-                        email: joi_1.default.string().email().required().messages({
+                        email: joi_1.default.string().email().allow('').messages({
                             'string.email': 'Contact email must be a valid email address',
-                            'any.required': 'Contact email is required',
-                            'string.empty': 'Contact email cannot be empty',
+                            'string.base': 'Contact email must be a string',
                         }),
                         relationWithDebtor: joi_1.default.string().allow('').messages({
                             'string.base': 'Relation with debtor must be a string',

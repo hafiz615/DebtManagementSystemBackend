@@ -25,6 +25,24 @@ class PaymentValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async updateACHDetails(req, res, next) {
+        const schema = joi_1.default.object({
+            data: joi_1.default.string().required().messages({
+                'string.base': 'Data must be a string.',
+                'string.empty': 'Data cannot be empty.',
+                'any.required': 'Data is a required field.',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
     async updatePaymentLinkStatus(req, res, next) {
         const schema = joi_1.default.object({
             status: joi_1.default.string().valid('Success', 'Failed').required().messages({

@@ -17,6 +17,15 @@ class AttorneyUtil {
     return await this.attorneyRepository.create<IAttorney>(validatedattorney);
   }
 
+  async upsertAttorney(data: IAttorney) {
+    const newattorney = new Attorney();
+    const validatedattorney = DataCopier.copy(newattorney, data as IAttorney);
+    return await this.attorneyRepository.upsert<IAttorney>(
+      {phone: data.phone},
+      validatedattorney
+    );
+  }
+
   async attorneyData(req: any) {
     return {
       name: req.body['attorney.name'],

@@ -591,7 +591,7 @@ class DebtorService {
             if (body.basicInformation.weeklyBudget) {
                 body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
             }
-            if (body?.lawsuitDocuments.length) {
+            if (body?.lawsuitDocuments?.length) {
                 lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(body?.lawsuitDocuments);
                 body.lawsuitFields = [lawsuitExtractedFields.result];
             }
@@ -617,7 +617,7 @@ class DebtorService {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
         if (lawsuitExtractedFields?.result) {
-            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitExtractedFields);
+            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitExtractedFields, id);
             await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
         }
         moneyThumb_util_1.default.run(debtor, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
@@ -1144,7 +1144,7 @@ class DebtorService {
                     },
                 ];
             }
-            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitFields);
+            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitFields, reqTemp.id);
             await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
             debtorBody['lawsuitFields'] = [lawsuitFields.result];
             debtorBody['extractedFields'] = extractedFields.extracted_fields;

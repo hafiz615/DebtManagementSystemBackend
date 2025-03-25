@@ -12,7 +12,7 @@ class Lawsuit {
         this.debtorId = null;
         this.userId = null;
         this.creditorId = null;
-        this.lawsuitStatus = false;
+        this.lawsuitResolved = false;
         this.lawsuitPaidAmount = 0;
         this.lawsuitPaidCount = 0;
         this.lawsuitReceiveAmount = 0;
@@ -24,7 +24,7 @@ class Lawsuit {
         this.balance = 0;
         this.intervals = Array();
         this.isExempt = false;
-        this.attorneyPaymentsProceed = false;
+        this.paymentsProceed = false;
         this.lawsuitDate = common_util_1.default.getCurrentDate();
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

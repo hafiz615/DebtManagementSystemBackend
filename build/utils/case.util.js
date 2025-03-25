@@ -35,6 +35,7 @@ const creditor_util_1 = __importDefault(require("./creditor.util"));
 const email_util_1 = __importDefault(require("./email.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
 const twilio_1 = __importDefault(require("twilio"));
+const lawsuit_util_1 = __importDefault(require("./lawsuit.util"));
 dotenv_1.default.config();
 class CaseUtil {
     constructor() {
@@ -2276,6 +2277,15 @@ class CaseUtil {
                 // if (!caseCreated) {
                 //   return [false, constantsUtil.failureAddMessage('case')];
                 // }
+                if (body?.lawsuitExist) {
+                    const lawsuitFields = {
+                        ...body.lawsuit,
+                        ...body.lawfirm,
+                        ...body.attorney,
+                    };
+                    const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, id);
+                    const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, caseCreated);
+                }
                 if (caseCreated) {
                     createdCases.push(caseCreated);
                     const accountTitles = creditor.accountTitleMapping;

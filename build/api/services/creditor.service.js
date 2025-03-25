@@ -284,14 +284,14 @@ class CreditorService {
         const { pause, type } = req.query;
         const { id } = req.params;
         if ((pause !== 'true' && pause !== 'false') ||
-            (type !== 'attorney' && type !== 'creditor')) {
+            (type !== 'lawfirm' && type !== 'creditor')) {
             return [false, 'Query param missing or invalid!'];
         }
         const caseTemp = await this.caseRepository.getById(id, 'debtor creditor');
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
-        const updateResult = type === 'attorney'
-            ? await this.lawsuitRepository.updateByOne({ debtorId: caseTemp.debtor, creditorId: caseTemp.creditor }, { attorneyPaymentsProceed: pause })
+        const updateResult = type === 'lawfirm'
+            ? await this.lawsuitRepository.updateByOne({ debtorId: caseTemp.debtor, creditorId: caseTemp.creditor }, { paymentsProceed: pause })
             : await this.caseRepository.updateById(id, {
                 creditorPaymentsProceed: pause,
             });

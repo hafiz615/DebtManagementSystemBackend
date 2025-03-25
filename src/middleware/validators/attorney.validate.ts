@@ -6,7 +6,7 @@ import Joi from 'joi';
 
 dotenv.config();
 
-class CaseValidate {
+class AttorneyValidate {
   async validateCaseId(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       caseId: Joi.string().required().messages({
@@ -72,4 +72,4 @@ class CaseValidate {
   }
 }
 
-export default new CaseValidate();
+export default new AttorneyValidate();

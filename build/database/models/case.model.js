@@ -194,7 +194,10 @@ const caseModel = new mongoose_1.Schema({
     },
     affiliateEmail: {
         type: String,
-    }
+    },
+    lawsuitExist: {
+        type: Boolean,
+    },
 });
 caseModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

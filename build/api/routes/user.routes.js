@@ -38,5 +38,11 @@ router.post('/thirdPartySignIn', user_validate_1.default.thirdPartySignIn, user_
 router.post('/addUserSender', authorize_middleware_1.default.validateAuth, user_validate_1.default.addSenderIdentity, user_controller_1.default.addUserSender);
 router.get('/getUsers', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUsers);
 router.get('/usersByRole', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUsersByRole);
+router.get('/getSignatures', authorize_middleware_1.default.validateAuth, user_controller_1.default.getSignatures);
+router.post('/addSignature', authorize_middleware_1.default.validateAuth, user_validate_1.default.signature, user_controller_1.default.addSignature);
+router.post('/updateSignature/:id', authorize_middleware_1.default.validateAuth, user_validate_1.default.signature, user_controller_1.default.updateSignature);
+router.delete('/deleteSignature/:id', authorize_middleware_1.default.validateAuth, user_controller_1.default.deleteSignature);
+router.post('/updateSignatureStatus/:id', authorize_middleware_1.default.validateAuth, user_validate_1.default.updateSignatureStatus, user_controller_1.default.updateSignatureStatus);
+router.get('/getUserActiveSignature', authorize_middleware_1.default.validateAuth, user_controller_1.default.getUserActiveSignature);
 exports.default = router;
 //# sourceMappingURL=user.routes.js.map

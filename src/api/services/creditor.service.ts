@@ -356,7 +356,7 @@ class CreditorService {
     const {id} = req.params;
     if (
       (pause !== 'true' && pause !== 'false') ||
-      (type !== 'attorney' && type !== 'creditor')
+      (type !== 'lawfirm' && type !== 'creditor')
     ) {
       return [false, 'Query param missing or invalid!'];
     }
@@ -367,10 +367,10 @@ class CreditorService {
     );
     if (!caseTemp) return [false, constants.notFoundMessage('case')];
     const updateResult =
-      type === 'attorney'
+      type === 'lawfirm'
         ? await this.lawsuitRepository.updateByOne<ILawsuit>(
             {debtorId: caseTemp.debtor, creditorId: caseTemp.creditor},
-            {attorneyPaymentsProceed: pause}
+            {paymentsProceed: pause}
           )
         : await this.caseRepository.updateById<ICase>(id, {
             creditorPaymentsProceed: pause,

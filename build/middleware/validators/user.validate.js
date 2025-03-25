@@ -191,6 +191,41 @@ class UserRequests {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async signature(req, res, next) {
+        const schema = joi_1.default.object({
+            signature: joi_1.default.string().required().messages({
+                'string.empty': 'Signature cannot be empty.',
+                'any.required': 'Signature is required.',
+                'string.base': 'Signature must be a string.',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
+    async updateSignatureStatus(req, res, next) {
+        const schema = joi_1.default.object({
+            active: joi_1.default.boolean().required().messages({
+                'any.required': 'Active field is required',
+                'boolean.base': 'Active must be a boolean value',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new UserRequests();
 //# sourceMappingURL=user.validate.js.map

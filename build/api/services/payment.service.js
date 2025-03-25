@@ -784,16 +784,38 @@ class PaymentService {
             }
             return [false, message];
         }
-        // const sourceId = fundingSource.funding_source.source_id;
-        // this.creditorReposiotry.updateById(creditor._id, {
-        //   paynoteSourceId: fundingSource.funding_source.source_id,
-        // });
+        const sourceId = fundingSource.funding_source.source_id;
+        user.model.updateById(user.obj._id, {
+            paynoteSourceId: fundingSource.funding_source.source_id,
+            paynoteSourceVerified: true,
+        });
         // paynoteUtil.initiateFundingSourceVerifcation(
         //   sourceId,
         //   creditor.paynoteUserId
         // );
         // paynoteUtil.verifyFundingSource(sourceId);
         return [true, constants_util_1.default.successAddMessage('ACH details')];
+    }
+    async updateACHDetails(req) {
+        const reqTemp = req;
+        const type = reqTemp.query.type;
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user.obj)
+            return [false, constants_util_1.default.notFoundMessage(`${type}`)];
+        const data = req.body.data;
+        const paymentObj = common_util_1.default.getDecryptedData(data);
+        const fundingSource = await paynote_util_1.default.updateFundingSource(paymentObj, user);
+        if (fundingSource?.error) {
+            let message = '';
+            if (fundingSource?.messages) {
+                message = fundingSource.messages[0];
+            }
+            else {
+                message = fundingSource.message;
+            }
+            return [false, message];
+        }
+        return [true, constants_util_1.default.successUpdateMessage('ACH details')];
     }
     async sendPaymentPaynote(req) {
         const paymentId = req.params.id;
@@ -1029,18 +1051,20 @@ class PaymentService {
         return [true, caseIds];
     }
     async addPaymentPlan(req) {
-        let lawsuit = await this.lawsuitRepository.getOne({
-            attorneyId: req.params.id,
-        });
-        if (!lawsuit) {
-            return [false, constants_util_1.default.notFoundMessage('Attorney')];
-        }
-        if (lawsuit.intervals && lawsuit.intervals.length)
-            return [false, constants_util_1.default.alreadyExistsMessage('Attorney payment plan')];
         let findCase = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
         if (!findCase) {
             return [false, constants_util_1.default.notFoundMessage('Case')];
         }
+        let lawsuit = await this.lawsuitRepository.getOne({
+            attorneyId: req.params.id,
+            debtorId: findCase.debtor,
+            creditorId: findCase.creditor._id,
+        });
+        if (!lawsuit) {
+            return [false, constants_util_1.default.notFoundMessage('Lawsuit')];
+        }
+        if (lawsuit.intervals && lawsuit.intervals.length)
+            return [false, constants_util_1.default.alreadyExistsMessage('Payment plan')];
         req.body._id = req.body.caseId;
         req.body.debtor = findCase.debtor._id;
         req.body.attorneyId = req.params.id;
@@ -1052,6 +1076,7 @@ class PaymentService {
             intervals: req.body.intervals,
             isExempt: req.body.isExempt,
         });
+        console.log(lawsuit);
         req.body.intervals = lawsuit.intervals;
         req.body.debtorName = findCase.debtor.basicInformation.fullName;
         req.body.creditorName = findCase.creditor.basicInformation.fullName;

@@ -126,21 +126,18 @@ class EmailService {
       let caseData = null;
       if (caseId) {
         console.log('caseId Check in caseID: ', caseId);
-
-        await caseUtil.addInHistory(
-          {
-            Username: userName,
-            Subject: subject,
-            From: from,
-            To: to,
-            CC: cc,
-            Content: extractedHtml,
-            Time: new Date(commonUtil.getCurrentDate()),
-            Action: 'EMAIL',
-            Attachments: data,
-          },
-          caseId
-        );
+        const historyObj = {
+          Username: userName,
+          Subject: subject,
+          From: from,
+          To: to,
+          Content: extractedHtml,
+          Time: new Date(commonUtil.getCurrentDate()),
+          Action: 'EMAIL',
+          Attachments: data,
+        };
+        if (cc.length) historyObj['CC'] = cc;
+        await caseUtil.addInHistory(historyObj, caseId);
         caseData = await this.caseRepository.getById<ICase>(
           caseId,
           undefined,

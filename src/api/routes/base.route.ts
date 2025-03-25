@@ -20,6 +20,7 @@ import seemlesschexRouter from './seemlesschex.route';
 import lawfirmRouter from './lawfirm.route';
 import smsRouter from './sms.routes';
 import attorneyRouter from './attorney.routes';
+
 export default function setup(app: Application) {
   app.use('/api/v1/user', userRouter);
   app.use('/api/v1/attorney', attorneyRouter);

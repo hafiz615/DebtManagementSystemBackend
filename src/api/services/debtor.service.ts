@@ -687,7 +687,7 @@ class DebtorService {
       if (body.basicInformation.weeklyBudget) {
         body.weeklyBudgetStrategy1 = body.basicInformation.weeklyBudget;
       }
-      if (body?.lawsuitDocuments.length) {
+      if (body?.lawsuitDocuments?.length) {
         lawsuitExtractedFields = await caseUtil.getExtractionLawsuit(
           body?.lawsuitDocuments
         );
@@ -721,7 +721,8 @@ class DebtorService {
     }
     if (lawsuitExtractedFields?.result) {
       const lawfirmTemp = await lawfirmUtil.lawfirmDetails(
-        lawsuitExtractedFields
+        lawsuitExtractedFields,
+        id
       );
       await lawfirmUtil.upsertLawfirm(lawfirmTemp);
     }
@@ -1517,7 +1518,10 @@ class DebtorService {
           },
         ];
       }
-      const lawfirmTemp = await lawfirmUtil.lawfirmDetails(lawsuitFields);
+      const lawfirmTemp = await lawfirmUtil.lawfirmDetails(
+        lawsuitFields,
+        reqTemp.id
+      );
       await lawfirmUtil.upsertLawfirm(lawfirmTemp);
       debtorBody['lawsuitFields'] = [lawsuitFields.result];
       debtorBody['extractedFields'] = extractedFields.extracted_fields;

@@ -18,5 +18,10 @@ router.post('/callSummary', call_controller_1.default.callSummary);
 router.patch('/updateCall/:callSid', authorize_middleware_1.default.validateAuth, call_controller_1.default.updateCall);
 router.post('/twilio/callerName', authorize_middleware_1.default.validateAuth, call_controller_1.default.callerName);
 router.get('/twilio/getNumberMissedCalls', authorize_middleware_1.default.validateAuth, call_controller_1.default.getMissedCalls);
+router.post('/twilio/voiceMail', call_controller_1.default.voiceMail);
+router.post('/twilio/voiceMailRecording', call_controller_1.default.voiceMailRecording);
+router.get('/getVoiceMails', authorize_middleware_1.default.validateAuth, call_controller_1.default.getVoiceMails);
+router.post('/twilio/voice-mail-recording-status', call_controller_1.default.voiceMailRecordingStatus);
+router.delete('/deleteCall/:id', authorize_middleware_1.default.validateAuth, call_controller_1.default.deleteCall);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

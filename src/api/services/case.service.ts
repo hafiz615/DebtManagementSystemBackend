@@ -415,6 +415,22 @@ class CaseService {
     //   const checkCasePayment = await caseUtil.checkCasePayment(findCase);
     //   if (!checkCasePayment[0]) return checkCasePayment;
     // }
+    if (!findCase.lawsuitExist && req.body?.lawsuitExist) {
+      const lawsuitFields = {
+        ...req.body.lawsuit,
+        ...req.body.lawfirm,
+        ...req.body.attorney,
+      };
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+        lawsuitFields,
+        reqTemp.id
+      );
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        findCase
+      );
+    }
+
     req.body.updatedAt = commonUtil.getCurrentDate();
     if (req.body.paidAmount && req.body.paidAmount > 0) {
       req.body.remaining = req.body.totalDebt - req.body.paidAmount;
@@ -1260,18 +1276,17 @@ class CaseService {
     );
     if (!caseTemp) return [false, constantsUtil.notFoundMessage('case')];
     const time = new Date(commonUtil.getCurrentDate());
-    await caseUtil.addInHistory(
-      {
-        Username: reqTemp.name,
-        Subject: subject,
-        From: from,
-        To: sendTo,
-        Content: content,
-        Time: time,
-        Action: 'EMAIL',
-      },
-      caseId
-    );
+    const historyObj = {
+      Username: reqTemp.name,
+      Subject: subject,
+      From: from,
+      To: sendTo,
+      Content: content,
+      Time: time,
+      Action: 'EMAIL',
+    };
+    if (cc.length) historyObj['CC'] = cc;
+    await caseUtil.addInHistory(historyObj, caseId);
     const emailData = {
       from,
       to: sendTo,
@@ -1490,26 +1505,28 @@ class CaseService {
     ) {
       return [false, 'Payment plan already exist!'];
     }
-    const lawsuitFields =
-      findCase.debtor.lawsuitFields?.find(
-        lawsuit =>
-          lawsuit.plaintiff_company ===
-            findCase.creditor.businessInformation.companyName &&
-          lawsuit.defendant_company ===
-            findCase.debtor.businessInformation.companyName
-      ) || null;
 
-    if (lawsuitFields) {
-      lawsuitFields['userId'] = reqTemp.id;
+    if (!findCase.lawsuitExist) {
+      const lawsuitFields =
+        findCase.debtor.lawsuitFields?.find(
+          lawsuit =>
+            lawsuit.plaintiff_company ===
+              findCase.creditor.businessInformation.companyName &&
+            lawsuit.defendant_company ===
+              findCase.debtor.businessInformation.companyName
+        ) || null;
 
-      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
-        lawsuitFields,
-        req.body?.intervals
-      );
-      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
-        lawsuitDetails,
-        findCase
-      );
+      if (lawsuitFields) {
+        const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+          lawsuitFields,
+          reqTemp.id
+        );
+        const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+          lawsuitDetails,
+          findCase
+        );
+        if (lawfirmTemp) req.body.lawsuitExist = true;
+      }
     }
 
     // if (req.body?.commission) {
@@ -1570,13 +1587,31 @@ class CaseService {
       return [false, 'Payment plan already exist!'];
     }
     reqTemp['platform'] = true;
-    const lawfirmTemp = await lawsuitUtil.lawsuitFormation(reqTemp, findCase);
+    if (
+      !findCase.lawsuitExist &&
+      reqTemp.body.attorney &&
+      reqTemp.body.lawsuit
+    ) {
+      const lawsuitFields = {
+        ...req.body.lawsuit,
+        ...req.body.attorney,
+      };
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetailsDebtorPortal(
+        lawsuitFields,
+        reqTemp.id
+      );
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        findCase
+      );
+    }
     let caseUpdated = await this.caseRepository.updateById<ICase>(
       req.params.id,
       {
         intervals: req.body.intervals,
         serviceFee: req.body.serviceFee,
         legalFee: req.body.legalFee,
+        lawsuitExist: true,
         updatedAt: new Date(commonUtil.getCurrentDate()),
       }
     );

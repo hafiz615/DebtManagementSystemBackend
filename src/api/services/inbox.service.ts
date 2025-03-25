@@ -265,9 +265,12 @@ class InboxService {
   };
 
   inboxStatus = async (req: Request) => {
-    const filter = req?.query?.task
-      ? {Repository: TasksRepository}
-      : {Repository: InboxRepository};
+    const filter =
+      req?.query?.task === 'true'
+        ? {Repository: TasksRepository}
+        : {Repository: InboxRepository};
+    let undo = req?.query?.undo;
+    let status = undo === 'true' ? false : true;
 
     const repositoryInstance = new filter.Repository();
 
@@ -281,7 +284,7 @@ class InboxService {
     }
 
     const updatedInbox = await repositoryInstance.updateById(req.params.id, {
-      isCompleted: true,
+      isCompleted: status,
       updatedAt: commonUtil.getCurrentDate(),
     });
     return [true, updatedInbox];

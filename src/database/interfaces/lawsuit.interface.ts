@@ -7,7 +7,7 @@ export interface ILawsuit extends Document {
   debtorId: mongoose.Schema.Types.ObjectId;
   userId: mongoose.Schema.Types.ObjectId;
   creditorId: mongoose.Schema.Types.ObjectId;
-  lawsuitStatus: boolean;
+  lawsuitResolved: boolean;
   lawsuitPaidAmount: number;
   lawsuitPaidCount: number;
   lawsuitReceiveAmount: number;
@@ -18,7 +18,7 @@ export interface ILawsuit extends Document {
   logTrackingId: string;
   lawsuitDate: Date;
   balance: number;
-  attorneyPaymentsProceed: boolean;
+  paymentsProceed: boolean;
   intervals: Array<IInterval>;
   isExempt: boolean;
   createdAt: Date;

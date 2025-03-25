@@ -18,10 +18,7 @@ class AttorneyService {
             const lawSuitBalanceSummary = await this.lawsuitRepository.getOne({
                 debtorId: getCase.debtor,
                 creditorId: getCase.creditor,
-            }, undefined, undefined, [
-                { path: 'attorneyId', select: '-paynoteUserId -paynoteUserFound' },
-                { path: 'lawfirmId' },
-            ]);
+            }, undefined, undefined, ['attorneyId', 'lawfirmId']);
             if (!lawSuitBalanceSummary)
                 return [true, null];
             const { attorneyId, lawfirmId, ...lawsuitData } = lawSuitBalanceSummary;
@@ -63,8 +60,8 @@ class AttorneyService {
             isDeleted: true,
         });
         if (!lawSuit || !updatePayments)
-            return [false, 'Failed to cancel law suit payment plan'];
-        return [true, 'Law suit payment plan canceled successfully'];
+            return [false, 'Failed to cancel lawsuit payment plan'];
+        return [true, 'Lawsuit payment plan canceled successfully'];
     }
 }
 exports.default = AttorneyService;

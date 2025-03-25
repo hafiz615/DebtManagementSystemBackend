@@ -14,6 +14,7 @@ router.post('/creditorUpcomingPayments', authorize_middleware_1.default.validate
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
 router.get('/getAllUpcomingPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getAllUpcomingPayments);
 router.post('/addACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
+router.put('/updateACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.updateACHDetails, payment_controller_1.default.updateACHDetails);
 router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
 router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceCommission);

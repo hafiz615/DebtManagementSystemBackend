@@ -25,7 +25,7 @@ const lawsuitModel: Schema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Creditors',
   },
-  lawsuitStatus: {
+  lawsuitResolved: {
     type: Boolean,
   },
   lawsuitPaidAmount: {
@@ -58,7 +58,7 @@ const lawsuitModel: Schema = new Schema({
   balance: {
     type: Number,
   },
-  attorneyPaymentsProceed: {
+  paymentsProceed: {
     type: Boolean,
   },
   intervals: {

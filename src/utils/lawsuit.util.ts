@@ -35,51 +35,79 @@ class LawsuitUtil {
   }
 
   async lawsuitFormation(req: any, caseData: any) {
-    const {lawsuit, attorney} = req.body;
+    const {lawsuit, attorney, lawfirm} = req.body;
+    const id = lawsuit?.userId;
 
-    const lawfirmExist = await this.lawfirmRepository.getOne<ILawfirm>({
-      lawfirmCompanyName: lawsuit.lawfirmCompanyName,
+    const newLawfirm = lawsuit?.lawfirmCompanyName
+      ? {
+          lawfirmCompanyName: lawsuit.lawfirmCompanyName,
+          platform: req.body.platform,
+          userId: id,
+        }
+      : lawfirm
+        ? {...lawfirm, platform: req.body.platform, userId: id}
+        : null;
+
+    const lawfirmTemp = await lawfirmUtil.upsertLawfirm({
+      ...newLawfirm,
     });
-    let createdLawfirm = null;
-    let createdAttorney = null;
-    if (!lawfirmExist) {
-      createdLawfirm = await lawfirmUtil.createLawfirm({
-        lawfirmCompanyName: lawsuit.lawfirmCompanyName,
-        platform: req.body.platform,
-        userId: lawsuit?.userId || null,
-      });
-    }
-    const lawfirmId = lawfirmExist ? lawfirmExist._id : createdLawfirm._id;
-    attorney.phone = await commonUtil.cleanPhoneNumber(attorney.phone);
-    const attorneyExist = await this.attorneyRepository.getOne<IAttorney>({
-      phone: attorney.phone,
+
+    const attorneyTemp = await attorneyUtil.upsertAttorney({
+      ...attorney,
+      platform: req.body.platform,
+      userId: id,
+      lawfirmId: lawfirmTemp.id,
     });
-    attorney.platform = req.body.platform;
-    attorney.lawfirmId = lawfirmId;
-    if (!attorneyExist) {
-      createdAttorney = await attorneyUtil.createAttorney(attorney);
-    }
 
-    const attorneyId = attorneyExist ? attorneyExist._id : createdAttorney._id;
+    const lawsuitInfo = this.lawsuitInfo(
+      lawsuit,
+      caseData,
+      attorneyTemp._id,
+      lawfirmTemp._id,
+      id
+    );
 
-    const lawsuitData = {
-      attorneyId: attorneyId,
-      lawfirmId: lawfirmId,
-      debtorId: caseData.debtor,
-      creditorId: caseData.creditor,
-      lawfirmCompanyName: lawsuit.lawfirmCompanyName,
-      defendentCompanyName: lawsuit.defendentCompanyName,
-      plantiffCompanyName: lawsuit.plantiffCompanyName,
-      lawsuitDate: lawsuit.startDate,
-      balance: lawsuit?.balance || lawsuit?.Balance,
-      userId: lawsuit?.userId || null,
-    };
-    const lawsuitTemp = await this.createLawsuit(lawsuitData);
+    const lawsuitTemp = await this.createLawsuit(lawsuitInfo);
 
     return lawsuitTemp ? [true, lawsuitTemp] : false;
   }
 
-  async lawsuitDetails(lawsuitFields: any, interval: any) {
+  async lawsuitDetailsDebtorPortal(lawsuitFields: any, userId?: any) {
+    return {
+      body: {
+        attorney: {
+          name: lawsuitFields?.name || '',
+          phone: await commonUtil.cleanPhoneNumber(lawsuitFields?.phone),
+          address: lawsuitFields.address || '',
+          city: lawsuitFields.city || '',
+          SSN: lawsuitFields.SSN || '',
+          state: lawsuitFields.state || '',
+          userId: userId || null,
+          email: lawsuitFields?.email || '',
+        },
+        lawsuit: {
+          balance: lawsuitFields?.balance || lawsuitFields?.Balance || 0,
+          lawfirmCompanyName: lawsuitFields.lawfirmCompanyName || '',
+          startDate: lawsuitFields.startDate || '',
+          defendentCompanyName: lawsuitFields.defendentCompanyName || '',
+          plantiffCompanyName: lawsuitFields.plantiffCompanyName || '',
+          userId: userId || null,
+        },
+        lawfirm: {
+          lawfirmCompanyName: lawsuitFields.lawfirmCompanyName,
+          // email: lawsuitFields.email,
+          // phone: await commonUtil.cleanPhoneNumber(lawsuitFields.phone),
+          // address: lawsuitFields.address,
+          // city: lawsuitFields.city,
+          // state: lawsuitFields.state,
+          // EIN: lawsuitFields.EIN,
+          // userId: userId || null,
+        },
+      },
+    };
+  }
+
+  async lawsuitDetails(lawsuitFields: any, userId?: any) {
     return {
       body: {
         attorney: {
@@ -91,17 +119,50 @@ class LawsuitUtil {
           city: lawsuitFields.attorney_city || '',
           SSN: lawsuitFields.attorney_SSN || '',
           state: lawsuitFields.attorney_state || '',
-          userId: lawsuitFields?.userId || '',
+          userId: userId || null,
         },
         lawsuit: {
           balance: lawsuitFields?.balance || lawsuitFields?.Balance || 0,
           startDate: lawsuitFields.document_date || '',
           defendentCompanyName: lawsuitFields.defendant_company || '',
           plantiffCompanyName: lawsuitFields.plaintiff_company || '',
-          lawfirmCompanyName: lawsuitFields.lawfirmCompanyName || '',
-          userId: lawsuitFields?.userId || '',
+          userId: userId || null,
+        },
+        lawfirm: {
+          lawfirmCompanyName: lawsuitFields.lawfirmCompanyName,
+          email: lawsuitFields.email,
+          phone: await commonUtil.cleanPhoneNumber(lawsuitFields.phone),
+          address: lawsuitFields.address,
+          city: lawsuitFields.city,
+          state: lawsuitFields.state,
+          EIN: lawsuitFields.EIN,
+          userId: userId || null,
+          lawfirmFee: commonUtil.extractAmount(
+            lawsuitFields?.monthly_subscription_fee
+          ),
         },
       },
+    };
+  }
+
+  private lawsuitInfo(
+    lawsuit: any,
+    caseData: any,
+    attorneyId: string,
+    lawfirmId: string,
+    userId?: string
+  ) {
+    return {
+      attorneyId,
+      lawfirmId,
+      debtorId: caseData.debtor,
+      creditorId: caseData.creditor,
+      lawfirmCompanyName: lawsuit.lawfirmCompanyName,
+      defendentCompanyName: lawsuit.defendentCompanyName,
+      plantiffCompanyName: lawsuit.plantiffCompanyName,
+      lawsuitDate: lawsuit.startDate,
+      balance: lawsuit?.balance || lawsuit?.Balance,
+      userId: userId || null,
     };
   }
 
@@ -187,12 +248,22 @@ class LawsuitUtil {
       return caseData.legalFee;
     }
 
-    const lawsuitData: any = await this.lawsuitRepository.getOne<ILawsuit>({
-      debtorId: caseData.debtor,
-      creditorId: caseData.creditor,
-    });
+    const lawsuitData: any = await this.lawsuitRepository.getOne<ILawsuit>(
+      {
+        debtorId: caseData.debtor,
+        creditorId: caseData.creditor,
+      },
+      undefined,
+      undefined,
+      ['lawfirmId']
+    );
+
+    if (lawsuitData.lawfirmId.lawfirmFee !== 0) {
+      return lawsuitData.lawfirmId.lawfirmFee;
+    }
+
     let legalFee = null;
-    if (lawsuitData && lawsuitData.lawsuitStatus) {
+    if (caseData.lawsuitExist) {
       legalFee = await this.serviceFeeRepository.getOne<IFee>({
         type: 'legalFee',
       });

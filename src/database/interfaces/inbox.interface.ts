@@ -16,6 +16,7 @@ export interface IInbox extends Document {
   debtorId: string;
   userName: string;
   isDeleted: boolean;
+  senderName: string;
   isCompleted: boolean;
   isRead: boolean;
   type: string;

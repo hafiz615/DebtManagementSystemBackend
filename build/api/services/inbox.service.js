@@ -74,9 +74,11 @@ class InboxService {
             return [true, updatedDraft];
         };
         this.inboxStatus = async (req) => {
-            const filter = req?.query?.task
+            const filter = req?.query?.task === 'true'
                 ? { Repository: tasks_repository_1.TasksRepository }
                 : { Repository: inbox_repository_1.InboxRepository };
+            let undo = req?.query?.undo;
+            let status = undo === 'true' ? false : true;
             const repositoryInstance = new filter.Repository();
             const existingInbox = await repositoryInstance.getOne({
                 _id: req.params.id,
@@ -86,7 +88,7 @@ class InboxService {
                 return [false, constants_util_2.default.notFoundMessage('')];
             }
             const updatedInbox = await repositoryInstance.updateById(req.params.id, {
-                isCompleted: true,
+                isCompleted: status,
                 updatedAt: common_util_1.default.getCurrentDate(),
             });
             return [true, updatedInbox];

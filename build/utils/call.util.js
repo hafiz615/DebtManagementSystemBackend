@@ -27,14 +27,60 @@ class CallUtil {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
     }
+    async pollRecordingStatus(recordingSid) {
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`;
+        for (let i = 0; i < 10; i++) {
+            // Max 10 retries
+            const response = await axiosInstanceInterceptor_1.default.get(url, {
+                headers: {
+                    Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+                },
+            });
+            const status = response.data.status;
+            console.log(`Recording status: ${status}`);
+            if (status === 'completed') {
+                console.log('Recording is ready to download.');
+                return true;
+            }
+            console.log('Recording still processing, retrying...');
+            await new Promise(resolve => setTimeout(resolve, 30000)); // wait 3 sec
+        }
+        console.log('Recording not ready after retries.');
+        return false;
+    }
     async fetchRecording(recordingSid) {
+        console.log(recordingSid, 'recordingSid');
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+        console.log('recordingUrl', recordingUrl);
         const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
             headers: {
                 Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
             },
             responseType: 'arraybuffer',
+        });
+        if (response.status === 200) {
+            const buffer = Buffer.from(response.data);
+            const fileName = `${recordingSid}`;
+            await this.uploadUtil.callUploadFile(fileName, buffer);
+            return 'File uploaded to S3';
+        }
+        return null;
+    }
+    async fetchRecordingWithRetry(recordingSid) {
+        const isReady = await this.pollRecordingStatus(recordingSid);
+        if (!isReady) {
+            throw new Error('Recording is still processing after retries.');
+        }
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+        const response = await axiosInstanceInterceptor_1.default.get(recordingUrl, {
+            headers: {
+                Authorization: `Basic ${Buffer.from(`${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64')}`,
+                responseType: 'arraybuffer',
+            },
         });
         if (response.status === 200) {
             const buffer = Buffer.from(response.data);
@@ -110,6 +156,7 @@ class CallUtil {
         return response.choices[0].message.content;
     }
     async createTranscript(recordingSID) {
+        console.log(recordingSID, 'recordingSid');
         const client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         const transcript = await client.intelligence.v2.transcripts.create({
             channel: {
@@ -119,6 +166,7 @@ class CallUtil {
             },
             serviceSid: process.env.TWILIO_Service_SID,
         });
+        console.log('transcript', transcript);
         return transcript.links.sentences;
     }
     async getDebtorOrCreditorName(number) {
@@ -128,7 +176,7 @@ class CallUtil {
         if (getCreditor) {
             return {
                 creditorId: getCreditor._id,
-                creditorName: getCreditor.basicInformation.fullName,
+                fullName: getCreditor.basicInformation.fullName,
                 companyName: getCreditor.businessInformation.companyName,
             };
         }
@@ -138,7 +186,7 @@ class CallUtil {
         if (getDebtor) {
             return {
                 debtorId: getDebtor._id,
-                debtorName: getDebtor.basicInformation.fullName,
+                fullName: getDebtor.basicInformation.fullName,
                 companyName: getDebtor.businessInformation.companyName,
             };
         }
@@ -160,7 +208,7 @@ class CallUtil {
                 pageToken,
             });
             const callsWithNames = await Promise.all(response.map(async (call) => {
-                const number = await common_util_1.default.cleanPhoneNumberConditionally(call.from);
+                const number = await common_util_1.default.extractLastTenDigits(call.from);
                 const name = await this.getDebtorOrCreditorName(number);
                 let caseData = null;
                 if (name) {

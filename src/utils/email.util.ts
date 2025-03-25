@@ -613,19 +613,18 @@ class EmailUtil {
   }
 
   async createNewInbox(
-    emailData,
-    caseTemp,
-    type,
-    threadId,
-    userId,
-    userName,
-    previousMessages?,
-    uniqueAttachments?,
-    medium?
+    emailData: any,
+    caseTemp: any,
+    type: string,
+    threadId: any,
+    userId: string,
+    userName: string,
+    previousMessages?: any,
+    uniqueAttachments?: any,
+    medium?: any,
+    senderFullName?: string
   ) {
     const newMessage = new Inbox();
-    const newNotification = new Notification();
-    const newNotificationCount = new NotificationCount();
 
     if (caseTemp) {
       newMessage.caseCode = caseTemp.caseCode;
@@ -634,9 +633,9 @@ class EmailUtil {
       newMessage.debtorCompanyName =
         caseTemp.debtor.businessInformation.companyName;
       newMessage.negotiatorName = caseTemp.negotiator;
-      newNotification.caseId = String(caseTemp._id);
+
       newMessage.caseId = String(caseTemp._id);
-      newNotification.text = this.formatText(caseTemp.caseCode);
+
       newMessage.debtorId = String(caseTemp.debtor._id);
     }
     newMessage.cc = emailData.cc;
@@ -644,11 +643,12 @@ class EmailUtil {
     newMessage.subject = emailData.subject;
     newMessage.text = emailData.text;
     newMessage.textAsHtml = emailData.textAsHtml;
+    if (senderFullName) newMessage.senderName = senderFullName;
     newMessage.to = emailData.to;
     newMessage.type = type;
     newMessage.medium = medium;
     newMessage.attachments = uniqueAttachments || emailData.attachments;
-    newNotification.type = medium;
+
     newMessage.threadId = threadId;
     newMessage.userId = userId;
     newMessage.userName = userName;

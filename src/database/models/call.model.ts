@@ -1,24 +1,29 @@
-import mongoose, { Schema, model, Document } from 'mongoose';
-import { ICall } from '../interfaces/call.interface';
+import mongoose, {Schema, model, Document} from 'mongoose';
+import {ICall} from '../interfaces/call.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
-import { v4 } from 'uuid';
+import {v4} from 'uuid';
 
 const callSchema: Schema = new Schema({
-  callSid: { type: String},
-  caseId: { type: String},
-  callerName: { type: String},
-  accountSid: { type: String},
-  callTo: { type: String},
-  callFrom: { type: String},
+  callSid: {type: String},
+  caseId: {type: String},
+  callerName: {type: String},
+  accountSid: {type: String},
+  callTo: {type: String},
+  callFrom: {type: String},
   callStartTime: {type: Date},
   callDirection: {type: String},
-  callDuration: { type: String},
-  callStatus: { type: String},
-  callRecordingSid: { type: String},
-  transcriptUrl: { type: String},
-  createdAt: { type: Date, required: true },
-  updatedAt: { type: Date, required: true },
+  callDuration: {type: String},
+  callStatus: {type: String},
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  callRecordingSid: {type: String},
+  transcriptUrl: {type: String},
+  type: {type: String, default: 'Call'},
+  createdAt: {type: Date, required: true},
+  updatedAt: {type: Date, required: true},
 });
 
 // Automatically update `updatedAt` field
@@ -28,7 +33,7 @@ callSchema.pre('save', function (next) {
 });
 
 callSchema.pre('findOneAndUpdate', function (next) {
-  this.set({ updatedAt: new Date() });
+  this.set({updatedAt: new Date()});
   next();
 });
 
@@ -70,7 +75,7 @@ const logUpdatePost = async function (doc) {
     method,
   });
 
-  logEntry.save().catch((err) => {
+  logEntry.save().catch(err => {
     console.error('Error saving log entry:', err);
   });
 };

@@ -40,9 +40,43 @@ class CallUtil {
     this.creditorRepository = new CreditorRepository();
   }
 
+  async pollRecordingStatus(recordingSid: string) {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.json`;
+
+    for (let i = 0; i < 10; i++) {
+      // Max 10 retries
+      const response = await axiosInstance.get(url, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(
+            `${accountSid}:${authToken}`
+          ).toString('base64')}`,
+        },
+      });
+
+      const status = response.data.status;
+      console.log(`Recording status: ${status}`);
+
+      if (status === 'completed') {
+        console.log('Recording is ready to download.');
+        return true;
+      }
+
+      console.log('Recording still processing, retrying...');
+      await new Promise(resolve => setTimeout(resolve, 30000)); // wait 3 sec
+    }
+
+    console.log('Recording not ready after retries.');
+    return false;
+  }
+
   async fetchRecording(recordingSid: string) {
+    console.log(recordingSid, 'recordingSid');
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+    console.log('recordingUrl', recordingUrl);
 
     const response = await axiosInstance.get(recordingUrl, {
       headers: {
@@ -52,6 +86,32 @@ class CallUtil {
       },
       responseType: 'arraybuffer',
     });
+    if (response.status === 200) {
+      const buffer = Buffer.from(response.data);
+      const fileName = `${recordingSid}`;
+      await this.uploadUtil.callUploadFile(fileName, buffer);
+      return 'File uploaded to S3';
+    }
+    return null;
+  }
+  async fetchRecordingWithRetry(recordingSid: string) {
+    const isReady = await this.pollRecordingStatus(recordingSid);
+    if (!isReady) {
+      throw new Error('Recording is still processing after retries.');
+    }
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+
+    const response = await axiosInstance.get(recordingUrl, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(
+          `${accountSid}:${process.env.TWILIO_AUTH_TOKEN}`
+        ).toString('base64')}`,
+        responseType: 'arraybuffer',
+      },
+    });
+
     if (response.status === 200) {
       const buffer = Buffer.from(response.data);
       const fileName = `${recordingSid}`;
@@ -137,6 +197,7 @@ class CallUtil {
   }
 
   async createTranscript(recordingSID: string) {
+    console.log(recordingSID, 'recordingSid');
     const client = twilio(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN
@@ -149,6 +210,7 @@ class CallUtil {
       },
       serviceSid: process.env.TWILIO_Service_SID,
     });
+    console.log('transcript', transcript);
     return transcript.links.sentences;
   }
 
@@ -160,7 +222,7 @@ class CallUtil {
     if (getCreditor) {
       return {
         creditorId: getCreditor._id,
-        creditorName: getCreditor.basicInformation.fullName,
+        fullName: getCreditor.basicInformation.fullName,
         companyName: getCreditor.businessInformation.companyName,
       };
     }
@@ -172,7 +234,7 @@ class CallUtil {
     if (getDebtor) {
       return {
         debtorId: getDebtor._id,
-        debtorName: getDebtor.basicInformation.fullName,
+        fullName: getDebtor.basicInformation.fullName,
         companyName: getDebtor.businessInformation.companyName,
       };
     }
@@ -199,9 +261,7 @@ class CallUtil {
 
       const callsWithNames = await Promise.all(
         response.map(async (call: any) => {
-          const number = await commonUtil.cleanPhoneNumberConditionally(
-            call.from
-          );
+          const number = await commonUtil.extractLastTenDigits(call.from);
           const name = await this.getDebtorOrCreditorName(number);
           let caseData = null;
 

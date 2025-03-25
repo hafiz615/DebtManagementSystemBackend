@@ -23,6 +23,9 @@ const inbox: Schema = new Schema({
   textAsHtml: {
     type: String,
   },
+  senderName: {
+    type: String,
+  },
   caseCode: {
     type: String,
   },

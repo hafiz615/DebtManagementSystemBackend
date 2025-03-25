@@ -23,18 +23,23 @@ import dotenv from 'dotenv';
 import caseUtil from '../../utils/case.util';
 import {IDebtor} from '../../database/interfaces/debtor.interface';
 import {DebtorRepository} from '../repository/debtor/debtor.repository';
+import {SignatureRepository} from '../repository/signature/signature.repository';
+import {ISignature} from '../../database/interfaces/signature.interface';
+import {Signature} from '../../database/repomodels/signature.repomodel';
 dotenv.config();
 class UserService {
   private userRepository: UserRepository;
   private tokenService: TokenService;
   private caseRepository: CaseRepository;
   private debtorRepository: DebtorRepository;
+  private signatureRepository: SignatureRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.tokenService = new TokenService();
     this.caseRepository = new CaseRepository();
     this.debtorRepository = new DebtorRepository();
+    this.signatureRepository = new SignatureRepository();
     client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
@@ -710,6 +715,72 @@ class UserService {
       data.unshift(objectToMove);
     }
     return data;
+  }
+
+  async addSignature(req: Request) {
+    const reqTemp: any = req;
+    const signature = new Signature();
+    signature.signature = req.body.signature;
+    signature.userId = reqTemp.id;
+    const result = await this.signatureRepository.create<ISignature>(signature);
+    if (!result) return [false, constants.failureAddMessage('signature')];
+    return [true, []];
+  }
+
+  async getSignatures(req: Request) {
+    const reqTemp: any = req;
+    const result =
+      await this.signatureRepository.getAllWithoutPagination<ISignature>({
+        userId: reqTemp.id,
+        isDeleted: false,
+      });
+    if (!result) return [false, constants.notFoundMessage('signatures')];
+    return [true, result];
+  }
+
+  async updateSignature(req: Request) {
+    const result = await this.signatureRepository.updateById<ISignature>(
+      req.params.id,
+      {signature: req.body.signature}
+    );
+    if (!result) return [false, constants.failureUpdateMessage('signature')];
+    return [true, result];
+  }
+
+  async deleteSignature(req: Request) {
+    const result = await this.signatureRepository.updateById<ISignature>(
+      req.params.id,
+      {isDeleted: true, active: false}
+    );
+    if (!result) return [false, constants.failureDeleteMessage('signature')];
+    return [true, result];
+  }
+
+  async updateSignatureStatus(req: Request) {
+    const reqTemp: any = req;
+    if (req.body.active) {
+      await this.signatureRepository.updateMany<ISignature>(
+        {userId: reqTemp.id, active: true},
+        {active: false}
+      );
+    }
+    const result = await this.signatureRepository.updateById<ISignature>(
+      req.params.id,
+      {active: req.body.active}
+    );
+    if (!result) return [false, constants.failureUpdateMessage('signature')];
+    return [true, result];
+  }
+
+  async getUserActiveSignature(req: Request) {
+    const reqTemp: any = req;
+    const result = await this.signatureRepository.getOne<ISignature>({
+      active: true,
+      userId: reqTemp.id,
+      isDeleted: false,
+    });
+    if (!result) return [false, constants.notFoundMessage('signature')];
+    return [true, result];
   }
 }
 

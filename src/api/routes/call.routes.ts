@@ -35,4 +35,24 @@ router.get(
   callController.getMissedCalls
 );
 
+router.post('/twilio/voiceMail', callController.voiceMail);
+router.post('/twilio/voiceMailRecording', callController.voiceMailRecording);
+
+router.get(
+  '/getVoiceMails',
+  authorize.validateAuth,
+  callController.getVoiceMails
+);
+
+router.post(
+  '/twilio/voice-mail-recording-status',
+  callController.voiceMailRecordingStatus
+);
+
+router.delete(
+  '/deleteCall/:id',
+  authorize.validateAuth,
+  callController.deleteCall
+);
+
 export default router;

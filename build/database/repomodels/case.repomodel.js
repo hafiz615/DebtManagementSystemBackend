@@ -57,6 +57,7 @@ class Case {
         this.legalFee = 0;
         this.affiliateLink = '';
         this.affiliateEmail = '';
+        this.lawsuitExist = false;
     }
 }
 exports.Case = Case;

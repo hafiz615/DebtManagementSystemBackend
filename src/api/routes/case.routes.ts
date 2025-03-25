@@ -3,12 +3,12 @@ import authorize from '../../middleware/authorize.middleware';
 import caseController from '../controllers/case/case.controller';
 import caseValidate from '../../middleware/validators/case.validate';
 const router = Router();
-router.post(
-  '/createCase',
-  authorize.validateAuth,
-  caseValidate.validateCase,
-  caseController.createCase
-); // not in current use
+// router.post(
+//   '/createCase',
+//   authorize.validateAuth,
+//   caseValidate.validateCase,
+//   caseController.createCase
+// ); // not in current use
 
 router.get('/getAllCases', authorize.validateAuth, caseController.getAllCases);
 router.get(
@@ -172,7 +172,11 @@ router.put(
   caseController.updateCasePlan
 );
 
-router.put('/update-case-plan/:id', caseController.updateCasePlanDebtorPortal);
+router.put(
+  '/update-case-plan/:id',
+  authorize.validateAuth,
+  caseController.updateCasePlanDebtorPortal
+);
 
 router.get(
   '/getAllUserCases',
