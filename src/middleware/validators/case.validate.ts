@@ -606,7 +606,7 @@ class CaseValidate {
           'string.empty': 'Document date cannot be empty',
         }),
       })
-        .required()
+        .optional()
         .messages({
           'object.base': 'Lawsuit must be an object.',
         }),
@@ -695,7 +695,7 @@ class CaseValidate {
           'any.required': 'Attorney state is a required field.',
         }),
       })
-        .required()
+        .optional()
         .messages({
           'object.base': 'Attorney must be an object.',
         }),
@@ -988,7 +988,7 @@ class CaseValidate {
               'string.empty': 'Document date cannot be empty',
             }),
           })
-            .required()
+            .optional()
             .messages({
               'object.base': 'Lawsuit must be an object.',
             }),
@@ -1077,7 +1077,7 @@ class CaseValidate {
               'any.required': 'Attorney state is a required field.',
             }),
           })
-            .required()
+            .optional()
             .messages({
               'object.base': 'Attorney must be an object.',
             }),
