@@ -1414,14 +1414,6 @@ class PaymentService {
   }
 
   async addPaymentPlan(req: Request) {
-    let lawsuit = await this.lawsuitRepository.getOne<ILawsuit>({
-      attorneyId: req.params.id,
-    });
-    if (!lawsuit) {
-      return [false, constants.notFoundMessage('Attorney')];
-    }
-    if (lawsuit.intervals && lawsuit.intervals.length)
-      return [false, constants.alreadyExistsMessage('Attorney payment plan')];
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.body.caseId,
       undefined,
@@ -1432,6 +1424,17 @@ class PaymentService {
     if (!findCase) {
       return [false, constants.notFoundMessage('Case')];
     }
+
+    let lawsuit = await this.lawsuitRepository.getOne<ILawsuit>({
+      attorneyId: req.params.id,
+      debtorId: findCase.debtor,
+      creditorId: findCase.creditor._id,
+    });
+    if (!lawsuit) {
+      return [false, constants.notFoundMessage('Lawsuit')];
+    }
+    if (lawsuit.intervals && lawsuit.intervals.length)
+      return [false, constants.alreadyExistsMessage('Payment plan')];
 
     req.body._id = req.body.caseId;
     req.body.debtor = findCase.debtor._id;
@@ -1447,6 +1450,7 @@ class PaymentService {
         isExempt: req.body.isExempt,
       }
     );
+    console.log(lawsuit);
     req.body.intervals = lawsuit.intervals;
     req.body.debtorName = findCase.debtor.basicInformation.fullName;
     req.body.creditorName = findCase.creditor.basicInformation.fullName;

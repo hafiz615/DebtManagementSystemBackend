@@ -112,6 +112,7 @@ class LawsuitUtil {
                     state: lawsuitFields.state,
                     EIN: lawsuitFields.EIN,
                     userId: userId || null,
+                    lawfirmFee: common_util_1.default.extractAmount(lawsuitFields?.monthly_subscription_fee),
                 },
             },
         };
@@ -190,9 +191,12 @@ class LawsuitUtil {
         const lawsuitData = await this.lawsuitRepository.getOne({
             debtorId: caseData.debtor,
             creditorId: caseData.creditor,
-        });
+        }, undefined, undefined, ['lawfirmId']);
+        if (lawsuitData.lawfirmId.lawfirmFee !== 0) {
+            return lawsuitData.lawfirmId.lawfirmFee;
+        }
         let legalFee = null;
-        if (lawsuitData && lawsuitData.lawsuitStatus) {
+        if (caseData.lawsuitExist) {
             legalFee = await this.serviceFeeRepository.getOne({
                 type: 'legalFee',
             });

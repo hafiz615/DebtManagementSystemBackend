@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const lawfirm_repository_1 = require("../repository/lawfirm/lawfirm.repository");
 const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
@@ -46,6 +47,14 @@ class LawfirmService {
             };
             const lawsuit = await lawsuit_util_1.default.createLawsuit(lawsuitData);
             return [true, []];
+        };
+        this.updateLawfirm = async (req) => {
+            const updateData = { ...req.body, updatedAt: common_util_1.default.getCurrentDate() };
+            const lawfirm = await this.lawfirmRepository.updateById(req.params.id, updateData);
+            if (!lawfirm) {
+                return [false, constants_util_1.default.notFoundMessage('Lawfirm')];
+            }
+            return [true, lawfirm];
         };
         this.lawfirmRepository = new lawfirm_repository_1.LawfirmRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();

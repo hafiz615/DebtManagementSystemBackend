@@ -8,7 +8,7 @@ const responseHelper_util_1 = __importDefault(require("../../utils/responseHelpe
 const constants_util_1 = __importDefault(require("../../utils/constants.util"));
 const joi_1 = __importDefault(require("joi"));
 dotenv_1.default.config();
-class CaseValidate {
+class AttorneyValidate {
     async validateCaseId(req, res, next) {
         const schema = joi_1.default.object({
             caseId: joi_1.default.string().required().messages({
@@ -71,5 +71,5 @@ class CaseValidate {
         }
     }
 }
-exports.default = new CaseValidate();
+exports.default = new AttorneyValidate();
 //# sourceMappingURL=attorney.validate.js.map

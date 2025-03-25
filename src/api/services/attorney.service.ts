@@ -90,8 +90,8 @@ class AttorneyService {
     );
 
     if (!lawSuit || !updatePayments)
-      return [false, 'Failed to cancel law suit payment plan'];
-    return [true, 'Law suit payment plan canceled successfully'];
+      return [false, 'Failed to cancel lawsuit payment plan'];
+    return [true, 'Lawsuit payment plan canceled successfully'];
   }
 }
 

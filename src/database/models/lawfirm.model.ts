@@ -42,6 +42,18 @@ const lawfirmModel: Schema = new Schema({
   platform: {
     type: Boolean,
   },
+  paynoteUserId: {
+    type: String,
+  },
+  paynoteSourceId: {
+    type: String,
+  },
+  paynoteSourceVerified: {
+    type: Boolean,
+  },
+  paynoteUserFound: {
+    type: Boolean,
+  },
   logTrackingId: {
     type: String,
   },

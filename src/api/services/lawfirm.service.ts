@@ -69,6 +69,19 @@ class LawfirmService {
 
     return [true, []];
   };
+
+  updateLawfirm = async (req: Request) => {
+    const updateData = {...req.body, updatedAt: commonUtil.getCurrentDate()};
+    const lawfirm = await this.lawfirmRepository.updateById<ILawfirm>(
+      req.params.id,
+      updateData
+    );
+
+    if (!lawfirm) {
+      return [false, constants.notFoundMessage('Lawfirm')];
+    }
+    return [true, lawfirm];
+  };
 }
 
 export default LawfirmService;
