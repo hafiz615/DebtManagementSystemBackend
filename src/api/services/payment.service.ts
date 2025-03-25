@@ -1427,6 +1427,8 @@ class PaymentService {
 
     let lawsuit = await this.lawsuitRepository.getOne<ILawsuit>({
       attorneyId: req.params.id,
+      debtorId: findCase.debtor,
+      creditorId: findCase.creditor._id,
     });
     if (!lawsuit) {
       return [false, constants.notFoundMessage('Lawsuit')];
@@ -1448,6 +1450,7 @@ class PaymentService {
         isExempt: req.body.isExempt,
       }
     );
+    console.log(lawsuit);
     req.body.intervals = lawsuit.intervals;
     req.body.debtorName = findCase.debtor.basicInformation.fullName;
     req.body.creditorName = findCase.creditor.basicInformation.fullName;
