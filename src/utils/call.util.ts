@@ -169,11 +169,11 @@ class CallUtil {
   async createIncomingCall(data: any, userId: string) {
     const {CallSid, AccountSid, CallStatus, From, Direction, To} = data;
     console.log('data', data);
+    console.log(userId, 'userId');
     const number = await commonUtil.extractLastTenDigits(From);
     const name = await this.getDebtorOrCreditorName(number);
 
     let newCall = new Call();
-
     newCall.callSid = CallSid;
     newCall.userId = userId;
     newCall.accountSid = AccountSid;
@@ -182,6 +182,7 @@ class CallUtil {
     (newCall = newCall.callDirection = Direction),
       (newCall.callFrom = From),
       (newCall.callStatus = CallStatus);
+    console.log(newCall);
     return await this.callRepository.create<ICall>(newCall as any);
   }
 

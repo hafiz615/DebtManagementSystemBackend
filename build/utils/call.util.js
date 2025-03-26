@@ -126,6 +126,7 @@ class CallUtil {
     async createIncomingCall(data, userId) {
         const { CallSid, AccountSid, CallStatus, From, Direction, To } = data;
         console.log('data', data);
+        console.log(userId, 'userId');
         const number = await common_util_1.default.extractLastTenDigits(From);
         const name = await this.getDebtorOrCreditorName(number);
         let newCall = new call_repomodel_1.Call();
@@ -137,6 +138,7 @@ class CallUtil {
         (newCall = newCall.callDirection = Direction),
             (newCall.callFrom = From),
             (newCall.callStatus = CallStatus);
+        console.log(newCall);
         return await this.callRepository.create(newCall);
     }
     async summarizeTranscriptText(text) {
