@@ -5,6 +5,7 @@ import {
 } from '../interfaces/notificationConfiguration.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
+import commonUtil from '../../utils/common.util';
 
 const NotificationConfigurationModel: Schema = new Schema({
   label: {
@@ -63,6 +64,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: new Date(commonUtil.getCurrentDate()),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

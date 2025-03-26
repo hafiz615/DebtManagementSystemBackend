@@ -3,6 +3,7 @@ import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
 import {ISyncPaymentMethod} from '../interfaces/syncPaymentMethod.interface';
+import commonUtil from '../../utils/common.util';
 
 const syncPaymentMethodModel = new Schema({
   syncId: {
@@ -68,6 +69,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: new Date(commonUtil.getCurrentDate()),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

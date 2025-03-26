@@ -3,6 +3,7 @@ import {IInbox} from '../interfaces/inbox.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const inbox: Schema = new Schema({
   from: {
@@ -136,6 +137,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: new Date(commonUtil.getCurrentDate()),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

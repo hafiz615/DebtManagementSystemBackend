@@ -30,6 +30,7 @@ exports.Call = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 const callSchema = new mongoose_1.Schema({
     callSid: { type: String },
     caseId: { type: String },
@@ -90,6 +91,7 @@ const logUpdatePost = async function (doc) {
         userId,
         url,
         method,
+        createdAt: new Date(common_util_1.default.getCurrentDate()),
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry:', err);

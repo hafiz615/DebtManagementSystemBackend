@@ -3,6 +3,7 @@ import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
 import {IDomainVerify} from '../interfaces/domainVerify.interface';
+import commonUtil from '../../utils/common.util';
 
 const domainVerifyModel: Schema = new Schema({
   link: {
@@ -69,6 +70,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: new Date(commonUtil.getCurrentDate()),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

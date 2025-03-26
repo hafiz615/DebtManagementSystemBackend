@@ -147,6 +147,7 @@ const logUpdatePost = async function (doc) {
         userId,
         url,
         method,
+        createdAt: new Date(common_util_1.default.getCurrentDate()),
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry', err);

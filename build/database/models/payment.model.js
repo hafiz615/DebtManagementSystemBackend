@@ -31,6 +31,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const uuid_1 = require("uuid");
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const paymentLogs_model_1 = __importDefault(require("./paymentLogs.model"));
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 const PaymentModel = new mongoose_1.Schema({
     caseId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
@@ -197,6 +198,7 @@ const logUpdatePost = async function (doc) {
         userId,
         url,
         method,
+        createdAt: new Date(common_util_1.default.getCurrentDate()),
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry', err);
