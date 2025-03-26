@@ -156,7 +156,7 @@ class CallUtil {
     newCall.callSid = CallSid;
     if (user) {
       newCall.callerName = user.name;
-      newCall.userId = user._id;
+      newCall.userId = String(user._id);
     }
     newCall.accountSid = AccountSid;
     newCall.callTo = To;
@@ -170,6 +170,7 @@ class CallUtil {
     const {CallSid, AccountSid, CallStatus, From, Direction, To} = data;
     console.log('data', data);
     console.log(userId, 'userId');
+
     const number = await commonUtil.extractLastTenDigits(From);
     const name = await this.getDebtorOrCreditorName(number);
 
@@ -177,13 +178,12 @@ class CallUtil {
     newCall.callSid = CallSid;
     newCall.userId = userId;
     newCall.accountSid = AccountSid;
-    newCall.callerName = name.fullName;
+    if (name) newCall.callerName = name.fullName;
     newCall.callTo = To;
-    (newCall = newCall.callDirection = Direction),
-      (newCall.callFrom = From),
-      (newCall.callStatus = CallStatus);
-    console.log(newCall);
-    return await this.callRepository.create<ICall>(newCall as any);
+    newCall.callDirection = Direction;
+    newCall.callFrom = From;
+    newCall.callStatus = CallStatus;
+    return this.callRepository.create<ICall>(newCall as any);
   }
 
   async summarizeTranscriptText(text: string) {

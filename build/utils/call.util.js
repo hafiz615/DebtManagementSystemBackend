@@ -114,7 +114,7 @@ class CallUtil {
         newCall.callSid = CallSid;
         if (user) {
             newCall.callerName = user.name;
-            newCall.userId = user._id;
+            newCall.userId = String(user._id);
         }
         newCall.accountSid = AccountSid;
         newCall.callTo = To;
@@ -133,13 +133,13 @@ class CallUtil {
         newCall.callSid = CallSid;
         newCall.userId = userId;
         newCall.accountSid = AccountSid;
-        newCall.callerName = name.fullName;
+        if (name)
+            newCall.callerName = name.fullName;
         newCall.callTo = To;
-        (newCall = newCall.callDirection = Direction),
-            (newCall.callFrom = From),
-            (newCall.callStatus = CallStatus);
-        console.log(newCall);
-        return await this.callRepository.create(newCall);
+        newCall.callDirection = Direction;
+        newCall.callFrom = From;
+        newCall.callStatus = CallStatus;
+        return this.callRepository.create(newCall);
     }
     async summarizeTranscriptText(text) {
         const openai = new openai_1.default({
