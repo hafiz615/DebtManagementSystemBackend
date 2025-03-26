@@ -10,14 +10,18 @@ import {CreditorRepository} from '../api/repository/creditor/creditor.repository
 import {AttorneyRepository} from '../api/repository/attorney/attorney.repository';
 import {ICreditor} from '../database/interfaces/creditor.interface';
 import {IAttorney} from '../database/interfaces/attorney.interface';
+import {LawfirmRepository} from '../api/repository/lawfirm/lawfirm.repository';
+import {ILawfirm} from '../database/interfaces/lawfirm.interface';
 dotnev.config();
 class CommonUtil {
   private creditorRepository: CreditorRepository;
   private attorneyRepository: AttorneyRepository;
+  private lawfirmRepository: LawfirmRepository;
 
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.attorneyRepository = new AttorneyRepository();
+    this.lawfirmRepository = new LawfirmRepository();
   }
   getCurrentDate() {
     let date = new Date().toUTCString();
@@ -34,6 +38,11 @@ class CommonUtil {
         return {
           obj: await this.attorneyRepository.getById<IAttorney>(id),
           model: new AttorneyRepository(),
+        };
+      case 'lawfirm':
+        return {
+          obj: await this.lawfirmRepository.getById<ILawfirm>(id),
+          model: new LawfirmRepository(),
         };
       default:
         return null;
@@ -88,6 +97,14 @@ class CommonUtil {
 
   async extractLastTenDigits(num: string) {
     return num.replace(/\D/g, '').slice(-10);
+  }
+
+  extractAmount(feeString: string) {
+    const match = feeString ? feeString.match(/(\d+(\.\d+)?)/) : false;
+    if (match) {
+      return parseFloat(match[0]);
+    }
+    return 0;
   }
 
   async removeDashesAndRoundBrackets(data: string) {

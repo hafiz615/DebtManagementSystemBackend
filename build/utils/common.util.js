@@ -12,11 +12,13 @@ const enums_1 = require("../enums");
 const mime_types_1 = __importDefault(require("mime-types"));
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const attorney_repository_1 = require("../api/repository/attorney/attorney.repository");
+const lawfirm_repository_1 = require("../api/repository/lawfirm/lawfirm.repository");
 dotenv_1.default.config();
 class CommonUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.attorneyRepository = new attorney_repository_1.AttorneyRepository();
+        this.lawfirmRepository = new lawfirm_repository_1.LawfirmRepository();
     }
     getCurrentDate() {
         let date = new Date().toUTCString();
@@ -33,6 +35,11 @@ class CommonUtil {
                 return {
                     obj: await this.attorneyRepository.getById(id),
                     model: new attorney_repository_1.AttorneyRepository(),
+                };
+            case 'lawfirm':
+                return {
+                    obj: await this.lawfirmRepository.getById(id),
+                    model: new lawfirm_repository_1.LawfirmRepository(),
                 };
             default:
                 return null;
@@ -80,6 +87,13 @@ class CommonUtil {
     }
     async extractLastTenDigits(num) {
         return num.replace(/\D/g, '').slice(-10);
+    }
+    extractAmount(feeString) {
+        const match = feeString ? feeString.match(/(\d+(\.\d+)?)/) : false;
+        if (match) {
+            return parseFloat(match[0]);
+        }
+        return 0;
     }
     async removeDashesAndRoundBrackets(data) {
         if (typeof data === 'number')

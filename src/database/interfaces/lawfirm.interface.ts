@@ -13,6 +13,10 @@ export interface ILawfirm extends Document {
   isDeleted: boolean;
   lawfirmFee: number;
   platform: boolean;
+  paynoteUserId: string;
+  paynoteSourceId: string;
+  paynoteSourceVerified: boolean;
+  paynoteUserFound: boolean;
   logTrackingId: string;
   createdAt: Date;
   updatedAt: Date;
