@@ -946,7 +946,7 @@ class CronJob {
       const retryDate = this.getRetryDate(
         interval.unit,
         value,
-        new Date(authorizedDate).toUTCString()
+        commonUtil.getCurrentDate()
       );
       updateObjPayment['rescheduled'] = retryDate;
       emailUtil.sendEmailOrSmsByEvent(
@@ -1015,7 +1015,7 @@ class CronJob {
       const retryDate = this.getRetryDate(
         interval.unit,
         value,
-        new Date(authorizedDate).toUTCString()
+        commonUtil.getCurrentDate()
       );
       updateObjPayment['rescheduled'] = retryDate;
       emailUtil.sendEmailOrSmsByEvent(
@@ -1224,7 +1224,7 @@ class CronJob {
       const retryDate = this.getRetryDate(
         interval.unit,
         value,
-        payment.dueDate
+        commonUtil.getCurrentDate()
       );
       updateObjPayment['rescheduled'] = retryDate;
 
@@ -1304,7 +1304,7 @@ class CronJob {
       const retryDate = this.getRetryDate(
         interval.unit,
         value,
-        payment.dueDate
+        commonUtil.getCurrentDate()
       );
       updateObjPayment['rescheduled'] = retryDate;
 
