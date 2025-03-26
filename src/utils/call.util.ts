@@ -173,8 +173,38 @@ class CallUtil {
 
     const number = await commonUtil.extractLastTenDigits(From);
     const name = await this.getDebtorOrCreditorName(number);
+    let caseData: any = null;
+
+    if (name?.creditorId) {
+      caseData = await this.caseRepository.getOne<ICase>(
+        {creditor: name.creditorId, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        [{path: 'debtor'}, {path: 'creditor'}]
+      );
+    }
+
+    if (!caseData && name?.debtorId) {
+      const findCases =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {debtor: name.debtorId, isDeleted: {$ne: true}},
+          undefined,
+          undefined,
+          undefined,
+          [{path: 'creditor'}, {path: 'debtor'}]
+        );
+
+      if (findCases.length === 1) {
+        caseData = findCases[0];
+      }
+    }
 
     let newCall = new Call();
+    if (caseData) {
+      newCall.debtorId = String(caseData.debtor._id);
+      newCall.creditorId = String(caseData.creditor._id);
+      newCall.caseId = String(caseData._id);
+    }
     newCall.callSid = CallSid;
     newCall.userId = userId;
     newCall.accountSid = AccountSid;
