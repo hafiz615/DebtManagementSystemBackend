@@ -915,9 +915,13 @@ class CronJob {
     const updateObjPayment = {};
     updateObjPayment['transactionType'] = 'CC';
     updateObjPayment['paymentGateway'] = platform;
-    updateObjPayment['authorizedDate'] = new Date(
-      commonUtil.getCurrentDate()
-    ).setUTCHours(0, 0, 0, 0);
+    let authorizedDate = new Date(commonUtil.getCurrentDate()).setUTCHours(
+      0,
+      0,
+      0,
+      0
+    );
+    updateObjPayment['authorizedDate'] = authorizedDate;
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -942,7 +946,7 @@ class CronJob {
       const retryDate = this.getRetryDate(
         interval.unit,
         value,
-        payment.dueDate
+        new Date(authorizedDate).toUTCString()
       );
       updateObjPayment['rescheduled'] = retryDate;
       emailUtil.sendEmailOrSmsByEvent(
@@ -981,9 +985,13 @@ class CronJob {
     const updateObjPayment = {};
     updateObjPayment['transactionType'] = 'CC';
     updateObjPayment['paymentGateway'] = platform;
-    updateObjPayment['authorizedDate'] = new Date(
-      commonUtil.getCurrentDate()
-    ).setUTCHours(0, 0, 0, 0);
+    let authorizedDate = new Date(commonUtil.getCurrentDate()).setUTCHours(
+      0,
+      0,
+      0,
+      0
+    );
+    updateObjPayment['authorizedDate'] = authorizedDate;
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
 
@@ -1007,7 +1015,7 @@ class CronJob {
       const retryDate = this.getRetryDate(
         interval.unit,
         value,
-        payment.dueDate
+        new Date(authorizedDate).toUTCString()
       );
       updateObjPayment['rescheduled'] = retryDate;
       emailUtil.sendEmailOrSmsByEvent(

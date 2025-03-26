@@ -750,11 +750,8 @@ class DebtorService {
     if (!caseTemp) {
       return [false, constants.notFoundMessage('case')];
     }
-    const files = {
-      lawsuitDocuments: req.body.lawsuitDocuments,
-    };
     let lawsuitExtractedFields: any = [];
-    const newFiles = await this.updateDebtorIdExist(caseTemp.debtor, files);
+    const newFiles = await this.updateDebtorIdExist(caseTemp.debtor, req.body);
     if (newFiles?.lawsuitDocuments.length) {
       lawsuitExtractedFields = await caseUtil.getExtractionLawsuit(
         newFiles?.lawsuitDocuments
