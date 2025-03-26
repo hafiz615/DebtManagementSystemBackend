@@ -3,6 +3,7 @@ import {IPayment} from '../interfaces/payment.interface';
 import {v4} from 'uuid';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import PaymentLog from './paymentLogs.model';
+import commonUtil from '../../utils/common.util';
 
 const PaymentModel: Schema = new Schema({
   caseId: {
@@ -173,6 +174,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

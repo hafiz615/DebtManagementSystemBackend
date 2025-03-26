@@ -660,7 +660,7 @@ class CronJob {
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;
-            const retryDate = this.getRetryDate(interval.unit, value, new Date(authorizedDate).toUTCString());
+            const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
             email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
         }
@@ -698,7 +698,7 @@ class CronJob {
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
             const value = interval.value * retry;
-            const retryDate = this.getRetryDate(interval.unit, value, new Date(authorizedDate).toUTCString());
+            const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
             email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
         }
@@ -815,7 +815,7 @@ class CronJob {
             const interval = retryInterval.failedPayment;
             const retry = payment.retriesCapture + 1;
             const value = interval.value * retry;
-            const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
+            const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
             email_util_1.default.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
         }
@@ -872,7 +872,7 @@ class CronJob {
             const interval = retryInterval.failedPayment;
             const retry = payment.retriesCapture + 1;
             const value = interval.value * retry;
-            const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
+            const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
             email_util_1.default.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
         }
