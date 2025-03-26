@@ -166,7 +166,7 @@ class CallUtil {
     return await this.callRepository.create<ICall>(newCall as any);
   }
 
-  async createIncomingCall(data: any) {
+  async createIncomingCall(data: any, userId: string) {
     const {CallSid, AccountSid, CallStatus, From, Direction, To} = data;
     console.log('data', data);
     const number = await commonUtil.extractLastTenDigits(From);
@@ -175,7 +175,7 @@ class CallUtil {
     let newCall = new Call();
 
     newCall.callSid = CallSid;
-
+    newCall.userId = userId;
     newCall.accountSid = AccountSid;
     newCall.callerName = name.fullName;
     newCall.callTo = To;
