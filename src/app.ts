@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import {Database} from './config/database.config';
 import setup from './api/routes/base.route';
 import paymentCronjob from './cron-job/payment.cronjob';
+import paymentPauseCronjob from './cron-job/paymentPause.cronjob';
 import logMiddleware from './middleware/logs.middleware'; // Import the logging middleware
 import asyncLocalStorage from './utils/localStorage.util';
 import {EnvSetup} from './utils/setEnv';
@@ -105,7 +106,7 @@ class App {
     // await easypayUtil.syncClients('Easypay direct');
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
-    paymentCronjob.startCronJob();
+    paymentPauseCronjob.startCronJob();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
     // paymentCronjob.testPaynote();
