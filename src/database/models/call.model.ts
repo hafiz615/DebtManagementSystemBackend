@@ -8,7 +8,10 @@ import commonUtil from '../../utils/common.util';
 const callSchema: Schema = new Schema({
   callSid: {type: String},
   caseId: {type: String},
-  callerName: {type: String},
+  creditorId: {type: String},
+  debtorId: {type: String},
+  userId: {type: String},
+  callerName: {type: String, default: 'Unknown'},
   accountSid: {type: String},
   callTo: {type: String},
   callFrom: {type: String},
@@ -74,7 +77,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
-    createdAt: new Date(commonUtil.getCurrentDate()),
+    createdAt: commonUtil.getCurrentDate(),
   });
 
   logEntry.save().catch(err => {

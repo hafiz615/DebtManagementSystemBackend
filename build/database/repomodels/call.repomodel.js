@@ -9,7 +9,10 @@ class Call {
     constructor() {
         this.callSid = '';
         this.caseId = '';
-        this.callerName = '';
+        this.userId = '';
+        this.debtorId = '';
+        this.creditorId = '';
+        this.callerName = 'Unknown';
         this.accountSid = '';
         this.callTo = '';
         this.callFrom = '';

@@ -34,7 +34,10 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const callSchema = new mongoose_1.Schema({
     callSid: { type: String },
     caseId: { type: String },
-    callerName: { type: String },
+    creditorId: { type: String },
+    debtorId: { type: String },
+    userId: { type: String },
+    callerName: { type: String, default: 'Unknown' },
     accountSid: { type: String },
     callTo: { type: String },
     callFrom: { type: String },
@@ -91,7 +94,7 @@ const logUpdatePost = async function (doc) {
         userId,
         url,
         method,
-        createdAt: new Date(common_util_1.default.getCurrentDate()),
+        createdAt: common_util_1.default.getCurrentDate(),
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry:', err);

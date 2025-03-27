@@ -1068,6 +1068,7 @@ class PaymentService {
         req.body._id = req.body.caseId;
         req.body.debtor = findCase.debtor._id;
         req.body.attorneyId = req.params.id;
+        req.body.lawsuitId = lawsuit._id;
         lawsuit = await this.lawsuitRepository.updateByOne({
             attorneyId: req.params.id,
             debtorId: findCase.debtor,

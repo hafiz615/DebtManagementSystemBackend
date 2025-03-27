@@ -105,37 +105,56 @@ class CallUtil {
         }
         return null;
     }
-    async createCall(data, userName, callerId) {
+    async createCall(data, user, callerId, debtorId, creditorId) {
         const newCall = new call_repomodel_1.Call();
         const { CaseId, CallSid, AccountSid, To, CallStatus, Direction } = data;
         newCall.caseId = CaseId;
+        newCall.debtorId = debtorId;
+        newCall.creditorId = creditorId;
         newCall.callSid = CallSid;
-        (newCall.callerName = userName), (newCall.accountSid = AccountSid);
+        if (user) {
+            newCall.callerName = user.name;
+            newCall.userId = String(user._id);
+        }
+        newCall.accountSid = AccountSid;
         newCall.callTo = To;
         (newCall.callDirection = Direction),
             (newCall.callFrom = callerId),
             (newCall.callStatus = CallStatus);
         return await this.callRepository.create(newCall);
     }
-    async createIncomingCall(data, userName, callerId) {
-        const { CallSid, AccountSid, CallStatus, From, Direction } = data;
+    async createIncomingCall(data, userId) {
+        const { CallSid, AccountSid, CallStatus, From, Direction, To } = data;
         console.log('data', data);
-        console.log(callerId);
-        console.log('userName', userName);
-        const getDebtor = await this.debtorRepository.getOne({
-            $or: [
-                { 'basicInformation.phone': data.from },
-                { 'businessInformation.phone': data.from },
-            ],
-        });
-        const newCall = new call_repomodel_1.Call();
+        console.log(userId, 'userId');
+        const number = await common_util_1.default.extractLastTenDigits(From);
+        const name = await this.getDebtorOrCreditorName(number);
+        let caseData = null;
+        if (name?.creditorId) {
+            caseData = await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [{ path: 'debtor' }, { path: 'creditor' }]);
+        }
+        if (!caseData && name?.debtorId) {
+            const findCases = await this.caseRepository.getAllWithoutPagination({ debtor: name.debtorId, isDeleted: { $ne: true } }, undefined, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
+            if (findCases.length === 1) {
+                caseData = findCases[0];
+            }
+        }
+        let newCall = new call_repomodel_1.Call();
+        if (caseData) {
+            newCall.debtorId = String(caseData.debtor._id);
+            newCall.creditorId = String(caseData.creditor._id);
+            newCall.caseId = String(caseData._id);
+        }
         newCall.callSid = CallSid;
-        (newCall.callerName = userName), (newCall.accountSid = AccountSid);
-        newCall.callTo = callerId;
-        (newCall.callDirection = Direction),
-            (newCall.callFrom = From),
-            (newCall.callStatus = CallStatus);
-        return await this.callRepository.create(newCall);
+        newCall.userId = userId;
+        newCall.accountSid = AccountSid;
+        if (name)
+            newCall.callerName = name.fullName;
+        newCall.callTo = To;
+        newCall.callDirection = Direction;
+        newCall.callFrom = From;
+        newCall.callStatus = CallStatus;
+        return this.callRepository.create(newCall);
     }
     async summarizeTranscriptText(text) {
         const openai = new openai_1.default({

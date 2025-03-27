@@ -71,6 +71,7 @@ class LawfirmService {
   };
 
   updateLawfirm = async (req: Request) => {
+    req.body.lawfirm = req.body?.monthly_subscription_fee;
     const updateData = {...req.body, updatedAt: commonUtil.getCurrentDate()};
     const lawfirm = await this.lawfirmRepository.updateById<ILawfirm>(
       req.params.id,

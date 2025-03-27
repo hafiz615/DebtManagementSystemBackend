@@ -41,6 +41,10 @@ const PaymentModel = new mongoose_1.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'Attorneys',
     },
+    lawsuitId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Lawsuits',
+    },
     authorized: {
         type: String,
         default: 'Pending',
@@ -198,7 +202,7 @@ const logUpdatePost = async function (doc) {
         userId,
         url,
         method,
-        createdAt: new Date(common_util_1.default.getCurrentDate()),
+        createdAt: common_util_1.default.getCurrentDate(),
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry', err);
