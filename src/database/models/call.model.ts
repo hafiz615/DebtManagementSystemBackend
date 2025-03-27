@@ -7,7 +7,10 @@ import {v4} from 'uuid';
 const callSchema: Schema = new Schema({
   callSid: {type: String},
   caseId: {type: String},
-  callerName: {type: String},
+  creditorId: {type: String},
+  debtorId: {type: String},
+  userId: {type: String},
+  callerName: {type: String, default: 'Unknown'},
   accountSid: {type: String},
   callTo: {type: String},
   callFrom: {type: String},

@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const call_util_1 = __importDefault(require("./call.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const call_repository_1 = require("../api/repository/call/call.repository");
 const common_util_1 = __importDefault(require("./common.util"));
@@ -13,7 +12,7 @@ class VoiceMailUtil {
         this.callRepository = new call_repository_1.CallRepository();
     }
     async updateVoiceMail(data) {
-        const { CallSid, To, CallStatus, From, RecordingSid } = data;
+        const { CallSid, CallStatus, RecordingSid } = data;
         const findCall = await this.callRepository.getOne({
             callSid: CallSid,
         });
@@ -21,21 +20,12 @@ class VoiceMailUtil {
             console.error(`Call not found for CallSid: ${CallSid}`);
             return null;
         }
-        console.log('Voice mail call found:', findCall);
-        const number = await common_util_1.default.extractLastTenDigits(From);
-        const name = await call_util_1.default.getDebtorOrCreditorName(number);
-        const updatedData = {
-            callTo: To,
+        const result = await this.callRepository.updateByOne({ callSid: CallSid }, {
             callStatus: CallStatus,
-            callFrom: From,
             callRecordingSid: RecordingSid,
             type: 'Voice Mail',
             updatedAt: common_util_1.default.getCurrentDate(),
-        };
-        if (name) {
-            updatedData.callerName = name.fullName;
-        }
-        const result = await this.callRepository.updateByOne({ callSid: CallSid }, updatedData);
+        });
         return result;
     }
     async getVoiceMails(req) {

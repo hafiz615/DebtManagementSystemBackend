@@ -33,7 +33,10 @@ const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const callSchema = new mongoose_1.Schema({
     callSid: { type: String },
     caseId: { type: String },
-    callerName: { type: String },
+    creditorId: { type: String },
+    debtorId: { type: String },
+    userId: { type: String },
+    callerName: { type: String, default: 'Unknown' },
     accountSid: { type: String },
     callTo: { type: String },
     callFrom: { type: String },
