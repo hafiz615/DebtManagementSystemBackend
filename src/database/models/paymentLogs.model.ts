@@ -12,7 +12,7 @@ const logSchema = new Schema({
   userId: String,
   url: String,
   method: String,
-  createdAt: {type: Date, default: commonUtil.getCurrentDate()},
+  createdAt: {type: Date},
 });
 
 const PaymentLog = model('PaymentLog', logSchema);
