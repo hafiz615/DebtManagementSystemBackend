@@ -474,7 +474,7 @@ class DebtorService {
       amount = payment.amount;
     }
     if (!payment.paymentReference) {
-      if (payment.commision) amount = payment.amount + payment.commision;
+      // if (payment.commision) amount = payment.amount + payment.commision;
       payments.push(payment);
     }
     let response: any;
@@ -483,7 +483,7 @@ class DebtorService {
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.authorizeCreditCard(
-          amount,
+          amount + legalFeeAmount + legalFeeAmount,
           account.customerVaultId,
           account.platform
         );
