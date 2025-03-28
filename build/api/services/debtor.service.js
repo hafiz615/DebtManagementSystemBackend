@@ -425,7 +425,7 @@ class DebtorService {
         let debtor = null;
         let amount = 0;
         if (payment.caseId)
-            debtor = payment.caseId.debtor;
+            debtor = payment.caseId?.debtor;
         if (!payment.caseId) {
             debtor = await this.debtorRepository.getById(payment.debtorId);
         }
