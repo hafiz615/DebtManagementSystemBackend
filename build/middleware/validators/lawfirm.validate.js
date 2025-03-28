@@ -47,8 +47,10 @@ class LawfirmValidate {
                 'string.pattern.base': 'lawfirm EIN must contain only digits.',
                 'any.required': 'lawfirm EIN is a required field.',
             }),
-            lawfirmFee: joi_1.default.number().strict().messages({
-                'number.base': 'Lawfirm fee must be a number.',
+            monthly_subscription_fee: joi_1.default.number().allow('').messages({
+                'number.base': 'lawfirm fee must be a number.',
+                'any.required': 'lawfirm fee is a required field.',
+                'string.empty': 'lawfirm fee cannot be empty',
             }),
         });
         const { error } = schema.validate(req.body);

@@ -31,6 +31,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const localStorage_util_1 = __importDefault(require("../../utils/localStorage.util"));
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const uuid_1 = require("uuid");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 const notification = new mongoose_1.Schema({
     text: {
         type: String,
@@ -105,6 +106,7 @@ const logUpdatePost = async function (doc) {
         userId,
         url,
         method,
+        createdAt: common_util_1.default.getCurrentDate(),
     });
     logEntry.save().catch(err => {
         console.error('Error saving log entry', err);

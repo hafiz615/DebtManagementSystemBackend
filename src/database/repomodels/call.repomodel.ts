@@ -3,7 +3,10 @@ import commonUtil from '../../utils/common.util';
 export class Call {
   callSid = '';
   caseId = '';
-  callerName = '';
+  userId = '';
+  debtorId = '';
+  creditorId = '';
+  callerName = 'Unknown';
   accountSid = '';
   callTo = '';
   callFrom = '';

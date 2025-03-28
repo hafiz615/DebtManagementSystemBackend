@@ -3,11 +3,15 @@ import {ICall} from '../interfaces/call.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const callSchema: Schema = new Schema({
   callSid: {type: String},
   caseId: {type: String},
-  callerName: {type: String},
+  creditorId: {type: String},
+  debtorId: {type: String},
+  userId: {type: String},
+  callerName: {type: String, default: 'Unknown'},
   accountSid: {type: String},
   callTo: {type: String},
   callFrom: {type: String},
@@ -73,6 +77,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
 
   logEntry.save().catch(err => {

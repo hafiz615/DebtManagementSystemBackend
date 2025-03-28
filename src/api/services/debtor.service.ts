@@ -446,20 +446,20 @@ class DebtorService {
       paymentId,
       undefined,
       undefined,
-      {path: 'caseId'}
+      {path: 'caseId', populate: 'debtor'}
     );
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
-    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+    // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+    // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     if (payment.authorized === 'Success') {
       return [false, 'Payment already authorized'];
     }
     let payments: IPayment[] = [];
     let debtor = null;
     let amount = 0;
-    if (payment.caseId) debtor = payment.caseId.debtor;
+    if (payment.caseId) debtor = payment.caseId?.debtor;
     if (!payment.caseId) {
       debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
     }
@@ -474,7 +474,7 @@ class DebtorService {
       amount = payment.amount;
     }
     if (!payment.paymentReference) {
-      if (payment.commision) amount = payment.amount + payment.commision;
+      // if (payment.commision) amount = payment.amount + payment.commision;
       payments.push(payment);
     }
     let response: any;
@@ -498,8 +498,8 @@ class DebtorService {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['serviceFee'] = serviceFeeAmount;
-      updateObjPayment['legalFee'] = legalFeeAmount;
+      // updateObjPayment['serviceFee'] = serviceFeeAmount;
+      // updateObjPayment['legalFee'] = legalFeeAmount;
       // updateObjPayment['status'] = 'Pending';
       result = true;
       await emailUtil.sendEmailOrSmsByEvent(
@@ -544,8 +544,8 @@ class DebtorService {
     if (payment.captured === 'Success') {
       return [false, 'Payment already captured'];
     }
-    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+    // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+    // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     let payments: IPayment[] = [];
     let debtor = null;
     if (payment.caseId) debtor = payment.caseId.debtor;
@@ -597,7 +597,7 @@ class DebtorService {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
       updateObjPayment['status'] = 'Pending';
-      lawsuitUtil.updatePaymentLawsuit(payment);
+      // lawsuitUtil.updatePaymentLawsuit(payment);
       if (!payment.debtorTransId) {
         updateObjPayment['debtorTransId'] = transactionId;
       }

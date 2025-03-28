@@ -3,6 +3,7 @@ import {ICreditor} from '../interfaces/creditor.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const creditorModel: Schema = new Schema({
   basicInformation: {
@@ -140,6 +141,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

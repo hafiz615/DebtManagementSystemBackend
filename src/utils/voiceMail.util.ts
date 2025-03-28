@@ -15,7 +15,7 @@ class VoiceMailUtil {
   }
 
   async updateVoiceMail(data: any) {
-    const {CallSid, To, CallStatus, From, RecordingSid} = data;
+    const {CallSid, CallStatus, RecordingSid} = data;
 
     const findCall = await this.callRepository.getOne<ICall>({
       callSid: CallSid,
@@ -25,27 +25,14 @@ class VoiceMailUtil {
       return null;
     }
 
-    console.log('Voice mail call found:', findCall);
-
-    const number = await commonUtil.extractLastTenDigits(From);
-    const name = await callUtil.getDebtorOrCreditorName(number);
-
-    const updatedData: any = {
-      callTo: To,
-      callStatus: CallStatus,
-      callFrom: From,
-      callRecordingSid: RecordingSid,
-      type: 'Voice Mail',
-      updatedAt: commonUtil.getCurrentDate(),
-    };
-
-    if (name) {
-      updatedData.callerName = name.fullName;
-    }
-
     const result = await this.callRepository.updateByOne(
       {callSid: CallSid},
-      updatedData
+      {
+        callStatus: CallStatus,
+        callRecordingSid: RecordingSid,
+        type: 'Voice Mail',
+        updatedAt: commonUtil.getCurrentDate(),
+      }
     );
 
     return result;
