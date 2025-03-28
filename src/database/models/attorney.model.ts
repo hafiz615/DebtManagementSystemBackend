@@ -3,6 +3,7 @@ import {IAttorney} from '../interfaces/attorney.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const attorneyModel: Schema = new Schema({
   lawfirmId: {
@@ -110,6 +111,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

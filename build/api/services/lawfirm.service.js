@@ -49,12 +49,13 @@ class LawfirmService {
             return [true, []];
         };
         this.updateLawfirm = async (req) => {
+            req.body.lawfirmFee = req.body?.monthly_subscription_fee;
             const updateData = { ...req.body, updatedAt: common_util_1.default.getCurrentDate() };
             const lawfirm = await this.lawfirmRepository.updateById(req.params.id, updateData);
             if (!lawfirm) {
                 return [false, constants_util_1.default.notFoundMessage('Lawfirm')];
             }
-            return [true, lawfirm];
+            return [true, []];
         };
         this.lawfirmRepository = new lawfirm_repository_1.LawfirmRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();

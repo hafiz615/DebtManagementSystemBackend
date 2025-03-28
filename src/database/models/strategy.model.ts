@@ -3,6 +3,7 @@ import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {IStrategy} from '../interfaces/strategy.interface';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const strategy: Schema = new Schema({
   caseId: {
@@ -62,6 +63,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);
