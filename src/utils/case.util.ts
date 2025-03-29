@@ -2983,14 +2983,16 @@ class CaseUtil {
     });
   }
 
-  async addInHistory(history: any, id: string) {
-    const res = await this.caseHistoryRepository.upsert<ICaseHistory>(
-      {caseId: id},
-      {
-        $push: {caseHistory: {$each: [history], $position: 0}},
-        updatedAt: commonUtil.getCurrentDate(),
-      }
-    );
+  async addInHistory(history: any, id: any) {
+    if (id) {
+      const res = await this.caseHistoryRepository.upsert<ICaseHistory>(
+        {caseId: id},
+        {
+          $push: {caseHistory: {$each: [history], $position: 0}},
+          updatedAt: commonUtil.getCurrentDate(),
+        }
+      );
+    }
   }
 
   async getJustificationModels() {

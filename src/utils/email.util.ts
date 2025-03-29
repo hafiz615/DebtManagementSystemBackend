@@ -322,7 +322,7 @@ class EmailUtil {
           content,
           cc,
           attachments,
-          caseData._id,
+          caseData?._id,
           threadId,
           userId,
           userName
@@ -345,7 +345,7 @@ class EmailUtil {
               Action: 'EMAIL',
               Attachments: uniqueAttachments,
             },
-            caseData._id
+            caseData?._id
           );
           const emailData = {
             from,
@@ -409,7 +409,7 @@ class EmailUtil {
               Time: time,
               Action: 'SMS',
             },
-            caseData._id
+            caseData?._id
           );
         }
         return smsResult;
