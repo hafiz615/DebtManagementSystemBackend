@@ -48,7 +48,8 @@ class EmailService {
       return [false, 'Type is missing!'];
     }
     let caseTemp = null;
-    if (type !== 'compose') {
+    const isMongoId = commonUtil.isMongoId(req.params.id);
+    if (isMongoId) {
       caseTemp = await this.caseRepository.getById<ICase>(
         req.params.id,
         undefined,
@@ -58,12 +59,9 @@ class EmailService {
           {path: 'creditor', select: ['businessInformation.companyName']},
         ]
       );
-      if (!caseTemp) {
-        return [false, constantsUtil.notFoundMessage('case')];
-      }
     }
     return await emailUtil.sendEmailSmsToDebtorCreditor(
-      caseTemp ? caseTemp : null,
+      caseTemp,
       reqTemp.id,
       req.body,
       type,
