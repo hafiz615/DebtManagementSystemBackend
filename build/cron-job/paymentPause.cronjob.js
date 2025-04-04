@@ -19,6 +19,7 @@ const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_util_1 = __importDefault(require("../utils/creditor.util"));
 const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
 const lawsuit_util_1 = __importDefault(require("../utils/lawsuit.util"));
+const lawsuit_repository_1 = require("../api/repository/lawsuit/lawsuit.repository");
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -27,6 +28,7 @@ class CronJob {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
+        this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
     }
     async testCron() {
         let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
@@ -50,41 +52,158 @@ class CronJob {
         console.log(conn.readyState);
     }
     async testPaynote() {
-        const pendingPayments = await this.paymentRepository.getAllWithoutPagination({
+        // const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+        //   {creditorPaymentsProceed: true},
+        //   '_id'
+        // );
+        // const caseIds = cases.map(caseTemp => {
+        //   return String(caseTemp._id);
+        // });
+        // const pendingPayments =
+        //   await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        //     {
+        //       caseId: {$in: caseIds},
+        //       captured: 'Success',
+        //       sendViaPaynote: 'Pending',
+        //       isDeleted: false,
+        //       attorneyId: null,
+        //     },
+        //     undefined,
+        //     undefined,
+        //     undefined,
+        //     {
+        //       path: 'caseId',
+        //       select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+        //       populate: [
+        //         {
+        //           path: 'creditor',
+        //           select: [
+        //             'paynoteSourceId',
+        //             'paynoteUserId',
+        //             'basicInformation.fullName',
+        //             'businessInformation.companyName',
+        //           ],
+        //         },
+        //         {
+        //           path: 'debtor',
+        //           select: [
+        //             '_id',
+        //             'basicInformation.fullName',
+        //             'businessInformation.companyName',
+        //           ],
+        //         },
+        //       ],
+        //     }
+        //   );
+        // await this.paynotePending(pendingPayments, true);
+        // const failedPayments =
+        //   await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        //     {
+        //       captured: 'Success',
+        //       sendViaPaynote: 'Failed',
+        //       caseId: {$ne: null},
+        //       isDeleted: false,
+        //     },
+        //     undefined,
+        //     undefined,
+        //     undefined,
+        //     {
+        //       path: 'caseId',
+        //       select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+        //       populate: [
+        //         {
+        //           path: 'creditor',
+        //           select: [
+        //             'paynoteSourceId',
+        //             'paynoteUserId',
+        //             'basicInformation.fullName',
+        //             'businessInformation.companyName',
+        //           ],
+        //         },
+        //         {
+        //           path: 'debtor',
+        //           select: [
+        //             '_id',
+        //             'basicInformation.fullName',
+        //             'businessInformation.companyName',
+        //           ],
+        //         },
+        //       ],
+        //     }
+        //   );
+        // await this.paynoteFailed(failedPayments, true);
+        const lawsuits = await this.lawsuitRepository.getAllWithoutPagination({
+            paymentsProceed: true,
+        });
+        const debtorIds = lawsuits.map(lawsuit => {
+            return String(lawsuit.debtorId);
+        });
+        const pendingAttorneyPayments = await this.paymentRepository.getAllWithoutPagination({
+            debtorId: { $in: debtorIds },
             captured: 'Success',
             sendViaPaynote: 'Pending',
-            caseId: { $ne: null },
             isDeleted: false,
-        }, undefined, undefined, undefined, {
-            path: 'caseId',
-            select: ['_id', 'caseCode'],
-            populate: ['creditor'],
-        });
-        await this.paynotePending(pendingPayments, true);
-        const failedPayments = await this.paymentRepository.getAllWithoutPagination({
+        }, undefined, undefined, undefined, [
+            {
+                path: 'caseId',
+                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+                populate: [
+                    {
+                        path: 'debtor',
+                        select: [
+                            '_id',
+                            'basicInformation.fullName',
+                            'businessInformation.companyName',
+                        ],
+                    },
+                ],
+            },
+            {
+                path: 'lawsuitId',
+                populate: 'lawfirmId',
+            },
+        ]);
+        await this.paynotePending(pendingAttorneyPayments, false);
+        const failedAttorneyPayments = await this.paymentRepository.getAllWithoutPagination({
             captured: 'Success',
             sendViaPaynote: 'Failed',
             caseId: { $ne: null },
             isDeleted: false,
-        }, undefined, undefined, undefined, {
-            path: 'caseId',
-            select: ['_id', 'caseCode'],
-            populate: ['creditor'],
-        });
-        await this.paynoteFailed(failedPayments, true);
+            lawsuitId: { $ne: null },
+        }, undefined, undefined, undefined, [
+            {
+                path: 'caseId',
+                select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+                populate: [
+                    {
+                        path: 'debtor',
+                        select: [
+                            '_id',
+                            'basicInformation.fullName',
+                            'businessInformation.companyName',
+                        ],
+                    },
+                ],
+            },
+            {
+                path: 'lawsuitId',
+                populate: 'lawfirmId',
+            },
+        ]);
+        await this.paynoteFailed(failedAttorneyPayments, false);
     }
     startCronJob() {
         node_cron_1.default.schedule('0 4 * * *', async () => {
             console.log('Running a task in a day for 4am (UTC)');
-            await this.processCommissionPayments();
-            await this.processPayments();
+            this.processCommissionPayments();
+            this.processPayments();
         }, {
             timezone: 'America/New_York',
         });
         node_cron_1.default.schedule('0 * * * *', async () => {
             console.log('Running a task every zero of an hour');
-            await this.processCommissionRetryPayments();
-            await this.processRetryPayments();
+            this.processCommissionRetryPayments();
+            this.processRetryPayments();
         }, {
             timezone: 'America/New_York',
         });
@@ -162,90 +281,75 @@ class CronJob {
                 ],
             });
             await this.paynoteFailed(failedPayments, true);
-            // const lawsuits =
-            //   await this.lawsuitRepository.getAllWithoutPagination<ILawsuit>({
-            //     paymentsProceed: true,
-            //   });
-            // const attorneyIds = lawsuits.map(lawsuit => {
-            //   return String(lawsuit.attorneyId);
-            // });
-            // const pendingAttorneyPayments =
-            //   await this.paymentRepository.getAllWithoutPagination<IPayment>(
-            //     {
-            //       attorneyId: {$in: attorneyIds},
-            //       captured: 'Success',
-            //       sendViaPaynote: 'Pending',
-            //       isDeleted: false,
-            //     },
-            //     undefined,
-            //     undefined,
-            //     undefined,
-            //     [
-            //       {
-            //         path: 'caseId',
-            //         select: [
-            //           '_id',
-            //           'caseCode',
-            //           'remaining',
-            //           'creditorPaymentsProceed',
-            //         ],
-            //         populate: [
-            //           {
-            //             path: 'debtor',
-            //             select: [
-            //               '_id',
-            //               'basicInformation.fullName',
-            //               'businessInformation.companyName',
-            //             ],
-            //           },
-            //         ],
-            //       },
-            //       {
-            //         path: 'attorneyId',
-            //         select: ['paynoteUserId', 'name'],
-            //       },
-            //     ]
-            //   );
-            // await this.paynotePending(pendingAttorneyPayments, false);
-            // const failedAttorneyPayments =
-            //   await this.paymentRepository.getAllWithoutPagination<IPayment>(
-            //     {
-            //       captured: 'Success',
-            //       sendViaPaynote: 'Failed',
-            //       caseId: {$ne: null},
-            //       isDeleted: false,
-            //       attorneyId: {$ne: null},
-            //     },
-            //     undefined,
-            //     undefined,
-            //     undefined,
-            //     [
-            //       {
-            //         path: 'caseId',
-            //         select: [
-            //           '_id',
-            //           'caseCode',
-            //           'remaining',
-            //           'creditorPaymentsProceed',
-            //         ],
-            //         populate: [
-            //           {
-            //             path: 'debtor',
-            //             select: [
-            //               '_id',
-            //               'basicInformation.fullName',
-            //               'businessInformation.companyName',
-            //             ],
-            //           },
-            //         ],
-            //       },
-            //       {
-            //         path: 'attorneyId',
-            //         select: ['paynoteUserId', 'name'],
-            //       },
-            //     ]
-            //   );
-            // await this.paynoteFailed(failedAttorneyPayments, false);
+            const lawsuits = await this.lawsuitRepository.getAllWithoutPagination({
+                paymentsProceed: true,
+            });
+            const debtorIds = lawsuits.map(lawsuit => {
+                return String(lawsuit.debtorId);
+            });
+            const pendingAttorneyPayments = await this.paymentRepository.getAllWithoutPagination({
+                debtorId: { $in: debtorIds },
+                captured: 'Success',
+                sendViaPaynote: 'Pending',
+                isDeleted: false,
+            }, undefined, undefined, undefined, [
+                {
+                    path: 'caseId',
+                    select: [
+                        '_id',
+                        'caseCode',
+                        'remaining',
+                        'creditorPaymentsProceed',
+                    ],
+                    populate: [
+                        {
+                            path: 'debtor',
+                            select: [
+                                '_id',
+                                'basicInformation.fullName',
+                                'businessInformation.companyName',
+                            ],
+                        },
+                    ],
+                },
+                {
+                    path: 'lawsuitId',
+                    populate: 'lawfirmId',
+                },
+            ]);
+            await this.paynotePending(pendingAttorneyPayments, false);
+            const failedAttorneyPayments = await this.paymentRepository.getAllWithoutPagination({
+                captured: 'Success',
+                sendViaPaynote: 'Failed',
+                caseId: { $ne: null },
+                isDeleted: false,
+                lawsuitId: { $ne: null },
+            }, undefined, undefined, undefined, [
+                {
+                    path: 'caseId',
+                    select: [
+                        '_id',
+                        'caseCode',
+                        'remaining',
+                        'creditorPaymentsProceed',
+                    ],
+                    populate: [
+                        {
+                            path: 'debtor',
+                            select: [
+                                '_id',
+                                'basicInformation.fullName',
+                                'businessInformation.companyName',
+                            ],
+                        },
+                    ],
+                },
+                {
+                    path: 'lawsuitId',
+                    populate: 'lawfirmId',
+                },
+            ]);
+            await this.paynoteFailed(failedAttorneyPayments, false);
         }, {
             timezone: 'America/New_York',
         });
@@ -326,7 +430,7 @@ class CronJob {
                     console.log(message, 'message');
                     const retry = payment.retriesAuth + 1;
                     const value = interval.value * retry;
-                    const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
+                    const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
                     let retries = payment.retriesAuth;
                     if (retryPlus)
                         retries += 1;
@@ -355,7 +459,7 @@ class CronJob {
     }
     async processPaynoteAttorneyPayments(payments, retryPlus, interval) {
         for (const payment of payments) {
-            if (payment.attorneyId.paynoteUserId) {
+            if (payment.lawsuitId?.lawfirmId?.paynoteUserId) {
                 // const paynoteCustomer = await paynoteUtil.getCustomer(
                 //   payment.caseId.creditor
                 // );
@@ -378,7 +482,7 @@ class CronJob {
                     console.log(message, 'message');
                     const retry = payment.retriesAuth + 1;
                     const value = interval.value * retry;
-                    const retryDate = this.getRetryDate(interval.unit, value, payment.dueDate);
+                    const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
                     let retries = payment.retriesAuth;
                     if (retryPlus)
                         retries += 1;
@@ -406,9 +510,13 @@ class CronJob {
         const paymentsPendingAuthorized = await payment_util_1.default.getPendingAuthorized();
         const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
         await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
-        const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptured();
-        const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
-        await this.processCapture(pendingCaptureDocs, cronId, false, settings);
+        // const paymentsPendingCaptured = await paymentUtil.getPendingCaptured();
+        // const pendingCaptureDocs = await this.pendingCaptured(
+        //   paymentsPendingCaptured,
+        //   cronId,
+        //   settings
+        // );
+        // await this.processCapture(pendingCaptureDocs, cronId, false, settings);
     }
     async processRetryPayments() {
         const settings = await this.settingsRepository.getAllWithoutPagination();
@@ -427,18 +535,34 @@ class CronJob {
         const paymentsPendingAuthorized = await payment_util_1.default.getPendingCommissionAuthorized();
         const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
         await this.processCommissionAuthorized(pendingAuthDocs, cronId, false, settings);
-        const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
-        const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
-        console.log(pendingCaptureDocs, 'pendingCaptureDocs');
-        await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);
+        // const paymentsPendingCaptured =
+        //   await paymentUtil.getPendingCommissionCaptured();
+        // const pendingCaptureDocs = await this.pendingCaptured(
+        //   paymentsPendingCaptured,
+        //   cronId,
+        //   settings
+        // );
+        // console.log(pendingCaptureDocs, 'pendingCaptureDocs');
+        // await this.processCommissionCapture(
+        //   pendingCaptureDocs,
+        //   cronId,
+        //   false,
+        //   settings
+        // );
     }
     async processCommissionRetryPayments() {
         // const payments: any = await paymentUtil.getAllCronJobPayments();
         const settings = await this.settingsRepository.getAllWithoutPagination();
         const cronId = (0, uuid_1.v4)();
         const paymentsFailedAuthorized = await payment_util_1.default.getFailedCommissionAuthorized();
-        const pendingFailedAuthDocs = await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
-        await this.processCommissionAuthorized(pendingFailedAuthDocs, cronId, true, settings);
+        console.log(paymentsFailedAuthorized, 'paymentsFailedAuthorized');
+        // const pendingFailedAuthDocs = await this.failedAuthorized(
+        //   paymentsFailedAuthorized,
+        //   cronId,
+        //   settings
+        // );
+        // console.log(pendingFailedAuthDocs, 'pendingFailedAuthDocs');
+        await this.processCommissionAuthorized(paymentsFailedAuthorized, cronId, true, settings);
         const paymentsFailedCaptured = await payment_util_1.default.getFailedCommissionCaptured();
         const pendingFailedCaptureDocs = await this.failedCaptured(paymentsFailedCaptured, cronId, settings);
         await this.processCommissionCapture(pendingFailedCaptureDocs, cronId, true, settings);
@@ -586,7 +710,9 @@ class CronJob {
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
-            const otherPayments = await payment_util_1.default.getOtherPayments(payment);
+            const otherPayments = retryPlus
+                ? await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference)
+                : await payment_util_1.default.getOtherPayments(payment);
             const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
             const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
@@ -601,6 +727,7 @@ class CronJob {
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             const accounts = debtor.accounts;
+            let retryOriginalValue = retryPlus;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId, account.platform);
@@ -637,6 +764,7 @@ class CronJob {
                     // if (result) break;
                 }
             }
+            retryPlus = retryOriginalValue;
         }
     }
     async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
@@ -702,7 +830,12 @@ class CronJob {
             // updateObjPayment['serviceFee'] = serviceFee;
             // updateObjPayment['status'] = 'Pending';
             result = true;
-            email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'successful_authorization',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
         }
         else {
             updateObjPayment['authorized'] = 'Failed';
@@ -713,7 +846,12 @@ class CronJob {
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
-            email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
+            // emailUtil.sendEmailOrSmsByEvent(
+            //   'failed_authorization',
+            //   '',
+            //   payment._id,
+            //   ''
+            // );
         }
         updateObjPayment['dueDate'] = payment.dueDate;
         if (retryPlus)
@@ -770,17 +908,20 @@ class CronJob {
     async processCommissionCapture(payments, cronId, retryPlus, settings) {
         for (const payment of payments) {
             const otherPayments = await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference);
-            const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
-            const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments);
+            // const totalLegalFeeAmount =
+            //   await lawsuitUtil.getTotalLegalFee(otherPayments);
+            // const totalServiceFeeAmount =
+            //   await lawsuitUtil.getTotalServiceFee(otherPayments);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
-            const remainingAmount = payment.amount -
-                totalAmount +
-                totalServiceFeeAmount +
-                totalLegalFeeAmount;
-            if (remainingAmount <= 0) {
-                email_util_1.default.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
-                return;
-            }
+            // const remainingAmount =
+            //   payment.amount -
+            //   totalAmount +
+            //   totalServiceFeeAmount +
+            //   totalLegalFeeAmount;
+            // if (remainingAmount <= 0) {
+            //   emailUtil.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
+            //   return;
+            // }
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             console.log(concatedPayments, 'concatedPayments');
@@ -821,12 +962,12 @@ class CronJob {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
+            lawsuit_util_1.default.updatePaymentLawsuit([payment]);
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
                 updateObjPayment['serviceFee'] = serviceFee;
                 updateObjPayment['legalFee'] = legalFee;
-                lawsuit_util_1.default.updatePaymentLawsuit(payment);
                 // updateObjPayment['commission'] = commision;
             }
             result = true;
@@ -868,9 +1009,9 @@ class CronJob {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
+            lawsuit_util_1.default.updatePaymentLawsuit(payments);
             if (type === 'ck') {
                 lawsuit_util_1.default.updateFee(payments);
-                lawsuit_util_1.default.updatePaymentLawsuit(payments);
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
             }
