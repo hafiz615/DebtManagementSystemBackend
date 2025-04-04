@@ -540,6 +540,7 @@ class CronJob {
         return failedAuthorized;
     }
     async processAuthorized(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
             // const getCommission = await debtorUtil.getCommissionAmount(payment);
@@ -579,9 +580,11 @@ class CronJob {
                     break;
                 }
             }
+            retryPlus = retryOriginalValue;
         }
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const otherPayments = await payment_util_1.default.getOtherPayments(payment);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
@@ -628,6 +631,7 @@ class CronJob {
                     // if (result) break;
                 }
             }
+            retryPlus = retryOriginalValue;
         }
     }
     async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
@@ -730,6 +734,7 @@ class CronJob {
         await this.processCapture(failedCaptured, cronId, true, settings);
     }
     async processCapture(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
             for (const account of accounts) {
@@ -750,9 +755,11 @@ class CronJob {
                         break;
                 }
             }
+            retryPlus = retryOriginalValue;
         }
     }
     async processCommissionCapture(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const otherPayments = await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
@@ -778,6 +785,7 @@ class CronJob {
                         break;
                 }
             }
+            retryPlus = retryOriginalValue;
         }
     }
     async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform

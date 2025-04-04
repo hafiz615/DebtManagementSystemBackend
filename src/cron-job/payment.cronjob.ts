@@ -771,6 +771,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
       // const getCommission = await debtorUtil.getCommissionAmount(payment);
@@ -818,6 +819,7 @@ class CronJob {
           break;
         }
       }
+      retryPlus = retryOriginalValue;
     }
   }
 
@@ -827,6 +829,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const otherPayments: IPayment[] =
         await paymentUtil.getOtherPayments(payment);
@@ -894,6 +897,7 @@ class CronJob {
           // if (result) break;
         }
       }
+      retryPlus = retryOriginalValue;
     }
   }
 
@@ -1066,6 +1070,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
       for (const account of accounts) {
@@ -1106,6 +1111,7 @@ class CronJob {
           if (result) break;
         }
       }
+      retryPlus = retryOriginalValue;
     }
   }
 
@@ -1115,6 +1121,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const otherPayments: IPayment[] =
         await paymentUtil.getPaymentReferenceDocuments(
@@ -1172,6 +1179,7 @@ class CronJob {
           if (result) break;
         }
       }
+      retryPlus = retryOriginalValue;
     }
   }
 
