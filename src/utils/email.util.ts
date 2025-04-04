@@ -500,6 +500,7 @@ class EmailUtil {
     const newMessage = new Inbox();
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
+    let res = null;
 
     if (type == 'received') {
       console.log('ABC');
@@ -516,7 +517,7 @@ class EmailUtil {
 
       console.log('This is existing id', existingInbox[0]);
       if (!existingInbox[0]) {
-        const res = await this.createNewInbox(
+        res = await this.createNewInbox(
           emailData,
           caseTemp,
           type,
@@ -552,7 +553,7 @@ class EmailUtil {
         //   attachments: uniqueAttachments,
         // });
 
-        const res = await this.createNewInbox(
+        res = await this.createNewInbox(
           emailData,
           caseTemp,
           type,
@@ -566,7 +567,7 @@ class EmailUtil {
         console.log('Create New Inbox response when Response', res);
       }
     } else {
-      const res = await this.createNewInbox(
+      res = await this.createNewInbox(
         emailData,
         caseTemp,
         type,
@@ -588,6 +589,8 @@ class EmailUtil {
     }
     newNotification.type = 'EMAIL';
     newNotification.userId = userId;
+    newNotification.inboxId = res._id;
+
     // await this.notificationRepository.create<INotification>(
     //   newNotification as any
     // );
