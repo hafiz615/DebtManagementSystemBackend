@@ -11,10 +11,16 @@ const case_util_1 = __importDefault(require("../../utils/case.util"));
 const case_repository_1 = require("../repository/case/case.repository");
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const email_util_1 = __importDefault(require("../../utils/email.util"));
+const notification_repomodel_1 = require("../../database/repomodels/notification.repomodel");
+const app_1 = __importDefault(require("../../app"));
+const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
+const notification_repository_1 = require("../repository/notification/notification.repository");
 class TasksService {
     constructor() {
         this.tasksRepository = new tasks_repository_1.TasksRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
+        this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
+        this.notificationRepository = new notification_repository_1.NotificationRepository();
     }
     async getTasks(req) {
         if (!req.query.caseId)
@@ -63,12 +69,29 @@ class TasksService {
         if (vaildatedTask.notes)
             history['Notes'] = vaildatedTask.notes;
         await case_util_1.default.addInHistory(history, caseId);
-        email_util_1.default.sendEmailOrSmsByEvent('case_task_added', caseId, null, reqTemp.id);
+        const notification = new notification_repomodel_1.Notification();
+        notification.caseId = caseId;
+        notification.debtorId = String(findCase.debtor);
+        notification.type = 'TASK';
+        notification.userId = task.assigneeId;
+        notification.text = `Hey ${task.assignee}, You have a new task!`;
+        await this.notificationRepository.create(notification);
+        const count = await this.notificationCountRepository.upsert({ userId: task.assigneeId }, { $inc: { count: 1, taskCount: 1 } });
+        app_1.default.socketInstance.emit('notify', {
+            notificationCount: count?.count || 0,
+            type: 'TASK',
+            taskCount: count.taskCount,
+            notification: notification,
+        });
+        email_util_1.default.sendEmailOrSmsByEvent('case_task_added', caseId, null, reqTemp.id, String(task._id));
         return [true, task];
     }
     async updateTask(req) {
         const reqTemp = req;
         req.body.updatedAt = common_util_1.default.getCurrentDate();
+        let task = await this.tasksRepository.getById(req.params.id);
+        if (!task)
+            return [false, constants_util_1.default.notFoundMessage('task')];
         const updatedTask = await this.tasksRepository.updateById(req.params.id, req.body);
         if (!updatedTask) {
             return [false, constants_util_1.default.failureUpdateMessage('task')];
@@ -84,6 +107,22 @@ class TasksService {
         if (req.body.notes)
             history['Notes'] = req.body.notes;
         await case_util_1.default.addInHistory(history, updatedTask.caseId);
+        if (task.assigneeId !== updatedTask.assigneeId) {
+            const count = await this.notificationCountRepository.upsert({ userId: updatedTask.assigneeId }, { $inc: { count: 1, taskCount: 1 } });
+            const notification = new notification_repomodel_1.Notification();
+            notification.caseId = updatedTask.caseId;
+            notification.type = 'TASK';
+            notification.userId = updatedTask.assigneeId;
+            notification.text = `Hey ${updatedTask.assignee}, You have a new task!`;
+            await this.notificationRepository.create(notification);
+            app_1.default.socketInstance.emit('notify', {
+                notificationCount: count?.count || 0,
+                type: 'TASK',
+                taskCount: count.taskCount,
+                notification: notification,
+            });
+            email_util_1.default.sendEmailOrSmsByEvent('case_task_added', task.caseId, null, reqTemp.id, String(task._id));
+        }
         return [true, updatedTask];
     }
     async deleteTask(req) {

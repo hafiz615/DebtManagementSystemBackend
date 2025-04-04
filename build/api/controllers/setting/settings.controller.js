@@ -375,6 +375,13 @@ class SettingsController {
                             gender: 'User Gender',
                             address: 'User Address',
                         },
+                        task: {
+                            dueDate: 'Task Due Date',
+                            assignee: 'Task Assignee',
+                            title: 'Task Title',
+                            status: 'Task Status',
+                            notes: 'Task Notes',
+                        },
                     },
                 ];
                 if (!response[0]) {

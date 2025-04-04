@@ -27,7 +27,9 @@ class InboxService {
                 ? { emailCount: 0 }
                 : type === 'SMS'
                     ? { smsCount: 0 }
-                    : {};
+                    : type === 'TASK'
+                        ? { taskCount: 0 }
+                        : {};
             if (Object.keys(updateField).length) {
                 await this.notificationCountRepository.upsert({ userId }, { $set: updateField });
                 return [true, constants_util_1.default.successFoundMessage('Notification')];
