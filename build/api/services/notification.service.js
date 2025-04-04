@@ -34,7 +34,7 @@ class InboxService {
             }
         }
         else {
-            notifications = await this.notificationRepository.getAll({ type: req.body.type, userId: reqTemp.id }, undefined, undefined, { createdAt: -1 }, undefined, undefined);
+            notifications = await this.notificationRepository.getAll({ type: req.body.type, userId: reqTemp.id }, undefined, undefined, { createdAt: -1 }, ['inboxId'], undefined);
             if (!notifications) {
                 return [false, constants_util_2.default.notFoundMessage('Notification')];
             }

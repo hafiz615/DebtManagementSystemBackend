@@ -46,7 +46,7 @@ class InboxService {
         undefined,
         undefined,
         {createdAt: -1},
-        undefined,
+        ['inboxId'],
         undefined
       );
 
