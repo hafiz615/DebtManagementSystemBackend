@@ -15,6 +15,9 @@ const notificationCount: Schema = new Schema({
   emailCount: {
     type: Number,
   },
+  taskCount: {
+    type: Number,
+  },
   userId: {
     type: String,
   },

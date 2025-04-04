@@ -39,6 +39,8 @@ import {INotificationCount} from '../database/interfaces/notificationCount.inter
 import {v4} from 'uuid';
 import UploadUtil from './upload.util';
 import mime from 'mime-types';
+import {TasksRepository} from '../api/repository/tasks/tasks.repository';
+import {ITasks} from '../database/interfaces/tasks.interface';
 // import {threadId} from 'worker_threads';
 
 dotenv.config();
@@ -54,6 +56,7 @@ class EmailUtil {
   private notificationCountRepository: NotificationCountRepository;
   private client: Twilio;
   private uploadUtil: UploadUtil;
+  private taskRepository: TasksRepository;
   constructor() {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
     this.notificationConfigurationRepository =
@@ -72,6 +75,7 @@ class EmailUtil {
     );
     clientSendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
     this.uploadUtil = new UploadUtil();
+    this.taskRepository = new TasksRepository();
   }
 
   async sendInvitationLink(user: IUser, link: string) {
@@ -117,7 +121,8 @@ class EmailUtil {
     value: string,
     caseId: string,
     paymentId: string,
-    userId: string
+    userId: string,
+    taskId?: string
   ) {
     const event =
       await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
@@ -126,8 +131,8 @@ class EmailUtil {
     const threadId = v4();
     if (event) {
       const userPermissions = event.userPermission;
-      let [user, debtor, creditor, caseTemp, payment] =
-        await this.initializeValues(caseId, paymentId, userId);
+      let [user, debtor, creditor, caseTemp, payment, task] =
+        await this.initializeValues(caseId, paymentId, userId, taskId);
       for (const userPermission of userPermissions) {
         if (userPermission.email_allowed && userPermission.email_template) {
           const template = await this.getTemplate(
@@ -144,6 +149,7 @@ class EmailUtil {
               caseTemp,
               user,
               payment,
+              task,
               allValues
             );
             if (Object.keys(replacements).length) {
@@ -197,6 +203,7 @@ class EmailUtil {
               caseTemp,
               user,
               payment,
+              task,
               allValues
             );
             if (Object.keys(replacements).length) {
@@ -256,8 +263,8 @@ class EmailUtil {
     }
     const allValues = await this.getValues(content);
     if (allValues.length) {
-      let [user, debtor, creditor, caseTemp, payment] =
-        await this.initializeValues(caseData?._id, '', userId);
+      let [user, debtor, creditor, caseTemp, payment, task] =
+        await this.initializeValues(caseData?._id, '', userId, '');
       let replacements = await this.getPopulatedObject(
         null,
         debtor,
@@ -265,6 +272,7 @@ class EmailUtil {
         caseTemp,
         user,
         payment,
+        task,
         allValues
       );
       if (Object.keys(replacements).length) {
@@ -687,6 +695,7 @@ class EmailUtil {
               null,
               null,
               payment,
+              null,
               allValues
             );
             if (Object.keys(replacements).length) {
@@ -817,12 +826,18 @@ class EmailUtil {
       : null;
   }
 
-  async initializeValues(caseId: string, paymentId: string, userId: string) {
+  async initializeValues(
+    caseId: string,
+    paymentId: string,
+    userId: string,
+    taskId: string
+  ) {
     let debtor = null,
       creditor = null,
       user = null,
       payment = null,
-      caseTemp = null;
+      caseTemp = null,
+      task = null;
     if (caseId) {
       const result: any = await this.caseRepository.getById<ICase>(
         caseId,
@@ -853,7 +868,9 @@ class EmailUtil {
       user = await this.userRepository.getById<IUser>(userId);
     }
 
-    return [user, debtor, creditor, caseTemp, payment];
+    if (taskId) task = await this.taskRepository.getById<ITasks>(taskId);
+
+    return [user, debtor, creditor, caseTemp, payment, task];
   }
 
   async getValues(html: string) {
@@ -874,6 +891,7 @@ class EmailUtil {
     caseTemp: ICase,
     user: IUser,
     payment: IPayment,
+    task: ITasks,
     keys: Array<string>
   ) {
     // keys = ['debtor.basicInformation.fullName', 'case.totalDebt'];
@@ -900,6 +918,9 @@ class EmailUtil {
           break;
         case 'user':
           populatedObj[key] = _.get(user, joinedString) ?? '';
+          break;
+        case 'task':
+          populatedObj[key] = _.get(task, joinedString) ?? '';
           break;
         default:
           populatedObj[key] = '';

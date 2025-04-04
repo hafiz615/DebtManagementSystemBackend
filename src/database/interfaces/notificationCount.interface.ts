@@ -5,6 +5,7 @@ export interface INotificationCount extends Document {
   count: number;
   smsCount: number;
   emailCount: number;
+  taskCount: number;
   createdAt: string;
   updatedAt: string;
 }
