@@ -3,6 +3,7 @@ import {INotification} from '../interfaces/notification.interface';
 import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const notification: Schema = new Schema({
   text: {
@@ -12,7 +13,8 @@ const notification: Schema = new Schema({
     type: String,
   },
   inboxId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'inbox',
   },
   debtorId: {
     type: String,
@@ -80,6 +82,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

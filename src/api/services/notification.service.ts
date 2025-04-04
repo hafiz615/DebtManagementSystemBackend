@@ -32,7 +32,9 @@ class InboxService {
           ? {emailCount: 0}
           : type === 'SMS'
             ? {smsCount: 0}
-            : {};
+            : type === 'TASK'
+              ? {taskCount: 0}
+              : {};
       if (Object.keys(updateField).length) {
         await this.notificationCountRepository.upsert<INotificationCount>(
           {userId},
@@ -46,7 +48,7 @@ class InboxService {
         undefined,
         undefined,
         {createdAt: -1},
-        undefined,
+        ['inboxId'],
         undefined
       );
 

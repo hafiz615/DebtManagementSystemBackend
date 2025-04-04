@@ -27,6 +27,7 @@ const notificationCount_repomodel_1 = require("../database/repomodels/notificati
 const notificationCount_repository_1 = require("../api/repository/notificationCount/notificationCount.repository");
 const uuid_1 = require("uuid");
 const upload_util_1 = __importDefault(require("./upload.util"));
+const tasks_repository_1 = require("../api/repository/tasks/tasks.repository");
 // import {threadId} from 'worker_threads';
 dotenv_1.default.config();
 class EmailUtil {
@@ -45,6 +46,7 @@ class EmailUtil {
         this.client = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
         this.uploadUtil = new upload_util_1.default();
+        this.taskRepository = new tasks_repository_1.TasksRepository();
     }
     async sendInvitationLink(user, link) {
         const msg = {
@@ -85,12 +87,12 @@ class EmailUtil {
             return error.message;
         }
     }
-    async sendEmailOrSmsByEvent(value, caseId, paymentId, userId) {
+    async sendEmailOrSmsByEvent(value, caseId, paymentId, userId, taskId) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
         const threadId = (0, uuid_1.v4)();
         if (event) {
             const userPermissions = event.userPermission;
-            let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseId, paymentId, userId);
+            let [user, debtor, creditor, caseTemp, payment, task] = await this.initializeValues(caseId, paymentId, userId, taskId);
             for (const userPermission of userPermissions) {
                 if (userPermission.email_allowed && userPermission.email_template) {
                     const template = await this.getTemplate(userPermission.email_template);
@@ -99,7 +101,7 @@ class EmailUtil {
                     const allValues = await this.getValues(template.content);
                     let content = template.content;
                     if (allValues.length) {
-                        let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
+                        let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, task, allValues);
                         if (Object.keys(replacements).length) {
                             const nestedObject = await this.unflat(replacements);
                             const compiledHtml = handlebars_1.default.compile(content);
@@ -133,7 +135,7 @@ class EmailUtil {
                     const allValues = await this.getValues(template.content);
                     let content = template.content;
                     if (allValues.length) {
-                        let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, allValues);
+                        let replacements = await this.getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, task, allValues);
                         if (Object.keys(replacements).length) {
                             const nestedObject = await this.unflat(replacements);
                             const compiledContent = handlebars_1.default.compile(content);
@@ -181,8 +183,8 @@ class EmailUtil {
         }
         const allValues = await this.getValues(content);
         if (allValues.length) {
-            let [user, debtor, creditor, caseTemp, payment] = await this.initializeValues(caseData?._id, '', userId);
-            let replacements = await this.getPopulatedObject(null, debtor, creditor, caseTemp, user, payment, allValues);
+            let [user, debtor, creditor, caseTemp, payment, task] = await this.initializeValues(caseData?._id, '', userId, '');
+            let replacements = await this.getPopulatedObject(null, debtor, creditor, caseTemp, user, payment, task, allValues);
             if (Object.keys(replacements).length) {
                 const nestedObject = await this.unflat(replacements);
                 const compiledString = handlebars_1.default.compile(content);
@@ -311,6 +313,7 @@ class EmailUtil {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
+        let res = null;
         if (type == 'received') {
             console.log('ABC');
             const existingInbox = await this.inboxRepository.getAllWithoutPagination({
@@ -319,7 +322,7 @@ class EmailUtil {
             }, undefined, undefined, { _id: -1 });
             console.log('This is existing id', existingInbox[0]);
             if (!existingInbox[0]) {
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
+                res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
                 console.log('Create New Inbox response when Received', res);
             }
             else {
@@ -339,12 +342,12 @@ class EmailUtil {
                 //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
                 //   attachments: uniqueAttachments,
                 // });
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
+                res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
                 console.log('Create New Inbox response when Response', res);
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
+            res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
             console.log('Create New Inbox response when Create', res);
             return res;
         }
@@ -354,6 +357,7 @@ class EmailUtil {
         }
         newNotification.type = 'EMAIL';
         newNotification.userId = userId;
+        newNotification.inboxId = res._id;
         // await this.notificationRepository.create<INotification>(
         //   newNotification as any
         // );
@@ -417,7 +421,7 @@ class EmailUtil {
                     const allValues = await this.getValues(template.content);
                     let content = template.content;
                     if (allValues.length) {
-                        let replacements = await this.getPopulatedObject(event, debtor, null, null, null, payment, allValues);
+                        let replacements = await this.getPopulatedObject(event, debtor, null, null, null, payment, null, allValues);
                         if (Object.keys(replacements).length) {
                             const nestedObject = await this.unflat(replacements);
                             const compiledHtml = handlebars_1.default.compile(content);
@@ -522,8 +526,8 @@ class EmailUtil {
             ? result?.notificationTemplates[0]
             : null;
     }
-    async initializeValues(caseId, paymentId, userId) {
-        let debtor = null, creditor = null, user = null, payment = null, caseTemp = null;
+    async initializeValues(caseId, paymentId, userId, taskId) {
+        let debtor = null, creditor = null, user = null, payment = null, caseTemp = null, task = null;
         if (caseId) {
             const result = await this.caseRepository.getById(caseId, undefined, undefined, ['debtor', 'creditor']);
             caseTemp = result;
@@ -543,7 +547,9 @@ class EmailUtil {
         if (userId) {
             user = await this.userRepository.getById(userId);
         }
-        return [user, debtor, creditor, caseTemp, payment];
+        if (taskId)
+            task = await this.taskRepository.getById(taskId);
+        return [user, debtor, creditor, caseTemp, payment, task];
     }
     async getValues(html) {
         const regex = /\{\{([^}]+)\}\}/g;
@@ -554,7 +560,7 @@ class EmailUtil {
         }
         return matches;
     }
-    async getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, keys) {
+    async getPopulatedObject(event, debtor, creditor, caseTemp, user, payment, task, keys) {
         // keys = ['debtor.basicInformation.fullName', 'case.totalDebt'];
         const populatedObj = {};
         for (const key of keys) {
@@ -578,6 +584,9 @@ class EmailUtil {
                     break;
                 case 'user':
                     populatedObj[key] = lodash_1.default.get(user, joinedString) ?? '';
+                    break;
+                case 'task':
+                    populatedObj[key] = lodash_1.default.get(task, joinedString) ?? '';
                     break;
                 default:
                     populatedObj[key] = '';

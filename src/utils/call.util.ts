@@ -141,12 +141,24 @@ class CallUtil {
     return null;
   }
 
-  async createCall(data: any, userName: string, callerId: string) {
+  async createCall(
+    data: any,
+    user: any,
+    callerId: string,
+    debtorId: string,
+    creditorId: string
+  ) {
     const newCall = new Call();
     const {CaseId, CallSid, AccountSid, To, CallStatus, Direction} = data;
     newCall.caseId = CaseId;
+    newCall.debtorId = debtorId;
+    newCall.creditorId = creditorId;
     newCall.callSid = CallSid;
-    (newCall.callerName = userName), (newCall.accountSid = AccountSid);
+    if (user) {
+      newCall.callerName = user.name;
+      newCall.userId = String(user._id);
+    }
+    newCall.accountSid = AccountSid;
     newCall.callTo = To;
     (newCall.callDirection = Direction),
       (newCall.callFrom = callerId),
@@ -154,26 +166,54 @@ class CallUtil {
     return await this.callRepository.create<ICall>(newCall as any);
   }
 
-  async createIncomingCall(data: any, userName: string, callerId: string) {
-    const {CallSid, AccountSid, CallStatus, From, Direction} = data;
+  async createIncomingCall(data: any, userId: string) {
+    const {CallSid, AccountSid, CallStatus, From, Direction, To} = data;
     console.log('data', data);
-    console.log(callerId);
-    console.log('userName', userName);
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      $or: [
-        {'basicInformation.phone': data.from},
-        {'businessInformation.phone': data.from},
-      ],
-    });
-    const newCall = new Call();
+    console.log(userId, 'userId');
 
+    const number = await commonUtil.extractLastTenDigits(From);
+    const name = await this.getDebtorOrCreditorName(number);
+    let caseData: any = null;
+
+    if (name?.creditorId) {
+      caseData = await this.caseRepository.getOne<ICase>(
+        {creditor: name.creditorId, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        [{path: 'debtor'}, {path: 'creditor'}]
+      );
+    }
+
+    if (!caseData && name?.debtorId) {
+      const findCases =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {debtor: name.debtorId, isDeleted: {$ne: true}},
+          undefined,
+          undefined,
+          undefined,
+          [{path: 'creditor'}, {path: 'debtor'}]
+        );
+
+      if (findCases.length === 1) {
+        caseData = findCases[0];
+      }
+    }
+
+    let newCall = new Call();
+    if (caseData) {
+      newCall.debtorId = String(caseData.debtor._id);
+      newCall.creditorId = String(caseData.creditor._id);
+      newCall.caseId = String(caseData._id);
+    }
     newCall.callSid = CallSid;
-    (newCall.callerName = userName), (newCall.accountSid = AccountSid);
-    newCall.callTo = callerId;
-    (newCall.callDirection = Direction),
-      (newCall.callFrom = From),
-      (newCall.callStatus = CallStatus);
-    return await this.callRepository.create<ICall>(newCall as any);
+    newCall.userId = userId;
+    newCall.accountSid = AccountSid;
+    if (name) newCall.callerName = name.fullName;
+    newCall.callTo = To;
+    newCall.callDirection = Direction;
+    newCall.callFrom = From;
+    newCall.callStatus = CallStatus;
+    return this.callRepository.create<ICall>(newCall as any);
   }
 
   async summarizeTranscriptText(text: string) {

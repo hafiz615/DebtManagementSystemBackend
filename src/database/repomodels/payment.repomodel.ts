@@ -3,6 +3,7 @@ import commonUtil from '../../utils/common.util';
 export class Payment {
   caseId = null;
   attorneyId = null;
+  lawsuitId = null;
   debtorId = '';
   authorized = 'Pending';
   captured = 'Pending';

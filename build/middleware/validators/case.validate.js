@@ -633,6 +633,11 @@ class CaseValidate {
                     'string.pattern.base': 'lawfirm EIN must contain only digits.',
                     'any.required': 'lawfirm EIN is a required field.',
                 }),
+                monthly_subscription_fee: joi_1.default.number().allow('').messages({
+                    'number.base': 'lawfirm fee must be a number.',
+                    'any.required': 'lawfirm fee is a required field.',
+                    'string.empty': 'lawfirm fee cannot be empty',
+                }),
             })
                 .optional()
                 .messages({
@@ -979,6 +984,11 @@ class CaseValidate {
                         'string.base': 'lawfirm EIN must be a string.',
                         'string.pattern.base': 'lawfirm EIN must contain only digits.',
                         'any.required': 'lawfirm EIN is a required field.',
+                    }),
+                    monthly_subscription_fee: joi_1.default.number().allow('').messages({
+                        'number.base': 'lawfirm fee must be a number.',
+                        'any.required': 'lawfirm fee is a required field.',
+                        'string.empty': 'lawfirm fee cannot be empty',
                     }),
                 })
                     .optional()

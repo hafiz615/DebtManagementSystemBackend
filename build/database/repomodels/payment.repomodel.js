@@ -9,6 +9,7 @@ class Payment {
     constructor() {
         this.caseId = null;
         this.attorneyId = null;
+        this.lawsuitId = null;
         this.debtorId = '';
         this.authorized = 'Pending';
         this.captured = 'Pending';

@@ -4,6 +4,7 @@ import asyncLocalStorage from '../../utils/localStorage.util';
 import UpdateLog from './updateLogs.model';
 import {Type} from '@aws-sdk/client-s3';
 import {v4} from 'uuid';
+import commonUtil from '../../utils/common.util';
 
 const settignsModel: Schema = new Schema({
   paymentsAuthorizations: {
@@ -299,6 +300,7 @@ const logUpdatePost = async function (doc) {
     userId,
     url,
     method,
+    createdAt: commonUtil.getCurrentDate(),
   });
   logEntry.save().catch(err => {
     console.error('Error saving log entry', err);

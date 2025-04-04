@@ -29,7 +29,6 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
 const index_1 = require("../../enums/index");
-const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
 class DebtorService {
     constructor() {
@@ -413,12 +412,12 @@ class DebtorService {
     }
     async retryAuth(paymentId) {
         let result = false;
-        let payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId' });
+        let payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: 'debtor' });
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
-        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
-        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
+        // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+        // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
         if (payment.authorized === 'Success') {
             return [false, 'Payment already authorized'];
         }
@@ -426,7 +425,7 @@ class DebtorService {
         let debtor = null;
         let amount = 0;
         if (payment.caseId)
-            debtor = payment.caseId.debtor;
+            debtor = payment.caseId?.debtor;
         if (!payment.caseId) {
             debtor = await this.debtorRepository.getById(payment.debtorId);
         }
@@ -459,8 +458,8 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
-            updateObjPayment['serviceFee'] = serviceFeeAmount;
-            updateObjPayment['legalFee'] = legalFeeAmount;
+            // updateObjPayment['serviceFee'] = serviceFeeAmount;
+            // updateObjPayment['legalFee'] = legalFeeAmount;
             // updateObjPayment['status'] = 'Pending';
             result = true;
             await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
@@ -488,8 +487,8 @@ class DebtorService {
         if (payment.captured === 'Success') {
             return [false, 'Payment already captured'];
         }
-        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
-        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
+        // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+        // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
         let payments = [];
         let debtor = null;
         if (payment.caseId)
@@ -532,7 +531,7 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            lawsuit_util_1.default.updatePaymentLawsuit(payment);
+            // lawsuitUtil.updatePaymentLawsuit(payment);
             if (!payment.debtorTransId) {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
