@@ -313,6 +313,7 @@ class EmailUtil {
         const newMessage = new inbox_repomodel_1.Inbox();
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
+        let res = null;
         if (type == 'received') {
             console.log('ABC');
             const existingInbox = await this.inboxRepository.getAllWithoutPagination({
@@ -321,7 +322,7 @@ class EmailUtil {
             }, undefined, undefined, { _id: -1 });
             console.log('This is existing id', existingInbox[0]);
             if (!existingInbox[0]) {
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
+                res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
                 console.log('Create New Inbox response when Received', res);
             }
             else {
@@ -341,12 +342,12 @@ class EmailUtil {
                 //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
                 //   attachments: uniqueAttachments,
                 // });
-                const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
+                res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
                 console.log('Create New Inbox response when Response', res);
             }
         }
         else {
-            const res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
+            res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
             console.log('Create New Inbox response when Create', res);
             return res;
         }
@@ -356,6 +357,7 @@ class EmailUtil {
         }
         newNotification.type = 'EMAIL';
         newNotification.userId = userId;
+        newNotification.inboxId = res._id;
         // await this.notificationRepository.create<INotification>(
         //   newNotification as any
         // );
