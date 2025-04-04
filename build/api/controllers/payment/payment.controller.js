@@ -8,7 +8,6 @@ const responseHelper_util_1 = __importDefault(require("../../../utils/responseHe
 const payment_service_1 = __importDefault(require("../../services/payment.service"));
 const common_util_1 = __importDefault(require("../../../utils/common.util"));
 const payment_cronjob_1 = __importDefault(require("../../../cron-job/payment.cronjob"));
-const paymentPause_cronjob_1 = __importDefault(require("../../../cron-job/paymentPause.cronjob"));
 class PaymentController {
     constructor() {
         this.getHomePayments = async (req, res) => {
@@ -162,7 +161,7 @@ class PaymentController {
         };
         this.processAuthAndCapture = async (req, res) => {
             try {
-                await paymentPause_cronjob_1.default.processPayments();
+                await payment_cronjob_1.default.processPayments();
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],
@@ -194,7 +193,7 @@ class PaymentController {
         };
         this.firstChoiceCommission = async (req, res) => {
             try {
-                await paymentPause_cronjob_1.default.processCommissionRetryPayments();
+                await payment_cronjob_1.default.processCommissionPayments();
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: [],

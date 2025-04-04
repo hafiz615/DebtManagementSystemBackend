@@ -5,7 +5,6 @@ import PaymentService from '../../services/payment.service';
 import commonUtil from '../../../utils/common.util';
 import bulkUploadCronjob from '../../../cron-job/bulkUpload.cronjob';
 import paymentCronjob from '../../../cron-job/payment.cronjob';
-import paymentPauseCronjob from '../../../cron-job/paymentPause.cronjob';
 
 class PaymentController {
   protected paymentService: PaymentService;
@@ -213,7 +212,7 @@ class PaymentController {
 
   processAuthAndCapture = async (req: Request, res: Response) => {
     try {
-      await paymentPauseCronjob.processPayments();
+      await paymentCronjob.processPayments();
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
@@ -249,7 +248,7 @@ class PaymentController {
 
   firstChoiceCommission = async (req: Request, res: Response) => {
     try {
-      await paymentPauseCronjob.processCommissionRetryPayments();
+      await paymentCronjob.processCommissionPayments();
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
