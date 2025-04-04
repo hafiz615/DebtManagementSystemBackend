@@ -222,7 +222,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -236,7 +236,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -252,7 +252,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -267,7 +267,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -283,7 +283,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -297,7 +297,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -314,7 +314,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -329,7 +329,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -416,12 +416,18 @@ class PaymentUtil {
   }
 
   async getPaymentReferenceDocuments(referenceId: string) {
-    return await this.paymentRepository.getAllWithoutPagination<IPayment>({
-      paymentReference: referenceId,
-      paymentReferenceBool: true,
-      caseId: {$ne: null},
-      isDeleted: false,
-    });
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        paymentReference: referenceId,
+        paymentReferenceBool: true,
+        caseId: {$ne: null},
+        isDeleted: false,
+      },
+      undefined,
+      undefined,
+      undefined,
+      {path: 'caseId', populate: [{path: 'debtor'}]}
+    );
   }
 
   async getAllPaymentReferenceDocuments(referenceId: string) {
@@ -460,7 +466,7 @@ class PaymentUtil {
         undefined,
         undefined,
         undefined,
-        ['caseId']
+        {path: 'caseId', populate: [{path: 'debtor'}]}
       );
     return payments;
   }

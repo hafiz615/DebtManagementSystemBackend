@@ -178,14 +178,14 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             transactionType: { $nin: ['Wire', 'Check'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getPendingCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getPendingCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -194,7 +194,7 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             transactionType: { $nin: ['Wire', 'Check'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getPendingCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -202,7 +202,7 @@ class PaymentUtil {
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getFailedAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -211,14 +211,14 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             transactionType: { $nin: ['Wire', 'Check'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getFailedCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getFailedCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -228,7 +228,7 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             transactionType: { $nin: ['Wire', 'Check'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async getFailedCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -236,7 +236,7 @@ class PaymentUtil {
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', select: ['_id'], populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
     }
     async searchAndFilterHomePayments(payments, req) {
         // Helper function to apply text search
@@ -316,7 +316,7 @@ class PaymentUtil {
             paymentReferenceBool: true,
             caseId: { $ne: null },
             isDeleted: false,
-        });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
     }
     async getAllPaymentReferenceDocuments(referenceId) {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -338,7 +338,7 @@ class PaymentUtil {
                 $gte: new Date(payment.dueDate),
                 $lt: nextDate,
             },
-        }, undefined, undefined, undefined, ['caseId']);
+        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
         return payments;
     }
     async addDaysBasedOnPeriod(date, timePeriod) {

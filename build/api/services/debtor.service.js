@@ -29,6 +29,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
 const index_1 = require("../../enums/index");
+const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
 class DebtorService {
     constructor() {
@@ -416,8 +417,8 @@ class DebtorService {
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
-        // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-        // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
         if (payment.authorized === 'Success') {
             return [false, 'Payment already authorized'];
         }
@@ -438,7 +439,7 @@ class DebtorService {
             amount = payment.amount;
         }
         if (!payment.paymentReference) {
-            // if (payment.commision) amount = payment.amount + payment.commision;
+            amount = payment.amount + legalFeeAmount + serviceFeeAmount;
             payments.push(payment);
         }
         let response;
@@ -446,7 +447,7 @@ class DebtorService {
         let responseNum = '';
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.authorizeCreditCard(amount + legalFeeAmount + legalFeeAmount, account.customerVaultId, account.platform);
+                response = await this.paymentService.authorizeCreditCard(amount, account.customerVaultId, account.platform);
                 responseNum = new url_1.URLSearchParams(response).get('response');
                 if (responseNum === '1')
                     break;
@@ -458,8 +459,8 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
-            // updateObjPayment['serviceFee'] = serviceFeeAmount;
-            // updateObjPayment['legalFee'] = legalFeeAmount;
+            updateObjPayment['serviceFee'] = serviceFeeAmount;
+            updateObjPayment['legalFee'] = legalFeeAmount;
             // updateObjPayment['status'] = 'Pending';
             result = true;
             await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
@@ -487,8 +488,6 @@ class DebtorService {
         if (payment.captured === 'Success') {
             return [false, 'Payment already captured'];
         }
-        // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-        // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
         let payments = [];
         let debtor = null;
         if (payment.caseId)
@@ -531,7 +530,7 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            // lawsuitUtil.updatePaymentLawsuit(payment);
+            lawsuit_util_1.default.updatePaymentLawsuit(payments);
             if (!payment.debtorTransId) {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
@@ -601,9 +600,21 @@ class DebtorService {
                 lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(newFiles?.lawsuitDocuments);
             }
             if (newFiles?.lawsuitDocuments.length) {
-                body.lawsuitDocuments = getDebtor?.lawsuitDocuments
+                body.lawsuitDocuments = getDebtor?.lawsuitDocuments.length
                     ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
                     : newFiles.lawsuitDocuments;
+                body.bankStatementDocuments = getDebtor?.bankStatementDocuments.length
+                    ? [
+                        ...getDebtor.bankStatementDocuments,
+                        ...newFiles.bankStatementDocuments,
+                    ]
+                    : newFiles.bankStatementDocuments;
+                body.mcaDocuments = getDebtor?.mcaDocuments.length
+                    ? [...getDebtor.mcaDocuments, ...newFiles.mcaDocuments]
+                    : newFiles.mcaDocuments;
+                body.otherDocuments = getDebtor?.otherDocuments.length
+                    ? [...getDebtor.otherDocuments, ...newFiles.otherDocuments]
+                    : newFiles.otherDocuments;
                 body.lawsuitFields = getDebtor?.lawsuitFields
                     ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
                     : [lawsuitExtractedFields.result];

@@ -451,8 +451,8 @@ class DebtorService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
-    // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-    // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     if (payment.authorized === 'Success') {
       return [false, 'Payment already authorized'];
     }
@@ -474,7 +474,7 @@ class DebtorService {
       amount = payment.amount;
     }
     if (!payment.paymentReference) {
-      // if (payment.commision) amount = payment.amount + payment.commision;
+      amount = payment.amount + legalFeeAmount + serviceFeeAmount;
       payments.push(payment);
     }
     let response: any;
@@ -483,7 +483,7 @@ class DebtorService {
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.authorizeCreditCard(
-          amount + legalFeeAmount + legalFeeAmount,
+          amount,
           account.customerVaultId,
           account.platform
         );
@@ -498,8 +498,8 @@ class DebtorService {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      // updateObjPayment['serviceFee'] = serviceFeeAmount;
-      // updateObjPayment['legalFee'] = legalFeeAmount;
+      updateObjPayment['serviceFee'] = serviceFeeAmount;
+      updateObjPayment['legalFee'] = legalFeeAmount;
       // updateObjPayment['status'] = 'Pending';
       result = true;
       await emailUtil.sendEmailOrSmsByEvent(
@@ -544,8 +544,6 @@ class DebtorService {
     if (payment.captured === 'Success') {
       return [false, 'Payment already captured'];
     }
-    // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-    // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     let payments: IPayment[] = [];
     let debtor = null;
     if (payment.caseId) debtor = payment.caseId.debtor;
@@ -597,7 +595,7 @@ class DebtorService {
       const transactionId = new URLSearchParams(response).get('transactionid');
       updateObjPayment['captured'] = 'Success';
       updateObjPayment['status'] = 'Pending';
-      // lawsuitUtil.updatePaymentLawsuit(payment);
+      lawsuitUtil.updatePaymentLawsuit(payments);
       if (!payment.debtorTransId) {
         updateObjPayment['debtorTransId'] = transactionId;
       }
@@ -702,9 +700,21 @@ class DebtorService {
         );
       }
       if (newFiles?.lawsuitDocuments.length) {
-        body.lawsuitDocuments = getDebtor?.lawsuitDocuments
+        body.lawsuitDocuments = getDebtor?.lawsuitDocuments.length
           ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
           : newFiles.lawsuitDocuments;
+        body.bankStatementDocuments = getDebtor?.bankStatementDocuments.length
+          ? [
+              ...getDebtor.bankStatementDocuments,
+              ...newFiles.bankStatementDocuments,
+            ]
+          : newFiles.bankStatementDocuments;
+        body.mcaDocuments = getDebtor?.mcaDocuments.length
+          ? [...getDebtor.mcaDocuments, ...newFiles.mcaDocuments]
+          : newFiles.mcaDocuments;
+        body.otherDocuments = getDebtor?.otherDocuments.length
+          ? [...getDebtor.otherDocuments, ...newFiles.otherDocuments]
+          : newFiles.otherDocuments;
         body.lawsuitFields = getDebtor?.lawsuitFields
           ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
           : [lawsuitExtractedFields.result];
