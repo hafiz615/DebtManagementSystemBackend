@@ -939,6 +939,7 @@ class PaymentService {
       type: 'auth',
       amount: amount,
     };
+    console.log(params);
 
     try {
       const response = await axiosInstance.get(url, {params});

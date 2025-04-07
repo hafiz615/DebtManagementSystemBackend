@@ -2,7 +2,6 @@ import cron from 'node-cron';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import {IPayment} from '../database/interfaces/payment.interface';
 import paymentUtil from '../utils/payment.util';
-import serviceFeeUtil from '../utils/serviceFee.util';
 import {SettingsRepository} from '../api/repository/setting/settings.repository';
 import {ISettings} from '../database/interfaces/settings.interface';
 import {URLSearchParams} from 'url';
@@ -19,9 +18,8 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import creditorUtil from '../utils/creditor.util';
 import debtorUtil from '../utils/debtor.util';
-import {ServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository';
-import {IFee} from '../database/interfaces/serviceFee.interface';
-import lawsuitUtil from '../utils/lawsuit.util';
+import {LawsuitRepository} from '../api/repository/lawsuit/lawsuit.repository';
+import {ILawsuit} from '../database/interfaces/lawsuit.interface';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -29,7 +27,7 @@ class CronJob {
   private settingsRepository: SettingsRepository;
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
-  private serviceFeeRepository: ServiceFeeRepository;
+  private lawsuitRepository: LawsuitRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
@@ -37,7 +35,7 @@ class CronJob {
     this.paymentService = new PaymentService();
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
-    this.serviceFeeRepository = new ServiceFeeRepository();
+    this.lawsuitRepository = new LawsuitRepository();
   }
   async testCron() {
     let dbconfig =
@@ -775,14 +773,12 @@ class CronJob {
   ) {
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
-      const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-      const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
       // const getCommission = await debtorUtil.getCommissionAmount(payment);
       // const sum = getCommission + payment.amount;
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
-            payment.amount + serviceFeeAmount + legalFeeAmount,
+            payment.amount,
             account.customerVaultId,
             account.platform
           );
@@ -793,9 +789,7 @@ class CronJob {
             cronId,
             settings,
             // getCommission,
-            account.platform,
-            serviceFeeAmount,
-            legalFeeAmount
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -836,21 +830,11 @@ class CronJob {
     for (const payment of payments) {
       const otherPayments: IPayment[] =
         await paymentUtil.getOtherPayments(payment);
-      const totalLegalFeeAmount =
-        await lawsuitUtil.getTotalLegalFee(otherPayments);
-      const totalServiceFeeAmount =
-        await lawsuitUtil.getTotalServiceFee(otherPayments);
       const totalAmount = otherPayments.reduce(
         (sum, obj) => sum + obj.amount,
         0
       );
-      const remainingAmount =
-        payment.amount -
-        totalAmount +
-        totalServiceFeeAmount +
-        totalLegalFeeAmount;
-
-      if (remainingAmount <= 0) {
+      if (payment.amount - totalAmount < 0) {
         emailUtil.sendEmailOrSmsByEvent(
           'failed_authorization',
           '',
@@ -920,9 +904,7 @@ class CronJob {
     cronId: string,
     settings: ISettings[],
     // commission: number,
-    platform: string,
-    serviceFee: number,
-    legalFee: number
+    platform: string
   ) {
     let result = false;
     const {retryInterval} = settings.length
@@ -945,8 +927,6 @@ class CronJob {
 
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['serviceFee'] = serviceFee;
-      updateObjPayment['legalFee'] = legalFee;
       // updateObjPayment['commission'] = commission;
       // updateObjPayment['status'] = 'Pending';
       result = true;
@@ -1014,10 +994,9 @@ class CronJob {
     updateObjPayment['authorizedDate'] = authorizedDate;
     if (responseNum === '1') {
       const transactionId = new URLSearchParams(response).get('transactionid');
-      lawsuitUtil.updateFee(payments);
+
       updateObjPayment['debtorTransId'] = transactionId;
       updateObjPayment['authorized'] = 'Success';
-      // updateObjPayment['serviceFee'] = serviceFee;
       // updateObjPayment['status'] = 'Pending';
       result = true;
       emailUtil.sendEmailOrSmsByEvent(
@@ -1089,8 +1068,6 @@ class CronJob {
   ) {
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
-      const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-      const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.captureCreditCard(
@@ -1113,7 +1090,7 @@ class CronJob {
         if (account.paymentType === 'ck') {
           const response = await this.paymentService.achCredit(
             account.customerVaultId,
-            payment.amount + serviceFeeAmount + legalFeeAmount,
+            payment.amount,
             account.platform
           );
           const result = await this.processCaptureResponse(
@@ -1123,9 +1100,7 @@ class CronJob {
             cronId,
             settings,
             'ck',
-            account.platform,
-            serviceFeeAmount,
-            legalFeeAmount
+            account.platform
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -1145,24 +1120,10 @@ class CronJob {
         await paymentUtil.getPaymentReferenceDocuments(
           payment.paymentReference
         );
-      const totalLegalFeeAmount =
-        await lawsuitUtil.getTotalLegalFee(otherPayments);
-      const totalServiceFeeAmount =
-        await lawsuitUtil.getTotalServiceFee(otherPayments);
       const totalAmount = otherPayments.reduce(
         (sum, obj) => sum + obj.amount,
         0
       );
-      const remainingAmount =
-        payment.amount -
-        totalAmount +
-        totalServiceFeeAmount +
-        totalLegalFeeAmount;
-
-      if (remainingAmount <= 0) {
-        emailUtil.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
-        return;
-      }
       const concatedPayments = otherPayments.concat(payment);
       const debtor = await this.debtorRepository.getById<IDebtor>(
         payment.debtorId
@@ -1221,9 +1182,7 @@ class CronJob {
     cronId: string,
     settings: ISettings[],
     type: string,
-    platform: string,
-    serviceFee?: number,
-    legalFee?: number
+    platform: string
     // commision?: number
   ) {
     let result = false;
@@ -1242,9 +1201,6 @@ class CronJob {
       if (type === 'ck') {
         updateObjPayment['authorized'] = 'Success';
         updateObjPayment['debtorTransId'] = transactionId;
-        updateObjPayment['serviceFee'] = serviceFee;
-        updateObjPayment['legalFee'] = legalFee;
-        lawsuitUtil.updatePaymentLawsuit(payment);
         // updateObjPayment['commission'] = commision;
       }
       result = true;
@@ -1310,8 +1266,6 @@ class CronJob {
       updateObjPayment['captured'] = 'Success';
       updateObjPayment['status'] = 'Pending';
       if (type === 'ck') {
-        lawsuitUtil.updateFee(payments);
-        lawsuitUtil.updatePaymentLawsuit(payments);
         updateObjPayment['authorized'] = 'Success';
         updateObjPayment['debtorTransId'] = transactionId;
       }

@@ -682,6 +682,7 @@ class PaymentService {
             type: 'auth',
             amount: amount,
         };
+        console.log(params);
         try {
             const response = await axiosInstanceInterceptor_1.default.get(url, { params });
             return response.data;
