@@ -599,15 +599,27 @@ class DebtorService {
             const newFiles = await this.updateDebtorIdExist(getDebtor, body);
             if (newFiles?.lawsuitDocuments.length) {
                 lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(newFiles?.lawsuitDocuments);
+                if (lawsuitExtractedFields?.result) {
+                    body.lawsuitFields = getDebtor?.lawsuitFields
+                        ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
+                        : [lawsuitExtractedFields.result];
+                }
             }
-            if (newFiles?.lawsuitDocuments.length) {
-                body.lawsuitDocuments = getDebtor?.lawsuitDocuments
-                    ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
-                    : newFiles.lawsuitDocuments;
-                body.lawsuitFields = getDebtor?.lawsuitFields
-                    ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
-                    : [lawsuitExtractedFields.result];
-            }
+            body.lawsuitDocuments = getDebtor?.lawsuitDocuments.length
+                ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
+                : newFiles.lawsuitDocuments;
+            body.bankStatementDocuments = getDebtor?.bankStatementDocuments.length
+                ? [
+                    ...getDebtor.bankStatementDocuments,
+                    ...newFiles.bankStatementDocuments,
+                ]
+                : newFiles.bankStatementDocuments;
+            body.mcaDocuments = getDebtor?.mcaDocuments.length
+                ? [...getDebtor.mcaDocuments, ...newFiles.mcaDocuments]
+                : newFiles.mcaDocuments;
+            body.otherDocuments = getDebtor?.otherDocuments.length
+                ? [...getDebtor.otherDocuments, ...newFiles.otherDocuments]
+                : newFiles.otherDocuments;
             body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, body);
         }
