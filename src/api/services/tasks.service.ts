@@ -97,6 +97,8 @@ class TasksService {
       taskCount: count.taskCount,
       notification: notification,
     });
+
+    console.log('I have emit task noti');
     emailUtil.sendEmailOrSmsByEvent(
       'case_task_added',
       caseId,

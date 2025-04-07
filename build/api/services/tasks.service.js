@@ -83,6 +83,7 @@ class TasksService {
             taskCount: count.taskCount,
             notification: notification,
         });
+        console.log('I have emit task noti');
         email_util_1.default.sendEmailOrSmsByEvent('case_task_added', caseId, null, reqTemp.id, String(task._id));
         return [true, task];
     }
