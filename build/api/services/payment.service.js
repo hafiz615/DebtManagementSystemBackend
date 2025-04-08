@@ -1085,6 +1085,17 @@ class PaymentService {
         case_util_1.default.createPayment(req.body);
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
+    async updatePaymentDate(req) {
+        let payment = await this.paymentRepository.getById(req.params.id);
+        if (!payment)
+            return [false, constants_util_1.default.notFoundMessage('payment')];
+        let updatedPayment = await this.paymentRepository.updateById(req.params.id, {
+            dueDate: req.body.date,
+        });
+        if (!updatedPayment)
+            return [false, constants_util_1.default.failureUpdateMessage('payment')];
+        return [true, []];
+    }
 }
 exports.default = PaymentService;
 //# sourceMappingURL=payment.service.js.map
