@@ -102,4 +102,11 @@ router.post(
   authorize.validateAuth,
   paymentController.addPaymentPlan
 );
+
+router.post(
+  '/updatePaymentDate/:id',
+  authorize.validateAuth,
+  paymentValidate.updatePaymentDate,
+  paymentController.updatePaymentDate
+);
 export default router;

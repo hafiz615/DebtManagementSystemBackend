@@ -93,6 +93,25 @@ class PaymentValidate {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  async updatePaymentDate(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      date: Joi.date().required().messages({
+        'date.base': 'Date must be a valid date.',
+        'any.required': 'Date is required.',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 
 export default new PaymentValidate();
