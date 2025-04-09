@@ -246,6 +246,6 @@ router.post(
   debtorController.addDebtorInvoice
 );
 
-router.post('/getToken/:id', debtorController.getToken);
+router.get('/getToken/:id', debtorController.getToken);
 
 export default router;
