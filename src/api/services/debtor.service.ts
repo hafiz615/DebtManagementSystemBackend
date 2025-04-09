@@ -46,6 +46,10 @@ import AttorneyUtil from '../../utils/attorney.util';
 import {IAttorney} from '../../database/interfaces/attorney.interface';
 import lawsuitUtil from '../../utils/lawsuit.util';
 import lawfirmUtil from '../../utils/lawfirm.util';
+import TokenService from './token.service';
+import {v4} from 'uuid';
+import dotenv from 'dotenv';
+dotenv.config();
 
 class DebtorService {
   private debtorRepository: DebtorRepository;
@@ -58,6 +62,7 @@ class DebtorService {
   private caseService: CaseService;
   private uploadUtil: UploadUtil;
   private syncPaymentMethodRepository: SyncPaymentMethodRepository;
+  private tokenService: TokenService;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -69,6 +74,7 @@ class DebtorService {
     this.caseService = new CaseService();
     this.uploadUtil = new UploadUtil();
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
+    this.tokenService = new TokenService();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -1826,6 +1832,26 @@ class DebtorService {
     );
     if (!response[0]) return response;
     return response;
+  }
+
+  async getToken(req: Request) {
+    const getDebtor = await this.debtorRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!getDebtor) {
+      return [false, constants.notFoundMessage('debtor')];
+    }
+    const token = await this.tokenService.createVerifyToken(
+      req.params.id,
+      process.env.verifyKey!,
+      '1m'
+    );
+    return [
+      true,
+      {
+        token: token,
+      },
+    ];
   }
 }
 

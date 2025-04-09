@@ -292,7 +292,7 @@ class UserService {
                 return [false, constants_util_1.default.failureRegisterMessage('User')];
             }
         }
-        const token = await this.tokenService.createVerifyToken(email);
+        const token = await this.tokenService.createVerifyToken(email, process.env.verifyKey, process.env.jwtExpire);
         req.body.verifyToken = token;
         req.body.isDeleted = false;
         req.body.updatedAt = common_util_1.default.getCurrentDate();
@@ -312,7 +312,7 @@ class UserService {
         if (!userExist)
             return [false, constants_util_1.default.Messages.INVALID];
         const uuid = (0, uuid_1.v4)();
-        const token = await this.tokenService.create(userExist._id, uuid);
+        const token = await this.tokenService.create(userExist._id, uuid, process.env.jwtExpire);
         await this.userRepository.updateById(userExist._id, {
             $push: { sessionIds: uuid },
             updatedAt: common_util_1.default.getCurrentDate(),
@@ -397,7 +397,7 @@ class UserService {
         if (user.isActive) {
             return [false, 'Could not send invitation link to active user'];
         }
-        const token = await this.tokenService.createVerifyToken(user.email);
+        const token = await this.tokenService.createVerifyToken(user.email, process.env.verifyKey, process.env.jwtExpire);
         const invitationLink = await user_util_1.default.getInvitationLink(token, 'update');
         await email_util_1.default.sendInvitationLink(user, invitationLink);
         await this.userRepository.updateById(user._id, {
@@ -414,7 +414,7 @@ class UserService {
         if (!user.isActive) {
             return [false, 'Inactive users cannot do forgot password'];
         }
-        const token = await this.tokenService.createVerifyToken(user.email);
+        const token = await this.tokenService.createVerifyToken(user.email, process.env.verifyKey, process.env.jwtExpire);
         const updateUser = await this.userRepository.updateById(user._id, {
             verifyToken: token,
             updatedAt: common_util_1.default.getCurrentDate(),
@@ -450,7 +450,7 @@ class UserService {
         user.isActive = true;
         user.verifyToken = '';
         const uuid = (0, uuid_1.v4)();
-        const token = await this.tokenService.create(findUser._id, uuid);
+        const token = await this.tokenService.create(findUser._id, uuid, process.env.jwtExpire);
         user.sessionIds = [uuid];
         const updatedUser = await this.userRepository.updateByOne({ email: req.body.email }, { ...user, updatedAt: common_util_1.default.getCurrentDate() });
         if (!updatedUser) {
@@ -583,7 +583,7 @@ class UserService {
             return [false, constants_util_1.default.failureRegisterMessage('User')];
         }
         const uuid = (0, uuid_1.v4)();
-        const token = await this.tokenService.create(user._id, uuid);
+        const token = await this.tokenService.create(user._id, uuid, process.env.jwtExpire);
         await this.userRepository.updateById(user._id, {
             $push: { sessionIds: uuid },
             updatedAt: common_util_1.default.getCurrentDate(),
