@@ -73,4 +73,5 @@ export interface ICase extends Document {
   affiliateLink: string;
   affiliateEmail: string;
   lawsuitExist: boolean;
+  lawfirmId: mongoose.Schema.Types.ObjectId;
 }
