@@ -31,6 +31,9 @@ const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
 const index_1 = require("../../enums/index");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
+const token_service_1 = __importDefault(require("./token.service"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -155,6 +158,7 @@ class DebtorService {
         this.caseService = new case_service_1.default();
         this.uploadUtil = new upload_util_1.default();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
+        this.tokenService = new token_service_1.default();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -1362,6 +1366,19 @@ class DebtorService {
         if (!response[0])
             return response;
         return response;
+    }
+    async getToken(req) {
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const token = await this.tokenService.createVerifyToken(req.params.id, process.env.verifyKey, '1m');
+        return [
+            true,
+            {
+                token: token,
+            },
+        ];
     }
 }
 exports.default = DebtorService;
