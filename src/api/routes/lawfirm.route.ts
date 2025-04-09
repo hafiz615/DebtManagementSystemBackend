@@ -17,4 +17,17 @@ router.put(
   lawfirmController.updateLawfirm
 );
 
+router.get(
+  '/getLawfirms',
+  authorize.validateAuth,
+  lawfirmController.getLawfirm
+);
+
+router.post(
+  '/assignLawfirmToCase/:id',
+  authorize.validateAuth,
+  lawfirmValidate.assignLawfirmToCase,
+  lawfirmController.assignLawfirmToCase
+);
+
 export default router;
