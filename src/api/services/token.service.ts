@@ -12,7 +12,8 @@ class TokenService {
   }
   create = async (
     userId: mongoose.Types.ObjectId,
-    uuid: string
+    uuid: string,
+    expiresIn: string
   ): Promise<string> => {
     try {
       const accessToken = this.generateJwtToken(
@@ -20,16 +21,21 @@ class TokenService {
           userId: userId,
           sessionId: uuid,
         },
-        process.env.jwtKey!
+        process.env.jwtKey!,
+        expiresIn
       );
       return accessToken;
     } catch (err) {
       throw new Error('Something went wrong while creating token' + err);
     }
   };
-  private generateJwtToken(payload: {}, jwtKey: string): string {
+  private generateJwtToken(
+    payload: {},
+    jwtKey: string,
+    expiresIn: string
+  ): string {
     const token = sign(payload, jwtKey, {
-      expiresIn: process.env.jwtExpire,
+      expiresIn: expiresIn,
     });
     return token;
   }
@@ -42,13 +48,14 @@ class TokenService {
     return user ? user : null;
   }
 
-  createVerifyToken = async (email: string) => {
+  createVerifyToken = async (email: string, key: string, expiresIn: string) => {
     try {
       const accessToken = this.generateJwtToken(
         {
           email: email,
         },
-        process.env.verifyKey!
+        key,
+        expiresIn
       );
       return accessToken;
     } catch (err) {

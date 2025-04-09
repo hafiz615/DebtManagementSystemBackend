@@ -9,23 +9,23 @@ const user_repository_1 = require("../repository/user/user.repository");
 dotenv_1.default.config();
 class TokenService {
     constructor() {
-        this.create = async (userId, uuid) => {
+        this.create = async (userId, uuid, expiresIn) => {
             try {
                 const accessToken = this.generateJwtToken({
                     userId: userId,
                     sessionId: uuid,
-                }, process.env.jwtKey);
+                }, process.env.jwtKey, expiresIn);
                 return accessToken;
             }
             catch (err) {
                 throw new Error('Something went wrong while creating token' + err);
             }
         };
-        this.createVerifyToken = async (email) => {
+        this.createVerifyToken = async (email, key, expiresIn) => {
             try {
                 const accessToken = this.generateJwtToken({
                     email: email,
-                }, process.env.verifyKey);
+                }, key, expiresIn);
                 return accessToken;
             }
             catch (err) {
@@ -34,9 +34,9 @@ class TokenService {
         };
         this.userRepository = new user_repository_1.UserRepository();
     }
-    generateJwtToken(payload, jwtKey) {
+    generateJwtToken(payload, jwtKey, expiresIn) {
         const token = (0, jsonwebtoken_1.sign)(payload, jwtKey, {
-            expiresIn: process.env.jwtExpire,
+            expiresIn: expiresIn,
         });
         return token;
     }
