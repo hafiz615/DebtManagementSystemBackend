@@ -246,4 +246,10 @@ router.post(
   debtorController.addDebtorInvoice
 );
 
+router.post(
+  '/pauseDebtorPayments/:id',
+  authorize.validateAuth,
+  debtorController.pauseDebtorPayments
+);
+
 export default router;

@@ -1817,6 +1817,47 @@ class DebtorService {
     if (!response[0]) return response;
     return response;
   }
+
+  async pauseDebtorPayments(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const timePeriod = await commonUtil.getTimePeriod(
+      req.body.timePeriod,
+      req.body.endDate
+    );
+
+    if (timePeriod) {
+      const dueDate =
+        req.body.timePeriod === 'Custom'
+          ? timePeriod
+          : timePeriod * req.body.frequency;
+
+      const payments =
+        await this.paymentRepository.getAllWithoutPagination<IPayment>({
+          debtorId: req.params.id,
+          isDeleted: {$ne: true},
+        });
+
+      if (!payments) return [false, constants.notFoundMessage('Payments')];
+
+      console.log('payments before update:', payments);
+
+      for (const payment of payments) {
+        const paymentDueDate = new Date(payment.dueDate);
+        const updatedDueDate = new Date(
+          paymentDueDate.getTime() + dueDate * 24 * 60 * 60 * 1000
+        );
+
+        await this.paymentRepository.updateById(payment._id, {
+          dueDate: updatedDueDate.toISOString(),
+        });
+      }
+    }
+    return [true, []];
+  }
 }
 
 export default DebtorService;

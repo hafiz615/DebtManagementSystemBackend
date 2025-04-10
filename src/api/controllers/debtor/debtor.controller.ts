@@ -958,6 +958,29 @@ class DebtorController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
+
+  pauseDebtorPayments = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.pauseDebtorPayments(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: 'Debtor Payments Paused Successfully',
+        })
+      );
+    } catch (error) {
+      console.log('error', error.message);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
 }
 
 export default new DebtorController();
