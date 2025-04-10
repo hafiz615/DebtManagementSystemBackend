@@ -12,19 +12,24 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class AttorneyService {
     constructor() {
         this.getLawsuitDetails = async (req) => {
-            const getCase = await this.caseRepository.getById(req.params.id, 'debtor creditor');
-            if (!getCase)
+            const caseData = await this.caseRepository.getById(req.params.id, 'debtor creditor', undefined, ['lawfirmId']);
+            if (!caseData)
                 return [false, constants_util_1.default.notFoundMessage('Case')];
-            const lawSuitBalanceSummary = await this.lawsuitRepository.getOne({
-                debtorId: getCase.debtor,
-                creditorId: getCase.creditor,
+            const lawsuit = await this.lawsuitRepository.getOne({
+                debtorId: caseData.debtor,
+                creditorId: caseData.creditor,
             }, undefined, undefined, ['attorneyId', 'lawfirmId']);
-            if (!lawSuitBalanceSummary)
-                return [true, null];
-            const { attorneyId, lawfirmId, ...lawsuitData } = lawSuitBalanceSummary;
+            if (!lawsuit) {
+                return [true, caseData.lawfirmId ? { lawfirm: caseData.lawfirmId } : null];
+            }
+            const { attorneyId, lawfirmId, ...rest } = lawsuit;
             return [
                 true,
-                { lawSuit: lawsuitData, attorney: attorneyId, lawfirm: lawfirmId },
+                {
+                    lawSuit: rest,
+                    attorney: attorneyId,
+                    lawfirm: lawfirmId,
+                },
             ];
         };
         this.updateAttorney = async (req) => {

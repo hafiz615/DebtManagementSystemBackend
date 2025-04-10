@@ -13,6 +13,7 @@ const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const attorney_repository_1 = require("../repository/attorney/attorney.repository");
 const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
+const case_repository_1 = require("../repository/case/case.repository");
 dotenv_1.default.config();
 class LawfirmService {
     constructor() {
@@ -57,10 +58,29 @@ class LawfirmService {
             }
             return [true, []];
         };
+        this.getLawfirm = async (req) => {
+            const lawfirms = await this.lawfirmRepository.getAllWithoutPagination({
+                isDeleted: { $ne: true },
+            });
+            return lawfirms
+                ? [true, lawfirms]
+                : [true, constants_util_1.default.notFoundMessage('Lawfirms')];
+        };
+        this.assignLawfirmToCase = async (req) => {
+            const reqTemp = req;
+            const caseTemp = await this.caseRepository.getById(reqTemp.params.id);
+            if (!caseTemp)
+                return [false, constants_util_1.default.notFoundMessage('Case')];
+            const updatedCase = await this.caseRepository.updateById(reqTemp.params.id, { lawfirmId: reqTemp.body.lawfirmId });
+            return updatedCase
+                ? [true, []]
+                : [false, constants_util_1.default.failureAddMessage('Lawfirm')];
+        };
         this.lawfirmRepository = new lawfirm_repository_1.LawfirmRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.attorneyRepository = new attorney_repository_1.AttorneyRepository();
         this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
     }
 }
 exports.default = LawfirmService;

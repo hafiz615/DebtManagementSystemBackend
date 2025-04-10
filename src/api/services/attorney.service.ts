@@ -20,31 +20,39 @@ class AttorneyService {
     this.paymentRepository = new PaymentRepository();
     this.attorneyRepository = new AttorneyRepository();
   }
-
   getLawsuitDetails = async (req: Request) => {
-    const getCase: ICase = await this.caseRepository.getById<ICase>(
+    const caseData: ICase = await this.caseRepository.getById<ICase>(
       req.params.id,
-      'debtor creditor'
+      'debtor creditor',
+      undefined,
+      ['lawfirmId']
     );
-    if (!getCase) return [false, constants.notFoundMessage('Case')];
 
-    const lawSuitBalanceSummary = await this.lawsuitRepository.getOne<ILawsuit>(
+    if (!caseData) return [false, constants.notFoundMessage('Case')];
+
+    const lawsuit = await this.lawsuitRepository.getOne<ILawsuit>(
       {
-        debtorId: getCase.debtor,
-        creditorId: getCase.creditor,
+        debtorId: caseData.debtor,
+        creditorId: caseData.creditor,
       },
       undefined,
       undefined,
       ['attorneyId', 'lawfirmId']
     );
 
-    if (!lawSuitBalanceSummary) return [true, null];
+    if (!lawsuit) {
+      return [true, caseData.lawfirmId ? {lawfirm: caseData.lawfirmId} : null];
+    }
 
-    const {attorneyId, lawfirmId, ...lawsuitData} = lawSuitBalanceSummary;
+    const {attorneyId, lawfirmId, ...rest} = lawsuit;
 
     return [
       true,
-      {lawSuit: lawsuitData, attorney: attorneyId, lawfirm: lawfirmId},
+      {
+        lawSuit: rest,
+        attorney: attorneyId,
+        lawfirm: lawfirmId,
+      },
     ];
   };
 

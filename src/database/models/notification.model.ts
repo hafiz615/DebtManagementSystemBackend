@@ -13,7 +13,8 @@ const notification: Schema = new Schema({
     type: String,
   },
   inboxId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'inbox',
   },
   debtorId: {
     type: String,

@@ -156,10 +156,10 @@ class SmsService {
       notification: newNotification,
     });
 
-    const twiml = new MessagingResponse();
-    twiml.message('Message received successfully');
+    // const twiml = new MessagingResponse();
+    // twiml.message('Message received successfully');
 
-    return [true, twiml.toString()];
+    return [true, null];
   };
 
   saveCaseDetailNotification = async (req: Request) => {

@@ -939,6 +939,7 @@ class PaymentService {
       type: 'auth',
       amount: amount,
     };
+    console.log(params);
 
     try {
       const response = await axiosInstance.get(url, {params});
@@ -1458,6 +1459,24 @@ class PaymentService {
     caseUtil.createPayment(req.body);
 
     return [true, constants.successAddMessage('Payment plan')];
+  }
+
+  async updatePaymentDate(req: Request) {
+    let payment = await this.paymentRepository.getById<IPayment>(req.params.id);
+
+    if (!payment) return [false, constants.notFoundMessage('payment')];
+
+    let updatedPayment = await this.paymentRepository.updateById<IPayment>(
+      req.params.id,
+      {
+        dueDate: req.body.date,
+      }
+    );
+
+    if (!updatedPayment)
+      return [false, constants.failureUpdateMessage('payment')];
+
+    return [true, []];
   }
 }
 

@@ -13,6 +13,8 @@ import {AttorneyRepository} from '../repository/attorney/attorney.repository';
 import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
 import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 import lawsuitUtil from '../../utils/lawsuit.util';
+import {CaseRepository} from '../repository/case/case.repository';
+import {ICase} from '../../database/interfaces/case.interface';
 
 dotenv.config();
 
@@ -21,12 +23,14 @@ class LawfirmService {
   private debtorRepository: DebtorRepository;
   private attorneyRepository: AttorneyRepository;
   private lawsuitRepository: LawsuitRepository;
+  private caseRepository: CaseRepository;
 
   constructor() {
     this.lawfirmRepository = new LawfirmRepository();
     this.debtorRepository = new DebtorRepository();
     this.attorneyRepository = new AttorneyRepository();
     this.lawsuitRepository = new LawsuitRepository();
+    this.caseRepository = new CaseRepository();
   }
 
   createLawfirm = async (req: Request) => {
@@ -82,6 +86,34 @@ class LawfirmService {
       return [false, constants.notFoundMessage('Lawfirm')];
     }
     return [true, []];
+  };
+
+  getLawfirm = async (req: Request) => {
+    const lawfirms =
+      await this.lawfirmRepository.getAllWithoutPagination<ILawfirm>({
+        isDeleted: {$ne: true},
+      });
+
+    return lawfirms
+      ? [true, lawfirms]
+      : [true, constants.notFoundMessage('Lawfirms')];
+  };
+
+  assignLawfirmToCase = async (req: Request) => {
+    const reqTemp: any = req;
+
+    const caseTemp = await this.caseRepository.getById(reqTemp.params.id);
+
+    if (!caseTemp) return [false, constants.notFoundMessage('Case')];
+
+    const updatedCase = await this.caseRepository.updateById<ICase>(
+      reqTemp.params.id,
+      {lawfirmId: reqTemp.body.lawfirmId}
+    );
+
+    return updatedCase
+      ? [true, []]
+      : [false, constants.failureAddMessage('Lawfirm')];
   };
 }
 

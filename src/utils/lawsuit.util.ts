@@ -199,11 +199,13 @@ class LawsuitUtil {
     for (const payment of payments) {
       if (payment.caseId) {
         const fee = await this.getLegalFee(payment.caseId);
-        this.updateLawsuitFee(
-          fee,
-          payment.caseId.debtor,
-          payment.caseId.creditor
-        );
+        if (fee) {
+          this.updateLawsuitFee(
+            fee,
+            payment.caseId.debtor,
+            payment.caseId.creditor
+          );
+        }
       }
     }
   }
@@ -242,38 +244,37 @@ class LawsuitUtil {
     return totalServiceFee;
   }
 
-  async getLegalFee(caseId: any) {
-    const caseData = await this.caseRepository.getById<ICase>(caseId);
-    if (caseData.legalFee !== 0) {
-      return caseData.legalFee;
-    }
-
-    const lawsuitData: any = await this.lawsuitRepository.getOne<ILawsuit>(
-      {
-        debtorId: caseData.debtor,
-        creditorId: caseData.creditor,
-      },
-      undefined,
-      undefined,
-      ['lawfirmId']
-    );
-
-    if (lawsuitData.lawfirmId.lawfirmFee !== 0) {
-      return lawsuitData.lawfirmId.lawfirmFee;
-    }
-
-    let legalFee = null;
+  async getLegalFee(caseData: any) {
+    // const caseData = await this.caseRepository.getById<ICase>(caseId._id);
     if (caseData.lawsuitExist) {
-      legalFee = await this.serviceFeeRepository.getOne<IFee>({
+      if (caseData.legalFee > 0) {
+        return caseData.legalFee;
+      }
+
+      const lawsuitData: any = await this.lawsuitRepository.getOne<ILawsuit>(
+        {
+          debtorId: caseData.debtor._id,
+          creditorId: caseData.creditor,
+        },
+        undefined,
+        undefined,
+        ['lawfirmId']
+      );
+
+      if (lawsuitData?.lawfirmId?.lawfirmFee !== 0) {
+        return lawsuitData.lawfirmId.lawfirmFee;
+      }
+
+      let legalFee = await this.serviceFeeRepository.getOne<IFee>({
         type: 'legalFee',
       });
+      return legalFee ? legalFee.fee : 0;
     }
-
-    return legalFee ? legalFee.fee : 0;
+    return 0;
   }
 
-  async getServiceFee(caseId: any) {
-    const caseData = await this.caseRepository.getById<ICase>(caseId);
+  async getServiceFee(caseData: any) {
+    // const caseData = await this.caseRepository.getById<ICase>(caseId._id);
     if (caseData.serviceFee !== 0) {
       return caseData.serviceFee;
     }

@@ -37,7 +37,7 @@ router.get('/getStatementsSummaryWithPf/:id', authorize_middleware_1.default.val
 router.get('/getDailyCashFlows/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDailyCashFlows);
 router.put('/updateDebtorBulk/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorBulk, debtor_controller_1.default.updateDebtorBulk);
 router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
-router.post('/add-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
+router.post('/add-debtor-account/:id', authorize_middleware_1.default.validateDebtorToken, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
 router.put('/update-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorAccount, debtor_controller_1.default.updateDebtorAccount);
 router.delete('/delete-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.deleteDebtorAccount, debtor_controller_1.default.deleteDebtorAccount);
 router.get('/getDebtorSummery', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorSummery);
@@ -63,5 +63,6 @@ router.get('/getClientSyncEmail/:id', debtor_controller_1.default.getClientSyncE
 router.post('/clientSync/:id', debtor_validate_2.default.syncDebtorEmail, debtor_controller_1.default.clientSync);
 router.get('/client-financial-summary/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.clientFinancialSummary);
 router.post('/create-invoice', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorInvoice, debtor_controller_1.default.addDebtorInvoice);
+router.get('/getToken/:id', debtor_controller_1.default.getToken);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

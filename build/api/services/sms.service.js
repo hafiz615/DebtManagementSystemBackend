@@ -88,9 +88,9 @@ class SmsService {
                 smsCount: updatedCount?.smsCount,
                 notification: newNotification,
             });
-            const twiml = new MessagingResponse_1.default();
-            twiml.message('Message received successfully');
-            return [true, twiml.toString()];
+            // const twiml = new MessagingResponse();
+            // twiml.message('Message received successfully');
+            return [true, null];
         };
         this.saveCaseDetailNotification = async (req) => {
             const reqTemp = req;

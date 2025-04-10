@@ -10,5 +10,7 @@ const lawfirm_validate_1 = __importDefault(require("../../middleware/validators/
 const router = (0, express_1.Router)();
 router.post('/create/lawfirm/:id', authorize_middleware_1.default.validateAuth, lawfirm_controller_1.default.createLawfirm);
 router.put('/updateLawfirm/:id', authorize_middleware_1.default.validateAuth, lawfirm_validate_1.default.updateLawfirm, lawfirm_controller_1.default.updateLawfirm);
+router.get('/getLawfirms', authorize_middleware_1.default.validateAuth, lawfirm_controller_1.default.getLawfirm);
+router.post('/assignLawfirmToCase/:id', authorize_middleware_1.default.validateAuth, lawfirm_validate_1.default.assignLawfirmToCase, lawfirm_controller_1.default.assignLawfirmToCase);
 exports.default = router;
 //# sourceMappingURL=lawfirm.route.js.map

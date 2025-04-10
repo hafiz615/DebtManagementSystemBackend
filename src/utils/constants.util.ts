@@ -77,4 +77,6 @@ export default {
     `payment is already captured for this transaction`,
   callMadesuccessMessage: (name: string): string =>
     `${name} made successfully!`,
+  paymentPausedSuccessfully: (name: string): string =>
+    `${name} payment paused successfully`,
 };

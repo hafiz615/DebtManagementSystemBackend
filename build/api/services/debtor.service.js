@@ -31,6 +31,9 @@ const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
 const index_1 = require("../../enums/index");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
+const token_service_1 = __importDefault(require("./token.service"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -155,6 +158,7 @@ class DebtorService {
         this.caseService = new case_service_1.default();
         this.uploadUtil = new upload_util_1.default();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
+        this.tokenService = new token_service_1.default();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -413,7 +417,7 @@ class DebtorService {
     }
     async retryAuth(paymentId) {
         let result = false;
-        let payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId' });
+        let payment = await this.paymentRepository.getById(paymentId, undefined, undefined, { path: 'caseId', populate: 'debtor' });
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
@@ -426,7 +430,7 @@ class DebtorService {
         let debtor = null;
         let amount = 0;
         if (payment.caseId)
-            debtor = payment.caseId.debtor;
+            debtor = payment.caseId?.debtor;
         if (!payment.caseId) {
             debtor = await this.debtorRepository.getById(payment.debtorId);
         }
@@ -439,8 +443,7 @@ class DebtorService {
             amount = payment.amount;
         }
         if (!payment.paymentReference) {
-            if (payment.commision)
-                amount = payment.amount + payment.commision;
+            amount = payment.amount + legalFeeAmount + serviceFeeAmount;
             payments.push(payment);
         }
         let response;
@@ -489,8 +492,6 @@ class DebtorService {
         if (payment.captured === 'Success') {
             return [false, 'Payment already captured'];
         }
-        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
-        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
         let payments = [];
         let debtor = null;
         if (payment.caseId)
@@ -533,7 +534,7 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            lawsuit_util_1.default.updatePaymentLawsuit(payment);
+            lawsuit_util_1.default.updatePaymentLawsuit(payments);
             if (!payment.debtorTransId) {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
@@ -601,15 +602,27 @@ class DebtorService {
             const newFiles = await this.updateDebtorIdExist(getDebtor, body);
             if (newFiles?.lawsuitDocuments.length) {
                 lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(newFiles?.lawsuitDocuments);
+                if (lawsuitExtractedFields?.result) {
+                    body.lawsuitFields = getDebtor?.lawsuitFields
+                        ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
+                        : [lawsuitExtractedFields.result];
+                }
             }
-            if (newFiles?.lawsuitDocuments.length) {
-                body.lawsuitDocuments = getDebtor?.lawsuitDocuments
-                    ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
-                    : newFiles.lawsuitDocuments;
-                body.lawsuitFields = getDebtor?.lawsuitFields
-                    ? [...getDebtor.lawsuitFields, lawsuitExtractedFields.result]
-                    : [lawsuitExtractedFields.result];
-            }
+            body.lawsuitDocuments = getDebtor?.lawsuitDocuments.length
+                ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
+                : newFiles.lawsuitDocuments;
+            body.bankStatementDocuments = getDebtor?.bankStatementDocuments.length
+                ? [
+                    ...getDebtor.bankStatementDocuments,
+                    ...newFiles.bankStatementDocuments,
+                ]
+                : newFiles.bankStatementDocuments;
+            body.mcaDocuments = getDebtor?.mcaDocuments.length
+                ? [...getDebtor.mcaDocuments, ...newFiles.mcaDocuments]
+                : newFiles.mcaDocuments;
+            body.otherDocuments = getDebtor?.otherDocuments.length
+                ? [...getDebtor.otherDocuments, ...newFiles.otherDocuments]
+                : newFiles.otherDocuments;
             body.updatedAt = common_util_1.default.getCurrentDate();
             debtor = await this.debtorRepository.updateById(getDebtor._id, body);
         }
@@ -1353,6 +1366,19 @@ class DebtorService {
         if (!response[0])
             return response;
         return response;
+    }
+    async getToken(req) {
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const token = await this.tokenService.createVerifyToken(req.params.id, process.env.verifyKey, '1m');
+        return [
+            true,
+            {
+                token: token,
+            },
+        ];
     }
 }
 exports.default = DebtorService;

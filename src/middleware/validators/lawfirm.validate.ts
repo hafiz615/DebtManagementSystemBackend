@@ -63,6 +63,28 @@ class LawfirmValidate {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  async assignLawfirmToCase(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      lawfirmId: Joi.string().required().length(24).hex().messages({
+        'string.base': 'Lawfirm Id must be a string.',
+        'any.required': 'Lawfirm Id is a required field.',
+        'string.empty': 'Lawfirm Id cannot be empty',
+        'string.length': 'Lawfirm Id must be exactly 24 characters long.',
+        'string.hex': 'Lawfirm Id must be a valid hexadecimal string.',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 
 export default new LawfirmValidate();

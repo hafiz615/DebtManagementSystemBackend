@@ -2,7 +2,7 @@ import commonUtil from '../../utils/common.util';
 
 export class Notification {
   caseId = '';
-  inboxId = '';
+  inboxId = null;
   debtorId = '';
   userId = '';
   type = '';

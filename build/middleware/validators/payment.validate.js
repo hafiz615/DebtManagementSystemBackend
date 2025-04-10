@@ -81,6 +81,23 @@ class PaymentValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async updatePaymentDate(req, res, next) {
+        const schema = joi_1.default.object({
+            date: joi_1.default.date().required().messages({
+                'date.base': 'Date must be a valid date.',
+                'any.required': 'Date is required.',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new PaymentValidate();
 //# sourceMappingURL=payment.validate.js.map
