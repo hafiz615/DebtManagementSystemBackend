@@ -1478,6 +1478,11 @@ class PaymentService {
 
     return [true, []];
   }
+
+  async checkInvoice(req: Request) {
+    console.log(req.body, 'check invoice');
+    return [true, []];
+  }
 }
 
 export default PaymentService;

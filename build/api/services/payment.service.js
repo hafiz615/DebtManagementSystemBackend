@@ -1096,6 +1096,10 @@ class PaymentService {
             return [false, constants_util_1.default.failureUpdateMessage('payment')];
         return [true, []];
     }
+    async checkInvoice(req) {
+        console.log(req.body, 'check invoice');
+        return [true, []];
+    }
 }
 exports.default = PaymentService;
 //# sourceMappingURL=payment.service.js.map
