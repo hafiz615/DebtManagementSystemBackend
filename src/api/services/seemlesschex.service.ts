@@ -61,7 +61,7 @@ class SeemlesschexService {
       {
         authorized: authorized,
         debtorTransId: response.check.check_id,
-        transactionType: transactionType,
+        paymentMode: transactionType,
         manualCommission: commission,
         dueDate: transactionDate,
         paymentGateway: 'Seemlesschex',
@@ -144,7 +144,7 @@ class SeemlesschexService {
         captured: 'Pending',
         status: 'Upcoming',
         debtorTransId: '',
-        transactionType: '',
+        paymentMode: '',
         manualCommission: 0,
         paymentGateway: '',
         updatedAt: commonUtil.getCurrentDate(),
@@ -161,7 +161,7 @@ class SeemlesschexService {
     let payments: IPayment[] =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
         {
-          transactionType: 'Check',
+          paymentMode: 'Check',
           debtorId: req.params.id,
         },
         undefined,

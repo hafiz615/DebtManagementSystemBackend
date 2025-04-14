@@ -1035,7 +1035,7 @@ class DebtorService {
             status: 'Pending',
             dueDate: req.body.transactionDate,
             debtorTransId: req.body.referenceId,
-            transactionType: req.body.transactionType,
+            paymentMode: req.body.transactionType,
             paymentGateway: 'Manual',
             manualCommission: req.body.commission,
             updatedAt: common_util_1.default.getCurrentDate(),
@@ -1072,7 +1072,7 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         let manualPayments = await this.paymentRepository.getAllWithoutPagination({
-            transactionType: 'Wire',
+            paymentMode: 'Wire',
             debtorId: req.params.id,
         }, undefined, undefined, { _id: -1 });
         if (!manualPayments.length) {
@@ -1104,7 +1104,7 @@ class DebtorService {
             captured: 'Pending',
             status: 'Upcoming',
             debtorTransId: '',
-            transactionType: '',
+            paymentMode: '',
             manualCommission: 0,
             paymentGateway: '',
             retriesAuth: 0,
@@ -1115,8 +1115,8 @@ class DebtorService {
             return [false, 'Could not revert payments'];
         }
         if (result.modifiedCount &&
-            (manualPayment.transactionType === 'Wire' ||
-                manualPayment.transactionType === 'Check')) {
+            (manualPayment.paymentMode === 'Wire' ||
+                manualPayment.paymentMode === 'Check')) {
             await this.debtorRepository.updateById(req.params.id, {
                 $inc: { commissionPaid: -req.body.commission },
             });

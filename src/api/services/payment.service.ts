@@ -877,7 +877,7 @@ class PaymentService {
         caseId: null,
         isDeleted: false,
         status: {$ne: 'Upcoming'},
-        transactionType: {$ne: 'Link'},
+        paymentMode: {$ne: 'Link'},
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway',
       undefined,
@@ -891,7 +891,7 @@ class PaymentService {
         caseId: null,
         isDeleted: false,
         status: 'Upcoming',
-        transactionType: {$ne: 'Link'},
+        paymentMode: {$ne: 'Link'},
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway',
       undefined,
@@ -1271,7 +1271,7 @@ class PaymentService {
         debtorId: req.params.id,
         $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
         caseId: {$eq: null},
-        transactionType: {$ne: 'Link'},
+        paymentMode: {$ne: 'Link'},
       },
       {
         isDeleted: true,
@@ -1480,7 +1480,99 @@ class PaymentService {
   }
 
   async checkInvoice(req: Request) {
-    console.log(req.body, 'check invoice');
+    if (req.body.event_type === 'transaction.sale.success') {
+      const payment = await this.paymentRepository.getOne<IPayment>({
+        debtorTransId: req.body.event_body.transaction_id,
+      });
+      if (!payment)
+        return [false, constants.notFoundMessage('payment invoice')];
+      await this.paymentRepository.updateByOne<IPayment>(
+        {
+          debtorTransId: req.body.event_body.transaction_id,
+          transactionType: req.body.event_body.transaction_type,
+        },
+        {status: 'Success'}
+      );
+      let results = null;
+      let caseIds = null;
+      const debtor = await this.debtorRepository.getOne<IDebtor>({
+        _id: payment.debtorId,
+      });
+
+      const creditorNames = await caseUtil.getCreditorNames(
+        debtor,
+        debtor.extractedFields
+      );
+
+      const caseTemp = await googleDriveUtil.mapCreditorsCases(
+        debtor.extractedFields,
+        creditorNames
+      );
+
+      for (const bin of caseTemp) {
+        bin['platform'] = true;
+        bin.creditor.platform = true;
+      }
+
+      results = await caseUtil.createCreditorsCases(
+        {data: caseTemp},
+        '',
+        '',
+        payment.debtorId
+      );
+      const caseList = Array.isArray(results[1]) ? results[1] : [];
+      console.log(caseList, 'caseList');
+      caseIds = caseList.map(result => ({
+        caseId: result._id,
+        caseCode: result.caseCode,
+        debtorId: result.debtor,
+        creditorId: result.creditor,
+      }));
+      console.log(caseIds, 'caseIds');
+      let caseIdTemp = caseList.map(result => result._id);
+      console.log(caseIdTemp, 'caseIdTemp');
+      let caseData = await caseUtil.getCaseCreditorPartialData(caseIdTemp);
+      console.log(caseData);
+
+      return [
+        true,
+        {
+          casesCreated: caseData,
+          invoiceData: {
+            invoiceId: payment.debtorTransId,
+            transactionType: req.body.event_body.transaction_type,
+            paymentGateway: payment.paymentGateway,
+            status: 'Success',
+          },
+          debtorId: payment.debtorId,
+        },
+      ];
+    }
+
+    if (req.body.event_type === 'transaction.sale.failed') {
+      const payment = await this.paymentRepository.getOne<IPayment>({
+        debtorTransId: req.body.event_body.transaction_id,
+      });
+      if (!payment)
+        return [false, constants.notFoundMessage('payment invoice')];
+      await this.paymentRepository.updateByOne<IPayment>(
+        {debtorTransId: req.body.event_body.transaction_id},
+        {status: 'Failed'}
+      );
+      return [
+        true,
+        {
+          casesCreated: [],
+          invoiceData: {
+            invoiceId: payment.debtorTransId,
+            transactionType: payment.transactionType,
+            paymentGateway: payment.paymentGateway,
+            status: 'Failed',
+          },
+          debtorId: payment.debtorId,
+        },
+      ];
+    }
     return [true, []];
   }
 }

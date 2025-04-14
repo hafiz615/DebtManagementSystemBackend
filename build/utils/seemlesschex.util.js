@@ -269,7 +269,7 @@ class SeemlesschexUtil {
             captured: 'Pending',
             status: 'Upcoming',
             debtorTransId: '',
-            transactionType: '',
+            paymentMode: '',
             paymentGateway: '',
             manualCommission: 0,
             updatedAt: common_util_1.default.getCurrentDate(),

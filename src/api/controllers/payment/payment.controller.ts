@@ -552,7 +552,7 @@ class PaymentController {
       return res.status(constants.CODE.OK).send(
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
-          data: [],
+          data: response[1],
           message: 'Invoice status checked successfully',
         })
       );
