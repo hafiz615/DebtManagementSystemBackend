@@ -460,7 +460,7 @@ class CronJob {
               $gte: startOfDay,
               $lte: endOfDay,
             },
-            transactionType: {$nin: ['Wire', 'Check']},
+            paymentMode: {$nin: ['Wire', 'Check', 'Invoice', 'Cash']},
           });
 
         for (const payment of payments) {

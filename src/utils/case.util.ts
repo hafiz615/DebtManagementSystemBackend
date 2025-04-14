@@ -2655,12 +2655,12 @@ class CaseUtil {
       });
       if (!getCreditor) {
         creditor = await this.createCreditor(body.creditor as ICreditor);
-        await paynoteUtil.createCustomer(
-          creditor._id,
-          creditor.basicInformation.fullName,
-          creditor.basicInformation.email,
-          new CreditorRepository()
-        );
+        // await paynoteUtil.createCustomer(
+        //   creditor._id,
+        //   creditor.basicInformation.fullName,
+        //   creditor.basicInformation.email,
+        //   new CreditorRepository()
+        // );
       }
       if (getCreditor) {
         body.updatedAt = commonUtil.getCurrentDate();
@@ -2744,16 +2744,16 @@ class CaseUtil {
             caseCreated._id
           );
         }
-        if (getCreditorsEmail.length && createdCases.length) {
-          emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
-            createdCases,
-            debtor,
-            getCreditorsEmail
-          );
-        }
-        if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-          await this.createPayment(caseCreated);
-        }
+        // if (getCreditorsEmail.length && createdCases.length) {
+        //   emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
+        //     createdCases,
+        //     debtor,
+        //     getCreditorsEmail
+        //   );
+        // }
+        // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+        //   await this.createPayment(caseCreated);
+        // }
       }
     }
     await debtorUtil.updateDebtorTotalCommission(debtor);
@@ -3140,6 +3140,19 @@ class CaseUtil {
     const regex = /(bank|statement)/i; // Match either "bank" or "statement" (case-insensitive)
     const match = str.match(regex);
     return match ? true : false;
+  }
+
+  async getCaseCreditorPartialData(caseIds: string[]) {
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {
+        _id: caseIds,
+      },
+      'caseCode totalDebt paidAmount remaining',
+      undefined,
+      undefined,
+      {path: 'creditor', select: ['basicInformation', 'businessInformation']}
+    );
+    return cases;
   }
 }
 export default new CaseUtil();

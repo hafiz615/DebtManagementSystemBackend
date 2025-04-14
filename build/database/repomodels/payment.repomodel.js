@@ -44,6 +44,7 @@ class Payment {
         this.serviceFee = 0;
         this.legalFee = 0;
         this.creditorName = '';
+        this.paymentMode = '';
     }
 }
 exports.Payment = Payment;

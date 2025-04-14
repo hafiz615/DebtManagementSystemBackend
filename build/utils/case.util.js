@@ -30,9 +30,7 @@ const form_data_1 = __importDefault(require("form-data"));
 const strategy_repository_1 = require("../api/repository/strategy/strategy.repository");
 const caseHistory_repository_1 = require("../api/repository/caseHistory/caseHistory.repository");
 const justification_repository_1 = require("../api/repository/justification/justification.repository");
-const paynote_util_1 = __importDefault(require("./paynote.util"));
 const creditor_util_1 = __importDefault(require("./creditor.util"));
-const email_util_1 = __importDefault(require("./email.util"));
 const debtor_util_1 = __importDefault(require("./debtor.util"));
 const twilio_1 = __importDefault(require("twilio"));
 const lawsuit_util_1 = __importDefault(require("./lawsuit.util"));
@@ -2234,7 +2232,12 @@ class CaseUtil {
             });
             if (!getCreditor) {
                 creditor = await this.createCreditor(body.creditor);
-                await paynote_util_1.default.createCustomer(creditor._id, creditor.basicInformation.fullName, creditor.basicInformation.email, new creditor_repository_1.CreditorRepository());
+                // await paynoteUtil.createCustomer(
+                //   creditor._id,
+                //   creditor.basicInformation.fullName,
+                //   creditor.basicInformation.email,
+                //   new CreditorRepository()
+                // );
             }
             if (getCreditor) {
                 body.updatedAt = common_util_1.default.getCurrentDate();
@@ -2306,12 +2309,16 @@ class CaseUtil {
                         'Created By': name,
                     }, caseCreated._id);
                 }
-                if (getCreditorsEmail.length && createdCases.length) {
-                    email_util_1.default.sendEmailIfDebtorGetsAdditionalDebt(createdCases, debtor, getCreditorsEmail);
-                }
-                if (caseCreated?.intervals && caseCreated?.intervals?.length) {
-                    await this.createPayment(caseCreated);
-                }
+                // if (getCreditorsEmail.length && createdCases.length) {
+                //   emailUtil.sendEmailIfDebtorGetsAdditionalDebt(
+                //     createdCases,
+                //     debtor,
+                //     getCreditorsEmail
+                //   );
+                // }
+                // if (caseCreated?.intervals && caseCreated?.intervals?.length) {
+                //   await this.createPayment(caseCreated);
+                // }
             }
         }
         await debtor_util_1.default.updateDebtorTotalCommission(debtor);
@@ -2628,6 +2635,12 @@ class CaseUtil {
         const regex = /(bank|statement)/i; // Match either "bank" or "statement" (case-insensitive)
         const match = str.match(regex);
         return match ? true : false;
+    }
+    async getCaseCreditorPartialData(caseIds) {
+        const cases = await this.caseRepository.getAllWithoutPagination({
+            _id: caseIds,
+        }, 'caseCode totalDebt paidAmount remaining', undefined, undefined, { path: 'creditor', select: ['basicInformation', 'businessInformation'] });
+        return cases;
     }
 }
 exports.default = new CaseUtil();

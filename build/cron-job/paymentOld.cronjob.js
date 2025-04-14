@@ -262,7 +262,7 @@ class CronJob {
                     $gte: startOfDay,
                     $lte: endOfDay,
                 },
-                transactionType: { $nin: ['Wire', 'Check'] },
+                paymentMode: { $nin: ['Wire', 'Check', 'Invoice', 'Cash'] },
             });
             for (const payment of payments) {
                 email_util_1.default.sendEmailOrSmsByEvent('upcoming_payment', '', payment._id, '');
