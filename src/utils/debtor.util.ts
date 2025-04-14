@@ -778,7 +778,7 @@ class DebtorUtil {
     const doc = await this.paymentRepository.getOne<IPayment>({
       debtorId,
       caseId: {$eq: null},
-      transactionType: 'Link',
+      paymentMode: 'Link',
       isDeleted: {$ne: true},
       status: {$ne: 'Success'},
     });
@@ -808,6 +808,7 @@ class DebtorUtil {
     await paymentUtil.createPaymentDoc(
       amount,
       response.checkout_link.checkout_token,
+      'Seamlesschex',
       debtorId,
       debtorName,
       response.checkout_link.link
@@ -832,7 +833,7 @@ class DebtorUtil {
     const doc = await this.paymentRepository.getOne<IPayment>({
       debtorId,
       caseId: {$eq: null},
-      transactionType: 'Invoice',
+      paymentMode: 'Invoice',
       isDeleted: {$ne: true},
       status: {$ne: 'Success'},
     });
@@ -868,6 +869,7 @@ class DebtorUtil {
     await paymentUtil.createPaymentDoc(
       amount,
       customerInvoiceResponse[1],
+      platform,
       debtorId,
       debtorName
     );

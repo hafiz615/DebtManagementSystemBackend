@@ -180,6 +180,10 @@ const caseModel: Schema = new Schema({
   lawsuitExist: {
     type: Boolean,
   },
+  lawfirmId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Lawfirms',
+  },
 });
 
 caseModel.pre('save', async function (next) {

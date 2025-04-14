@@ -60,4 +60,5 @@ export class Case {
   affiliateLink = '';
   affiliateEmail = '';
   lawsuitExist = false;
+  lawfirmId = null;
 }

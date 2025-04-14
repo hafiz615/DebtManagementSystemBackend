@@ -38,4 +38,5 @@ export class Payment {
   serviceFee = 0;
   legalFee = 0;
   creditorName = '';
+  paymentMode = '';
 }

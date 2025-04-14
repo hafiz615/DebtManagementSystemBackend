@@ -588,7 +588,7 @@ class DebtorUtil {
         const doc = await this.paymentRepository.getOne({
             debtorId,
             caseId: { $eq: null },
-            transactionType: 'Link',
+            paymentMode: 'Link',
             isDeleted: { $ne: true },
             status: { $ne: 'Success' },
         });
@@ -614,7 +614,7 @@ class DebtorUtil {
         const response = await seemlesschex_util_1.default.createPaymentLink(amount);
         if (response?.error)
             return [false, response.message];
-        await payment_util_1.default.createPaymentDoc(amount, response.checkout_link.checkout_token, debtorId, debtorName, response.checkout_link.link);
+        await payment_util_1.default.createPaymentDoc(amount, response.checkout_link.checkout_token, 'Seamlesschex', debtorId, debtorName, response.checkout_link.link);
         return [
             true,
             {
@@ -628,7 +628,7 @@ class DebtorUtil {
         const doc = await this.paymentRepository.getOne({
             debtorId,
             caseId: { $eq: null },
-            transactionType: 'Invoice',
+            paymentMode: 'Invoice',
             isDeleted: { $ne: true },
             status: { $ne: 'Success' },
         });
@@ -654,7 +654,7 @@ class DebtorUtil {
         const customerInvoiceResponse = await easyPayDirectSeamless_1.default.addInvoice(platform, amount, email);
         if (!customerInvoiceResponse[0])
             return customerInvoiceResponse;
-        await payment_util_1.default.createPaymentDoc(amount, customerInvoiceResponse[1], debtorId, debtorName);
+        await payment_util_1.default.createPaymentDoc(amount, customerInvoiceResponse[1], platform, debtorId, debtorName);
         return [
             true,
             {

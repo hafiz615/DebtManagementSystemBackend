@@ -128,7 +128,7 @@ router.post(
 
 router.post(
   '/add-debtor-account/:id',
-  authorize.validateAuth,
+  authorize.validateDebtorToken,
   debtor.addDebtorAccount,
   debtorController.addDebtorAccount
 );
@@ -245,5 +245,7 @@ router.post(
   debtor.addDebtorInvoice,
   debtorController.addDebtorInvoice
 );
+
+router.get('/getToken/:id', debtorController.getToken);
 
 export default router;

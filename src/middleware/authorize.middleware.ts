@@ -104,6 +104,46 @@ class Authorize {
     return validity;
   }
 
+  validateDebtorToken(req: Request | any, res: Response, next: NextFunction) {
+    if (!req.headers.authorization) {
+      return res
+        .status(constants.CODE.FORBIDDEN)
+        .send(
+          responseHelper.get4xxResponse(
+            constants.Messages.AUTHENTICATION_REQUIRED
+          )
+        );
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    if (token) {
+      // verifies secret and checks exp
+      return jwt.verify(
+        token,
+        process.env.verifyKey!,
+        async (err: any, decoded: any) => {
+          if (err || typeof decoded === 'string') {
+            return res
+              .status(constants.CODE.UNAUTHORIZED)
+              .send(
+                responseHelper.get4xxResponse(
+                  constants.Messages.AUTHENTICATION_REQUIRED
+                )
+              );
+          }
+          return next();
+        }
+      );
+    } else {
+      return res
+        .status(constants.CODE.UNAUTHORIZED)
+        .send(
+          responseHelper.get4xxResponse(
+            constants.Messages.AUTHENTICATION_REQUIRED
+          )
+        );
+    }
+  }
+
   validateRole = (req: Request | any, res: Response, next: NextFunction) => {
     if (req.role !== 'Admin') {
       return res

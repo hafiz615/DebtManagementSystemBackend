@@ -4,6 +4,7 @@ export class NotificationCount {
   count = 0;
   smsCount = 0;
   emailCount = 0;
+  taskCount = 0;
   userId = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

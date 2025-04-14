@@ -37,4 +37,5 @@ export interface IPayment extends Document {
   authorizedDate: string;
   serviceFee: number;
   legalFee: number;
+  paymentMode: string;
 }

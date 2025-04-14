@@ -29,7 +29,11 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const syncPaymentMethod_repository_1 = require("../repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const easypay_util_1 = __importDefault(require("../../utils/easypay.util"));
 const index_1 = require("../../enums/index");
+const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const lawfirm_util_1 = __importDefault(require("../../utils/lawfirm.util"));
+const token_service_1 = __importDefault(require("./token.service"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 class DebtorService {
     constructor() {
         this.getStatementsSummary = async (req) => {
@@ -154,6 +158,7 @@ class DebtorService {
         this.caseService = new case_service_1.default();
         this.uploadUtil = new upload_util_1.default();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
+        this.tokenService = new token_service_1.default();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -416,8 +421,8 @@ class DebtorService {
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
-        // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-        // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+        const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+        const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
         if (payment.authorized === 'Success') {
             return [false, 'Payment already authorized'];
         }
@@ -438,7 +443,7 @@ class DebtorService {
             amount = payment.amount;
         }
         if (!payment.paymentReference) {
-            // if (payment.commision) amount = payment.amount + payment.commision;
+            amount = payment.amount + legalFeeAmount + serviceFeeAmount;
             payments.push(payment);
         }
         let response;
@@ -458,8 +463,8 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
-            // updateObjPayment['serviceFee'] = serviceFeeAmount;
-            // updateObjPayment['legalFee'] = legalFeeAmount;
+            updateObjPayment['serviceFee'] = serviceFeeAmount;
+            updateObjPayment['legalFee'] = legalFeeAmount;
             // updateObjPayment['status'] = 'Pending';
             result = true;
             await email_util_1.default.sendEmailOrSmsByEvent('successful_authorization', '', paymentId, '');
@@ -487,8 +492,6 @@ class DebtorService {
         if (payment.captured === 'Success') {
             return [false, 'Payment already captured'];
         }
-        // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-        // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
         let payments = [];
         let debtor = null;
         if (payment.caseId)
@@ -531,7 +534,7 @@ class DebtorService {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
-            // lawsuitUtil.updatePaymentLawsuit(payment);
+            lawsuit_util_1.default.updatePaymentLawsuit(payments);
             if (!payment.debtorTransId) {
                 updateObjPayment['debtorTransId'] = transactionId;
             }
@@ -1032,7 +1035,7 @@ class DebtorService {
             status: 'Pending',
             dueDate: req.body.transactionDate,
             debtorTransId: req.body.referenceId,
-            transactionType: req.body.transactionType,
+            paymentMode: req.body.transactionType,
             paymentGateway: 'Manual',
             manualCommission: req.body.commission,
             updatedAt: common_util_1.default.getCurrentDate(),
@@ -1069,7 +1072,7 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         let manualPayments = await this.paymentRepository.getAllWithoutPagination({
-            transactionType: 'Wire',
+            paymentMode: 'Wire',
             debtorId: req.params.id,
         }, undefined, undefined, { _id: -1 });
         if (!manualPayments.length) {
@@ -1101,7 +1104,7 @@ class DebtorService {
             captured: 'Pending',
             status: 'Upcoming',
             debtorTransId: '',
-            transactionType: '',
+            paymentMode: '',
             manualCommission: 0,
             paymentGateway: '',
             retriesAuth: 0,
@@ -1112,8 +1115,8 @@ class DebtorService {
             return [false, 'Could not revert payments'];
         }
         if (result.modifiedCount &&
-            (manualPayment.transactionType === 'Wire' ||
-                manualPayment.transactionType === 'Check')) {
+            (manualPayment.paymentMode === 'Wire' ||
+                manualPayment.paymentMode === 'Check')) {
             await this.debtorRepository.updateById(req.params.id, {
                 $inc: { commissionPaid: -req.body.commission },
             });
@@ -1363,6 +1366,19 @@ class DebtorService {
         if (!response[0])
             return response;
         return response;
+    }
+    async getToken(req) {
+        const getDebtor = await this.debtorRepository.getById(req.params.id);
+        if (!getDebtor) {
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        }
+        const token = await this.tokenService.createVerifyToken(req.params.id, process.env.verifyKey, '1m');
+        return [
+            true,
+            {
+                token: token,
+            },
+        ];
     }
 }
 exports.default = DebtorService;

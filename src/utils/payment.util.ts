@@ -217,12 +217,12 @@ class PaymentUtil {
         authorized: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -236,7 +236,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -247,12 +247,12 @@ class PaymentUtil {
         captured: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -267,7 +267,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -278,12 +278,12 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -297,7 +297,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -309,12 +309,12 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -329,7 +329,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', select: ['_id'], populate: 'debtor'}]
+      [{path: 'caseId', populate: 'debtor'}]
     );
   }
 
@@ -416,12 +416,18 @@ class PaymentUtil {
   }
 
   async getPaymentReferenceDocuments(referenceId: string) {
-    return await this.paymentRepository.getAllWithoutPagination<IPayment>({
-      paymentReference: referenceId,
-      paymentReferenceBool: true,
-      caseId: {$ne: null},
-      isDeleted: false,
-    });
+    return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+      {
+        paymentReference: referenceId,
+        paymentReferenceBool: true,
+        caseId: {$ne: null},
+        isDeleted: false,
+      },
+      undefined,
+      undefined,
+      undefined,
+      {path: 'caseId', populate: [{path: 'debtor'}]}
+    );
   }
 
   async getAllPaymentReferenceDocuments(referenceId: string) {
@@ -450,7 +456,7 @@ class PaymentUtil {
           debtorId: debtorId,
           caseId: {$ne: null},
           authorized: {$ne: 'Success'},
-          transactionType: {$nin: ['Wire', 'Check']},
+          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
           isDeleted: false,
           dueDate: {
             $gte: new Date(payment.dueDate),
@@ -460,7 +466,7 @@ class PaymentUtil {
         undefined,
         undefined,
         undefined,
-        ['caseId']
+        {path: 'caseId', populate: [{path: 'debtor'}]}
       );
     return payments;
   }
@@ -490,6 +496,7 @@ class PaymentUtil {
     amount: number,
     token: string,
     debtorId: string,
+    paymentGateway: string,
     debtorName?: string,
     link?: string
   ) {
@@ -500,7 +507,8 @@ class PaymentUtil {
     payment.status = 'Pending';
     payment.debtorId = debtorId;
     if (debtorName) payment.debtorName = debtorName;
-    payment.transactionType = link ? 'Link' : 'Invoice';
+    payment.paymentMode = link ? 'Link' : 'Invoice';
+    payment.paymentGateway = paymentGateway;
 
     const hello = await this.paymentRepository.create<IPayment>(payment as any);
     console.log('hello', hello);

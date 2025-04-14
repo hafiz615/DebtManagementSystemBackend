@@ -134,6 +134,9 @@ const PaymentModel = new mongoose_1.Schema({
     transactionType: {
         type: String,
     },
+    paymentMode: {
+        type: String,
+    },
     paymentGateway: {
         type: String,
     },

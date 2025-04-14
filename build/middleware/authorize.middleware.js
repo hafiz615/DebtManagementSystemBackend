@@ -127,6 +127,30 @@ class Authorize {
         });
         return validity;
     }
+    validateDebtorToken(req, res, next) {
+        if (!req.headers.authorization) {
+            return res
+                .status(constants_util_1.default.CODE.FORBIDDEN)
+                .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_REQUIRED));
+        }
+        const token = req.headers.authorization.split(' ')[1];
+        if (token) {
+            // verifies secret and checks exp
+            return jwt.verify(token, process.env.verifyKey, async (err, decoded) => {
+                if (err || typeof decoded === 'string') {
+                    return res
+                        .status(constants_util_1.default.CODE.UNAUTHORIZED)
+                        .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_REQUIRED));
+                }
+                return next();
+            });
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.UNAUTHORIZED)
+                .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.AUTHENTICATION_REQUIRED));
+        }
+    }
 }
 exports.default = new Authorize();
 //# sourceMappingURL=authorize.middleware.js.map

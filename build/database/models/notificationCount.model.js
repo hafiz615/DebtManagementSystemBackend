@@ -42,6 +42,9 @@ const notificationCount = new mongoose_1.Schema({
     emailCount: {
         type: Number,
     },
+    taskCount: {
+        type: Number,
+    },
     userId: {
         type: String,
     },
