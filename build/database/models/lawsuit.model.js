@@ -100,6 +100,7 @@ const lawsuitModel = new mongoose_1.Schema({
         ],
     },
     isExempt: Boolean,
+    isDeleted: Boolean,
     createdAt: {
         type: Date,
     },

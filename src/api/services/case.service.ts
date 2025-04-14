@@ -1517,6 +1517,13 @@ class CaseService {
         ) || null;
 
       if (lawsuitFields) {
+        if (findCase.dummyLawsuitExist) {
+          await lawsuitUtil.deleteLawsuit(
+            findCase.debtor._id,
+            findCase.creditor._id
+          );
+          req.body.dummyLawsuitExist = false;
+        }
         const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
           lawsuitFields,
           reqTemp.id

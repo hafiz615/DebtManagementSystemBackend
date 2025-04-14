@@ -184,6 +184,9 @@ const caseModel: Schema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Lawfirms',
   },
+  dummyLawsuitExist: {
+    type: Boolean,
+  },
 });
 
 caseModel.pre('save', async function (next) {
