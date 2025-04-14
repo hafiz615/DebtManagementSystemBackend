@@ -13,6 +13,7 @@ const mime_types_1 = __importDefault(require("mime-types"));
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const attorney_repository_1 = require("../api/repository/attorney/attorney.repository");
 const lawfirm_repository_1 = require("../api/repository/lawfirm/lawfirm.repository");
+const mongoose_1 = __importDefault(require("mongoose"));
 dotenv_1.default.config();
 class CommonUtil {
     constructor() {
@@ -175,6 +176,9 @@ class CommonUtil {
     }
     getMimeType(fileName) {
         return mime_types_1.default.lookup(fileName) || 'application/octet-stream';
+    }
+    isMongoId(data) {
+        return mongoose_1.default.Types.ObjectId.isValid(data);
     }
 }
 exports.default = new CommonUtil();

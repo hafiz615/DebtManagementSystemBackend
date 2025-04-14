@@ -2503,10 +2503,12 @@ class CaseUtil {
         });
     }
     async addInHistory(history, id) {
-        const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
-            $push: { caseHistory: { $each: [history], $position: 0 } },
-            updatedAt: common_util_1.default.getCurrentDate(),
-        });
+        if (id) {
+            const res = await this.caseHistoryRepository.upsert({ caseId: id }, {
+                $push: { caseHistory: { $each: [history], $position: 0 } },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+        }
     }
     async getJustificationModels() {
         const justification = await this.justificationRepository.getOne({});

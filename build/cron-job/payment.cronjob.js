@@ -661,6 +661,7 @@ class CronJob {
         return failedAuthorized;
     }
     async processAuthorized(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
             const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
@@ -707,6 +708,7 @@ class CronJob {
         }
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const otherPayments = retryPlus
                 ? await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference)
@@ -879,6 +881,7 @@ class CronJob {
         await this.processCapture(failedCaptured, cronId, true, settings);
     }
     async processCapture(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
             const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
@@ -906,6 +909,7 @@ class CronJob {
         }
     }
     async processCommissionCapture(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const otherPayments = await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference);
             // const totalLegalFeeAmount =

@@ -900,6 +900,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
       const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
@@ -962,6 +963,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const otherPayments: IPayment[] = retryPlus
         ? await paymentUtil.getPaymentReferenceDocuments(
@@ -1221,6 +1223,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const accounts = payment.caseId.debtor.accounts;
       const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
@@ -1276,6 +1279,7 @@ class CronJob {
     retryPlus: boolean,
     settings: ISettings[]
   ) {
+    let retryOriginalValue = retryPlus;
     for (const payment of payments) {
       const otherPayments: IPayment[] =
         await paymentUtil.getPaymentReferenceDocuments(

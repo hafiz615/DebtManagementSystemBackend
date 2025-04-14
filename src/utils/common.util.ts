@@ -12,6 +12,7 @@ import {ICreditor} from '../database/interfaces/creditor.interface';
 import {IAttorney} from '../database/interfaces/attorney.interface';
 import {LawfirmRepository} from '../api/repository/lawfirm/lawfirm.repository';
 import {ILawfirm} from '../database/interfaces/lawfirm.interface';
+import mongoose from 'mongoose';
 dotnev.config();
 class CommonUtil {
   private creditorRepository: CreditorRepository;
@@ -195,6 +196,10 @@ class CommonUtil {
 
   getMimeType(fileName: string) {
     return mime.lookup(fileName) || 'application/octet-stream';
+  }
+
+  isMongoId(data: string) {
+    return mongoose.Types.ObjectId.isValid(data);
   }
 }
 export default new CommonUtil();
