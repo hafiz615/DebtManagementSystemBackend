@@ -1057,7 +1057,6 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('Case')];
         }
         let lawsuit = await this.lawsuitRepository.getOne({
-            attorneyId: req.params.id,
             debtorId: findCase.debtor,
             creditorId: findCase.creditor._id,
         });

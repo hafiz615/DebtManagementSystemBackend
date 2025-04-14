@@ -1427,7 +1427,6 @@ class PaymentService {
     }
 
     let lawsuit = await this.lawsuitRepository.getOne<ILawsuit>({
-      attorneyId: req.params.id,
       debtorId: findCase.debtor,
       creditorId: findCase.creditor._id,
     });

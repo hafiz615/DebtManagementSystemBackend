@@ -73,6 +73,7 @@ const lawsuitModel: Schema = new Schema({
     ],
   },
   isExempt: Boolean,
+  isDeleted: Boolean,
   createdAt: {
     type: Date,
   },

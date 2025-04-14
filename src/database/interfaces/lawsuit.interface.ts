@@ -21,6 +21,7 @@ export interface ILawsuit extends Document {
   paymentsProceed: boolean;
   intervals: Array<IInterval>;
   isExempt: boolean;
+  isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
