@@ -762,7 +762,7 @@ class DebtorService {
       req.params.id,
       undefined,
       undefined,
-      [{path: 'debtor'}]
+      ['debtor', 'creditor']
     );
     if (!caseTemp) {
       return [false, constants.notFoundMessage('case')];
