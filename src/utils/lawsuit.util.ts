@@ -298,5 +298,18 @@ class LawsuitUtil {
       }
     );
   }
+
+  async cancelPlan(debtorId: string, creditorId: string) {
+    await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: debtorId,
+        creditorId: creditorId,
+      },
+      {
+        intervals: [],
+        isExempt: false,
+      }
+    );
+  }
 }
 export default new LawsuitUtil();
