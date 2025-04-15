@@ -638,6 +638,7 @@ class DebtorService {
         return [true, { debtor, creditorNames }];
     }
     async addDocumentsToDebtor(req) {
+        let reqTemp = req;
         const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, [{ path: 'debtor' }]);
         if (!caseTemp) {
             return [false, constants_util_1.default.notFoundMessage('case')];
@@ -663,16 +664,38 @@ class DebtorService {
         if (!updatedDebtor) {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
         }
-        this.caseRepository.updateById(req.params.id, {
-            settlementRange: false,
-            updatedAt: common_util_1.default.getCurrentDate(),
-        });
-        await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
+        let lawfirmCancelPlan = req.query.lawfirmCancelPlan;
+        if (lawfirmCancelPlan === 'true') {
+            await lawsuit_util_1.default.cancelPlan(caseTemp.debtor._id, caseTemp.creditor._id);
+        }
+        if (!caseTemp.lawsuitExist && lawfirmCancelPlan === 'true') {
+            const lawsuitFields = updatedDebtor.lawsuitFields?.find(lawsuit => lawsuit.plaintiff_company ===
+                caseTemp.creditor.businessInformation.companyName &&
+                lawsuit.defendant_company ===
+                    caseTemp.debtor.businessInformation.companyName) || null;
+            if (lawsuitFields) {
+                if (caseTemp.dummyLawsuitExist) {
+                    await lawsuit_util_1.default.deleteLawsuit(caseTemp.debtor._id, caseTemp.creditor._id);
+                    req.body.dummyLawsuitExist = false;
+                }
+                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
+                const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, caseTemp);
+                if (lawfirmTemp)
+                    req.body.lawsuitExist = true;
+            }
+        }
+        if (newFiles.bankStatementDocuments.length) {
+            this.caseRepository.updateById(req.params.id, {
+                settlementRange: false,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            await moneyThumb_util_1.default.run(updatedDebtor, await debtor_util_1.default.normalizeCompanyName(updatedDebtor.businessInformation.companyName));
+        }
         const statements = caseTemp.debtor?.totalStatements;
         if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
             debtor_util_1.default.percentageChangeEmail(updatedDebtor.businessInformation.companyName, String(updatedDebtor._id), statements ? statements : 0, caseTemp.debtor?.basicInformation?.fullName, req.params.id);
         }
-        return [true, updatedDebtor];
+        return [true, []];
     }
     async getExtractedFields(req) {
         const caseTemp = await this.caseRepository.getById(req.params.id);

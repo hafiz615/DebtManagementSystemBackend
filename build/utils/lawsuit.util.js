@@ -224,6 +224,15 @@ class LawsuitUtil {
             isDeleted: true,
         });
     }
+    async cancelPlan(debtorId, creditorId) {
+        await this.lawsuitRepository.updateByOne({
+            debtorId: debtorId,
+            creditorId: creditorId,
+        }, {
+            intervals: [],
+            isExempt: false,
+        });
+    }
 }
 exports.default = new LawsuitUtil();
 //# sourceMappingURL=lawsuit.util.js.map
