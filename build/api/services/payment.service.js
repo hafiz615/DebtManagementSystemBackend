@@ -647,7 +647,7 @@ class PaymentService {
             caseId: null,
             isDeleted: false,
             status: { $ne: 'Upcoming' },
-            transactionType: { $ne: 'Link' },
+            paymentMode: { $ne: 'Link' },
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway', undefined, { createdAt: -1 });
     }
     async getUpcomingCommissionPayments(page, limit) {
@@ -655,7 +655,7 @@ class PaymentService {
             caseId: null,
             isDeleted: false,
             status: 'Upcoming',
-            transactionType: { $ne: 'Link' },
+            paymentMode: { $ne: 'Link' },
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status transactionType paymentGateway', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
     }
     async getUpcomingCommissionPaymentsCount() {
@@ -959,7 +959,7 @@ class PaymentService {
             debtorId: req.params.id,
             $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
             caseId: { $eq: null },
-            transactionType: { $ne: 'Link' },
+            paymentMode: { $ne: 'Link' },
         }, {
             isDeleted: true,
         });
@@ -1057,7 +1057,6 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('Case')];
         }
         let lawsuit = await this.lawsuitRepository.getOne({
-            attorneyId: req.params.id,
             debtorId: findCase.debtor,
             creditorId: findCase.creditor._id,
         });
@@ -1094,6 +1093,79 @@ class PaymentService {
         });
         if (!updatedPayment)
             return [false, constants_util_1.default.failureUpdateMessage('payment')];
+        return [true, []];
+    }
+    async checkInvoice(req) {
+        if (req.body.event_type === 'transaction.sale.success') {
+            const payment = await this.paymentRepository.getOne({
+                debtorTransId: req.body.event_body.transaction_id,
+            });
+            if (!payment)
+                return [false, constants_util_1.default.notFoundMessage('payment invoice')];
+            await this.paymentRepository.updateByOne({
+                debtorTransId: req.body.event_body.transaction_id,
+                transactionType: req.body.event_body.transaction_type,
+            }, { status: 'Success' });
+            let results = null;
+            let caseIds = null;
+            const debtor = await this.debtorRepository.getOne({
+                _id: payment.debtorId,
+            });
+            const creditorNames = await case_util_1.default.getCreditorNames(debtor, debtor.extractedFields);
+            const caseTemp = await googleDrive_util_1.default.mapCreditorsCases(debtor.extractedFields, creditorNames);
+            for (const bin of caseTemp) {
+                bin['platform'] = true;
+                bin.creditor.platform = true;
+            }
+            results = await case_util_1.default.createCreditorsCases({ data: caseTemp }, '', '', payment.debtorId);
+            const caseList = Array.isArray(results[1]) ? results[1] : [];
+            console.log(caseList, 'caseList');
+            caseIds = caseList.map(result => ({
+                caseId: result._id,
+                caseCode: result.caseCode,
+                debtorId: result.debtor,
+                creditorId: result.creditor,
+            }));
+            console.log(caseIds, 'caseIds');
+            let caseIdTemp = caseList.map(result => result._id);
+            console.log(caseIdTemp, 'caseIdTemp');
+            let caseData = await case_util_1.default.getCaseCreditorPartialData(caseIdTemp);
+            console.log(caseData);
+            return [
+                true,
+                {
+                    casesCreated: caseData,
+                    invoiceData: {
+                        invoiceId: payment.debtorTransId,
+                        transactionType: req.body.event_body.transaction_type,
+                        paymentGateway: payment.paymentGateway,
+                        status: 'Success',
+                    },
+                    debtorId: payment.debtorId,
+                },
+            ];
+        }
+        if (req.body.event_type === 'transaction.sale.failed') {
+            const payment = await this.paymentRepository.getOne({
+                debtorTransId: req.body.event_body.transaction_id,
+            });
+            if (!payment)
+                return [false, constants_util_1.default.notFoundMessage('payment invoice')];
+            await this.paymentRepository.updateByOne({ debtorTransId: req.body.event_body.transaction_id }, { status: 'Failed' });
+            return [
+                true,
+                {
+                    casesCreated: [],
+                    invoiceData: {
+                        invoiceId: payment.debtorTransId,
+                        transactionType: payment.transactionType,
+                        paymentGateway: payment.paymentGateway,
+                        status: 'Failed',
+                    },
+                    debtorId: payment.debtorId,
+                },
+            ];
+        }
         return [true, []];
     }
 }

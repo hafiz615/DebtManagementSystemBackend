@@ -757,11 +757,12 @@ class DebtorService {
   }
 
   async addDocumentsToDebtor(req: Request) {
+    let reqTemp: any = req;
     const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
-      [{path: 'debtor'}]
+      ['debtor', 'creditor']
     );
     if (!caseTemp) {
       return [false, constants.notFoundMessage('case')];
@@ -796,16 +797,51 @@ class DebtorService {
     if (!updatedDebtor) {
       return [false, constants.failureUpdateMessage('debtor')];
     }
-    this.caseRepository.updateById<ICase>(req.params.id, {
-      settlementRange: false,
-      updatedAt: commonUtil.getCurrentDate(),
-    });
-    await moneyThumbUtil.run(
-      updatedDebtor,
-      await debtorUtil.normalizeCompanyName(
-        updatedDebtor.businessInformation.companyName
-      )
-    );
+    let lawfirmCancelPlan = req.query.lawfirmCancelPlan;
+
+    if (lawfirmCancelPlan === 'true') {
+      await lawsuitUtil.cancelPlan(caseTemp.debtor._id, caseTemp.creditor._id);
+    }
+    if (!caseTemp.lawsuitExist && lawfirmCancelPlan === 'true') {
+      const lawsuitFields =
+        updatedDebtor.lawsuitFields?.find(
+          lawsuit =>
+            lawsuit.plaintiff_company ===
+              caseTemp.creditor.businessInformation.companyName &&
+            lawsuit.defendant_company ===
+              caseTemp.debtor.businessInformation.companyName
+        ) || null;
+      if (lawsuitFields) {
+        if (caseTemp.dummyLawsuitExist) {
+          await lawsuitUtil.deleteLawsuit(
+            caseTemp.debtor._id,
+            caseTemp.creditor._id
+          );
+          req.body.dummyLawsuitExist = false;
+        }
+        const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+          lawsuitFields,
+          reqTemp.id
+        );
+        const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+          lawsuitDetails,
+          caseTemp
+        );
+        if (lawfirmTemp) req.body.lawsuitExist = true;
+      }
+    }
+    if (newFiles.bankStatementDocuments.length) {
+      this.caseRepository.updateById<ICase>(req.params.id, {
+        settlementRange: false,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
+      await moneyThumbUtil.run(
+        updatedDebtor,
+        await debtorUtil.normalizeCompanyName(
+          updatedDebtor.businessInformation.companyName
+        )
+      );
+    }
     const statements = caseTemp.debtor?.totalStatements;
     if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
       debtorUtil.percentageChangeEmail(
@@ -816,7 +852,7 @@ class DebtorService {
         req.params.id
       );
     }
-    return [true, updatedDebtor];
+    return [true, []];
   }
 
   getLumpSumAmount = async (req: Request) => {
@@ -1374,7 +1410,7 @@ class DebtorService {
         status: 'Pending',
         dueDate: req.body.transactionDate,
         debtorTransId: req.body.referenceId,
-        transactionType: req.body.transactionType,
+        paymentMode: req.body.transactionType,
         paymentGateway: 'Manual',
         manualCommission: req.body.commission,
         updatedAt: commonUtil.getCurrentDate(),
@@ -1424,7 +1460,7 @@ class DebtorService {
     let manualPayments: IPayment[] =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
         {
-          transactionType: 'Wire',
+          paymentMode: 'Wire',
           debtorId: req.params.id,
         },
         undefined,
@@ -1465,7 +1501,7 @@ class DebtorService {
         captured: 'Pending',
         status: 'Upcoming',
         debtorTransId: '',
-        transactionType: '',
+        paymentMode: '',
         manualCommission: 0,
         paymentGateway: '',
         retriesAuth: 0,
@@ -1480,8 +1516,8 @@ class DebtorService {
 
     if (
       result.modifiedCount &&
-      (manualPayment.transactionType === 'Wire' ||
-        manualPayment.transactionType === 'Check')
+      (manualPayment.paymentMode === 'Wire' ||
+        manualPayment.paymentMode === 'Check')
     ) {
       await this.debtorRepository.updateById<IDebtor>(req.params.id, {
         $inc: {commissionPaid: -req.body.commission},

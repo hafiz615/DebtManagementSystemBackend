@@ -24,7 +24,8 @@ export class Lawsuit {
   }>();
   isExempt = false;
   paymentsProceed = false;
-  lawsuitDate = commonUtil.getCurrentDate();
+  isDeleted = false;
+  lawsuitDate = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

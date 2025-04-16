@@ -109,4 +109,6 @@ router.post(
   paymentValidate.updatePaymentDate,
   paymentController.updatePaymentDate
 );
+
+router.post('/checkInvoice', paymentController.checkInvoice);
 export default router;

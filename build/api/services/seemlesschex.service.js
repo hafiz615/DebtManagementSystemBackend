@@ -40,7 +40,7 @@ class SeemlesschexService {
         await this.paymentRepository.updateMany({ _id: transactionIds }, {
             authorized: authorized,
             debtorTransId: response.check.check_id,
-            transactionType: transactionType,
+            paymentMode: transactionType,
             manualCommission: commission,
             dueDate: transactionDate,
             paymentGateway: 'Seemlesschex',
@@ -108,7 +108,7 @@ class SeemlesschexService {
             captured: 'Pending',
             status: 'Upcoming',
             debtorTransId: '',
-            transactionType: '',
+            paymentMode: '',
             manualCommission: 0,
             paymentGateway: '',
             updatedAt: common_util_1.default.getCurrentDate(),
@@ -121,7 +121,7 @@ class SeemlesschexService {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         let payments = await this.paymentRepository.getAllWithoutPagination({
-            transactionType: 'Check',
+            paymentMode: 'Check',
             debtorId: req.params.id,
         }, undefined, undefined, { _id: -1 });
         if (!payments.length) {

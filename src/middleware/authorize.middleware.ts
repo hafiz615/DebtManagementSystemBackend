@@ -119,7 +119,7 @@ class Authorize {
       // verifies secret and checks exp
       return jwt.verify(
         token,
-        process.env.jwtKey!,
+        process.env.verifyKey!,
         async (err: any, decoded: any) => {
           if (err || typeof decoded === 'string') {
             return res

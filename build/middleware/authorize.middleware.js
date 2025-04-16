@@ -136,7 +136,7 @@ class Authorize {
         const token = req.headers.authorization.split(' ')[1];
         if (token) {
             // verifies secret and checks exp
-            return jwt.verify(token, process.env.jwtKey, async (err, decoded) => {
+            return jwt.verify(token, process.env.verifyKey, async (err, decoded) => {
                 if (err || typeof decoded === 'string') {
                     return res
                         .status(constants_util_1.default.CODE.UNAUTHORIZED)

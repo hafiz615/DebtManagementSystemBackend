@@ -222,7 +222,7 @@ class EmailUtil {
                         disposition: 'attachment',
                     });
                 });
-                const result = await this.sendEmail(sendTo, from, subject, content, cc, attachments, caseData._id, threadId, userId, userName);
+                const result = await this.sendEmail(sendTo, from, subject, content, cc, attachments, caseData?._id, threadId, userId, userName);
                 const updatedData = [...data, ...signedUrls];
                 const uniqueAttachments = lodash_1.default.uniqBy(updatedData, item => `${item.key}-${item.originalFileName}`);
                 if (result[0]) {
@@ -236,7 +236,7 @@ class EmailUtil {
                         Time: time,
                         Action: 'EMAIL',
                         Attachments: uniqueAttachments,
-                    }, caseData._id);
+                    }, caseData?._id);
                     const emailData = {
                         from,
                         to: sendTo,
@@ -271,7 +271,7 @@ class EmailUtil {
                         Content: content,
                         Time: time,
                         Action: 'SMS',
-                    }, caseData._id);
+                    }, caseData?._id);
                 }
                 return smsResult;
             case 'compose':

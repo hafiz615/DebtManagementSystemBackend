@@ -203,6 +203,9 @@ const caseModel = new mongoose_1.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'Lawfirms',
     },
+    dummyLawsuitExist: {
+        type: Boolean,
+    },
 });
 caseModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

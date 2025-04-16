@@ -770,6 +770,10 @@ class CaseService {
                     lawsuit.defendant_company ===
                         findCase.debtor.businessInformation.companyName) || null;
                 if (lawsuitFields) {
+                    if (findCase.dummyLawsuitExist) {
+                        await lawsuit_util_1.default.deleteLawsuit(findCase.debtor._id, findCase.creditor._id);
+                        req.body.dummyLawsuitExist = false;
+                    }
                     const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
                     const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
                     if (lawfirmTemp)

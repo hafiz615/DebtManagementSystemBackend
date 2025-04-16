@@ -255,6 +255,7 @@ class LawsuitUtil {
         {
           debtorId: caseData.debtor._id,
           creditorId: caseData.creditor,
+          isDeleted: {$ne: true},
         },
         undefined,
         undefined,
@@ -284,6 +285,31 @@ class LawsuitUtil {
     });
 
     return serviceFee ? serviceFee.fee : 0;
+  }
+
+  async deleteLawsuit(debtorId: string, creditorId: string) {
+    await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: debtorId,
+        creditorId: creditorId,
+      },
+      {
+        isDeleted: true,
+      }
+    );
+  }
+
+  async cancelPlan(debtorId: string, creditorId: string) {
+    await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: debtorId,
+        creditorId: creditorId,
+      },
+      {
+        intervals: [],
+        isExempt: false,
+      }
+    );
   }
 }
 export default new LawsuitUtil();

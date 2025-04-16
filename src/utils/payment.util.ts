@@ -217,7 +217,7 @@ class PaymentUtil {
         authorized: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
@@ -247,7 +247,7 @@ class PaymentUtil {
         captured: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
@@ -278,7 +278,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
@@ -309,7 +309,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
-        transactionType: {$nin: ['Wire', 'Check']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       },
       undefined,
       undefined,
@@ -456,7 +456,7 @@ class PaymentUtil {
           debtorId: debtorId,
           caseId: {$ne: null},
           authorized: {$ne: 'Success'},
-          transactionType: {$nin: ['Wire', 'Check']},
+          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
           isDeleted: false,
           dueDate: {
             $gte: new Date(payment.dueDate),
@@ -496,6 +496,7 @@ class PaymentUtil {
     amount: number,
     token: string,
     debtorId: string,
+    paymentGateway: string,
     debtorName?: string,
     link?: string
   ) {
@@ -506,7 +507,8 @@ class PaymentUtil {
     payment.status = 'Pending';
     payment.debtorId = debtorId;
     if (debtorName) payment.debtorName = debtorName;
-    payment.transactionType = link ? 'Link' : 'Invoice';
+    payment.paymentMode = link ? 'Link' : 'Invoice';
+    payment.paymentGateway = paymentGateway;
 
     const hello = await this.paymentRepository.create<IPayment>(payment as any);
     console.log('hello', hello);

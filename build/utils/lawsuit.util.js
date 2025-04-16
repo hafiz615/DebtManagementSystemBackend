@@ -194,6 +194,7 @@ class LawsuitUtil {
             const lawsuitData = await this.lawsuitRepository.getOne({
                 debtorId: caseData.debtor._id,
                 creditorId: caseData.creditor,
+                isDeleted: { $ne: true },
             }, undefined, undefined, ['lawfirmId']);
             if (lawsuitData?.lawfirmId?.lawfirmFee !== 0) {
                 return lawsuitData.lawfirmId.lawfirmFee;
@@ -214,6 +215,23 @@ class LawsuitUtil {
             type: 'serviceFee',
         });
         return serviceFee ? serviceFee.fee : 0;
+    }
+    async deleteLawsuit(debtorId, creditorId) {
+        await this.lawsuitRepository.updateByOne({
+            debtorId: debtorId,
+            creditorId: creditorId,
+        }, {
+            isDeleted: true,
+        });
+    }
+    async cancelPlan(debtorId, creditorId) {
+        await this.lawsuitRepository.updateByOne({
+            debtorId: debtorId,
+            creditorId: creditorId,
+        }, {
+            intervals: [],
+            isExempt: false,
+        });
     }
 }
 exports.default = new LawsuitUtil();
