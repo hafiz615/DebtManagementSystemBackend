@@ -229,6 +229,7 @@ class CallUtil {
     const conferenceRoom = `conference_${callerId.replace(/^\+1/, '')}`;
     const conferenceSid =
       await this.getConferenceSidByFriendlyName(conferenceRoom);
+
     const participant = await this.twilioClient
       .conferences(conferenceSid)
       .participants.create({
@@ -238,9 +239,15 @@ class CallUtil {
         beep: 'onEnter',
         label: `customer-${toNumber}-${Date.now()}`,
         record: true,
-        statusCallback: `${process.env.webHookURl}/api/v1/call/conference/participant-answered`,
-        statusCallbackEvent: ['answered'],
       });
+
+    await this.callRepository.updateByOne(
+      {callSid: conferenceSid},
+      {
+        $addToSet: {callTo: toNumber},
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
 
     console.log(`Participant added. Call SID: ${participant.callSid}`);
   }

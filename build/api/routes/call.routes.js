@@ -13,7 +13,6 @@ router.post('/twilio/recording-status', call_controller_1.default.callRecordingS
 router.post('/conference/conference-start-event', call_controller_1.default.conferenceStartEvent);
 router.post('/conference/conference-recording-status', call_controller_1.default.conferenceRecordingStatus);
 router.post('/conference/add-participant', authorize_middleware_1.default.validateAuth, call_controller_1.default.addParticipant);
-router.post('/conference/participant-answered', call_controller_1.default.answeredParticipant);
 router.get('/twilio/token', authorize_middleware_1.default.validateAuth, call_controller_1.default.getToken);
 router.post('/twilio/fallback', call_controller_1.default.callFallBack);
 router.post('/twilio/call-status', call_controller_1.default.callStatus);

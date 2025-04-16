@@ -177,8 +177,10 @@ class CallUtil {
             beep: 'onEnter',
             label: `customer-${toNumber}-${Date.now()}`,
             record: true,
-            statusCallback: `${process.env.webHookURl}/api/v1/call/conference/participant-answered`,
-            statusCallbackEvent: ['answered'],
+        });
+        await this.callRepository.updateByOne({ callSid: conferenceSid }, {
+            $addToSet: { callTo: toNumber },
+            updatedAt: common_util_1.default.getCurrentDate(),
         });
         console.log(`Participant added. Call SID: ${participant.callSid}`);
     }

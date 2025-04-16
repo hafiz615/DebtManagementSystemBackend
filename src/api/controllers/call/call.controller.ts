@@ -156,28 +156,6 @@ class CallController {
     }
   };
 
-  answeredParticipant = async (req: Request, res: Response) => {
-    try {
-      const response = await this.callService.answeredParticipant(req);
-      if (!response[0]) {
-        return res
-          .status(constants.CODE.BAD_REQUEST)
-          .send(responseHelper.get4xxResponse(response[1]));
-      }
-      return res.status(constants.CODE.CREATED).send(
-        responseHelper.get2xxResponse({
-          statusCode: constants.CODE.CREATED,
-          data: response[1],
-          message: response[1],
-        })
-      );
-    } catch (error) {
-      return res
-        .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
-    }
-  };
-
   addParticipant = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.addParticipant(req);

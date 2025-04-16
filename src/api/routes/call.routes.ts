@@ -25,11 +25,6 @@ router.post(
   callController.addParticipant
 );
 
-router.post(
-  '/conference/participant-answered',
-  callController.answeredParticipant
-);
-
 router.get('/twilio/token', authorize.validateAuth, callController.getToken);
 router.post('/twilio/fallback', callController.callFallBack);
 router.post('/twilio/call-status', callController.callStatus);
