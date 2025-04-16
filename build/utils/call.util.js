@@ -176,6 +176,8 @@ class CallUtil {
             earlyMedia: true,
             beep: 'onEnter',
             label: `customer-${toNumber}-${Date.now()}`,
+            startConferenceOnEnter: false, // 👈 this should usually be false for others
+            endConferenceOnExit: false,
             record: true,
         });
         await this.callRepository.updateByOne({ callSid: conferenceSid }, {

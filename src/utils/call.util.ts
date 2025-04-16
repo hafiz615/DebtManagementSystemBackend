@@ -229,7 +229,6 @@ class CallUtil {
     const conferenceRoom = `conference_${callerId.replace(/^\+1/, '')}`;
     const conferenceSid =
       await this.getConferenceSidByFriendlyName(conferenceRoom);
-
     const participant = await this.twilioClient
       .conferences(conferenceSid)
       .participants.create({
@@ -238,6 +237,8 @@ class CallUtil {
         earlyMedia: true,
         beep: 'onEnter',
         label: `customer-${toNumber}-${Date.now()}`,
+        startConferenceOnEnter: false, // 👈 this should usually be false for others
+        endConferenceOnExit: false,
         record: true,
       });
 
