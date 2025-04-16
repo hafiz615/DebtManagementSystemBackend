@@ -188,7 +188,7 @@ class LawsuitUtil {
         );
         this.updateLawsuitFee(
           fee,
-          payment.caseId.debtor,
+          payment.caseId.debtor._id,
           payment.caseId.creditor
         );
       }
@@ -202,7 +202,7 @@ class LawsuitUtil {
         if (fee) {
           this.updateLawsuitFee(
             fee,
-            payment.caseId.debtor,
+            payment.caseId.debtor._id,
             payment.caseId.creditor
           );
         }
