@@ -39,7 +39,7 @@ const callSchema = new mongoose_1.Schema({
     userId: { type: String },
     callerName: { type: String, default: 'Unknown' },
     accountSid: { type: String },
-    callTo: { type: String },
+    callTo: [{ type: String }],
     callFrom: { type: String },
     callStartTime: { type: Date },
     callDirection: { type: String },

@@ -8,7 +8,7 @@ export interface ICall extends Document {
   userId: string;
   callerName: string;
   accountSid: string;
-  callTo: string;
+  callTo: string[];
   callFrom: string;
   callStartTime: string;
   callDirection: string;

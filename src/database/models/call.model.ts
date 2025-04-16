@@ -13,7 +13,7 @@ const callSchema: Schema = new Schema({
   userId: {type: String},
   callerName: {type: String, default: 'Unknown'},
   accountSid: {type: String},
-  callTo: {type: String},
+  callTo: [{type: String}],
   callFrom: {type: String},
   callStartTime: {type: Date},
   callDirection: {type: String},

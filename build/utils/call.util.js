@@ -117,7 +117,8 @@ class CallUtil {
             newCall.userId = String(user._id);
         }
         newCall.accountSid = AccountSid;
-        newCall.callTo = To;
+        if (To)
+            newCall.callTo = [To];
         (newCall.callDirection = Direction),
             (newCall.callFrom = callerId),
             (newCall.callStatus = CallStatus);
@@ -150,11 +151,36 @@ class CallUtil {
         newCall.accountSid = AccountSid;
         if (name)
             newCall.callerName = name.fullName;
-        newCall.callTo = To;
+        newCall.callTo = [To];
         newCall.callDirection = Direction;
         newCall.callFrom = From;
         newCall.callStatus = CallStatus;
         return this.callRepository.create(newCall);
+    }
+    async getConferenceSidByFriendlyName(friendlyName) {
+        const conferences = await this.twilioClient.conferences.list({
+            friendlyName,
+            status: 'in-progress',
+            limit: 1,
+        });
+        return conferences.length > 0 ? conferences[0].sid : null;
+    }
+    async addParticipantToConference(toNumber, callerId) {
+        const conferenceRoom = `conference_${callerId.replace(/^\+1/, '')}`;
+        const conferenceSid = await this.getConferenceSidByFriendlyName(conferenceRoom);
+        const participant = await this.twilioClient
+            .conferences(conferenceSid)
+            .participants.create({
+            from: callerId,
+            to: toNumber,
+            earlyMedia: true,
+            beep: 'onEnter',
+            label: `customer-${toNumber}-${Date.now()}`,
+            record: true,
+            statusCallback: `${process.env.webHookURl}/api/v1/call/conference/participant-answered`,
+            statusCallbackEvent: ['answered'],
+        });
+        console.log(`Participant added. Call SID: ${participant.callSid}`);
     }
     async summarizeTranscriptText(text) {
         const openai = new openai_1.default({

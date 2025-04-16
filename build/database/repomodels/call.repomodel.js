@@ -14,7 +14,7 @@ class Call {
         this.creditorId = '';
         this.callerName = 'Unknown';
         this.accountSid = '';
-        this.callTo = '';
+        this.callTo = [];
         this.callFrom = '';
         this.callStartTime = '';
         this.callDirection = '';

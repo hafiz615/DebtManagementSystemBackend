@@ -10,6 +10,26 @@ router.get(
 );
 router.post('/voice', callController.callTwiml);
 router.post('/twilio/recording-status', callController.callRecordingStatus);
+router.post(
+  '/conference/conference-start-event',
+  callController.conferenceStartEvent
+);
+router.post(
+  '/conference/conference-recording-status',
+  callController.conferenceRecordingStatus
+);
+
+router.post(
+  '/conference/add-participant',
+  authorize.validateAuth,
+  callController.addParticipant
+);
+
+router.post(
+  '/conference/participant-answered',
+  callController.answeredParticipant
+);
+
 router.get('/twilio/token', authorize.validateAuth, callController.getToken);
 router.post('/twilio/fallback', callController.callFallBack);
 router.post('/twilio/call-status', callController.callStatus);
@@ -17,6 +37,12 @@ router.get(
   '/twilio/getIncomingCall/:callSid',
   callController.getIncomingCallSid
 );
+router.get(
+  '/conference/getAllTheParticipants',
+  authorize.validateAuth,
+  callController.getAllTheParticipants
+);
+
 router.post('/callSummary', callController.callSummary);
 router.patch(
   '/updateCall/:callSid',
@@ -53,6 +79,11 @@ router.delete(
   '/deleteCall/:id',
   authorize.validateAuth,
   callController.deleteCall
+);
+
+router.delete(
+  '/conference/removeParticipant',
+  callController.removeParticipant
 );
 
 export default router;

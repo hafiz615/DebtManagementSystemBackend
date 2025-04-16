@@ -8,7 +8,7 @@ export class Call {
   creditorId = '';
   callerName = 'Unknown';
   accountSid = '';
-  callTo = '';
+  callTo: string[] = [];
   callFrom = '';
   callStartTime = '';
   callDirection = '';
