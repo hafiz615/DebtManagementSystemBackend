@@ -79,4 +79,5 @@ export default {
     `${name} made successfully!`,
   paymentPausedSuccessfully: (name: string): string =>
     `${name} payment paused successfully`,
+  successfullyMessage: (name: string): string => `${name} successfully`,
 };

@@ -3,6 +3,10 @@ import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import commonUtil from './common.util';
 import {IPayment} from '../database/interfaces/payment.interface';
 import {Payment} from '../database/repomodels/payment.repomodel';
+import {DataCopier} from './dataCopier.util';
+import constants from '../utils/constants.util';
+import {IDebtor} from '../database/interfaces/debtor.interface';
+import constantsUtil from '../utils/constants.util';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -512,6 +516,150 @@ class PaymentUtil {
 
     const hello = await this.paymentRepository.create<IPayment>(payment as any);
     console.log('hello', hello);
+  }
+
+  async pausePaymentByDay(
+    payments: IPayment[],
+    timePeriod: string,
+    endDate: string,
+    intervalId?: string,
+    debtorId?: string
+  ) {
+    if (intervalId) {
+      payments = await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: debtorId,
+          isDeleted: {$ne: true},
+          attorneyId: null,
+          authorized: 'Pending',
+          intervalId: intervalId,
+        }
+      );
+    }
+    const dueDate = await commonUtil.getTimePeriod(
+      timePeriod,
+      endDate,
+      payments[0].dueDate
+    );
+
+    for (const payment of payments) {
+      const paymentDueDate = new Date(payment.dueDate);
+      const updatedDueDate = new Date(
+        paymentDueDate.getTime() + dueDate * 24 * 60 * 60 * 1000
+      );
+
+      await this.paymentRepository.updateById(payment._id, {
+        dueDate: updatedDueDate.toISOString(),
+      });
+    }
+    return [true, 'Payment date update'];
+  }
+
+  async moveToLastPayment(
+    payment: IPayment,
+    debtorId: string,
+    paymentAmountCheck?: boolean
+  ) {
+    const allPayments: any =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: debtorId,
+        isDeleted: {$ne: true},
+        attorneyId: null,
+        authorized: 'Pending',
+        intervalId: payment.intervalId,
+      });
+
+    const latestPayment = allPayments.reduce(
+      (latest, p) => {
+        const dueTime = new Date(p.dueDate).getTime();
+        const latestDueTime = latest ? new Date(latest.dueDate).getTime() : 0;
+
+        return dueTime > latestDueTime ? p : latest;
+      },
+      null as IPayment | null
+    );
+
+    if (
+      String(latestPayment._id) == String(payment._id) &&
+      !paymentAmountCheck
+    ) {
+      return [
+        false,
+        'You Cannot pause the payment Which is already in last you can shift the day',
+      ];
+    }
+
+    const newDueDate = new Date(
+      new Date(latestPayment.dueDate).getTime() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    if (payment._id) {
+      await this.paymentRepository.updateById<IPayment>(payment._id, {
+        dueDate: newDueDate.toISOString(),
+      });
+      return [true, []];
+    } else {
+      payment.dueDate = newDueDate.toISOString();
+      payment.frequency = latestPayment.frequency + 1;
+
+      await this.paymentRepository.create<IPayment>(payment);
+      return [true, []];
+    }
+  }
+
+  async changePaymentAmmount(payment: IPayment, amount: number) {
+    const newPayment = new Payment();
+
+    const remainingAmount = payment.amount - amount;
+
+    const paymentValidate = DataCopier.copy(newPayment, payment);
+
+    paymentValidate.amount = remainingAmount;
+
+    const updatePayment = await this.paymentRepository.updateById(
+      String(payment._id),
+      {
+        amount: amount,
+      }
+    );
+
+    return await this.moveToLastPayment(
+      paymentValidate,
+      paymentValidate.debtorId,
+      true
+    );
+  }
+
+  async pausePaymentChecks(
+    debtor: IDebtor,
+    amount?: number,
+    timePeriod?: string
+  ) {
+    if (!debtor?.lastPaymentAmountDate && !debtor?.lastPaymentPauseDate)
+      return [true, []];
+
+    if (debtor?.lastPaymentAmountDate && amount) {
+      const pauseAmountDateCount = await commonUtil.getTimePeriod(
+        'Custom',
+        commonUtil.getCurrentDate(),
+        debtor.lastPaymentAmountDate
+      );
+      if (pauseAmountDateCount <= 30) {
+        return [false, 'Cannot change the Payment amount twice a month.'];
+      }
+    }
+
+    if (debtor?.lastPaymentPauseDate && timePeriod) {
+      const pauseDateCount = await commonUtil.getTimePeriod(
+        'Custom',
+        commonUtil.getCurrentDate(),
+        debtor.lastPaymentPauseDate
+      );
+      if (pauseDateCount <= 14) {
+        return [false, 'Cannot pause the Payment in a consecutive week'];
+      }
+    }
+    return [true, []];
   }
 }
 export default new PaymentUtil();

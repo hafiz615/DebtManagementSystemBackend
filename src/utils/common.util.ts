@@ -50,7 +50,11 @@ class CommonUtil {
     }
   }
 
-  async getTimePeriod(timePeriod: string, endDate?: string) {
+  async getTimePeriod(
+    timePeriod: string,
+    endDate?: string,
+    paymentDueDate?: string
+  ) {
     switch (timePeriod) {
       case 'Daily':
         return 1;
@@ -61,9 +65,12 @@ class CommonUtil {
       case 'Monthly':
         return 30;
       case 'Custom':
-        const currentDate = new Date(this.getCurrentDate());
+        const baseDate = paymentDueDate
+          ? new Date(paymentDueDate)
+          : new Date(this.getCurrentDate());
+
         return Math.round(
-          (new Date(endDate).getTime() - currentDate.getTime()) /
+          (new Date(endDate).getTime() - baseDate.getTime()) /
             (1000 * 60 * 60 * 24)
         );
       default:

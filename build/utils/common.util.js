@@ -46,6 +46,26 @@ class CommonUtil {
                 return null;
         }
     }
+    async getTimePeriod(timePeriod, endDate, paymentDueDate) {
+        switch (timePeriod) {
+            case 'Daily':
+                return 1;
+            case 'Weekly':
+                return 7;
+            case 'Fortnightly':
+                return 14;
+            case 'Monthly':
+                return 30;
+            case 'Custom':
+                const baseDate = paymentDueDate
+                    ? new Date(paymentDueDate)
+                    : new Date(this.getCurrentDate());
+                return Math.round((new Date(endDate).getTime() - baseDate.getTime()) /
+                    (1000 * 60 * 60 * 24));
+            default:
+                return null;
+        }
+    }
     async getUserDetails(data) {
         return {
             name: data?.basicInformation?.fullName || data?.name,

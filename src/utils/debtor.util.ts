@@ -918,6 +918,20 @@ class DebtorUtil {
 
     return [true, result];
   }
+
+  async updateDebtorPausePayment(debtorId: string, amountCheck?: boolean) {
+    const updatePayload = amountCheck
+      ? {
+          $inc: {paymentAmountCount: 1},
+          $set: {lastPaymentAmountDate: commonUtil.getCurrentDate()},
+        }
+      : {
+          $inc: {paymentPauseCount: 1},
+          $set: {lastPaymentPauseDate: commonUtil.getCurrentDate()},
+        };
+
+    return this.debtorRepository.updateById<IDebtor>(debtorId, updatePayload);
+  }
 }
 
 export default new DebtorUtil();

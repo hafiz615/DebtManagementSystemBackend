@@ -1876,39 +1876,82 @@ class DebtorService {
       return [false, constants.notFoundMessage('Debtor')];
     }
 
-    const timePeriod = await commonUtil.getTimePeriod(
-      req.body.timePeriod,
-      req.body.endDate
+    const pausePaymentCheck = await paymentUtil.pausePaymentChecks(
+      debtor,
+      req.body.amount,
+      req.body.timePeriod
     );
 
-    if (timePeriod) {
-      const dueDate =
-        req.body.timePeriod === 'Custom'
-          ? timePeriod
-          : timePeriod * req.body.frequency;
+    if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-      const payments =
-        await this.paymentRepository.getAllWithoutPagination<IPayment>({
-          debtorId: req.params.id,
-          isDeleted: {$ne: true},
-        });
+    let updateDebtor = null;
+    const filter: any = {
+      debtorId: req.params.id,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: 'Pending',
+    };
 
-      if (!payments) return [false, constants.notFoundMessage('Payments')];
-
-      console.log('payments before update:', payments);
-
-      for (const payment of payments) {
-        const paymentDueDate = new Date(payment.dueDate);
-        const updatedDueDate = new Date(
-          paymentDueDate.getTime() + dueDate * 24 * 60 * 60 * 1000
-        );
-
-        await this.paymentRepository.updateById(payment._id, {
-          dueDate: updatedDueDate.toISOString(),
-        });
-      }
+    if (req.body?.paymentId) {
+      filter._id = req.body.paymentId;
     }
-    return [true, []];
+    let successMessage = null;
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(filter);
+
+    if (!payments.length) return [false, constants.notFoundMessage('Payments')];
+
+    if (req.body.endDate && req.body.timePeriod) {
+      const updateDatesPayment = await paymentUtil.pausePaymentByDay(
+        payments,
+        req.body.timePeriod,
+        req.body.endDate,
+        req.body.intervalId,
+        req.params.id
+      );
+      successMessage = updateDatesPayment[1];
+    } else if (req.body.paymentId && req.body.amount) {
+      const newPyament = await paymentUtil.changePaymentAmmount(
+        payments[0],
+        req.body.amount
+      );
+
+      if (!newPyament)
+        return [false, constants.failureUpdateMessage('payments amount')];
+      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      successMessage = 'Change the payment amount';
+    } else if (req.body.paymentId && req.body.timePeriod) {
+      const updatePyament = await paymentUtil.moveToLastPayment(
+        payments[0],
+        req.params.id,
+        false
+      );
+      if (!updatePyament[0]) return [false, updatePyament[1]];
+      successMessage = 'Payments move to the last';
+    }
+    if (!updateDebtor)
+      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    return [true, constants.successfullyMessage(successMessage)];
+  }
+
+  async getDebtorPayments(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: req.params.id,
+        isDeleted: {$ne: true},
+        attorneyId: null,
+        authorized: 'Pending',
+      });
+
+    if (!payments) return [true, constants.notFoundMessage('Payments')];
+
+    return [true, {count: payments.length, payments}];
   }
 
   async getToken(req: Request) {

@@ -87,6 +87,10 @@ export interface IDebtor extends Document {
   intervals: Array<IInterval>;
   isExempt: boolean;
   status: string;
+  paymentPauseCount: number;
+  lastPaymentPauseDate: string;
+  paymentAmountCount: number;
+  lastPaymentAmountDate: string;
   createdAt: string;
   updatedAt: string;
 }

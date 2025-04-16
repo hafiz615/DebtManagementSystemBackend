@@ -251,6 +251,13 @@ router.post(
   authorize.validateAuth,
   debtorController.pauseDebtorPayments
 );
+
+router.get(
+  '/getDebtorPayments/:id',
+  authorize.validateAuth,
+  debtorController.getDebtorPayments
+);
+
 router.get('/getToken/:id', debtorController.getToken);
 
 export default router;

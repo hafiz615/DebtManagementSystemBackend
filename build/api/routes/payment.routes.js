@@ -21,6 +21,7 @@ router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth
 router.get('/sendPaymentPaynote/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.sendPaymentPaynote);
 router.get('/cancelCasePaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelCasePaymentPlan);
 router.get('/cancelDebtorPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelDebtorPaymentPlan);
+router.get('/cancelAllDebtorPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelAllDebtorPaymentPlan);
 router.get('/getCommissionPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCommissionPayments);
 router.get('/getRelatedPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getRelatedPayments);
 router.post('/addAttorneyPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.addPaymentPlan);

@@ -967,6 +967,46 @@ class PaymentService {
             return [false, 'Failed to cancel payment plan'];
         return [true, 'Payment plan canceled successfully'];
     }
+    async cancelAllDebtorPaymentPlan(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const updateDebtor = await this.debtorRepository.updateById(req.params.id, {
+            intervals: [],
+            isExempt: false,
+            paymentPauseCount: 0,
+            lastPaymentPauseDate: '',
+            paymentAmountCount: 0,
+            lastPaymentAmountDate: '',
+        });
+        const updateCommisionPayments = await this.paymentRepository.updateMany({
+            debtorId: req.params.id,
+            $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
+            caseId: { $eq: null },
+            transactionType: { $ne: 'Link' },
+        }, {
+            isDeleted: true,
+        });
+        const debtorCases = await this.caseRepository.getAllWithoutPagination({
+            debtor: req.params.id,
+            isDeleted: { $ne: true },
+        });
+        if (!debtorCases)
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        for (const caseTemp of debtorCases) {
+            const updateCase = await this.caseRepository.updateById(caseTemp._id, {
+                intervals: [],
+                isExempt: false,
+            });
+            const updateCreditorPayments = await this.paymentRepository.updateMany({
+                caseId: caseTemp._id,
+                $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
+            }, {
+                isDeleted: true,
+            });
+        }
+        return [true, 'Payment plan canceled successfully'];
+    }
     async getRelatedPayments(req) {
         let payments = await this.paymentRepository.getAllWithoutPagination({
             debtorTransId: req.params.id,

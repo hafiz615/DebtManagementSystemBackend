@@ -86,6 +86,12 @@ router.get(
 );
 
 router.get(
+  '/cancelAllDebtorPaymentPlan/:id',
+  authorize.validateAuth,
+  paymentController.cancelAllDebtorPaymentPlan
+);
+
+router.get(
   '/getCommissionPayments',
   authorize.validateAuth,
   paymentController.getCommissionPayments
