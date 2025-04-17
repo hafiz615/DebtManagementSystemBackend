@@ -149,6 +149,7 @@ class LawfirmService {
       {
         debtorId: caseTemp.debtor,
         creditorId: caseTemp.creditor,
+        isDeleted: {$ne: true},
       },
       req.body
     );

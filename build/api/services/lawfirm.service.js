@@ -105,6 +105,7 @@ class LawfirmService {
         const lawsuit = await this.lawsuitRepository.updateByOne({
             debtorId: caseTemp.debtor,
             creditorId: caseTemp.creditor,
+            isDeleted: { $ne: true },
         }, req.body);
         if (!lawsuit)
             return [false, constants_util_1.default.failureUpdateMessage('lawsuit')];
