@@ -107,7 +107,7 @@ class CallUtil {
     }
     async createCall(data, user, callerId, debtorId, creditorId) {
         const newCall = new call_repomodel_1.Call();
-        const { CaseId, CallSid, AccountSid, To, CallStatus, Direction } = data;
+        const { CaseId, CallSid, AccountSid, CallStatus, Direction, ConferenceName } = data;
         newCall.caseId = CaseId;
         newCall.debtorId = debtorId;
         newCall.creditorId = creditorId;
@@ -117,10 +117,10 @@ class CallUtil {
             newCall.userId = String(user._id);
         }
         newCall.accountSid = AccountSid;
-        newCall.callTo = To;
-        (newCall.callDirection = Direction),
-            (newCall.callFrom = callerId),
-            (newCall.callStatus = CallStatus);
+        newCall.conferenceName = ConferenceName;
+        newCall.callDirection = Direction;
+        newCall.callFrom = callerId;
+        newCall.callStatus = CallStatus;
         return await this.callRepository.create(newCall);
     }
     async createIncomingCall(data, userId) {
@@ -150,11 +150,40 @@ class CallUtil {
         newCall.accountSid = AccountSid;
         if (name)
             newCall.callerName = name.fullName;
-        newCall.callTo = To;
+        newCall.callTo = [To];
         newCall.callDirection = Direction;
         newCall.callFrom = From;
         newCall.callStatus = CallStatus;
         return this.callRepository.create(newCall);
+    }
+    async getConferenceSidByFriendlyName(friendlyName) {
+        const conferences = await this.twilioClient.conferences.list({
+            friendlyName,
+            status: 'in-progress',
+            limit: 1,
+        });
+        console.log('conferences', conferences);
+        return conferences.length > 0 ? conferences[0].sid : null;
+    }
+    async addParticipantToConference(toNumber, callerId, conferenceRoom) {
+        const conferenceSid = await this.getConferenceSidByFriendlyName(conferenceRoom);
+        const participant = await this.twilioClient
+            .conferences(conferenceSid)
+            .participants.create({
+            from: callerId,
+            to: toNumber,
+            earlyMedia: true,
+            beep: 'onEnter',
+            label: `customer-${toNumber}-${Date.now()}`,
+            startConferenceOnEnter: false, // 👈 this should usually be false for others
+            endConferenceOnExit: false,
+            record: true,
+        });
+        await this.callRepository.updateByOne({ conferenceName: conferenceRoom }, {
+            $addToSet: { callTo: toNumber },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        console.log(`Participant added. Call SID: ${participant.callSid}`);
     }
     async summarizeTranscriptText(text) {
         const openai = new openai_1.default({

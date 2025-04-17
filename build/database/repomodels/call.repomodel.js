@@ -14,7 +14,7 @@ class Call {
         this.creditorId = '';
         this.callerName = 'Unknown';
         this.accountSid = '';
-        this.callTo = '';
+        this.callTo = [];
         this.callFrom = '';
         this.callStartTime = '';
         this.callDirection = '';
@@ -24,6 +24,7 @@ class Call {
         this.isDeleted = false;
         this.transcriptUrl = '';
         this.type = 'Call';
+        this.conferenceName = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
