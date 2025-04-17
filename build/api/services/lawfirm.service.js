@@ -127,6 +127,35 @@ class LawfirmService {
         }, { attorneyId: attorney._id });
         return [true, []];
     }
+    async syncLawsuitData(req) {
+        let reqTemp = req;
+        const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor', 'creditor']);
+        if (!caseTemp)
+            return [false, constants_util_1.default.notFoundMessage('Case')];
+        const debtor = caseTemp.debtor;
+        let sync = false;
+        if (!caseTemp.lawsuitExist) {
+            const lawsuitFields = debtor.lawsuitFields?.find(lawsuit => lawsuit.plaintiff_company ===
+                caseTemp.creditor.businessInformation.companyName &&
+                lawsuit.defendant_company ===
+                    caseTemp.debtor.businessInformation.companyName) || null;
+            if (lawsuitFields) {
+                if (caseTemp.dummyLawsuitExist) {
+                    await lawsuit_util_1.default.deleteLawsuit(caseTemp.debtor._id, caseTemp.creditor._id);
+                }
+                const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
+                const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, caseTemp);
+                if (lawfirmTemp) {
+                    sync = true;
+                    await this.caseRepository.updateById(req.params.id, {
+                        lawsuitExist: true,
+                        dummyLawsuitExist: false,
+                    });
+                }
+            }
+        }
+        return sync ? [true, []] : [false, 'Unable to sync lawsuit data'];
+    }
 }
 exports.default = LawfirmService;
 //# sourceMappingURL=lawfirm.service.js.map
