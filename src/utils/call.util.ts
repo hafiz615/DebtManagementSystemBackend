@@ -4,7 +4,6 @@ import OpenAI from 'openai';
 import {Twilio} from 'twilio';
 import commonUtil from './common.util';
 import dotenv from 'dotenv';
-import {DataCopier} from './dataCopier.util';
 import {ICall} from '../database/interfaces/call.interface';
 import {Call} from '../database/repomodels/call.repomodel';
 import {CallRepository} from '../api/repository/call/call.repository';
@@ -248,7 +247,7 @@ class CallUtil {
       });
 
     await this.callRepository.updateByOne(
-      {callSid: conferenceSid},
+      {conferenceName: conferenceRoom},
       {
         $addToSet: {callTo: toNumber},
         updatedAt: commonUtil.getCurrentDate(),
