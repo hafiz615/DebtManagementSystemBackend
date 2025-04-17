@@ -797,43 +797,42 @@ class DebtorService {
     if (!updatedDebtor) {
       return [false, constants.failureUpdateMessage('debtor')];
     }
-    let lawfirmCancelPlan = req.query.lawfirmCancelPlan;
 
-    if (lawfirmCancelPlan === 'true') {
+    if (req.query.lawfirmCancelPlan === 'true') {
       await lawsuitUtil.cancelPlan(caseTemp.debtor._id, caseTemp.creditor._id);
     }
-    if (!caseTemp.lawsuitExist && lawfirmCancelPlan === 'true') {
-      const lawsuitFields =
-        updatedDebtor.lawsuitFields?.find(
-          lawsuit =>
-            lawsuit.plaintiff_company ===
-              caseTemp.creditor.businessInformation.companyName &&
-            lawsuit.defendant_company ===
-              caseTemp.debtor.businessInformation.companyName
-        ) || null;
-      if (lawsuitFields) {
-        if (caseTemp.dummyLawsuitExist) {
-          await lawsuitUtil.deleteLawsuit(
-            caseTemp.debtor._id,
-            caseTemp.creditor._id
-          );
-        }
-        const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
-          lawsuitFields,
-          reqTemp.id
-        );
-        const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
-          lawsuitDetails,
-          caseTemp
-        );
-        if (lawfirmTemp) {
-          await this.caseRepository.updateById(req.params.id, {
-            lawsuitExist: true,
-            dummyLawsuitExist: false,
-          });
-        }
-      }
-    }
+    // if (!caseTemp.lawsuitExist && lawfirmCancelPlan === 'true') {
+    //   const lawsuitFields =
+    //     updatedDebtor.lawsuitFields?.find(
+    //       lawsuit =>
+    //         lawsuit.plaintiff_company ===
+    //           caseTemp.creditor.businessInformation.companyName &&
+    //         lawsuit.defendant_company ===
+    //           caseTemp.debtor.businessInformation.companyName
+    //     ) || null;
+    //   if (lawsuitFields) {
+    //     if (caseTemp.dummyLawsuitExist) {
+    //       await lawsuitUtil.deleteLawsuit(
+    //         caseTemp.debtor._id,
+    //         caseTemp.creditor._id
+    //       );
+    //     }
+    //     const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+    //       lawsuitFields,
+    //       reqTemp.id
+    //     );
+    //     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+    //       lawsuitDetails,
+    //       caseTemp
+    //     );
+    //     if (lawfirmTemp) {
+    //       await this.caseRepository.updateById(req.params.id, {
+    //         lawsuitExist: true,
+    //         dummyLawsuitExist: false,
+    //       });
+    //     }
+    //   }
+    // }
     if (newFiles.bankStatementDocuments.length) {
       this.caseRepository.updateById<ICase>(req.params.id, {
         settlementRange: false,
