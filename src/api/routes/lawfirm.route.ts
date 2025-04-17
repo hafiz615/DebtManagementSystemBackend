@@ -44,4 +44,10 @@ router.post(
   lawfirmController.addAttorney
 );
 
+router.get(
+  '/syncLawsuitData/:id',
+  authorize.validateAuth,
+  lawfirmController.syncLawsuitData
+);
+
 export default router;

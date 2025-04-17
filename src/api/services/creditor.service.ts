@@ -369,7 +369,11 @@ class CreditorService {
     const updateResult =
       type === 'lawfirm'
         ? await this.lawsuitRepository.updateByOne<ILawsuit>(
-            {debtorId: caseTemp.debtor, creditorId: caseTemp.creditor},
+            {
+              debtorId: caseTemp.debtor,
+              creditorId: caseTemp.creditor,
+              isDeleted: {$ne: true},
+            },
             {paymentsProceed: pause}
           )
         : await this.caseRepository.updateById<ICase>(id, {

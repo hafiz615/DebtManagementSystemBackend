@@ -149,6 +149,7 @@ class LawfirmService {
       {
         debtorId: caseTemp.debtor,
         creditorId: caseTemp.creditor,
+        isDeleted: {$ne: true},
       },
       req.body
     );
@@ -171,10 +172,54 @@ class LawfirmService {
       {
         debtorId: caseTemp.debtor,
         creditorId: caseTemp.creditor,
+        isDeleted: {$ne: true},
       },
       {attorneyId: attorney._id}
     );
     return [true, []];
+  }
+
+  async syncLawsuitData(req: Request) {
+    let reqTemp: any = req;
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor', 'creditor']
+    );
+    if (!caseTemp) return [false, constants.notFoundMessage('Case')];
+    const debtor = caseTemp.debtor;
+    let sync = false;
+    const lawsuitFields =
+      debtor.lawsuitFields?.find(
+        lawsuit =>
+          lawsuit.plaintiff_company ===
+            caseTemp.creditor.businessInformation.companyName &&
+          lawsuit.defendant_company ===
+            caseTemp.debtor.businessInformation.companyName
+      ) || null;
+    if (lawsuitFields) {
+      await lawsuitUtil.deleteLawsuit(
+        caseTemp.debtor._id,
+        caseTemp.creditor._id
+      );
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+        lawsuitFields,
+        reqTemp.id
+      );
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        caseTemp
+      );
+      if (lawfirmTemp) {
+        sync = true;
+        await this.caseRepository.updateById(req.params.id, {
+          lawsuitExist: true,
+          dummyLawsuitExist: false,
+        });
+      }
+    }
+    return sync ? [true, []] : [false, 'Unable to sync lawsuit data'];
   }
 }
 

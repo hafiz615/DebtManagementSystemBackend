@@ -86,7 +86,9 @@ class CaseUtil {
         for (const interval of data.intervals) {
             if (interval.frequency === 0) {
                 payment.dueDate = interval.startDate;
-                tempPayment = await this.populatePayment(data._id, payment, interval, 0, String(data.debtor), data.debtorName, data.creditorName, data.attorneyId, data.lawsuitId);
+                tempPayment = await this.populatePayment(data._id, payment, interval, 0, String(data.debtor), data.debtorName, data.creditorName, 
+                // data.attorneyId,
+                data.lawsuitId);
                 paymentsArray.push(tempPayment);
             }
             if (interval.frequency != 0) {
@@ -97,7 +99,9 @@ class CaseUtil {
                     else {
                         payment.dueDate = await this.getDatePayment(interval.startDate, interval.timePeriod, i - 1);
                     }
-                    tempPayment = await this.populatePayment(data._id, payment, interval, i, String(data.debtor), data.debtorName, data.creditorName, data.attorneyId, data.lawsuitId);
+                    tempPayment = await this.populatePayment(data._id, payment, interval, i, String(data.debtor), data.debtorName, data.creditorName, 
+                    // data.attorneyId,
+                    data.lawsuitId);
                     paymentsArray.push(tempPayment);
                 }
             }
@@ -159,7 +163,9 @@ class CaseUtil {
         }
         return currentDate.toString();
     }
-    async populatePayment(caseId, payment, interval, frequency, debtor, debtorName, creditorName, attorneyId, lawsuitId) {
+    async populatePayment(caseId, payment, interval, frequency, debtor, debtorName, creditorName, 
+    // attorneyId: string,
+    lawsuitId) {
         // const uuid = v4();
         payment.amount = interval.amount;
         payment.frequency = frequency;
@@ -170,7 +176,7 @@ class CaseUtil {
         payment.debtorId = debtor;
         payment.debtorName = debtorName;
         payment.creditorName = creditorName;
-        payment.attorneyId = attorneyId;
+        // payment.attorneyId = attorneyId;
         payment.lawsuitId = lawsuitId;
         return { ...payment };
     }
