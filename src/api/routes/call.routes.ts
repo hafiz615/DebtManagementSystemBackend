@@ -43,6 +43,11 @@ router.patch(
   authorize.validateAuth,
   callController.updateCall
 );
+
+router.patch(
+  '/updateConferenceParticipant',
+  callController.updateConferenceParticipant
+);
 router.post(
   '/twilio/callerName',
   authorize.validateAuth,
