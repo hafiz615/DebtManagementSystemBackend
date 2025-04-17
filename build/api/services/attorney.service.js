@@ -51,9 +51,10 @@ class AttorneyService {
         if (!getCase)
             return [false, constants_util_1.default.notFoundMessage('Case')];
         const lawSuit = await this.lawsuitRepository.updateByOne({
-            attorneyId: req.params.id,
+            // attorneyId: req.params.id,
             debtorId: getCase.debtor,
             creditorId: getCase.creditor,
+            isDeleted: { $ne: true },
         }, {
             intervals: [],
             isExempt: false,

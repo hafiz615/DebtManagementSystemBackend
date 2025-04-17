@@ -1429,6 +1429,7 @@ class PaymentService {
     let lawsuit = await this.lawsuitRepository.getOne<ILawsuit>({
       debtorId: findCase.debtor,
       creditorId: findCase.creditor._id,
+      isDeleted: {$ne: true},
     });
     if (!lawsuit) {
       return [false, constants.notFoundMessage('Lawsuit')];
@@ -1445,6 +1446,7 @@ class PaymentService {
         // attorneyId: req.params.id,
         debtorId: findCase.debtor,
         creditorId: findCase.creditor._id,
+        isDeleted: {$ne: true},
       },
       {
         intervals: req.body.intervals,

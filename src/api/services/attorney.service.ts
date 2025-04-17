@@ -78,9 +78,10 @@ class AttorneyService {
 
     const lawSuit = await this.lawsuitRepository.updateByOne<ILawsuit>(
       {
-        attorneyId: req.params.id,
+        // attorneyId: req.params.id,
         debtorId: getCase.debtor,
         creditorId: getCase.creditor,
+        isDeleted: {$ne: true},
       },
       {
         intervals: [],

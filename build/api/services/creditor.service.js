@@ -291,7 +291,11 @@ class CreditorService {
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
         const updateResult = type === 'lawfirm'
-            ? await this.lawsuitRepository.updateByOne({ debtorId: caseTemp.debtor, creditorId: caseTemp.creditor }, { paymentsProceed: pause })
+            ? await this.lawsuitRepository.updateByOne({
+                debtorId: caseTemp.debtor,
+                creditorId: caseTemp.creditor,
+                isDeleted: { $ne: true },
+            }, { paymentsProceed: pause })
             : await this.caseRepository.updateById(id, {
                 creditorPaymentsProceed: pause,
             });

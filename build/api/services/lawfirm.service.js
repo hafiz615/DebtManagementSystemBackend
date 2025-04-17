@@ -123,6 +123,7 @@ class LawfirmService {
         await this.lawsuitRepository.updateByOne({
             debtorId: caseTemp.debtor,
             creditorId: caseTemp.creditor,
+            isDeleted: { $ne: true },
         }, { attorneyId: attorney._id });
         return [true, []];
     }
