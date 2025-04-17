@@ -18,6 +18,7 @@ export interface ICall extends Document {
   isDeleted: boolean;
   type: string;
   transcriptUrl: string;
+  conferenceName: string;
   createdAt: Date;
   updatedAt: Date;
 }

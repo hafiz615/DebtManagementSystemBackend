@@ -17,7 +17,7 @@ router.get('/twilio/token', authorize_middleware_1.default.validateAuth, call_co
 router.post('/twilio/fallback', call_controller_1.default.callFallBack);
 router.post('/twilio/call-status', call_controller_1.default.callStatus);
 router.get('/twilio/getIncomingCall/:callSid', call_controller_1.default.getIncomingCallSid);
-router.get('/conference/getAllTheParticipants', authorize_middleware_1.default.validateAuth, call_controller_1.default.getAllTheParticipants);
+router.post('/conference/getAllTheParticipants', call_controller_1.default.getAllTheParticipants);
 router.post('/callSummary', call_controller_1.default.callSummary);
 router.patch('/updateCall/:callSid', authorize_middleware_1.default.validateAuth, call_controller_1.default.updateCall);
 router.post('/twilio/callerName', authorize_middleware_1.default.validateAuth, call_controller_1.default.callerName);

@@ -107,7 +107,7 @@ class CallUtil {
     }
     async createCall(data, user, callerId, debtorId, creditorId) {
         const newCall = new call_repomodel_1.Call();
-        const { CaseId, CallSid, AccountSid, To, CallStatus, Direction } = data;
+        const { CaseId, CallSid, AccountSid, CallStatus, Direction, ConferenceName } = data;
         newCall.caseId = CaseId;
         newCall.debtorId = debtorId;
         newCall.creditorId = creditorId;
@@ -117,11 +117,10 @@ class CallUtil {
             newCall.userId = String(user._id);
         }
         newCall.accountSid = AccountSid;
-        if (To)
-            newCall.callTo = [To];
-        (newCall.callDirection = Direction),
-            (newCall.callFrom = callerId),
-            (newCall.callStatus = CallStatus);
+        newCall.conferenceName = ConferenceName;
+        newCall.callDirection = Direction;
+        newCall.callFrom = callerId;
+        newCall.callStatus = CallStatus;
         return await this.callRepository.create(newCall);
     }
     async createIncomingCall(data, userId) {
@@ -163,10 +162,10 @@ class CallUtil {
             status: 'in-progress',
             limit: 1,
         });
+        console.log('conferences', conferences);
         return conferences.length > 0 ? conferences[0].sid : null;
     }
-    async addParticipantToConference(toNumber, callerId) {
-        const conferenceRoom = `conference_${callerId.replace(/^\+1/, '')}`;
+    async addParticipantToConference(toNumber, callerId, conferenceRoom) {
         const conferenceSid = await this.getConferenceSidByFriendlyName(conferenceRoom);
         const participant = await this.twilioClient
             .conferences(conferenceSid)

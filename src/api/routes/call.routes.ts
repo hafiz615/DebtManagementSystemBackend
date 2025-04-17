@@ -32,9 +32,8 @@ router.get(
   '/twilio/getIncomingCall/:callSid',
   callController.getIncomingCallSid
 );
-router.get(
+router.post(
   '/conference/getAllTheParticipants',
-  authorize.validateAuth,
   callController.getAllTheParticipants
 );
 

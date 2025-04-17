@@ -18,6 +18,7 @@ export class Call {
   isDeleted = false;
   transcriptUrl = '';
   type = 'Call';
+  conferenceName = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
