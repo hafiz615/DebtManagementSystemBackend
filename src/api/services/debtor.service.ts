@@ -817,7 +817,6 @@ class DebtorService {
             caseTemp.debtor._id,
             caseTemp.creditor._id
           );
-          req.body.dummyLawsuitExist = false;
         }
         const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
           lawsuitFields,
@@ -827,7 +826,12 @@ class DebtorService {
           lawsuitDetails,
           caseTemp
         );
-        if (lawfirmTemp) req.body.lawsuitExist = true;
+        if (lawfirmTemp) {
+          await this.caseRepository.updateById(req.params.id, {
+            lawsuitExist: true,
+            dummyLawsuitExist: false,
+          });
+        }
       }
     }
     if (newFiles.bankStatementDocuments.length) {

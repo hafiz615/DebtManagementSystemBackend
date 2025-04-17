@@ -676,12 +676,15 @@ class DebtorService {
             if (lawsuitFields) {
                 if (caseTemp.dummyLawsuitExist) {
                     await lawsuit_util_1.default.deleteLawsuit(caseTemp.debtor._id, caseTemp.creditor._id);
-                    req.body.dummyLawsuitExist = false;
                 }
                 const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
                 const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, caseTemp);
-                if (lawfirmTemp)
-                    req.body.lawsuitExist = true;
+                if (lawfirmTemp) {
+                    await this.caseRepository.updateById(req.params.id, {
+                        lawsuitExist: true,
+                        dummyLawsuitExist: false,
+                    });
+                }
             }
         }
         if (newFiles.bankStatementDocuments.length) {

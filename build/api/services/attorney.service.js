@@ -18,6 +18,7 @@ class AttorneyService {
             const lawsuit = await this.lawsuitRepository.getOne({
                 debtorId: caseData.debtor,
                 creditorId: caseData.creditor,
+                isDeleted: { $ne: true },
             }, undefined, undefined, ['attorneyId', 'lawfirmId']);
             if (!lawsuit) {
                 return [true, caseData.lawfirmId ? { lawfirm: caseData.lawfirmId } : null];

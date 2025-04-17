@@ -34,6 +34,7 @@ class AttorneyService {
       {
         debtorId: caseData.debtor,
         creditorId: caseData.creditor,
+        isDeleted: {$ne: true},
       },
       undefined,
       undefined,
