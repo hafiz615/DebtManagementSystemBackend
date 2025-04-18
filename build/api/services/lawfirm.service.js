@@ -48,7 +48,7 @@ class LawfirmService {
                 debtorId: reqTemp.params.id,
                 userId: reqTemp.id,
             };
-            const lawsuit = await lawsuit_util_1.default.createLawsuit(lawsuitData);
+            const lawsuit = await lawsuit_util_1.default.upsertLawsuit(lawsuitData);
             return [true, []];
         };
         this.updateLawfirm = async (req) => {
@@ -139,7 +139,10 @@ class LawfirmService {
             lawsuit.defendant_company ===
                 caseTemp.debtor.businessInformation.companyName) || null;
         if (lawsuitFields) {
-            await lawsuit_util_1.default.deleteLawsuit(caseTemp.debtor._id, caseTemp.creditor._id);
+            // await lawsuitUtil.deleteLawsuit(
+            //   caseTemp.debtor._id,
+            //   caseTemp.creditor._id
+            // );
             const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
             const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, caseTemp);
             if (lawfirmTemp) {

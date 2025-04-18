@@ -47,7 +47,7 @@ class LawsuitUtil {
             lawfirmId: lawfirmTemp.id,
         });
         const lawsuitInfo = this.lawsuitInfo(lawsuit, caseData, attorneyTemp._id, lawfirmTemp._id, id);
-        const lawsuitTemp = await this.createLawsuit(lawsuitInfo);
+        const lawsuitTemp = await this.upsertLawsuit(lawsuitInfo);
         return lawsuitTemp ? [true, lawsuitTemp] : false;
     }
     async lawsuitDetailsDebtorPortal(lawsuitFields, userId) {
@@ -135,6 +135,17 @@ class LawsuitUtil {
         const newLawsuit = new lawsuit_repomodel_1.Lawsuit();
         const validatedLawsuit = dataCopier_util_1.DataCopier.copy(newLawsuit, data);
         return await this.lawsuitRepository.create(validatedLawsuit);
+    }
+    async upsertLawsuit(data) {
+        const newLawsuit = new lawsuit_repomodel_1.Lawsuit();
+        const validatedLawsuit = dataCopier_util_1.DataCopier.copy(newLawsuit, data);
+        delete validatedLawsuit.debtorId;
+        delete validatedLawsuit.creditorId;
+        return await this.lawsuitRepository.upsert({
+            debtorId: data.debtorId,
+            creditorId: data.creditorId,
+            isDeleted: false,
+        }, validatedLawsuit);
     }
     async updateFee(payments) {
         for (const payment of payments) {
