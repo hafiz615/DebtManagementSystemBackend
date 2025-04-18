@@ -699,6 +699,10 @@ class PaymentUtil {
   ) {
     const newPayment = new Payment();
 
+    if (payment.amount <= amount) {
+      return [false, 'Updated amount should be less than current amount.'];
+    }
+
     const updatedRemainingAmount = payment.amount - amount;
 
     const paymentValidate = DataCopier.copy(newPayment, payment);

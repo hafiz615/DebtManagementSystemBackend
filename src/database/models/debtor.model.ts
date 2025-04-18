@@ -241,6 +241,9 @@ const debtorSchema: Schema = new Schema({
   lastPaymentAmountDate: {
     type: Date,
   },
+  additionalCharge: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     required: true,

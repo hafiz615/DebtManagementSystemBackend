@@ -24,6 +24,7 @@ class PausePayment {
       {
         paymentAmountCount: 0,
         lastPaymentAmountDate: null,
+        additionalCharge: false,
       }
     );
   }
@@ -39,13 +40,14 @@ class PausePayment {
       {
         paymentPauseCount: 0,
         lastPaymentPauseDate: null,
+        additionalCharge: false,
       }
     );
   }
 
   public startCronJob(): void {
     cron.schedule(
-      '0 4 * * *',
+      '0 9 * * *',
       async () => {
         console.log(
           '[PausePayment] Running debtor pause task at 4 AM (America/New_York)'

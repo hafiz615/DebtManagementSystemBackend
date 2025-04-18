@@ -1885,6 +1885,18 @@ class DebtorService {
       req.body.timePeriod
     );
 
+    let additionalCharge = false;
+
+    if (!debtor.additionalCharge) {
+      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+
+      if (!additionalCharge) return [false, 'Unable to charge the amount.'];
+
+      this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        additionalCharge: true,
+      });
+    }
+
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
     let updateDebtor = null;
@@ -1923,7 +1935,7 @@ class DebtorService {
 
       if (!newPyament)
         return [false, constants.failureUpdateMessage('payments amount')];
-      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {
       const updatePyament = await paymentUtil.moveToLastPayment(
@@ -1934,8 +1946,8 @@ class DebtorService {
       if (!updatePyament[0]) return [false, updatePyament[1]];
       successMessage = 'Payments move to the last';
     }
-    // if (!updateDebtor)
-    // debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    if (!updateDebtor)
+      debtorUtil.updateDebtorPausePayment(req.params.id, false);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
@@ -1947,14 +1959,19 @@ class DebtorService {
     }
 
     const payments =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>({
-        debtorId: req.params.id,
-        caseId: null,
-        isDeleted: {$ne: true},
-        attorneyId: null,
-        authorized: {$ne: 'Success'},
-        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
-      });
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: req.params.id,
+          caseId: null,
+          isDeleted: {$ne: true},
+          attorneyId: null,
+          authorized: {$ne: 'Success'},
+          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        },
+        undefined,
+        undefined,
+        {dueDate: 1}
+      );
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
 

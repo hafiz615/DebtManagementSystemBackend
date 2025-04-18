@@ -84,6 +84,7 @@ export class Debtor {
   lastPaymentPauseDate = '';
   paymentAmountCount = 0;
   lastPaymentAmountDate = '';
+  additionalCharge = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

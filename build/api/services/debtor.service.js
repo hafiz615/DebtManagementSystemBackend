@@ -1411,6 +1411,15 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount, req.body.timePeriod);
+        let additionalCharge = false;
+        if (!debtor.additionalCharge) {
+            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
+            if (!additionalCharge)
+                return [false, 'Unable to charge the amount.'];
+            this.debtorRepository.updateById(debtor._id, {
+                additionalCharge: true,
+            });
+        }
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
         let updateDebtor = null;
@@ -1437,7 +1446,7 @@ class DebtorService {
             const newPyament = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
             if (!newPyament)
                 return [false, constants_util_1.default.failureUpdateMessage('payments amount')];
-            // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+            updateDebtor = debtor_util_1.default.updateDebtorPausePayment(req.params.id, true);
             successMessage = 'Change the payment amount';
         }
         else if (req.body.paymentId) {
@@ -1446,8 +1455,8 @@ class DebtorService {
                 return [false, updatePyament[1]];
             successMessage = 'Payments move to the last';
         }
-        // if (!updateDebtor)
-        // debtorUtil.updateDebtorPausePayment(req.params.id, false);
+        if (!updateDebtor)
+            debtor_util_1.default.updateDebtorPausePayment(req.params.id, false);
         return [true, constants_util_1.default.successfullyMessage(successMessage)];
     }
     async getDebtorPayments(req) {
@@ -1462,7 +1471,7 @@ class DebtorService {
             attorneyId: null,
             authorized: { $ne: 'Success' },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        });
+        }, undefined, undefined, { dueDate: 1 });
         if (!payments)
             return [true, constants_util_1.default.notFoundMessage('Payments')];
         return [true, { count: payments.length, payments }];

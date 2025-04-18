@@ -20,6 +20,7 @@ class PausePayment {
         }, {
             paymentAmountCount: 0,
             lastPaymentAmountDate: null,
+            additionalCharge: false,
         });
     }
     async pauseDebtorPaymentDay() {
@@ -30,10 +31,11 @@ class PausePayment {
         }, {
             paymentPauseCount: 0,
             lastPaymentPauseDate: null,
+            additionalCharge: false,
         });
     }
     startCronJob() {
-        node_cron_1.default.schedule('0 4 * * *', async () => {
+        node_cron_1.default.schedule('0 9 * * *', async () => {
             console.log('[PausePayment] Running debtor pause task at 4 AM (America/New_York)');
             await this.pauseDebtorPaymentAmount();
             await this.pauseDebtorPaymentDay();
