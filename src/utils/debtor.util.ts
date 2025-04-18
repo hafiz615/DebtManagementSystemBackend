@@ -923,11 +923,17 @@ class DebtorUtil {
     const updatePayload = amountCheck
       ? {
           $inc: {paymentAmountCount: 1},
-          $set: {lastPaymentAmountDate: commonUtil.getCurrentDate()},
+          $set: {
+            lastPaymentAmountDate: commonUtil.getCurrentDate(),
+            additionalCharge: false,
+          },
         }
       : {
           $inc: {paymentPauseCount: 1},
-          $set: {lastPaymentPauseDate: commonUtil.getCurrentDate()},
+          $set: {
+            lastPaymentPauseDate: commonUtil.getCurrentDate(),
+            additionalCharge: false,
+          },
         };
 
     return this.debtorRepository.updateById<IDebtor>(debtorId, updatePayload);

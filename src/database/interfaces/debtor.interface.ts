@@ -91,6 +91,7 @@ export interface IDebtor extends Document {
   lastPaymentPauseDate: string;
   paymentAmountCount: number;
   lastPaymentAmountDate: string;
+  additionalCharge: boolean;
   createdAt: string;
   updatedAt: string;
 }

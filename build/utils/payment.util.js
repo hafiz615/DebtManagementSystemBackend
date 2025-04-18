@@ -489,6 +489,9 @@ class PaymentUtil {
     }
     async changePaymentAmmount(payment, amount, debtor) {
         const newPayment = new payment_repomodel_1.Payment();
+        if (payment.amount <= amount) {
+            return [false, 'Updated amount should be less than current amount.'];
+        }
         const updatedRemainingAmount = payment.amount - amount;
         const paymentValidate = dataCopier_util_1.DataCopier.copy(newPayment, payment);
         paymentValidate.amount = updatedRemainingAmount;

@@ -244,6 +244,9 @@ const debtorSchema = new mongoose_1.Schema({
     lastPaymentAmountDate: {
         type: Date,
     },
+    additionalCharge: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         required: true,
