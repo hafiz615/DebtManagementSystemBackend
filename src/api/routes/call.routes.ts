@@ -69,6 +69,12 @@ router.get(
   callController.getVoiceMails
 );
 
+router.get(
+  '/getAllUserNumbers',
+  authorize.validateAuth,
+  callController.getAllUserNumbers
+);
+
 router.post(
   '/twilio/voice-mail-recording-status',
   callController.voiceMailRecordingStatus
