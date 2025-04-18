@@ -67,7 +67,7 @@ class LawsuitUtil {
       id
     );
 
-    const lawsuitTemp = await this.createLawsuit(lawsuitInfo);
+    const lawsuitTemp = await this.upsertLawsuit(lawsuitInfo);
 
     return lawsuitTemp ? [true, lawsuitTemp] : false;
   }
@@ -170,6 +170,21 @@ class LawsuitUtil {
     const newLawsuit = new Lawsuit();
     const validatedLawsuit = DataCopier.copy(newLawsuit, data as ILawsuit);
     return await this.lawsuitRepository.create<ILawsuit>(validatedLawsuit);
+  }
+
+  async upsertLawsuit(data: any) {
+    const newLawsuit = new Lawsuit();
+    const validatedLawsuit = DataCopier.copy(newLawsuit, data as ILawsuit);
+    delete validatedLawsuit.debtorId;
+    delete validatedLawsuit.creditorId;
+    return await this.lawsuitRepository.upsert<ILawsuit>(
+      {
+        debtorId: data.debtorId,
+        creditorId: data.creditorId,
+        isDeleted: false,
+      },
+      validatedLawsuit
+    );
   }
 
   async updateFee(payments: any) {
