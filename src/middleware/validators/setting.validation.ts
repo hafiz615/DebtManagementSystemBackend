@@ -223,12 +223,15 @@ class SettingValidate {
 
   async validateFee(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
-      type: Joi.string().valid('legalFee', 'serviceFee').required().messages({
-        'any.required': 'Fee type is required.',
-        'string.base': 'Fee type must be a string.',
-        'string.empty': 'Fee type cannot be an empty string.',
-        'any.only': 'Fee type is invalid',
-      }),
+      type: Joi.string()
+        .valid('legalFee', 'serviceFee', 'pausePaymentFee')
+        .required()
+        .messages({
+          'any.required': 'Fee type is required.',
+          'string.base': 'Fee type must be a string.',
+          'string.empty': 'Fee type cannot be an empty string.',
+          'any.only': 'Fee type is invalid',
+        }),
       fee: Joi.number().positive().required().messages({
         'any.required': 'Fee is required.',
         'number.positive': 'Fee must be a positive number.',

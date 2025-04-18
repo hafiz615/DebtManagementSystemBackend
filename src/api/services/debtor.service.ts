@@ -1873,6 +1873,94 @@ class DebtorService {
     return response;
   }
 
+  async pauseDebtorPayments(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const pausePaymentCheck = await paymentUtil.pausePaymentChecks(
+      debtor,
+      req.body.amount,
+      req.body.timePeriod
+    );
+
+    if (!pausePaymentCheck[0]) return pausePaymentCheck;
+
+    let updateDebtor = null;
+
+    const filter: any = {
+      debtorId: req.params.id,
+      caseId: null,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+    };
+
+    if (req.body?.paymentId) {
+      filter._id = req.body.paymentId;
+    }
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(filter);
+
+    if (!payments.length) return [false, constants.notFoundMessage('Payments')];
+
+    let successMessage = null;
+
+    if (req.body.endDate) {
+      const updateDatesPayment = await paymentUtil.pausePaymentByDay(
+        payments,
+        req.body.endDate
+      );
+      successMessage = updateDatesPayment[1];
+    } else if (req.body.paymentId && req.body.amount) {
+      const newPyament = await paymentUtil.changePaymentAmmount(
+        payments[0],
+        req.body.amount,
+        debtor
+      );
+
+      if (!newPyament)
+        return [false, constants.failureUpdateMessage('payments amount')];
+      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      successMessage = 'Change the payment amount';
+    } else if (req.body.paymentId) {
+      const updatePyament = await paymentUtil.moveToLastPayment(
+        payments[0],
+        debtor,
+        false
+      );
+      if (!updatePyament[0]) return [false, updatePyament[1]];
+      successMessage = 'Payments move to the last';
+    }
+    // if (!updateDebtor)
+    // debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    return [true, constants.successfullyMessage(successMessage)];
+  }
+
+  async getDebtorPayments(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: req.params.id,
+        caseId: null,
+        isDeleted: {$ne: true},
+        attorneyId: null,
+        authorized: {$ne: 'Success'},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+      });
+
+    if (!payments) return [true, constants.notFoundMessage('Payments')];
+
+    return [true, {count: payments.length, payments}];
+  }
+
   async getToken(req: Request) {
     const getDebtor = await this.debtorRepository.getById<IDebtor>(
       req.params.id

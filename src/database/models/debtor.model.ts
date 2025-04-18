@@ -229,6 +229,18 @@ const debtorSchema: Schema = new Schema({
   status: {
     type: String,
   },
+  paymentPauseCount: {
+    type: Number,
+  },
+  lastPaymentPauseDate: {
+    type: Date,
+  },
+  paymentAmountCount: {
+    type: Number,
+  },
+  lastPaymentAmountDate: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     required: true,

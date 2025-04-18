@@ -1,10 +1,19 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const common_util_1 = __importDefault(require("./common.util"));
 const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
+const dataCopier_util_1 = require("./dataCopier.util");
+const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
+const axios_1 = __importDefault(require("axios"));
+const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
 class PaymentUtil {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
+        this.feeRepository = new serviceFee_repository_1.ServiceFeeRepository();
     }
     async getFilteredPayments(payments, arrayName) {
         const transformedArray = payments.map(obj => ({
@@ -178,14 +187,14 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -194,7 +203,7 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -202,7 +211,7 @@ class PaymentUtil {
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -211,14 +220,14 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -228,7 +237,7 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -236,7 +245,7 @@ class PaymentUtil {
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async searchAndFilterHomePayments(payments, req) {
         // Helper function to apply text search
@@ -316,18 +325,35 @@ class PaymentUtil {
             paymentReferenceBool: true,
             caseId: { $ne: null },
             isDeleted: false,
-        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
     }
     async getAllPaymentReferenceDocuments(referenceId) {
         return await this.paymentRepository.getAllWithoutPagination({
             paymentReference: referenceId,
             paymentReferenceBool: true,
             isDeleted: false,
-        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
+    }
+    async MonToFriDates(payment) {
+        const baseDate = new Date(payment.dueDate); // e.g., 2025-04-16
+        const dayOfWeek = baseDate.getUTCDay(); // 0 (Sun) to 6 (Sat)
+        // Calculate how many days to subtract to get Monday
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday is 0, so we subtract 6
+        const monday = new Date(baseDate);
+        monday.setUTCDate(baseDate.getUTCDate() + diffToMonday);
+        monday.setUTCHours(0, 0, 0, 0);
+        const friday = new Date(monday);
+        friday.setUTCDate(monday.getUTCDate() + 4); // Monday + 4 days = Friday
+        friday.setUTCHours(23, 59, 59, 999);
+        return { monday, friday };
     }
     async getOtherPayments(payment) {
         const debtorId = payment.debtorId;
-        const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        // const nextDate = await this.addDaysBasedOnPeriod(
+        //   payment.dueDate,
+        //   payment.timePeriod
+        // );
+        const { monday, friday } = await this.MonToFriDates(payment);
         const payments = await this.paymentRepository.getAllWithoutPagination({
             debtorId: debtorId,
             caseId: { $ne: null },
@@ -335,10 +361,10 @@ class PaymentUtil {
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
             isDeleted: false,
             dueDate: {
-                $gte: new Date(payment.dueDate),
-                $lt: nextDate,
+                $gte: monday,
+                $lte: friday,
             },
-        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
         return payments;
     }
     async addDaysBasedOnPeriod(date, timePeriod) {
@@ -357,6 +383,14 @@ class PaymentUtil {
         resultDate.setDate(resultDate.getDate() + daysToAdd);
         return resultDate;
     }
+    getWeekdayDate(baseDate, targetWeekday) {
+        const day = baseDate.getUTCDay();
+        const diff = (targetWeekday + 7 - day) % 7;
+        const alignedDate = new Date(baseDate);
+        alignedDate.setUTCDate(baseDate.getUTCDate() + diff);
+        alignedDate.setUTCHours(0, 0, 0, 0);
+        return alignedDate;
+    }
     async createPaymentDoc(amount, token, debtorId, paymentGateway, debtorName, link) {
         const payment = new payment_repomodel_1.Payment();
         payment.amount = amount;
@@ -371,6 +405,312 @@ class PaymentUtil {
         payment.paymentGateway = paymentGateway;
         const hello = await this.paymentRepository.create(payment);
         console.log('hello', hello);
+    }
+    async pausePaymentByDay(payments, endDate, updatedDueDate, targetWeekday, creditorPayments) {
+        let updatedCreditorDueDate = updatedDueDate;
+        targetWeekday = !targetWeekday
+            ? new Date(endDate).getUTCDay()
+            : targetWeekday;
+        for (const payment of payments) {
+            if (!updatedDueDate &&
+                new Date(payment.dueDate).getUTCDay() <= targetWeekday) {
+                updatedDueDate = this.getWeekdayDate(new Date(payment.dueDate), targetWeekday);
+            }
+            await this.paymentRepository.updateById(payment._id, {
+                dueDate: updatedDueDate.toISOString(),
+            });
+            if (!creditorPayments)
+                creditorPayments = await this.getOtherPayments(payment);
+            for (const creditorPayment of creditorPayments) {
+                let newCreditorDate;
+                if (updatedCreditorDueDate) {
+                    newCreditorDate = updatedCreditorDueDate;
+                }
+                else {
+                    const creditorDate = new Date(creditorPayment.dueDate);
+                    const creditorWeekday = creditorDate.getUTCDay();
+                    if (creditorWeekday < targetWeekday) {
+                        newCreditorDate = this.getWeekdayDate(creditorDate, targetWeekday);
+                    }
+                    else {
+                        newCreditorDate = creditorDate;
+                    }
+                }
+                await this.paymentRepository.updateById(creditorPayment._id, {
+                    dueDate: newCreditorDate.toISOString(),
+                });
+            }
+            updatedDueDate = null;
+            creditorPayments = null;
+        }
+        return [true, 'Payment date updated'];
+    }
+    async moveToLastPayment(payment, debtor, paymentAmountCheck, creditorPayments) {
+        const paymentTemp = await this.findLastDueDate(debtor._id);
+        const updatedDueDate = await this.findLastDate(paymentTemp[0]);
+        if (payment._id) {
+            if (new Date(paymentTemp[0].dueDate).getTime() ===
+                new Date(payment.dueDate).getTime() &&
+                !paymentAmountCheck) {
+                return [
+                    false,
+                    'You Cannot pause the payment Which is already in last you can shift the day',
+                ];
+            }
+            await this.pausePaymentByDay([payment], '', updatedDueDate, updatedDueDate.getUTCDay());
+            return [true, []];
+        }
+        else {
+            payment.dueDate = updatedDueDate.toISOString();
+            payment.frequency = paymentTemp[0].frequency + 1;
+            const createdPayment = await this.paymentRepository.create(payment);
+            await this.pausePaymentByDay([createdPayment], '', new Date(createdPayment.dueDate), null, creditorPayments);
+            return [true, []];
+        }
+    }
+    async findLastDateByFrequency(interval) {
+        const { frequency, timePeriod, startDate } = interval;
+        const daysToAdd = (await common_util_1.default.getTimePeriod(timePeriod)) * frequency;
+        return new Date(new Date(startDate).getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    }
+    async findLastDate(payment) {
+        const daysToAdd = await common_util_1.default.getTimePeriod(payment.timePeriod);
+        return new Date(new Date(payment.dueDate).getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    }
+    async findLastDueDate(debtorId) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            debtorId,
+            caseId: null,
+            isDeleted: { $ne: true },
+            attorneyId: null,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
+        }, undefined, undefined, { dueDate: -1 }, undefined, undefined, 1, 1);
+    }
+    async changePaymentAmmount(payment, amount, debtor) {
+        const newPayment = new payment_repomodel_1.Payment();
+        const updatedRemainingAmount = payment.amount - amount;
+        const paymentValidate = dataCopier_util_1.DataCopier.copy(newPayment, payment);
+        paymentValidate.amount = updatedRemainingAmount;
+        const updatePayment = await this.paymentRepository.updateById(String(payment._id), {
+            amount: amount,
+        });
+        const creditorPayments = await this.getOtherPayments(payment);
+        const { highAggressionPayments, remainingPayments, remainingAmount } = await this.creditorsAmountFilter(amount, creditorPayments);
+        return await this.moveToLastPayment(paymentValidate, debtor, true, remainingPayments);
+    }
+    async creditorsAmountFilter(amount, payments) {
+        const highAggressionPayments = [];
+        const remainingPayments = [];
+        let remainingAmount = amount;
+        // Sort in-place by aggression descending
+        payments.sort((a, b) => (b.caseId?.creditor?.aggression ?? 0) -
+            (a.caseId?.creditor?.aggression ?? 0));
+        for (const payment of payments) {
+            const paymentAmount = payment.amount ?? 0;
+            if (paymentAmount <= remainingAmount) {
+                highAggressionPayments.push(payment);
+                remainingAmount -= paymentAmount;
+            }
+            else {
+                remainingPayments.push(payment);
+            }
+        }
+        return {
+            highAggressionPayments,
+            remainingPayments,
+            remainingAmount,
+        };
+    }
+    async pausePaymentChecks(debtor, amount, timePeriod) {
+        if (!debtor?.lastPaymentAmountDate && !debtor?.lastPaymentPauseDate)
+            return [true, []];
+        if (debtor?.lastPaymentAmountDate && amount) {
+            const pauseAmountDateCount = await common_util_1.default.getTimePeriod('Custom', common_util_1.default.getCurrentDate(), debtor.lastPaymentAmountDate);
+            if (pauseAmountDateCount <= 30) {
+                return [false, 'Cannot change the Payment amount twice a month.'];
+            }
+        }
+        if (debtor?.lastPaymentPauseDate && timePeriod) {
+            const pauseDateCount = await common_util_1.default.getTimePeriod('Custom', common_util_1.default.getCurrentDate(), debtor.lastPaymentPauseDate);
+            if (pauseDateCount <= 14) {
+                return [false, 'Cannot pause the Payment in a consecutive week'];
+            }
+        }
+        return [true, []];
+    }
+    async authorizeCreditCard(amount, customer_vault_id, platform) {
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
+        const params = {
+            security_key: urlSecurityKey.securityKey,
+            customer_vault_id: customer_vault_id,
+            type: 'auth',
+            amount: amount,
+        };
+        console.log(params);
+        try {
+            const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+            return response.data;
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
+    }
+    async captureCreditCard(customer_vault_id, transactionId, platform) {
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
+        const params = {
+            security_key: urlSecurityKey.securityKey,
+            customer_vault_id: customer_vault_id,
+            transaction_id: transactionId,
+            stored_credential_indicator: 'used',
+            type: 'capture',
+        };
+        try {
+            const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+            return response.data;
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
+    }
+    async achCredit(customer_vault_id, amount, platform) {
+        const urlSecurityKey = await common_util_1.default.getUrlAndSecurityKeyPlatform(platform);
+        const url = urlSecurityKey.url;
+        const params = {
+            security_key: urlSecurityKey.securityKey,
+            customer_vault_id: customer_vault_id,
+            stored_credential_indicator: 'used',
+            type: 'credit',
+            amount: amount,
+            payment: 'check',
+        };
+        try {
+            const response = await axiosInstanceInterceptor_1.default.get(url, { params });
+            return response.data;
+        }
+        catch (error) {
+            if (axios_1.default.isAxiosError(error)) {
+                console.error('Error making request:', error.message);
+                if (error.response) {
+                    console.error('Response data:', error.response.data);
+                    console.error('Response status:', error.response.status);
+                    console.error('Response headers:', error.response.headers);
+                }
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+        }
+    }
+    async getAdditionalCharge(debtor) {
+        const accounts = debtor.accounts;
+        const pausePaymentFee = await this.feeRepository.getOne({
+            type: 'pausePaymentFee',
+        });
+        const amount = pausePaymentFee ? pausePaymentFee.fee : 0;
+        let result = false;
+        console.log(amount, 'amounttt');
+        if (amount > 0) {
+            const payment = new payment_repomodel_1.Payment();
+            payment.authorizedDate = common_util_1.default.getCurrentDate();
+            payment.debtorId = debtor._id;
+            payment.amount = amount;
+            payment.debtorName = debtor.basicInformation.fullName;
+            payment.paymentMode = 'Additional Charge';
+            let customerVaultId = '';
+            let platform = '';
+            for (const account of accounts) {
+                if (account.paymentType === 'cc') {
+                    const authCreditCard = await this.authorizeCreditCard(amount, account.customerVaultId, account.platform);
+                    const responseNumAuth = new URLSearchParams(authCreditCard).get('response');
+                    const responseTextAuth = new URLSearchParams(authCreditCard).get('responsetext');
+                    const transactionIdAuth = new URLSearchParams(authCreditCard).get('transactionid');
+                    if (responseNumAuth === '1') {
+                        console.log('auth successs');
+                        payment.authorized = 'Success';
+                        payment.debtorTransId = transactionIdAuth;
+                        payment.paymentGateway = account.platform;
+                        payment.transactionType = account.paymentType;
+                        customerVaultId = account.customerVaultId;
+                        platform = account.platform;
+                        break;
+                    }
+                    if (responseNumAuth !== '1') {
+                        console.log('auth failed');
+                        payment.authorized = 'Failed';
+                        payment.debtorTransId = transactionIdAuth;
+                        payment.failedReasonAuthorization = responseTextAuth;
+                        payment.paymentGateway = account.platform;
+                        payment.transactionType = account.paymentType;
+                    }
+                }
+                if (account.paymentType === 'ck') {
+                    const response = await this.achCredit(account.customerVaultId, amount, account.platform);
+                    const responseNum = new URLSearchParams(response).get('response');
+                    const responseText = new URLSearchParams(response).get('responsetext');
+                    const transactionId = new URLSearchParams(response).get('transactionid');
+                    if (responseNum === '1') {
+                        payment.authorized = 'Success';
+                        payment.captured = 'Success';
+                        payment.debtorTransId = transactionId;
+                        payment.paymentGateway = account.platform;
+                        payment.transactionType = account.paymentType;
+                        customerVaultId = account.customerVaultId;
+                        result = true;
+                        break;
+                    }
+                    if (responseNum !== '1') {
+                        payment.authorized = 'Failed';
+                        payment.captured = 'Failed';
+                        payment.debtorTransId = transactionId;
+                        payment.failedReasonCaptured = responseText;
+                        payment.paymentGateway = account.platform;
+                        payment.transactionType = account.paymentType;
+                    }
+                }
+            }
+            if (payment.authorized === 'Success') {
+                console.log('going to capture');
+                const captureCreditCard = await this.captureCreditCard(customerVaultId, payment.debtorTransId, platform);
+                const responseNumCapture = new URLSearchParams(captureCreditCard).get('response');
+                const responseTextCapture = new URLSearchParams(captureCreditCard).get('responsetext');
+                if (responseNumCapture === '1') {
+                    console.log('capture success');
+                    payment.captured = 'Success';
+                    result = true;
+                }
+                if (responseNumCapture !== '1') {
+                    console.log('capture failed');
+                    payment.captured = 'Failed';
+                    payment.failedReasonCaptured = responseTextCapture;
+                }
+            }
+            console.log(payment, 'paymenttttt');
+            await this.paymentRepository.create(payment);
+        }
+        return result;
     }
 }
 exports.default = new PaymentUtil();
