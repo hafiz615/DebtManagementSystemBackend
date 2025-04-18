@@ -1411,15 +1411,14 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
         const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount, req.body.timePeriod);
-        let additionalCharge = false;
-        if (!debtor.additionalCharge) {
-            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
-            if (!additionalCharge)
-                return [false, 'Unable to charge the amount.'];
-            this.debtorRepository.updateById(debtor._id, {
-                additionalCharge: true,
-            });
-        }
+        // let additionalCharge = false;
+        // if (!debtor.additionalCharge) {
+        //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+        //   if (!additionalCharge) return [false, 'Unable to charge the amount.'];
+        //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        //     additionalCharge: true,
+        //   });
+        // }
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
         let updateDebtor = null;

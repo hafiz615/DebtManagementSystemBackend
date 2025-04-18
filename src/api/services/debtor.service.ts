@@ -1885,17 +1885,17 @@ class DebtorService {
       req.body.timePeriod
     );
 
-    let additionalCharge = false;
+    // let additionalCharge = false;
 
-    if (!debtor.additionalCharge) {
-      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+    // if (!debtor.additionalCharge) {
+    //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-      if (!additionalCharge) return [false, 'Unable to charge the amount.'];
+    //   if (!additionalCharge) return [false, 'Unable to charge the amount.'];
 
-      this.debtorRepository.updateById<IDebtor>(debtor._id, {
-        additionalCharge: true,
-      });
-    }
+    //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
+    //     additionalCharge: true,
+    //   });
+    // }
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
