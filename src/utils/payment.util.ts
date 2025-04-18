@@ -778,7 +778,7 @@ class PaymentUtil {
       }
     }
 
-    if (debtor?.lastPaymentPauseDate && timePeriod) {
+    if (debtor?.lastPaymentPauseDate) {
       const pauseDateCount = await commonUtil.getTimePeriod(
         'Custom',
         commonUtil.getCurrentDate(),

@@ -1885,6 +1885,8 @@ class DebtorService {
       req.body.timePeriod
     );
 
+    if (!pausePaymentCheck[0]) return pausePaymentCheck;
+
     // let additionalCharge = false;
 
     // if (!debtor.additionalCharge) {
@@ -1896,8 +1898,6 @@ class DebtorService {
     //     additionalCharge: true,
     //   });
     // }
-
-    if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
     let updateDebtor = null;
 

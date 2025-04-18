@@ -534,7 +534,7 @@ class PaymentUtil {
                 return [false, 'Cannot change the Payment amount twice a month.'];
             }
         }
-        if (debtor?.lastPaymentPauseDate && timePeriod) {
+        if (debtor?.lastPaymentPauseDate) {
             const pauseDateCount = await common_util_1.default.getTimePeriod('Custom', common_util_1.default.getCurrentDate(), debtor.lastPaymentPauseDate);
             if (pauseDateCount <= 14) {
                 return [false, 'Cannot pause the Payment in a consecutive week'];
