@@ -212,7 +212,7 @@ class LawsuitUtil {
 
   async updateLawsuitFee(fee: number, debtorId: any, creditorId: any) {
     await this.lawsuitRepository.updateByOne<ILawsuit>(
-      {creditorId, debtorId},
+      {creditorId, debtorId, isDeleted: {$ne: true}},
       {
         $inc: {
           lawsuitReceiveAmount: fee,
@@ -292,6 +292,7 @@ class LawsuitUtil {
       {
         debtorId: debtorId,
         creditorId: creditorId,
+        isDeleted: {$ne: true},
       },
       {
         isDeleted: true,
@@ -304,6 +305,7 @@ class LawsuitUtil {
       {
         debtorId: debtorId,
         creditorId: creditorId,
+        isDeleted: {$ne: true},
       },
       {
         intervals: [],

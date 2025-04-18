@@ -160,7 +160,7 @@ class LawsuitUtil {
         }
     }
     async updateLawsuitFee(fee, debtorId, creditorId) {
-        await this.lawsuitRepository.updateByOne({ creditorId, debtorId }, {
+        await this.lawsuitRepository.updateByOne({ creditorId, debtorId, isDeleted: { $ne: true } }, {
             $inc: {
                 lawsuitReceiveAmount: fee,
                 lawsuitReceiveCount: 1,
@@ -220,6 +220,7 @@ class LawsuitUtil {
         await this.lawsuitRepository.updateByOne({
             debtorId: debtorId,
             creditorId: creditorId,
+            isDeleted: { $ne: true },
         }, {
             isDeleted: true,
         });
@@ -228,6 +229,7 @@ class LawsuitUtil {
         await this.lawsuitRepository.updateByOne({
             debtorId: debtorId,
             creditorId: creditorId,
+            isDeleted: { $ne: true },
         }, {
             intervals: [],
             isExempt: false,

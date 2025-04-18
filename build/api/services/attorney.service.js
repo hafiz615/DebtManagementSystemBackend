@@ -18,6 +18,7 @@ class AttorneyService {
             const lawsuit = await this.lawsuitRepository.getOne({
                 debtorId: caseData.debtor,
                 creditorId: caseData.creditor,
+                isDeleted: { $ne: true },
             }, undefined, undefined, ['attorneyId', 'lawfirmId']);
             if (!lawsuit) {
                 return [true, caseData.lawfirmId ? { lawfirm: caseData.lawfirmId } : null];
@@ -50,9 +51,10 @@ class AttorneyService {
         if (!getCase)
             return [false, constants_util_1.default.notFoundMessage('Case')];
         const lawSuit = await this.lawsuitRepository.updateByOne({
-            attorneyId: req.params.id,
+            // attorneyId: req.params.id,
             debtorId: getCase.debtor,
             creditorId: getCase.creditor,
+            isDeleted: { $ne: true },
         }, {
             intervals: [],
             isExempt: false,

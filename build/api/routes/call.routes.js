@@ -10,12 +10,17 @@ const router = (0, express_1.Router)();
 router.get('/getCalls/:caseId', authorize_middleware_1.default.validateAuth, call_controller_1.default.getCalls);
 router.post('/voice', call_controller_1.default.callTwiml);
 router.post('/twilio/recording-status', call_controller_1.default.callRecordingStatus);
+router.post('/conference/conference-start-event', call_controller_1.default.conferenceStartEvent);
+router.post('/conference/conference-recording-status', call_controller_1.default.conferenceRecordingStatus);
+router.post('/conference/add-participant', authorize_middleware_1.default.validateAuth, call_controller_1.default.addParticipant);
 router.get('/twilio/token', authorize_middleware_1.default.validateAuth, call_controller_1.default.getToken);
 router.post('/twilio/fallback', call_controller_1.default.callFallBack);
 router.post('/twilio/call-status', call_controller_1.default.callStatus);
 router.get('/twilio/getIncomingCall/:callSid', call_controller_1.default.getIncomingCallSid);
+router.post('/conference/getAllTheParticipants', call_controller_1.default.getAllTheParticipants);
 router.post('/callSummary', call_controller_1.default.callSummary);
 router.patch('/updateCall/:callSid', authorize_middleware_1.default.validateAuth, call_controller_1.default.updateCall);
+router.patch('/updateConferenceParticipant', call_controller_1.default.updateConferenceParticipant);
 router.post('/twilio/callerName', authorize_middleware_1.default.validateAuth, call_controller_1.default.callerName);
 router.get('/twilio/getNumberMissedCalls', authorize_middleware_1.default.validateAuth, call_controller_1.default.getMissedCalls);
 router.post('/twilio/voiceMail', call_controller_1.default.voiceMail);
@@ -23,5 +28,6 @@ router.post('/twilio/voiceMailRecording', call_controller_1.default.voiceMailRec
 router.get('/getVoiceMails', authorize_middleware_1.default.validateAuth, call_controller_1.default.getVoiceMails);
 router.post('/twilio/voice-mail-recording-status', call_controller_1.default.voiceMailRecordingStatus);
 router.delete('/deleteCall/:id', authorize_middleware_1.default.validateAuth, call_controller_1.default.deleteCall);
+router.delete('/conference/removeParticipant', call_controller_1.default.removeParticipant);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

@@ -1506,35 +1506,35 @@ class CaseService {
       return [false, 'Payment plan already exist!'];
     }
 
-    if (!findCase.lawsuitExist) {
-      const lawsuitFields =
-        findCase.debtor.lawsuitFields?.find(
-          lawsuit =>
-            lawsuit.plaintiff_company ===
-              findCase.creditor.businessInformation.companyName &&
-            lawsuit.defendant_company ===
-              findCase.debtor.businessInformation.companyName
-        ) || null;
+    // if (!findCase.lawsuitExist) {
+    //   const lawsuitFields =
+    //     findCase.debtor.lawsuitFields?.find(
+    //       lawsuit =>
+    //         lawsuit.plaintiff_company ===
+    //           findCase.creditor.businessInformation.companyName &&
+    //         lawsuit.defendant_company ===
+    //           findCase.debtor.businessInformation.companyName
+    //     ) || null;
 
-      if (lawsuitFields) {
-        if (findCase.dummyLawsuitExist) {
-          await lawsuitUtil.deleteLawsuit(
-            findCase.debtor._id,
-            findCase.creditor._id
-          );
-          req.body.dummyLawsuitExist = false;
-        }
-        const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
-          lawsuitFields,
-          reqTemp.id
-        );
-        const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
-          lawsuitDetails,
-          findCase
-        );
-        if (lawfirmTemp) req.body.lawsuitExist = true;
-      }
-    }
+    //   if (lawsuitFields) {
+    //     if (findCase.dummyLawsuitExist) {
+    //       await lawsuitUtil.deleteLawsuit(
+    //         findCase.debtor._id,
+    //         findCase.creditor._id
+    //       );
+    //       req.body.dummyLawsuitExist = false;
+    //     }
+    //     const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+    //       lawsuitFields,
+    //       reqTemp.id
+    //     );
+    //     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+    //       lawsuitDetails,
+    //       findCase
+    //     );
+    //     if (lawfirmTemp) req.body.lawsuitExist = true;
+    //   }
+    // }
 
     // if (req.body?.commission) {
     //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {

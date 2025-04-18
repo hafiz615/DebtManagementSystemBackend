@@ -51,6 +51,28 @@ class CallController {
     }
   };
 
+  updateConferenceParticipant = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.updateConferenceParticipant(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
   callSummary = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.callSummary(req);
@@ -102,7 +124,7 @@ class CallController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.CREATED,
           data: response[1],
-          message: constants.successUpdateMessage('Cases'),
+          message: constants.successUpdateMessage('Call Recording'),
         })
       );
     } catch (error) {
@@ -112,6 +134,71 @@ class CallController {
     }
   };
 
+  conferenceStartEvent = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.conferenceStartEvent(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response));
+      }
+      return res.status(constants.CODE.CREATED).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.CREATED,
+          data: response[1],
+          message: constants.successUpdateMessage('Call Sid'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  conferenceRecordingStatus = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.conferenceRecordingStatus(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.CREATED).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.CREATED,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  addParticipant = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.addParticipant(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.CREATED).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.CREATED,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
   getCalls = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.getCalls(req);
@@ -125,6 +212,28 @@ class CallController {
           statusCode: constants.CODE.OK,
           data: response[1],
           message: constants.successFoundMessage('All Calls for this Case'),
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getAllTheParticipants = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.getAllTheParticipants(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.OK)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Particpants'),
         })
       );
     } catch (error) {
@@ -350,7 +459,29 @@ class CallController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successDeleteMessage('Voice Mail'),
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  removeParticipant = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.removeParticipant(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: response[1],
         })
       );
     } catch (error) {
