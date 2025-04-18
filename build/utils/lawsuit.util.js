@@ -145,7 +145,7 @@ class LawsuitUtil {
                 updateObjPayment['serviceFee'] = await this.getServiceFee(payment.caseId);
                 updateObjPayment['updatedAt'] = common_util_1.default.getCurrentDate();
                 await this.paymentRepository.updateById(payment._id, updateObjPayment);
-                this.updateLawsuitFee(fee, payment.caseId.debtor, payment.caseId.creditor);
+                this.updateLawsuitFee(fee, payment.caseId.debtor._id, payment.caseId.creditor._id);
             }
         }
     }
@@ -154,7 +154,7 @@ class LawsuitUtil {
             if (payment.caseId) {
                 const fee = await this.getLegalFee(payment.caseId);
                 if (fee) {
-                    this.updateLawsuitFee(fee, payment.caseId.debtor, payment.caseId.creditor);
+                    this.updateLawsuitFee(fee, payment.caseId.debtor._id, payment.caseId.creditor._id);
                 }
             }
         }

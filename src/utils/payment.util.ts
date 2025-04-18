@@ -7,6 +7,7 @@ import {DataCopier} from './dataCopier.util';
 import constants from '../utils/constants.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import constantsUtil from '../utils/constants.util';
+import {ICreditor} from '../database/interfaces/creditor.interface';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -226,7 +227,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -240,7 +241,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -256,7 +257,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -271,7 +272,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -287,7 +288,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -301,7 +302,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -318,7 +319,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -333,7 +334,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      [{path: 'caseId', populate: 'debtor'}]
+      [{path: 'caseId', populate: ['debtor', 'creditor']}]
     );
   }
 
@@ -430,7 +431,7 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      {path: 'caseId', populate: [{path: 'debtor'}]}
+      {path: 'caseId', populate: ['debtor', 'creditor']}
     );
   }
 
@@ -444,16 +445,37 @@ class PaymentUtil {
       undefined,
       undefined,
       undefined,
-      {path: 'caseId', populate: [{path: 'debtor'}]}
+      {path: 'caseId', populate: ['debtor', 'creditor']}
     );
+  }
+
+  async MonToFriDates(payment: IPayment) {
+    const baseDate = new Date(payment.dueDate); // e.g., 2025-04-16
+    const dayOfWeek = baseDate.getUTCDay(); // 0 (Sun) to 6 (Sat)
+
+    // Calculate how many days to subtract to get Monday
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday is 0, so we subtract 6
+
+    const monday = new Date(baseDate);
+    monday.setUTCDate(baseDate.getUTCDate() + diffToMonday);
+    monday.setUTCHours(0, 0, 0, 0);
+
+    const friday = new Date(monday);
+    friday.setUTCDate(monday.getUTCDate() + 4); // Monday + 4 days = Friday
+    friday.setUTCHours(23, 59, 59, 999);
+
+    return {monday, friday};
   }
 
   async getOtherPayments(payment: IPayment) {
     const debtorId = payment.debtorId;
-    const nextDate = await this.addDaysBasedOnPeriod(
-      payment.dueDate,
-      payment.timePeriod
-    );
+    // const nextDate = await this.addDaysBasedOnPeriod(
+    //   payment.dueDate,
+    //   payment.timePeriod
+    // );
+
+    const {monday, friday} = await this.MonToFriDates(payment);
+
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
         {
@@ -463,14 +485,14 @@ class PaymentUtil {
           paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
           isDeleted: false,
           dueDate: {
-            $gte: new Date(payment.dueDate),
-            $lt: nextDate,
+            $gte: monday,
+            $lte: friday,
           },
         },
         undefined,
         undefined,
         undefined,
-        {path: 'caseId', populate: [{path: 'debtor'}]}
+        {path: 'caseId', populate: ['debtor', 'creditor']}
       );
     return payments;
   }
@@ -494,6 +516,15 @@ class PaymentUtil {
     resultDate.setDate(resultDate.getDate() + daysToAdd);
 
     return resultDate;
+  }
+
+  private getWeekdayDate(baseDate: Date, targetWeekday: number): Date {
+    const day = baseDate.getUTCDay();
+    const diff = (targetWeekday + 7 - day) % 7;
+    const alignedDate = new Date(baseDate);
+    alignedDate.setUTCDate(baseDate.getUTCDate() + diff);
+    alignedDate.setUTCHours(0, 0, 0, 0);
+    return alignedDate;
   }
 
   async createPaymentDoc(
@@ -520,101 +551,152 @@ class PaymentUtil {
 
   async pausePaymentByDay(
     payments: IPayment[],
-    timePeriod: string,
     endDate: string,
-    intervalId?: string,
-    debtorId?: string
+    updatedDueDate?: Date,
+    targetWeekday?: number,
+    creditorPayments?: IPayment[]
   ) {
-    if (intervalId) {
-      payments = await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {
-          debtorId: debtorId,
-          isDeleted: {$ne: true},
-          attorneyId: null,
-          authorized: 'Pending',
-          intervalId: intervalId,
-        }
-      );
-    }
-    const dueDate = await commonUtil.getTimePeriod(
-      timePeriod,
-      endDate,
-      payments[0].dueDate
-    );
+    let updatedCreditorDueDate = updatedDueDate;
+    targetWeekday = !targetWeekday
+      ? new Date(endDate).getUTCDay()
+      : targetWeekday;
 
     for (const payment of payments) {
-      const paymentDueDate = new Date(payment.dueDate);
-      const updatedDueDate = new Date(
-        paymentDueDate.getTime() + dueDate * 24 * 60 * 60 * 1000
-      );
+      if (
+        !updatedDueDate &&
+        new Date(payment.dueDate).getUTCDay() <= targetWeekday
+      ) {
+        updatedDueDate = this.getWeekdayDate(
+          new Date(payment.dueDate),
+          targetWeekday
+        );
+      }
 
       await this.paymentRepository.updateById(payment._id, {
         dueDate: updatedDueDate.toISOString(),
       });
+
+      if (!creditorPayments)
+        creditorPayments = await this.getOtherPayments(payment);
+
+      for (const creditorPayment of creditorPayments) {
+        let newCreditorDate: Date;
+
+        if (updatedCreditorDueDate) {
+          newCreditorDate = updatedCreditorDueDate;
+        } else {
+          const creditorDate = new Date(creditorPayment.dueDate);
+          const creditorWeekday = creditorDate.getUTCDay();
+
+          if (creditorWeekday < targetWeekday) {
+            newCreditorDate = this.getWeekdayDate(creditorDate, targetWeekday);
+          } else {
+            newCreditorDate = creditorDate;
+          }
+        }
+
+        await this.paymentRepository.updateById(creditorPayment._id, {
+          dueDate: newCreditorDate.toISOString(),
+        });
+      }
+      updatedDueDate = null;
+      creditorPayments = null;
     }
-    return [true, 'Payment date update'];
+
+    return [true, 'Payment date updated'];
   }
 
   async moveToLastPayment(
     payment: IPayment,
-    debtorId: string,
-    paymentAmountCheck?: boolean
+    debtor: IDebtor,
+    paymentAmountCheck?: boolean,
+    creditorPayments?: IPayment[]
   ) {
-    const allPayments: any =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>({
-        debtorId: debtorId,
-        isDeleted: {$ne: true},
-        attorneyId: null,
-        authorized: 'Pending',
-        intervalId: payment.intervalId,
-      });
-
-    const latestPayment = allPayments.reduce(
-      (latest, p) => {
-        const dueTime = new Date(p.dueDate).getTime();
-        const latestDueTime = latest ? new Date(latest.dueDate).getTime() : 0;
-
-        return dueTime > latestDueTime ? p : latest;
-      },
-      null as IPayment | null
-    );
-
-    if (
-      String(latestPayment._id) == String(payment._id) &&
-      !paymentAmountCheck
-    ) {
-      return [
-        false,
-        'You Cannot pause the payment Which is already in last you can shift the day',
-      ];
-    }
-
-    const newDueDate = new Date(
-      new Date(latestPayment.dueDate).getTime() + 7 * 24 * 60 * 60 * 1000
-    );
-
+    const paymentTemp: any = await this.findLastDueDate(debtor._id);
+    const updatedDueDate = await this.findLastDate(paymentTemp[0]);
     if (payment._id) {
-      await this.paymentRepository.updateById<IPayment>(payment._id, {
-        dueDate: newDueDate.toISOString(),
-      });
+      if (
+        new Date(paymentTemp[0].dueDate).getTime() ===
+          new Date(payment.dueDate).getTime() &&
+        !paymentAmountCheck
+      ) {
+        return [
+          false,
+          'You Cannot pause the payment Which is already in last you can shift the day',
+        ];
+      }
+
+      await this.pausePaymentByDay(
+        [payment],
+        '',
+        updatedDueDate,
+        updatedDueDate.getUTCDay()
+      );
       return [true, []];
     } else {
-      payment.dueDate = newDueDate.toISOString();
-      payment.frequency = latestPayment.frequency + 1;
+      payment.dueDate = updatedDueDate.toISOString();
+      payment.frequency = paymentTemp[0].frequency + 1;
 
-      await this.paymentRepository.create<IPayment>(payment);
+      const createdPayment =
+        await this.paymentRepository.create<IPayment>(payment);
+      await this.pausePaymentByDay(
+        [createdPayment],
+        '',
+        new Date(createdPayment.dueDate),
+        null,
+        creditorPayments
+      );
       return [true, []];
     }
   }
 
-  async changePaymentAmmount(payment: IPayment, amount: number) {
+  async findLastDateByFrequency(interval: any) {
+    const {frequency, timePeriod, startDate} = interval;
+    const daysToAdd = (await commonUtil.getTimePeriod(timePeriod)) * frequency;
+    return new Date(
+      new Date(startDate).getTime() + daysToAdd * 24 * 60 * 60 * 1000
+    );
+  }
+
+  async findLastDate(payment: IPayment) {
+    const daysToAdd = await commonUtil.getTimePeriod(payment.timePeriod);
+    return new Date(
+      new Date(payment.dueDate).getTime() + daysToAdd * 24 * 60 * 60 * 1000
+    );
+  }
+
+  async findLastDueDate(debtorId: string) {
+    return await this.paymentRepository.getAllWithoutPagination(
+      {
+        debtorId,
+        caseId: null,
+        isDeleted: {$ne: true},
+        attorneyId: null,
+        authorized: {$ne: 'Success'},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+      },
+      undefined,
+      undefined,
+      {dueDate: -1},
+      undefined,
+      undefined,
+      1,
+      1
+    );
+  }
+
+  async changePaymentAmmount(
+    payment: IPayment,
+    amount: number,
+    debtor: IDebtor
+  ) {
     const newPayment = new Payment();
 
-    const remainingAmount = payment.amount - amount;
+    const updatedRemainingAmount = payment.amount - amount;
 
     const paymentValidate = DataCopier.copy(newPayment, payment);
 
-    paymentValidate.amount = remainingAmount;
+    paymentValidate.amount = updatedRemainingAmount;
 
     const updatePayment = await this.paymentRepository.updateById(
       String(payment._id),
@@ -623,11 +705,47 @@ class PaymentUtil {
       }
     );
 
+    const creditorPayments = await this.getOtherPayments(payment);
+    const {highAggressionPayments, remainingPayments, remainingAmount} =
+      await this.creditorsAmountFilter(amount, creditorPayments);
+
     return await this.moveToLastPayment(
       paymentValidate,
-      paymentValidate.debtorId,
-      true
+      debtor,
+      true,
+      remainingPayments
     );
+  }
+
+  async creditorsAmountFilter(amount: number, payments: any) {
+    const highAggressionPayments: IPayment[] = [];
+    const remainingPayments: IPayment[] = [];
+
+    let remainingAmount = amount;
+
+    // Sort in-place by aggression descending
+    payments.sort(
+      (a, b) =>
+        (b.caseId?.creditor?.aggression ?? 0) -
+        (a.caseId?.creditor?.aggression ?? 0)
+    );
+
+    for (const payment of payments) {
+      const paymentAmount = payment.amount ?? 0;
+
+      if (paymentAmount <= remainingAmount) {
+        highAggressionPayments.push(payment);
+        remainingAmount -= paymentAmount;
+      } else {
+        remainingPayments.push(payment);
+      }
+    }
+
+    return {
+      highAggressionPayments,
+      remainingPayments,
+      remainingAmount,
+    };
   }
 
   async pausePaymentChecks(

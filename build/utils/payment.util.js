@@ -183,14 +183,14 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -199,7 +199,7 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -207,7 +207,7 @@ class PaymentUtil {
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -216,14 +216,14 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -233,7 +233,7 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
@@ -241,7 +241,7 @@ class PaymentUtil {
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-        }, undefined, undefined, undefined, [{ path: 'caseId', populate: 'debtor' }]);
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async searchAndFilterHomePayments(payments, req) {
         // Helper function to apply text search
@@ -321,18 +321,35 @@ class PaymentUtil {
             paymentReferenceBool: true,
             caseId: { $ne: null },
             isDeleted: false,
-        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
     }
     async getAllPaymentReferenceDocuments(referenceId) {
         return await this.paymentRepository.getAllWithoutPagination({
             paymentReference: referenceId,
             paymentReferenceBool: true,
             isDeleted: false,
-        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
+    }
+    async MonToFriDates(payment) {
+        const baseDate = new Date(payment.dueDate); // e.g., 2025-04-16
+        const dayOfWeek = baseDate.getUTCDay(); // 0 (Sun) to 6 (Sat)
+        // Calculate how many days to subtract to get Monday
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday is 0, so we subtract 6
+        const monday = new Date(baseDate);
+        monday.setUTCDate(baseDate.getUTCDate() + diffToMonday);
+        monday.setUTCHours(0, 0, 0, 0);
+        const friday = new Date(monday);
+        friday.setUTCDate(monday.getUTCDate() + 4); // Monday + 4 days = Friday
+        friday.setUTCHours(23, 59, 59, 999);
+        return { monday, friday };
     }
     async getOtherPayments(payment) {
         const debtorId = payment.debtorId;
-        const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        // const nextDate = await this.addDaysBasedOnPeriod(
+        //   payment.dueDate,
+        //   payment.timePeriod
+        // );
+        const { monday, friday } = await this.MonToFriDates(payment);
         const payments = await this.paymentRepository.getAllWithoutPagination({
             debtorId: debtorId,
             caseId: { $ne: null },
@@ -340,10 +357,10 @@ class PaymentUtil {
             paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
             isDeleted: false,
             dueDate: {
-                $gte: new Date(payment.dueDate),
-                $lt: nextDate,
+                $gte: monday,
+                $lte: friday,
             },
-        }, undefined, undefined, undefined, { path: 'caseId', populate: [{ path: 'debtor' }] });
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
         return payments;
     }
     async addDaysBasedOnPeriod(date, timePeriod) {
@@ -362,6 +379,14 @@ class PaymentUtil {
         resultDate.setDate(resultDate.getDate() + daysToAdd);
         return resultDate;
     }
+    getWeekdayDate(baseDate, targetWeekday) {
+        const day = baseDate.getUTCDay();
+        const diff = (targetWeekday + 7 - day) % 7;
+        const alignedDate = new Date(baseDate);
+        alignedDate.setUTCDate(baseDate.getUTCDate() + diff);
+        alignedDate.setUTCHours(0, 0, 0, 0);
+        return alignedDate;
+    }
     async createPaymentDoc(amount, token, debtorId, paymentGateway, debtorName, link) {
         const payment = new payment_repomodel_1.Payment();
         payment.amount = amount;
@@ -377,69 +402,121 @@ class PaymentUtil {
         const hello = await this.paymentRepository.create(payment);
         console.log('hello', hello);
     }
-    async pausePaymentByDay(payments, timePeriod, endDate, intervalId, debtorId) {
-        if (intervalId) {
-            payments = await this.paymentRepository.getAllWithoutPagination({
-                debtorId: debtorId,
-                isDeleted: { $ne: true },
-                attorneyId: null,
-                authorized: 'Pending',
-                intervalId: intervalId,
-            });
-        }
-        const dueDate = await common_util_1.default.getTimePeriod(timePeriod, endDate, payments[0].dueDate);
+    async pausePaymentByDay(payments, endDate, updatedDueDate, targetWeekday, creditorPayments) {
+        let updatedCreditorDueDate = updatedDueDate;
+        targetWeekday = !targetWeekday
+            ? new Date(endDate).getUTCDay()
+            : targetWeekday;
         for (const payment of payments) {
-            const paymentDueDate = new Date(payment.dueDate);
-            const updatedDueDate = new Date(paymentDueDate.getTime() + dueDate * 24 * 60 * 60 * 1000);
+            if (!updatedDueDate &&
+                new Date(payment.dueDate).getUTCDay() <= targetWeekday) {
+                updatedDueDate = this.getWeekdayDate(new Date(payment.dueDate), targetWeekday);
+            }
             await this.paymentRepository.updateById(payment._id, {
                 dueDate: updatedDueDate.toISOString(),
             });
+            if (!creditorPayments)
+                creditorPayments = await this.getOtherPayments(payment);
+            for (const creditorPayment of creditorPayments) {
+                let newCreditorDate;
+                if (updatedCreditorDueDate) {
+                    newCreditorDate = updatedCreditorDueDate;
+                }
+                else {
+                    const creditorDate = new Date(creditorPayment.dueDate);
+                    const creditorWeekday = creditorDate.getUTCDay();
+                    if (creditorWeekday < targetWeekday) {
+                        newCreditorDate = this.getWeekdayDate(creditorDate, targetWeekday);
+                    }
+                    else {
+                        newCreditorDate = creditorDate;
+                    }
+                }
+                await this.paymentRepository.updateById(creditorPayment._id, {
+                    dueDate: newCreditorDate.toISOString(),
+                });
+            }
+            updatedDueDate = null;
+            creditorPayments = null;
         }
-        return [true, 'Payment date update'];
+        return [true, 'Payment date updated'];
     }
-    async moveToLastPayment(payment, debtorId, paymentAmountCheck) {
-        const allPayments = await this.paymentRepository.getAllWithoutPagination({
-            debtorId: debtorId,
-            isDeleted: { $ne: true },
-            attorneyId: null,
-            authorized: 'Pending',
-            intervalId: payment.intervalId,
-        });
-        const latestPayment = allPayments.reduce((latest, p) => {
-            const dueTime = new Date(p.dueDate).getTime();
-            const latestDueTime = latest ? new Date(latest.dueDate).getTime() : 0;
-            return dueTime > latestDueTime ? p : latest;
-        }, null);
-        if (String(latestPayment._id) == String(payment._id) &&
-            !paymentAmountCheck) {
-            return [
-                false,
-                'You Cannot pause the payment Which is already in last you can shift the day',
-            ];
-        }
-        const newDueDate = new Date(new Date(latestPayment.dueDate).getTime() + 7 * 24 * 60 * 60 * 1000);
+    async moveToLastPayment(payment, debtor, paymentAmountCheck, creditorPayments) {
+        const paymentTemp = await this.findLastDueDate(debtor._id);
+        const updatedDueDate = await this.findLastDate(paymentTemp[0]);
         if (payment._id) {
-            await this.paymentRepository.updateById(payment._id, {
-                dueDate: newDueDate.toISOString(),
-            });
+            if (new Date(paymentTemp[0].dueDate).getTime() ===
+                new Date(payment.dueDate).getTime() &&
+                !paymentAmountCheck) {
+                return [
+                    false,
+                    'You Cannot pause the payment Which is already in last you can shift the day',
+                ];
+            }
+            await this.pausePaymentByDay([payment], '', updatedDueDate, updatedDueDate.getUTCDay());
             return [true, []];
         }
         else {
-            payment.dueDate = newDueDate.toISOString();
-            payment.frequency = latestPayment.frequency + 1;
-            await this.paymentRepository.create(payment);
+            payment.dueDate = updatedDueDate.toISOString();
+            payment.frequency = paymentTemp[0].frequency + 1;
+            const createdPayment = await this.paymentRepository.create(payment);
+            await this.pausePaymentByDay([createdPayment], '', new Date(createdPayment.dueDate), null, creditorPayments);
             return [true, []];
         }
     }
-    async changePaymentAmmount(payment, amount) {
+    async findLastDateByFrequency(interval) {
+        const { frequency, timePeriod, startDate } = interval;
+        const daysToAdd = (await common_util_1.default.getTimePeriod(timePeriod)) * frequency;
+        return new Date(new Date(startDate).getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    }
+    async findLastDate(payment) {
+        const daysToAdd = await common_util_1.default.getTimePeriod(payment.timePeriod);
+        return new Date(new Date(payment.dueDate).getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    }
+    async findLastDueDate(debtorId) {
+        return await this.paymentRepository.getAllWithoutPagination({
+            debtorId,
+            caseId: null,
+            isDeleted: { $ne: true },
+            attorneyId: null,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
+        }, undefined, undefined, { dueDate: -1 }, undefined, undefined, 1, 1);
+    }
+    async changePaymentAmmount(payment, amount, debtor) {
         const newPayment = new payment_repomodel_1.Payment();
-        const remainingAmount = payment.amount - amount;
+        const updatedRemainingAmount = payment.amount - amount;
         const paymentValidate = dataCopier_util_1.DataCopier.copy(newPayment, payment);
-        paymentValidate.amount = remainingAmount;
+        paymentValidate.amount = updatedRemainingAmount;
         const updatePayment = await this.paymentRepository.updateById(String(payment._id), {
             amount: amount,
         });
-        return await this.moveToLastPayment(paymentValidate, paymentValidate.debtorId, true);
+        const creditorPayments = await this.getOtherPayments(payment);
+        const { highAggressionPayments, remainingPayments, remainingAmount } = await this.creditorsAmountFilter(amount, creditorPayments);
+        return await this.moveToLastPayment(paymentValidate, debtor, true, remainingPayments);
+    }
+    async creditorsAmountFilter(amount, payments) {
+        const highAggressionPayments = [];
+        const remainingPayments = [];
+        let remainingAmount = amount;
+        // Sort in-place by aggression descending
+        payments.sort((a, b) => (b.caseId?.creditor?.aggression ?? 0) -
+            (a.caseId?.creditor?.aggression ?? 0));
+        for (const payment of payments) {
+            const paymentAmount = payment.amount ?? 0;
+            if (paymentAmount <= remainingAmount) {
+                highAggressionPayments.push(payment);
+                remainingAmount -= paymentAmount;
+            }
+            else {
+                remainingPayments.push(payment);
+            }
+        }
+        return {
+            highAggressionPayments,
+            remainingPayments,
+            remainingAmount,
+        };
     }
     async pausePaymentChecks(debtor, amount, timePeriod) {
         if (!debtor?.lastPaymentAmountDate && !debtor?.lastPaymentPauseDate)

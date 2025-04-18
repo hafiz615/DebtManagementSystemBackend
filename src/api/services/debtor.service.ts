@@ -1888,52 +1888,54 @@ class DebtorService {
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
     let updateDebtor = null;
+
     const filter: any = {
       debtorId: req.params.id,
+      caseId: null,
       isDeleted: {$ne: true},
       attorneyId: null,
-      authorized: 'Pending',
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
     };
 
     if (req.body?.paymentId) {
       filter._id = req.body.paymentId;
     }
-    let successMessage = null;
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(filter);
 
     if (!payments.length) return [false, constants.notFoundMessage('Payments')];
 
-    if (req.body.endDate && req.body.timePeriod) {
+    let successMessage = null;
+
+    if (req.body.endDate) {
       const updateDatesPayment = await paymentUtil.pausePaymentByDay(
         payments,
-        req.body.timePeriod,
-        req.body.endDate,
-        req.body.intervalId,
-        req.params.id
+        req.body.endDate
       );
       successMessage = updateDatesPayment[1];
     } else if (req.body.paymentId && req.body.amount) {
       const newPyament = await paymentUtil.changePaymentAmmount(
         payments[0],
-        req.body.amount
+        req.body.amount,
+        debtor
       );
 
       if (!newPyament)
         return [false, constants.failureUpdateMessage('payments amount')];
-      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       successMessage = 'Change the payment amount';
-    } else if (req.body.paymentId && req.body.timePeriod) {
+    } else if (req.body.paymentId) {
       const updatePyament = await paymentUtil.moveToLastPayment(
         payments[0],
-        req.params.id,
+        debtor,
         false
       );
       if (!updatePyament[0]) return [false, updatePyament[1]];
       successMessage = 'Payments move to the last';
     }
-    if (!updateDebtor)
-      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    // if (!updateDebtor)
+    // debtorUtil.updateDebtorPausePayment(req.params.id, false);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
@@ -1947,9 +1949,11 @@ class DebtorService {
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>({
         debtorId: req.params.id,
+        caseId: null,
         isDeleted: {$ne: true},
         attorneyId: null,
-        authorized: 'Pending',
+        authorized: {$ne: 'Success'},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
       });
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
