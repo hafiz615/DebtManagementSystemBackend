@@ -8,12 +8,19 @@ import constants from '../utils/constants.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import constantsUtil from '../utils/constants.util';
 import {ICreditor} from '../database/interfaces/creditor.interface';
+import axiosInstance from './axiosInstanceInterceptor';
+import axios from 'axios';
+import {ServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository';
+import {IServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository.interface';
+import {IFee} from '../database/interfaces/serviceFee.interface';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
+  private feeRepository: ServiceFeeRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
+    this.feeRepository = new ServiceFeeRepository();
   }
   async getFilteredPayments(payments: any, arrayName: string) {
     const transformedArray = payments.map(obj => ({
@@ -778,6 +785,218 @@ class PaymentUtil {
       }
     }
     return [true, []];
+  }
+
+  async authorizeCreditCard(
+    amount: number,
+    customer_vault_id: string,
+    platform: string
+  ) {
+    const urlSecurityKey =
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
+    const params = {
+      security_key: urlSecurityKey.securityKey,
+      customer_vault_id: customer_vault_id,
+      type: 'auth',
+      amount: amount,
+    };
+    console.log(params);
+
+    try {
+      const response = await axiosInstance.get(url, {params});
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error making request:', error.message);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        }
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    }
+  }
+  async captureCreditCard(
+    customer_vault_id: string,
+    transactionId: string,
+    platform: string
+  ) {
+    const urlSecurityKey =
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
+    const params = {
+      security_key: urlSecurityKey.securityKey,
+      customer_vault_id: customer_vault_id,
+      transaction_id: transactionId,
+      stored_credential_indicator: 'used',
+      type: 'capture',
+    };
+
+    try {
+      const response = await axiosInstance.get(url, {params});
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error making request:', error.message);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        }
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    }
+  }
+
+  async achCredit(customer_vault_id: string, amount: number, platform: string) {
+    const urlSecurityKey =
+      await commonUtil.getUrlAndSecurityKeyPlatform(platform);
+    const url = urlSecurityKey.url;
+    const params = {
+      security_key: urlSecurityKey.securityKey,
+      customer_vault_id: customer_vault_id,
+      stored_credential_indicator: 'used',
+      type: 'credit',
+      amount: amount,
+      payment: 'check',
+    };
+
+    try {
+      const response = await axiosInstance.get(url, {params});
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error making request:', error.message);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        }
+      } else {
+        console.error('Unexpected error:', error);
+      }
+    }
+  }
+
+  async getAdditionalCharge(debtor: IDebtor) {
+    const accounts = debtor.accounts;
+    const pausePaymentFee = await this.feeRepository.getOne<IFee>({
+      type: 'pausePaymentFee',
+    });
+    const amount = pausePaymentFee ? pausePaymentFee.fee : 0;
+    let result = false;
+    console.log(amount, 'amounttt');
+    if (amount > 0) {
+      const payment = new Payment();
+      payment.authorizedDate = commonUtil.getCurrentDate();
+      payment.debtorId = debtor._id;
+      payment.amount = amount;
+      payment.debtorName = debtor.basicInformation.fullName;
+      payment.paymentMode = 'Additional Charge';
+      let customerVaultId = '';
+      let platform = '';
+      for (const account of accounts) {
+        if (account.paymentType === 'cc') {
+          const authCreditCard = await this.authorizeCreditCard(
+            amount,
+            account.customerVaultId,
+            account.platform
+          );
+          const responseNumAuth = new URLSearchParams(authCreditCard).get(
+            'response'
+          );
+          const responseTextAuth = new URLSearchParams(authCreditCard).get(
+            'responsetext'
+          );
+          const transactionIdAuth = new URLSearchParams(authCreditCard).get(
+            'transactionid'
+          );
+          if (responseNumAuth === '1') {
+            console.log('auth successs');
+            payment.authorized = 'Success';
+            payment.debtorTransId = transactionIdAuth;
+            payment.paymentGateway = account.platform;
+            payment.transactionType = account.paymentType;
+            customerVaultId = account.customerVaultId;
+            platform = account.platform;
+            break;
+          }
+          if (responseNumAuth !== '1') {
+            console.log('auth failed');
+            payment.authorized = 'Failed';
+            payment.debtorTransId = transactionIdAuth;
+            payment.failedReasonAuthorization = responseTextAuth;
+            payment.paymentGateway = account.platform;
+            payment.transactionType = account.paymentType;
+          }
+        }
+        if (account.paymentType === 'ck') {
+          const response = await this.achCredit(
+            account.customerVaultId,
+            amount,
+            account.platform
+          );
+          const responseNum = new URLSearchParams(response).get('response');
+          const responseText = new URLSearchParams(response).get(
+            'responsetext'
+          );
+          const transactionId = new URLSearchParams(response).get(
+            'transactionid'
+          );
+          if (responseNum === '1') {
+            payment.authorized = 'Success';
+            payment.captured = 'Success';
+            payment.debtorTransId = transactionId;
+            payment.paymentGateway = account.platform;
+            payment.transactionType = account.paymentType;
+            customerVaultId = account.customerVaultId;
+            result = true;
+            break;
+          }
+          if (responseNum !== '1') {
+            payment.authorized = 'Failed';
+            payment.captured = 'Failed';
+            payment.debtorTransId = transactionId;
+            payment.failedReasonCaptured = responseText;
+            payment.paymentGateway = account.platform;
+            payment.transactionType = account.paymentType;
+          }
+        }
+      }
+      if (payment.authorized === 'Success') {
+        console.log('going to capture');
+        const captureCreditCard = await this.captureCreditCard(
+          customerVaultId,
+          payment.debtorTransId,
+          platform
+        );
+
+        const responseNumCapture = new URLSearchParams(captureCreditCard).get(
+          'response'
+        );
+        const responseTextCapture = new URLSearchParams(captureCreditCard).get(
+          'responsetext'
+        );
+
+        if (responseNumCapture === '1') {
+          console.log('capture success');
+          payment.captured = 'Success';
+          result = true;
+        }
+        if (responseNumCapture !== '1') {
+          console.log('capture failed');
+          payment.captured = 'Failed';
+          payment.failedReasonCaptured = responseTextCapture;
+        }
+      }
+      console.log(payment, 'paymenttttt');
+      await this.paymentRepository.create<IPayment>(payment as any);
+    }
+    return result;
   }
 }
 export default new PaymentUtil();
