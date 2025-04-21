@@ -1410,17 +1410,18 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount, req.body.timePeriod);
+        const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount);
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
-        // let additionalCharge = false;
-        // if (!debtor.additionalCharge) {
-        //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
-        //   if (!additionalCharge) return [false, 'Unable to charge the amount.'];
-        //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
-        //     additionalCharge: true,
-        //   });
-        // }
+        let additionalCharge = false;
+        if (!debtor.additionalCharge) {
+            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
+            if (!additionalCharge)
+                return [false, 'Unable to charge the amount.'];
+            this.debtorRepository.updateById(debtor._id, {
+                additionalCharge: true,
+            });
+        }
         let updateDebtor = null;
         const filter = {
             debtorId: req.params.id,
@@ -1443,8 +1444,8 @@ class DebtorService {
         }
         else if (req.body.paymentId && req.body.amount) {
             const newPyament = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
-            if (!newPyament)
-                return [false, constants_util_1.default.failureUpdateMessage('payments amount')];
+            if (!newPyament[0])
+                return [false, newPyament[1]];
             updateDebtor = debtor_util_1.default.updateDebtorPausePayment(req.params.id, true);
             successMessage = 'Change the payment amount';
         }

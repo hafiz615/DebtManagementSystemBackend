@@ -1264,6 +1264,10 @@ class PaymentService {
       {
         intervals: [],
         isExempt: false,
+        paymentPauseCount: 0,
+        lastPaymentPauseDate: '',
+        paymentAmountCount: 0,
+        lastPaymentAmountDate: '',
       }
     );
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(
