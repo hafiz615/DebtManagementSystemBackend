@@ -1881,23 +1881,22 @@ class DebtorService {
 
     const pausePaymentCheck = await paymentUtil.pausePaymentChecks(
       debtor,
-      req.body.amount,
-      req.body.timePeriod
+      req.body.amount
     );
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    // let additionalCharge = false;
+    let additionalCharge = false;
 
-    // if (!debtor.additionalCharge) {
-    //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+    if (!debtor.additionalCharge) {
+      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-    //   if (!additionalCharge) return [false, 'Unable to charge the amount.'];
+      if (!additionalCharge) return [false, 'Unable to charge the amount.'];
 
-    //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
-    //     additionalCharge: true,
-    //   });
-    // }
+      this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        additionalCharge: true,
+      });
+    }
 
     let updateDebtor = null;
 
@@ -1933,8 +1932,7 @@ class DebtorService {
         debtor
       );
 
-      if (!newPyament)
-        return [false, constants.failureUpdateMessage('payments amount')];
+      if (!newPyament[0]) return [false, newPyament[1]];
       updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {

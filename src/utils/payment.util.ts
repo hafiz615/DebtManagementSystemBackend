@@ -476,13 +476,10 @@ class PaymentUtil {
 
   async getOtherPayments(payment: IPayment) {
     const debtorId = payment.debtorId;
-    // const nextDate = await this.addDaysBasedOnPeriod(
-    //   payment.dueDate,
-    //   payment.timePeriod
-    // );
-
-    const {monday, friday} = await this.MonToFriDates(payment);
-
+    const nextDate = await this.addDaysBasedOnPeriod(
+      payment.dueDate,
+      payment.timePeriod
+    );
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
         {
@@ -492,8 +489,8 @@ class PaymentUtil {
           paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
           isDeleted: false,
           dueDate: {
-            $gte: monday,
-            $lte: friday,
+            $gte: new Date(payment.dueDate),
+            $lt: nextDate,
           },
         },
         undefined,
@@ -503,7 +500,6 @@ class PaymentUtil {
       );
     return payments;
   }
-
   async addDaysBasedOnPeriod(date: string, timePeriod: string) {
     const timePeriods = {
       daily: 1,
@@ -759,11 +755,7 @@ class PaymentUtil {
     };
   }
 
-  async pausePaymentChecks(
-    debtor: IDebtor,
-    amount?: number,
-    timePeriod?: string
-  ) {
+  async pausePaymentChecks(debtor: IDebtor, amount?: number) {
     if (!debtor?.lastPaymentAmountDate && !debtor?.lastPaymentPauseDate)
       return [true, []];
 
