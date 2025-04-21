@@ -354,13 +354,13 @@ class PaymentUtil {
             debtorId: debtorId,
             caseId: { $ne: null },
             authorized: { $ne: 'Success' },
-            transactionType: { $nin: ['Wire', 'Check'] },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
             isDeleted: false,
             dueDate: {
                 $gte: new Date(payment.dueDate),
                 $lt: nextDate,
             },
-        }, undefined, undefined, undefined, ['caseId']);
+        }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
         return payments;
     }
     async addDaysBasedOnPeriod(date, timePeriod) {

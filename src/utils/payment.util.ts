@@ -486,7 +486,7 @@ class PaymentUtil {
           debtorId: debtorId,
           caseId: {$ne: null},
           authorized: {$ne: 'Success'},
-          transactionType: {$nin: ['Wire', 'Check']},
+          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
           isDeleted: false,
           dueDate: {
             $gte: new Date(payment.dueDate),
@@ -496,7 +496,7 @@ class PaymentUtil {
         undefined,
         undefined,
         undefined,
-        ['caseId']
+        {path: 'caseId', populate: ['debtor', 'creditor']}
       );
     return payments;
   }
