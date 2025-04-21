@@ -757,11 +757,12 @@ class DebtorService {
   }
 
   async addDocumentsToDebtor(req: Request) {
+    let reqTemp: any = req;
     const caseTemp: any = await this.caseRepository.getById<ICase>(
       req.params.id,
       undefined,
       undefined,
-      [{path: 'debtor'}]
+      ['debtor', 'creditor']
     );
     if (!caseTemp) {
       return [false, constants.notFoundMessage('case')];
@@ -796,16 +797,54 @@ class DebtorService {
     if (!updatedDebtor) {
       return [false, constants.failureUpdateMessage('debtor')];
     }
-    this.caseRepository.updateById<ICase>(req.params.id, {
-      settlementRange: false,
-      updatedAt: commonUtil.getCurrentDate(),
-    });
-    await moneyThumbUtil.run(
-      updatedDebtor,
-      await debtorUtil.normalizeCompanyName(
-        updatedDebtor.businessInformation.companyName
-      )
-    );
+
+    if (req.query.lawfirmCancelPlan === 'true') {
+      await lawsuitUtil.cancelPlan(caseTemp.debtor._id, caseTemp.creditor._id);
+    }
+    // if (!caseTemp.lawsuitExist && lawfirmCancelPlan === 'true') {
+    //   const lawsuitFields =
+    //     updatedDebtor.lawsuitFields?.find(
+    //       lawsuit =>
+    //         lawsuit.plaintiff_company ===
+    //           caseTemp.creditor.businessInformation.companyName &&
+    //         lawsuit.defendant_company ===
+    //           caseTemp.debtor.businessInformation.companyName
+    //     ) || null;
+    //   if (lawsuitFields) {
+    //     if (caseTemp.dummyLawsuitExist) {
+    //       await lawsuitUtil.deleteLawsuit(
+    //         caseTemp.debtor._id,
+    //         caseTemp.creditor._id
+    //       );
+    //     }
+    //     const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+    //       lawsuitFields,
+    //       reqTemp.id
+    //     );
+    //     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+    //       lawsuitDetails,
+    //       caseTemp
+    //     );
+    //     if (lawfirmTemp) {
+    //       await this.caseRepository.updateById(req.params.id, {
+    //         lawsuitExist: true,
+    //         dummyLawsuitExist: false,
+    //       });
+    //     }
+    //   }
+    // }
+    if (newFiles.bankStatementDocuments.length) {
+      this.caseRepository.updateById<ICase>(req.params.id, {
+        settlementRange: false,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
+      await moneyThumbUtil.run(
+        updatedDebtor,
+        await debtorUtil.normalizeCompanyName(
+          updatedDebtor.businessInformation.companyName
+        )
+      );
+    }
     const statements = caseTemp.debtor?.totalStatements;
     if (caseTemp.intervals.length && !updatedDebtor.percentageChange) {
       debtorUtil.percentageChangeEmail(
@@ -816,7 +855,7 @@ class DebtorService {
         req.params.id
       );
     }
-    return [true, updatedDebtor];
+    return [true, []];
   }
 
   getLumpSumAmount = async (req: Request) => {
@@ -1832,6 +1871,109 @@ class DebtorService {
     );
     if (!response[0]) return response;
     return response;
+  }
+
+  async pauseDebtorPayments(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const pausePaymentCheck = await paymentUtil.pausePaymentChecks(
+      debtor,
+      req.body.amount
+    );
+
+    if (!pausePaymentCheck[0]) return pausePaymentCheck;
+
+    let additionalCharge = false;
+
+    if (!debtor.additionalCharge) {
+      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+
+      if (!additionalCharge) return [false, 'Unable to charge the amount.'];
+
+      this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        additionalCharge: true,
+      });
+    }
+
+    let updateDebtor = null;
+
+    const filter: any = {
+      debtorId: req.params.id,
+      caseId: null,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+    };
+
+    if (req.body?.paymentId) {
+      filter._id = req.body.paymentId;
+    }
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(filter);
+
+    if (!payments.length) return [false, constants.notFoundMessage('Payments')];
+
+    let successMessage = null;
+
+    if (req.body.endDate) {
+      const updateDatesPayment = await paymentUtil.pausePaymentByDay(
+        payments,
+        req.body.endDate
+      );
+      successMessage = updateDatesPayment[1];
+    } else if (req.body.paymentId && req.body.amount) {
+      const newPyament = await paymentUtil.changePaymentAmmount(
+        payments[0],
+        req.body.amount,
+        debtor
+      );
+
+      if (!newPyament[0]) return [false, newPyament[1]];
+      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      successMessage = 'Change the payment amount';
+    } else if (req.body.paymentId) {
+      const updatePyament = await paymentUtil.moveToLastPayment(
+        payments[0],
+        debtor,
+        false
+      );
+      if (!updatePyament[0]) return [false, updatePyament[1]];
+      successMessage = 'Payments move to the last';
+    }
+    if (!updateDebtor)
+      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    return [true, constants.successfullyMessage(successMessage)];
+  }
+
+  async getDebtorPayments(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          debtorId: req.params.id,
+          caseId: null,
+          isDeleted: {$ne: true},
+          attorneyId: null,
+          authorized: {$ne: 'Success'},
+          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        },
+        undefined,
+        undefined,
+        {dueDate: 1}
+      );
+
+    if (!payments) return [true, constants.notFoundMessage('Payments')];
+
+    return [true, {count: payments.length, payments}];
   }
 
   async getToken(req: Request) {

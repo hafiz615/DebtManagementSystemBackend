@@ -67,7 +67,7 @@ class LawsuitUtil {
       id
     );
 
-    const lawsuitTemp = await this.createLawsuit(lawsuitInfo);
+    const lawsuitTemp = await this.upsertLawsuit(lawsuitInfo);
 
     return lawsuitTemp ? [true, lawsuitTemp] : false;
   }
@@ -172,6 +172,21 @@ class LawsuitUtil {
     return await this.lawsuitRepository.create<ILawsuit>(validatedLawsuit);
   }
 
+  async upsertLawsuit(data: any) {
+    const newLawsuit = new Lawsuit();
+    const validatedLawsuit = DataCopier.copy(newLawsuit, data as ILawsuit);
+    delete validatedLawsuit.debtorId;
+    delete validatedLawsuit.creditorId;
+    return await this.lawsuitRepository.upsert<ILawsuit>(
+      {
+        debtorId: data.debtorId,
+        creditorId: data.creditorId,
+        isDeleted: false,
+      },
+      validatedLawsuit
+    );
+  }
+
   async updateFee(payments: any) {
     for (const payment of payments) {
       const updateObjPayment = {};
@@ -189,7 +204,7 @@ class LawsuitUtil {
         this.updateLawsuitFee(
           fee,
           payment.caseId.debtor._id,
-          payment.caseId.creditor
+          payment.caseId.creditor._id
         );
       }
     }
@@ -203,7 +218,7 @@ class LawsuitUtil {
           this.updateLawsuitFee(
             fee,
             payment.caseId.debtor._id,
-            payment.caseId.creditor
+            payment.caseId.creditor._id
           );
         }
       }
@@ -212,7 +227,7 @@ class LawsuitUtil {
 
   async updateLawsuitFee(fee: number, debtorId: any, creditorId: any) {
     await this.lawsuitRepository.updateByOne<ILawsuit>(
-      {creditorId, debtorId},
+      {creditorId, debtorId, isDeleted: {$ne: true}},
       {
         $inc: {
           lawsuitReceiveAmount: fee,
@@ -255,6 +270,7 @@ class LawsuitUtil {
         {
           debtorId: caseData.debtor._id,
           creditorId: caseData.creditor,
+          isDeleted: {$ne: true},
         },
         undefined,
         undefined,
@@ -284,6 +300,33 @@ class LawsuitUtil {
     });
 
     return serviceFee ? serviceFee.fee : 0;
+  }
+
+  async deleteLawsuit(debtorId: string, creditorId: string) {
+    await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: debtorId,
+        creditorId: creditorId,
+        isDeleted: {$ne: true},
+      },
+      {
+        isDeleted: true,
+      }
+    );
+  }
+
+  async cancelPlan(debtorId: string, creditorId: string) {
+    await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: debtorId,
+        creditorId: creditorId,
+        isDeleted: {$ne: true},
+      },
+      {
+        intervals: [],
+        isExempt: false,
+      }
+    );
   }
 }
 export default new LawsuitUtil();

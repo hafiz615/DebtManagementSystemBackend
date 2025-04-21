@@ -27,7 +27,7 @@ class LawfirmValidate {
                 .required()
                 .messages({
                 'string.base': 'lawfirm PhoneNo must be a string.',
-                'string.pattern.base': 'lawfirm PhoneNo must must be between 10 digits.',
+                'string.pattern.base': 'lawfirm PhoneNo must be 10 digits.',
                 'any.required': 'lawfirm PhoneNo is a required field.',
             }),
             address: joi_1.default.string().messages({
@@ -71,6 +71,66 @@ class LawfirmValidate {
                 'string.empty': 'Lawfirm Id cannot be empty',
                 'string.length': 'Lawfirm Id must be exactly 24 characters long.',
                 'string.hex': 'Lawfirm Id must be a valid hexadecimal string.',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
+    async updateLawsuit(req, res, next) {
+        const schema = joi_1.default.object({
+            balance: joi_1.default.number().strict().required().messages({
+                'number.base': 'Balance must be a number',
+                'any.required': 'Balance is required',
+            }),
+            lawsuitDate: joi_1.default.date().required().messages({
+                'date.base': 'Lawsuit date must be a valid date.',
+                'any.required': 'Lawsuit date is a required field.',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
+    async addAttorney(req, res, next) {
+        const schema = joi_1.default.object({
+            name: joi_1.default.string()
+                .allow('')
+                .messages({ 'string.base': 'Name must be a string.' }),
+            email: joi_1.default.string().email().allow('').messages({
+                'string.base': 'Email must be a string.',
+                'string.email': 'Email must be a valid email address.',
+            }),
+            phone: joi_1.default.string()
+                .allow('')
+                .pattern(/^\d{10}$/)
+                .messages({
+                'string.base': 'Phone must be a string.',
+                'string.pattern.base': 'Phone must be 10 digits.',
+            }),
+            address: joi_1.default.string()
+                .allow('')
+                .messages({ 'string.base': 'Address must be a string.' }),
+            city: joi_1.default.string()
+                .allow('')
+                .messages({ 'string.base': 'City must be a string.' }),
+            SSN: joi_1.default.string()
+                .pattern(/^\d{9}$/)
+                .allow('')
+                .messages({
+                'string.pattern.base': 'SSN must be a 9-digit number.',
             }),
         });
         const { error } = schema.validate(req.body);

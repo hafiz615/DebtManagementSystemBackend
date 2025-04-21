@@ -71,6 +71,11 @@ class Debtor {
         this.intervals = Array();
         this.isExempt = false;
         this.status = '';
+        this.paymentPauseCount = 0;
+        this.lastPaymentPauseDate = '';
+        this.paymentAmountCount = 0;
+        this.lastPaymentAmountDate = '';
+        this.additionalCharge = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

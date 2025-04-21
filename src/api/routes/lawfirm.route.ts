@@ -30,4 +30,24 @@ router.post(
   lawfirmController.assignLawfirmToCase
 );
 
+router.post(
+  '/updateLawsuit/:id',
+  authorize.validateAuth,
+  lawfirmValidate.updateLawsuit,
+  lawfirmController.updateLawsuit
+);
+
+router.post(
+  '/addAttorney/:id',
+  authorize.validateAuth,
+  lawfirmValidate.addAttorney,
+  lawfirmController.addAttorney
+);
+
+router.get(
+  '/syncLawsuitData/:id',
+  authorize.validateAuth,
+  lawfirmController.syncLawsuitData
+);
+
 export default router;

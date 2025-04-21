@@ -8,7 +8,7 @@ export class Call {
   creditorId = '';
   callerName = 'Unknown';
   accountSid = '';
-  callTo = '';
+  callTo: string[] = [];
   callFrom = '';
   callStartTime = '';
   callDirection = '';
@@ -18,6 +18,7 @@ export class Call {
   isDeleted = false;
   transcriptUrl = '';
   type = 'Call';
+  conferenceName = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

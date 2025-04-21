@@ -15,6 +15,8 @@ import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 import lawsuitUtil from '../../utils/lawsuit.util';
 import {CaseRepository} from '../repository/case/case.repository';
 import {ICase} from '../../database/interfaces/case.interface';
+import {Lawsuit} from '../../database/repomodels/lawsuit.repomodel';
+import attorneyUtil from '../../utils/attorney.util';
 
 dotenv.config();
 
@@ -69,7 +71,7 @@ class LawfirmService {
       userId: reqTemp.id,
     };
 
-    const lawsuit = await lawsuitUtil.createLawsuit(lawsuitData);
+    const lawsuit = await lawsuitUtil.upsertLawsuit(lawsuitData);
 
     return [true, []];
   };
@@ -102,19 +104,123 @@ class LawfirmService {
   assignLawfirmToCase = async (req: Request) => {
     const reqTemp: any = req;
 
-    const caseTemp = await this.caseRepository.getById(reqTemp.params.id);
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor', 'creditor']
+    );
 
     if (!caseTemp) return [false, constants.notFoundMessage('Case')];
 
+    const lawFirm = await this.lawfirmRepository.getById<ILawfirm>(
+      req.body.lawfirmId
+    );
+
+    if (!lawFirm) return [false, constants.notFoundMessage('lawfirm')];
+
+    const lawSuit = new Lawsuit();
+    lawSuit.debtorId = caseTemp.debtor._id;
+    lawSuit.creditorId = caseTemp.creditor._id;
+    lawSuit.lawfirmId = req.body.lawfirmId;
+    lawSuit.lawfirmCompanyName = lawFirm.lawfirmCompanyName;
+    lawSuit.userId = reqTemp.id;
+    lawSuit.defendentCompanyName =
+      caseTemp.debtor.businessInformation.companyName;
+    lawSuit.plantiffCompanyName =
+      caseTemp.creditor.businessInformation.companyName;
+    await this.lawsuitRepository.create<ILawsuit>(lawSuit as any);
     const updatedCase = await this.caseRepository.updateById<ICase>(
-      reqTemp.params.id,
-      {lawfirmId: reqTemp.body.lawfirmId}
+      req.params.id,
+      {dummyLawsuitExist: true}
     );
 
     return updatedCase
       ? [true, []]
       : [false, constants.failureAddMessage('Lawfirm')];
   };
+
+  async updateLawsuit(req: Request) {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+
+    if (!caseTemp) return [false, constants.notFoundMessage('Case')];
+
+    const lawsuit = await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: caseTemp.debtor,
+        creditorId: caseTemp.creditor,
+        isDeleted: {$ne: true},
+      },
+      req.body
+    );
+
+    if (!lawsuit) return [false, constants.failureUpdateMessage('lawsuit')];
+
+    return [true, []];
+  }
+
+  async addAttorney(req: Request) {
+    let reqTemp: any = req;
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constants.notFoundMessage('Case')];
+
+    req.body.userId = reqTemp.id;
+    const attorney = await attorneyUtil.createAttorney(req.body);
+    if (!attorney) return [false, constants.failureAddMessage('attorney')];
+
+    await this.lawsuitRepository.updateByOne<ILawsuit>(
+      {
+        debtorId: caseTemp.debtor,
+        creditorId: caseTemp.creditor,
+        isDeleted: {$ne: true},
+      },
+      {attorneyId: attorney._id}
+    );
+    return [true, []];
+  }
+
+  async syncLawsuitData(req: Request) {
+    let reqTemp: any = req;
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor', 'creditor']
+    );
+    if (!caseTemp) return [false, constants.notFoundMessage('Case')];
+    const debtor = caseTemp.debtor;
+    let sync = false;
+    const lawsuitFields =
+      debtor.lawsuitFields?.find(
+        lawsuit =>
+          lawsuit.plaintiff_company ===
+            caseTemp.creditor.businessInformation.companyName &&
+          lawsuit.defendant_company ===
+            caseTemp.debtor.businessInformation.companyName
+      ) || null;
+    if (lawsuitFields) {
+      // await lawsuitUtil.deleteLawsuit(
+      //   caseTemp.debtor._id,
+      //   caseTemp.creditor._id
+      // );
+      const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+        lawsuitFields,
+        reqTemp.id
+      );
+      const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+        lawsuitDetails,
+        caseTemp
+      );
+      if (lawfirmTemp) {
+        sync = true;
+        await this.caseRepository.updateById(req.params.id, {
+          lawsuitExist: true,
+          dummyLawsuitExist: false,
+        });
+      }
+    }
+    return sync ? [true, []] : [false, 'Unable to sync lawsuit data'];
+  }
 }
 
 export default LawfirmService;

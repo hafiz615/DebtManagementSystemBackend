@@ -13,6 +13,7 @@ const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware"
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 const setEnv_1 = require("./utils/setEnv");
 const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
+const pausePayment_cronjob_1 = __importDefault(require("./cron-job/pausePayment.cronjob"));
 const paynote_util_1 = __importDefault(require("./utils/paynote.util"));
 const socket_io_1 = require("socket.io");
 const http_1 = require("http");
@@ -72,6 +73,20 @@ class App {
         // await moneyThumbUtil.getProfitMarginPerMonth(debtor, card);
         // const caseRepo = new CaseRepository();
         // await caseRepo.updateMany({'intervals.amount': {$gte: 0}}, {intervals: []});
+        // const debtorRepos = new DebtorRepository();
+        // const thirtyDaysAgo = new Date();
+        // thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        // const debtorData = await debtorRepos.updateMany<IDebtor>(
+        //   {
+        //     paymentAmountCount: 1,
+        //     lastPaymentAmountDate: {$lt: thirtyDaysAgo},
+        //   },
+        //   {
+        //     paymentAmountCount: 0,
+        //     lastPaymentAmountDate: null,
+        //   }
+        // );
+        // console.log('show', debtorData);
         if (process.env.environment === 'prod' &&
             process.env.runPaynoteScript === 'true')
             await paynote_util_1.default.syncUsersPaynote();
@@ -80,6 +95,7 @@ class App {
         // paymentCronjob.processPayments();
         // paymentCronjob.processCommissionPayments();
         payment_cronjob_1.default.startCronJob();
+        pausePayment_cronjob_1.default.startCronJob();
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
         // paymentCronjob.testPaynote();

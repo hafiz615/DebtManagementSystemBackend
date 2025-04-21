@@ -61,4 +61,5 @@ export class Case {
   affiliateEmail = '';
   lawsuitExist = false;
   lawfirmId = null;
+  dummyLawsuitExist = false;
 }

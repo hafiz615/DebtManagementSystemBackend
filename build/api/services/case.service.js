@@ -764,18 +764,34 @@ class CaseService {
                 findCase.intervals.length) {
                 return [false, 'Payment plan already exist!'];
             }
-            if (!findCase.lawsuitExist) {
-                const lawsuitFields = findCase.debtor.lawsuitFields?.find(lawsuit => lawsuit.plaintiff_company ===
-                    findCase.creditor.businessInformation.companyName &&
-                    lawsuit.defendant_company ===
-                        findCase.debtor.businessInformation.companyName) || null;
-                if (lawsuitFields) {
-                    const lawsuitDetails = await lawsuit_util_1.default.lawsuitDetails(lawsuitFields, reqTemp.id);
-                    const lawfirmTemp = await lawsuit_util_1.default.lawsuitFormation(lawsuitDetails, findCase);
-                    if (lawfirmTemp)
-                        req.body.lawsuitExist = true;
-                }
-            }
+            // if (!findCase.lawsuitExist) {
+            //   const lawsuitFields =
+            //     findCase.debtor.lawsuitFields?.find(
+            //       lawsuit =>
+            //         lawsuit.plaintiff_company ===
+            //           findCase.creditor.businessInformation.companyName &&
+            //         lawsuit.defendant_company ===
+            //           findCase.debtor.businessInformation.companyName
+            //     ) || null;
+            //   if (lawsuitFields) {
+            //     if (findCase.dummyLawsuitExist) {
+            //       await lawsuitUtil.deleteLawsuit(
+            //         findCase.debtor._id,
+            //         findCase.creditor._id
+            //       );
+            //       req.body.dummyLawsuitExist = false;
+            //     }
+            //     const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
+            //       lawsuitFields,
+            //       reqTemp.id
+            //     );
+            //     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
+            //       lawsuitDetails,
+            //       findCase
+            //     );
+            //     if (lawfirmTemp) req.body.lawsuitExist = true;
+            //   }
+            // }
             // if (req.body?.commission) {
             //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
             //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {

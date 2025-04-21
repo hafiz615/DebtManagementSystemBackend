@@ -64,5 +64,7 @@ exports.default = {
     unexpectedErrorMessage: (action) => `An unexpected error occurred while ${action}.`,
     paymentAlreadyExistsMessage: (name) => `payment is already captured for this transaction`,
     callMadesuccessMessage: (name) => `${name} made successfully!`,
+    paymentPausedSuccessfully: (name) => `${name} payment paused successfully`,
+    successfullyMessage: (name) => `${name} successfully`,
 };
 //# sourceMappingURL=constants.util.js.map

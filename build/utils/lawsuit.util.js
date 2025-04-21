@@ -47,7 +47,7 @@ class LawsuitUtil {
             lawfirmId: lawfirmTemp.id,
         });
         const lawsuitInfo = this.lawsuitInfo(lawsuit, caseData, attorneyTemp._id, lawfirmTemp._id, id);
-        const lawsuitTemp = await this.createLawsuit(lawsuitInfo);
+        const lawsuitTemp = await this.upsertLawsuit(lawsuitInfo);
         return lawsuitTemp ? [true, lawsuitTemp] : false;
     }
     async lawsuitDetailsDebtorPortal(lawsuitFields, userId) {
@@ -136,6 +136,17 @@ class LawsuitUtil {
         const validatedLawsuit = dataCopier_util_1.DataCopier.copy(newLawsuit, data);
         return await this.lawsuitRepository.create(validatedLawsuit);
     }
+    async upsertLawsuit(data) {
+        const newLawsuit = new lawsuit_repomodel_1.Lawsuit();
+        const validatedLawsuit = dataCopier_util_1.DataCopier.copy(newLawsuit, data);
+        delete validatedLawsuit.debtorId;
+        delete validatedLawsuit.creditorId;
+        return await this.lawsuitRepository.upsert({
+            debtorId: data.debtorId,
+            creditorId: data.creditorId,
+            isDeleted: false,
+        }, validatedLawsuit);
+    }
     async updateFee(payments) {
         for (const payment of payments) {
             const updateObjPayment = {};
@@ -145,7 +156,7 @@ class LawsuitUtil {
                 updateObjPayment['serviceFee'] = await this.getServiceFee(payment.caseId);
                 updateObjPayment['updatedAt'] = common_util_1.default.getCurrentDate();
                 await this.paymentRepository.updateById(payment._id, updateObjPayment);
-                this.updateLawsuitFee(fee, payment.caseId.debtor._id, payment.caseId.creditor);
+                this.updateLawsuitFee(fee, payment.caseId.debtor._id, payment.caseId.creditor._id);
             }
         }
     }
@@ -154,13 +165,13 @@ class LawsuitUtil {
             if (payment.caseId) {
                 const fee = await this.getLegalFee(payment.caseId);
                 if (fee) {
-                    this.updateLawsuitFee(fee, payment.caseId.debtor._id, payment.caseId.creditor);
+                    this.updateLawsuitFee(fee, payment.caseId.debtor._id, payment.caseId.creditor._id);
                 }
             }
         }
     }
     async updateLawsuitFee(fee, debtorId, creditorId) {
-        await this.lawsuitRepository.updateByOne({ creditorId, debtorId }, {
+        await this.lawsuitRepository.updateByOne({ creditorId, debtorId, isDeleted: { $ne: true } }, {
             $inc: {
                 lawsuitReceiveAmount: fee,
                 lawsuitReceiveCount: 1,
@@ -194,6 +205,7 @@ class LawsuitUtil {
             const lawsuitData = await this.lawsuitRepository.getOne({
                 debtorId: caseData.debtor._id,
                 creditorId: caseData.creditor,
+                isDeleted: { $ne: true },
             }, undefined, undefined, ['lawfirmId']);
             if (lawsuitData?.lawfirmId?.lawfirmFee !== 0) {
                 return lawsuitData.lawfirmId.lawfirmFee;
@@ -214,6 +226,25 @@ class LawsuitUtil {
             type: 'serviceFee',
         });
         return serviceFee ? serviceFee.fee : 0;
+    }
+    async deleteLawsuit(debtorId, creditorId) {
+        await this.lawsuitRepository.updateByOne({
+            debtorId: debtorId,
+            creditorId: creditorId,
+            isDeleted: { $ne: true },
+        }, {
+            isDeleted: true,
+        });
+    }
+    async cancelPlan(debtorId, creditorId) {
+        await this.lawsuitRepository.updateByOne({
+            debtorId: debtorId,
+            creditorId: creditorId,
+            isDeleted: { $ne: true },
+        }, {
+            intervals: [],
+            isExempt: false,
+        });
     }
 }
 exports.default = new LawsuitUtil();

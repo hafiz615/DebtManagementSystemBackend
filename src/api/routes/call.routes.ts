@@ -10,6 +10,21 @@ router.get(
 );
 router.post('/voice', callController.callTwiml);
 router.post('/twilio/recording-status', callController.callRecordingStatus);
+router.post(
+  '/conference/conference-start-event',
+  callController.conferenceStartEvent
+);
+router.post(
+  '/conference/conference-recording-status',
+  callController.conferenceRecordingStatus
+);
+
+router.post(
+  '/conference/add-participant',
+  authorize.validateAuth,
+  callController.addParticipant
+);
+
 router.get('/twilio/token', authorize.validateAuth, callController.getToken);
 router.post('/twilio/fallback', callController.callFallBack);
 router.post('/twilio/call-status', callController.callStatus);
@@ -17,11 +32,21 @@ router.get(
   '/twilio/getIncomingCall/:callSid',
   callController.getIncomingCallSid
 );
+router.post(
+  '/conference/getAllTheParticipants',
+  callController.getAllTheParticipants
+);
+
 router.post('/callSummary', callController.callSummary);
 router.patch(
   '/updateCall/:callSid',
   authorize.validateAuth,
   callController.updateCall
+);
+
+router.patch(
+  '/updateConferenceParticipant',
+  callController.updateConferenceParticipant
 );
 router.post(
   '/twilio/callerName',
@@ -44,6 +69,12 @@ router.get(
   callController.getVoiceMails
 );
 
+router.get(
+  '/getAllUserNumbers',
+  authorize.validateAuth,
+  callController.getAllUserNumbers
+);
+
 router.post(
   '/twilio/voice-mail-recording-status',
   callController.voiceMailRecordingStatus
@@ -53,6 +84,11 @@ router.delete(
   '/deleteCall/:id',
   authorize.validateAuth,
   callController.deleteCall
+);
+
+router.delete(
+  '/conference/removeParticipant',
+  callController.removeParticipant
 );
 
 export default router;

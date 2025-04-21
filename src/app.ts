@@ -10,6 +10,7 @@ import {EnvSetup} from './utils/setEnv';
 import emailUtil from './utils/email.util';
 import googleDriveUtil from './utils/googleDrive.util';
 import bulkUploadCronjob from './cron-job/bulkUpload.cronjob';
+import pausePayment from './cron-job/pausePayment.cronjob';
 import {CreditorRepository} from './api/repository/creditor/creditor.repository';
 import {ICreditor} from './database/interfaces/creditor.interface';
 import paynoteUtil from './utils/paynote.util';
@@ -96,6 +97,24 @@ class App {
     // await moneyThumbUtil.getProfitMarginPerMonth(debtor, card);
     // const caseRepo = new CaseRepository();
     // await caseRepo.updateMany({'intervals.amount': {$gte: 0}}, {intervals: []});
+
+    // const debtorRepos = new DebtorRepository();
+    // const thirtyDaysAgo = new Date();
+    // thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // const debtorData = await debtorRepos.updateMany<IDebtor>(
+    //   {
+    //     paymentAmountCount: 1,
+    //     lastPaymentAmountDate: {$lt: thirtyDaysAgo},
+    //   },
+    //   {
+    //     paymentAmountCount: 0,
+    //     lastPaymentAmountDate: null,
+    //   }
+    // );
+
+    // console.log('show', debtorData);
+
     if (
       process.env.environment === 'prod' &&
       process.env.runPaynoteScript === 'true'
@@ -106,6 +125,7 @@ class App {
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
     paymentCronjob.startCronJob();
+    pausePayment.startCronJob();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
     // paymentCronjob.testPaynote();

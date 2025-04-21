@@ -689,6 +689,24 @@ class DebtorUtil {
         const result = this.getSortedAccountDetails(accountDetails);
         return [true, result];
     }
+    async updateDebtorPausePayment(debtorId, amountCheck) {
+        const updatePayload = amountCheck
+            ? {
+                $inc: { paymentAmountCount: 1 },
+                $set: {
+                    lastPaymentAmountDate: common_util_1.default.getCurrentDate(),
+                    additionalCharge: false,
+                },
+            }
+            : {
+                $inc: { paymentPauseCount: 1 },
+                $set: {
+                    lastPaymentPauseDate: common_util_1.default.getCurrentDate(),
+                    additionalCharge: false,
+                },
+            };
+        return this.debtorRepository.updateById(debtorId, updatePayload);
+    }
 }
 exports.default = new DebtorUtil();
 //# sourceMappingURL=debtor.util.js.map
