@@ -235,7 +235,7 @@ class CallUtil {
       });
 
     await this.callRepository.updateByOne(
-      {conferenceName: conferenceSid},
+      {callSid: conferenceSid},
       {
         $addToSet: {callTo: toNumber},
         updatedAt: commonUtil.getCurrentDate(),

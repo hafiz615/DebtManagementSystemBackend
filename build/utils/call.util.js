@@ -169,7 +169,7 @@ class CallUtil {
             endConferenceOnExit: false,
             record: true,
         });
-        await this.callRepository.updateByOne({ conferenceName: conferenceSid }, {
+        await this.callRepository.updateByOne({ callSid: conferenceSid }, {
             $addToSet: { callTo: toNumber },
             updatedAt: common_util_1.default.getCurrentDate(),
         });
