@@ -156,17 +156,7 @@ class CallUtil {
         newCall.callStatus = CallStatus;
         return this.callRepository.create(newCall);
     }
-    async getConferenceSidByFriendlyName(friendlyName) {
-        const conferences = await this.twilioClient.conferences.list({
-            friendlyName,
-            status: 'in-progress',
-            limit: 1,
-        });
-        console.log('conferences', conferences);
-        return conferences.length > 0 ? conferences[0].sid : null;
-    }
-    async addParticipantToConference(toNumber, callerId, conferenceRoom) {
-        const conferenceSid = await this.getConferenceSidByFriendlyName(conferenceRoom);
+    async addParticipantToConference(toNumber, callerId, conferenceSid) {
         const participant = await this.twilioClient
             .conferences(conferenceSid)
             .participants.create({
@@ -179,7 +169,7 @@ class CallUtil {
             endConferenceOnExit: false,
             record: true,
         });
-        await this.callRepository.updateByOne({ conferenceName: conferenceRoom }, {
+        await this.callRepository.updateByOne({ conferenceName: conferenceSid }, {
             $addToSet: { callTo: toNumber },
             updatedAt: common_util_1.default.getCurrentDate(),
         });
