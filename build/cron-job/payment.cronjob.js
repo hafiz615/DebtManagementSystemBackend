@@ -200,6 +200,12 @@ class CronJob {
         }, {
             timezone: 'America/New_York',
         });
+        node_cron_1.default.schedule('15 4 * * *', async () => {
+            console.log('Running a task in a day for 4am (UTC)');
+            this.processPayments();
+        }, {
+            timezone: 'America/New_York',
+        });
         node_cron_1.default.schedule('0 * * * *', async () => {
             console.log('Running a task every zero of an hour');
             this.processCommissionRetryPayments();
