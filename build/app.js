@@ -94,8 +94,10 @@ class App {
         // await easypayUtil.syncClients('Easypay direct');
         // paymentCronjob.processPayments();
         // paymentCronjob.processCommissionPayments();
-        payment_cronjob_1.default.startCronJob();
-        pausePayment_cronjob_1.default.startCronJob();
+        if (process.env.environment === 'prod') {
+            payment_cronjob_1.default.startCronJob();
+            pausePayment_cronjob_1.default.startCronJob();
+        }
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
         // paymentCronjob.testPaynote();
