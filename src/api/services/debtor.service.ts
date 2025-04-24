@@ -1993,8 +1993,8 @@ class DebtorService {
 
       getPayment.push({
         ...payment.toObject(),
-        LegalFee: totalLegalFeeAmount || 0,
-        ServiceFee: totalServiceFeeAmount || 0,
+        legalFee: totalLegalFeeAmount || 0,
+        serviceFee: totalServiceFeeAmount || 0,
         commissionFee: commission,
         total: total,
       });
