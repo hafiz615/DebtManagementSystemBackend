@@ -232,9 +232,8 @@ class CronJob {
     cron.schedule(
       '0 4 * * *',
       async () => {
-        console.log('Running a task in a day for 4am (UTC)');
+        console.log('Running a task in a day for 4am');
         this.processCommissionPayments();
-        this.processPayments();
       },
       {
         timezone: 'America/New_York',
@@ -244,7 +243,7 @@ class CronJob {
     cron.schedule(
       '15 4 * * *',
       async () => {
-        console.log('Running a task in a day for 4am (UTC)');
+        console.log('Running a task in a day for 4:15am');
         this.processPayments();
       },
       {

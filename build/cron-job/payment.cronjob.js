@@ -194,14 +194,13 @@ class CronJob {
     }
     startCronJob() {
         node_cron_1.default.schedule('0 4 * * *', async () => {
-            console.log('Running a task in a day for 4am (UTC)');
+            console.log('Running a task in a day for 4am');
             this.processCommissionPayments();
-            this.processPayments();
         }, {
             timezone: 'America/New_York',
         });
         node_cron_1.default.schedule('15 4 * * *', async () => {
-            console.log('Running a task in a day for 4am (UTC)');
+            console.log('Running a task in a day for 4:15am');
             this.processPayments();
         }, {
             timezone: 'America/New_York',
