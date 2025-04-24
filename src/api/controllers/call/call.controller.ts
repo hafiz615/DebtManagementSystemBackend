@@ -22,7 +22,7 @@ class CallController {
       res.type('text/xml');
       return res.status(constants.CODE.OK).send(response[1]);
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -107,7 +107,7 @@ class CallController {
       res.type('text/xml');
       return res.status(constants.CODE.OK).send(response[1]);
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -130,7 +130,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -153,7 +153,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -176,7 +176,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -199,7 +199,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -243,7 +243,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -266,7 +266,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
@@ -289,7 +289,7 @@ class CallController {
         })
       );
     } catch (error) {
-      console.log('error', error.message);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
