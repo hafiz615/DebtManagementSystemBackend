@@ -1413,15 +1413,14 @@ class DebtorService {
         const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount);
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
-        let additionalCharge = false;
-        if (!debtor.additionalCharge) {
-            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
-            if (!additionalCharge)
-                return [false, 'Unable to charge the amount.'];
-            this.debtorRepository.updateById(debtor._id, {
-                additionalCharge: true,
-            });
-        }
+        // let additionalCharge = false;
+        // if (!debtor.additionalCharge) {
+        //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+        //   if (!additionalCharge) return [false, 'Unable to charge the amount.'];
+        //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        //     additionalCharge: true,
+        //   });
+        // }
         let updateDebtor = null;
         const filter = {
             debtorId: req.params.id,
@@ -1429,7 +1428,7 @@ class DebtorService {
             isDeleted: { $ne: true },
             attorneyId: null,
             authorized: { $ne: 'Success' },
-            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
         };
         if (req.body?.paymentId) {
             filter._id = req.body.paymentId;
@@ -1464,17 +1463,34 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
+        const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const payments = await this.paymentRepository.getAllWithoutPagination({
             debtorId: req.params.id,
             caseId: null,
             isDeleted: { $ne: true },
             attorneyId: null,
             authorized: { $ne: 'Success' },
-            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, { dueDate: 1 });
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+        }, undefined, undefined, { dueDate: 1 }, undefined, undefined, pageLimit.page, pageLimit.limit);
         if (!payments)
             return [true, constants_util_1.default.notFoundMessage('Payments')];
-        return [true, { count: payments.length, payments }];
+        let getPayment = [];
+        for (const payment of payments) {
+            const { totalLegalFeeAmount, totalServiceFeeAmount, totalAmount } = await payment_util_1.default.getOtherPaymentsTotal(payments[0]);
+            const commission = payment.amount -
+                totalLegalFeeAmount -
+                totalServiceFeeAmount -
+                totalAmount;
+            const total = totalLegalFeeAmount + totalServiceFeeAmount + commission;
+            getPayment.push({
+                ...payment.toObject(),
+                LegalFee: totalLegalFeeAmount || 0,
+                ServiceFee: totalServiceFeeAmount || 0,
+                commissionFee: commission,
+                total: total,
+            });
+        }
+        return [true, getPayment];
     }
     async getToken(req) {
         const getDebtor = await this.debtorRepository.getById(req.params.id);

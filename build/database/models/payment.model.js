@@ -68,6 +68,10 @@ const PaymentModel = new mongoose_1.Schema({
         type: Number,
         default: 0,
     },
+    previousAmount: {
+        type: Number,
+        default: 0,
+    },
     dueDate: {
         type: Date,
     },

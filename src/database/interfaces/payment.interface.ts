@@ -11,6 +11,7 @@ export interface IPayment extends Document {
   sendViaPaynote: string;
   paynoteCheckId: string;
   amount: number;
+  previousAmount: number;
   dueDate: string;
   frequency: number;
   intervalId: string;

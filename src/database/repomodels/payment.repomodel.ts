@@ -11,6 +11,7 @@ export class Payment {
   sendViaPaynote = 'Pending';
   paynoteCheckId = '';
   amount = 0;
+  previousAmount = 0;
   dueDate = '';
   frequency = 0;
   intervalId = '';
