@@ -21,9 +21,10 @@ class CallController {
                 return res.status(constants_util_1.default.CODE.OK).send(response[1]);
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.updateCall = async (req, res) => {
@@ -100,9 +101,10 @@ class CallController {
                 return res.status(constants_util_1.default.CODE.OK).send(response[1]);
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.callRecordingStatus = async (req, res) => {
@@ -120,9 +122,10 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.conferenceStartEvent = async (req, res) => {
@@ -140,9 +143,10 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.conferenceRecordingStatus = async (req, res) => {
@@ -160,9 +164,10 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.addParticipant = async (req, res) => {
@@ -180,9 +185,10 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getCalls = async (req, res) => {
@@ -220,9 +226,10 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.callStatus = async (req, res) => {
@@ -240,9 +247,10 @@ class CallController {
                 }));
             }
             catch (error) {
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getToken = async (req, res) => {
@@ -260,10 +268,10 @@ class CallController {
                 }));
             }
             catch (error) {
-                console.log(error);
+                console.log('error', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getIncomingCallSid = async (req, res) => {
@@ -284,7 +292,7 @@ class CallController {
                 console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.callerName = async (req, res) => {
@@ -305,7 +313,7 @@ class CallController {
                 console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getMissedCalls = async (req, res) => {
@@ -326,7 +334,7 @@ class CallController {
                 console.log(error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.voiceMail = async (req, res) => {
@@ -344,7 +352,7 @@ class CallController {
                 console.log('error voice mail', error.message);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getVoiceMails = async (req, res) => {
@@ -364,7 +372,7 @@ class CallController {
             catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.voiceMailRecording = async (req, res) => {
@@ -405,7 +413,7 @@ class CallController {
             catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.deleteCall = async (req, res) => {
@@ -425,7 +433,7 @@ class CallController {
             catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.removeParticipant = async (req, res) => {
@@ -445,7 +453,7 @@ class CallController {
             catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.getAllUserNumbers = async (req, res) => {
@@ -465,7 +473,7 @@ class CallController {
             catch (error) {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+                    .send(responseHelper_util_1.default.get4xxResponse(error.message));
             }
         };
         this.callService = new call_service_1.default();
