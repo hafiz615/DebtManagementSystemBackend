@@ -480,7 +480,8 @@ class DebtorService {
       amount = payment.amount;
     }
     if (!payment.paymentReference) {
-      amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+      // amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+      amount = payment.amount;
       payments.push(payment);
     }
     let response: any;
@@ -523,7 +524,6 @@ class DebtorService {
         ''
       );
     }
-    console.log(payments, 'paymentssssss');
     if (Object.keys(updateObjPayment).length) {
       for (const payment of payments) {
         await this.paymentRepository.updateById<IPayment>(

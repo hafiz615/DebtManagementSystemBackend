@@ -499,6 +499,28 @@ class CallController {
     }
   };
 
+  completeConference = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.completeConference(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.message));
+    }
+  };
+
   getAllUserNumbers = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.getAllUserNumbers();
