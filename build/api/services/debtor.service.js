@@ -443,7 +443,8 @@ class DebtorService {
             amount = payment.amount;
         }
         if (!payment.paymentReference) {
-            amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+            // amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+            amount = payment.amount;
             payments.push(payment);
         }
         let response;
@@ -473,7 +474,6 @@ class DebtorService {
             updateObjPayment['failedReasonAuthorization'] = responseText;
             await email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', paymentId, '');
         }
-        console.log(payments, 'paymentssssss');
         if (Object.keys(updateObjPayment).length) {
             for (const payment of payments) {
                 await this.paymentRepository.updateById(payment._id, updateObjPayment);

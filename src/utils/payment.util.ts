@@ -679,21 +679,33 @@ class PaymentUtil {
 
       const {totalAmount} = await this.getOtherPaymentsTotal(payment);
 
+      if (!totalAmount) {
+        return [
+          false,
+          'The total amount belongs to the first choice, so we cannot move to the last one.',
+        ];
+      }
+
       const remainingAmount = payment.amount - totalAmount;
 
-      const updatePayment = await this.paymentRepository.updateById(
-        String(payment._id),
-        {
-          amount: remainingAmount,
-        }
-      );
+      let createdPayment = payment;
+
+      if (remainingAmount) {
+        const updatePayment = await this.paymentRepository.updateById(
+          String(payment._id),
+          {
+            amount: remainingAmount,
+          }
+        );
+        const paymentValidate = DataCopier.copy(newPayment, payment);
+        paymentValidate.amount = totalAmount;
+        paymentValidate.dueDate = updatedDueDate.toISOString();
+        paymentValidate.frequency = paymentTemp[0].frequency + 1;
+        paymentValidate.calculateComission = true;
+        createdPayment =
+          await this.paymentRepository.create<IPayment>(paymentValidate);
+      }
       const creditorPayments = await this.getOtherPayments(payment);
-      const paymentValidate = DataCopier.copy(newPayment, payment);
-      paymentValidate.amount = totalAmount;
-      paymentValidate.dueDate = updatedDueDate.toISOString();
-      paymentValidate.frequency = paymentTemp[0].frequency + 1;
-      const createdPayment =
-        await this.paymentRepository.create<IPayment>(paymentValidate);
 
       await this.pausePaymentByDay(
         [createdPayment],
@@ -706,7 +718,7 @@ class PaymentUtil {
     } else {
       payment.dueDate = updatedDueDate.toISOString();
       payment.frequency = paymentTemp[0].frequency + 1;
-
+      payment.calculateComission = true;
       const createdPayment =
         await this.paymentRepository.create<IPayment>(payment);
       await this.pausePaymentByDay(

@@ -40,4 +40,5 @@ export class Payment {
   legalFee = 0;
   creditorName = '';
   paymentMode = '';
+  calculateComission = false;
 }

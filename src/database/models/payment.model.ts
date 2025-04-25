@@ -136,6 +136,9 @@ const PaymentModel: Schema = new Schema({
     type: Number,
   },
   creditorName: String,
+  calculateComission: {
+    type: Boolean,
+  },
 });
 
 PaymentModel.pre('save', async function (next) {

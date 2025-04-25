@@ -480,7 +480,8 @@ class DebtorService {
       amount = payment.amount;
     }
     if (!payment.paymentReference) {
-      amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+      // amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+      amount = payment.amount;
       payments.push(payment);
     }
     let response: any;
@@ -523,7 +524,6 @@ class DebtorService {
         ''
       );
     }
-    console.log(payments, 'paymentssssss');
     if (Object.keys(updateObjPayment).length) {
       for (const payment of payments) {
         await this.paymentRepository.updateById<IPayment>(
@@ -1933,7 +1933,7 @@ class DebtorService {
       );
 
       if (!newPyament[0]) return [false, newPyament[1]];
-      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {
       const updatePyament = await paymentUtil.moveToLastPayment(
@@ -1944,8 +1944,8 @@ class DebtorService {
       if (!updatePyament[0]) return [false, updatePyament[1]];
       successMessage = 'Payments move to the last';
     }
-    if (!updateDebtor)
-      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    // if (!updateDebtor)
+    //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
@@ -1957,16 +1957,18 @@ class DebtorService {
     }
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
 
+    const filter = {
+      debtorId: req.params.id,
+      caseId: null,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+    };
+
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {
-          debtorId: req.params.id,
-          caseId: null,
-          isDeleted: {$ne: true},
-          attorneyId: null,
-          authorized: {$ne: 'Success'},
-          paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
-        },
+        filter,
         undefined,
         undefined,
         {dueDate: 1},
@@ -1978,29 +1980,37 @@ class DebtorService {
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
 
-    let getPayment = [];
+    const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
+
+    const getPayment = [];
+
     for (const payment of payments) {
-      const {totalLegalFeeAmount, totalServiceFeeAmount, totalAmount} =
-        await paymentUtil.getOtherPaymentsTotal(payments[0]);
+      const {
+        totalLegalFeeAmount = 0,
+        totalServiceFeeAmount = 0,
+        totalAmount = 0,
+      } = !payment.calculateComission
+        ? await paymentUtil.getOtherPaymentsTotal(payment)
+        : {};
 
-      const commission =
-        payment.amount -
-        totalLegalFeeAmount -
-        totalServiceFeeAmount -
-        totalAmount;
+      const legalFee = totalLegalFeeAmount;
+      const serviceFee = totalServiceFeeAmount;
+      const commissionFee = !payment.calculateComission
+        ? payment.amount - legalFee - serviceFee - totalAmount
+        : 0;
 
-      const total = totalLegalFeeAmount + totalServiceFeeAmount + commission;
+      const total = legalFee + serviceFee + commissionFee;
 
       getPayment.push({
         ...payment.toObject(),
-        legalFee: totalLegalFeeAmount || 0,
-        serviceFee: totalServiceFeeAmount || 0,
-        commissionFee: commission,
-        total: total,
+        legalFee,
+        serviceFee,
+        commissionFee,
+        total,
       });
     }
 
-    return [true, getPayment];
+    return [true, {totalCount, payments: getPayment}];
   }
 
   async getToken(req: Request) {

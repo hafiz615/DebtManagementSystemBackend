@@ -91,4 +91,9 @@ router.delete(
   callController.removeParticipant
 );
 
+router.post(
+  '/conference/completeConference',
+  callController.completeConference
+);
+
 export default router;
