@@ -66,6 +66,12 @@ export enum Events {
   case_negotiator_changed = 'case_negotiator_changed',
   case_manager_changed = 'case_manager_changed',
   case_details_update = 'case_details_update',
+  failed_capture = 'failed_capture',
+  successful_capture = 'successful_capture',
+  pause_single_payment = 'pause_single_payment',
+  pause_all_payments = 'pause_all_payments',
+  move_payment_to_last = 'move_payment_to_last',
+  change_payment_amount = 'change_payment_amount',
 }
 
 export enum User {

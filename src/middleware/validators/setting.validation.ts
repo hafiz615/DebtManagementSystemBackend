@@ -31,7 +31,13 @@ class SettingValidate {
           Events.successful_authorization,
           Events.case_details_update,
           Events.upcoming_payment,
-          Events.successful_payment
+          Events.successful_payment,
+          Events.successful_capture,
+          Events.failed_capture,
+          Events.change_payment_amount,
+          Events.move_payment_to_last,
+          Events.pause_all_payments,
+          Events.pause_single_payment
         )
         .required()
         .messages({

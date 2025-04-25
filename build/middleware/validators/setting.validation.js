@@ -15,7 +15,7 @@ class SettingValidate {
                 'string.base': 'Label must be a string.',
             }),
             value: joi_1.default.string()
-                .valid(enums_1.Events.case_details_update, enums_1.Events.case_manager_changed, enums_1.Events.case_negotiator_changed, enums_1.Events.case_note_added, enums_1.Events.case_owner_changed, enums_1.Events.case_task_added, enums_1.Events.case_task_assigned, enums_1.Events.case_task_due_data_near, enums_1.Events.case_task_unassigned, enums_1.Events.failed_authorization, enums_1.Events.failed_payment, enums_1.Events.successful_authorization, enums_1.Events.case_details_update, enums_1.Events.upcoming_payment, enums_1.Events.successful_payment)
+                .valid(enums_1.Events.case_details_update, enums_1.Events.case_manager_changed, enums_1.Events.case_negotiator_changed, enums_1.Events.case_note_added, enums_1.Events.case_owner_changed, enums_1.Events.case_task_added, enums_1.Events.case_task_assigned, enums_1.Events.case_task_due_data_near, enums_1.Events.case_task_unassigned, enums_1.Events.failed_authorization, enums_1.Events.failed_payment, enums_1.Events.successful_authorization, enums_1.Events.case_details_update, enums_1.Events.upcoming_payment, enums_1.Events.successful_payment, enums_1.Events.successful_capture, enums_1.Events.failed_capture, enums_1.Events.change_payment_amount, enums_1.Events.move_payment_to_last, enums_1.Events.pause_all_payments, enums_1.Events.pause_single_payment)
                 .required()
                 .messages({
                 'any.required': 'Event value is required.',
