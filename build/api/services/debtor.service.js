@@ -1493,13 +1493,16 @@ class DebtorService {
         const totalCount = await this.paymentRepository.getCount(filter);
         const getPayment = [];
         for (const payment of payments) {
-            const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, totalAmount = 0, } = !payment.calculateComission
+            const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = !payment.calculateComission
                 ? await payment_util_1.default.getOtherPaymentsTotal(payment)
                 : {};
+            const creditorPayments = await payment_util_1.default.getCreditorPayments(payment);
+            if (!creditorPayments.length)
+                continue;
             const legalFee = totalLegalFeeAmount;
             const serviceFee = totalServiceFeeAmount;
             const commissionFee = !payment.calculateComission
-                ? payment.amount - legalFee - serviceFee - totalAmount
+                ? payment.amount - legalFee - serviceFee - creditorsAmount
                 : 0;
             const total = legalFee + serviceFee + commissionFee;
             getPayment.push({
@@ -1507,7 +1510,9 @@ class DebtorService {
                 legalFee,
                 serviceFee,
                 commissionFee,
+                creditorsAmount,
                 total,
+                creditorPayments,
             });
         }
         return [true, { totalCount, payments: getPayment }];

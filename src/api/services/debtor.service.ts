@@ -1999,15 +1999,19 @@ class DebtorService {
       const {
         totalLegalFeeAmount = 0,
         totalServiceFeeAmount = 0,
-        totalAmount = 0,
+        creditorsAmount = 0,
       } = !payment.calculateComission
         ? await paymentUtil.getOtherPaymentsTotal(payment)
         : {};
 
+      const creditorPayments = await paymentUtil.getCreditorPayments(payment);
+
+      if (!creditorPayments.length) continue;
+
       const legalFee = totalLegalFeeAmount;
       const serviceFee = totalServiceFeeAmount;
       const commissionFee = !payment.calculateComission
-        ? payment.amount - legalFee - serviceFee - totalAmount
+        ? payment.amount - legalFee - serviceFee - creditorsAmount
         : 0;
 
       const total = legalFee + serviceFee + commissionFee;
@@ -2017,7 +2021,9 @@ class DebtorService {
         legalFee,
         serviceFee,
         commissionFee,
+        creditorsAmount,
         total,
+        creditorPayments,
       });
     }
 

@@ -502,6 +502,27 @@ class PaymentUtil {
     return payments;
   }
 
+  async getCreditorPayments(payment: IPayment) {
+    const debtorId = payment.debtorId;
+    const nextDate = await this.addDaysBasedOnPeriod(
+      payment.dueDate,
+      payment.timePeriod
+    );
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: debtorId,
+        caseId: {$ne: null},
+        authorized: {$ne: 'Success'},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        isDeleted: false,
+        dueDate: {
+          $gte: new Date(payment.dueDate),
+          $lt: nextDate,
+        },
+      });
+    return payments;
+  }
+
   async getOtherPaymentsTotal(payment: IPayment) {
     const debtorId = payment.debtorId;
     const nextDate = await this.addDaysBasedOnPeriod(
@@ -534,7 +555,7 @@ class PaymentUtil {
       {$match: matchStage},
       {$group: {_id: null, totalAmount: {$sum: '$amount'}}},
     ]);
-    const totalAmount = result[0]?.totalAmount || 0;
+    const creditorsAmount = result[0]?.totalAmount || 0;
 
     const totalLegalFeeAmount = await lawsuitUtil.getTotalLegalFee(payments);
     const totalServiceFeeAmount =
@@ -543,7 +564,7 @@ class PaymentUtil {
     return {
       totalLegalFeeAmount: totalLegalFeeAmount || 0,
       totalServiceFeeAmount: totalServiceFeeAmount || 0,
-      totalAmount,
+      creditorsAmount,
     };
   }
 
@@ -677,16 +698,16 @@ class PaymentUtil {
         ];
       }
 
-      const {totalAmount} = await this.getOtherPaymentsTotal(payment);
+      const {creditorsAmount} = await this.getOtherPaymentsTotal(payment);
 
-      if (!totalAmount) {
+      if (!creditorsAmount) {
         return [
           false,
           'The total amount belongs to the first choice, so we cannot move to the last one.',
         ];
       }
 
-      const remainingAmount = payment.amount - totalAmount;
+      const remainingAmount = payment.amount - creditorsAmount;
 
       let createdPayment = payment;
 
@@ -698,7 +719,7 @@ class PaymentUtil {
           }
         );
         const paymentValidate = DataCopier.copy(newPayment, payment);
-        paymentValidate.amount = totalAmount;
+        paymentValidate.amount = creditorsAmount;
         paymentValidate.dueDate = updatedDueDate.toISOString();
         paymentValidate.frequency = paymentTemp[0].frequency + 1;
         paymentValidate.calculateComission = true;
@@ -778,14 +799,14 @@ class PaymentUtil {
 
     const newPayment = new Payment();
 
-    const {totalLegalFeeAmount, totalServiceFeeAmount, totalAmount} =
+    const {totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount} =
       await this.getOtherPaymentsTotal(payment);
 
     const commission =
       payment.amount -
       totalLegalFeeAmount -
       totalServiceFeeAmount -
-      totalAmount;
+      creditorsAmount;
 
     const totalAmoutFee =
       totalLegalFeeAmount + totalServiceFeeAmount + commission;

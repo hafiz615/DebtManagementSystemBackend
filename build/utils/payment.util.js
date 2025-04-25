@@ -364,6 +364,22 @@ class PaymentUtil {
         }, undefined, undefined, undefined, { path: 'caseId', populate: ['debtor', 'creditor'] });
         return payments;
     }
+    async getCreditorPayments(payment) {
+        const debtorId = payment.debtorId;
+        const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        const payments = await this.paymentRepository.getAllWithoutPagination({
+            debtorId: debtorId,
+            caseId: { $ne: null },
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+            isDeleted: false,
+            dueDate: {
+                $gte: new Date(payment.dueDate),
+                $lt: nextDate,
+            },
+        });
+        return payments;
+    }
     async getOtherPaymentsTotal(payment) {
         const debtorId = payment.debtorId;
         const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
@@ -383,13 +399,13 @@ class PaymentUtil {
             { $match: matchStage },
             { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
         ]);
-        const totalAmount = result[0]?.totalAmount || 0;
+        const creditorsAmount = result[0]?.totalAmount || 0;
         const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(payments);
         const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(payments);
         return {
             totalLegalFeeAmount: totalLegalFeeAmount || 0,
             totalServiceFeeAmount: totalServiceFeeAmount || 0,
-            totalAmount,
+            creditorsAmount,
         };
     }
     async addDaysBasedOnPeriod(date, timePeriod) {
@@ -483,21 +499,21 @@ class PaymentUtil {
                     'You Cannot pause the payment Which is already in last you can shift the day',
                 ];
             }
-            const { totalAmount } = await this.getOtherPaymentsTotal(payment);
-            if (!totalAmount) {
+            const { creditorsAmount } = await this.getOtherPaymentsTotal(payment);
+            if (!creditorsAmount) {
                 return [
                     false,
                     'The total amount belongs to the first choice, so we cannot move to the last one.',
                 ];
             }
-            const remainingAmount = payment.amount - totalAmount;
+            const remainingAmount = payment.amount - creditorsAmount;
             let createdPayment = payment;
             if (remainingAmount) {
                 const updatePayment = await this.paymentRepository.updateById(String(payment._id), {
                     amount: remainingAmount,
                 });
                 const paymentValidate = dataCopier_util_1.DataCopier.copy(newPayment, payment);
-                paymentValidate.amount = totalAmount;
+                paymentValidate.amount = creditorsAmount;
                 paymentValidate.dueDate = updatedDueDate.toISOString();
                 paymentValidate.frequency = paymentTemp[0].frequency + 1;
                 paymentValidate.calculateComission = true;
@@ -541,11 +557,11 @@ class PaymentUtil {
             return [false, 'Updated amount should be less than current amount.'];
         }
         const newPayment = new payment_repomodel_1.Payment();
-        const { totalLegalFeeAmount, totalServiceFeeAmount, totalAmount } = await this.getOtherPaymentsTotal(payment);
+        const { totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount } = await this.getOtherPaymentsTotal(payment);
         const commission = payment.amount -
             totalLegalFeeAmount -
             totalServiceFeeAmount -
-            totalAmount;
+            creditorsAmount;
         const totalAmoutFee = totalLegalFeeAmount + totalServiceFeeAmount + commission;
         if (totalAmoutFee > amount) {
             return [false, `Amount cannot be less than ${totalAmoutFee}`];
