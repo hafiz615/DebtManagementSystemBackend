@@ -46,6 +46,7 @@ class Payment {
         this.legalFee = 0;
         this.creditorName = '';
         this.paymentMode = '';
+        this.calculateComission = false;
     }
 }
 exports.Payment = Payment;
