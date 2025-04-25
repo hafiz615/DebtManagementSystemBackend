@@ -1874,6 +1874,7 @@ class DebtorService {
   }
 
   async pauseDebtorPayments(req: Request) {
+    const reqTemp: any = req;
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
@@ -1887,19 +1888,21 @@ class DebtorService {
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
     // let additionalCharge = false;
-
     // if (!debtor.additionalCharge) {
     //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-    //   if (!additionalCharge) return [false, 'Unable to charge the amount.'];
-
+    //   if (!additionalCharge) {
+    //     await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "failed_capture");
+    //     return [false, 'Unable to charge the amount.'];
+    //   }
+    //   await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "successful_capture");
     //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
     //     additionalCharge: true,
     //   });
     // }
 
     let updateDebtor = null;
-
+    let eventValue = null;
     const filter: any = {
       debtorId: req.params.id,
       caseId: null,
@@ -1924,6 +1927,10 @@ class DebtorService {
         payments,
         req.body.endDate
       );
+      if (req.body.paymentId) {
+        eventValue = 'pause_single_payment';
+      }
+      if (!eventValue) eventValue = 'pause_all_payments';
       successMessage = updateDatesPayment[1];
     } else if (req.body.paymentId && req.body.amount) {
       const newPyament = await paymentUtil.changePaymentAmmount(
@@ -1933,7 +1940,8 @@ class DebtorService {
       );
 
       if (!newPyament[0]) return [false, newPyament[1]];
-      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      eventValue = 'change_payment_amount';
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {
       const updatePyament = await paymentUtil.moveToLastPayment(
@@ -1942,10 +1950,13 @@ class DebtorService {
         false
       );
       if (!updatePyament[0]) return [false, updatePyament[1]];
+      eventValue = 'move_payment_to_last';
       successMessage = 'Payments move to the last';
     }
-    // if (!updateDebtor)
-    //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    if (!updateDebtor) {
+      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    }
+    await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
