@@ -50,6 +50,9 @@ const caseModel: Schema = new Schema({
   remaining: {
     type: Number,
   },
+  settledAmount: {
+    type: Number,
+  },
   remainingAmountPaid: {
     type: Number,
   },

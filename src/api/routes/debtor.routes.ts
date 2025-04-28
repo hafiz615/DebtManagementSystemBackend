@@ -260,4 +260,11 @@ router.get(
 
 router.get('/getToken/:id', debtorController.getToken);
 
+router.post(
+  '/getTopPayees/:id',
+  authorize.validateAuth,
+  debtor.getTopPayees,
+  debtorController.getTopPayees
+);
+
 export default router;
