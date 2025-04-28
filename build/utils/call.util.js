@@ -168,6 +168,16 @@ class CallUtil {
             startConferenceOnEnter: false, // 👈 this should usually be false for others
             endConferenceOnExit: false,
             record: true,
+            statusCallback: `${process.env.webHookURl}/api/v1/call/conference/participant-status`,
+            statusCallbackEvent: [
+                'initiated',
+                'ringing',
+                'answered',
+                'completed',
+                'busy',
+                'no-answer',
+                'failed',
+            ],
         });
         await this.callRepository.updateByOne({ callSid: conferenceSid }, {
             $addToSet: { callTo: toNumber },

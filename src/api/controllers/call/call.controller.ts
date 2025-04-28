@@ -273,6 +273,28 @@ class CallController {
     }
   };
 
+  participantStatus = async (req: Request, res: Response) => {
+    try {
+      const response = await this.callService.participantStatus(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response));
+      }
+      return res.status(constants.CODE.CREATED).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.CREATED,
+          data: response[1],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      console.log('error', error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.message));
+    }
+  };
   getToken = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.getToken(req);
