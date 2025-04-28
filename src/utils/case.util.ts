@@ -3156,5 +3156,35 @@ class CaseUtil {
     );
     return cases;
   }
+
+  async getTopPayees(debtorId: string, monthsList: string[]) {
+    if (
+      !AIAuth.auth_token ||
+      new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
+    ) {
+      await this.storeAuthToken('test', 'test');
+    }
+    const url = `${process.env.baseUrlAI}get-top-payees`;
+
+    const data = {
+      debtor_id: debtorId,
+      months: monthsList,
+    };
+    try {
+      const response = await axiosInstance.post(url, data, {
+        headers: {
+          accept: 'application/json',
+          token: AIAuth.auth_token,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.data && response.data.error) {
+        return [false, response.data.error];
+      }
+      return [true, response.data];
+    } catch (error) {
+      return [false, error.message];
+    }
+  }
 }
 export default new CaseUtil();

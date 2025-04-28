@@ -1191,6 +1191,32 @@ class DebtorRequests {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   };
+
+  async getTopPayees(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      months: Joi.array()
+        .items(
+          Joi.string().messages({
+            'string.base': 'Month must be a string.',
+            'string.empty': 'Month cannot be an empty string.',
+          })
+        )
+        .required()
+        .messages({
+          'any.required': 'Months array is required.',
+          'array.base': 'Months must be an array.',
+        }),
+    });
+
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 
 export default new DebtorRequests();

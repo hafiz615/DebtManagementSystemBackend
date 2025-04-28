@@ -524,6 +524,9 @@ class CaseValidate {
             remaining: joi_1.default.number().strict().optional().messages({
                 'number.base': 'Remaining must be a number.',
             }),
+            settledAmount: joi_1.default.number().strict().allow(0).messages({
+                'number.base': 'Remaining must be a number.',
+            }),
             confidence: joi_1.default.number().strict().messages({
                 'number.base': 'Confidence must be a number.',
             }),
@@ -856,6 +859,9 @@ class CaseValidate {
                 }),
                 remaining: joi_1.default.number().strict().optional().messages({
                     'number.base': 'Remaining amount must be a number.',
+                }),
+                settledAmount: joi_1.default.number().strict().allow(0).messages({
+                    'number.base': 'Remaining must be a number.',
                 }),
                 confidence: joi_1.default.number().strict().messages({
                     'number.base': 'Confidence must be a number.',

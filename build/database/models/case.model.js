@@ -77,6 +77,9 @@ const caseModel = new mongoose_1.Schema({
     remaining: {
         type: Number,
     },
+    settledAmount: {
+        type: Number,
+    },
     remainingAmountPaid: {
         type: Number,
     },
