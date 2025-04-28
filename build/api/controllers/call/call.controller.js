@@ -461,7 +461,7 @@ class CallController {
                 const response = await this.callService.completeConference(req);
                 if (!response[0]) {
                     return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .status(constants_util_1.default.CODE.OK)
                         .send(responseHelper_util_1.default.get4xxResponse(response[1]));
                 }
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
