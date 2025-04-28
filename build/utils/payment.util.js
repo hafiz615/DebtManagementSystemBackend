@@ -499,7 +499,7 @@ class PaymentUtil {
                     'You Cannot pause the payment Which is already in last you can shift the day',
                 ];
             }
-            const { creditorsAmount } = await this.getOtherPaymentsTotal(payment);
+            const { totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount } = await this.getOtherPaymentsTotal(payment);
             if (!creditorsAmount) {
                 return [
                     false,
@@ -513,7 +513,8 @@ class PaymentUtil {
                     amount: remainingAmount,
                 });
                 const paymentValidate = dataCopier_util_1.DataCopier.copy(newPayment, payment);
-                paymentValidate.amount = creditorsAmount;
+                paymentValidate.amount =
+                    creditorsAmount + totalLegalFeeAmount + totalServiceFeeAmount;
                 paymentValidate.dueDate = updatedDueDate.toISOString();
                 paymentValidate.frequency = paymentTemp[0].frequency + 1;
                 paymentValidate.calculateComission = true;
@@ -558,17 +559,26 @@ class PaymentUtil {
         }
         const newPayment = new payment_repomodel_1.Payment();
         const { totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount } = await this.getOtherPaymentsTotal(payment);
-        const commission = payment.amount -
-            totalLegalFeeAmount -
-            totalServiceFeeAmount -
-            creditorsAmount;
+        if (amount >= creditorsAmount && payment.calculateComission) {
+            return [false, 'Updated amount should be greater than creditors amount.'];
+        }
+        let commission = 0;
+        if (!payment.calculateComission) {
+            commission =
+                payment.amount -
+                    totalLegalFeeAmount -
+                    totalServiceFeeAmount -
+                    creditorsAmount;
+        }
         const totalAmoutFee = totalLegalFeeAmount + totalServiceFeeAmount + commission;
         if (totalAmoutFee > amount) {
             return [false, `Amount cannot be less than ${totalAmoutFee}`];
         }
         const updatedAmount = amount - totalAmoutFee;
         const paymentValidate = dataCopier_util_1.DataCopier.copy(newPayment, payment);
-        paymentValidate.amount = payment.amount - amount;
+        paymentValidate.amount =
+            payment.amount - amount + totalLegalFeeAmount + totalServiceFeeAmount;
+        paymentValidate.calculateComission = true;
         const updatePayment = await this.paymentRepository.updateById(String(payment._id), {
             amount: amount,
             previousAmount: payment.amount,

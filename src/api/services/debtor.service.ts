@@ -1940,7 +1940,7 @@ class DebtorService {
       );
 
       if (!newPyament[0]) return [false, newPyament[1]];
-      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       eventValue = 'change_payment_amount';
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {
@@ -1953,10 +1953,10 @@ class DebtorService {
       eventValue = 'move_payment_to_last';
       successMessage = 'Payments move to the last';
     }
-    if (!updateDebtor) {
-      debtorUtil.updateDebtorPausePayment(req.params.id, false);
-    }
-    await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
+    // if (!updateDebtor) {
+    //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    // }
+    // await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
@@ -1991,7 +1991,7 @@ class DebtorService {
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
 
-    const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
+    // const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
 
     const getPayment = [];
 
@@ -2000,9 +2000,7 @@ class DebtorService {
         totalLegalFeeAmount = 0,
         totalServiceFeeAmount = 0,
         creditorsAmount = 0,
-      } = !payment.calculateComission
-        ? await paymentUtil.getOtherPaymentsTotal(payment)
-        : {};
+      } = await paymentUtil.getOtherPaymentsTotal(payment);
 
       const creditorPayments = await paymentUtil.getCreditorPayments(payment);
 
@@ -2026,7 +2024,7 @@ class DebtorService {
         creditorPayments,
       });
     }
-
+    const totalCount = getPayment.length;
     return [true, {totalCount, payments: getPayment}];
   }
 

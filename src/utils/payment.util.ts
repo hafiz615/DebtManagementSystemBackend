@@ -698,7 +698,8 @@ class PaymentUtil {
         ];
       }
 
-      const {creditorsAmount} = await this.getOtherPaymentsTotal(payment);
+      const {totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount} =
+        await this.getOtherPaymentsTotal(payment);
 
       if (!creditorsAmount) {
         return [
@@ -719,7 +720,8 @@ class PaymentUtil {
           }
         );
         const paymentValidate = DataCopier.copy(newPayment, payment);
-        paymentValidate.amount = creditorsAmount;
+        paymentValidate.amount =
+          creditorsAmount + totalLegalFeeAmount + totalServiceFeeAmount;
         paymentValidate.dueDate = updatedDueDate.toISOString();
         paymentValidate.frequency = paymentTemp[0].frequency + 1;
         paymentValidate.calculateComission = true;
@@ -802,11 +804,19 @@ class PaymentUtil {
     const {totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount} =
       await this.getOtherPaymentsTotal(payment);
 
-    const commission =
-      payment.amount -
-      totalLegalFeeAmount -
-      totalServiceFeeAmount -
-      creditorsAmount;
+    if (amount >= creditorsAmount && payment.calculateComission) {
+      return [false, 'Updated amount should be greater than creditors amount.'];
+    }
+
+    let commission = 0;
+
+    if (!payment.calculateComission) {
+      commission =
+        payment.amount -
+        totalLegalFeeAmount -
+        totalServiceFeeAmount -
+        creditorsAmount;
+    }
 
     const totalAmoutFee =
       totalLegalFeeAmount + totalServiceFeeAmount + commission;
@@ -819,7 +829,9 @@ class PaymentUtil {
 
     const paymentValidate = DataCopier.copy(newPayment, payment);
 
-    paymentValidate.amount = payment.amount - amount;
+    paymentValidate.amount =
+      payment.amount - amount + totalLegalFeeAmount + totalServiceFeeAmount;
+    paymentValidate.calculateComission = true;
 
     const updatePayment = await this.paymentRepository.updateById(
       String(payment._id),

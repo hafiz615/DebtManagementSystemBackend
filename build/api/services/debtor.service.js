@@ -1456,7 +1456,7 @@ class DebtorService {
             const newPyament = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
             if (!newPyament[0])
                 return [false, newPyament[1]];
-            updateDebtor = debtor_util_1.default.updateDebtorPausePayment(req.params.id, true);
+            // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
             eventValue = 'change_payment_amount';
             successMessage = 'Change the payment amount';
         }
@@ -1467,10 +1467,10 @@ class DebtorService {
             eventValue = 'move_payment_to_last';
             successMessage = 'Payments move to the last';
         }
-        if (!updateDebtor) {
-            debtor_util_1.default.updateDebtorPausePayment(req.params.id, false);
-        }
-        await email_util_1.default.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
+        // if (!updateDebtor) {
+        //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
+        // }
+        // await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
         return [true, constants_util_1.default.successfullyMessage(successMessage)];
     }
     async getDebtorPayments(req) {
@@ -1490,12 +1490,10 @@ class DebtorService {
         const payments = await this.paymentRepository.getAllWithoutPagination(filter, undefined, undefined, { dueDate: 1 }, undefined, undefined, pageLimit.page, pageLimit.limit);
         if (!payments)
             return [true, constants_util_1.default.notFoundMessage('Payments')];
-        const totalCount = await this.paymentRepository.getCount(filter);
+        // const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
         const getPayment = [];
         for (const payment of payments) {
-            const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = !payment.calculateComission
-                ? await payment_util_1.default.getOtherPaymentsTotal(payment)
-                : {};
+            const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = await payment_util_1.default.getOtherPaymentsTotal(payment);
             const creditorPayments = await payment_util_1.default.getCreditorPayments(payment);
             if (!creditorPayments.length)
                 continue;
@@ -1515,6 +1513,7 @@ class DebtorService {
                 creditorPayments,
             });
         }
+        const totalCount = getPayment.length;
         return [true, { totalCount, payments: getPayment }];
     }
     async getToken(req) {
