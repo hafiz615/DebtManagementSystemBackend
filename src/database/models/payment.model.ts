@@ -41,6 +41,10 @@ const PaymentModel: Schema = new Schema({
     type: Number,
     default: 0,
   },
+  previousAmount: {
+    type: Number,
+    default: 0,
+  },
   dueDate: {
     type: Date,
   },
@@ -132,6 +136,9 @@ const PaymentModel: Schema = new Schema({
     type: Number,
   },
   creditorName: String,
+  calculateComission: {
+    type: Boolean,
+  },
 });
 
 PaymentModel.pre('save', async function (next) {

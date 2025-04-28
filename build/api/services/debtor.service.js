@@ -1406,6 +1406,7 @@ class DebtorService {
         return response;
     }
     async pauseDebtorPayments(req) {
+        const reqTemp = req;
         const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
@@ -1413,23 +1414,27 @@ class DebtorService {
         const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount);
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
-        let additionalCharge = false;
-        if (!debtor.additionalCharge) {
-            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
-            if (!additionalCharge)
-                return [false, 'Unable to charge the amount.'];
-            this.debtorRepository.updateById(debtor._id, {
-                additionalCharge: true,
-            });
-        }
+        // let additionalCharge = false;
+        // if (!debtor.additionalCharge) {
+        //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+        //   if (!additionalCharge) {
+        //     await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "failed_capture");
+        //     return [false, 'Unable to charge the amount.'];
+        //   }
+        //   await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "successful_capture");
+        //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        //     additionalCharge: true,
+        //   });
+        // }
         let updateDebtor = null;
+        let eventValue = null;
         const filter = {
             debtorId: req.params.id,
             caseId: null,
             isDeleted: { $ne: true },
             attorneyId: null,
             authorized: { $ne: 'Success' },
-            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
         };
         if (req.body?.paymentId) {
             filter._id = req.body.paymentId;
@@ -1440,23 +1445,32 @@ class DebtorService {
         let successMessage = null;
         if (req.body.endDate) {
             const updateDatesPayment = await payment_util_1.default.pausePaymentByDay(payments, req.body.endDate);
+            if (req.body.paymentId) {
+                eventValue = 'pause_single_payment';
+            }
+            if (!eventValue)
+                eventValue = 'pause_all_payments';
             successMessage = updateDatesPayment[1];
         }
         else if (req.body.paymentId && req.body.amount) {
             const newPyament = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
             if (!newPyament[0])
                 return [false, newPyament[1]];
-            updateDebtor = debtor_util_1.default.updateDebtorPausePayment(req.params.id, true);
+            // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+            eventValue = 'change_payment_amount';
             successMessage = 'Change the payment amount';
         }
         else if (req.body.paymentId) {
             const updatePyament = await payment_util_1.default.moveToLastPayment(payments[0], debtor, false);
             if (!updatePyament[0])
                 return [false, updatePyament[1]];
+            eventValue = 'move_payment_to_last';
             successMessage = 'Payments move to the last';
         }
-        if (!updateDebtor)
-            debtor_util_1.default.updateDebtorPausePayment(req.params.id, false);
+        // if (!updateDebtor) {
+        //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
+        // }
+        // await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
         return [true, constants_util_1.default.successfullyMessage(successMessage)];
     }
     async getDebtorPayments(req) {
@@ -1464,17 +1478,43 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        const payments = await this.paymentRepository.getAllWithoutPagination({
+        const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
+        const filter = {
             debtorId: req.params.id,
             caseId: null,
             isDeleted: { $ne: true },
             attorneyId: null,
             authorized: { $ne: 'Success' },
-            paymentMode: { $nin: ['Wire', 'Check', 'Cash'] },
-        }, undefined, undefined, { dueDate: 1 });
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+        };
+        const payments = await this.paymentRepository.getAllWithoutPagination(filter, undefined, undefined, { dueDate: 1 }, undefined, undefined, pageLimit.page, pageLimit.limit);
         if (!payments)
             return [true, constants_util_1.default.notFoundMessage('Payments')];
-        return [true, { count: payments.length, payments }];
+        // const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
+        const getPayment = [];
+        for (const payment of payments) {
+            const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = await payment_util_1.default.getOtherPaymentsTotal(payment);
+            const creditorPayments = await payment_util_1.default.getCreditorPayments(payment);
+            if (!creditorPayments.length)
+                continue;
+            const legalFee = totalLegalFeeAmount;
+            const serviceFee = totalServiceFeeAmount;
+            const commissionFee = !payment.calculateComission
+                ? payment.amount - legalFee - serviceFee - creditorsAmount
+                : 0;
+            const total = legalFee + serviceFee + commissionFee;
+            getPayment.push({
+                ...payment.toObject(),
+                legalFee,
+                serviceFee,
+                commissionFee,
+                creditorsAmount,
+                total,
+                creditorPayments,
+            });
+        }
+        const totalCount = getPayment.length;
+        return [true, { totalCount, payments: getPayment }];
     }
     async getToken(req) {
         const getDebtor = await this.debtorRepository.getById(req.params.id);

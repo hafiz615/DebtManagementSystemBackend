@@ -13,6 +13,7 @@ import axios from 'axios';
 import {ServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository';
 import {IServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository.interface';
 import {IFee} from '../database/interfaces/serviceFee.interface';
+import lawsuitUtil from './lawsuit.util';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -229,7 +230,7 @@ class PaymentUtil {
         authorized: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
-        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       },
       undefined,
       undefined,
@@ -259,7 +260,7 @@ class PaymentUtil {
         captured: 'Pending',
         isDeleted: {$ne: true},
         caseId: {$ne: null},
-        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       },
       undefined,
       undefined,
@@ -290,7 +291,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
-        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       },
       undefined,
       undefined,
@@ -321,7 +322,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
-        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       },
       undefined,
       undefined,
@@ -486,7 +487,7 @@ class PaymentUtil {
           debtorId: debtorId,
           caseId: {$ne: null},
           authorized: {$ne: 'Success'},
-          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+          paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
           isDeleted: false,
           dueDate: {
             $gte: new Date(payment.dueDate),
@@ -500,6 +501,73 @@ class PaymentUtil {
       );
     return payments;
   }
+
+  async getCreditorPayments(payment: IPayment) {
+    const debtorId = payment.debtorId;
+    const nextDate = await this.addDaysBasedOnPeriod(
+      payment.dueDate,
+      payment.timePeriod
+    );
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: debtorId,
+        caseId: {$ne: null},
+        authorized: {$ne: 'Success'},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        isDeleted: false,
+        dueDate: {
+          $gte: new Date(payment.dueDate),
+          $lt: nextDate,
+        },
+      });
+    return payments;
+  }
+
+  async getOtherPaymentsTotal(payment: IPayment) {
+    const debtorId = payment.debtorId;
+    const nextDate = await this.addDaysBasedOnPeriod(
+      payment.dueDate,
+      payment.timePeriod
+    );
+
+    const matchStage = {
+      debtorId: debtorId,
+      caseId: {$ne: null},
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+      isDeleted: false,
+      dueDate: {
+        $gte: new Date(payment.dueDate),
+        $lt: nextDate,
+      },
+    };
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        matchStage,
+        undefined,
+        undefined,
+        undefined,
+        {path: 'caseId', populate: ['debtor', 'creditor']}
+      );
+
+    const result = await this.paymentRepository.applyAggregate([
+      {$match: matchStage},
+      {$group: {_id: null, totalAmount: {$sum: '$amount'}}},
+    ]);
+    const creditorsAmount = result[0]?.totalAmount || 0;
+
+    const totalLegalFeeAmount = await lawsuitUtil.getTotalLegalFee(payments);
+    const totalServiceFeeAmount =
+      await lawsuitUtil.getTotalServiceFee(payments);
+
+    return {
+      totalLegalFeeAmount: totalLegalFeeAmount || 0,
+      totalServiceFeeAmount: totalServiceFeeAmount || 0,
+      creditorsAmount,
+    };
+  }
+
   async addDaysBasedOnPeriod(date: string, timePeriod: string) {
     const timePeriods = {
       daily: 1,
@@ -615,6 +683,7 @@ class PaymentUtil {
     paymentAmountCheck?: boolean,
     creditorPayments?: IPayment[]
   ) {
+    const newPayment = new Payment();
     const paymentTemp: any = await this.findLastDueDate(debtor._id);
     const updatedDueDate = await this.findLastDate(paymentTemp[0]);
     if (payment._id) {
@@ -629,17 +698,50 @@ class PaymentUtil {
         ];
       }
 
+      const {totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount} =
+        await this.getOtherPaymentsTotal(payment);
+
+      if (!creditorsAmount) {
+        return [
+          false,
+          'The total amount belongs to the first choice, so we cannot move to the last one.',
+        ];
+      }
+
+      const remainingAmount = payment.amount - creditorsAmount;
+
+      let createdPayment = payment;
+
+      if (remainingAmount) {
+        const updatePayment = await this.paymentRepository.updateById(
+          String(payment._id),
+          {
+            amount: remainingAmount,
+          }
+        );
+        const paymentValidate = DataCopier.copy(newPayment, payment);
+        paymentValidate.amount =
+          creditorsAmount + totalLegalFeeAmount + totalServiceFeeAmount;
+        paymentValidate.dueDate = updatedDueDate.toISOString();
+        paymentValidate.frequency = paymentTemp[0].frequency + 1;
+        paymentValidate.calculateComission = true;
+        createdPayment =
+          await this.paymentRepository.create<IPayment>(paymentValidate);
+      }
+      const creditorPayments = await this.getOtherPayments(payment);
+
       await this.pausePaymentByDay(
-        [payment],
+        [createdPayment],
         '',
         updatedDueDate,
-        updatedDueDate.getUTCDay()
+        updatedDueDate.getUTCDay(),
+        creditorPayments
       );
       return [true, []];
     } else {
       payment.dueDate = updatedDueDate.toISOString();
       payment.frequency = paymentTemp[0].frequency + 1;
-
+      payment.calculateComission = true;
       const createdPayment =
         await this.paymentRepository.create<IPayment>(payment);
       await this.pausePaymentByDay(
@@ -676,7 +778,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         attorneyId: null,
         authorized: {$ne: 'Success'},
-        paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       },
       undefined,
       undefined,
@@ -693,28 +795,57 @@ class PaymentUtil {
     amount: number,
     debtor: IDebtor
   ) {
-    const newPayment = new Payment();
-
     if (payment.amount <= amount) {
       return [false, 'Updated amount should be less than current amount.'];
     }
 
-    const updatedRemainingAmount = payment.amount - amount;
+    const newPayment = new Payment();
+
+    const {totalLegalFeeAmount, totalServiceFeeAmount, creditorsAmount} =
+      await this.getOtherPaymentsTotal(payment);
+
+    if (amount >= creditorsAmount && payment.calculateComission) {
+      return [false, 'Updated amount should be greater than creditors amount.'];
+    }
+
+    let commission = 0;
+
+    if (!payment.calculateComission) {
+      commission =
+        payment.amount -
+        totalLegalFeeAmount -
+        totalServiceFeeAmount -
+        creditorsAmount;
+    }
+
+    const totalAmoutFee =
+      totalLegalFeeAmount + totalServiceFeeAmount + commission;
+
+    if (totalAmoutFee! > amount) {
+      return [false, `Amount cannot be less than ${totalAmoutFee}`];
+    }
+
+    const updatedAmount = amount - totalAmoutFee;
 
     const paymentValidate = DataCopier.copy(newPayment, payment);
 
-    paymentValidate.amount = updatedRemainingAmount;
+    paymentValidate.amount =
+      payment.amount - amount + totalLegalFeeAmount + totalServiceFeeAmount;
+    paymentValidate.calculateComission = true;
 
     const updatePayment = await this.paymentRepository.updateById(
       String(payment._id),
       {
         amount: amount,
+        previousAmount: payment.amount,
       }
     );
 
     const creditorPayments = await this.getOtherPayments(payment);
-    const {highAggressionPayments, remainingPayments, remainingAmount} =
-      await this.creditorsAmountFilter(amount, creditorPayments);
+    const {remainingPayments} = await this.creditorsAmountFilter(
+      updatedAmount,
+      creditorPayments
+    );
 
     return await this.moveToLastPayment(
       paymentValidate,

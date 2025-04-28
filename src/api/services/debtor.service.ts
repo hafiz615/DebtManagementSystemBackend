@@ -1874,6 +1874,7 @@ class DebtorService {
   }
 
   async pauseDebtorPayments(req: Request) {
+    const reqTemp: any = req;
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
@@ -1886,27 +1887,29 @@ class DebtorService {
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    let additionalCharge = false;
+    // let additionalCharge = false;
+    // if (!debtor.additionalCharge) {
+    //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-    if (!debtor.additionalCharge) {
-      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
-
-      if (!additionalCharge) return [false, 'Unable to charge the amount.'];
-
-      this.debtorRepository.updateById<IDebtor>(debtor._id, {
-        additionalCharge: true,
-      });
-    }
+    //   if (!additionalCharge) {
+    //     await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "failed_capture");
+    //     return [false, 'Unable to charge the amount.'];
+    //   }
+    //   await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "successful_capture");
+    //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
+    //     additionalCharge: true,
+    //   });
+    // }
 
     let updateDebtor = null;
-
+    let eventValue = null;
     const filter: any = {
       debtorId: req.params.id,
       caseId: null,
       isDeleted: {$ne: true},
       attorneyId: null,
       authorized: {$ne: 'Success'},
-      paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
     };
 
     if (req.body?.paymentId) {
@@ -1924,6 +1927,10 @@ class DebtorService {
         payments,
         req.body.endDate
       );
+      if (req.body.paymentId) {
+        eventValue = 'pause_single_payment';
+      }
+      if (!eventValue) eventValue = 'pause_all_payments';
       successMessage = updateDatesPayment[1];
     } else if (req.body.paymentId && req.body.amount) {
       const newPyament = await paymentUtil.changePaymentAmmount(
@@ -1933,7 +1940,8 @@ class DebtorService {
       );
 
       if (!newPyament[0]) return [false, newPyament[1]];
-      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      eventValue = 'change_payment_amount';
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {
       const updatePyament = await paymentUtil.moveToLastPayment(
@@ -1942,10 +1950,13 @@ class DebtorService {
         false
       );
       if (!updatePyament[0]) return [false, updatePyament[1]];
+      eventValue = 'move_payment_to_last';
       successMessage = 'Payments move to the last';
     }
-    if (!updateDebtor)
-      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    // if (!updateDebtor) {
+    //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    // }
+    // await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
@@ -1955,25 +1966,66 @@ class DebtorService {
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+
+    const filter = {
+      debtorId: req.params.id,
+      caseId: null,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+    };
 
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {
-          debtorId: req.params.id,
-          caseId: null,
-          isDeleted: {$ne: true},
-          attorneyId: null,
-          authorized: {$ne: 'Success'},
-          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
-        },
+        filter,
         undefined,
         undefined,
-        {dueDate: 1}
+        {dueDate: 1},
+        undefined,
+        undefined,
+        pageLimit.page,
+        pageLimit.limit
       );
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
 
-    return [true, {count: payments.length, payments}];
+    // const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
+
+    const getPayment = [];
+
+    for (const payment of payments) {
+      const {
+        totalLegalFeeAmount = 0,
+        totalServiceFeeAmount = 0,
+        creditorsAmount = 0,
+      } = await paymentUtil.getOtherPaymentsTotal(payment);
+
+      const creditorPayments = await paymentUtil.getCreditorPayments(payment);
+
+      if (!creditorPayments.length) continue;
+
+      const legalFee = totalLegalFeeAmount;
+      const serviceFee = totalServiceFeeAmount;
+      const commissionFee = !payment.calculateComission
+        ? payment.amount - legalFee - serviceFee - creditorsAmount
+        : 0;
+
+      const total = legalFee + serviceFee + commissionFee;
+
+      getPayment.push({
+        ...payment.toObject(),
+        legalFee,
+        serviceFee,
+        commissionFee,
+        creditorsAmount,
+        total,
+        creditorPayments,
+      });
+    }
+    const totalCount = getPayment.length;
+    return [true, {totalCount, payments: getPayment}];
   }
 
   async getToken(req: Request) {

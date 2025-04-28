@@ -842,6 +842,18 @@ class EmailUtil {
         const subject = `Discover Your Exclusive Benefits with DMS`;
         await this.sendEmail(to, from, subject, content);
     }
+    async sendEmailPausePayment(debtor, userName, event) {
+        const cases = await this.caseRepository.getAllWithoutPagination({
+            debtor: debtor._id,
+            isDeleted: { $ne: true },
+        }, undefined, undefined, undefined, ['creditor']);
+        let creditorsEmail = null;
+        for (const caseTemp of cases) {
+            // creditorsEmail.push(caseTemp.creditor.businessInformation.email);
+            await this.sendEmailOrSmsByEvent(event, caseTemp._id, '', userName);
+        }
+        // await this.sendEmail(to, from, subject, content);
+    }
 }
 exports.default = new EmailUtil();
 //# sourceMappingURL=email.util.js.map

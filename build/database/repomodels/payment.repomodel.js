@@ -17,6 +17,7 @@ class Payment {
         this.sendViaPaynote = 'Pending';
         this.paynoteCheckId = '';
         this.amount = 0;
+        this.previousAmount = 0;
         this.dueDate = '';
         this.frequency = 0;
         this.intervalId = '';
@@ -45,6 +46,7 @@ class Payment {
         this.legalFee = 0;
         this.creditorName = '';
         this.paymentMode = '';
+        this.calculateComission = false;
     }
 }
 exports.Payment = Payment;
