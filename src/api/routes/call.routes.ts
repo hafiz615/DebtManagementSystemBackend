@@ -96,6 +96,4 @@ router.post(
   callController.completeConference
 );
 
-router.post('/conference/participant-status', callController.participantStatus);
-
 export default router;
