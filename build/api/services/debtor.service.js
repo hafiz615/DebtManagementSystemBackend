@@ -1498,7 +1498,7 @@ class DebtorService {
         const payments = await this.paymentRepository.getAllWithoutPagination(filter, undefined, undefined, { dueDate: 1 }, undefined, undefined, pageLimit.page, pageLimit.limit);
         if (!payments)
             return [true, constants_util_1.default.notFoundMessage('Payments')];
-        // const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
+        const totalCount = await payment_util_1.default.paymentTotalCount(req.params.id);
         const getPayment = [];
         for (const payment of payments) {
             const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = await payment_util_1.default.getOtherPaymentsTotal(payment);
@@ -1521,7 +1521,6 @@ class DebtorService {
                 creditorPayments,
             });
         }
-        const totalCount = getPayment.length;
         return [true, { totalCount, payments: getPayment }];
     }
     async getToken(req) {

@@ -1999,10 +1999,9 @@ class DebtorService {
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
 
-    // const totalCount = await this.paymentRepository.getCount<IPayment>(filter);
+    const totalCount = await paymentUtil.paymentTotalCount(req.params.id);
 
     const getPayment = [];
-
     for (const payment of payments) {
       const {
         totalLegalFeeAmount = 0,
@@ -2011,7 +2010,6 @@ class DebtorService {
       } = await paymentUtil.getOtherPaymentsTotal(payment);
 
       const creditorPayments = await paymentUtil.getCreditorPayments(payment);
-
       if (!creditorPayments.length) continue;
 
       const legalFee = totalLegalFeeAmount;
@@ -2032,7 +2030,7 @@ class DebtorService {
         creditorPayments,
       });
     }
-    const totalCount = getPayment.length;
+
     return [true, {totalCount, payments: getPayment}];
   }
 
