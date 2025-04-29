@@ -1887,27 +1887,27 @@ class DebtorService {
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    let additionalCharge = false;
-    if (!debtor.additionalCharge) {
-      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+    // let additionalCharge = false;
+    // if (!debtor.additionalCharge) {
+    //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-      if (!additionalCharge) {
-        await emailUtil.sendEmailPausePayment(
-          debtor,
-          reqTemp.id,
-          'failed_capture'
-        );
-        return [false, 'Unable to charge the amount.'];
-      }
-      await emailUtil.sendEmailPausePayment(
-        debtor,
-        reqTemp.id,
-        'successful_capture'
-      );
-      this.debtorRepository.updateById<IDebtor>(debtor._id, {
-        additionalCharge: true,
-      });
-    }
+    //   if (!additionalCharge) {
+    //     await emailUtil.sendEmailPausePayment(
+    //       debtor,
+    //       reqTemp.id,
+    //       'failed_capture'
+    //     );
+    //     return [false, 'Unable to charge the amount.'];
+    //   }
+    //   await emailUtil.sendEmailPausePayment(
+    //     debtor,
+    //     reqTemp.id,
+    //     'successful_capture'
+    //   );
+    //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
+    //     additionalCharge: true,
+    //   });
+    // }
 
     let updateDebtor = null;
     let eventValue = null;
