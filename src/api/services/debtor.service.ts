@@ -1887,19 +1887,27 @@ class DebtorService {
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    // let additionalCharge = false;
-    // if (!debtor.additionalCharge) {
-    //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+    let additionalCharge = false;
+    if (!debtor.additionalCharge) {
+      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-    //   if (!additionalCharge) {
-    //     await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "failed_capture");
-    //     return [false, 'Unable to charge the amount.'];
-    //   }
-    //   await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, "successful_capture");
-    //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
-    //     additionalCharge: true,
-    //   });
-    // }
+      if (!additionalCharge) {
+        await emailUtil.sendEmailPausePayment(
+          debtor,
+          reqTemp.id,
+          'failed_capture'
+        );
+        return [false, 'Unable to charge the amount.'];
+      }
+      await emailUtil.sendEmailPausePayment(
+        debtor,
+        reqTemp.id,
+        'successful_capture'
+      );
+      this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        additionalCharge: true,
+      });
+    }
 
     let updateDebtor = null;
     let eventValue = null;
@@ -1940,7 +1948,7 @@ class DebtorService {
       );
 
       if (!newPyament[0]) return [false, newPyament[1]];
-      // updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       eventValue = 'change_payment_amount';
       successMessage = 'Change the payment amount';
     } else if (req.body.paymentId) {
@@ -1953,10 +1961,10 @@ class DebtorService {
       eventValue = 'move_payment_to_last';
       successMessage = 'Payments move to the last';
     }
-    // if (!updateDebtor) {
-    //   debtorUtil.updateDebtorPausePayment(req.params.id, false);
-    // }
-    // await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
+    if (!updateDebtor) {
+      debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    }
+    await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
     return [true, constants.successfullyMessage(successMessage)];
   }
 
