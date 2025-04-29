@@ -125,7 +125,7 @@ class App {
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
     if (process.env.environment === 'prod') {
-      paymentCronjob.startCronJob();
+      // paymentCronjob.startCronJob();
       pausePayment.startCronJob();
     }
     // paymentCronjob.testCron();
