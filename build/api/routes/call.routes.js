@@ -31,5 +31,6 @@ router.post('/twilio/voice-mail-recording-status', call_controller_1.default.voi
 router.delete('/deleteCall/:id', authorize_middleware_1.default.validateAuth, call_controller_1.default.deleteCall);
 router.delete('/conference/removeParticipant', call_controller_1.default.removeParticipant);
 router.post('/conference/completeConference', call_controller_1.default.completeConference);
+router.post('/conference/participantEvents', call_controller_1.default.participantEvents);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map
