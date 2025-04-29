@@ -24,7 +24,6 @@ import {IFee} from '../database/interfaces/serviceFee.interface';
 import lawsuitUtil from '../utils/lawsuit.util';
 import {ILawsuit} from '../database/interfaces/lawsuit.interface';
 import {LawsuitRepository} from '../api/repository/lawsuit/lawsuit.repository';
-import {sleep} from 'openai/core';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -971,7 +970,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
-      await sleep(5000);
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1063,7 +1062,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
-      await sleep(5000);
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1302,7 +1301,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
-      await sleep(5000);
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1370,7 +1369,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
-      await sleep(5000);
+      await commonUtil.sleep(5000);
     }
   }
 

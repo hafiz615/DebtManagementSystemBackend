@@ -20,7 +20,6 @@ const creditor_util_1 = __importDefault(require("../utils/creditor.util"));
 const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
 const lawsuit_util_1 = __importDefault(require("../utils/lawsuit.util"));
 const lawsuit_repository_1 = require("../api/repository/lawsuit/lawsuit.repository");
-const core_1 = require("openai/core");
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -702,7 +701,7 @@ class CronJob {
                 }
             }
             retryPlus = retryOriginalValue;
-            await (0, core_1.sleep)(5000);
+            await common_util_1.default.sleep(5000);
         }
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
@@ -762,7 +761,7 @@ class CronJob {
                 }
             }
             retryPlus = retryOriginalValue;
-            await (0, core_1.sleep)(5000);
+            await common_util_1.default.sleep(5000);
         }
     }
     async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
@@ -923,7 +922,7 @@ class CronJob {
                 }
             }
             retryPlus = retryOriginalValue;
-            await (0, core_1.sleep)(5000);
+            await common_util_1.default.sleep(5000);
         }
     }
     async processCommissionCapture(payments, cronId, retryPlus, settings) {
@@ -953,7 +952,7 @@ class CronJob {
                 }
             }
             retryPlus = retryOriginalValue;
-            await (0, core_1.sleep)(5000);
+            await common_util_1.default.sleep(5000);
         }
     }
     async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform
