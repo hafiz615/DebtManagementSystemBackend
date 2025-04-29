@@ -200,6 +200,9 @@ class CommonUtil {
     isMongoId(data) {
         return mongoose_1.default.Types.ObjectId.isValid(data);
     }
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 }
 exports.default = new CommonUtil();
 //# sourceMappingURL=common.util.js.map

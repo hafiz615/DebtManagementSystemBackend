@@ -24,7 +24,6 @@ import {IFee} from '../database/interfaces/serviceFee.interface';
 import lawsuitUtil from '../utils/lawsuit.util';
 import {ILawsuit} from '../database/interfaces/lawsuit.interface';
 import {LawsuitRepository} from '../api/repository/lawsuit/lawsuit.repository';
-import {sleep} from 'openai/core';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -253,7 +252,7 @@ class CronJob {
     );
 
     cron.schedule(
-      '0 * * * *',
+      '30 * * * *',
       async () => {
         console.log('Running a task every zero of an hour');
         this.processCommissionRetryPayments();
@@ -924,7 +923,6 @@ class CronJob {
       // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
       // const getCommission = await debtorUtil.getCommissionAmount(payment);
       // const sum = getCommission + payment.amount;
-      await sleep(5000);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
@@ -972,6 +970,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1016,7 +1015,6 @@ class CronJob {
         payment.debtorId
       );
       const accounts = debtor.accounts;
-      await sleep(5000);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
@@ -1064,6 +1062,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1132,11 +1131,18 @@ class CronJob {
     }
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
 
-    if (Object.keys(updateObjPayment).length) {
-      await this.paymentRepository.updateById<IPayment>(
-        payment._id,
-        updateObjPayment
-      );
+    const paymentLatest = await this.paymentRepository.getById<IPayment>(
+      payment._id
+    );
+    if (paymentLatest.authorized === 'Success') {
+      result = true;
+    } else {
+      if (Object.keys(updateObjPayment).length) {
+        await this.paymentRepository.updateById<IPayment>(
+          payment._id,
+          updateObjPayment
+        );
+      }
     }
     return result;
   }
@@ -1203,16 +1209,23 @@ class CronJob {
     updateObjPayment['dueDate'] = payment.dueDate;
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
 
-    if (Object.keys(updateObjPayment).length) {
-      if (!retryPlus) {
-        updateObjPayment['paymentReference'] = v4();
-        updateObjPayment['paymentReferenceBool'] = true;
-      }
-      for (const payment of payments) {
-        await this.paymentRepository.updateById<IPayment>(
-          payment._id,
-          updateObjPayment
-        );
+    const paymentLatest = await this.paymentRepository.getById<IPayment>(
+      payment._id
+    );
+    if (paymentLatest.authorized === 'Success') {
+      result = true;
+    } else {
+      if (Object.keys(updateObjPayment).length) {
+        if (!retryPlus) {
+          updateObjPayment['paymentReference'] = v4();
+          updateObjPayment['paymentReferenceBool'] = true;
+        }
+        for (const payment of payments) {
+          await this.paymentRepository.updateById<IPayment>(
+            payment._id,
+            updateObjPayment
+          );
+        }
       }
     }
     return result;
@@ -1246,7 +1259,6 @@ class CronJob {
       const accounts = payment.caseId.debtor.accounts;
       // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
       // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
-      await sleep(5000);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.captureCreditCard(
@@ -1289,6 +1301,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1313,7 +1326,6 @@ class CronJob {
         payment.debtorId
       );
       const accounts = debtor.accounts;
-      await sleep(5000);
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.captureCreditCard(
@@ -1357,6 +1369,7 @@ class CronJob {
         }
       }
       retryPlus = retryOriginalValue;
+      await commonUtil.sleep(5000);
     }
   }
 
@@ -1422,11 +1435,19 @@ class CronJob {
     }
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
-    if (Object.keys(updateObjPayment).length) {
-      await this.paymentRepository.updateById<IPayment>(
-        payment._id,
-        updateObjPayment
-      );
+
+    const paymentLatest = await this.paymentRepository.getById<IPayment>(
+      payment._id
+    );
+    if (paymentLatest.captured === 'Success') {
+      result = true;
+    } else {
+      if (Object.keys(updateObjPayment).length) {
+        await this.paymentRepository.updateById<IPayment>(
+          payment._id,
+          updateObjPayment
+        );
+      }
     }
     return result;
   }
@@ -1504,12 +1525,20 @@ class CronJob {
     }
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
-    if (Object.keys(updateObjPayment).length) {
-      for (const payment of payments) {
-        await this.paymentRepository.updateById<IPayment>(
-          payment._id,
-          updateObjPayment
-        );
+
+    const paymentLatest = await this.paymentRepository.getById<IPayment>(
+      payment._id
+    );
+    if (paymentLatest.captured === 'Success') {
+      result = true;
+    } else {
+      if (Object.keys(updateObjPayment).length) {
+        for (const payment of payments) {
+          await this.paymentRepository.updateById<IPayment>(
+            payment._id,
+            updateObjPayment
+          );
+        }
       }
     }
     return result;
