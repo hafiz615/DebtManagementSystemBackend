@@ -524,6 +524,24 @@ class PaymentUtil {
     return payments;
   }
 
+  async paymentTotalCount(id: string) {
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        debtorId: id,
+        caseId: null,
+        authorized: {$ne: 'Success'},
+        paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        isDeleted: false,
+      });
+    let totalCount = 0;
+    for (const payment of payments) {
+      const creditorPayments = await this.getCreditorPayments(payment);
+      if (!creditorPayments.length) continue;
+      totalCount++;
+    }
+    return totalCount;
+  }
+
   async getOtherPaymentsTotal(payment: IPayment) {
     const debtorId = payment.debtorId;
     const nextDate = await this.addDaysBasedOnPeriod(
