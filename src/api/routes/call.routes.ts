@@ -96,5 +96,4 @@ router.post(
   callController.completeConference
 );
 
-router.post('/conference/participantEvents', callController.participantEvents);
 export default router;

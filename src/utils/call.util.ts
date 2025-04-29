@@ -232,8 +232,6 @@ class CallUtil {
         startConferenceOnEnter: false, // 👈 this should usually be false for others
         endConferenceOnExit: false,
         record: true,
-        statusCallback: `${process.env.webHookURl}/api/v1/call/conference/participantEvents`,
-        statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
       });
 
     await this.callRepository.updateByOne(
