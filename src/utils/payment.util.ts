@@ -515,6 +515,7 @@ class PaymentUtil {
         authorized: {$ne: 'Success'},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
         isDeleted: false,
+        calculateComission: payment.calculateComission,
         dueDate: {
           $gte: new Date(payment.dueDate),
           $lt: nextDate,
@@ -536,6 +537,7 @@ class PaymentUtil {
       authorized: {$ne: 'Success'},
       paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       isDeleted: false,
+      calculateComission: payment.calculateComission,
       dueDate: {
         $gte: new Date(payment.dueDate),
         $lt: nextDate,
@@ -668,6 +670,7 @@ class PaymentUtil {
 
         await this.paymentRepository.updateById(creditorPayment._id, {
           dueDate: newCreditorDate.toISOString(),
+          calculateComission: payment.calculateComission,
         });
       }
       updatedDueDate = null;
