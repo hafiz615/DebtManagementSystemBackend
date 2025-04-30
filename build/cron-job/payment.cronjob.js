@@ -656,21 +656,18 @@ class CronJob {
         let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
-            // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-            // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+            const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+            const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
             // const getCommission = await debtorUtil.getCommissionAmount(payment);
             // const sum = getCommission + payment.amount;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.authorizeCreditCard(payment.amount, 
-                    // payment.amount + serviceFeeAmount + legalFeeAmount,
-                    account.customerVaultId, account.platform);
+                    const response = await this.paymentService.authorizeCreditCard(
+                    // payment.amount,
+                    payment.amount + serviceFeeAmount + legalFeeAmount, account.customerVaultId, account.platform);
                     const result = await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
                     // getCommission,
-                    account.platform
-                    // serviceFeeAmount,
-                    // legalFeeAmount
-                    );
+                    account.platform, serviceFeeAmount, legalFeeAmount);
                     if (retryPlus)
                         retryPlus = false;
                     if (result)
@@ -766,10 +763,7 @@ class CronJob {
     }
     async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
     // commission: number,
-    platform
-    // serviceFee: number,
-    // legalFee: number
-    ) {
+    platform, serviceFee, legalFee) {
         let result = false;
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
@@ -785,8 +779,8 @@ class CronJob {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
-            // updateObjPayment['serviceFee'] = serviceFee;
-            // updateObjPayment['legalFee'] = legalFee;
+            updateObjPayment['serviceFee'] = serviceFee;
+            updateObjPayment['legalFee'] = legalFee;
             // updateObjPayment['commission'] = commission;
             // updateObjPayment['status'] = 'Pending';
             result = true;
@@ -896,8 +890,8 @@ class CronJob {
         let retryOriginalValue = retryPlus;
         for (const payment of payments) {
             const accounts = payment.caseId.debtor.accounts;
-            // const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-            // const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+            const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+            const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
@@ -908,13 +902,10 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, 
-                    // payment.amount + serviceFeeAmount + legalFeeAmount,
-                    payment.amount, account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform
-                    // serviceFeeAmount,
-                    // legalFeeAmount
-                    );
+                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount + serviceFeeAmount + legalFeeAmount, 
+                    // payment.amount,
+                    account.platform);
+                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform, serviceFeeAmount, legalFeeAmount);
                     if (retryPlus)
                         retryPlus = false;
                     if (result)
@@ -955,9 +946,7 @@ class CronJob {
             await common_util_1.default.sleep(5000);
         }
     }
-    async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform
-    // serviceFee?: number,
-    // legalFee?: number
+    async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform, serviceFee, legalFee
     // commision?: number
     ) {
         let result = false;
@@ -977,8 +966,8 @@ class CronJob {
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
                 updateObjPayment['debtorTransId'] = transactionId;
-                // updateObjPayment['serviceFee'] = serviceFee;
-                // updateObjPayment['legalFee'] = legalFee;
+                updateObjPayment['serviceFee'] = serviceFee;
+                updateObjPayment['legalFee'] = legalFee;
                 // updateObjPayment['commission'] = commision;
             }
             result = true;

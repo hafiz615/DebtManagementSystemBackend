@@ -401,6 +401,8 @@ class PaymentUtil {
     async getOtherPaymentsTotal(payment) {
         const debtorId = payment.debtorId;
         const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        let totalLegalFeeAmount = 0;
+        let totalServiceFeeAmount = 0;
         const matchStage = {
             debtorId: debtorId,
             caseId: { $ne: null },
@@ -419,8 +421,12 @@ class PaymentUtil {
             { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
         ]);
         const creditorsAmount = result[0]?.totalAmount || 0;
-        const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(payments);
-        const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(payments);
+        if (payments.length) {
+            totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(payments);
+            totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee([
+                payments[0],
+            ]);
+        }
         return {
             totalLegalFeeAmount: totalLegalFeeAmount || 0,
             totalServiceFeeAmount: totalServiceFeeAmount || 0,
@@ -467,6 +473,7 @@ class PaymentUtil {
         console.log('hello', hello);
     }
     async pausePaymentByDay(payments, endDate, updatedDueDate, targetWeekday, creditorPayments) {
+        let creditorPaymentForEmail = creditorPayments;
         let updatedCreditorDueDate = updatedDueDate;
         targetWeekday = !targetWeekday
             ? new Date(endDate).getUTCDay()
@@ -501,10 +508,11 @@ class PaymentUtil {
                     calculateComission: payment.calculateComission,
                 });
             }
+            creditorPaymentForEmail = creditorPayments;
             updatedDueDate = null;
             creditorPayments = null;
         }
-        return [true, 'Payment date updated'];
+        return [true, 'Payment date updated', creditorPaymentForEmail];
     }
     async moveToLastPayment(payment, debtor, paymentAmountCheck, creditorPayments) {
         const newPayment = new payment_repomodel_1.Payment();
@@ -542,16 +550,14 @@ class PaymentUtil {
                     await this.paymentRepository.create(paymentValidate);
             }
             const creditorPayments = await this.getOtherPayments(payment);
-            await this.pausePaymentByDay([createdPayment], '', updatedDueDate, updatedDueDate.getUTCDay(), creditorPayments);
-            return [true, []];
+            return await this.pausePaymentByDay([createdPayment], '', updatedDueDate, updatedDueDate.getUTCDay(), creditorPayments);
         }
         else {
             payment.dueDate = updatedDueDate.toISOString();
             payment.frequency = paymentTemp[0].frequency + 1;
             payment.calculateComission = true;
             const createdPayment = await this.paymentRepository.create(payment);
-            await this.pausePaymentByDay([createdPayment], '', new Date(createdPayment.dueDate), null, creditorPayments);
-            return [true, []];
+            return await this.pausePaymentByDay([createdPayment], '', new Date(createdPayment.dueDate), null, creditorPayments);
         }
     }
     async findLastDateByFrequency(interval) {

@@ -190,7 +190,7 @@ class LawsuitUtil {
     async getTotalServiceFee(payments) {
         let totalServiceFee = 0;
         for (const payment of payments) {
-            if (payment.caseId) {
+            if (payment?.caseId) {
                 totalServiceFee += await this.getServiceFee(payment.caseId);
             }
         }
