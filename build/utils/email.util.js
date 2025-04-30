@@ -87,12 +87,14 @@ class EmailUtil {
             return error.message;
         }
     }
-    async sendEmailOrSmsByEvent(value, caseId, paymentId, userId, taskId) {
+    async sendEmailOrSmsByEvent(value, caseId, paymentId, userId, taskId, debtorTemp) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
         const threadId = (0, uuid_1.v4)();
         if (event) {
             const userPermissions = event.userPermission;
             let [user, debtor, creditor, caseTemp, payment, task] = await this.initializeValues(caseId, paymentId, userId, taskId);
+            if (debtorTemp)
+                debtor = debtorTemp;
             for (const userPermission of userPermissions) {
                 if (userPermission.email_allowed && userPermission.email_template) {
                     const template = await this.getTemplate(userPermission.email_template);
@@ -841,6 +843,11 @@ class EmailUtil {
         const from = process.env.defaultEmail;
         const subject = `Discover Your Exclusive Benefits with DMS`;
         await this.sendEmail(to, from, subject, content);
+    }
+    async sendEmailPausePayment(userName, event, payments) {
+        for (const payment of payments) {
+            await this.sendEmailOrSmsByEvent(event, payment.caseId._id, '', userName);
+        }
     }
 }
 exports.default = new EmailUtil();

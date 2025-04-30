@@ -2650,6 +2650,33 @@ class CaseUtil {
         }, 'caseCode totalDebt paidAmount remaining', undefined, undefined, { path: 'creditor', select: ['basicInformation', 'businessInformation'] });
         return cases;
     }
+    async getTopPayees(debtorId, monthsList) {
+        if (!global_1.AIAuth.auth_token ||
+            new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
+            await this.storeAuthToken('test', 'test');
+        }
+        const url = `${process.env.baseUrlAI}get-top-payees`;
+        const data = {
+            debtor_id: debtorId,
+            months: monthsList,
+        };
+        try {
+            const response = await axiosInstanceInterceptor_1.default.post(url, data, {
+                headers: {
+                    accept: 'application/json',
+                    token: global_1.AIAuth.auth_token,
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (response.data && response.data.error) {
+                return [false, response.data.error];
+            }
+            return [true, response.data];
+        }
+        catch (error) {
+            return [false, error.message];
+        }
+    }
 }
 exports.default = new CaseUtil();
 //# sourceMappingURL=case.util.js.map

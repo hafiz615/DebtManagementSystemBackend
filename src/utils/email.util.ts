@@ -122,7 +122,8 @@ class EmailUtil {
     caseId: string,
     paymentId: string,
     userId: string,
-    taskId?: string
+    taskId?: string,
+    debtorTemp?: IDebtor
   ) {
     const event =
       await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
@@ -133,6 +134,7 @@ class EmailUtil {
       const userPermissions = event.userPermission;
       let [user, debtor, creditor, caseTemp, payment, task] =
         await this.initializeValues(caseId, paymentId, userId, taskId);
+      if (debtorTemp) debtor = debtorTemp;
       for (const userPermission of userPermissions) {
         if (userPermission.email_allowed && userPermission.email_template) {
           const template = await this.getTemplate(
@@ -1253,6 +1255,12 @@ class EmailUtil {
     const from = process.env.defaultEmail;
     const subject = `Discover Your Exclusive Benefits with DMS`;
     await this.sendEmail(to, from, subject, content);
+  }
+
+  async sendEmailPausePayment(userName: string, event: string, payments: any) {
+    for (const payment of payments) {
+      await this.sendEmailOrSmsByEvent(event, payment.caseId._id, '', userName);
+    }
   }
 }
 

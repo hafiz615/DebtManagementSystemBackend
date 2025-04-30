@@ -11,6 +11,7 @@ export interface IPayment extends Document {
   sendViaPaynote: string;
   paynoteCheckId: string;
   amount: number;
+  previousAmount: number;
   dueDate: string;
   frequency: number;
   intervalId: string;
@@ -38,4 +39,5 @@ export interface IPayment extends Document {
   serviceFee: number;
   legalFee: number;
   paymentMode: string;
+  calculateComission: boolean;
 }

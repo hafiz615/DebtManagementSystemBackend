@@ -11,6 +11,7 @@ export class Payment {
   sendViaPaynote = 'Pending';
   paynoteCheckId = '';
   amount = 0;
+  previousAmount = 0;
   dueDate = '';
   frequency = 0;
   intervalId = '';
@@ -39,4 +40,5 @@ export class Payment {
   legalFee = 0;
   creditorName = '';
   paymentMode = '';
+  calculateComission = false;
 }

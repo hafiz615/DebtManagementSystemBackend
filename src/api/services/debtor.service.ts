@@ -480,8 +480,8 @@ class DebtorService {
       amount = payment.amount;
     }
     if (!payment.paymentReference) {
-      // amount = payment.amount + legalFeeAmount + serviceFeeAmount;
-      amount = payment.amount;
+      amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+      // amount = payment.amount;
       payments.push(payment);
     }
     let response: any;
@@ -1874,6 +1874,7 @@ class DebtorService {
   }
 
   async pauseDebtorPayments(req: Request) {
+    const reqTemp: any = req;
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
@@ -1887,26 +1888,43 @@ class DebtorService {
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
     let additionalCharge = false;
-
-    if (!debtor.additionalCharge) {
+    if (!debtor.additionalCharge && process.env.environment === 'prod') {
       additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-      if (!additionalCharge) return [false, 'Unable to charge the amount.'];
-
+      if (!additionalCharge) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'failed_capture',
+          null,
+          null,
+          reqTemp.id,
+          null,
+          debtor
+        );
+        return [false, 'Unable to charge the amount.'];
+      }
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_capture',
+        null,
+        null,
+        reqTemp.id,
+        null,
+        debtor
+      );
       this.debtorRepository.updateById<IDebtor>(debtor._id, {
         additionalCharge: true,
       });
     }
 
     let updateDebtor = null;
-
+    let eventValue = null;
+    let creditorsPayment = null;
     const filter: any = {
       debtorId: req.params.id,
       caseId: null,
       isDeleted: {$ne: true},
       attorneyId: null,
       authorized: {$ne: 'Success'},
-      paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
     };
 
     if (req.body?.paymentId) {
@@ -1924,28 +1942,43 @@ class DebtorService {
         payments,
         req.body.endDate
       );
+      if (req.body.paymentId) {
+        eventValue = 'pause_single_payment';
+      }
+      if (!eventValue) eventValue = 'pause_all_payments';
       successMessage = updateDatesPayment[1];
+      creditorsPayment = updateDatesPayment[2];
     } else if (req.body.paymentId && req.body.amount) {
-      const newPyament = await paymentUtil.changePaymentAmmount(
+      const newPayment = await paymentUtil.changePaymentAmmount(
         payments[0],
         req.body.amount,
         debtor
       );
 
-      if (!newPyament[0]) return [false, newPyament[1]];
+      if (!newPayment[0]) return [false, newPayment[1]];
       updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
+      eventValue = 'change_payment_amount';
       successMessage = 'Change the payment amount';
+      creditorsPayment = newPayment[2];
     } else if (req.body.paymentId) {
-      const updatePyament = await paymentUtil.moveToLastPayment(
+      const updatePayment = await paymentUtil.moveToLastPayment(
         payments[0],
         debtor,
         false
       );
-      if (!updatePyament[0]) return [false, updatePyament[1]];
+      if (!updatePayment[0]) return [false, updatePayment[1]];
+      eventValue = 'move_payment_to_last';
       successMessage = 'Payments move to the last';
+      creditorsPayment = updatePayment[2];
     }
-    if (!updateDebtor)
+    if (!updateDebtor) {
       debtorUtil.updateDebtorPausePayment(req.params.id, false);
+    }
+    await emailUtil.sendEmailPausePayment(
+      reqTemp.id,
+      eventValue,
+      creditorsPayment
+    );
     return [true, constants.successfullyMessage(successMessage)];
   }
 
@@ -1955,25 +1988,64 @@ class DebtorService {
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+
+    const filter = {
+      debtorId: req.params.id,
+      caseId: null,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+    };
 
     const payments =
       await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        {
-          debtorId: req.params.id,
-          caseId: null,
-          isDeleted: {$ne: true},
-          attorneyId: null,
-          authorized: {$ne: 'Success'},
-          paymentMode: {$nin: ['Wire', 'Check', 'Cash']},
-        },
+        filter,
         undefined,
         undefined,
-        {dueDate: 1}
+        {dueDate: 1},
+        undefined,
+        undefined,
+        pageLimit.page,
+        pageLimit.limit
       );
 
     if (!payments) return [true, constants.notFoundMessage('Payments')];
 
-    return [true, {count: payments.length, payments}];
+    const totalCount = await paymentUtil.paymentTotalCount(req.params.id);
+
+    const getPayment = [];
+    for (const payment of payments) {
+      const {
+        totalLegalFeeAmount = 0,
+        totalServiceFeeAmount = 0,
+        creditorsAmount = 0,
+      } = await paymentUtil.getOtherPaymentsTotal(payment);
+
+      const creditorPayments = await paymentUtil.getCreditorPayments(payment);
+      if (!creditorPayments.length) continue;
+
+      const legalFee = totalLegalFeeAmount;
+      const serviceFee = totalServiceFeeAmount;
+      const commissionFee = !payment.calculateComission
+        ? payment.amount - legalFee - serviceFee - creditorsAmount
+        : 0;
+
+      const total = legalFee + serviceFee + commissionFee;
+
+      getPayment.push({
+        ...payment.toObject(),
+        legalFee,
+        serviceFee,
+        commissionFee: commissionFee > 0 ? commissionFee : 0,
+        creditorsAmount,
+        total,
+        creditorPayments,
+      });
+    }
+
+    return [true, {totalCount, payments: getPayment}];
   }
 
   async getToken(req: Request) {
@@ -1994,6 +2066,17 @@ class DebtorService {
         token: token,
       },
     ];
+  }
+
+  async getTopPayees(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const result = await caseUtil.getTopPayees(req.params.id, req.body.months);
+
+    return result;
   }
 }
 

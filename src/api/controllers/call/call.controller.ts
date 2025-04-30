@@ -504,7 +504,7 @@ class CallController {
       const response = await this.callService.completeConference(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.OK)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.OK).send(
@@ -516,7 +516,7 @@ class CallController {
       );
     } catch (error) {
       return res
-        .status(constants.CODE.BAD_REQUEST)
+        .status(constants.CODE.OK)
         .send(responseHelper.get4xxResponse(error.message));
     }
   };

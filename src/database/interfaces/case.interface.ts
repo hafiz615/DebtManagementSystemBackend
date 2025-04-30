@@ -33,6 +33,7 @@ export interface ICase extends Document {
   feePayment: string;
   paidAmount: number;
   remaining: number;
+  settledAmount: number;
   remainingAmountPaid: number;
   // documents: Array<IKeyFile>;
   intervals: Array<IInterval>;

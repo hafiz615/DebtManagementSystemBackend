@@ -28,9 +28,8 @@ class LawfirmValidate {
           'string.pattern.base': 'lawfirm PhoneNo must be 10 digits.',
           'any.required': 'lawfirm PhoneNo is a required field.',
         }),
-      address: Joi.string().messages({
-        'string.base': 'lawfirm Address must be a string.',
-        'any.required': 'lawfirm Address is a required field.',
+      address: Joi.string().allow('').messages({
+        'string.base': 'Lawfirm Address must be a string.',
       }),
       city: Joi.string().messages({
         'string.base': 'lawfirm City must be a string.',
