@@ -708,7 +708,7 @@ class CronJob {
                 ? await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference)
                 : await payment_util_1.default.getOtherPayments(payment);
             const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
-            const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments);
+            const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments.length ? [otherPayments[0]] : otherPayments);
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
             const remainingAmount = payment.amount -
                 totalAmount +

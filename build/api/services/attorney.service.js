@@ -68,7 +68,7 @@ class AttorneyService {
         });
         if (!lawSuit || !updatePayments)
             return [false, 'Failed to cancel lawsuit payment plan'];
-        return [true, 'Lawsuit payment plan canceled successfully'];
+        return [true, 'Lawsuit payment plan cancelled successfully'];
     }
 }
 exports.default = AttorneyService;
