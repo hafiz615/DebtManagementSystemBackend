@@ -443,8 +443,8 @@ class DebtorService {
             amount = payment.amount;
         }
         if (!payment.paymentReference) {
-            // amount = payment.amount + legalFeeAmount + serviceFeeAmount;
-            amount = payment.amount;
+            amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+            // amount = payment.amount;
             payments.push(payment);
         }
         let response;
