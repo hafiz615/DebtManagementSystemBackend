@@ -1455,21 +1455,21 @@ class DebtorService {
             creditorsPayment = updateDatesPayment[2];
         }
         else if (req.body.paymentId && req.body.amount) {
-            const newPyament = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
-            if (!newPyament[0])
-                return [false, newPyament[1]];
+            const newPayment = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
+            if (!newPayment[0])
+                return [false, newPayment[1]];
             updateDebtor = debtor_util_1.default.updateDebtorPausePayment(req.params.id, true);
             eventValue = 'change_payment_amount';
             successMessage = 'Change the payment amount';
-            creditorsPayment = newPyament[2];
+            creditorsPayment = newPayment[2];
         }
         else if (req.body.paymentId) {
-            const updatePyament = await payment_util_1.default.moveToLastPayment(payments[0], debtor, false);
-            if (!updatePyament[0])
-                return [false, updatePyament[1]];
+            const updatePayment = await payment_util_1.default.moveToLastPayment(payments[0], debtor, false);
+            if (!updatePayment[0])
+                return [false, updatePayment[1]];
             eventValue = 'move_payment_to_last';
             successMessage = 'Payments move to the last';
-            creditorsPayment = updatePyament[2];
+            creditorsPayment = updatePayment[2];
         }
         if (!updateDebtor) {
             debtor_util_1.default.updateDebtorPausePayment(req.params.id, false);
