@@ -1214,6 +1214,26 @@ class PaymentService {
         }
         return [true, []];
     }
+    async getInstantPayment(req) {
+        let payment = await this.paymentRepository.getById(req.params.id);
+        if (!payment)
+            return [false, constants_util_1.default.notFoundMessage('payment')];
+        if (!payment.debtorId)
+            [false, constants_util_1.default.notFoundMessage('debtor')];
+        const debtor = await this.debtorRepository.getById(payment.debtorId);
+        if (!debtor)
+            [false, constants_util_1.default.notFoundMessage('debtor')];
+        const response = await payment_util_1.default.getInstantPayment(payment.amount, debtor, payment);
+        console.log(response);
+        // if (response[0]) {
+        let updatedPayment = await this.paymentRepository.updateById(req.params.id, response[1]);
+        if (!updatedPayment)
+            return [false, constants_util_1.default.failureUpdateMessage('payment')];
+        // }
+        if (!response[0])
+            return [false, response[1].failedReasonAuthorization];
+        return [response[0], []];
+    }
 }
 exports.default = PaymentService;
 //# sourceMappingURL=payment.service.js.map
