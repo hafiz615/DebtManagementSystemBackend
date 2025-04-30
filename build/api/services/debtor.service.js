@@ -1415,7 +1415,7 @@ class DebtorService {
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
         let additionalCharge = false;
-        if (!debtor.additionalCharge) {
+        if (!debtor.additionalCharge && process.env.environment === 'prod') {
             additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
             if (!additionalCharge) {
                 await email_util_1.default.sendEmailOrSmsByEvent('failed_capture', null, null, reqTemp.id, null, debtor);
@@ -1511,7 +1511,7 @@ class DebtorService {
                 ...payment.toObject(),
                 legalFee,
                 serviceFee,
-                commissionFee,
+                commissionFee: commissionFee > 0 ? commissionFee : 0,
                 creditorsAmount,
                 total,
                 creditorPayments,
