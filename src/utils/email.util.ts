@@ -122,7 +122,8 @@ class EmailUtil {
     caseId: string,
     paymentId: string,
     userId: string,
-    taskId?: string
+    taskId?: string,
+    debtorTemp?: IDebtor
   ) {
     const event =
       await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
@@ -133,6 +134,7 @@ class EmailUtil {
       const userPermissions = event.userPermission;
       let [user, debtor, creditor, caseTemp, payment, task] =
         await this.initializeValues(caseId, paymentId, userId, taskId);
+      if (debtorTemp) debtor = debtorTemp;
       for (const userPermission of userPermissions) {
         if (userPermission.email_allowed && userPermission.email_template) {
           const template = await this.getTemplate(
@@ -1255,30 +1257,10 @@ class EmailUtil {
     await this.sendEmail(to, from, subject, content);
   }
 
-  async sendEmailPausePayment(
-    debtor: IDebtor,
-    userName: string,
-    event: string
-  ) {
-    const cases: any = await this.caseRepository.getAllWithoutPagination<ICase>(
-      {
-        debtor: debtor._id,
-        isDeleted: {$ne: true},
-      },
-      undefined,
-      undefined,
-      undefined,
-      ['creditor']
-    );
-
-    let creditorsEmail = null;
-
-    for (const caseTemp of cases) {
-      // creditorsEmail.push(caseTemp.creditor.businessInformation.email);
-
-      await this.sendEmailOrSmsByEvent(event, caseTemp._id, '', userName);
+  async sendEmailPausePayment(userName: string, event: string, payments: any) {
+    for (const payment of payments) {
+      await this.sendEmailOrSmsByEvent(event, payment.caseId._id, '', userName);
     }
-    // await this.sendEmail(to, from, subject, content);
   }
 }
 
