@@ -401,6 +401,8 @@ class PaymentUtil {
     async getOtherPaymentsTotal(payment) {
         const debtorId = payment.debtorId;
         const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
+        let totalLegalFeeAmount = 0;
+        let totalServiceFeeAmount = 0;
         const matchStage = {
             debtorId: debtorId,
             caseId: { $ne: null },
@@ -419,8 +421,12 @@ class PaymentUtil {
             { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
         ]);
         const creditorsAmount = result[0]?.totalAmount || 0;
-        const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(payments);
-        const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(payments);
+        if (payments.length) {
+            totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(payments);
+            totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee([
+                payments[0],
+            ]);
+        }
         return {
             totalLegalFeeAmount: totalLegalFeeAmount || 0,
             totalServiceFeeAmount: totalServiceFeeAmount || 0,

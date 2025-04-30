@@ -549,6 +549,9 @@ class PaymentUtil {
       payment.timePeriod
     );
 
+    let totalLegalFeeAmount = 0;
+    let totalServiceFeeAmount = 0;
+
     const matchStage = {
       debtorId: debtorId,
       caseId: {$ne: null},
@@ -576,11 +579,12 @@ class PaymentUtil {
       {$group: {_id: null, totalAmount: {$sum: '$amount'}}},
     ]);
     const creditorsAmount = result[0]?.totalAmount || 0;
-
-    const totalLegalFeeAmount = await lawsuitUtil.getTotalLegalFee(payments);
-    const totalServiceFeeAmount =
-      await lawsuitUtil.getTotalServiceFee(payments);
-
+    if (payments.length) {
+      totalLegalFeeAmount = await lawsuitUtil.getTotalLegalFee(payments);
+      totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee([
+        payments[0],
+      ]);
+    }
     return {
       totalLegalFeeAmount: totalLegalFeeAmount || 0,
       totalServiceFeeAmount: totalServiceFeeAmount || 0,
