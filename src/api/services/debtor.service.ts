@@ -1887,30 +1887,37 @@ class DebtorService {
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    // let additionalCharge = false;
-    // if (!debtor.additionalCharge) {
-    //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+    let additionalCharge = false;
+    if (!debtor.additionalCharge) {
+      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
-    //   if (!additionalCharge) {
-    //     await emailUtil.sendEmailPausePayment(
-    //       debtor,
-    //       reqTemp.id,
-    //       'failed_capture'
-    //     );
-    //     return [false, 'Unable to charge the amount.'];
-    //   }
-    //   await emailUtil.sendEmailPausePayment(
-    //     debtor,
-    //     reqTemp.id,
-    //     'successful_capture'
-    //   );
-    //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
-    //     additionalCharge: true,
-    //   });
-    // }
+      if (!additionalCharge) {
+        await emailUtil.sendEmailOrSmsByEvent(
+          'failed_capture',
+          null,
+          null,
+          reqTemp.id,
+          null,
+          debtor
+        );
+        return [false, 'Unable to charge the amount.'];
+      }
+      await emailUtil.sendEmailOrSmsByEvent(
+        'successful_capture',
+        null,
+        null,
+        reqTemp.id,
+        null,
+        debtor
+      );
+      this.debtorRepository.updateById<IDebtor>(debtor._id, {
+        additionalCharge: true,
+      });
+    }
 
     let updateDebtor = null;
     let eventValue = null;
+    let creditorsPayment = null;
     const filter: any = {
       debtorId: req.params.id,
       caseId: null,
@@ -1940,6 +1947,7 @@ class DebtorService {
       }
       if (!eventValue) eventValue = 'pause_all_payments';
       successMessage = updateDatesPayment[1];
+      creditorsPayment = updateDatesPayment[2];
     } else if (req.body.paymentId && req.body.amount) {
       const newPyament = await paymentUtil.changePaymentAmmount(
         payments[0],
@@ -1951,6 +1959,7 @@ class DebtorService {
       updateDebtor = debtorUtil.updateDebtorPausePayment(req.params.id, true);
       eventValue = 'change_payment_amount';
       successMessage = 'Change the payment amount';
+      creditorsPayment = newPyament[2];
     } else if (req.body.paymentId) {
       const updatePyament = await paymentUtil.moveToLastPayment(
         payments[0],
@@ -1960,11 +1969,16 @@ class DebtorService {
       if (!updatePyament[0]) return [false, updatePyament[1]];
       eventValue = 'move_payment_to_last';
       successMessage = 'Payments move to the last';
+      creditorsPayment = updatePyament[2];
     }
     if (!updateDebtor) {
       debtorUtil.updateDebtorPausePayment(req.params.id, false);
     }
-    await emailUtil.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
+    await emailUtil.sendEmailPausePayment(
+      reqTemp.id,
+      eventValue,
+      creditorsPayment
+    );
     return [true, constants.successfullyMessage(successMessage)];
   }
 

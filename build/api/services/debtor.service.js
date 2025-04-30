@@ -1414,28 +1414,21 @@ class DebtorService {
         const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount);
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
-        // let additionalCharge = false;
-        // if (!debtor.additionalCharge) {
-        //   additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
-        //   if (!additionalCharge) {
-        //     await emailUtil.sendEmailPausePayment(
-        //       debtor,
-        //       reqTemp.id,
-        //       'failed_capture'
-        //     );
-        //     return [false, 'Unable to charge the amount.'];
-        //   }
-        //   await emailUtil.sendEmailPausePayment(
-        //     debtor,
-        //     reqTemp.id,
-        //     'successful_capture'
-        //   );
-        //   this.debtorRepository.updateById<IDebtor>(debtor._id, {
-        //     additionalCharge: true,
-        //   });
-        // }
+        let additionalCharge = false;
+        if (!debtor.additionalCharge) {
+            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
+            if (!additionalCharge) {
+                await email_util_1.default.sendEmailOrSmsByEvent('failed_capture', null, null, reqTemp.id, null, debtor);
+                return [false, 'Unable to charge the amount.'];
+            }
+            await email_util_1.default.sendEmailOrSmsByEvent('successful_capture', null, null, reqTemp.id, null, debtor);
+            this.debtorRepository.updateById(debtor._id, {
+                additionalCharge: true,
+            });
+        }
         let updateDebtor = null;
         let eventValue = null;
+        let creditorsPayment = null;
         const filter = {
             debtorId: req.params.id,
             caseId: null,
@@ -1459,6 +1452,7 @@ class DebtorService {
             if (!eventValue)
                 eventValue = 'pause_all_payments';
             successMessage = updateDatesPayment[1];
+            creditorsPayment = updateDatesPayment[2];
         }
         else if (req.body.paymentId && req.body.amount) {
             const newPyament = await payment_util_1.default.changePaymentAmmount(payments[0], req.body.amount, debtor);
@@ -1467,6 +1461,7 @@ class DebtorService {
             updateDebtor = debtor_util_1.default.updateDebtorPausePayment(req.params.id, true);
             eventValue = 'change_payment_amount';
             successMessage = 'Change the payment amount';
+            creditorsPayment = newPyament[2];
         }
         else if (req.body.paymentId) {
             const updatePyament = await payment_util_1.default.moveToLastPayment(payments[0], debtor, false);
@@ -1474,11 +1469,12 @@ class DebtorService {
                 return [false, updatePyament[1]];
             eventValue = 'move_payment_to_last';
             successMessage = 'Payments move to the last';
+            creditorsPayment = updatePyament[2];
         }
         if (!updateDebtor) {
             debtor_util_1.default.updateDebtorPausePayment(req.params.id, false);
         }
-        await email_util_1.default.sendEmailPausePayment(debtor, reqTemp.id, eventValue);
+        await email_util_1.default.sendEmailPausePayment(reqTemp.id, eventValue, creditorsPayment);
         return [true, constants_util_1.default.successfullyMessage(successMessage)];
     }
     async getDebtorPayments(req) {

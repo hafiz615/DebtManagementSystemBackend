@@ -651,6 +651,7 @@ class PaymentUtil {
     targetWeekday?: number,
     creditorPayments?: IPayment[]
   ) {
+    let creditorPaymentForEmail = creditorPayments;
     let updatedCreditorDueDate = updatedDueDate;
     targetWeekday = !targetWeekday
       ? new Date(endDate).getUTCDay()
@@ -695,11 +696,12 @@ class PaymentUtil {
           calculateComission: payment.calculateComission,
         });
       }
+      creditorPaymentForEmail = creditorPayments;
       updatedDueDate = null;
       creditorPayments = null;
     }
 
-    return [true, 'Payment date updated'];
+    return [true, 'Payment date updated', creditorPaymentForEmail];
   }
 
   async moveToLastPayment(
@@ -755,28 +757,26 @@ class PaymentUtil {
       }
       const creditorPayments = await this.getOtherPayments(payment);
 
-      await this.pausePaymentByDay(
+      return await this.pausePaymentByDay(
         [createdPayment],
         '',
         updatedDueDate,
         updatedDueDate.getUTCDay(),
         creditorPayments
       );
-      return [true, []];
     } else {
       payment.dueDate = updatedDueDate.toISOString();
       payment.frequency = paymentTemp[0].frequency + 1;
       payment.calculateComission = true;
       const createdPayment =
         await this.paymentRepository.create<IPayment>(payment);
-      await this.pausePaymentByDay(
+      return await this.pausePaymentByDay(
         [createdPayment],
         '',
         new Date(createdPayment.dueDate),
         null,
         creditorPayments
       );
-      return [true, []];
     }
   }
 
