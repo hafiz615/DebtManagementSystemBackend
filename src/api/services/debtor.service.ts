@@ -2038,7 +2038,7 @@ class DebtorService {
         ...payment.toObject(),
         legalFee,
         serviceFee,
-        commissionFee,
+        commissionFee: commissionFee > 0 ? commissionFee : 0,
         creditorsAmount,
         total,
         creditorPayments,
