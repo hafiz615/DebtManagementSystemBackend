@@ -261,8 +261,8 @@ class LawsuitUtil {
 
   async getLegalFee(caseData: any) {
     // const caseData = await this.caseRepository.getById<ICase>(caseId._id);
-    if (caseData.lawsuitExist) {
-      if (caseData.legalFee > 0) {
+    if (caseData?.lawsuitExist || caseData?.dummyLawsuitExist) {
+      if (caseData?.legalFee > 0) {
         return caseData.legalFee;
       }
 
@@ -291,7 +291,7 @@ class LawsuitUtil {
 
   async getServiceFee(caseData: any) {
     // const caseData = await this.caseRepository.getById<ICase>(caseId._id);
-    if (caseData.serviceFee !== 0) {
+    if (caseData?.serviceFee) {
       return caseData.serviceFee;
     }
 
