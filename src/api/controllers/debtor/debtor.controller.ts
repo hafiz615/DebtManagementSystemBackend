@@ -1040,7 +1040,7 @@ class DebtorController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: response[1],
-          message: constants.successFoundMessage('Payments'),
+          message: constants.successFoundMessage('Top Payees'),
         })
       );
     } catch (error) {
