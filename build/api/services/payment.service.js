@@ -1225,6 +1225,12 @@ class PaymentService {
             [false, constants_util_1.default.notFoundMessage('debtor')];
         const response = await payment_util_1.default.getInstantPayment(payment.amount, debtor, payment);
         if (response[0]) {
+            if (!payment.caseId) {
+                const otherPayments = await payment_util_1.default.getOtherPayments(payment);
+                for (const payment of otherPayments) {
+                    await this.paymentRepository.updateById(payment._id, response[1]);
+                }
+            }
             let updatedPayment = await this.paymentRepository.updateById(req.params.id, response[1]);
             if (!updatedPayment)
                 return [false, constants_util_1.default.failureUpdateMessage('payment')];
