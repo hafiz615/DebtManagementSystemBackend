@@ -25,6 +25,7 @@ import {AttorneyRepository} from '../repository/attorney/attorney.repository';
 import {LawfirmRepository} from '../repository/lawfirm/lawfirm.repository';
 import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
+import lawsuitUtil from '../../utils/lawsuit.util';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -1648,25 +1649,43 @@ class PaymentService {
       payment.debtorId
     );
     if (!debtor) [false, constants.notFoundMessage('debtor')];
+    let amount = 0;
+    let legalFeeAmount = 0;
+    let serviceFeeAmount = 0;
+    if (payment.caseId) {
+      legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+      serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
+      amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+    }
+    let otherPayments: IPayment[] = [];
+    if (!payment.caseId) {
+      otherPayments = await paymentUtil.getOtherPayments(payment);
+      legalFeeAmount = await lawsuitUtil.getTotalLegalFee(otherPayments);
+      serviceFeeAmount = await lawsuitUtil.getTotalServiceFee(
+        otherPayments.length ? [otherPayments[0]] : otherPayments
+      );
+      amount = payment.amount;
+    }
     const response: any = await paymentUtil.getInstantPayment(
-      payment.amount,
+      amount,
       debtor,
       payment
     );
     if (response[0]) {
+      const paymentObj = response[1];
+      paymentObj['legalFee'] = legalFeeAmount;
+      paymentObj['serviceFee'] = serviceFeeAmount;
       if (!payment.caseId) {
-        const otherPayments: IPayment[] =
-          await paymentUtil.getOtherPayments(payment);
         for (const payment of otherPayments) {
           await this.paymentRepository.updateById<IPayment>(
             payment._id,
-            response[1]
+            paymentObj
           );
         }
       }
       let updatedPayment = await this.paymentRepository.updateById<IPayment>(
         req.params.id,
-        response[1]
+        paymentObj
       );
       if (!updatedPayment)
         return [false, constants.failureUpdateMessage('payment')];
