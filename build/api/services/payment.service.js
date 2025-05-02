@@ -1224,15 +1224,14 @@ class PaymentService {
         if (!debtor)
             [false, constants_util_1.default.notFoundMessage('debtor')];
         const response = await payment_util_1.default.getInstantPayment(payment.amount, debtor, payment);
-        console.log(response);
-        // if (response[0]) {
-        let updatedPayment = await this.paymentRepository.updateById(req.params.id, response[1]);
-        if (!updatedPayment)
-            return [false, constants_util_1.default.failureUpdateMessage('payment')];
-        // }
+        if (response[0]) {
+            let updatedPayment = await this.paymentRepository.updateById(req.params.id, response[1]);
+            if (!updatedPayment)
+                return [false, constants_util_1.default.failureUpdateMessage('payment')];
+        }
         if (!response[0])
             return [false, response[1].failedReasonAuthorization];
-        return [response[0], []];
+        return response;
     }
 }
 exports.default = PaymentService;

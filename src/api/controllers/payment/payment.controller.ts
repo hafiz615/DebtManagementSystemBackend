@@ -600,7 +600,7 @@ class PaymentController {
         responseHelper.get2xxResponse({
           statusCode: constants.CODE.OK,
           data: [],
-          message: constants.successUpdateMessage('Payment'),
+          message: 'Payment deducted successfully!',
         })
       );
     } catch (error) {

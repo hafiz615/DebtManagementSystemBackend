@@ -1653,18 +1653,16 @@ class PaymentService {
       debtor,
       payment
     );
-    console.log(response);
-    // if (response[0]) {
-    let updatedPayment = await this.paymentRepository.updateById<IPayment>(
-      req.params.id,
-      response[1]
-    );
-
-    if (!updatedPayment)
-      return [false, constants.failureUpdateMessage('payment')];
-    // }
+    if (response[0]) {
+      let updatedPayment = await this.paymentRepository.updateById<IPayment>(
+        req.params.id,
+        response[1]
+      );
+      if (!updatedPayment)
+        return [false, constants.failureUpdateMessage('payment')];
+    }
     if (!response[0]) return [false, response[1].failedReasonAuthorization];
-    return [response[0], []];
+    return response;
   }
 }
 
