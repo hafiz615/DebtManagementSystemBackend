@@ -1888,7 +1888,7 @@ class DebtorService {
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
     let additionalCharge = false;
-    if (!debtor.additionalCharge) {
+    if (!debtor.additionalCharge && process.env.environment === 'prod') {
       additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
 
       if (!additionalCharge) {
@@ -2038,7 +2038,7 @@ class DebtorService {
         ...payment.toObject(),
         legalFee,
         serviceFee,
-        commissionFee,
+        commissionFee: commissionFee > 0 ? commissionFee : 0,
         creditorsAmount,
         total,
         creditorPayments,

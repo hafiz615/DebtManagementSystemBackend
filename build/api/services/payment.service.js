@@ -945,7 +945,7 @@ class PaymentService {
         // );
         if (!updateCase || !updatePayments)
             return [false, 'Failed to cancel payment plan'];
-        return [true, 'Payment plan canceled successfully'];
+        return [true, 'Payment plan cancelled successfully'];
     }
     async cancelDebtorPaymentPlan(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
@@ -969,7 +969,7 @@ class PaymentService {
         });
         if (!updateDebtor || !updatePayments)
             return [false, 'Failed to cancel payment plan'];
-        return [true, 'Payment plan canceled successfully'];
+        return [true, 'Payment plan cancelled successfully'];
     }
     async cancelAllDebtorPaymentPlan(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
@@ -1009,7 +1009,7 @@ class PaymentService {
                 isDeleted: true,
             });
         }
-        return [true, 'Payment plan canceled successfully'];
+        return [true, 'Payment plan cancelled successfully'];
     }
     async getRelatedPayments(req) {
         let payments = await this.paymentRepository.getAllWithoutPagination({

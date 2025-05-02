@@ -1253,7 +1253,7 @@ class PaymentService {
     // );
     if (!updateCase || !updatePayments)
       return [false, 'Failed to cancel payment plan'];
-    return [true, 'Payment plan canceled successfully'];
+    return [true, 'Payment plan cancelled successfully'];
   }
 
   async cancelDebtorPaymentPlan(req: Request) {
@@ -1283,7 +1283,7 @@ class PaymentService {
     );
     if (!updateDebtor || !updatePayments)
       return [false, 'Failed to cancel payment plan'];
-    return [true, 'Payment plan canceled successfully'];
+    return [true, 'Payment plan cancelled successfully'];
   }
 
   async cancelAllDebtorPaymentPlan(req: Request) {
@@ -1340,7 +1340,7 @@ class PaymentService {
         );
     }
 
-    return [true, 'Payment plan canceled successfully'];
+    return [true, 'Payment plan cancelled successfully'];
   }
 
   async getRelatedPayments(req: Request) {
