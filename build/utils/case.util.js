@@ -608,6 +608,7 @@ class CaseUtil {
                                 },
                             },
                             caseOwner: '$negotiator',
+                            settledAmount: { $ifNull: ['$settledAmount', 0] },
                             outstandingDebt: {
                                 $subtract: [
                                     '$totalDebt',
@@ -935,6 +936,7 @@ class CaseUtil {
                                 },
                             },
                             caseOwner: '$negotiator',
+                            settledAmount: { $ifNull: ['$settledAmount', 0] },
                             outstandingDebt: {
                                 $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },

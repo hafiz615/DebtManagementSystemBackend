@@ -224,11 +224,6 @@ class DebtorService {
         debtor.businessInformation.companyName
       )
     );
-    console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
-    console.log(
-      moneyThumbApp['totalstatements'],
-      'moneyThumbApp[totalStatements]'
-    );
     const filterDebtor = {};
     if (!debtor?.totalStatements && moneyThumbApp['totalstatements']) {
       filterDebtor['totalStatements'] = moneyThumbApp['totalstatements'];
@@ -256,16 +251,6 @@ class DebtorService {
 
     if (clientDetails)
       clientDetails = await caseUtil.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
-
-    // console.log("Updated clientDetails: ", clientDetails);
-    // if (req.query.filter === 'true' || req.query.search === 'true') {
-    //   casesCount = clientDetails.caseHistory.length;
-    // } else {
-    //   casesCount = await this.caseRepository.getCount<ICase>({
-    //     debtor: req.params.id,
-    //     isDeleted: false,
-    //   });
-    // }
     casesCount = clientDetails.caseHistory.length;
     if (!clientDetails) {
       return [false, constants.notFoundMessage('Debtor')];
