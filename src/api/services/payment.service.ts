@@ -1654,6 +1654,16 @@ class PaymentService {
       payment
     );
     if (response[0]) {
+      if (!payment.caseId) {
+        const otherPayments: IPayment[] =
+          await paymentUtil.getOtherPayments(payment);
+        for (const payment of otherPayments) {
+          await this.paymentRepository.updateById<IPayment>(
+            payment._id,
+            response[1]
+          );
+        }
+      }
       let updatedPayment = await this.paymentRepository.updateById<IPayment>(
         req.params.id,
         response[1]
