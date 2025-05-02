@@ -248,8 +248,6 @@ class DebtorService {
         const debtor = findCase.debtor;
         const token = await moneyThumb_util_1.default.authenticateUser();
         const moneyThumbApp = await moneyThumb_util_1.default.createNewApp(token, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
-        console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
-        console.log(moneyThumbApp['totalstatements'], 'moneyThumbApp[totalStatements]');
         const filterDebtor = {};
         if (!debtor?.totalStatements && moneyThumbApp['totalstatements']) {
             filterDebtor['totalStatements'] = moneyThumbApp['totalstatements'];
@@ -275,15 +273,6 @@ class DebtorService {
         let clientDetails = await case_util_1.default.getClientDetails(req);
         if (clientDetails)
             clientDetails = await case_util_1.default.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
-        // console.log("Updated clientDetails: ", clientDetails);
-        // if (req.query.filter === 'true' || req.query.search === 'true') {
-        //   casesCount = clientDetails.caseHistory.length;
-        // } else {
-        //   casesCount = await this.caseRepository.getCount<ICase>({
-        //     debtor: req.params.id,
-        //     isDeleted: false,
-        //   });
-        // }
         casesCount = clientDetails.caseHistory.length;
         if (!clientDetails) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
