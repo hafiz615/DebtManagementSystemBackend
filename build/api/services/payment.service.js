@@ -21,6 +21,7 @@ const case_util_1 = __importDefault(require("../../utils/case.util"));
 const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util"));
 const attorney_repository_1 = require("../repository/attorney/attorney.repository");
 const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
+const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -1213,6 +1214,48 @@ class PaymentService {
             ];
         }
         return [true, []];
+    }
+    async getInstantPayment(req) {
+        let payment = await this.paymentRepository.getById(req.params.id);
+        if (!payment)
+            return [false, constants_util_1.default.notFoundMessage('payment')];
+        if (!payment.debtorId)
+            [false, constants_util_1.default.notFoundMessage('debtor')];
+        const debtor = await this.debtorRepository.getById(payment.debtorId);
+        if (!debtor)
+            [false, constants_util_1.default.notFoundMessage('debtor')];
+        let amount = 0;
+        let legalFeeAmount = 0;
+        let serviceFeeAmount = 0;
+        if (payment.caseId) {
+            legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
+            serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
+            amount = payment.amount + legalFeeAmount + serviceFeeAmount;
+        }
+        let otherPayments = [];
+        if (!payment.caseId) {
+            otherPayments = await payment_util_1.default.getOtherPayments(payment);
+            legalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
+            serviceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments.length ? [otherPayments[0]] : otherPayments);
+            amount = payment.amount;
+        }
+        const response = await payment_util_1.default.getInstantPayment(amount, debtor, payment);
+        if (response[0]) {
+            const paymentObj = response[1];
+            paymentObj['legalFee'] = legalFeeAmount;
+            paymentObj['serviceFee'] = serviceFeeAmount;
+            if (!payment.caseId) {
+                for (const payment of otherPayments) {
+                    await this.paymentRepository.updateById(payment._id, paymentObj);
+                }
+            }
+            let updatedPayment = await this.paymentRepository.updateById(req.params.id, paymentObj);
+            if (!updatedPayment)
+                return [false, constants_util_1.default.failureUpdateMessage('payment')];
+        }
+        if (!response[0])
+            return [false, response[1].failedReasonAuthorization];
+        return response;
     }
 }
 exports.default = PaymentService;

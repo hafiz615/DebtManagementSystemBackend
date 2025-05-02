@@ -27,5 +27,6 @@ router.get('/getRelatedPayments/:id', authorize_middleware_1.default.validateAut
 router.post('/addAttorneyPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.addPaymentPlan);
 router.post('/updatePaymentDate/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.updatePaymentDate, payment_controller_1.default.updatePaymentDate);
 router.post('/checkInvoice', payment_controller_1.default.checkInvoice);
+router.get('/getInstantPayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getInstantPayment);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map
