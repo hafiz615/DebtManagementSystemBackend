@@ -1872,11 +1872,10 @@ class DebtorService {
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    let additionalCharge = false;
     if (!debtor.additionalCharge && process.env.environment === 'prod') {
-      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+      let additionalCharge: any = await paymentUtil.getAdditionalCharge(debtor);
 
-      if (!additionalCharge) {
+      if (!additionalCharge[0]) {
         await emailUtil.sendEmailOrSmsByEvent(
           'failed_capture',
           null,
@@ -1885,7 +1884,7 @@ class DebtorService {
           null,
           debtor
         );
-        return [false, 'Unable to charge the amount.'];
+        return [false, additionalCharge[1].failedReasonAuthorization];
       }
       await emailUtil.sendEmailOrSmsByEvent(
         'successful_capture',

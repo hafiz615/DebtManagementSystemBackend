@@ -1043,7 +1043,7 @@ class PaymentUtil {
     const payment = new Payment();
     const validPayment = DataCopier.copy(payment, response[1]);
     await this.paymentRepository.create<IPayment>(validPayment);
-    return response[0] as boolean;
+    return response;
   }
 
   async getInstantPayment(

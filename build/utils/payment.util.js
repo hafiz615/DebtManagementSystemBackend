@@ -747,7 +747,7 @@ class PaymentUtil {
         const payment = new payment_repomodel_1.Payment();
         const validPayment = dataCopier_util_1.DataCopier.copy(payment, response[1]);
         await this.paymentRepository.create(validPayment);
-        return response[0];
+        return response;
     }
     async getInstantPayment(amount, debtor, paymentPass) {
         const accounts = debtor.accounts;

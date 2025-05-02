@@ -1403,12 +1403,11 @@ class DebtorService {
         const pausePaymentCheck = await payment_util_1.default.pausePaymentChecks(debtor, req.body.amount);
         if (!pausePaymentCheck[0])
             return pausePaymentCheck;
-        let additionalCharge = false;
         if (!debtor.additionalCharge && process.env.environment === 'prod') {
-            additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
-            if (!additionalCharge) {
+            let additionalCharge = await payment_util_1.default.getAdditionalCharge(debtor);
+            if (!additionalCharge[0]) {
                 await email_util_1.default.sendEmailOrSmsByEvent('failed_capture', null, null, reqTemp.id, null, debtor);
-                return [false, 'Unable to charge the amount.'];
+                return [false, additionalCharge[1].failedReasonAuthorization];
             }
             await email_util_1.default.sendEmailOrSmsByEvent('successful_capture', null, null, reqTemp.id, null, debtor);
             this.debtorRepository.updateById(debtor._id, {
