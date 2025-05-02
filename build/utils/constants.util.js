@@ -9,6 +9,7 @@ exports.default = {
         PARTIAL_CONTENT: 206,
         BAD_REQUEST: 400,
         UNAUTHORIZED: 401,
+        NO_CONTENT: 204,
         FORBIDDEN: 403,
         RECORD_NOT_FOUND: 404,
         NOT_ACCEPTED: 406,

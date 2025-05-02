@@ -119,7 +119,7 @@ class CallController {
       const response = await this.callService.callRecordingStatus(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.NO_CONTENT)
           .send(responseHelper.get4xxResponse(response));
       }
       return res.status(constants.CODE.CREATED).send(
@@ -165,7 +165,7 @@ class CallController {
       const response = await this.callService.conferenceRecordingStatus(req);
       if (!response[0]) {
         return res
-          .status(constants.CODE.BAD_REQUEST)
+          .status(constants.CODE.NO_CONTENT)
           .send(responseHelper.get4xxResponse(response[1]));
       }
       return res.status(constants.CODE.CREATED).send(
