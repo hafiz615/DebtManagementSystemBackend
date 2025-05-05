@@ -3159,7 +3159,7 @@ class CaseUtil {
     return cases;
   }
 
-  async getTopPayees(debtorId: string, monthsList: string[]) {
+  async getTopPayees(appId: number, monthsList: string[]) {
     if (
       !AIAuth.auth_token ||
       new Date(AIAuth.expires_in) <= new Date(commonUtil.getCurrentDate())
@@ -3169,7 +3169,7 @@ class CaseUtil {
     const url = `${process.env.baseUrlAI}get-top-payees`;
 
     const data = {
-      debtor_id: debtorId,
+      app_id: appId,
       months: monthsList,
     };
     try {

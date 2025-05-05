@@ -61,7 +61,7 @@ class AttorneyService {
         });
         const updatePayments = await this.paymentRepository.updateMany({
             caseId: req.body.caseId,
-            attorneyId: req.params.id,
+            lawsuitId: lawSuit._id,
             $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
         }, {
             isDeleted: true,

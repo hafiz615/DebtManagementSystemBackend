@@ -143,6 +143,7 @@ class PaymentService {
     let filters = {
       caseId: {$ne: null},
       isDeleted: false,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
     };
     if (days) {
       filters = await this.getDaysFilterPopulated(filters, days);
@@ -155,7 +156,7 @@ class PaymentService {
     );
     let page = populatedFiltersResult.page;
     let limit = populatedFiltersResult.limit;
-    const finalFilters = populatedFiltersResult.filters;
+    let finalFilters = populatedFiltersResult.filters;
     let payments: any = await this.getAllPaymentsQuery(
       finalFilters,
       page,
@@ -207,6 +208,7 @@ class PaymentService {
     let filters = {
       caseId: {$ne: null},
       isDeleted: false,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
     };
     if (days) {
       let upcomingFilter = await this.getDaysFilterUpcoming(days);
@@ -776,6 +778,7 @@ class PaymentService {
       {
         debtorId: id,
         caseId: {$ne: null},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
         isDeleted: false,
         status: 'Upcoming',
       },
@@ -793,6 +796,7 @@ class PaymentService {
     return await this.paymentRepository.getCount<IPayment>({
       debtorId: id,
       caseId: {$ne: null},
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       isDeleted: false,
       status: 'Upcoming',
     });
@@ -808,6 +812,8 @@ class PaymentService {
           {authorized: 'Failed'},
           {captured: 'Success'},
           {captured: 'Failed'},
+          {lawsuitId: {$exists: false}},
+          {lawsuitId: {$eq: null}},
         ],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName',
@@ -839,6 +845,7 @@ class PaymentService {
       {
         caseId: id,
         isDeleted: false,
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
         status: 'Upcoming',
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName',
@@ -864,9 +871,30 @@ class PaymentService {
     );
   }
 
+  private async getAttorneyPayments(page: number, limit: number, filter: any) {
+    return await this.paymentRepository.getAll<IPayment>(
+      filter,
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName creditorName sendViaPaynote',
+      undefined,
+      undefined,
+      {
+        path: 'caseId',
+        select: ['_id'],
+      },
+      undefined,
+      page,
+      limit
+    );
+  }
+
+  private async getAttorneyPaymentsCount(filter: any) {
+    return await this.paymentRepository.getCount<IPayment>(filter);
+  }
+
   private async getUpcomingPaymentsByCaseIdCount(id: string) {
     return await this.paymentRepository.getCount<IPayment>({
       caseId: id,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       isDeleted: false,
       status: 'Upcoming',
     });
@@ -1640,23 +1668,22 @@ class PaymentService {
   }
 
   async getInstantPayment(req: Request) {
-    let payment = await this.paymentRepository.getById<IPayment>(req.params.id);
-
-    if (!payment) return [false, constants.notFoundMessage('payment')];
-    if (!payment.debtorId) [false, constants.notFoundMessage('debtor')];
-
     const debtor: IDebtor = await this.debtorRepository.getById<IDebtor>(
-      payment.debtorId
+      req.params.id
     );
     if (!debtor) [false, constants.notFoundMessage('debtor')];
+
+    let payment = await this.paymentRepository.getOne<IPayment>({
+      debtorId: req.params.id,
+      caseId: null,
+      status: 'Upcoming',
+      isDeleted: false,
+    });
+
+    if (!payment) return [false, constants.notFoundMessage('payment')];
     let amount = 0;
     let legalFeeAmount = 0;
     let serviceFeeAmount = 0;
-    if (payment.caseId) {
-      legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-      serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
-      amount = payment.amount + legalFeeAmount + serviceFeeAmount;
-    }
     let otherPayments: IPayment[] = [];
     if (!payment.caseId) {
       otherPayments = await paymentUtil.getOtherPayments(payment);
@@ -1672,26 +1699,67 @@ class PaymentService {
       payment
     );
     if (response[0]) {
+      const concatedPayments = otherPayments.concat(payment);
       const paymentObj = response[1];
       paymentObj['legalFee'] = legalFeeAmount;
       paymentObj['serviceFee'] = serviceFeeAmount;
-      if (!payment.caseId) {
-        for (const payment of otherPayments) {
-          await this.paymentRepository.updateById<IPayment>(
-            payment._id,
-            paymentObj
-          );
-        }
+      for (const payment of concatedPayments) {
+        await this.paymentRepository.updateById<IPayment>(
+          payment._id,
+          paymentObj
+        );
       }
-      let updatedPayment = await this.paymentRepository.updateById<IPayment>(
-        req.params.id,
-        paymentObj
-      );
-      if (!updatedPayment)
-        return [false, constants.failureUpdateMessage('payment')];
     }
     if (!response[0]) return [false, response[1].failedReasonAuthorization];
     return response;
+  }
+
+  async getCaseAttorneyPayments(req: Request) {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const lawSuit = await this.lawsuitRepository.getOne<ILawsuit>({
+      debtorId: caseTemp.debtor,
+      creditorId: caseTemp.creditor,
+      isDeleted: {$ne: true},
+    });
+    if (!lawSuit) return [false, constants.notFoundMessage('lawsuit')];
+    const filters = {
+      caseId: caseTemp._id,
+      lawsuitId: lawSuit._id,
+      isDeleted: false,
+    };
+    const sendViaPaynoteFilter = {
+      ...filters,
+      $or: [{sendViaPaynote: 'Success'}, {sendViaPaynote: 'Failed'}],
+    };
+    const upcomingFilter = {
+      ...filters,
+      status: 'Upcoming',
+    };
+    const payments: IPayment[] = await this.getAttorneyPayments(
+      pageLimit.page,
+      pageLimit.limit,
+      sendViaPaynoteFilter
+    );
+    const paymentsUpcoming: IPayment[] = await this.getAttorneyPayments(
+      pageLimit.page,
+      pageLimit.limit,
+      upcomingFilter
+    );
+    const paymentsUpcomingCount =
+      await this.getAttorneyPaymentsCount(upcomingFilter);
+    const paymentsCount =
+      await this.getAttorneyPaymentsCount(sendViaPaynoteFilter);
+    return [
+      true,
+      {
+        payments,
+        paymentsUpcoming,
+        paymentsUpcomingCount,
+        paymentsCount,
+      },
+    ];
   }
 }
 

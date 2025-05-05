@@ -1521,11 +1521,15 @@ class DebtorService {
         ];
     }
     async getTopPayees(req) {
-        const debtor = await this.debtorRepository.getById(req.params.id);
+        let debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        const result = await case_util_1.default.getTopPayees(req.params.id, req.body.months);
+        if (!debtor.appid) {
+            await moneyThumb_util_1.default.run(debtor, await debtor_util_1.default.normalizeCompanyName(debtor.businessInformation.companyName));
+            debtor = await this.debtorRepository.getById(req.params.id);
+        }
+        const result = await case_util_1.default.getTopPayees(debtor.appid, req.body.months);
         return result;
     }
 }

@@ -35,9 +35,11 @@ class PaymentUtil {
           ? obj.caseId.debtor.basicInformation.fullName
           : '',
 
-      creditorName: obj.caseId?.creditor
-        ? obj.caseId.creditor.basicInformation.fullName
-        : '',
+      creditorName: obj.creditorName
+        ? obj.creditorName
+        : obj.caseId?.creditor
+          ? obj.caseId.creditor.basicInformation.fullName
+          : '',
       // SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
       authorized: obj.authorized,
       captured: obj.captured,
@@ -231,6 +233,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -261,6 +264,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -292,6 +296,7 @@ class PaymentUtil {
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -323,6 +328,7 @@ class PaymentUtil {
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,

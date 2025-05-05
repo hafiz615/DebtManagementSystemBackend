@@ -123,4 +123,10 @@ router.get(
   authorize.validateAuth,
   paymentController.getInstantPayment
 );
+
+router.get(
+  '/getCaseAttorneyPayments/:id',
+  authorize.validateAuth,
+  paymentController.getCaseAttorneyPayments
+);
 export default router;
