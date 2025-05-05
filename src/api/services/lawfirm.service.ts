@@ -132,7 +132,7 @@ class LawfirmService {
     await this.lawsuitRepository.create<ILawsuit>(lawSuit as any);
     const updatedCase = await this.caseRepository.updateById<ICase>(
       req.params.id,
-      {dummyLawsuitExist: true}
+      {dummyLawsuitExist: true, lawsuitExist: false}
     );
 
     return updatedCase
