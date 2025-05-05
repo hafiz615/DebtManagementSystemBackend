@@ -224,11 +224,6 @@ class DebtorService {
         debtor.businessInformation.companyName
       )
     );
-    console.log(!debtor?.totalStatements, '!debtor?.totalStatements');
-    console.log(
-      moneyThumbApp['totalstatements'],
-      'moneyThumbApp[totalStatements]'
-    );
     const filterDebtor = {};
     if (!debtor?.totalStatements && moneyThumbApp['totalstatements']) {
       filterDebtor['totalStatements'] = moneyThumbApp['totalstatements'];
@@ -256,16 +251,6 @@ class DebtorService {
 
     if (clientDetails)
       clientDetails = await caseUtil.addWeekRemainingToCases(clientDetails); // Add weekRemaining to each case
-
-    // console.log("Updated clientDetails: ", clientDetails);
-    // if (req.query.filter === 'true' || req.query.search === 'true') {
-    //   casesCount = clientDetails.caseHistory.length;
-    // } else {
-    //   casesCount = await this.caseRepository.getCount<ICase>({
-    //     debtor: req.params.id,
-    //     isDeleted: false,
-    //   });
-    // }
     casesCount = clientDetails.caseHistory.length;
     if (!clientDetails) {
       return [false, constants.notFoundMessage('Debtor')];
@@ -1887,11 +1872,10 @@ class DebtorService {
 
     if (!pausePaymentCheck[0]) return pausePaymentCheck;
 
-    let additionalCharge = false;
     if (!debtor.additionalCharge && process.env.environment === 'prod') {
-      additionalCharge = await paymentUtil.getAdditionalCharge(debtor);
+      let additionalCharge: any = await paymentUtil.getAdditionalCharge(debtor);
 
-      if (!additionalCharge) {
+      if (!additionalCharge[0]) {
         await emailUtil.sendEmailOrSmsByEvent(
           'failed_capture',
           null,
@@ -1900,7 +1884,7 @@ class DebtorService {
           null,
           debtor
         );
-        return [false, 'Unable to charge the amount.'];
+        return [false, additionalCharge[1].failedReasonAuthorization];
       }
       await emailUtil.sendEmailOrSmsByEvent(
         'successful_capture',
@@ -2069,12 +2053,21 @@ class DebtorService {
   }
 
   async getTopPayees(req: Request) {
-    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    let debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
 
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
-    const result = await caseUtil.getTopPayees(req.params.id, req.body.months);
+    if (!debtor.appid) {
+      await moneyThumbUtil.run(
+        debtor,
+        await debtorUtil.normalizeCompanyName(
+          debtor.businessInformation.companyName
+        )
+      );
+      debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    }
+    const result = await caseUtil.getTopPayees(debtor.appid, req.body.months);
 
     return result;
   }

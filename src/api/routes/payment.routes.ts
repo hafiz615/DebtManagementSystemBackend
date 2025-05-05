@@ -117,4 +117,16 @@ router.post(
 );
 
 router.post('/checkInvoice', paymentController.checkInvoice);
+
+router.get(
+  '/getInstantPayment/:id',
+  authorize.validateAuth,
+  paymentController.getInstantPayment
+);
+
+router.get(
+  '/getCaseAttorneyPayments/:id',
+  authorize.validateAuth,
+  paymentController.getCaseAttorneyPayments
+);
 export default router;

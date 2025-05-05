@@ -87,7 +87,7 @@ class LawfirmService {
             lawSuit.plantiffCompanyName =
                 caseTemp.creditor.businessInformation.companyName;
             await this.lawsuitRepository.create(lawSuit);
-            const updatedCase = await this.caseRepository.updateById(req.params.id, { dummyLawsuitExist: true });
+            const updatedCase = await this.caseRepository.updateById(req.params.id, { dummyLawsuitExist: true, lawsuitExist: false });
             return updatedCase
                 ? [true, []]
                 : [false, constants_util_1.default.failureAddMessage('Lawfirm')];

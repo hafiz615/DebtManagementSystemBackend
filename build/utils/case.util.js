@@ -608,6 +608,7 @@ class CaseUtil {
                                 },
                             },
                             caseOwner: '$negotiator',
+                            settledAmount: { $ifNull: ['$settledAmount', 0] },
                             outstandingDebt: {
                                 $subtract: [
                                     '$totalDebt',
@@ -935,6 +936,7 @@ class CaseUtil {
                                 },
                             },
                             caseOwner: '$negotiator',
+                            settledAmount: { $ifNull: ['$settledAmount', 0] },
                             outstandingDebt: {
                                 $subtract: ['$remaining', { $sum: '$payments.amount' }],
                             },
@@ -2650,14 +2652,14 @@ class CaseUtil {
         }, 'caseCode totalDebt paidAmount remaining', undefined, undefined, { path: 'creditor', select: ['basicInformation', 'businessInformation'] });
         return cases;
     }
-    async getTopPayees(debtorId, monthsList) {
+    async getTopPayees(appId, monthsList) {
         if (!global_1.AIAuth.auth_token ||
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
         const url = `${process.env.baseUrlAI}get-top-payees`;
         const data = {
-            debtor_id: debtorId,
+            app_id: appId,
             months: monthsList,
         };
         try {

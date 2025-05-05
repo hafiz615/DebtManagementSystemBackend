@@ -35,9 +35,11 @@ class PaymentUtil {
           ? obj.caseId.debtor.basicInformation.fullName
           : '',
 
-      creditorName: obj.caseId?.creditor
-        ? obj.caseId.creditor.basicInformation.fullName
-        : '',
+      creditorName: obj.creditorName
+        ? obj.creditorName
+        : obj.caseId?.creditor
+          ? obj.caseId.creditor.basicInformation.fullName
+          : '',
       // SSID: obj.caseId?.debtor ? obj.caseId.debtor?.basicInformation.SSID : '',
       authorized: obj.authorized,
       captured: obj.captured,
@@ -231,6 +233,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -261,6 +264,7 @@ class PaymentUtil {
         isDeleted: {$ne: true},
         caseId: {$ne: null},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -292,6 +296,7 @@ class PaymentUtil {
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -323,6 +328,7 @@ class PaymentUtil {
         caseId: {$ne: null},
         paymentReferenceBool: {$ne: true},
         paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       },
       undefined,
       undefined,
@@ -1035,20 +1041,31 @@ class PaymentUtil {
   }
 
   async getAdditionalCharge(debtor: IDebtor) {
-    const accounts = debtor.accounts;
     const pausePaymentFee = await this.feeRepository.getOne<IFee>({
       type: 'pausePaymentFee',
     });
     const amount = pausePaymentFee ? pausePaymentFee.fee : 0;
+    const response = await this.getInstantPayment(amount, debtor, null);
+    const payment = new Payment();
+    const validPayment = DataCopier.copy(payment, response[1]);
+    await this.paymentRepository.create<IPayment>(validPayment);
+    return response;
+  }
+
+  async getInstantPayment(
+    amount: number,
+    debtor: IDebtor,
+    paymentPass: IPayment
+  ) {
+    const accounts = debtor.accounts;
+    let payment = {};
     let result = false;
-    console.log(amount, 'amounttt');
     if (amount > 0) {
-      const payment = new Payment();
-      payment.authorizedDate = commonUtil.getCurrentDate();
-      payment.debtorId = debtor._id;
-      payment.amount = amount;
-      payment.debtorName = debtor.basicInformation.fullName;
-      payment.paymentMode = 'Additional Charge';
+      payment['authorizedDate'] = commonUtil.getCurrentDate();
+      payment['debtorId'] = debtor._id;
+      payment['amount'] = amount;
+      payment['debtorName'] = debtor.basicInformation.fullName;
+      payment['paymentMode'] = paymentPass ? 'Instant' : 'Additional Charge';
       let customerVaultId = '';
       let platform = '';
       for (const account of accounts) {
@@ -1058,6 +1075,7 @@ class PaymentUtil {
             account.customerVaultId,
             account.platform
           );
+          console.log(authCreditCard, 'authCreditCard');
           const responseNumAuth = new URLSearchParams(authCreditCard).get(
             'response'
           );
@@ -1069,21 +1087,20 @@ class PaymentUtil {
           );
           if (responseNumAuth === '1') {
             console.log('auth successs');
-            payment.authorized = 'Success';
-            payment.debtorTransId = transactionIdAuth;
-            payment.paymentGateway = account.platform;
-            payment.transactionType = account.paymentType;
+            payment['authorized'] = 'Success';
+            payment['debtorTransId'] = transactionIdAuth;
+            payment['paymentGateway'] = account.platform;
+            payment['transactionType'] = account.paymentType;
             customerVaultId = account.customerVaultId;
             platform = account.platform;
             break;
           }
           if (responseNumAuth !== '1') {
             console.log('auth failed');
-            payment.authorized = 'Failed';
-            payment.debtorTransId = transactionIdAuth;
-            payment.failedReasonAuthorization = responseTextAuth;
-            payment.paymentGateway = account.platform;
-            payment.transactionType = account.paymentType;
+            payment['authorized'] = 'Failed';
+            payment['failedReasonAuthorization'] = responseTextAuth;
+            payment['paymentGateway'] = account.platform;
+            payment['transactionType'] = account.paymentType;
           }
         }
         if (account.paymentType === 'ck') {
@@ -1100,30 +1117,29 @@ class PaymentUtil {
             'transactionid'
           );
           if (responseNum === '1') {
-            payment.authorized = 'Success';
-            payment.captured = 'Success';
-            payment.debtorTransId = transactionId;
-            payment.paymentGateway = account.platform;
-            payment.transactionType = account.paymentType;
+            payment['authorized'] = 'Success';
+            payment['captured'] = 'Success';
+            payment['debtorTransId'] = transactionId;
+            payment['paymentGateway'] = account.platform;
+            payment['transactionType'] = account.paymentType;
             customerVaultId = account.customerVaultId;
             result = true;
             break;
           }
           if (responseNum !== '1') {
-            payment.authorized = 'Failed';
-            payment.captured = 'Failed';
-            payment.debtorTransId = transactionId;
-            payment.failedReasonCaptured = responseText;
-            payment.paymentGateway = account.platform;
-            payment.transactionType = account.paymentType;
+            payment['authorized'] = 'Failed';
+            payment['captured'] = 'Failed';
+            payment['failedReasonCaptured'] = responseText;
+            payment['paymentGateway'] = account.platform;
+            payment['transactionType'] = account.paymentType;
           }
         }
       }
-      if (payment.authorized === 'Success') {
+      if (payment['authorized'] === 'Success') {
         console.log('going to capture');
         const captureCreditCard = await this.captureCreditCard(
           customerVaultId,
-          payment.debtorTransId,
+          payment['debtorTransId'],
           platform
         );
 
@@ -1136,19 +1152,17 @@ class PaymentUtil {
 
         if (responseNumCapture === '1') {
           console.log('capture success');
-          payment.captured = 'Success';
+          payment['captured'] = 'Success';
           result = true;
         }
         if (responseNumCapture !== '1') {
           console.log('capture failed');
-          payment.captured = 'Failed';
-          payment.failedReasonCaptured = responseTextCapture;
+          payment['captured'] = 'Failed';
+          payment['failedReasonCaptured'] = responseTextCapture;
         }
       }
-      console.log(payment, 'paymenttttt');
-      await this.paymentRepository.create<IPayment>(payment as any);
     }
-    return result;
+    return [result, payment];
   }
 }
 export default new PaymentUtil();

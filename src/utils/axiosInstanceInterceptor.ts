@@ -14,14 +14,14 @@ const axiosInstance = axios.create();
 
 axiosInstance.interceptors.request.use(
   async (config: CustomAxiosRequestConfig) => {
-    const {url, method, data} = config;
+    const {url, method, data, params} = config;
     const userId = (config.headers as any).userId; // Assuming userId is passed in headers
 
     config.metadata = {startTime: new Date()};
     const logEntry = new Log({
       url,
       method,
-      requestPayload: data,
+      requestPayload: data || params,
       responsePayload: null,
       responseStatus: null,
       userId,
