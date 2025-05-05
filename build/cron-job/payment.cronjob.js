@@ -496,6 +496,7 @@ class CronJob {
                         retries += 1;
                     await this.paymentRepository.updateById(payment._id, {
                         sendViaPaynote: 'Failed',
+                        status: 'Pending',
                         rescheduled: retryDate,
                         retriesPaynote: retries,
                         failedReasonPaynote: message,
