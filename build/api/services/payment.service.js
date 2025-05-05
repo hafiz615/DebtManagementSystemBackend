@@ -644,7 +644,7 @@ class PaymentService {
         }, undefined, page, limit);
     }
     async getAttorneyPayments(page, limit, filter) {
-        return await this.paymentRepository.getAll(filter, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName sendViaPaynote', undefined, { _id: -1 }, {
+        return await this.paymentRepository.getAll(filter, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName creditorName sendViaPaynote', undefined, undefined, {
             path: 'caseId',
             select: ['_id'],
         }, undefined, page, limit);
@@ -1276,7 +1276,7 @@ class PaymentService {
         const lawSuit = await this.lawsuitRepository.getOne({
             debtorId: caseTemp.debtor,
             creditorId: caseTemp.creditor,
-            isDeleted: false,
+            isDeleted: { $ne: true },
         });
         if (!lawSuit)
             return [false, constants_util_1.default.notFoundMessage('lawsuit')];

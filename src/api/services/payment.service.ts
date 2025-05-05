@@ -874,9 +874,9 @@ class PaymentService {
   private async getAttorneyPayments(page: number, limit: number, filter: any) {
     return await this.paymentRepository.getAll<IPayment>(
       filter,
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName sendViaPaynote',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName creditorName sendViaPaynote',
       undefined,
-      {_id: -1},
+      undefined,
       {
         path: 'caseId',
         select: ['_id'],
@@ -1721,7 +1721,7 @@ class PaymentService {
     const lawSuit = await this.lawsuitRepository.getOne<ILawsuit>({
       debtorId: caseTemp.debtor,
       creditorId: caseTemp.creditor,
-      isDeleted: false,
+      isDeleted: {$ne: true},
     });
     if (!lawSuit) return [false, constants.notFoundMessage('lawsuit')];
     const filters = {
