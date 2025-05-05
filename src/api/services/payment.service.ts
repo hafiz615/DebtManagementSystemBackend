@@ -871,21 +871,10 @@ class PaymentService {
     );
   }
 
-  private async getAttorneyPayments(
-    caseId: string,
-    lawsuitId: string,
-    page: number,
-    limit: number,
-    status: string
-  ) {
+  private async getAttorneyPayments(page: number, limit: number, filter: any) {
     return await this.paymentRepository.getAll<IPayment>(
-      {
-        caseId: caseId,
-        lawsuitId: lawsuitId,
-        isDeleted: false,
-        status: status,
-      },
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName',
+      filter,
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName sendViaPaynote',
       undefined,
       {_id: -1},
       {
@@ -898,17 +887,8 @@ class PaymentService {
     );
   }
 
-  private async getAttorneyPaymentsCount(
-    caseId: string,
-    lawsuitId: string,
-    status: string
-  ) {
-    return await this.paymentRepository.getCount<IPayment>({
-      caseId: caseId,
-      lawsuitId: lawsuitId,
-      isDeleted: false,
-      status: status,
-    });
+  private async getAttorneyPaymentsCount(filter: any) {
+    return await this.paymentRepository.getCount<IPayment>(filter);
   }
 
   private async getUpcomingPaymentsByCaseIdCount(id: string) {
@@ -1744,31 +1724,33 @@ class PaymentService {
       isDeleted: false,
     });
     if (!lawSuit) return [false, constants.notFoundMessage('lawsuit')];
-
+    const filters = {
+      caseId: caseTemp._id,
+      lawsuitId: lawSuit._id,
+      isDeleted: false,
+    };
+    const sendViaPaynoteFilter = {
+      ...filters,
+      $or: [{sendViaPaynote: 'Success'}, {sendViaPaynote: 'Failed'}],
+    };
+    const upcomingFilter = {
+      ...filters,
+      status: 'Upcoming',
+    };
     const paymentsSuccess: IPayment[] = await this.getAttorneyPayments(
-      caseTemp._id,
-      lawSuit._id,
       pageLimit.page,
       pageLimit.limit,
-      'Success'
+      sendViaPaynoteFilter
     );
     const paymentsUpcoming: IPayment[] = await this.getAttorneyPayments(
-      caseTemp._id,
-      lawSuit._id,
       pageLimit.page,
       pageLimit.limit,
-      'Upcoming'
+      upcomingFilter
     );
-    const paymentsUpcomingCount = await this.getAttorneyPaymentsCount(
-      caseTemp._id,
-      lawSuit._id,
-      'Success'
-    );
-    const paymentsSuccessCount = await this.getAttorneyPaymentsCount(
-      caseTemp._id,
-      lawSuit._id,
-      'Upcoming'
-    );
+    const paymentsUpcomingCount =
+      await this.getAttorneyPaymentsCount(sendViaPaynoteFilter);
+    const paymentsSuccessCount =
+      await this.getAttorneyPaymentsCount(upcomingFilter);
     return [
       true,
       {
