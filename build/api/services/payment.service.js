@@ -1293,17 +1293,17 @@ class PaymentService {
             ...filters,
             status: 'Upcoming',
         };
-        const paymentsSuccess = await this.getAttorneyPayments(pageLimit.page, pageLimit.limit, sendViaPaynoteFilter);
+        const payments = await this.getAttorneyPayments(pageLimit.page, pageLimit.limit, sendViaPaynoteFilter);
         const paymentsUpcoming = await this.getAttorneyPayments(pageLimit.page, pageLimit.limit, upcomingFilter);
-        const paymentsUpcomingCount = await this.getAttorneyPaymentsCount(sendViaPaynoteFilter);
-        const paymentsSuccessCount = await this.getAttorneyPaymentsCount(upcomingFilter);
+        const paymentsUpcomingCount = await this.getAttorneyPaymentsCount(upcomingFilter);
+        const paymentsCount = await this.getAttorneyPaymentsCount(sendViaPaynoteFilter);
         return [
             true,
             {
-                paymentsSuccess,
+                payments,
                 paymentsUpcoming,
                 paymentsUpcomingCount,
-                paymentsSuccessCount,
+                paymentsCount,
             },
         ];
     }

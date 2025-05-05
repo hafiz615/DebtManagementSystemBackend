@@ -1737,7 +1737,7 @@ class PaymentService {
       ...filters,
       status: 'Upcoming',
     };
-    const paymentsSuccess: IPayment[] = await this.getAttorneyPayments(
+    const payments: IPayment[] = await this.getAttorneyPayments(
       pageLimit.page,
       pageLimit.limit,
       sendViaPaynoteFilter
@@ -1748,16 +1748,16 @@ class PaymentService {
       upcomingFilter
     );
     const paymentsUpcomingCount =
-      await this.getAttorneyPaymentsCount(sendViaPaynoteFilter);
-    const paymentsSuccessCount =
       await this.getAttorneyPaymentsCount(upcomingFilter);
+    const paymentsCount =
+      await this.getAttorneyPaymentsCount(sendViaPaynoteFilter);
     return [
       true,
       {
-        paymentsSuccess,
+        payments,
         paymentsUpcoming,
         paymentsUpcomingCount,
-        paymentsSuccessCount,
+        paymentsCount,
       },
     ];
   }
