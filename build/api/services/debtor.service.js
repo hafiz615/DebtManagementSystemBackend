@@ -1525,7 +1525,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        const result = await case_util_1.default.getTopPayees(req.params.id, req.body.months);
+        const result = await case_util_1.default.getTopPayees(debtor.appid, req.body.months);
         return result;
     }
 }

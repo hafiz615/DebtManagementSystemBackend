@@ -2058,7 +2058,7 @@ class DebtorService {
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
-    const result = await caseUtil.getTopPayees(req.params.id, req.body.months);
+    const result = await caseUtil.getTopPayees(debtor.appid, req.body.months);
 
     return result;
   }
