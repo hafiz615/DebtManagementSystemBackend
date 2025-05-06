@@ -15,7 +15,7 @@ class PaynoteUtil {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
     }
-    async createCustomer(id, name, email, modelRepository) {
+    async createCustomer(id, name, email, modelRepository, addAccount) {
         if (!name)
             return {
                 error: true,
@@ -50,10 +50,17 @@ class PaynoteUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            if (response.data?.success) {
+            if (response.data?.success && !addAccount) {
                 await modelRepository.updateById(id, {
                     paynoteUserId: response.data?.user?.user_id,
                     paynoteUserFound: true,
+                });
+            }
+            else {
+                await modelRepository.updateById(id, {
+                    $addToSet: {
+                        paynoteUserIds: response.data?.user?.user_id,
+                    },
                 });
             }
             return response.data;

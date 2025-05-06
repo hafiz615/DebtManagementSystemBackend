@@ -25,7 +25,7 @@ export class Debtor {
     phone: '',
     address: '',
   };
-  accounts = Array<{paymentType: ''; customerVaultId: ''; platform: ''}>();
+  accounts = [];
   // paymentType = '';
   // customerVaultId = '';
   createdBy = '';
@@ -85,6 +85,8 @@ export class Debtor {
   paymentAmountCount = 0;
   lastPaymentAmountDate = '';
   additionalCharge = false;
+  paynoteUserIds = [];
+  paynoteSourceIds = [];
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

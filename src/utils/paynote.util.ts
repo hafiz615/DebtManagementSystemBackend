@@ -19,7 +19,8 @@ class PaynoteUtil {
     id: string,
     name: string,
     email: string,
-    modelRepository: any
+    modelRepository: any,
+    addAccount?: boolean
   ) {
     if (!name)
       return {
@@ -54,10 +55,16 @@ class PaynoteUtil {
           'Content-Type': 'application/json',
         },
       });
-      if (response.data?.success) {
+      if (response.data?.success && !addAccount) {
         await modelRepository.updateById(id, {
           paynoteUserId: response.data?.user?.user_id,
           paynoteUserFound: true,
+        });
+      } else {
+        await modelRepository.updateById(id, {
+          $addToSet: {
+            paynoteUserIds: response.data?.user?.user_id,
+          },
         });
       }
       return response.data;
