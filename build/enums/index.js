@@ -11,6 +11,7 @@ var paymentPlatform;
 (function (paymentPlatform) {
     paymentPlatform["easypay"] = "Easypay direct";
     paymentPlatform["seamlesschexMerchant"] = "Seamlesschex merchant";
+    paymentPlatform["paynote"] = "Paynote";
 })(paymentPlatform || (exports.paymentPlatform = paymentPlatform = {}));
 var permissions;
 (function (permissions) {

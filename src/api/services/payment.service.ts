@@ -1086,7 +1086,7 @@ class PaymentService {
           return [false, constantsUtil.failureUpdateMessage('Debtor')];
         return [true, 'Account added successfully'];
 
-      case 'paynote':
+      case 'Paynote':
         req.query.type = 'debtor';
         const paynoteAccount = await this.addAccountACHDetails(req, true);
         if (!paynoteAccount[0]) return [false, paynoteAccount[1]];
@@ -1145,26 +1145,11 @@ class PaymentService {
       if (verifyFundingSource.error)
         return [false, verifyFundingSource.message];
 
-      const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+      const updatedDebtor = await paynoteUtil.addPaynoteAccount(
         user.obj._id,
-        {
-          $addToSet: {
-            accounts: {
-              $each: [
-                {
-                  paymentType: 'ACH',
-                  paynoteUserId: createCustomer.user.user_id,
-                  paynoteSourceId: sourceId,
-                  platform: 'Paynote',
-                },
-              ],
-            },
-            paynoteSourceIds: {$each: [sourceId]},
-          },
-          updatedAt: commonUtil.getCurrentDate(),
-        }
+        createCustomer.user.user_id,
+        sourceId
       );
-
       if (!updatedDebtor)
         return [false, constantsUtil.failureUpdateMessage('Debtor')];
       return [true, 'Account added successfully'];

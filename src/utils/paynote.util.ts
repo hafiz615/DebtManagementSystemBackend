@@ -6,14 +6,18 @@ import dotenv from 'dotenv';
 import constantsUtil from './constants.util';
 import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import commonUtil from './common.util';
+import {IDebtor} from '../database/interfaces/debtor.interface';
+import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 dotenv.config();
 
 class PaynoteUtil {
   private creditorRepository: CreditorRepository;
   private syncPaymentMethodRepository: SyncPaymentMethodRepository;
+  private debtorRepository: DebtorRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
+    this.debtorRepository = new DebtorRepository();
   }
   async createCustomer(
     id: string,
@@ -421,11 +425,30 @@ class PaynoteUtil {
     }
     update['paynoteUserFound'] = true;
     update['paynoteUserId'] = users[index].user_id;
+    update['paynoteSourceIds'] = users[index].sources;
+
     return [true, update];
   }
 
+  async selectPreferredPaynoteSource(paynoteSources: any[]) {
+    if (!Array.isArray(paynoteSources) || !paynoteSources.length) return null;
+
+    const primaryVerified = paynoteSources.find(
+      src => src.is_primary === true && src.status === 'verified'
+    );
+    if (primaryVerified) return primaryVerified;
+
+    const nonPrimaryVerified = paynoteSources.find(
+      src => src.is_primary === false && src.status === 'verified'
+    );
+    if (nonPrimaryVerified) return nonPrimaryVerified;
+
+    return paynoteSources[0];
+  }
+
   async updateSyncObject(data: any, creditorId: string, modelRepository: any) {
-    await modelRepository.updateById(creditorId, data);
+    const {paynoteSourceIds, ...rest} = data;
+    await modelRepository.updateById(creditorId, rest);
   }
 
   async upsertPaynoteEmail(id: string, email: string) {
@@ -437,6 +460,29 @@ class PaynoteUtil {
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
+  }
+
+  async addPaynoteAccount(
+    id: string,
+    paynoteUserId: string,
+    paynoteSourceId: string
+  ) {
+    return await this.debtorRepository.updateById<IDebtor>(id, {
+      $addToSet: {
+        accounts: {
+          $each: [
+            {
+              paymentType: 'ACH',
+              paynoteUserId: paynoteUserId,
+              paynoteSourceId: paynoteSourceId,
+              platform: 'Paynote',
+            },
+          ],
+        },
+        paynoteSourceIds: {$each: [paynoteSourceId]},
+      },
+      updatedAt: commonUtil.getCurrentDate(),
+    });
   }
 }
 
