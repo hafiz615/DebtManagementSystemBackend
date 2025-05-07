@@ -117,11 +117,7 @@ const debtorSchema: Schema = new Schema({
     }>,
   },
   accounts: {
-    type: Array<{
-      paymentType: String;
-      customerVaultId: String;
-      platform: String;
-    }>,
+    type: Array<Schema.Types.Mixed>,
   },
   // paymentType: {
   //   type: String,
@@ -243,6 +239,12 @@ const debtorSchema: Schema = new Schema({
   },
   additionalCharge: {
     type: Boolean,
+  },
+  paynoteUserIds: {
+    type: Array<String>,
+  },
+  paynoteSourceIds: {
+    type: Array<String>,
   },
   createdAt: {
     type: Date,

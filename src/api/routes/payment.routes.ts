@@ -42,6 +42,8 @@ router.post(
   paymentController.addACHDetails
 );
 
+router.post('/addAccount/:id', paymentController.addAccount);
+
 router.put(
   '/updateACHDetails/:id',
   authorize.validateAuth,

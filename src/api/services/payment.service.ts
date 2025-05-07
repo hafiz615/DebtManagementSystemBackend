@@ -1049,6 +1049,115 @@ class PaymentService {
     }
   }
 
+  async addAccount(req: Request) {
+    const type = req.body.platform;
+    const data = req.body.data;
+
+    switch (type) {
+      case 'Seamlesschex':
+        const user: any = await commonUtil.getUserByType(
+          req.params.id,
+          'debtor'
+        );
+
+        if (!user.obj) {
+          return [false, 'Debtor not found'];
+        }
+
+        const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+          user.obj._id,
+          {
+            $push: {
+              accounts: {
+                $each: [
+                  {
+                    paymentType: 'ACH',
+                    customerAccount: data,
+                    platform: 'Seamlesschex',
+                  },
+                ],
+              },
+            },
+            updatedAt: commonUtil.getCurrentDate(),
+          }
+        );
+
+        if (!updatedDebtor)
+          return [false, constantsUtil.failureUpdateMessage('Debtor')];
+        return [true, 'Account added successfully'];
+
+      case 'Paynote':
+        req.query.type = 'debtor';
+        const paynoteAccount = await this.addAccountACHDetails(req, true);
+        if (!paynoteAccount[0]) return [false, paynoteAccount[1]];
+        return [true, 'Account added successfully'];
+    }
+    return [true, 'Account added successfully'];
+  }
+
+  async addAccountACHDetails(req: Request, addAccount?: boolean) {
+    const reqTemp: any = req;
+    const type = reqTemp.query.type;
+    const user: any = await commonUtil.getUserByType(req.params.id, type);
+    if (!user.obj) return [false, constants.notFoundMessage('user')];
+    const {name, email}: any = await commonUtil.getUserDetails(user.obj);
+    const createCustomer = await paynoteUtil.createCustomer(
+      user.obj._id,
+      name,
+      email,
+      user.model,
+      true
+    );
+    if (createCustomer.error)
+      return [false, constantsUtil.failureAddMessage('Account')];
+
+    console.log('data: ', createCustomer);
+    const data = req.body.data;
+    const paymentObj = commonUtil.getDecryptedData(data);
+    const fundingSource = await paynoteUtil.addFundingSource(
+      paymentObj,
+      createCustomer.user.user_id
+    );
+
+    console.log('fundingSource:', fundingSource);
+
+    if (fundingSource?.error) {
+      let message = '';
+      if (fundingSource?.messages) {
+        message = fundingSource.messages[0];
+      } else {
+        message = fundingSource.message;
+      }
+      return [false, message];
+    }
+    const sourceId = fundingSource.funding_source.source_id;
+
+    if (addAccount) {
+      const initialVerify = await paynoteUtil.initiateFundingSourceVerifcation(
+        sourceId,
+        createCustomer.user.user_id
+      );
+      console.log('initialVerify', initialVerify);
+      if (initialVerify.error) return [false, initialVerify.message];
+
+      const verifyFundingSource =
+        await paynoteUtil.verifyFundingSource(sourceId);
+      if (verifyFundingSource.error)
+        return [false, verifyFundingSource.message];
+
+      const updatedDebtor = await paynoteUtil.addPaynoteAccount(
+        user.obj._id,
+        createCustomer.user.user_id,
+        sourceId
+      );
+      if (!updatedDebtor)
+        return [false, constantsUtil.failureUpdateMessage('Debtor')];
+      return [true, 'Account added successfully'];
+    }
+
+    return [true, constants.successAddMessage('ACH details')];
+  }
+
   async addACHDetails(req: Request) {
     const reqTemp: any = req;
     const type = reqTemp.query.type;

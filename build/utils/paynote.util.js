@@ -9,13 +9,15 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_1 = __importDefault(require("./constants.util"));
 const syncPaymentMethod_repository_1 = require("../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const common_util_1 = __importDefault(require("./common.util"));
+const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
     }
-    async createCustomer(id, name, email, modelRepository) {
+    async createCustomer(id, name, email, modelRepository, addAccount) {
         if (!name)
             return {
                 error: true,
@@ -50,10 +52,17 @@ class PaynoteUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            if (response.data?.success) {
+            if (response.data?.success && !addAccount) {
                 await modelRepository.updateById(id, {
                     paynoteUserId: response.data?.user?.user_id,
                     paynoteUserFound: true,
+                });
+            }
+            else {
+                await modelRepository.updateById(id, {
+                    $addToSet: {
+                        paynoteUserIds: response.data?.user?.user_id,
+                    },
                 });
             }
             return response.data;
@@ -393,15 +402,46 @@ class PaynoteUtil {
         }
         update['paynoteUserFound'] = true;
         update['paynoteUserId'] = users[index].user_id;
+        update['paynoteSourceIds'] = users[index].sources;
         return [true, update];
     }
+    async selectPreferredPaynoteSource(paynoteSources) {
+        if (!Array.isArray(paynoteSources) || !paynoteSources.length)
+            return null;
+        const primaryVerified = paynoteSources.find(src => src.is_primary === true && src.status === 'verified');
+        if (primaryVerified)
+            return primaryVerified;
+        const nonPrimaryVerified = paynoteSources.find(src => src.is_primary === false && src.status === 'verified');
+        if (nonPrimaryVerified)
+            return nonPrimaryVerified;
+        return paynoteSources[0];
+    }
     async updateSyncObject(data, creditorId, modelRepository) {
-        await modelRepository.updateById(creditorId, data);
+        const { paynoteSourceIds, ...rest } = data;
+        await modelRepository.updateById(creditorId, rest);
     }
     async upsertPaynoteEmail(id, email) {
         await this.syncPaymentMethodRepository.upsert({ syncId: id }, {
             email: email,
             platform: 'Paynote',
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+    }
+    async addPaynoteAccount(id, paynoteUserId, paynoteSourceId) {
+        return await this.debtorRepository.updateById(id, {
+            $addToSet: {
+                accounts: {
+                    $each: [
+                        {
+                            paymentType: 'ACH',
+                            paynoteUserId: paynoteUserId,
+                            paynoteSourceId: paynoteSourceId,
+                            platform: 'Paynote',
+                        },
+                    ],
+                },
+                paynoteSourceIds: { $each: [paynoteSourceId] },
+            },
             updatedAt: common_util_1.default.getCurrentDate(),
         });
     }

@@ -247,6 +247,12 @@ const debtorSchema = new mongoose_1.Schema({
     additionalCharge: {
         type: Boolean,
     },
+    paynoteUserIds: {
+        type: (Array),
+    },
+    paynoteSourceIds: {
+        type: (Array),
+    },
     createdAt: {
         type: Date,
         required: true,
