@@ -135,4 +135,7 @@ router.get(
   authorize.validateAuth,
   paymentController.getCaseAttorneyPayments
 );
+
+router.post('/paynote-webhook', paymentController.paynoteWebhook);
+
 export default router;

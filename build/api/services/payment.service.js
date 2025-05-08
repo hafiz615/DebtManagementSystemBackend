@@ -1387,6 +1387,10 @@ class PaymentService {
             },
         ];
     }
+    async paynoteWebhook(req) {
+        console.log(req.body, 'req.body');
+        return paynote_util_1.default.paynoteWebhook(req.body);
+    }
 }
 exports.default = PaymentService;
 //# sourceMappingURL=payment.service.js.map

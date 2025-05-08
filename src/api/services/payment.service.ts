@@ -1876,6 +1876,11 @@ class PaymentService {
       },
     ];
   }
+
+  async paynoteWebhook(req: Request) {
+    console.log(req.body, 'req.body');
+    return paynoteUtil.paynoteWebhook(req.body);
+  }
 }
 
 export default PaymentService;
