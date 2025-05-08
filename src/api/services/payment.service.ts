@@ -1064,8 +1064,10 @@ class PaymentService {
           return [false, 'Debtor not found'];
         }
 
+        const decryptedData = commonUtil.getDecryptedData(data);
+
         const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(
-          req.body?.bank_routing
+          decryptedData.bankRouting
         );
         if (routingNoExist) return [false, 'Routing Number already Exist.'];
 
@@ -1082,7 +1084,7 @@ class PaymentService {
                   },
                 ],
               },
-              seamlesschexRountingIds: {$each: [req.body?.bank_routing]},
+              seamlesschexRountingIds: {$each: [decryptedData.bankRouting]},
             },
             updatedAt: commonUtil.getCurrentDate(),
           }
@@ -1875,6 +1877,11 @@ class PaymentService {
         paymentsCount,
       },
     ];
+  }
+
+  async paynoteWebhook(req: Request) {
+    console.log(req.body, 'req.body');
+    return paynoteUtil.paynoteWebhook(req.body);
   }
 }
 

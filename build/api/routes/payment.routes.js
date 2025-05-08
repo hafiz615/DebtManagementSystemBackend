@@ -30,5 +30,6 @@ router.post('/updatePaymentDate/:id', authorize_middleware_1.default.validateAut
 router.post('/checkInvoice', payment_controller_1.default.checkInvoice);
 router.get('/getInstantPayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getInstantPayment);
 router.get('/getCaseAttorneyPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCaseAttorneyPayments);
+router.post('/paynote-webhook', payment_controller_1.default.paynoteWebhook);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

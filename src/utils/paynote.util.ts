@@ -8,16 +8,23 @@ import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/
 import commonUtil from './common.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import {PaymentRepository} from '../api/repository/payment/payment.repository';
+import {CheckRepository} from '../api/repository/check/check.repository';
+import {ICheck} from '../database/interfaces/check.interface';
 dotenv.config();
 
 class PaynoteUtil {
   private creditorRepository: CreditorRepository;
   private syncPaymentMethodRepository: SyncPaymentMethodRepository;
   private debtorRepository: DebtorRepository;
+  private paymentRepository: PaymentRepository;
+  private checkRepository: CheckRepository;
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
     this.debtorRepository = new DebtorRepository();
+    this.paymentRepository = new PaymentRepository();
+    this.checkRepository = new CheckRepository();
   }
   async createCustomer(
     id: string,
@@ -483,6 +490,87 @@ class PaynoteUtil {
       },
       updatedAt: commonUtil.getCurrentDate(),
     });
+  }
+
+  async paynoteWebhook(response: any) {
+    if (response?.event) {
+      const checkId = response.check.check_id;
+      const updateObj = {
+        status: 'Pending',
+        updatedAt: commonUtil.getCurrentDate(),
+      };
+      if (response.check.status !== 'processed') {
+        updateObj['captured'] = 'Failed';
+        updateObj['failedReasonCaptured'] =
+          response.check.error_explanation ||
+          response.check.error_description ||
+          constantsUtil.Messages.CHECK_VOIDED;
+      }
+      switch (response.event) {
+        case 'transaction.status':
+          switch (response.check.status) {
+            case 'processed':
+              updateObj['captured'] = 'Success';
+              updateObj['checkStatus'] = 'Completed';
+              await this.updateCheckAndPayment(
+                checkId,
+                updateObj,
+                response.check.status
+              );
+              break;
+            case 'voided':
+              await this.updateCheckAndPayment(
+                checkId,
+                updateObj,
+                response.check.status
+              );
+              break;
+            case 'declined':
+              await this.updateCheckAndPayment(
+                checkId,
+                updateObj,
+                response.check.status
+              );
+              break;
+            case 'failed':
+              await this.updateCheckAndPayment(
+                checkId,
+                updateObj,
+                response.check.status
+              );
+              break;
+            case 'expired':
+              await this.updateCheckAndPayment(
+                checkId,
+                updateObj,
+                response.check.status
+              );
+              break;
+          }
+          break;
+      }
+    }
+    return [true, ''];
+  }
+
+  async updateCheckAndPayment(
+    checkId: string,
+    updatePaymentObj: any,
+    status: string
+  ) {
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: checkId,
+    });
+    if (!payment) return [true, ''];
+    await this.checkRepository.updateByOne<ICheck>(
+      {checkId: checkId, isDeleted: false},
+      {status: status}
+    );
+    await this.paymentRepository.updateMany<IPayment>(
+      {debtorTransId: checkId},
+      updatePaymentObj
+    );
+    return [true, ''];
   }
 }
 

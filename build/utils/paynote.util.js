@@ -10,12 +10,16 @@ const constants_util_1 = __importDefault(require("./constants.util"));
 const syncPaymentMethod_repository_1 = require("../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const common_util_1 = __importDefault(require("./common.util"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const check_repository_1 = require("../api/repository/check/check.repository");
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.paymentRepository = new payment_repository_1.PaymentRepository();
+        this.checkRepository = new check_repository_1.CheckRepository();
     }
     async createCustomer(id, name, email, modelRepository, addAccount) {
         if (!name)
@@ -444,6 +448,56 @@ class PaynoteUtil {
             },
             updatedAt: common_util_1.default.getCurrentDate(),
         });
+    }
+    async paynoteWebhook(response) {
+        if (response?.event) {
+            const checkId = response.check.check_id;
+            const updateObj = {
+                status: 'Pending',
+                updatedAt: common_util_1.default.getCurrentDate(),
+            };
+            if (response.check.status !== 'processed') {
+                updateObj['captured'] = 'Failed';
+                updateObj['failedReasonCaptured'] =
+                    response.check.error_explanation ||
+                        response.check.error_description ||
+                        constants_util_1.default.Messages.CHECK_VOIDED;
+            }
+            switch (response.event) {
+                case 'transaction.status':
+                    switch (response.check.status) {
+                        case 'processed':
+                            updateObj['captured'] = 'Success';
+                            updateObj['checkStatus'] = 'Completed';
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'voided':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'declined':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'failed':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'expired':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                    }
+                    break;
+            }
+        }
+        return [true, ''];
+    }
+    async updateCheckAndPayment(checkId, updatePaymentObj, status) {
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
+        });
+        if (!payment)
+            return [true, ''];
+        await this.checkRepository.updateByOne({ checkId: checkId, isDeleted: false }, { status: status });
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, updatePaymentObj);
+        return [true, ''];
     }
 }
 exports.default = new PaynoteUtil();
