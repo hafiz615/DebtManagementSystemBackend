@@ -24,6 +24,41 @@ class PaymentValidate {
     }
   }
 
+  async addAccount(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      platform: Joi.string()
+        .valid('Seamlesschex', 'Paynote')
+        .required()
+        .messages({
+          'string.base': 'Platform must be a string.',
+          'string.empty': 'Platform cannot be empty.',
+          'any.only': 'Platform must be one of Seamlesschex or Paynote.',
+          'any.required': 'Platform is a required field.',
+        }),
+
+      data: Joi.string().required().messages({
+        'string.base': 'Data must be a string.',
+        'string.empty': 'Data cannot be empty.',
+        'any.required': 'Data is a required field.',
+      }),
+
+      bank_routing: Joi.string().allow('').messages({
+        'string.base': 'Bank routing must be a string.',
+        'any.required': 'Bank routing is a required field.',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
+
   async updateACHDetails(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       data: Joi.string().required().messages({

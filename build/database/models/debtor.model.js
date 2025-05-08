@@ -253,6 +253,9 @@ const debtorSchema = new mongoose_1.Schema({
     paynoteSourceIds: {
         type: (Array),
     },
+    seamlesschexRountingIds: {
+        type: (Array),
+    },
     createdAt: {
         type: Date,
         required: true,

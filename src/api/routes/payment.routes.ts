@@ -42,7 +42,11 @@ router.post(
   paymentController.addACHDetails
 );
 
-router.post('/addAccount/:id', paymentController.addAccount);
+router.post(
+  '/addAccount/:id',
+  paymentValidate.addAccount,
+  paymentController.addAccount
+);
 
 router.put(
   '/updateACHDetails/:id',

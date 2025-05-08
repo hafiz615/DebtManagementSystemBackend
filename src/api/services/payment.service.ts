@@ -1064,6 +1064,11 @@ class PaymentService {
           return [false, 'Debtor not found'];
         }
 
+        const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(
+          req.body?.bank_routing
+        );
+        if (routingNoExist) return [false, 'Routing Number already Exist.'];
+
         const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
           user.obj._id,
           {
@@ -1077,6 +1082,7 @@ class PaymentService {
                   },
                 ],
               },
+              seamlesschexRountingIds: {$each: [req.body?.bank_routing]},
             },
             updatedAt: commonUtil.getCurrentDate(),
           }
