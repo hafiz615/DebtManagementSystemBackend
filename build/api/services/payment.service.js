@@ -785,7 +785,8 @@ class PaymentService {
                 if (!user.obj) {
                     return [false, 'Debtor not found'];
                 }
-                const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(req.body?.bank_routing);
+                const decryptedData = common_util_1.default.getDecryptedData(data);
+                const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(decryptedData.bankRouting);
                 if (routingNoExist)
                     return [false, 'Routing Number already Exist.'];
                 const updatedDebtor = await this.debtorRepository.updateById(user.obj._id, {
@@ -799,7 +800,7 @@ class PaymentService {
                                 },
                             ],
                         },
-                        seamlesschexRountingIds: { $each: [req.body?.bank_routing] },
+                        seamlesschexRountingIds: { $each: [decryptedData.bankRouting] },
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
