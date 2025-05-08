@@ -1053,6 +1053,23 @@ class DebtorRequests {
                     .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
             }
         };
+        this.updateCommisionPercentage = (req, res, next) => {
+            const schema = joi_1.default.object({
+                commission: joi_1.default.number().required().messages({
+                    'number.base': 'Commission must be a number',
+                    'any.required': 'Commission is required',
+                }),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            }
+        };
     }
     async addDebtorInvoice(req, res, next) {
         const schema = joi_1.default.object({

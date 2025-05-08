@@ -168,8 +168,9 @@ class DebtorUtil {
     }
     const amount = debt * (debtor.commissionPercentage / 100);
     console.log(amount, 'amountttt');
-    await this.debtorRepository.updateById<IDebtor>(debtor._id, {
+    return await this.debtorRepository.updateById<IDebtor>(debtor._id, {
       totalCommission: Math.round(amount * 100) / 100,
+      commissionPercentage: debtor.commissionPercentage,
     });
   }
 

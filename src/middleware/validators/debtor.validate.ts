@@ -1217,6 +1217,29 @@ class DebtorRequests {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  updateCommisionPercentage = (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const schema = Joi.object({
+      commission: Joi.number().required().messages({
+        'number.base': 'Commission must be a number',
+        'any.required': 'Commission is required',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  };
 }
 
 export default new DebtorRequests();

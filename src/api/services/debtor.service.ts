@@ -2110,6 +2110,19 @@ class DebtorService {
 
     return result;
   }
+
+  async updateCommisionPercentage(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    debtor.commissionPercentage = req.body.commission;
+    const updatedDebtor = await debtorUtil.updateDebtorTotalCommission(debtor);
+    if (!updatedDebtor)
+      return [false, constantsUtil.failureUpdateMessage('commision.')];
+    return [true, constantsUtil.successUpdateMessage('Commision')];
+  }
 }
 
 export default DebtorService;

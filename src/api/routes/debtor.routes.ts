@@ -267,4 +267,11 @@ router.post(
   debtorController.getTopPayees
 );
 
+router.post(
+  '/updateCommision/:id',
+  authorize.validateAuth,
+  debtor.updateCommisionPercentage,
+  debtorController.updateCommisionPercentage
+);
+
 export default router;

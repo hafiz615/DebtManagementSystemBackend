@@ -1557,6 +1557,17 @@ class DebtorService {
         const result = await case_util_1.default.getTopPayees(debtor.appid, req.body.months);
         return result;
     }
+    async updateCommisionPercentage(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        debtor.commissionPercentage = req.body.commission;
+        const updatedDebtor = await debtor_util_1.default.updateDebtorTotalCommission(debtor);
+        if (!updatedDebtor)
+            return [false, constants_util_2.default.failureUpdateMessage('commision.')];
+        return [true, constants_util_2.default.successUpdateMessage('Commision')];
+    }
 }
 exports.default = DebtorService;
 //# sourceMappingURL=debtor.service.js.map
