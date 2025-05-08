@@ -246,6 +246,9 @@ const debtorSchema: Schema = new Schema({
   paynoteSourceIds: {
     type: Array<String>,
   },
+  seamlesschexRountingIds: {
+    type: Array<String>,
+  },
   createdAt: {
     type: Date,
     required: true,

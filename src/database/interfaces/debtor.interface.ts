@@ -90,6 +90,7 @@ export interface IDebtor extends Document {
   additionalCharge: boolean;
   paynoteUserIds: Array<string>;
   paynoteSourceIds: Array<string>;
+  seamlesschexRountingIds: Array<string>;
   createdAt: string;
   updatedAt: string;
 }
