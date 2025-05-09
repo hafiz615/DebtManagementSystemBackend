@@ -993,7 +993,7 @@ class CronJob {
                     account.platform === 'Seamlesschex') {
                     const decryptedData = common_util_1.default.getDecryptedData(account.customerAccount);
                     const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
-                    const response = await seemlesschex_util_1.default.createCheck(payment.caseId.debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
+                    const response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
                     console.log(response, 'response');
                     const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
                     if (retryPlus)

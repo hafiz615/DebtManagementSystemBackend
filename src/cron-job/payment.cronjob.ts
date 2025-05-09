@@ -1484,7 +1484,7 @@ class CronJob {
           const tokenResponse =
             await seemlesschexUtil.tokenization(decryptedData);
           const response = await seemlesschexUtil.createCheck(
-            payment.caseId.debtor,
+            debtor,
             payment.amount,
             tokenResponse.tokenization.token,
             decryptedData
