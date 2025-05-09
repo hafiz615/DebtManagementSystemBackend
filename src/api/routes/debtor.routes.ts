@@ -274,4 +274,10 @@ router.post(
   debtorController.updateCommisionPercentage
 );
 
+router.get(
+  '/debtorCreditorPaymentPlanDetail/:id',
+  authorize.validateAuth,
+  debtorController.debtorCreditorPaymentPlanDetail
+);
+
 export default router;
