@@ -1569,6 +1569,34 @@ class DebtorService {
             return [false, constants_util_2.default.failureUpdateMessage('commision.')];
         return [true, constants_util_2.default.successUpdateMessage('Commision')];
     }
+    async debtorCreditorPaymentPlanDetail(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id, {
+            basicInformation: 1,
+            totalCommission: 1,
+            commissionPercentage: 1,
+            intervals: 1,
+            isExempt: 1,
+            serviceFee: 1,
+        });
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: req.params.id, isDeleted: false }, {
+            creditor: 1,
+            totalDebt: 1,
+            remainingAmountPaid: 1,
+            paidAmount: 1,
+            remaining: 1,
+            settledAmount: 1,
+            intervals: 1,
+            isExempt: 1,
+            legalFee: 1,
+        }, undefined, undefined, [{ path: 'creditor', select: 'businessInformation aggression' }]);
+        if (!cases) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        return [true, { debtor, cases }];
+    }
 }
 exports.default = DebtorService;
 //# sourceMappingURL=debtor.service.js.map

@@ -1316,6 +1316,10 @@ class CaseValidate {
                 .messages({
                 'array.base': 'Intervals must be an array',
             }),
+            legalFee: joi_1.default.number().strict().messages({
+                'number.base': 'Legal fee must be a valid number',
+                'number.strict': 'Legal fee must be a strict number type',
+            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
