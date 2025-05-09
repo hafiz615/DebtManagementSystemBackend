@@ -139,6 +139,7 @@ const PaymentModel: Schema = new Schema({
   calculateComission: {
     type: Boolean,
   },
+  checkStatus: String,
 });
 
 PaymentModel.pre('save', async function (next) {

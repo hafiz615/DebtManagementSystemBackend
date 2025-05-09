@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import constantsUtil from './constants.util';
 import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import commonUtil from './common.util';
+import seemlesschexUtil from './seemlesschex.util';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
@@ -491,6 +492,31 @@ class PaynoteUtil {
       updatedAt: commonUtil.getCurrentDate(),
     });
   }
+  async directDebit(id: string, payment: any, debtor: IDebtor) {
+    const apiUrl = `${process.env.paynoteUrl}/ach-debit`;
+    const companyName = debtor?.businessInformation.companyName;
+    const debtorName = debtor?.basicInformation.fullName;
+    const data = {
+      sender: id,
+      name: debtorName,
+      amount: payment.amount,
+      description: companyName,
+    };
+    console.log('I am in directDebit');
+    console.log('URL: ', apiUrl);
+    console.log('Payload: ', data);
+    try {
+      const response = await axiosInstance.post(apiUrl, data, {
+        headers: {
+          Authorization: process.env.paynoteSecretKey,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return error?.response?.data;
+    }
+  }
 
   async paynoteWebhook(response: any) {
     if (response?.event) {
@@ -518,7 +544,7 @@ class PaynoteUtil {
                 response.check.status
               );
               break;
-            case 'voided':
+            case 'cancelled':
               await this.updateCheckAndPayment(
                 checkId,
                 updateObj,

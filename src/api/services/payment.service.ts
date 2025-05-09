@@ -450,6 +450,7 @@ class PaymentService {
       );
       const successAuth = {...filters};
       successAuth['authorized'] = 'Success';
+      successAuth['paymentMode'] = {$ne: 'Direct Post'};
       if (dueDateFilter) successAuth['authorizedDate'] = dueDateFilter;
       successAuthorizations = await this.getAllPaymentsQuery(
         successAuth,
@@ -1027,7 +1028,7 @@ class PaymentService {
       security_key: urlSecurityKey.securityKey,
       customer_vault_id: customer_vault_id,
       stored_credential_indicator: 'used',
-      type: 'credit',
+      type: 'sale',
       amount: amount,
       payment: 'check',
     };

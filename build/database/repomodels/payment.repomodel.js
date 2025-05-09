@@ -47,6 +47,7 @@ class Payment {
         this.creditorName = '';
         this.paymentMode = '';
         this.calculateComission = false;
+        this.checkStatus = '';
     }
 }
 exports.Payment = Payment;

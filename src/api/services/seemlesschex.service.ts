@@ -65,6 +65,7 @@ class SeemlesschexService {
         manualCommission: commission,
         dueDate: transactionDate,
         paymentGateway: 'Seemlesschex',
+        paymentType: 'ACH',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
@@ -190,40 +191,7 @@ class SeemlesschexService {
   async statusChanged(req: Request) {
     const response = req.body;
     console.log(response, 'response');
-    const checkId = response.data.check_id;
-    if (response?.data) {
-      switch (response.event) {
-        case 'check.changed':
-          switch (response.data.status) {
-            case 'void':
-              await seemlesschexUtil.updateIfCheckDeleted(
-                checkId,
-                response.data.status
-              );
-              break;
-            case 'deposited':
-              await seemlesschexUtil.updateIfCheckDeposited(
-                checkId,
-                response.data.status
-              );
-              break;
-            case 'failed':
-              await seemlesschexUtil.updateIfCheckFailed(
-                checkId,
-                response.data.status
-              );
-              break;
-          }
-          break;
-        case 'check.deleted':
-          await seemlesschexUtil.updateIfCheckDeleted(
-            checkId,
-            response.data.status
-          );
-          break;
-      }
-    }
-    return [true, ''];
+    return seemlesschexUtil.checkStatusWebhook(response);
   }
 }
 

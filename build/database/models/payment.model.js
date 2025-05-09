@@ -166,6 +166,7 @@ const PaymentModel = new mongoose_1.Schema({
     calculateComission: {
         type: Boolean,
     },
+    checkStatus: String,
 });
 PaymentModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();
