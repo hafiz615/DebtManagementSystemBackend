@@ -49,7 +49,7 @@ export interface IDebtor extends Document {
   otherDocuments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   lawsuitDocuments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   createdBy: string;
-  accounts: any;
+  accounts: Array<any>;
   // paymentType: string;
   extractedFields: any;
   lawsuitFields: any;

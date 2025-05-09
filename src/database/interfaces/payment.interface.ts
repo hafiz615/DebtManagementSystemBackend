@@ -40,4 +40,5 @@ export interface IPayment extends Document {
   legalFee: number;
   paymentMode: string;
   calculateComission: boolean;
+  checkStatus: string;
 }

@@ -31,9 +31,10 @@ class SeemlesschexUtil {
                 error: true,
                 message: constants_util_1.default.notFoundMessage('debtor phone'),
             };
+        const name = accountInfo.firstName + ' ' + accountInfo.lastName;
         const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/create`;
         var data = {
-            name: accountInfo.firstName + ' ' + accountInfo.lastName,
+            name: name,
             email: debtor.basicInformation?.email,
             amount: amount,
             memo: `First Choice Debt Solutions`,
@@ -257,59 +258,88 @@ class SeemlesschexUtil {
         await this.checkRepository.updateByOne({ checkId: checkId }, data);
     }
     async updateIfCheckDeleted(checkId, status) {
-        const foundCheck = await this.checkRepository.getOne({
-            checkId: checkId,
-            isDeleted: false,
-        });
-        if (!foundCheck)
-            return [true, ''];
-        await this.deleteCheckInfo(checkId, status);
-        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
-            authorized: 'Pending',
-            captured: 'Pending',
-            status: 'Upcoming',
-            debtorTransId: '',
-            paymentMode: '',
-            paymentGateway: '',
-            manualCommission: 0,
-            updatedAt: common_util_1.default.getCurrentDate(),
-        });
-        return [true, ''];
-    }
-    async updateIfCheckDeposited(checkId, status) {
-        const foundCheck = await this.checkRepository.getOne({
-            checkId: checkId,
-            isDeleted: false,
-        });
-        if (!foundCheck)
-            return [true, ''];
         const payment = await this.paymentRepository.getOne({
             debtorTransId: checkId,
         });
-        await this.checkRepository.updateByOne({ checkId: checkId }, { status: status });
+        if (!payment)
+            return [true, ''];
+        await this.deleteCheckInfo(checkId, status);
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
+            captured: 'Failed',
+            failedReasonCaptured: 'Check has been deleted',
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        // await this.paymentRepository.updateMany<IPayment>(
+        //   {debtorTransId: checkId},
+        //   {
+        //     authorized: 'Pending',
+        //     captured: 'Failed',
+        //     status: 'Upcoming',
+        //     debtorTransId: '',
+        //     paymentMode: '',
+        //     paymentGateway: '',
+        //     manualCommission: 0,
+        //     updatedAt: commonUtil.getCurrentDate(),
+        //   }
+        // );
+        return [true, ''];
+    }
+    async updateIfCheckDeposited(checkId, status) {
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
+        });
+        if (!payment)
+            return [true, ''];
+        await this.checkRepository.updateByOne({ checkId: checkId, isDeleted: false }, { status: status });
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             authorized: 'Success',
             captured: 'Success',
+            checkStatus: 'Completed',
             status: 'Pending',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        await this.debtorRepository.updateById(foundCheck.debtorId, {
-            $inc: { commissionPaid: payment.manualCommission },
-        });
+        // await this.debtorRepository.updateById<IDebtor>(foundCheck.debtorId, {
+        //   $inc: {commissionPaid: payment.manualCommission},
+        // });
         return [true, ''];
     }
     async updateIfCheckFailed(checkId, status) {
-        const foundCheck = await this.checkRepository.getOne({
-            checkId: checkId,
-            isDeleted: false,
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
         });
-        if (!foundCheck)
+        if (!payment)
             return [true, ''];
-        await this.checkRepository.updateByOne({ checkId: checkId }, { status: status });
+        await this.checkRepository.updateByOne({ checkId: checkId, isDeleted: false }, { status: status });
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
             captured: 'Failed',
+            failedReasonCaptured: 'Check has been failed',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
+        return [true, ''];
+    }
+    async checkStatusWebhook(response) {
+        console.log(response, 'lplplplp');
+        if (response?.data) {
+            const checkId = response.data.check_id;
+            switch (response.event) {
+                case 'check.changed':
+                    switch (response.data.status) {
+                        case 'void':
+                            await this.updateIfCheckDeleted(checkId, response.data.status);
+                            break;
+                        case 'deposited':
+                            await this.updateIfCheckDeposited(checkId, response.data.status);
+                            break;
+                        case 'failed':
+                            await this.updateIfCheckFailed(checkId, response.data.status);
+                            break;
+                    }
+                    break;
+                case 'check.deleted':
+                    await this.updateIfCheckDeleted(checkId, response.data.status);
+                    break;
+            }
+        }
         return [true, ''];
     }
 }

@@ -24,6 +24,7 @@ import {IFee} from '../database/interfaces/serviceFee.interface';
 import lawsuitUtil from '../utils/lawsuit.util';
 import {ILawsuit} from '../database/interfaces/lawsuit.interface';
 import {LawsuitRepository} from '../api/repository/lawsuit/lawsuit.repository';
+import seemlesschexUtil from '../utils/seemlesschex.util';
 
 class CronJob {
   private paymentRepository: PaymentRepository;
@@ -254,7 +255,7 @@ class CronJob {
     cron.schedule(
       '30 * * * *',
       async () => {
-        console.log('Running a task every zero of an hour');
+        console.log('Running a task every 30 min of an hour');
         this.processCommissionRetryPayments();
         this.processRetryPayments();
       },
@@ -374,9 +375,6 @@ class CronJob {
               sendViaPaynote: 'Pending',
               isDeleted: false,
               dueDate: {
-                $gte: new Date(
-                  new Date(commonUtil.getCurrentDate()).setUTCHours(0, 0, 0, 0)
-                ),
                 $lte: new Date(
                   new Date(commonUtil.getCurrentDate()).setUTCHours(0, 0, 0, 0)
                 ),
@@ -493,6 +491,78 @@ class CronJob {
         timezone: 'America/New_York',
       }
     );
+
+    cron.schedule(
+      '0 10 * * *',
+      async () => {
+        this.cronSeamlesschex();
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
+  }
+
+  async cronSeamlesschex() {
+    const paymentsCommission: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        authorized: 'Success',
+        captured: 'Pending',
+        paymentMode: {$eq: 'Direct Post'},
+        isDeleted: false,
+        paymentGateway: 'Seamlesschex',
+        caseId: null,
+        dueDate: {
+          $lte: new Date(
+            new Date(commonUtil.getCurrentDate()).setUTCHours(0, 0, 0, 0)
+          ),
+        },
+      });
+
+    for (const payment of paymentsCommission) {
+      if (payment.debtorTransId) {
+        const checkResponse = await seemlesschexUtil.getCheck(
+          payment.debtorTransId
+        );
+        if (checkResponse.success) {
+          if (checkResponse.check.status !== 'in_process') {
+            const data = {event: 'check.changed', data: checkResponse.check};
+            await seemlesschexUtil.checkStatusWebhook(data);
+          }
+        }
+      }
+    }
+
+    const payments: IPayment[] =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>({
+        authorized: 'Success',
+        captured: 'Pending',
+        paymentMode: {$eq: 'Direct Post'},
+        isDeleted: false,
+        paymentGateway: 'Seamlesschex',
+        caseId: {$ne: null},
+        paymentReferenceBool: {$ne: true},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
+        dueDate: {
+          $lte: new Date(
+            new Date(commonUtil.getCurrentDate()).setUTCHours(0, 0, 0, 0)
+          ),
+        },
+      });
+
+    for (const payment of payments) {
+      if (payment.debtorTransId) {
+        const checkResponse = await seemlesschexUtil.getCheck(
+          payment.debtorTransId
+        );
+        if (checkResponse.success) {
+          if (checkResponse.check.status !== 'in_process') {
+            const data = {event: 'check.changed', data: checkResponse.check};
+            await seemlesschexUtil.checkStatusWebhook(data);
+          }
+        }
+      }
+    }
   }
 
   async paynotePending(payments: any, creditor: boolean) {
@@ -742,6 +812,7 @@ class CronJob {
       paymentsPendingAuthorized,
       cronId
     );
+    console.log(pendingAuthDocs, 'pendingAuthDocs');
     await this.processCommissionAuthorized(
       pendingAuthDocs,
       cronId,
@@ -755,6 +826,7 @@ class CronJob {
       cronId,
       settings
     );
+    console.log(pendingCaptureDocs, 'pendingCaptureDocs');
     await this.processCommissionCapture(
       pendingCaptureDocs,
       cronId,
@@ -946,27 +1018,11 @@ class CronJob {
           if (retryPlus) retryPlus = false;
           if (result) break;
         }
-        if (account.paymentType === 'ck') {
+        if (account.paymentType === 'ck' || account.paymentType === 'ACH') {
           await this.paymentRepository.updateById<IPayment>(payment._id, {
             authorized: 'Success',
+            paymentMode: 'Direct Post',
           });
-          // const response = await this.paymentService.achCredit(
-          //   account.customerVaultId,
-          //   payment.amount,
-          //   account.platform
-          // );
-          // const result = await this.processCaptureResponse(
-          //   payment,
-          //   response,
-          //   retryPlus,
-          //   cronId,
-          //   settings,
-          //   'ck',
-          //   account.platform
-          //   // getCommission
-          // );
-          // if (retryPlus) retryPlus = false;
-          // if (result) break;
           break;
         }
       }
@@ -1036,31 +1092,18 @@ class CronJob {
           if (retryPlus) retryPlus = false;
           if (result) break;
         }
-        if (account.paymentType === 'ck') {
+        if (account.paymentType === 'ck' || account.paymentType === 'ACH') {
+          const reference = v4();
           for (const payment of concatedPayments) {
             await this.paymentRepository.updateById<IPayment>(payment._id, {
               authorized: 'Success',
-              paymentReference: v4(),
+              paymentMode: 'Direct Post',
+              paymentGateway: account.platform,
+              paymentReference: reference,
               paymentReferenceBool: true,
             });
           }
-          // const response = await this.paymentService.achCredit(
-          //   account.customerVaultId,
-          //   totalAmount,
-          //   account.platform
-          // );
-          // const result = await this.processCaptureCommissionResponse(
-          //   payment,
-          //   concatedPayments,
-          //   response,
-          //   retryPlus,
-          //   cronId,
-          //   settings,
-          //   'ck',
-          //   totalAmount
-          // );
-          // if (retryPlus) retryPlus = false;
-          // if (result) break;
+          break;
         }
       }
       retryPlus = retryOriginalValue;
@@ -1211,23 +1254,16 @@ class CronJob {
     updateObjPayment['dueDate'] = payment.dueDate;
     if (retryPlus) updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
 
-    const paymentLatest = await this.paymentRepository.getById<IPayment>(
-      payment._id
-    );
-    if (paymentLatest.authorized === 'Success') {
-      result = true;
-    } else {
-      if (Object.keys(updateObjPayment).length) {
-        if (!retryPlus) {
-          updateObjPayment['paymentReference'] = v4();
-          updateObjPayment['paymentReferenceBool'] = true;
-        }
-        for (const payment of payments) {
-          await this.paymentRepository.updateById<IPayment>(
-            payment._id,
-            updateObjPayment
-          );
-        }
+    if (Object.keys(updateObjPayment).length) {
+      if (!retryPlus) {
+        updateObjPayment['paymentReference'] = v4();
+        updateObjPayment['paymentReferenceBool'] = true;
+      }
+      for (const payment of payments) {
+        await this.paymentRepository.updateById<IPayment>(
+          payment._id,
+          updateObjPayment
+        );
       }
     }
     return result;
@@ -1301,6 +1337,53 @@ class CronJob {
           if (retryPlus) retryPlus = false;
           if (result) break;
         }
+        if (account.paymentType === 'ACH' && account.platform === 'Paynote') {
+          const response = await paynoteUtil.directDebit(
+            account.paynoteUserId,
+            payment,
+            payment.caseId?.debtor
+          );
+          const result = await this.processACHCaptureResponse(
+            payment,
+            response,
+            retryPlus,
+            cronId,
+            settings,
+            account.platform,
+            serviceFeeAmount,
+            legalFeeAmount
+          );
+          if (retryPlus) retryPlus = false;
+          if (result) break;
+        }
+        if (
+          account.paymentType === 'ACH' &&
+          account.platform === 'Seamlesschex'
+        ) {
+          const decryptedData = commonUtil.getDecryptedData(
+            account.customerAccount
+          );
+          const tokenResponse =
+            await seemlesschexUtil.tokenization(decryptedData);
+          const response = await seemlesschexUtil.createCheck(
+            payment.caseId.debtor,
+            payment.amount,
+            tokenResponse.tokenization.token,
+            decryptedData
+          );
+          const result = await this.processACHCaptureResponse(
+            payment,
+            response,
+            retryPlus,
+            cronId,
+            settings,
+            account.platform,
+            serviceFeeAmount,
+            legalFeeAmount
+          );
+          if (retryPlus) retryPlus = false;
+          if (result) break;
+        }
       }
       retryPlus = retryOriginalValue;
       await commonUtil.sleep(5000);
@@ -1365,6 +1448,58 @@ class CronJob {
             'ck',
             totalAmount,
             account.platform
+          );
+          if (retryPlus) retryPlus = false;
+          if (result) break;
+        }
+
+        if (account.paymentType === 'ACH' && account.platform === 'Paynote') {
+          const response = await paynoteUtil.directDebit(
+            account.paynoteUserId,
+            payment,
+            debtor
+          );
+          const result = await this.processACHCommissionResponse(
+            payment,
+            concatedPayments,
+            response,
+            retryPlus,
+            cronId,
+            settings,
+            totalAmount,
+            account.platform,
+            debtor
+          );
+          if (retryPlus) retryPlus = false;
+          if (result) break;
+        }
+
+        if (
+          account.paymentType === 'ACH' &&
+          account.platform === 'Seamlesschex'
+        ) {
+          const decryptedData = commonUtil.getDecryptedData(
+            account.customerAccount
+          );
+          const tokenResponse =
+            await seemlesschexUtil.tokenization(decryptedData);
+          const response = await seemlesschexUtil.createCheck(
+            payment.caseId.debtor,
+            payment.amount,
+            tokenResponse.tokenization.token,
+            decryptedData
+          );
+          console.log(response, 'response');
+          const result = await this.processACHCommissionResponse(
+            payment,
+            concatedPayments,
+            response,
+            retryPlus,
+            cronId,
+            settings,
+            totalAmount,
+            account.platform,
+            debtor
           );
           if (retryPlus) retryPlus = false;
           if (result) break;
@@ -1454,6 +1589,86 @@ class CronJob {
     return result;
   }
 
+  async processACHCaptureResponse(
+    payment: any,
+    response: any,
+    retryPlus: boolean,
+    cronId: string,
+    settings: ISettings[],
+    platform: string,
+    serviceFee?: number,
+    legalFee?: number
+    // commision?: number
+  ) {
+    if (response?.error) return [false, response.message];
+    let result = false;
+    const {retryInterval} = settings.length
+      ? settings[0].paymentsAuthorizations
+      : this.defaultRetryInterval();
+    const updateObjPayment = {};
+    updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['transactionType'] = 'ACH';
+    let bv = null;
+    if (platform === 'Seamlesschex') {
+      bv = await seemlesschexUtil.checkBasicVerification(response);
+      if (bv?.error) updateObjPayment['authorized'] = 'Failed';
+    }
+    await seemlesschexUtil.saveCheckInfo(
+      bv,
+      null,
+      response,
+      payment.caseId.debtor._id
+    );
+    if (response.success) {
+      const transactionId = response.check.check_id;
+      updateObjPayment['status'] = 'Pending';
+      updateObjPayment['checkStatus'] = 'Pending';
+      lawsuitUtil.updatePaymentLawsuit([payment]);
+      updateObjPayment['debtorTransId'] = transactionId;
+      updateObjPayment['serviceFee'] = serviceFee;
+      updateObjPayment['legalFee'] = legalFee;
+      result = true;
+      emailUtil.sendEmailOrSmsByEvent(
+        'successful_capture',
+        '',
+        payment._id,
+        ''
+      );
+      if (
+        response.check.status === 'processed' ||
+        response.check.status === 'deposited'
+      ) {
+        updateObjPayment['captured'] = 'Success';
+        updateObjPayment['checkStatus'] = 'Success';
+      }
+    } else {
+      updateObjPayment['status'] = 'Pending';
+      updateObjPayment['captured'] = 'Failed';
+      updateObjPayment['failedReasonCaptured'] = response.message;
+      const interval = retryInterval.failedPayment;
+      const retry = payment.retriesCapture + 1;
+      const value = interval.value * retry;
+      const retryDate = this.getRetryDate(
+        interval.unit,
+        value,
+        commonUtil.getCurrentDate()
+      );
+      updateObjPayment['rescheduled'] = retryDate;
+
+      emailUtil.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
+    }
+    if (retryPlus)
+      updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
+
+    if (Object.keys(updateObjPayment).length) {
+      await this.paymentRepository.updateById<IPayment>(
+        payment._id,
+        updateObjPayment
+      );
+    }
+    return result;
+  }
+
   async processCaptureCommissionResponse(
     payment: any,
     payments: any,
@@ -1528,19 +1743,101 @@ class CronJob {
     if (retryPlus)
       updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
 
-    const paymentLatest = await this.paymentRepository.getById<IPayment>(
-      payment._id
-    );
-    if (paymentLatest.captured === 'Success') {
+    if (Object.keys(updateObjPayment).length) {
+      for (const payment of payments) {
+        await this.paymentRepository.updateById<IPayment>(
+          payment._id,
+          updateObjPayment
+        );
+      }
+    }
+    return result;
+  }
+
+  async processACHCommissionResponse(
+    payment: any,
+    payments: any,
+    response: any,
+    retryPlus: boolean,
+    cronId: string,
+    settings: ISettings[],
+    amount: number,
+    platform: string,
+    debtor: IDebtor
+  ) {
+    let result = false;
+    const {retryInterval} = settings.length
+      ? settings[0].paymentsAuthorizations
+      : this.defaultRetryInterval();
+    const updateObjPayment = {};
+    updateObjPayment['paymentGateway'] = platform;
+    updateObjPayment['transactionType'] = 'ACH';
+    let bv = null;
+
+    await seemlesschexUtil.saveCheckInfo(bv, null, response, debtor._id);
+    if (response?.success) {
+      if (platform === 'Seamlesschex') {
+        bv = await seemlesschexUtil.checkBasicVerification(response);
+        if (bv?.error) updateObjPayment['authorized'] = 'Failed';
+      }
+      const transactionId = response.check.check_id;
+      updateObjPayment['status'] = 'Pending';
+      updateObjPayment['authorized'] = 'Success';
+      updateObjPayment['checkStatus'] = 'Pending';
+      updateObjPayment['debtorTransId'] = transactionId;
+      lawsuitUtil.updatePaymentLawsuit(payments);
       result = true;
-    } else {
-      if (Object.keys(updateObjPayment).length) {
-        for (const payment of payments) {
-          await this.paymentRepository.updateById<IPayment>(
-            payment._id,
-            updateObjPayment
-          );
+      emailUtil.sendEmailOrSmsByEvent(
+        'successful_capture',
+        '',
+        payment._id,
+        ''
+      );
+      console.log(amount, 'amount');
+      if (
+        response.check.status === 'processed' ||
+        response.check.status === 'deposited'
+      ) {
+        updateObjPayment['captured'] = 'Success';
+        updateObjPayment['checkStatus'] = 'Success';
+        if (amount) {
+          const commissionAmount = payment.amount - amount;
+          console.log(commissionAmount, 'commissionAmount');
+          await this.debtorRepository.updateById(payment.debtorId, {
+            $inc: {commissionPaid: commissionAmount},
+          });
         }
+        if (!amount) {
+          await this.debtorRepository.updateById(payment.debtorId, {
+            $inc: {commissionPaid: payment.amount},
+          });
+        }
+      }
+    } else {
+      updateObjPayment['status'] = 'Pending';
+      updateObjPayment['captured'] = 'Failed';
+      updateObjPayment['failedReasonCaptured'] = response.message;
+      const interval = retryInterval.failedPayment;
+      const retry = payment.retriesCapture + 1;
+      const value = interval.value * retry;
+      const retryDate = this.getRetryDate(
+        interval.unit,
+        value,
+        commonUtil.getCurrentDate()
+      );
+      updateObjPayment['rescheduled'] = retryDate;
+
+      emailUtil.sendEmailOrSmsByEvent('failed_capture', '', payment._id, '');
+    }
+    if (retryPlus)
+      updateObjPayment['retriesCapture'] = payment.retriesCapture + 1;
+
+    if (Object.keys(updateObjPayment).length) {
+      for (const payment of payments) {
+        await this.paymentRepository.updateById<IPayment>(
+          payment._id,
+          updateObjPayment
+        );
       }
     }
     return result;

@@ -449,6 +449,32 @@ class PaynoteUtil {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
     }
+    async directDebit(id, payment, debtor) {
+        const apiUrl = `${process.env.paynoteUrl}/ach-debit`;
+        const companyName = debtor?.businessInformation.companyName;
+        const debtorName = debtor?.basicInformation.fullName;
+        const data = {
+            sender: id,
+            name: debtorName,
+            amount: payment.amount,
+            description: companyName,
+        };
+        console.log('I am in directDebit');
+        console.log('URL: ', apiUrl);
+        console.log('Payload: ', data);
+        try {
+            const response = await axiosInstanceInterceptor_1.default.post(apiUrl, data, {
+                headers: {
+                    Authorization: process.env.paynoteSecretKey,
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            return error?.response?.data;
+        }
+    }
     async paynoteWebhook(response) {
         if (response?.event) {
             const checkId = response.check.check_id;
@@ -471,7 +497,7 @@ class PaynoteUtil {
                             updateObj['checkStatus'] = 'Completed';
                             await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
                             break;
-                        case 'voided':
+                        case 'cancelled':
                             await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
                             break;
                         case 'declined':
