@@ -1057,7 +1057,8 @@ class DebtorService {
     const customerVaultResponse = await caseUtil.createVault(
       req.body.paymentToken,
       req.body.platform,
-      debtorName
+      debtorName,
+      getDebtor.basicInformation.email
     );
     if (!customerVaultResponse[0]) return customerVaultResponse;
 

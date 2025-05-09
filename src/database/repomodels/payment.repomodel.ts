@@ -41,4 +41,5 @@ export class Payment {
   creditorName = '';
   paymentMode = '';
   calculateComission = false;
+  checkStatus = '';
 }

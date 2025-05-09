@@ -41,9 +41,10 @@ class SeemlesschexUtil {
         error: true,
         message: constantsUtil.notFoundMessage('debtor phone'),
       };
+    const name = accountInfo.firstName + ' ' + accountInfo.lastName;
     const apiUrl = `${process.env.seamlesschexUrl}/${process.env.seamlesschexVersion}/check/create`;
     var data = {
-      name: accountInfo.firstName + ' ' + accountInfo.lastName,
+      name: name,
       email: debtor.basicInformation?.email,
       amount: amount,
       memo: `First Choice Debt Solutions`,
@@ -286,39 +287,42 @@ class SeemlesschexUtil {
   }
 
   async updateIfCheckDeleted(checkId: string, status: string) {
-    const foundCheck = await this.checkRepository.getOne<ICheck>({
-      checkId: checkId,
-      isDeleted: false,
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: checkId,
     });
-    if (!foundCheck) return [true, ''];
+    if (!payment) return [true, ''];
     await this.deleteCheckInfo(checkId, status);
     await this.paymentRepository.updateMany<IPayment>(
       {debtorTransId: checkId},
       {
-        authorized: 'Pending',
-        captured: 'Pending',
-        status: 'Upcoming',
-        debtorTransId: '',
-        paymentMode: '',
-        paymentGateway: '',
-        manualCommission: 0,
+        captured: 'Failed',
+        failedReasonCaptured: 'Check has been deleted',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
+    // await this.paymentRepository.updateMany<IPayment>(
+    //   {debtorTransId: checkId},
+    //   {
+    //     authorized: 'Pending',
+    //     captured: 'Failed',
+    //     status: 'Upcoming',
+    //     debtorTransId: '',
+    //     paymentMode: '',
+    //     paymentGateway: '',
+    //     manualCommission: 0,
+    //     updatedAt: commonUtil.getCurrentDate(),
+    //   }
+    // );
     return [true, ''];
   }
 
   async updateIfCheckDeposited(checkId: string, status: string) {
-    const foundCheck = await this.checkRepository.getOne<ICheck>({
-      checkId: checkId,
-      isDeleted: false,
-    });
-    if (!foundCheck) return [true, ''];
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: checkId,
     });
+    if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
-      {checkId: checkId},
+      {checkId: checkId, isDeleted: false},
       {status: status}
     );
     await this.paymentRepository.updateMany<IPayment>(
@@ -326,33 +330,59 @@ class SeemlesschexUtil {
       {
         authorized: 'Success',
         captured: 'Success',
+        checkStatus: 'Completed',
         status: 'Pending',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
-    await this.debtorRepository.updateById<IDebtor>(foundCheck.debtorId, {
-      $inc: {commissionPaid: payment.manualCommission},
-    });
+    // await this.debtorRepository.updateById<IDebtor>(foundCheck.debtorId, {
+    //   $inc: {commissionPaid: payment.manualCommission},
+    // });
     return [true, ''];
   }
 
   async updateIfCheckFailed(checkId: string, status: string) {
-    const foundCheck = await this.checkRepository.getOne<ICheck>({
-      checkId: checkId,
-      isDeleted: false,
+    const payment = await this.paymentRepository.getOne<IPayment>({
+      debtorTransId: checkId,
     });
-    if (!foundCheck) return [true, ''];
+    if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
-      {checkId: checkId},
+      {checkId: checkId, isDeleted: false},
       {status: status}
     );
     await this.paymentRepository.updateMany<IPayment>(
       {debtorTransId: checkId},
       {
         captured: 'Failed',
+        failedReasonCaptured: 'Check has been failed',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
+    return [true, ''];
+  }
+
+  async checkStatusWebhook(response: any) {
+    if (response?.data) {
+      const checkId = response.data.check_id;
+      switch (response.event) {
+        case 'check.changed':
+          switch (response.data.status) {
+            case 'void':
+              await this.updateIfCheckDeleted(checkId, response.data.status);
+              break;
+            case 'deposited':
+              await this.updateIfCheckDeposited(checkId, response.data.status);
+              break;
+            case 'failed':
+              await this.updateIfCheckFailed(checkId, response.data.status);
+              break;
+          }
+          break;
+        case 'check.deleted':
+          await this.updateIfCheckDeleted(checkId, response.data.status);
+          break;
+      }
+    }
     return [true, ''];
   }
 }

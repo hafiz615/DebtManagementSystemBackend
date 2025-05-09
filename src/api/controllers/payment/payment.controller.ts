@@ -287,6 +287,24 @@ class PaymentController {
     }
   };
 
+  cronSeamlesschex = async (req: Request, res: Response) => {
+    try {
+      await paymentCronjob.cronSeamlesschex();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Cron-job for Seamlesschex completed successfully',
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   sendPaymentPaynote = async (req: Request, res: Response) => {
     try {
       const response = await this.paymentService.sendPaymentPaynote(req);
@@ -670,6 +688,29 @@ class PaymentController {
           statusCode: constants.CODE.OK,
           data: response[1],
           message: 'Paynote webhook processed successfully',
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.OK)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  getClientPendingChecks = async (req: Request, res: Response) => {
+    try {
+      const response = await this.paymentService.getClientPendingChecks(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.OK)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Client pending checks'),
         })
       );
     } catch (error) {

@@ -808,7 +808,7 @@ class DebtorService {
             return [false, constants_util_1.default.notFoundMessage('debtor')];
         }
         const debtorName = getDebtor?.basicInformation?.fullName;
-        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, req.body.platform, debtorName);
+        const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, req.body.platform, debtorName, getDebtor.basicInformation.email);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
         await this.debtorRepository.updateById(getDebtor._id, {
