@@ -1042,6 +1042,7 @@ class DebtorService {
         debtor = await this.debtorRepository.updateById(req.params.id, {
             intervals: req.body.intervals,
             isExempt: req.body.isExempt,
+            serviceFee: req.body.serviceFee,
         });
         req.body.intervals = debtor.intervals;
         req.body.debtorName = debtor.basicInformation.fullName;
