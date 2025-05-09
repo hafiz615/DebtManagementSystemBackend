@@ -362,7 +362,6 @@ class SeemlesschexUtil {
   }
 
   async checkStatusWebhook(response: any) {
-    console.log(response, 'lplplplp');
     if (response?.data) {
       const checkId = response.data.check_id;
       switch (response.event) {
