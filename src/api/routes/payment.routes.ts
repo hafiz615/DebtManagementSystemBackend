@@ -138,4 +138,16 @@ router.get(
 
 router.post('/paynote-webhook', paymentController.paynoteWebhook);
 
+router.post(
+  '/getClientPendingChecks',
+  authorize.validateAuth,
+  paymentController.getClientPendingChecks
+);
+
+router.get(
+  '/cronSeamlesschex',
+  authorize.validateAuth,
+  paymentController.cronSeamlesschex
+);
+
 export default router;

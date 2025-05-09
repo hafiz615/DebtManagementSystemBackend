@@ -31,5 +31,7 @@ router.post('/checkInvoice', payment_controller_1.default.checkInvoice);
 router.get('/getInstantPayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getInstantPayment);
 router.get('/getCaseAttorneyPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCaseAttorneyPayments);
 router.post('/paynote-webhook', payment_controller_1.default.paynoteWebhook);
+router.post('/getClientPendingChecks', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getClientPendingChecks);
+router.get('/cronSeamlesschex', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cronSeamlesschex);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

@@ -1393,6 +1393,49 @@ class PaymentService {
         console.log(req.body, 'req.body');
         return paynote_util_1.default.paynoteWebhook(req.body);
     }
+    async getClientPendingChecks(req) {
+        let days = Number(req.query.days);
+        let counts = {};
+        let filters = {
+            caseId: { $eq: null },
+            paymentMode: 'Direct Post',
+            checkStatus: 'Pending',
+            isDeleted: false,
+        };
+        if (days) {
+            filters = await this.getDaysFilterPopulated(filters, days);
+        }
+        const populatedFiltersResult = await this.populateFilterCreditor({ ...filters }, req, 'captured', 'Pending');
+        let page = populatedFiltersResult.page;
+        let limit = populatedFiltersResult.limit;
+        let finalFilters = populatedFiltersResult.filters;
+        let payments = await this.getAllPaymentsQuery(finalFilters, page, limit);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        if (req.query.filters !== 'true' && req.query.search !== 'true') {
+            const count = await this.paymentRepository.getCount(finalFilters);
+            counts['pendingCheckPayments'] = count;
+        }
+        if (req.query.filters === 'true' || req.query.search === 'true') {
+            if (req.query.page && !isNaN(Number(req.query.page))) {
+                page = Number(req.query.page) ? Number(req.query.page) : page;
+            }
+            if (req.query.limit && !isNaN(Number(req.query.limit))) {
+                limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+            }
+            payments = await payment_util_1.default.searchAndFilterHomePayments(payments, req);
+            counts['pendingCheckPayments'] = payments?.length;
+            payments = payments?.slice((page - 1) * limit, page * limit);
+        }
+        return [
+            true,
+            {
+                pendingCheckPayments: payments,
+                counts: counts,
+            },
+        ];
+    }
 }
 exports.default = PaymentService;
 //# sourceMappingURL=payment.service.js.map
