@@ -1155,6 +1155,7 @@ class PaymentUtil {
         if (responseNumCapture === '1') {
           console.log('capture success');
           payment['captured'] = 'Success';
+          payment['status'] = 'Pending';
           result = true;
         }
         if (responseNumCapture !== '1') {
