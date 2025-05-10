@@ -22,6 +22,7 @@ const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util
 const attorney_repository_1 = require("../repository/attorney/attorney.repository");
 const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
+const uuid_1 = require("uuid");
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -1260,6 +1261,8 @@ class PaymentService {
             const paymentObj = response[1];
             paymentObj['legalFee'] = legalFeeAmount;
             paymentObj['serviceFee'] = serviceFeeAmount;
+            paymentObj['paymentReference'] = (0, uuid_1.v4)();
+            paymentObj['paymentReferenceBool'] = true;
             for (const payment of concatedPayments) {
                 await this.paymentRepository.updateById(payment._id, paymentObj);
             }

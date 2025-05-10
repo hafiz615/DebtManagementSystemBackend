@@ -761,9 +761,11 @@ class PaymentUtil {
         let result = false;
         if (amount > 0) {
             payment['authorizedDate'] = common_util_1.default.getCurrentDate();
-            payment['debtorId'] = debtor._id;
-            payment['amount'] = amount;
-            payment['debtorName'] = debtor.basicInformation.fullName;
+            if (!paymentPass) {
+                payment['debtorId'] = debtor._id;
+                payment['amount'] = amount;
+                payment['debtorName'] = debtor.basicInformation.fullName;
+            }
             payment['paymentMode'] = paymentPass ? 'Instant' : 'Additional Charge';
             let customerVaultId = '';
             let platform = '';
