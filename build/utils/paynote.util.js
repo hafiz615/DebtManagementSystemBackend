@@ -9,13 +9,19 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const constants_util_1 = __importDefault(require("./constants.util"));
 const syncPaymentMethod_repository_1 = require("../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository");
 const common_util_1 = __importDefault(require("./common.util"));
+const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
+const payment_repository_1 = require("../api/repository/payment/payment.repository");
+const check_repository_1 = require("../api/repository/check/check.repository");
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
+        this.paymentRepository = new payment_repository_1.PaymentRepository();
+        this.checkRepository = new check_repository_1.CheckRepository();
     }
-    async createCustomer(id, name, email, modelRepository) {
+    async createCustomer(id, name, email, modelRepository, addAccount) {
         if (!name)
             return {
                 error: true,
@@ -50,10 +56,17 @@ class PaynoteUtil {
                     'Content-Type': 'application/json',
                 },
             });
-            if (response.data?.success) {
+            if (response.data?.success && !addAccount) {
                 await modelRepository.updateById(id, {
                     paynoteUserId: response.data?.user?.user_id,
                     paynoteUserFound: true,
+                });
+            }
+            else {
+                await modelRepository.updateById(id, {
+                    $addToSet: {
+                        paynoteUserIds: response.data?.user?.user_id,
+                    },
                 });
             }
             return response.data;
@@ -393,10 +406,23 @@ class PaynoteUtil {
         }
         update['paynoteUserFound'] = true;
         update['paynoteUserId'] = users[index].user_id;
+        update['paynoteSourceIds'] = users[index].sources;
         return [true, update];
     }
+    async selectPreferredPaynoteSource(paynoteSources) {
+        if (!Array.isArray(paynoteSources) || !paynoteSources.length)
+            return null;
+        const primaryVerified = paynoteSources.find(src => src.is_primary === true && src.status === 'verified');
+        if (primaryVerified)
+            return primaryVerified;
+        const nonPrimaryVerified = paynoteSources.find(src => src.is_primary === false && src.status === 'verified');
+        if (nonPrimaryVerified)
+            return nonPrimaryVerified;
+        return paynoteSources[0];
+    }
     async updateSyncObject(data, creditorId, modelRepository) {
-        await modelRepository.updateById(creditorId, data);
+        const { paynoteSourceIds, ...rest } = data;
+        await modelRepository.updateById(creditorId, rest);
     }
     async upsertPaynoteEmail(id, email) {
         await this.syncPaymentMethodRepository.upsert({ syncId: id }, {
@@ -404,6 +430,100 @@ class PaynoteUtil {
             platform: 'Paynote',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
+    }
+    async addPaynoteAccount(id, paynoteUserId, paynoteSourceId) {
+        return await this.debtorRepository.updateById(id, {
+            $addToSet: {
+                accounts: {
+                    $each: [
+                        {
+                            paymentType: 'ACH',
+                            paynoteUserId: paynoteUserId,
+                            paynoteSourceId: paynoteSourceId,
+                            platform: 'Paynote',
+                        },
+                    ],
+                },
+                paynoteSourceIds: { $each: [paynoteSourceId] },
+            },
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+    }
+    async directDebit(id, payment, debtor) {
+        const apiUrl = `${process.env.paynoteUrl}/ach-debit`;
+        const companyName = debtor?.businessInformation.companyName;
+        const debtorName = debtor?.basicInformation.fullName;
+        const data = {
+            sender: id,
+            name: debtorName,
+            amount: payment.amount,
+            description: companyName,
+        };
+        console.log('I am in directDebit');
+        console.log('URL: ', apiUrl);
+        console.log('Payload: ', data);
+        try {
+            const response = await axiosInstanceInterceptor_1.default.post(apiUrl, data, {
+                headers: {
+                    Authorization: process.env.paynoteSecretKey,
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            return error?.response?.data;
+        }
+    }
+    async paynoteWebhook(response) {
+        if (response?.event) {
+            const checkId = response.check.check_id;
+            const updateObj = {
+                status: 'Pending',
+                updatedAt: common_util_1.default.getCurrentDate(),
+            };
+            if (response.check.status !== 'processed') {
+                updateObj['captured'] = 'Failed';
+                updateObj['failedReasonCaptured'] =
+                    response.check.error_explanation ||
+                        response.check.error_description ||
+                        constants_util_1.default.Messages.CHECK_VOIDED;
+            }
+            switch (response.event) {
+                case 'transaction.status':
+                    switch (response.check.status) {
+                        case 'processed':
+                            updateObj['captured'] = 'Success';
+                            updateObj['checkStatus'] = 'Completed';
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'cancelled':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'declined':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'failed':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                        case 'expired':
+                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                            break;
+                    }
+                    break;
+            }
+        }
+        return [true, ''];
+    }
+    async updateCheckAndPayment(checkId, updatePaymentObj, status) {
+        const payment = await this.paymentRepository.getOne({
+            debtorTransId: checkId,
+        });
+        if (!payment)
+            return [true, ''];
+        await this.checkRepository.updateByOne({ checkId: checkId, isDeleted: false }, { status: status });
+        await this.paymentRepository.updateMany({ debtorTransId: checkId }, updatePaymentObj);
+        return [true, ''];
     }
 }
 exports.default = new PaynoteUtil();

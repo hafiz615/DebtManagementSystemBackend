@@ -301,7 +301,7 @@ class PaymentService {
         return { filters, page, limit };
     }
     async getDaysFilterPopulated(filters, days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             filters['dueDate'] = {
@@ -312,7 +312,7 @@ class PaymentService {
         return filters;
     }
     async getDaysFilterUpcoming(days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const tillDate = new Date(new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000).toUTCString();
             return {
@@ -323,7 +323,7 @@ class PaymentService {
         return null;
     }
     async getDaysFilterDueDate(days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             return {
@@ -349,6 +349,7 @@ class PaymentService {
             failedCaptures = await this.getAllPaymentsQuery(failedCapture, page, limit);
             const successAuth = { ...filters };
             successAuth['authorized'] = 'Success';
+            successAuth['paymentMode'] = { $ne: 'Direct Post' };
             if (dueDateFilter)
                 successAuth['authorizedDate'] = dueDateFilter;
             successAuthorizations = await this.getAllPaymentsQuery(successAuth, page, limit);
@@ -755,7 +756,7 @@ class PaymentService {
             security_key: urlSecurityKey.securityKey,
             customer_vault_id: customer_vault_id,
             stored_credential_indicator: 'used',
-            type: 'credit',
+            type: 'sale',
             amount: amount,
             payment: 'check',
         };
@@ -776,6 +777,87 @@ class PaymentService {
                 console.error('Unexpected error:', error);
             }
         }
+    }
+    async addAccount(req) {
+        const type = req.body.platform;
+        const data = req.body.data;
+        switch (type) {
+            case 'Seamlesschex':
+                const user = await common_util_1.default.getUserByType(req.params.id, 'debtor');
+                if (!user.obj) {
+                    return [false, 'Debtor not found'];
+                }
+                const decryptedData = common_util_1.default.getDecryptedData(data);
+                const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(decryptedData.bankRouting);
+                if (routingNoExist)
+                    return [false, 'Routing Number already Exist.'];
+                const updatedDebtor = await this.debtorRepository.updateById(user.obj._id, {
+                    $push: {
+                        accounts: {
+                            $each: [
+                                {
+                                    paymentType: 'ACH',
+                                    customerAccount: data,
+                                    platform: 'Seamlesschex',
+                                },
+                            ],
+                        },
+                        seamlesschexRountingIds: { $each: [decryptedData.bankRouting] },
+                    },
+                    updatedAt: common_util_1.default.getCurrentDate(),
+                });
+                if (!updatedDebtor)
+                    return [false, constants_util_2.default.failureUpdateMessage('Debtor')];
+                return [true, 'Account added successfully'];
+            case 'Paynote':
+                req.query.type = 'debtor';
+                const paynoteAccount = await this.addAccountACHDetails(req, true);
+                if (!paynoteAccount[0])
+                    return [false, paynoteAccount[1]];
+                return [true, 'Account added successfully'];
+        }
+        return [true, 'Account added successfully'];
+    }
+    async addAccountACHDetails(req, addAccount) {
+        const reqTemp = req;
+        const type = reqTemp.query.type;
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user.obj)
+            return [false, constants_util_1.default.notFoundMessage('user')];
+        const { name, email } = await common_util_1.default.getUserDetails(user.obj);
+        const createCustomer = await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model, true);
+        if (createCustomer.error)
+            return [false, constants_util_2.default.failureAddMessage('Account')];
+        console.log('data: ', createCustomer);
+        const data = req.body.data;
+        const paymentObj = common_util_1.default.getDecryptedData(data);
+        const fundingSource = await paynote_util_1.default.addFundingSource(paymentObj, createCustomer.user.user_id);
+        console.log('fundingSource:', fundingSource);
+        if (fundingSource?.error) {
+            let message = '';
+            if (fundingSource?.messages) {
+                message = fundingSource.messages[0];
+            }
+            else {
+                message = fundingSource.message;
+            }
+            return [false, message];
+        }
+        const sourceId = fundingSource.funding_source.source_id;
+        if (addAccount) {
+            const initialVerify = await paynote_util_1.default.initiateFundingSourceVerifcation(sourceId, createCustomer.user.user_id);
+            console.log('initialVerify', initialVerify);
+            if (initialVerify.error)
+                return [false, initialVerify.message];
+            const verifyFundingSource = await paynote_util_1.default.verifyFundingSource(sourceId);
+            if (verifyFundingSource.error)
+                return [false, verifyFundingSource.message];
+            const updatedDebtor = await paynote_util_1.default.addPaynoteAccount(user.obj._id, createCustomer.user.user_id, sourceId);
+            if (!updatedDebtor)
+                return [false, constants_util_2.default.failureUpdateMessage('Debtor')];
+            return [true, 'Account added successfully'];
+        }
+        return [true, constants_util_1.default.successAddMessage('ACH details')];
     }
     async addACHDetails(req) {
         const reqTemp = req;
@@ -1307,6 +1389,53 @@ class PaymentService {
                 paymentsUpcoming,
                 paymentsUpcomingCount,
                 paymentsCount,
+            },
+        ];
+    }
+    async paynoteWebhook(req) {
+        console.log(req.body, 'req.body');
+        return paynote_util_1.default.paynoteWebhook(req.body);
+    }
+    async getClientPendingChecks(req) {
+        let days = Number(req.query.days);
+        let counts = {};
+        let filters = {
+            caseId: { $eq: null },
+            paymentMode: 'Direct Post',
+            checkStatus: 'Pending',
+            isDeleted: false,
+        };
+        if (days) {
+            filters = await this.getDaysFilterPopulated(filters, days);
+        }
+        const populatedFiltersResult = await this.populateFilterCreditor({ ...filters }, req, 'captured', 'Pending');
+        let page = populatedFiltersResult.page;
+        let limit = populatedFiltersResult.limit;
+        let finalFilters = populatedFiltersResult.filters;
+        let payments = await this.getAllPaymentsQuery(finalFilters, page, limit);
+        if (!payments.length) {
+            return [false, constants_util_1.default.notFoundMessage('Payments')];
+        }
+        if (req.query.filters !== 'true' && req.query.search !== 'true') {
+            const count = await this.paymentRepository.getCount(finalFilters);
+            counts['pendingCheckPayments'] = count;
+        }
+        if (req.query.filters === 'true' || req.query.search === 'true') {
+            if (req.query.page && !isNaN(Number(req.query.page))) {
+                page = Number(req.query.page) ? Number(req.query.page) : page;
+            }
+            if (req.query.limit && !isNaN(Number(req.query.limit))) {
+                limit = Number(req.query.limit) ? Number(req.query.limit) : limit;
+            }
+            payments = await payment_util_1.default.searchAndFilterHomePayments(payments, req);
+            counts['pendingCheckPayments'] = payments?.length;
+            payments = payments?.slice((page - 1) * limit, page * limit);
+        }
+        return [
+            true,
+            {
+                pendingCheckPayments: payments,
+                counts: counts,
             },
         ];
     }

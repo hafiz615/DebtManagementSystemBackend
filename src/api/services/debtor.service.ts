@@ -49,6 +49,8 @@ import lawfirmUtil from '../../utils/lawfirm.util';
 import TokenService from './token.service';
 import {v4} from 'uuid';
 import dotenv from 'dotenv';
+import CreditorService from './creditor.service';
+import paynoteUtil from '../../utils/paynote.util';
 dotenv.config();
 
 class DebtorService {
@@ -63,6 +65,7 @@ class DebtorService {
   private uploadUtil: UploadUtil;
   private syncPaymentMethodRepository: SyncPaymentMethodRepository;
   private tokenService: TokenService;
+  private creditorService: CreditorService;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -75,6 +78,7 @@ class DebtorService {
     this.uploadUtil = new UploadUtil();
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
     this.tokenService = new TokenService();
+    this.creditorService = new CreditorService();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -1053,7 +1057,8 @@ class DebtorService {
     const customerVaultResponse = await caseUtil.createVault(
       req.body.paymentToken,
       req.body.platform,
-      debtorName
+      debtorName,
+      getDebtor.basicInformation.email
     );
     if (!customerVaultResponse[0]) return customerVaultResponse;
 
@@ -1775,6 +1780,7 @@ class DebtorService {
     const result =
       await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
         syncId: req.params.id,
+        platform: req.query.platform,
       });
     return result
       ? [true, result.email]
@@ -1782,33 +1788,67 @@ class DebtorService {
   }
 
   async clientSync(req: Request) {
-    console.log(req.body);
-    const platformExists = Object.values(paymentPlatform).includes(
-      req.body?.platform
-    );
-    console.log('platform', platformExists);
-    if (!platformExists) return [false, constants.Messages.INVALID_PLATFORM];
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('client')];
     const email = req.body.email.toLowerCase();
-    const customers = await easypayUtil.getEasyPayCustomers(req.body.platform);
-    const checkClientExist = await easypayUtil.checkClientExist(
-      customers,
-      email,
-      req.body.platform,
-      req.params.id,
-      debtor
-    );
-    console.log(checkClientExist[1]['userId']);
-    if (checkClientExist[0]) {
-      await easypayUtil.upsertDebtorEasyPayEmail(
-        req.params.id,
+    console.log(req.body);
+
+    if (
+      req.body?.platform == 'Easypay direct' ||
+      req.body?.platform == 'Seamlesschex merchant'
+    ) {
+      const platformExists = Object.values(paymentPlatform).includes(
+        req.body?.platform
+      );
+      console.log('platform', platformExists);
+      if (!platformExists) return [false, constants.Messages.INVALID_PLATFORM];
+
+      const customers = await easypayUtil.getEasyPayCustomers(
+        req.body.platform
+      );
+      const checkClientExist = await easypayUtil.checkClientExist(
+        customers,
         email,
         req.body.platform,
-        checkClientExist[1]['userIds']
+        req.params.id,
+        debtor
       );
+      console.log(checkClientExist[1]['userId']);
+      if (checkClientExist[0]) {
+        await easypayUtil.upsertDebtorEasyPayEmail(
+          req.params.id,
+          email,
+          req.body.platform,
+          checkClientExist[1]['userIds']
+        );
+      }
+      return checkClientExist;
     }
-    return checkClientExist;
+    if (req.body?.platform == 'Paynote') {
+      req.query.type = 'debtor';
+      const result = await this.creditorService.syncPaynote(req);
+      console.log('result', result);
+      if (!result[0]) return result;
+      if (result[0] && !result[1].paynoteSourceIds?.length)
+        return [false, 'Could not found user account'];
+
+      const res = await paynoteUtil.selectPreferredPaynoteSource(
+        result[1].paynoteSourceIds
+      );
+
+      const sourceIdExist = debtor.paynoteSourceIds?.includes(res.source_id);
+      if (sourceIdExist) return [true, []];
+      const updatedDebtor = await paynoteUtil.addPaynoteAccount(
+        debtor._id,
+        res.user_id,
+        res.source_id
+      );
+
+      if (!updatedDebtor)
+        return [false, constantsUtil.failureUpdateMessage('Debtor')];
+      return [true, 'Account added successfully'];
+    }
+    return 0;
   }
 
   async clientFinancialSummary(req: Request) {

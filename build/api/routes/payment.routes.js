@@ -14,6 +14,7 @@ router.post('/creditorUpcomingPayments', authorize_middleware_1.default.validate
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
 router.get('/getAllUpcomingPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getAllUpcomingPayments);
 router.post('/addACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
+router.post('/addAccount/:id', payment_validate_1.default.addAccount, payment_controller_1.default.addAccount);
 router.put('/updateACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.updateACHDetails, payment_controller_1.default.updateACHDetails);
 router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
@@ -29,5 +30,8 @@ router.post('/updatePaymentDate/:id', authorize_middleware_1.default.validateAut
 router.post('/checkInvoice', payment_controller_1.default.checkInvoice);
 router.get('/getInstantPayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getInstantPayment);
 router.get('/getCaseAttorneyPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCaseAttorneyPayments);
+router.post('/paynote-webhook', payment_controller_1.default.paynoteWebhook);
+router.post('/getClientPendingChecks', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getClientPendingChecks);
+router.get('/cronSeamlesschex', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cronSeamlesschex);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

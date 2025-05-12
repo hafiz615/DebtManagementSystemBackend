@@ -14,12 +14,14 @@ const creditor_repository_1 = require("../api/repository/creditor/creditor.repos
 const attorney_repository_1 = require("../api/repository/attorney/attorney.repository");
 const lawfirm_repository_1 = require("../api/repository/lawfirm/lawfirm.repository");
 const mongoose_1 = __importDefault(require("mongoose"));
+const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 dotenv_1.default.config();
 class CommonUtil {
     constructor() {
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
         this.attorneyRepository = new attorney_repository_1.AttorneyRepository();
         this.lawfirmRepository = new lawfirm_repository_1.LawfirmRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
     }
     getCurrentDate() {
         let date = new Date().toUTCString();
@@ -41,6 +43,11 @@ class CommonUtil {
                 return {
                     obj: await this.lawfirmRepository.getById(id),
                     model: new lawfirm_repository_1.LawfirmRepository(),
+                };
+            case 'debtor':
+                return {
+                    obj: await this.debtorRepository.getById(id),
+                    model: new debtor_repository_1.DebtorRepository(),
                 };
             default:
                 return null;

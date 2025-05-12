@@ -49,11 +49,7 @@ export interface IDebtor extends Document {
   otherDocuments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   lawsuitDocuments: Array<IKeyFile>; // Other Document Field i.e Lawsuit
   createdBy: string;
-  accounts: Array<{
-    paymentType: string;
-    customerVaultId: string;
-    platform: string;
-  }>;
+  accounts: Array<any>;
   // paymentType: string;
   extractedFields: any;
   lawsuitFields: any;
@@ -92,6 +88,9 @@ export interface IDebtor extends Document {
   paymentAmountCount: number;
   lastPaymentAmountDate: string;
   additionalCharge: boolean;
+  paynoteUserIds: Array<string>;
+  paynoteSourceIds: Array<string>;
+  seamlesschexRountingIds: Array<string>;
   createdAt: string;
   updatedAt: string;
 }

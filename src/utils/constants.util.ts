@@ -45,6 +45,10 @@ export default {
       'All statuses must be deleted to delete pipeline',
     PAYNOTE_SERVER_ERROR:
       'There is some issue in paynote server. Please try again later.',
+    CHECK_VOIDED: 'Check has been voided',
+    CHECK_DECLINED: 'Check has been declined',
+    CHECK_FAILED: 'Check has been failed',
+    CHECK_EXPIRED: 'Check has been expired',
   },
   ACCOUNT_INVITATION_SUBJECT: 'Complete Your Account Setup',
   FORGOT_PASSWORD_SUBJECT: 'Reset Your Password',

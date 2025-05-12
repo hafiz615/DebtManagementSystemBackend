@@ -128,6 +128,7 @@ class App {
       paymentCronjob.startCronJob();
       pausePayment.startCronJob();
     }
+    // paymentCronjob.cronSeamlesschex();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
     // paymentCronjob.testPaynote();

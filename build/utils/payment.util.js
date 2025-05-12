@@ -189,6 +189,7 @@ class PaymentUtil {
             authorized: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
@@ -206,8 +207,10 @@ class PaymentUtil {
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
+            checkStatus: { $nin: ['Pending', 'Completed'] },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionCaptured() {
@@ -216,6 +219,7 @@ class PaymentUtil {
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
+            checkStatus: { $nin: ['Pending', 'Completed'] },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedAuthorized() {
@@ -244,6 +248,7 @@ class PaymentUtil {
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
+            checkStatus: { $nin: ['Pending', 'Completed'] },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionCaptured() {
@@ -252,6 +257,7 @@ class PaymentUtil {
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
+            checkStatus: { $nin: ['Pending', 'Completed'] },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async searchAndFilterHomePayments(payments, req) {

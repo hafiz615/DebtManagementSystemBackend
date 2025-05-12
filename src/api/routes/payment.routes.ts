@@ -42,6 +42,12 @@ router.post(
   paymentController.addACHDetails
 );
 
+router.post(
+  '/addAccount/:id',
+  paymentValidate.addAccount,
+  paymentController.addAccount
+);
+
 router.put(
   '/updateACHDetails/:id',
   authorize.validateAuth,
@@ -129,4 +135,19 @@ router.get(
   authorize.validateAuth,
   paymentController.getCaseAttorneyPayments
 );
+
+router.post('/paynote-webhook', paymentController.paynoteWebhook);
+
+router.post(
+  '/getClientPendingChecks',
+  authorize.validateAuth,
+  paymentController.getClientPendingChecks
+);
+
+router.get(
+  '/cronSeamlesschex',
+  authorize.validateAuth,
+  paymentController.cronSeamlesschex
+);
+
 export default router;

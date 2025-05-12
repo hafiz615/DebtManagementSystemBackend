@@ -30,7 +30,7 @@ class Debtor {
             phone: '',
             address: '',
         };
-        this.accounts = Array();
+        this.accounts = [];
         // paymentType = '';
         // customerVaultId = '';
         this.createdBy = '';
@@ -76,6 +76,9 @@ class Debtor {
         this.paymentAmountCount = 0;
         this.lastPaymentAmountDate = '';
         this.additionalCharge = false;
+        this.paynoteUserIds = [];
+        this.paynoteSourceIds = [];
+        this.seamlesschexRountingIds = [];
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
