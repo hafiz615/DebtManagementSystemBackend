@@ -1350,7 +1350,10 @@ class PaymentService {
             }
         }
         if (!response[0])
-            return [false, response[1].failedReasonAuthorization];
+            return [
+                false,
+                response[1]?.failedReasonAuthorization || 'Unable to get payment',
+            ];
         return response;
     }
     async getCaseAttorneyPayments(req) {
