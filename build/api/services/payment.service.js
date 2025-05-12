@@ -300,7 +300,7 @@ class PaymentService {
         return { filters, page, limit };
     }
     async getDaysFilterPopulated(filters, days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             filters['dueDate'] = {
@@ -311,7 +311,7 @@ class PaymentService {
         return filters;
     }
     async getDaysFilterUpcoming(days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const tillDate = new Date(new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000).toUTCString();
             return {
@@ -322,7 +322,7 @@ class PaymentService {
         return null;
     }
     async getDaysFilterDueDate(days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             return {
