@@ -1068,9 +1068,11 @@ class PaymentUtil {
     let result = false;
     if (amount > 0) {
       payment['authorizedDate'] = commonUtil.getCurrentDate();
-      payment['debtorId'] = debtor._id;
-      payment['amount'] = amount;
-      payment['debtorName'] = debtor.basicInformation.fullName;
+      if (!paymentPass) {
+        payment['debtorId'] = debtor._id;
+        payment['amount'] = amount;
+        payment['debtorName'] = debtor.basicInformation.fullName;
+      }
       payment['paymentMode'] = paymentPass ? 'Instant' : 'Additional Charge';
       let customerVaultId = '';
       let platform = '';
@@ -1159,6 +1161,7 @@ class PaymentUtil {
         if (responseNumCapture === '1') {
           console.log('capture success');
           payment['captured'] = 'Success';
+          payment['status'] = 'Pending';
           result = true;
         }
         if (responseNumCapture !== '1') {

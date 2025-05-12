@@ -26,6 +26,7 @@ import {LawfirmRepository} from '../repository/lawfirm/lawfirm.repository';
 import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
 import lawsuitUtil from '../../utils/lawsuit.util';
+import {v4} from 'uuid';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -375,7 +376,7 @@ class PaymentService {
   }
 
   async getDaysFilterPopulated(filters: any, days: number) {
-    if (days && (days === 3 || days === 5 || days === 7)) {
+    if (days) {
       let currentDate = commonUtil.getCurrentDate();
       const startDate = new Date(
         new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
@@ -389,7 +390,7 @@ class PaymentService {
   }
 
   async getDaysFilterUpcoming(days: number) {
-    if (days && (days === 3 || days === 5 || days === 7)) {
+    if (days) {
       let currentDate = commonUtil.getCurrentDate();
       const tillDate = new Date(
         new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000
@@ -403,7 +404,7 @@ class PaymentService {
   }
 
   async getDaysFilterDueDate(days: number) {
-    if (days && (days === 3 || days === 5 || days === 7)) {
+    if (days) {
       let currentDate = commonUtil.getCurrentDate();
       const startDate = new Date(
         new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000
@@ -1821,6 +1822,8 @@ class PaymentService {
       const paymentObj = response[1];
       paymentObj['legalFee'] = legalFeeAmount;
       paymentObj['serviceFee'] = serviceFeeAmount;
+      paymentObj['paymentReference'] = v4();
+      paymentObj['paymentReferenceBool'] = true;
       for (const payment of concatedPayments) {
         await this.paymentRepository.updateById<IPayment>(
           payment._id,

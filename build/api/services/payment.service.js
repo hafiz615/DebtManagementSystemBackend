@@ -22,6 +22,7 @@ const googleDrive_util_1 = __importDefault(require("../../utils/googleDrive.util
 const attorney_repository_1 = require("../repository/attorney/attorney.repository");
 const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
+const uuid_1 = require("uuid");
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -300,7 +301,7 @@ class PaymentService {
         return { filters, page, limit };
     }
     async getDaysFilterPopulated(filters, days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             filters['dueDate'] = {
@@ -311,7 +312,7 @@ class PaymentService {
         return filters;
     }
     async getDaysFilterUpcoming(days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const tillDate = new Date(new Date(currentDate).getTime() + days * 24 * 60 * 60 * 1000).toUTCString();
             return {
@@ -322,7 +323,7 @@ class PaymentService {
         return null;
     }
     async getDaysFilterDueDate(days) {
-        if (days && (days === 3 || days === 5 || days === 7)) {
+        if (days) {
             let currentDate = common_util_1.default.getCurrentDate();
             const startDate = new Date(new Date(currentDate).getTime() - days * 24 * 60 * 60 * 1000).toUTCString();
             return {
@@ -1342,6 +1343,8 @@ class PaymentService {
             const paymentObj = response[1];
             paymentObj['legalFee'] = legalFeeAmount;
             paymentObj['serviceFee'] = serviceFeeAmount;
+            paymentObj['paymentReference'] = (0, uuid_1.v4)();
+            paymentObj['paymentReferenceBool'] = true;
             for (const payment of concatedPayments) {
                 await this.paymentRepository.updateById(payment._id, paymentObj);
             }
