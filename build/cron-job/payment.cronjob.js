@@ -224,6 +224,7 @@ class CronJob {
                 sendViaPaynote: 'Pending',
                 isDeleted: false,
                 attorneyId: null,
+                paymentMode: { $nin: ['Additional Charge'] },
             }, undefined, undefined, undefined, {
                 path: 'caseId',
                 select: [
@@ -258,6 +259,7 @@ class CronJob {
                 sendViaPaynote: 'Failed',
                 caseId: { $ne: null },
                 isDeleted: false,
+                paymentMode: { $nin: ['Additional Charge'] },
             }, undefined, undefined, undefined, {
                 path: 'caseId',
                 select: [
