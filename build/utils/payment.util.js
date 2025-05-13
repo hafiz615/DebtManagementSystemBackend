@@ -7,6 +7,7 @@ const payment_repository_1 = require("../api/repository/payment/payment.reposito
 const common_util_1 = __importDefault(require("./common.util"));
 const payment_repomodel_1 = require("../database/repomodels/payment.repomodel");
 const dataCopier_util_1 = require("./dataCopier.util");
+const constants_util_1 = __importDefault(require("../utils/constants.util"));
 const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInterceptor"));
 const axios_1 = __importDefault(require("axios"));
 const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
@@ -843,6 +844,27 @@ class PaymentUtil {
             }
         }
         return [result, payment];
+    }
+    async getCurrentWeekCommision(debtor) {
+        const filter = {
+            debtorId: debtor._id,
+            caseId: null,
+            isDeleted: { $ne: true },
+            attorneyId: null,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+        };
+        const payments = await this.paymentRepository.getAllWithoutPagination(filter, undefined, undefined, { dueDate: 1 });
+        if (!payments)
+            return [true, constants_util_1.default.notFoundMessage('Payments')];
+        const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = await this.getOtherPaymentsTotal(payments[0]);
+        const commissionFee = !payments[0].calculateComission
+            ? payments[0].amount -
+                totalLegalFeeAmount -
+                totalServiceFeeAmount -
+                creditorsAmount
+            : 0;
+        return commissionFee;
     }
 }
 exports.default = new PaymentUtil();

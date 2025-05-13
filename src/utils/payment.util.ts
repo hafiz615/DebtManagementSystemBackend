@@ -1173,5 +1173,41 @@ class PaymentUtil {
     }
     return [result, payment];
   }
+
+  async getCurrentWeekCommision(debtor: IDebtor) {
+    const filter = {
+      debtorId: debtor._id,
+      caseId: null,
+      isDeleted: {$ne: true},
+      attorneyId: null,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+    };
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        filter,
+        undefined,
+        undefined,
+        {dueDate: 1}
+      );
+
+    if (!payments) return [true, constants.notFoundMessage('Payments')];
+
+    const {
+      totalLegalFeeAmount = 0,
+      totalServiceFeeAmount = 0,
+      creditorsAmount = 0,
+    } = await this.getOtherPaymentsTotal(payments[0]);
+
+    const commissionFee = !payments[0].calculateComission
+      ? payments[0].amount -
+        totalLegalFeeAmount -
+        totalServiceFeeAmount -
+        creditorsAmount
+      : 0;
+
+    return commissionFee;
+  }
 }
 export default new PaymentUtil();

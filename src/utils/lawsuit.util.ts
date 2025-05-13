@@ -291,6 +291,11 @@ class LawsuitUtil {
 
   async getServiceFee(caseData: any) {
     // const caseData = await this.caseRepository.getById<ICase>(caseId._id);
+
+    if (caseData?.debtor?.serviceFee) {
+      return caseData.debtor.serviceFee;
+    }
+
     if (caseData?.serviceFee) {
       return caseData.serviceFee;
     }

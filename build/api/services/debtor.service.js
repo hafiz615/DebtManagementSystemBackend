@@ -846,7 +846,7 @@ class DebtorService {
         });
         return [true, constants_util_1.default.successUpdateMessage('Debtor account')];
     }
-    async deleteDebtorAccount(req) {
+    async deleteDebtorAccountDebtorPortal(req) {
         const { id } = req.params;
         const { customerVaultId } = req.body;
         const updatedDebtor = await this.debtorRepository.updateById(id, {
@@ -1595,7 +1595,20 @@ class DebtorService {
         if (!cases) {
             return [false, constants_util_1.default.notFoundMessage('case')];
         }
-        return [true, { debtor, cases }];
+        const commisionFee = await payment_util_1.default.getCurrentWeekCommision(debtor);
+        return [true, { debtor, cases, commisionFee }];
+    }
+    async deleteDebtorAccount(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        debtor.accounts.splice(req.body.index, 1);
+        const updatedDebtor = await this.debtorRepository.updateById(req.params.id, { accounts: debtor.accounts });
+        if (!updatedDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
     }
 }
 exports.default = DebtorService;

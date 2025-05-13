@@ -99,9 +99,9 @@ class DebtorController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
-        this.deleteDebtorAccount = async (req, res) => {
+        this.deleteDebtorAccountDebtorPortal = async (req, res) => {
             try {
-                const response = await this.debtorService.deleteDebtorAccount(req);
+                const response = await this.debtorService.deleteDebtorAccountDebtorPortal(req);
                 if (!response[0]) {
                     return res
                         .status(constants_util_1.default.CODE.BAD_REQUEST)
@@ -946,6 +946,27 @@ class DebtorController {
                 return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
                     statusCode: constants_util_1.default.CODE.OK,
                     data: response[1],
+                    message: constants_util_1.default.successUpdateMessage('Commision'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.deleteDebtorAccount = async (req, res) => {
+            try {
+                const response = await this.debtorService.deleteDebtorAccount(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.BAD_REQUEST)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
                     message: response[1],
                 }));
             }
