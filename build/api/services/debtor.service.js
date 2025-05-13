@@ -1595,8 +1595,15 @@ class DebtorService {
         if (!cases) {
             return [false, constants_util_1.default.notFoundMessage('case')];
         }
-        const commisionFee = await payment_util_1.default.getCurrentWeekCommision(debtor);
-        return [true, { debtor, cases, commisionFee }];
+        const commissionFee = await payment_util_1.default.getCurrentWeekCommission(debtor);
+        return [
+            true,
+            {
+                debtor,
+                cases,
+                commissionFee,
+            },
+        ];
     }
     async deleteDebtorAccount(req) {
         let debtor = await this.debtorRepository.getById(req.params.id);

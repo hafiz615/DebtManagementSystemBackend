@@ -1174,7 +1174,7 @@ class PaymentUtil {
     return [result, payment];
   }
 
-  async getCurrentWeekCommision(debtor: IDebtor) {
+  async getCurrentWeekCommission(debtor: IDebtor) {
     const filter = {
       debtorId: debtor._id,
       caseId: null,
@@ -1207,7 +1207,7 @@ class PaymentUtil {
         creditorsAmount
       : 0;
 
-    return commissionFee;
+    return commissionFee > 0 ? commissionFee : 0;
   }
 }
 export default new PaymentUtil();

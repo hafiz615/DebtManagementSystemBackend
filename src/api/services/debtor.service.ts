@@ -2163,9 +2163,16 @@ class DebtorService {
       return [false, constants.notFoundMessage('case')];
     }
 
-    const commisionFee = await paymentUtil.getCurrentWeekCommision(debtor);
+    const commissionFee = await paymentUtil.getCurrentWeekCommission(debtor);
 
-    return [true, {debtor, cases, commisionFee}];
+    return [
+      true,
+      {
+        debtor,
+        cases,
+        commissionFee,
+      },
+    ];
   }
 
   async deleteDebtorAccount(req: Request) {
