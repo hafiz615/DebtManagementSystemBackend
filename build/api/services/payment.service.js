@@ -216,7 +216,7 @@ class PaymentService {
                 };
             }
             if (filtersApply?.tryDate) {
-                filters['reschedule'] = {
+                filters['rescheduled'] = {
                     $gte: filtersApply.tryDate.start,
                     $lte: filtersApply.tryDate.end,
                 };

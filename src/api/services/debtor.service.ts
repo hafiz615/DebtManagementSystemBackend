@@ -1111,7 +1111,7 @@ class DebtorService {
     return [true, constants.successUpdateMessage('Debtor account')];
   }
 
-  async deleteDebtorAccount(req: Request) {
+  async deleteDebtorAccountDebtorPortal(req: Request) {
     const {id} = req.params;
     const {customerVaultId} = req.body;
 
@@ -2110,6 +2110,25 @@ class DebtorService {
     const result = await caseUtil.getTopPayees(debtor.appid, req.body.months);
 
     return result;
+  }
+
+  async deleteDebtorAccount(req: Request) {
+    let debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    debtor.accounts.splice(req.body.index, 1);
+    const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+      req.params.id,
+      {accounts: debtor.accounts}
+    );
+
+    if (!updatedDebtor) {
+      return [false, constants.failureUpdateMessage('debtor')];
+    }
+
+    return [true, constants.successDeleteMessage('Debtor account')];
   }
 }
 
