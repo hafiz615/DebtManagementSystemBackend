@@ -141,8 +141,8 @@ router.put(
 router.delete(
   '/delete-debtor-account/:id',
   authorize.validateAuth,
-  debtor.deleteDebtorAccount,
-  debtorController.deleteDebtorAccount
+  debtor.deleteDebtorAccountDebtorPortal,
+  debtorController.deleteDebtorAccountDebtorPortal
 );
 router.get(
   '/getDebtorSummery',
@@ -265,6 +265,12 @@ router.post(
   authorize.validateAuth,
   debtor.getTopPayees,
   debtorController.getTopPayees
+);
+
+router.delete(
+  '/deleteDebtorAccount/:id',
+  authorize.validateAuth,
+  debtorController.deleteDebtorAccount
 );
 
 export default router;

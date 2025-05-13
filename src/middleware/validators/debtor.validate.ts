@@ -892,7 +892,7 @@ class DebtorRequests {
     }
   };
 
-  deleteDebtorAccount = (
+  deleteDebtorAccountDebtorPortal = (
     req: Request | any,
     res: Response,
     next: NextFunction

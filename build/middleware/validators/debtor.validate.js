@@ -795,7 +795,7 @@ class DebtorRequests {
                     .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
             }
         };
-        this.deleteDebtorAccount = (req, res, next) => {
+        this.deleteDebtorAccountDebtorPortal = (req, res, next) => {
             const schema = joi_1.default.object({
                 customerVaultId: joi_1.default.string().required().messages({
                     'string.base': 'Customer vault id must be a string',

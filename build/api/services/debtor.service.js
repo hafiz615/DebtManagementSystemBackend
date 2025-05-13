@@ -846,7 +846,7 @@ class DebtorService {
         });
         return [true, constants_util_1.default.successUpdateMessage('Debtor account')];
     }
-    async deleteDebtorAccount(req) {
+    async deleteDebtorAccountDebtorPortal(req) {
         const { id } = req.params;
         const { customerVaultId } = req.body;
         const updatedDebtor = await this.debtorRepository.updateById(id, {
@@ -1556,6 +1556,18 @@ class DebtorService {
         }
         const result = await case_util_1.default.getTopPayees(debtor.appid, req.body.months);
         return result;
+    }
+    async deleteDebtorAccount(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        debtor.accounts.splice(req.body.index, 1);
+        const updatedDebtor = await this.debtorRepository.updateById(req.params.id, { accounts: debtor.accounts });
+        if (!updatedDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
     }
 }
 exports.default = DebtorService;
