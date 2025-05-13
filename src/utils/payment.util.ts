@@ -14,14 +14,17 @@ import {ServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repo
 import {IServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository.interface';
 import {IFee} from '../database/interfaces/serviceFee.interface';
 import lawsuitUtil from './lawsuit.util';
+import {CaseRepository} from '../api/repository/case/case.repository';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
   private feeRepository: ServiceFeeRepository;
+  private caseRepository: CaseRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.feeRepository = new ServiceFeeRepository();
+    this.caseRepository = new CaseRepository();
   }
   async getFilteredPayments(payments: any, arrayName: string) {
     const transformedArray = payments.map(obj => ({
@@ -1208,6 +1211,10 @@ class PaymentUtil {
       : 0;
 
     return commissionFee > 0 ? commissionFee : 0;
+  }
+
+  async updateCaseInterval(caseId: string, intervalId: string, count: number) {
+    const updateCase = await this.caseRepository.updateById(caseId, {});
   }
 }
 export default new PaymentUtil();

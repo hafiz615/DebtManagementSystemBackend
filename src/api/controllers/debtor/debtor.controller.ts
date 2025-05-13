@@ -1074,6 +1074,7 @@ class DebtorController {
         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
     }
   };
+
   deleteDebtorAccount = async (req: Request, res: Response) => {
     try {
       const response = await this.debtorService.deleteDebtorAccount(req);

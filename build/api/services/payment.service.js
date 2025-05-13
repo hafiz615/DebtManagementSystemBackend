@@ -1442,6 +1442,35 @@ class PaymentService {
             },
         ];
     }
+    async deletePayment(req) {
+        const deleteAllPayments = req.query.allPayment === 'true';
+        const payment = await this.paymentRepository.getById(req.params.id);
+        if (!payment) {
+            return [false, constants_util_1.default.notFoundMessage('payment')];
+        }
+        const targetField = payment.caseId
+            ? { caseId: payment.caseId }
+            : { debtorId: payment.debtorId };
+        const baseFilter = {
+            ...targetField,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+            isDeleted: false,
+        };
+        if (deleteAllPayments) {
+            const updated = await this.paymentRepository.updateMany({
+                ...baseFilter,
+                dueDate: { $gte: new Date(payment.dueDate) },
+            }, { isDeleted: true });
+            return updated
+                ? [true, constants_util_1.default.successDeleteMessage('Payments')]
+                : [false, constants_util_1.default.failureDeleteMessage('payments.')];
+        }
+        const updated = await this.paymentRepository.updateById(req.params.id, { isDeleted: true });
+        return updated
+            ? [true, constants_util_1.default.successDeleteMessage('Payment')]
+            : [false, constants_util_1.default.failureDeleteMessage('payment.')];
+    }
 }
 exports.default = PaymentService;
 //# sourceMappingURL=payment.service.js.map

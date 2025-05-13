@@ -12,10 +12,12 @@ const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInter
 const axios_1 = __importDefault(require("axios"));
 const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
 const lawsuit_util_1 = __importDefault(require("./lawsuit.util"));
+const case_repository_1 = require("../api/repository/case/case.repository");
 class PaymentUtil {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.feeRepository = new serviceFee_repository_1.ServiceFeeRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
     }
     async getFilteredPayments(payments, arrayName) {
         const transformedArray = payments.map(obj => ({
@@ -865,6 +867,9 @@ class PaymentUtil {
                 creditorsAmount
             : 0;
         return commissionFee > 0 ? commissionFee : 0;
+    }
+    async updateCaseInterval(caseId, intervalId, count) {
+        const updateCase = await this.caseRepository.updateById(caseId, {});
     }
 }
 exports.default = new PaymentUtil();

@@ -33,5 +33,6 @@ router.get('/getCaseAttorneyPayments/:id', authorize_middleware_1.default.valida
 router.post('/paynote-webhook', payment_controller_1.default.paynoteWebhook);
 router.post('/getClientPendingChecks', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getClientPendingChecks);
 router.get('/cronSeamlesschex', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cronSeamlesschex);
+router.post('/deletePayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.deletePayment);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map
