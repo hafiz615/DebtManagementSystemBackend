@@ -1213,13 +1213,43 @@ class PaymentUtil {
     return commissionFee > 0 ? commissionFee : 0;
   }
 
-  async updateCaseInterval(caseId: string, intervalId: string, count: number) {
-    const updateCase = await this.caseRepository.updateById(caseId, {});
+  async updateFrequencyInterval(
+    model: any,
+    id: string,
+    intervalId: string,
+    count: number
+  ) {
+    const data: any = await model.getById(id);
+
+    const updatedIntervals = data.intervals
+      .map((interval: any) => {
+        if (String(interval._id) === String(intervalId)) {
+          const newFrequency = Math.max(0, interval.frequency - count);
+
+          return {
+            ...interval,
+            frequency: newFrequency,
+          };
+        }
+        return interval;
+      })
+      .filter((interval: any) => interval.frequency > 0);
+
+    const result = await model.updateById(id, {
+      intervals: updatedIntervals,
+    });
+
+    return result;
   }
 
   async updatePaymentsDate(payments: IPayment[], date: string) {
     for (const payment of payments) {
     }
+  }
+
+  async getIntervals(model: any, id: string) {
+    const data = await model.getById(id);
+    return data.intervals.map((interval: any) => String(interval._id));
   }
 }
 export default new PaymentUtil();

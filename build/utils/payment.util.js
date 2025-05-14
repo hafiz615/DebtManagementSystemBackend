@@ -868,12 +868,32 @@ class PaymentUtil {
             : 0;
         return commissionFee > 0 ? commissionFee : 0;
     }
-    async updateCaseInterval(caseId, intervalId, count) {
-        const updateCase = await this.caseRepository.updateById(caseId, {});
+    async updateFrequencyInterval(model, id, intervalId, count) {
+        const data = await model.getById(id);
+        const updatedIntervals = data.intervals
+            .map((interval) => {
+            if (String(interval._id) === String(intervalId)) {
+                const newFrequency = Math.max(0, interval.frequency - count);
+                return {
+                    ...interval,
+                    frequency: newFrequency,
+                };
+            }
+            return interval;
+        })
+            .filter((interval) => interval.frequency > 0);
+        const result = await model.updateById(id, {
+            intervals: updatedIntervals,
+        });
+        return result;
     }
     async updatePaymentsDate(payments, date) {
         for (const payment of payments) {
         }
+    }
+    async getIntervals(model, id) {
+        const data = await model.getById(id);
+        return data.intervals.map((interval) => String(interval._id));
     }
 }
 exports.default = new PaymentUtil();
