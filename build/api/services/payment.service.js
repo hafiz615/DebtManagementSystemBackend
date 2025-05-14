@@ -1501,6 +1501,21 @@ class PaymentService {
                 ? [true, constants_util_1.default.successUpdateMessage('Payment')]
                 : [false, constants_util_1.default.failureUpdateMessage('payment.')];
         }
+        if (req.body.date) {
+            if (updateAllPayments) {
+                const payments = await this.paymentRepository.getAllWithoutPagination({
+                    ...baseFilter,
+                    dueDate: { $gte: new Date(payment.dueDate) },
+                });
+            }
+            const updatedPayment = await this.paymentRepository.updateById(req.params.id, {
+                dueDate: req.body.date,
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
+            if (!updatedPayment)
+                return [false, constants_util_1.default.failureUpdateMessage('payment')];
+            return [true, constants_util_1.default.successUpdateMessage('Payment')];
+        }
         return 0;
     }
 }

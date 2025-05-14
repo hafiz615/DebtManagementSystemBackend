@@ -1216,5 +1216,10 @@ class PaymentUtil {
   async updateCaseInterval(caseId: string, intervalId: string, count: number) {
     const updateCase = await this.caseRepository.updateById(caseId, {});
   }
+
+  async updatePaymentsDate(payments: IPayment[], date: string) {
+    for (const payment of payments) {
+    }
+  }
 }
 export default new PaymentUtil();

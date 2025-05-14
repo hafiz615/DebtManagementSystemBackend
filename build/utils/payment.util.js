@@ -871,6 +871,10 @@ class PaymentUtil {
     async updateCaseInterval(caseId, intervalId, count) {
         const updateCase = await this.caseRepository.updateById(caseId, {});
     }
+    async updatePaymentsDate(payments, date) {
+        for (const payment of payments) {
+        }
+    }
 }
 exports.default = new PaymentUtil();
 //# sourceMappingURL=payment.util.js.map

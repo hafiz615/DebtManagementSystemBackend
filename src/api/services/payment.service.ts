@@ -2038,6 +2038,29 @@ class PaymentService {
         : [false, constants.failureUpdateMessage('payment.')];
     }
 
+    if (req.body.date) {
+      if (updateAllPayments) {
+        const payments =
+          await this.paymentRepository.getAllWithoutPagination<IPayment>({
+            ...baseFilter,
+            dueDate: {$gte: new Date(payment.dueDate)},
+          });
+      }
+
+      const updatedPayment = await this.paymentRepository.updateById<IPayment>(
+        req.params.id,
+        {
+          dueDate: req.body.date,
+          updatedAt: commonUtil.getCurrentDate(),
+        }
+      );
+
+      if (!updatedPayment)
+        return [false, constants.failureUpdateMessage('payment')];
+
+      return [true, constants.successUpdateMessage('Payment')];
+    }
+
     return 0;
   }
 }
