@@ -55,6 +55,7 @@ class PaymentUtil {
       sendViaPaynote: obj.sendViaPaynote,
       failedReasonPaynote: obj.failedReasonPaynote,
       debtorId: obj.debtorId,
+      paymentMode: obj.paymentMode ? obj.paymentMode : '',
     }));
 
     return this.getFilteredPaymentsObj(transformedArray, arrayName);
