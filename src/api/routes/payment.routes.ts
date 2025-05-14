@@ -156,4 +156,10 @@ router.post(
   paymentController.deletePayment
 );
 
+router.post(
+  '/updatePayment/:id',
+  authorize.validateAuth,
+  paymentController.updatePayment
+);
+
 export default router;

@@ -1959,7 +1959,7 @@ class PaymentService {
 
     const targetField = payment.caseId
       ? {caseId: payment.caseId}
-      : {debtorId: payment.debtorId};
+      : {debtorId: payment.debtorId, caseId: null};
 
     const baseFilter = {
       ...targetField,
@@ -1974,7 +1974,7 @@ class PaymentService {
           ...baseFilter,
           dueDate: {$gte: new Date(payment.dueDate)},
         },
-        {isDeleted: true}
+        {isDeleted: true, updatedAt: commonUtil.getCurrentDate()}
       );
 
       return updated
@@ -1984,12 +1984,61 @@ class PaymentService {
 
     const updated = await this.paymentRepository.updateById<IPayment>(
       req.params.id,
-      {isDeleted: true}
+      {isDeleted: true, updatedAt: commonUtil.getCurrentDate()}
     );
 
     return updated
       ? [true, constants.successDeleteMessage('Payment')]
       : [false, constants.failureDeleteMessage('payment.')];
+  }
+
+  async updatePayment(req: Request) {
+    const updateAllPayments = req.query.allPayment === 'true';
+
+    const payment = await this.paymentRepository.getById<IPayment>(
+      req.params.id
+    );
+    if (!payment) {
+      return [false, constants.notFoundMessage('payment')];
+    }
+
+    const targetField = payment.caseId
+      ? {caseId: payment.caseId}
+      : {debtorId: payment.debtorId, caseId: null};
+
+    const baseFilter = {
+      ...targetField,
+      authorized: {$ne: 'Success'},
+      paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
+      isDeleted: false,
+    };
+
+    if (req.body.amount) {
+      if (updateAllPayments) {
+        const updated = await this.paymentRepository.updateMany<IPayment>(
+          {
+            ...baseFilter,
+            dueDate: {$gte: new Date(payment.dueDate)},
+          },
+          {amount: req.body.amount, updatedAt: commonUtil.getCurrentDate()}
+        );
+
+        return updated
+          ? [true, constants.successUpdateMessage('Payments')]
+          : [false, constants.failureUpdateMessage('payments.')];
+      }
+
+      const updated = await this.paymentRepository.updateById<IPayment>(
+        req.params.id,
+        {amount: req.body.amount, updatedAt: commonUtil.getCurrentDate()}
+      );
+
+      return updated
+        ? [true, constants.successUpdateMessage('Payment')]
+        : [false, constants.failureUpdateMessage('payment.')];
+    }
+
+    return 0;
   }
 }
 
