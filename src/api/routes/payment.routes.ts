@@ -150,4 +150,10 @@ router.get(
   paymentController.cronSeamlesschex
 );
 
+router.get(
+  '/getClientPayments/:id',
+  authorize.validateAuth,
+  paymentController.getClientPayments
+);
+
 export default router;
