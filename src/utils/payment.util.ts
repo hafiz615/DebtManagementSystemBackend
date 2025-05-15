@@ -15,6 +15,7 @@ import {IServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.rep
 import {IFee} from '../database/interfaces/serviceFee.interface';
 import lawsuitUtil from './lawsuit.util';
 import {CaseRepository} from '../api/repository/case/case.repository';
+import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -1188,30 +1189,43 @@ class PaymentUtil {
       paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
     };
 
-    const payments =
-      await this.paymentRepository.getAllWithoutPagination<IPayment>(
-        filter,
-        undefined,
-        undefined,
-        {dueDate: 1}
-      );
+    const intervals = await this.getIntervals(
+      new DebtorRepository(),
+      debtor._id
+    );
+    const commissionList: {intervalId: string; commissionFee: number}[] = [];
 
-    if (!payments) return [true, constants.notFoundMessage('Payments')];
+    for (const interval of intervals) {
+      const payments =
+        await this.paymentRepository.getAllWithoutPagination<IPayment>(
+          {...filter, intervalId: interval},
+          undefined,
+          undefined,
+          {dueDate: 1}
+        );
 
-    const {
-      totalLegalFeeAmount = 0,
-      totalServiceFeeAmount = 0,
-      creditorsAmount = 0,
-    } = await this.getOtherPaymentsTotal(payments[0]);
+      if (!payments || payments.length === 0) continue;
 
-    const commissionFee = !payments[0].calculateComission
-      ? payments[0].amount -
-        totalLegalFeeAmount -
-        totalServiceFeeAmount -
-        creditorsAmount
-      : 0;
+      const {
+        totalLegalFeeAmount = 0,
+        totalServiceFeeAmount = 0,
+        creditorsAmount = 0,
+      } = await this.getOtherPaymentsTotal(payments[0]);
 
-    return commissionFee > 0 ? commissionFee : 0;
+      const commissionFee = !payments[0].calculateComission
+        ? payments[0].amount -
+          totalLegalFeeAmount -
+          totalServiceFeeAmount -
+          creditorsAmount
+        : 0;
+
+      commissionList.push({
+        intervalId: interval,
+        commissionFee: commissionFee > 0 ? commissionFee : 0,
+      });
+    }
+
+    return commissionList;
   }
 
   async updateFrequencyInterval(

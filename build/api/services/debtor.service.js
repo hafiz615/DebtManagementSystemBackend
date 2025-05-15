@@ -1594,13 +1594,13 @@ class DebtorService {
         if (!cases) {
             return [false, constants_util_1.default.notFoundMessage('case')];
         }
-        const commissionFee = await payment_util_1.default.getCurrentWeekCommission(debtor);
+        const commissions = await payment_util_1.default.getCurrentWeekCommission(debtor);
         return [
             true,
             {
                 debtor,
                 cases,
-                commissionFee,
+                commissions,
             },
         ];
     }

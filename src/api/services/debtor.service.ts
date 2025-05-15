@@ -2162,14 +2162,14 @@ class DebtorService {
       return [false, constants.notFoundMessage('case')];
     }
 
-    const commissionFee = await paymentUtil.getCurrentWeekCommission(debtor);
+    const commissions = await paymentUtil.getCurrentWeekCommission(debtor);
 
     return [
       true,
       {
         debtor,
         cases,
-        commissionFee,
+        commissions,
       },
     ];
   }
