@@ -1266,5 +1266,26 @@ class PaymentUtil {
     const data = await model.getById(id);
     return data.intervals.map((interval: any) => String(interval._id));
   }
+
+  async updatePaymentAmount(
+    filter: any,
+    interval: string,
+    dueDate: string,
+    amount: number
+  ) {
+    const query: any = {
+      ...filter,
+      dueDate: {$gte: new Date(dueDate)},
+    };
+
+    if (interval) {
+      query.intervalId = interval;
+    }
+
+    return await this.paymentRepository.updateMany<IPayment>(query, {
+      amount: amount,
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+  }
 }
 export default new PaymentUtil();

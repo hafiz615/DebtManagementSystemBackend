@@ -579,16 +579,19 @@ class PaymentService {
     const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) return [false, constants.notFoundMessage('case')];
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
-    const paymentsPrevious: IPayment[] = await this.getPreviousPaymentsByCaseId(
-      req.params.id
+    const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
+      req.params.id,
+      false
     );
-    const paymentsUpcoming: IPayment[] = await this.getUpcomingPaymentsByCaseId(
+    const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(
       req.params.id,
       pageLimit.page,
-      pageLimit.limit
+      pageLimit.limit,
+      false
     );
-    const paymentsUpcomingCount = await this.getUpcomingPaymentsByCaseIdCount(
-      req.params.id
+    const paymentsUpcomingCount = await this.getUpcomingPaymentsCount(
+      req.params.id,
+      false
     );
 
     const paymentsObj = await paymentUtil.getFilteredPayments(
@@ -806,20 +809,26 @@ class PaymentService {
     });
   }
 
-  private async getPreviousPaymentsByCaseId(id: string) {
+  private async getPreviousPayments(id: string, debtor: boolean) {
+    const filters = {
+      isDeleted: false,
+      $or: [
+        {authorized: 'Success'},
+        {authorized: 'Failed'},
+        {captured: 'Success'},
+        {captured: 'Failed'},
+        {lawsuitId: {$exists: false}},
+        {lawsuitId: {$eq: null}},
+      ],
+    };
+    if (debtor) {
+      filters['debtorId'] = id;
+      filters['caseId'] = null;
+    } else {
+      filters['caseId'] = id;
+    }
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
-      {
-        caseId: id,
-        isDeleted: false,
-        $or: [
-          {authorized: 'Success'},
-          {authorized: 'Failed'},
-          {captured: 'Success'},
-          {captured: 'Failed'},
-          {lawsuitId: {$exists: false}},
-          {lawsuitId: {$eq: null}},
-        ],
-      },
+      filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode',
       undefined,
       {createdAt: -1},
@@ -840,18 +849,25 @@ class PaymentService {
     );
   }
 
-  private async getUpcomingPaymentsByCaseId(
+  private async getUpcomingPayments(
     id: string,
     page: number,
-    limit: number
+    limit: number,
+    debtor: boolean
   ) {
+    const filters = {
+      isDeleted: false,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
+      status: 'Upcoming',
+    };
+    if (debtor) {
+      filters['debtorId'] = id;
+      filters['caseId'] = null;
+    } else {
+      filters['caseId'] = id;
+    }
     return await this.paymentRepository.getAll<IPayment>(
-      {
-        caseId: id,
-        isDeleted: false,
-        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
-        status: 'Upcoming',
-      },
+      filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName',
       undefined,
       {createdAt: -1},
@@ -895,13 +911,19 @@ class PaymentService {
     return await this.paymentRepository.getCount<IPayment>(filter);
   }
 
-  private async getUpcomingPaymentsByCaseIdCount(id: string) {
-    return await this.paymentRepository.getCount<IPayment>({
-      caseId: id,
+  private async getUpcomingPaymentsCount(id: string, debtor: boolean) {
+    const filters = {
       $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       isDeleted: false,
       status: 'Upcoming',
-    });
+    };
+    if (debtor) {
+      filters['debtorId'] = id;
+      filters['caseId'] = null;
+    } else {
+      filters['caseId'] = id;
+    }
+    return await this.paymentRepository.getCount<IPayment>(filters);
   }
 
   private async getPreviousCommissionPayments() {
@@ -1991,7 +2013,6 @@ class PaymentService {
             },
             {isDeleted: true, updatedAt: commonUtil.getCurrentDate()}
           );
-          console.log('updatePayment', updatePayments);
 
           paymentUtil.updateFrequencyInterval(
             model.obj,
@@ -2039,6 +2060,7 @@ class PaymentService {
 
   async updatePayment(req: Request) {
     const updateAllPayments = req.query.allPayment === 'true';
+    const updateAllIntervalPayments = req.query.allIntervals === 'true';
 
     const payment = await this.paymentRepository.getById<IPayment>(
       req.params.id
@@ -2047,28 +2069,48 @@ class PaymentService {
       return [false, constants.notFoundMessage('payment')];
     }
 
+    const intervalId = !updateAllIntervalPayments ? payment.intervalId : null;
+
     const targetField = payment.caseId
       ? {caseId: payment.caseId}
       : {debtorId: payment.debtorId, caseId: null};
 
     const baseFilter = {
       ...targetField,
+      intervalId: intervalId,
       authorized: {$ne: 'Success'},
       paymentMode: {$nin: ['Wire', 'Check', 'Cash', 'Additional Charge']},
       isDeleted: false,
     };
 
+    const model = targetField.caseId
+      ? {obj: new CaseRepository(), id: targetField.caseId}
+      : {obj: new DebtorRepository(), id: targetField.debtorId};
+
     if (req.body.amount) {
       if (updateAllPayments) {
-        const updated = await this.paymentRepository.updateMany<IPayment>(
-          {
-            ...baseFilter,
-            dueDate: {$gte: new Date(payment.dueDate)},
-          },
-          {amount: req.body.amount, updatedAt: commonUtil.getCurrentDate()}
+        let updatedPayments = null;
+        if (updateAllIntervalPayments) {
+          const intervals = await paymentUtil.getIntervals(model.obj, model.id);
+          for (const interval of intervals) {
+            updatedPayments = await paymentUtil.updatePaymentAmount(
+              baseFilter,
+              interval,
+              payment.dueDate,
+              req.body.amount
+            );
+          }
+          return updatedPayments
+            ? [true, constants.successUpdateMessage('Payments')]
+            : [false, constants.failureUpdateMessage('payments.')];
+        }
+        const updatedPayment = await paymentUtil.updatePaymentAmount(
+          baseFilter,
+          '',
+          payment.dueDate,
+          req.body.amount
         );
-
-        return updated
+        return updatedPayment
           ? [true, constants.successUpdateMessage('Payments')]
           : [false, constants.failureUpdateMessage('payments.')];
       }
@@ -2107,6 +2149,113 @@ class PaymentService {
     }
 
     return 0;
+  }
+
+  async getClientPayments(req: Request): Promise<[boolean, {} | string]> {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('case')];
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
+      req.params.id,
+      true
+    );
+    const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(
+      req.params.id,
+      pageLimit.page,
+      pageLimit.limit,
+      true
+    );
+    const paymentsUpcomingCount = await this.getUpcomingPaymentsCount(
+      req.params.id,
+      true
+    );
+
+    const paymentsObj = await paymentUtil.getFilteredPayments(
+      paymentsPrevious,
+      'default'
+    );
+    const upcomingPaymentsObj = await paymentUtil.getFilteredPayments(
+      paymentsUpcoming,
+      'upcomingPayments'
+    );
+    let paidAmount = 0,
+      upcomingAmount = 0,
+      failedAmount = 0;
+    paidAmount = paymentsObj.successPayments.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    upcomingAmount = paymentsObj.upcomingPayments.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    failedAmount = paymentsObj.failedCaptures.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
+      ...obj,
+      type: 'authorization',
+    }));
+
+    // Adding type to each object in successCapture array
+    const failedCapture = paymentsObj.failedCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'capture',
+    }));
+
+    const successAuth = paymentsObj.successAuthorizations
+      .filter(payment => payment.paymentMode !== 'Direct Post')
+      .map((obj: any) => ({
+        ...obj,
+        type: 'authorization',
+      }));
+
+    // Adding type to each object in successCapture array
+    const successCapture = paymentsObj.successCaptures.map((obj: any) => ({
+      ...obj,
+      type: 'capture',
+    }));
+
+    // Merging the arrays
+    const mergedArray = [
+      ...successAuth,
+      ...failedAuth,
+      ...successCapture,
+      ...failedCapture,
+    ];
+    const paymentCounts = {
+      failedCaptures: paymentsObj.failedCaptures.length,
+      successCaptures: paymentsObj.successCaptures.length,
+      failedAuthorizations: paymentsObj.failedAuthorizations.length,
+      successAuthorizations: successAuth.length,
+      successPayments: paymentsObj.successPayments.length,
+      paidAmount: paidAmount,
+      remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
+    };
+    mergedArray.sort(
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+    );
+    upcomingPaymentsObj.upcomingPayments.sort(
+      (a: any, b: any) =>
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+    const paginatedArray = mergedArray.slice(
+      (pageLimit.page - 1) * pageLimit.limit,
+      pageLimit.page * pageLimit.limit
+    );
+    return [
+      true,
+      {
+        transactions: {
+          previous: paginatedArray,
+          upcomingPayments: upcomingPaymentsObj.upcomingPayments,
+          previousCount: mergedArray.length,
+          upcomingCount: paymentsUpcomingCount,
+        },
+        paymentCounts: paymentCounts,
+      },
+    ];
   }
 }
 

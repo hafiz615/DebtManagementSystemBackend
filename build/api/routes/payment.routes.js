@@ -35,5 +35,6 @@ router.post('/getClientPendingChecks', authorize_middleware_1.default.validateAu
 router.get('/cronSeamlesschex', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cronSeamlesschex);
 router.delete('/deletePayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.deletePayment);
 router.post('/updatePayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.updatePayment);
+router.get('/getClientPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getClientPayments);
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map
