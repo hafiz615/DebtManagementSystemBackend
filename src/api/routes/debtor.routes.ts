@@ -286,4 +286,11 @@ router.delete(
   debtorController.deleteDebtorAccount
 );
 
+router.put(
+  '/updateServiceFee/:id',
+  authorize.validateAuth,
+  debtor.updateServiceFee,
+  debtorController.updateServiceFee
+);
+
 export default router;

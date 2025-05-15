@@ -1316,10 +1316,6 @@ class CaseValidate {
                 .messages({
                 'array.base': 'Intervals must be an array',
             }),
-            legalFee: joi_1.default.number().strict().messages({
-                'number.base': 'Legal fee must be a valid number',
-                'number.strict': 'Legal fee must be a strict number type',
-            }),
         });
         const { error } = schema.validate(req.body);
         if (!error) {
@@ -1382,6 +1378,23 @@ class CaseValidate {
                 'string.base': 'Affiliate email should be a string',
                 'string.email': 'Affiliate email should be a valid email address',
                 'any.required': 'Affiliate email is required',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
+    async updateLegalFee(req, res, next) {
+        const schema = joi_1.default.object({
+            legalFee: joi_1.default.number().strict().required().messages({
+                'number.base': 'Legal fee must be a number',
+                'any.required': 'Legal fee is required',
             }),
         });
         const { error } = schema.validate(req.body);

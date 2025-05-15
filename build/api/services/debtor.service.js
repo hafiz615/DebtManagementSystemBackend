@@ -1042,7 +1042,6 @@ class DebtorService {
         debtor = await this.debtorRepository.updateById(req.params.id, {
             intervals: req.body.intervals,
             isExempt: req.body.isExempt,
-            serviceFee: req.body.serviceFee,
         });
         req.body.intervals = debtor.intervals;
         req.body.debtorName = debtor.basicInformation.fullName;
@@ -1616,6 +1615,17 @@ class DebtorService {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
         }
         return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
+    }
+    async updateServiceFee(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const updatedDebtor = await this.debtorRepository.updateById(req.params.id, { serviceFee: req.body.serviceFee });
+        if (!updatedDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        return [true, constants_util_1.default.successUpdateMessage('Debtor service fee')];
     }
 }
 exports.default = DebtorService;

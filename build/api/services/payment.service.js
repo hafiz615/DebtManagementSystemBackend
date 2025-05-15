@@ -466,7 +466,9 @@ class PaymentService {
             ...obj,
             type: 'capture',
         }));
-        const successAuth = paymentsObj.successAuthorizations.map((obj) => ({
+        const successAuth = paymentsObj.successAuthorizations
+            .filter(payment => payment.paymentMode !== 'Direct Post')
+            .map((obj) => ({
             ...obj,
             type: 'authorization',
         }));
@@ -486,7 +488,7 @@ class PaymentService {
             failedCaptures: paymentsObj.failedCaptures.length,
             successCaptures: paymentsObj.successCaptures.length,
             failedAuthorizations: paymentsObj.failedAuthorizations.length,
-            successAuthorizations: paymentsObj.successAuthorizations.length,
+            successAuthorizations: successAuth.length,
             successPayments: paymentsObj.successPayments.length,
             paidAmount: paidAmount,
             remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
@@ -609,7 +611,7 @@ class PaymentService {
                 { lawsuitId: { $exists: false } },
                 { lawsuitId: { $eq: null } },
             ],
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName', undefined, { createdAt: -1 }, {
+        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [
