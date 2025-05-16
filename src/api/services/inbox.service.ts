@@ -318,7 +318,7 @@ class InboxService {
       }
       return result;
     }, {});
-    return [true, data];
+    return [true, {allSms: data, userName: user ? user.name : ''}];
   }
 }
 
