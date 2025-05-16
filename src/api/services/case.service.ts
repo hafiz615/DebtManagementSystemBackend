@@ -1824,6 +1824,25 @@ class CaseService {
     data['settlementRange'] = settlementRange;
     return [true, data];
   };
+
+  updateLegalFee = async (req: Request) => {
+    const reqTemp: any = req;
+    let caseTemp: any = await this.caseRepository.getById<ICase>(req.params.id);
+
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {legalFee: req.body.legalFee}
+    );
+
+    if (!updateCase)
+      return [false, constantsUtil.failureUpdateMessage('legal fee.')];
+
+    return [true, constantsUtil.successUpdateMessage('legal fee.')];
+  };
 }
 
 export default CaseService;

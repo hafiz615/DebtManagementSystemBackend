@@ -88,6 +88,7 @@ export class Debtor {
   paynoteUserIds = [];
   paynoteSourceIds = [];
   seamlesschexRountingIds = [];
+  serviceFee = 0;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

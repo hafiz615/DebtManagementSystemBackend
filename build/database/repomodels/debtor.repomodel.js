@@ -79,6 +79,7 @@ class Debtor {
         this.paynoteUserIds = [];
         this.paynoteSourceIds = [];
         this.seamlesschexRountingIds = [];
+        this.serviceFee = 0;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

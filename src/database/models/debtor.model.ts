@@ -249,6 +249,9 @@ const debtorSchema: Schema = new Schema({
   seamlesschexRountingIds: {
     type: Array<String>,
   },
+  serviceFee: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     required: true,

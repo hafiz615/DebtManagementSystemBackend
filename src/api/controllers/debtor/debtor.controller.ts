@@ -1052,6 +1052,29 @@ class DebtorController {
     }
   };
 
+  updateCommisionPercentage = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.updateCommisionPercentage(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successUpdateMessage('Commision'),
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   deleteDebtorAccount = async (req: Request, res: Response) => {
     try {
       const response = await this.debtorService.deleteDebtorAccount(req);
@@ -1065,6 +1088,53 @@ class DebtorController {
           statusCode: constants.CODE.OK,
           data: [],
           message: response[1],
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  updateServiceFee = async (req: Request, res: Response) => {
+    try {
+      const response = await this.debtorService.updateServiceFee(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: response[1],
+        })
+      );
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  debtorCreditorPaymentPlanDetail = async (req: Request, res: Response) => {
+    try {
+      const response =
+        await this.debtorService.debtorCreditorPaymentPlanDetail(req);
+      if (!response[0]) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse(response[1]));
+      }
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: response[1],
+          message: constants.successFoundMessage('Payment plan'),
         })
       );
     } catch (error) {

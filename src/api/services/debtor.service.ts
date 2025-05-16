@@ -2114,6 +2114,68 @@ class DebtorService {
     return result;
   }
 
+  async updateCommisionPercentage(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    debtor.commissionPercentage = req.body.commission;
+    const updatedDebtor = await debtorUtil.updateDebtorTotalCommission(debtor);
+    if (!updatedDebtor)
+      return [false, constantsUtil.failureUpdateMessage('commision.')];
+    return [true, constantsUtil.successUpdateMessage('Commision')];
+  }
+
+  async debtorCreditorPaymentPlanDetail(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id, {
+      basicInformation: 1,
+      totalCommission: 1,
+      commissionPercentage: 1,
+      intervals: 1,
+      isExempt: 1,
+      serviceFee: 1,
+    });
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
+      {debtor: req.params.id, isDeleted: false},
+      {
+        creditor: 1,
+        totalDebt: 1,
+        remainingAmountPaid: 1,
+        paidAmount: 1,
+        remaining: 1,
+        settledAmount: 1,
+        intervals: 1,
+        isExempt: 1,
+        legalFee: 1,
+      },
+      undefined,
+      undefined,
+      [{path: 'creditor', select: 'businessInformation aggression'}]
+    );
+
+    if (!cases) {
+      return [false, constants.notFoundMessage('case')];
+    }
+
+    const commissions = await paymentUtil.getCurrentWeekCommission(debtor);
+
+    return [
+      true,
+      {
+        debtor,
+        cases,
+        commissions,
+      },
+    ];
+  }
+
   async deleteDebtorAccount(req: Request) {
     let debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
 
@@ -2131,6 +2193,24 @@ class DebtorService {
     }
 
     return [true, constants.successDeleteMessage('Debtor account')];
+  }
+
+  async updateServiceFee(req: Request) {
+    let debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+    const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
+      req.params.id,
+      {serviceFee: req.body.serviceFee}
+    );
+
+    if (!updatedDebtor) {
+      return [false, constants.failureUpdateMessage('debtor')];
+    }
+
+    return [true, constants.successUpdateMessage('Debtor service fee')];
   }
 }
 

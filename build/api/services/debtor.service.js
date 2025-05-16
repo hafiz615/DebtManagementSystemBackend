@@ -1559,6 +1559,53 @@ class DebtorService {
         const result = await case_util_1.default.getTopPayees(debtor.appid, req.body.months);
         return result;
     }
+    async updateCommisionPercentage(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        debtor.commissionPercentage = req.body.commission;
+        const updatedDebtor = await debtor_util_1.default.updateDebtorTotalCommission(debtor);
+        if (!updatedDebtor)
+            return [false, constants_util_2.default.failureUpdateMessage('commision.')];
+        return [true, constants_util_2.default.successUpdateMessage('Commision')];
+    }
+    async debtorCreditorPaymentPlanDetail(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id, {
+            basicInformation: 1,
+            totalCommission: 1,
+            commissionPercentage: 1,
+            intervals: 1,
+            isExempt: 1,
+            serviceFee: 1,
+        });
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const cases = await this.caseRepository.getAllWithoutPagination({ debtor: req.params.id, isDeleted: false }, {
+            creditor: 1,
+            totalDebt: 1,
+            remainingAmountPaid: 1,
+            paidAmount: 1,
+            remaining: 1,
+            settledAmount: 1,
+            intervals: 1,
+            isExempt: 1,
+            legalFee: 1,
+        }, undefined, undefined, [{ path: 'creditor', select: 'businessInformation aggression' }]);
+        if (!cases) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const commissions = await payment_util_1.default.getCurrentWeekCommission(debtor);
+        return [
+            true,
+            {
+                debtor,
+                cases,
+                commissions,
+            },
+        ];
+    }
     async deleteDebtorAccount(req) {
         let debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor) {
@@ -1570,6 +1617,17 @@ class DebtorService {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
         }
         return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
+    }
+    async updateServiceFee(req) {
+        let debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const updatedDebtor = await this.debtorRepository.updateById(req.params.id, { serviceFee: req.body.serviceFee });
+        if (!updatedDebtor) {
+            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        }
+        return [true, constants_util_1.default.successUpdateMessage('Debtor service fee')];
     }
 }
 exports.default = DebtorService;

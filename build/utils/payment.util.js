@@ -850,6 +850,89 @@ class PaymentUtil {
         }
         return [result, payment];
     }
+    async getCurrentWeekCommission(debtor) {
+        const filter = {
+            debtorId: debtor._id,
+            caseId: null,
+            isDeleted: { $ne: true },
+            attorneyId: null,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+        };
+        const intervals = await this.getIntervals(new debtor_repository_1.DebtorRepository(), debtor._id);
+        const commissionList = [];
+        for (const interval of intervals) {
+            const payments = await this.paymentRepository.getAllWithoutPagination({ ...filter, intervalId: interval }, undefined, undefined, { dueDate: 1 });
+            if (!payments || payments.length === 0)
+                continue;
+            const { totalLegalFeeAmount = 0, totalServiceFeeAmount = 0, creditorsAmount = 0, } = await this.getOtherPaymentsTotal(payments[0]);
+            const commissionFee = !payments[0].calculateComission
+                ? payments[0].amount -
+                    totalLegalFeeAmount -
+                    totalServiceFeeAmount -
+                    creditorsAmount
+                : 0;
+            commissionList.push({
+                intervalId: interval,
+                commissionFee: commissionFee > 0 ? commissionFee : 0,
+            });
+        }
+        return commissionList;
+    }
+    async updateFrequencyInterval(model, id, intervalId, count) {
+        const data = await model.getById(id);
+        const updatedIntervals = data.intervals
+            .map((interval) => {
+            if (String(interval._id) === String(intervalId)) {
+                const newFrequency = Math.max(0, interval.frequency - count);
+                return {
+                    ...interval,
+                    frequency: newFrequency,
+                };
+            }
+            return interval;
+        })
+            .filter((interval) => interval.frequency > 0);
+        const result = await model.updateById(id, {
+            intervals: updatedIntervals,
+        });
+        return result;
+    }
+    async updatePaymentsDate(payments, date) {
+        for (const payment of payments) {
+        }
+    }
+    async getIntervals(model, id) {
+        const data = await model.getById(id);
+        return data.intervals.map((interval) => String(interval._id));
+    }
+    async updatePaymentAmount(filter, interval, dueDate, amount) {
+        const query = {
+            ...filter,
+            dueDate: { $gte: new Date(dueDate) },
+        };
+        if (interval) {
+            query.intervalId = interval;
+        }
+        return await this.paymentRepository.updateMany(query, {
+            amount: amount,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+    }
+    async updatePaymentDate(filter, interval, dueDate) {
+        const query = {
+            ...filter,
+            dueDate: { $gte: new Date(dueDate) },
+        };
+        if (interval) {
+            query.intervalId = interval;
+        }
+        return await this.paymentRepository.updateMany(query, {
+            isDeleted: true,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+    }
+    async createPayment() { }
     async cancelCasePaymentPlan(caseId) {
         const updateCase = await this.caseRepository.updateById(caseId, {
             intervals: [],

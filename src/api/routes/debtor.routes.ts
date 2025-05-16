@@ -267,10 +267,30 @@ router.post(
   debtorController.getTopPayees
 );
 
+router.post(
+  '/updateCommision/:id',
+  authorize.validateAuth,
+  debtor.updateCommisionPercentage,
+  debtorController.updateCommisionPercentage
+);
+
+router.get(
+  '/debtorCreditorPaymentPlanDetail/:id',
+  authorize.validateAuth,
+  debtorController.debtorCreditorPaymentPlanDetail
+);
+
 router.delete(
   '/deleteDebtorAccount/:id',
   authorize.validateAuth,
   debtorController.deleteDebtorAccount
+);
+
+router.put(
+  '/updateServiceFee/:id',
+  authorize.validateAuth,
+  debtor.updateServiceFee,
+  debtorController.updateServiceFee
 );
 
 export default router;

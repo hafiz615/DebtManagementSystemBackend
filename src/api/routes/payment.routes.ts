@@ -150,6 +150,18 @@ router.get(
   paymentController.cronSeamlesschex
 );
 
+router.delete(
+  '/deletePayment/:id',
+  authorize.validateAuth,
+  paymentController.deletePayment
+);
+
+router.post(
+  '/updatePayment/:id',
+  authorize.validateAuth,
+  paymentController.updatePayment
+);
+
 router.get(
   '/getClientPayments/:id',
   authorize.validateAuth,

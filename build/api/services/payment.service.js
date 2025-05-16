@@ -1424,6 +1424,136 @@ class PaymentService {
             },
         ];
     }
+    async deletePayment(req) {
+        const deleteAllPayments = req.query.allPayment === 'true';
+        const deleteAllIntervalPayments = req.query.allIntervals === 'true';
+        const payment = await this.paymentRepository.getById(req.params.id);
+        if (!payment) {
+            return [false, constants_util_1.default.notFoundMessage('payment')];
+        }
+        const intervalId = !deleteAllIntervalPayments ? payment.intervalId : null;
+        const targetField = payment.caseId
+            ? { caseId: payment.caseId }
+            : { debtorId: payment.debtorId, caseId: null };
+        const baseFilter = {
+            ...targetField,
+            intervalId: intervalId,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+            isDeleted: false,
+        };
+        const model = targetField.caseId
+            ? { obj: new case_repository_1.CaseRepository(), id: targetField.caseId }
+            : { obj: new debtor_repository_1.DebtorRepository(), id: targetField.debtorId };
+        if (deleteAllPayments) {
+            if (deleteAllIntervalPayments) {
+                const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
+                let updatePayments = null;
+                for (const interval of intervals) {
+                    updatePayments = await this.paymentRepository.updateMany({
+                        ...baseFilter,
+                        intervalId: interval,
+                        dueDate: { $gte: new Date(payment.dueDate) },
+                    }, { isDeleted: true, updatedAt: common_util_1.default.getCurrentDate() });
+                    payment_util_1.default.updateFrequencyInterval(model.obj, model.id, interval, updatePayments.modifiedCount);
+                }
+                return updatePayments
+                    ? [true, constants_util_1.default.successDeleteMessage('Payments')]
+                    : [false, constants_util_1.default.failureDeleteMessage('payments.')];
+            }
+            const updatedPayment = await this.paymentRepository.updateMany({
+                ...baseFilter,
+                dueDate: { $gte: new Date(payment.dueDate) },
+            }, { isDeleted: true, updatedAt: common_util_1.default.getCurrentDate() });
+            payment_util_1.default.updateFrequencyInterval(model.obj, model.id, intervalId, updatedPayment.modifiedCount);
+            return updatedPayment
+                ? [true, constants_util_1.default.successDeleteMessage('Payments')]
+                : [false, constants_util_1.default.failureDeleteMessage('payments.')];
+        }
+        const updated = await this.paymentRepository.updateById(req.params.id, { isDeleted: true, updatedAt: common_util_1.default.getCurrentDate() });
+        payment_util_1.default.updateFrequencyInterval(model.obj, model.id, intervalId, 1);
+        return updated
+            ? [true, constants_util_1.default.successDeleteMessage('Payment')]
+            : [false, constants_util_1.default.failureDeleteMessage('payment.')];
+    }
+    async updatePayment(req) {
+        const updateAllPayments = req.query.allPayment === 'true';
+        const updateAllIntervalPayments = req.query.allIntervals === 'true';
+        const payment = await this.paymentRepository.getById(req.params.id);
+        if (!payment) {
+            return [false, constants_util_1.default.notFoundMessage('payment')];
+        }
+        const intervalId = !updateAllIntervalPayments ? payment.intervalId : null;
+        const targetField = payment.caseId
+            ? { caseId: payment.caseId }
+            : { debtorId: payment.debtorId, caseId: null };
+        const baseFilter = {
+            ...targetField,
+            intervalId: intervalId,
+            authorized: { $ne: 'Success' },
+            paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
+            isDeleted: false,
+        };
+        const model = targetField.caseId
+            ? { obj: new case_repository_1.CaseRepository(), id: targetField.caseId }
+            : { obj: new debtor_repository_1.DebtorRepository(), id: targetField.debtorId };
+        if (req.body.amount != payment.amount &&
+            req.body.timePeriod == payment.timePeriod &&
+            new Date(req.body.date).toDateString() ===
+                new Date(payment.dueDate).toDateString()) {
+            if (updateAllPayments) {
+                let updatedPayments = null;
+                if (updateAllIntervalPayments) {
+                    const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
+                    for (const interval of intervals) {
+                        updatedPayments = await payment_util_1.default.updatePaymentAmount(baseFilter, interval, payment.dueDate, req.body.amount);
+                    }
+                    return updatedPayments
+                        ? [true, constants_util_1.default.successUpdateMessage('Payments')]
+                        : [false, constants_util_1.default.failureUpdateMessage('payments.')];
+                }
+                const updatedPayment = await payment_util_1.default.updatePaymentAmount(baseFilter, '', payment.dueDate, req.body.amount);
+                return updatedPayment
+                    ? [true, constants_util_1.default.successUpdateMessage('Payments')]
+                    : [false, constants_util_1.default.failureUpdateMessage('payments.')];
+            }
+            const updated = await this.paymentRepository.updateById(req.params.id, { amount: req.body.amount, updatedAt: common_util_1.default.getCurrentDate() });
+            return updated
+                ? [true, constants_util_1.default.successUpdateMessage('Payment')]
+                : [false, constants_util_1.default.failureUpdateMessage('payment.')];
+        }
+        if (req.body.date) {
+            await this.updateDatePayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model);
+        }
+        return 0;
+    }
+    async updateDatePayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model) {
+        if (updateAllPayments) {
+            let updatedPayments = null;
+            if (updateAllIntervalPayments) {
+                const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
+                for (const interval of intervals) {
+                    updatedPayments = await payment_util_1.default.updatePaymentDate(baseFilter, interval, payment.dueDate);
+                }
+                return updatedPayments
+                    ? [true, constants_util_1.default.successUpdateMessage('Payments')]
+                    : [false, constants_util_1.default.failureUpdateMessage('payments.')];
+            }
+            const updatedPayment = await payment_util_1.default.updatePaymentDate(baseFilter, '', payment.dueDate);
+            return updatedPayment
+                ? [true, constants_util_1.default.successUpdateMessage('Payments')]
+                : [false, constants_util_1.default.failureUpdateMessage('payments.')];
+        }
+        const updatedPayment = await this.paymentRepository.updateById(req.params.id, {
+            amount: req.body.amout,
+            dueDate: req.body.date,
+            timePeriod: req.body.timePeriod,
+            updatedAt: common_util_1.default.getCurrentDate(),
+        });
+        return updatedPayment
+            ? [true, constants_util_1.default.successUpdateMessage('Payment')]
+            : [false, constants_util_1.default.failureUpdateMessage('payment.')];
+    }
     async getClientPayments(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
