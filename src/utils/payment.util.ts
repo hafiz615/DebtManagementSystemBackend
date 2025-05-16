@@ -14,6 +14,7 @@ import {ServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repo
 import {IServiceFeeRepository} from '../api/repository/serviceFee/serviceFee.repository.interface';
 import {IFee} from '../database/interfaces/serviceFee.interface';
 import lawsuitUtil from './lawsuit.util';
+import {ICase} from '../database/interfaces/case.interface';
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 
@@ -21,11 +22,13 @@ class PaymentUtil {
   private paymentRepository: PaymentRepository;
   private feeRepository: ServiceFeeRepository;
   private caseRepository: CaseRepository;
+  private debtorRepository: DebtorRepository;
 
   constructor() {
     this.paymentRepository = new PaymentRepository();
     this.feeRepository = new ServiceFeeRepository();
     this.caseRepository = new CaseRepository();
+    this.debtorRepository = new DebtorRepository();
   }
   async getFilteredPayments(payments: any, arrayName: string) {
     const transformedArray = payments.map(obj => ({
@@ -60,6 +63,7 @@ class PaymentUtil {
       failedReasonPaynote: obj.failedReasonPaynote,
       debtorId: obj.debtorId,
       paymentMode: obj.paymentMode ? obj.paymentMode : '',
+      timePeriod: obj.timePeriod,
     }));
 
     return this.getFilteredPaymentsObj(transformedArray, arrayName);
@@ -1305,5 +1309,53 @@ class PaymentUtil {
   }
 
   async createPayment() {}
+  async cancelCasePaymentPlan(caseId: string) {
+    const updateCase = await this.caseRepository.updateById<ICase>(caseId, {
+      intervals: [],
+      isExempt: false,
+    });
+    const updatePayments = await this.paymentRepository.updateMany<IPayment>(
+      {
+        caseId: caseId,
+        authorized: {$in: ['Pending', 'Failed']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
+      },
+      {
+        isDeleted: true,
+      }
+    );
+    if (!updateCase || !updatePayments)
+      return [false, 'Failed to cancel payment plan'];
+
+    return [true, 'Payment plan cancelled successfully'];
+  }
+
+  async cancelDebtorPaymentPlan(debtorId: string) {
+    const updateDebtor = await this.debtorRepository.updateById<IDebtor>(
+      debtorId,
+      {
+        intervals: [],
+        isExempt: false,
+        paymentPauseCount: 0,
+        lastPaymentPauseDate: '',
+        paymentAmountCount: 0,
+        lastPaymentAmountDate: '',
+      }
+    );
+    const updatePayments = await this.paymentRepository.updateMany<IPayment>(
+      {
+        debtorId: debtorId,
+        $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
+        caseId: {$eq: null},
+        paymentMode: {$ne: 'Link'},
+      },
+      {
+        isDeleted: true,
+      }
+    );
+    if (!updateDebtor || !updatePayments)
+      return [false, 'Failed to cancel payment plan'];
+    return [true, 'Payment plan cancelled successfully'];
+  }
 }
 export default new PaymentUtil();
