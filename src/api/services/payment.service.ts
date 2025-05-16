@@ -812,14 +812,9 @@ class PaymentService {
   private async getPreviousPayments(id: string, debtor: boolean) {
     const filters = {
       isDeleted: false,
-      $or: [
-        {authorized: 'Success'},
-        {authorized: 'Failed'},
-        {captured: 'Success'},
-        {captured: 'Failed'},
-        {lawsuitId: {$exists: false}},
-        {lawsuitId: {$eq: null}},
-      ],
+      authorized: {$in: ['Success', 'Failed']},
+      captured: {$in: ['Success', 'Failed']},
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
     };
     if (debtor) {
       filters['debtorId'] = id;
@@ -829,7 +824,7 @@ class PaymentService {
     }
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
       undefined,
       {createdAt: -1},
       {
@@ -868,7 +863,7 @@ class PaymentService {
     }
     return await this.paymentRepository.getAll<IPayment>(
       filters,
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName',
+      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName timePeriod',
       undefined,
       {createdAt: -1},
       {
@@ -1401,61 +1396,13 @@ class PaymentService {
   async cancelCasePaymentPlan(req: Request) {
     const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
     if (!caseTemp) return [false, constants.notFoundMessage('case')];
-    const updateCase = await this.caseRepository.updateById<ICase>(
-      req.params.id,
-      {
-        intervals: [],
-        isExempt: false,
-      }
-    );
-    const updatePayments = await this.paymentRepository.updateMany<IPayment>(
-      {
-        caseId: req.params.id,
-        $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
-      },
-      {
-        isDeleted: true,
-      }
-    );
-    // const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
-    //   String(caseTemp.debtor),
-    //   {
-    //     weeklyCommission: 0,
-    //   }
-    // );
-    if (!updateCase || !updatePayments)
-      return [false, 'Failed to cancel payment plan'];
-    return [true, 'Payment plan cancelled successfully'];
+    return await paymentUtil.cancelCasePaymentPlan(req.params.id);
   }
 
   async cancelDebtorPaymentPlan(req: Request) {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
     if (!debtor) return [false, constants.notFoundMessage('debtor')];
-    const updateDebtor = await this.debtorRepository.updateById<IDebtor>(
-      req.params.id,
-      {
-        intervals: [],
-        isExempt: false,
-        paymentPauseCount: 0,
-        lastPaymentPauseDate: '',
-        paymentAmountCount: 0,
-        lastPaymentAmountDate: '',
-      }
-    );
-    const updatePayments = await this.paymentRepository.updateMany<IPayment>(
-      {
-        debtorId: req.params.id,
-        $or: [{authorized: 'Pending'}, {authorized: 'Failed'}],
-        caseId: {$eq: null},
-        paymentMode: {$ne: 'Link'},
-      },
-      {
-        isDeleted: true,
-      }
-    );
-    if (!updateDebtor || !updatePayments)
-      return [false, 'Failed to cancel payment plan'];
-    return [true, 'Payment plan cancelled successfully'];
+    return await paymentUtil.cancelDebtorPaymentPlan(req.params.id);
   }
 
   async cancelAllDebtorPaymentPlan(req: Request) {

@@ -191,6 +191,10 @@ class InboxService {
         let user = null;
         const filters = await inbox_utils_1.default.getAllInboxFilters(req);
         filters['isDeleted'] = { $ne: true };
+        filters['medium'] = 'SMS';
+        req.query.medium === 'SMS'
+            ? (filters['type'] = { $ne: 'draft' })
+            : (filters['type'] = 'draft');
         if (req.query.all === 'false') {
             user = await this.userRepository.getById(req.body?.userId || reqTemp.id);
             if (!user)

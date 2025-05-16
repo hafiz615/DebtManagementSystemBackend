@@ -602,14 +602,9 @@ class PaymentService {
     async getPreviousPayments(id, debtor) {
         const filters = {
             isDeleted: false,
-            $or: [
-                { authorized: 'Success' },
-                { authorized: 'Failed' },
-                { captured: 'Success' },
-                { captured: 'Failed' },
-                { lawsuitId: { $exists: false } },
-                { lawsuitId: { $eq: null } },
-            ],
+            authorized: { $in: ['Success', 'Failed'] },
+            captured: { $in: ['Success', 'Failed'] },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
         };
         if (debtor) {
             filters['debtorId'] = id;
@@ -618,7 +613,7 @@ class PaymentService {
         else {
             filters['caseId'] = id;
         }
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode', undefined, { createdAt: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [
@@ -646,7 +641,7 @@ class PaymentService {
         else {
             filters['caseId'] = id;
         }
-        return await this.paymentRepository.getAll(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName', undefined, { createdAt: -1 }, {
+        return await this.paymentRepository.getAll(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName timePeriod', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [
@@ -1051,49 +1046,13 @@ class PaymentService {
         const caseTemp = await this.caseRepository.getById(req.params.id);
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
-        const updateCase = await this.caseRepository.updateById(req.params.id, {
-            intervals: [],
-            isExempt: false,
-        });
-        const updatePayments = await this.paymentRepository.updateMany({
-            caseId: req.params.id,
-            $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
-        }, {
-            isDeleted: true,
-        });
-        // const updateDebtor = await this.debtorReposiotry.updateById<IPayment>(
-        //   String(caseTemp.debtor),
-        //   {
-        //     weeklyCommission: 0,
-        //   }
-        // );
-        if (!updateCase || !updatePayments)
-            return [false, 'Failed to cancel payment plan'];
-        return [true, 'Payment plan cancelled successfully'];
+        return await payment_util_1.default.cancelCasePaymentPlan(req.params.id);
     }
     async cancelDebtorPaymentPlan(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
-        const updateDebtor = await this.debtorRepository.updateById(req.params.id, {
-            intervals: [],
-            isExempt: false,
-            paymentPauseCount: 0,
-            lastPaymentPauseDate: '',
-            paymentAmountCount: 0,
-            lastPaymentAmountDate: '',
-        });
-        const updatePayments = await this.paymentRepository.updateMany({
-            debtorId: req.params.id,
-            $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
-            caseId: { $eq: null },
-            paymentMode: { $ne: 'Link' },
-        }, {
-            isDeleted: true,
-        });
-        if (!updateDebtor || !updatePayments)
-            return [false, 'Failed to cancel payment plan'];
-        return [true, 'Payment plan cancelled successfully'];
+        return await payment_util_1.default.cancelDebtorPaymentPlan(req.params.id);
     }
     async cancelAllDebtorPaymentPlan(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
