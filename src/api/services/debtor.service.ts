@@ -1364,6 +1364,7 @@ class DebtorService {
     // if (debtor.weeklyCommission)
     //   return [false, 'Weekly commission already settled'];
     // req.body.isExempt = false;
+    await paymentUtil.cancelDebtorPaymentPlan(req.params.id);
     const checkCasePayment = await caseUtil.checkCasePayment(
       req.body,
       debtor.totalCommission
@@ -1378,6 +1379,7 @@ class DebtorService {
     req.body.intervals = debtor.intervals;
     req.body.debtorName = debtor.basicInformation.fullName;
     req.body.creditorName = '';
+    req.body.lawsuitId = null;
     caseUtil.createPayment(req.body);
 
     return [true, constants.successAddMessage('Payment plan')];

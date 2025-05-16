@@ -11,10 +11,14 @@ const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInter
 const axios_1 = __importDefault(require("axios"));
 const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
 const lawsuit_util_1 = __importDefault(require("./lawsuit.util"));
+const case_repository_1 = require("../api/repository/case/case.repository");
+const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 class PaymentUtil {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
         this.feeRepository = new serviceFee_repository_1.ServiceFeeRepository();
+        this.caseRepository = new case_repository_1.CaseRepository();
+        this.debtorRepository = new debtor_repository_1.DebtorRepository();
     }
     async getFilteredPayments(payments, arrayName) {
         const transformedArray = payments.map(obj => ({
@@ -48,6 +52,7 @@ class PaymentUtil {
             failedReasonPaynote: obj.failedReasonPaynote,
             debtorId: obj.debtorId,
             paymentMode: obj.paymentMode ? obj.paymentMode : '',
+            timePeriod: obj.timePeriod,
         }));
         return this.getFilteredPaymentsObj(transformedArray, arrayName);
     }
@@ -844,6 +849,43 @@ class PaymentUtil {
             }
         }
         return [result, payment];
+    }
+    async cancelCasePaymentPlan(caseId) {
+        const updateCase = await this.caseRepository.updateById(caseId, {
+            intervals: [],
+            isExempt: false,
+        });
+        const updatePayments = await this.paymentRepository.updateMany({
+            caseId: caseId,
+            authorized: { $in: ['Pending', 'Failed'] },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
+        }, {
+            isDeleted: true,
+        });
+        if (!updateCase || !updatePayments)
+            return [false, 'Failed to cancel payment plan'];
+        return [true, 'Payment plan cancelled successfully'];
+    }
+    async cancelDebtorPaymentPlan(debtorId) {
+        const updateDebtor = await this.debtorRepository.updateById(debtorId, {
+            intervals: [],
+            isExempt: false,
+            paymentPauseCount: 0,
+            lastPaymentPauseDate: '',
+            paymentAmountCount: 0,
+            lastPaymentAmountDate: '',
+        });
+        const updatePayments = await this.paymentRepository.updateMany({
+            debtorId: debtorId,
+            $or: [{ authorized: 'Pending' }, { authorized: 'Failed' }],
+            caseId: { $eq: null },
+            paymentMode: { $ne: 'Link' },
+        }, {
+            isDeleted: true,
+        });
+        if (!updateDebtor || !updatePayments)
+            return [false, 'Failed to cancel payment plan'];
+        return [true, 'Payment plan cancelled successfully'];
     }
 }
 exports.default = new PaymentUtil();

@@ -52,6 +52,7 @@ import {IPipelineStatus} from '../../database/interfaces/pipelineStatus.interfac
 import callUtil from '../../utils/call.util';
 import {CallRepository} from '../repository/call/call.repository';
 import lawsuitUtil from '../../utils/lawsuit.util';
+import paymentUtil from '../../utils/payment.util';
 const {
   jwt: {AccessToken},
 } = require('twilio');
@@ -1481,7 +1482,7 @@ class CaseService {
     return [true, constantsUtil.successDeleteMessage('Creditor')];
   };
 
-  updateCasePlan = async (req: Request): Promise<[boolean, ICase | string]> => {
+  updateCasePlan = async (req: Request) => {
     let reqTemp: any = req;
     let findCase: any = await this.caseRepository.getById<ICase>(
       req.params.id,
@@ -1498,52 +1499,15 @@ class CaseService {
     if (!findCase) return [false, constantsUtil.notFoundMessage('case')];
     const getDebtor = findCase.debtor;
     const creditor = findCase.creditor;
-    if (
-      req.body?.intervals &&
-      req.body?.intervals.length &&
-      findCase.intervals.length
-    ) {
-      return [false, 'Payment plan already exist!'];
-    }
-
-    // if (!findCase.lawsuitExist) {
-    //   const lawsuitFields =
-    //     findCase.debtor.lawsuitFields?.find(
-    //       lawsuit =>
-    //         lawsuit.plaintiff_company ===
-    //           findCase.creditor.businessInformation.companyName &&
-    //         lawsuit.defendant_company ===
-    //           findCase.debtor.businessInformation.companyName
-    //     ) || null;
-
-    //   if (lawsuitFields) {
-    //     if (findCase.dummyLawsuitExist) {
-    //       await lawsuitUtil.deleteLawsuit(
-    //         findCase.debtor._id,
-    //         findCase.creditor._id
-    //       );
-    //       req.body.dummyLawsuitExist = false;
-    //     }
-    //     const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
-    //       lawsuitFields,
-    //       reqTemp.id
-    //     );
-    //     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
-    //       lawsuitDetails,
-    //       findCase
-    //     );
-    //     if (lawfirmTemp) req.body.lawsuitExist = true;
-    //   }
+    // if (
+    //   req.body?.intervals &&
+    //   req.body?.intervals.length &&
+    //   findCase.intervals.length
+    // ) {
+    //   return [false, 'Payment plan already exist!'];
     // }
+    await paymentUtil.cancelCasePaymentPlan(req.params.id);
 
-    // if (req.body?.commission) {
-    //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-    //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-    //       weeklyCommission: req.body.commission,
-    //       updatedAt: commonUtil.getCurrentDate(),
-    //     });
-    //   }
-    // }
     if (req.body.intervals && req.body?.intervals?.length) {
       findCase.intervals = req.body?.intervals;
       findCase.isExempt = req.body.isExempt;
@@ -1560,6 +1524,7 @@ class CaseService {
     }
     caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
     caseUpdated['creditorName'] = creditor.basicInformation.fullName;
+    caseUpdated['lawsuitId'] = null;
     if (req.body.intervals && req.body.intervals.length) {
       caseUtil.createPayment(caseUpdated);
     }
@@ -1572,7 +1537,7 @@ class CaseService {
       caseUpdated._id
     );
     // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
-    return [true, caseUpdated];
+    return [true, []];
   };
 
   updateCasePlanDebtorPortal = async (req: Request) => {
