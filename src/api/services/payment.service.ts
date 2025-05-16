@@ -811,15 +811,9 @@ class PaymentService {
       {
         caseId: id,
         isDeleted: false,
-        $or: [
-          {authorized: 'Success'},
-          {authorized: 'Failed'},
-          {captured: 'Success'},
-          {captured: 'Failed'},
-          {
-            $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
-          },
-        ],
+        authorized: {$in: ['Success', 'Failed']},
+        captured: {$in: ['Success', 'Failed']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
       },
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode',
       undefined,
@@ -1390,13 +1384,8 @@ class PaymentService {
     const updatePayments = await this.paymentRepository.updateMany<IPayment>(
       {
         caseId: req.params.id,
-        $or: [
-          {authorized: 'Pending'},
-          {authorized: 'Failed'},
-          {
-            $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
-          },
-        ],
+        authorized: {$in: ['Pending', 'Failed']},
+        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
       },
       {
         isDeleted: true,

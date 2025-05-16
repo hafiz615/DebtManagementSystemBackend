@@ -603,15 +603,9 @@ class PaymentService {
         return await this.paymentRepository.getAllWithoutPagination({
             caseId: id,
             isDeleted: false,
-            $or: [
-                { authorized: 'Success' },
-                { authorized: 'Failed' },
-                { captured: 'Success' },
-                { captured: 'Failed' },
-                {
-                    $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
-                },
-            ],
+            authorized: { $in: ['Success', 'Failed'] },
+            captured: { $in: ['Success', 'Failed'] },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
         }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode', undefined, { createdAt: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
@@ -1037,13 +1031,8 @@ class PaymentService {
         });
         const updatePayments = await this.paymentRepository.updateMany({
             caseId: req.params.id,
-            $or: [
-                { authorized: 'Pending' },
-                { authorized: 'Failed' },
-                {
-                    $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
-                },
-            ],
+            authorized: { $in: ['Pending', 'Failed'] },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
         }, {
             isDeleted: true,
         });
