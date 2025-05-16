@@ -3,7 +3,7 @@ import {Request, Response, NextFunction} from 'express';
 import Log from '../database/models/logs.model';
 import commonUtil from '../utils/common.util';
 import asyncLocalStorage from '../utils/localStorage.util';
-
+import {BSON} from 'bson';
 const logMiddleware = (
   req: Request,
   res: Response,
@@ -21,11 +21,14 @@ const logMiddleware = (
       const timeTaken = end - start;
 
       // Convert response body to JSON if it is not already an object
-      let responsePayload;
+      let responsePayload = null;
+
       try {
         responsePayload = JSON.parse(body);
+        const estimatedSize = BSON.serialize(responsePayload).length;
       } catch (error) {
-        responsePayload = body;
+        // responsePayload = body;
+        responsePayload = null;
       }
       const store = asyncLocalStorage.getStore();
       let traceId = '';

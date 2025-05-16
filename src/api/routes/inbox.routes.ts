@@ -75,4 +75,6 @@ router.put(
   inboxController.inboxStatus
 );
 
+router.post('/getSms', authorize.validateAuth, inboxController.getSms);
+
 export default router;
