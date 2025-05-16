@@ -2087,7 +2087,12 @@ class PaymentService {
       ? {obj: new CaseRepository(), id: targetField.caseId}
       : {obj: new DebtorRepository(), id: targetField.debtorId};
 
-    if (req.body.amount) {
+    if (
+      req.body.amount != payment.amount &&
+      req.body.timePeriod == payment.timePeriod &&
+      new Date(req.body.date).toDateString() ===
+        new Date(payment.dueDate).toDateString()
+    ) {
       if (updateAllPayments) {
         let updatedPayments = null;
         if (updateAllIntervalPayments) {
@@ -2126,29 +2131,66 @@ class PaymentService {
     }
 
     if (req.body.date) {
-      if (updateAllPayments) {
-        const payments =
-          await this.paymentRepository.getAllWithoutPagination<IPayment>({
-            ...baseFilter,
-            dueDate: {$gte: new Date(payment.dueDate)},
-          });
-      }
-
-      const updatedPayment = await this.paymentRepository.updateById<IPayment>(
-        req.params.id,
-        {
-          dueDate: req.body.date,
-          updatedAt: commonUtil.getCurrentDate(),
-        }
+      await this.updateDatePayment(
+        req,
+        updateAllPayments,
+        updateAllIntervalPayments,
+        baseFilter,
+        payment,
+        model
       );
-
-      if (!updatedPayment)
-        return [false, constants.failureUpdateMessage('payment')];
-
-      return [true, constants.successUpdateMessage('Payment')];
     }
 
     return 0;
+  }
+
+  private async updateDatePayment(
+    req: Request,
+    updateAllPayments: boolean,
+    updateAllIntervalPayments: boolean,
+    baseFilter: any,
+    payment: IPayment,
+    model: any
+  ) {
+    if (updateAllPayments) {
+      let updatedPayments = null;
+      if (updateAllIntervalPayments) {
+        const intervals = await paymentUtil.getIntervals(model.obj, model.id);
+        for (const interval of intervals) {
+          updatedPayments = await paymentUtil.updatePaymentDate(
+            baseFilter,
+            interval,
+            payment.dueDate
+          );
+        }
+        return updatedPayments
+          ? [true, constants.successUpdateMessage('Payments')]
+          : [false, constants.failureUpdateMessage('payments.')];
+      }
+      const updatedPayment = await paymentUtil.updatePaymentDate(
+        baseFilter,
+        '',
+        payment.dueDate
+      );
+
+      return updatedPayment
+        ? [true, constants.successUpdateMessage('Payments')]
+        : [false, constants.failureUpdateMessage('payments.')];
+    }
+
+    const updatedPayment = await this.paymentRepository.updateById<IPayment>(
+      req.params.id,
+      {
+        amount: req.body.amout,
+        dueDate: req.body.date,
+        timePeriod: req.body.timePeriod,
+        updatedAt: commonUtil.getCurrentDate(),
+      }
+    );
+
+    return updatedPayment
+      ? [true, constants.successUpdateMessage('Payment')]
+      : [false, constants.failureUpdateMessage('payment.')];
   }
 
   async getClientPayments(req: Request): Promise<[boolean, {} | string]> {

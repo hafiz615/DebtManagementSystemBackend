@@ -1287,5 +1287,23 @@ class PaymentUtil {
       updatedAt: commonUtil.getCurrentDate(),
     });
   }
+
+  async updatePaymentDate(filter: any, interval: string, dueDate: string) {
+    const query: any = {
+      ...filter,
+      dueDate: {$gte: new Date(dueDate)},
+    };
+
+    if (interval) {
+      query.intervalId = interval;
+    }
+
+    return await this.paymentRepository.updateMany<IPayment>(query, {
+      isDeleted: true,
+      updatedAt: commonUtil.getCurrentDate(),
+    });
+  }
+
+  async createPayment() {}
 }
 export default new PaymentUtil();
