@@ -186,6 +186,30 @@ class InboxService {
         email_util_1.default.createNewInbox(smsData, caseData, 'draft', threadId, reqTemp.id, reqTemp.name, null, null, 'SMS');
         return [true, `Draft created successfully`];
     }
+    async getSms(req) {
+        const reqTemp = req;
+        let user = null;
+        const filters = await inbox_utils_1.default.getAllInboxFilters(req);
+        filters['isDeleted'] = { $ne: true };
+        if (req.query.all === 'false') {
+            user = await this.userRepository.getById(req.body?.userId || reqTemp.id);
+            if (!user)
+                return [false, constants_util_1.default.notFoundMessage('user')];
+            const cleanNumber = await common_util_1.default.cleanPhoneNumber(user.twilioNo);
+            filters['$or'] = [{ from: cleanNumber }, { to: cleanNumber }];
+        }
+        const result = await this.inboxRepository.getAllWithoutPagination(filters);
+        const data = result.reduce((result, item) => {
+            if (item.caseCode) {
+                if (!result[item.caseCode]) {
+                    result[item.caseCode] = [];
+                }
+                result[item.caseCode].push(item);
+            }
+            return result;
+        }, {});
+        return [true, data];
+    }
 }
 exports.default = InboxService;
 //# sourceMappingURL=inbox.service.js.map

@@ -13,6 +13,7 @@ import {ICase} from '../../database/interfaces/case.interface';
 import commonUtil from '../../utils/common.util';
 import emailUtil from '../../utils/email.util';
 import {v4} from 'uuid';
+import {IUser} from '../../database/interfaces/user.interface';
 dotenv.config();
 
 class InboxService {
@@ -289,6 +290,36 @@ class InboxService {
     });
     return [true, updatedInbox];
   };
+
+  async getSms(req: Request) {
+    const reqTemp: any = req;
+
+    let user = null;
+    const filters: any = await inboxUtils.getAllInboxFilters(req);
+    filters['isDeleted'] = {$ne: true};
+    if (req.query.all === 'false') {
+      user = await this.userRepository.getById<IUser>(
+        req.body?.userId || reqTemp.id
+      );
+      if (!user) return [false, constants.notFoundMessage('user')];
+      const cleanNumber = await commonUtil.cleanPhoneNumber(user.twilioNo);
+      filters['$or'] = [{from: cleanNumber}, {to: cleanNumber}];
+    }
+
+    const result: IInbox[] =
+      await this.inboxRepository.getAllWithoutPagination<IInbox>(filters);
+
+    const data = result.reduce((result: any, item: IInbox) => {
+      if (item.caseCode) {
+        if (!result[item.caseCode]) {
+          result[item.caseCode] = [];
+        }
+        result[item.caseCode].push(item);
+      }
+      return result;
+    }, {});
+    return [true, data];
+  }
 }
 
 export default InboxService;
