@@ -192,7 +192,8 @@ class InboxService {
         const filters = await inbox_utils_1.default.getAllInboxFilters(req);
         filters['isDeleted'] = { $ne: true };
         filters['medium'] = 'SMS';
-        req.query.medium === 'SMS'
+        const medium = req.query.medium;
+        medium === 'SMS'
             ? (filters['type'] = { $ne: 'draft' })
             : (filters['type'] = 'draft');
         if (req.query.all === 'false') {
@@ -202,17 +203,21 @@ class InboxService {
             const cleanNumber = await common_util_1.default.cleanPhoneNumber(user.twilioNo);
             filters['$or'] = [{ from: cleanNumber }, { to: cleanNumber }];
         }
-        const result = await this.inboxRepository.getAllWithoutPagination(filters);
-        const data = result.reduce((result, item) => {
-            if (item.caseCode) {
-                if (!result[item.caseCode]) {
-                    result[item.caseCode] = [];
+        let result = null;
+        result =
+            await this.inboxRepository.getAllWithoutPagination(filters);
+        if (medium === 'SMS') {
+            result = result.reduce((result, item) => {
+                if (item.caseCode) {
+                    if (!result[item.caseCode]) {
+                        result[item.caseCode] = [];
+                    }
+                    result[item.caseCode].push(item);
                 }
-                result[item.caseCode].push(item);
-            }
-            return result;
-        }, {});
-        return [true, { allSms: data, userName: user ? user.name : '' }];
+                return result;
+            }, {});
+        }
+        return [true, { allSms: result, userName: user ? user.name : '' }];
     }
 }
 exports.default = InboxService;
