@@ -1029,8 +1029,8 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        if (debtor.intervals && debtor.intervals.length)
-            return [false, constants_util_1.default.alreadyExistsMessage('Debtor payment plan')];
+        // if (debtor.intervals && debtor.intervals.length)
+        //   return [false, constants.alreadyExistsMessage('Debtor payment plan')];
         // if (debtor.weeklyCommission)
         //   return [false, 'Weekly commission already settled'];
         // req.body.isExempt = false;

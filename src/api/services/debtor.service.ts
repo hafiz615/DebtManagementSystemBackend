@@ -1358,8 +1358,8 @@ class DebtorService {
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
-    if (debtor.intervals && debtor.intervals.length)
-      return [false, constants.alreadyExistsMessage('Debtor payment plan')];
+    // if (debtor.intervals && debtor.intervals.length)
+    //   return [false, constants.alreadyExistsMessage('Debtor payment plan')];
 
     // if (debtor.weeklyCommission)
     //   return [false, 'Weekly commission already settled'];
