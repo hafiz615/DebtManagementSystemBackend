@@ -909,7 +909,7 @@ class PaymentUtil {
         const data = await model.getById(id);
         const updatedIntervals = data.intervals.map((interval) => {
             if (String(interval._id) === String(intervalId)) {
-                if (new Date(payment.dueDate).getTime() ==
+                if (new Date(payment.dueDate).getTime() ===
                     new Date(interval.startDate).getTime() ||
                     intervalCheck) {
                     interval.startDate = new Date(startDate);

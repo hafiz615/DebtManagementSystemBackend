@@ -1293,7 +1293,7 @@ class PaymentUtil {
     const updatedIntervals = data.intervals.map((interval: any) => {
       if (String(interval._id) === String(intervalId)) {
         if (
-          new Date(payment.dueDate).getTime() ==
+          new Date(payment.dueDate).getTime() ===
             new Date(interval.startDate).getTime() ||
           intervalCheck
         ) {
