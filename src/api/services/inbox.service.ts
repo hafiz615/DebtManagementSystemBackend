@@ -295,6 +295,7 @@ class InboxService {
     const reqTemp: any = req;
 
     let user = null;
+    let numbers = [];
     const filters: any = await inboxUtils.getAllInboxFilters(req);
     filters['isDeleted'] = {$ne: true};
     filters['medium'] = 'SMS';
@@ -302,6 +303,7 @@ class InboxService {
     medium === 'SMS'
       ? (filters['type'] = {$ne: 'draft'})
       : (filters['type'] = 'draft');
+
     if (req.query.all === 'false') {
       user = await this.userRepository.getById<IUser>(
         req.body?.userId || reqTemp.id
@@ -309,6 +311,18 @@ class InboxService {
       if (!user) return [false, constants.notFoundMessage('user')];
       const cleanNumber = await commonUtil.cleanPhoneNumber(user.twilioNo);
       filters['$or'] = [{from: cleanNumber}, {to: cleanNumber}];
+      numbers.push(cleanNumber);
+    }
+    if (req.query.all === 'true') {
+      let allUsers: IUser[] = await this.userRepository.getAll<IUser>(
+        {isActive: true},
+        'twilioNo'
+      );
+      numbers = await Promise.all(
+        allUsers
+          .filter(user => user.twilioNo)
+          .map(user => commonUtil.cleanPhoneNumber(user.twilioNo))
+      );
     }
     let result = null;
     result =
@@ -324,7 +338,7 @@ class InboxService {
         return result;
       }, {});
     }
-    return [true, {allSms: result, userName: user ? user.name : ''}];
+    return [true, {allSms: result, userName: user ? user.name : '', numbers}];
   }
 }
 
