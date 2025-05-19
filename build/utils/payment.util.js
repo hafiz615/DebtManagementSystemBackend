@@ -416,6 +416,13 @@ class PaymentUtil {
         }
         return totalCount;
     }
+    async nextPaymentDate(id) {
+        const payments = await this.paymentRepository.getAllWithoutPagination({
+            intervalId: id,
+            isDeleted: false,
+        }, undefined, undefined, { _id: -1 });
+        return await this.addDaysBasedOnPeriod(payments[0].dueDate, payments[0].timePeriod);
+    }
     async getOtherPaymentsTotal(payment) {
         const debtorId = payment.debtorId;
         const nextDate = await this.addDaysBasedOnPeriod(payment.dueDate, payment.timePeriod);
@@ -893,6 +900,26 @@ class PaymentUtil {
             return interval;
         })
             .filter((interval) => interval.frequency > 0);
+        const result = await model.updateById(id, {
+            intervals: updatedIntervals,
+        });
+        return result;
+    }
+    async updatePaymentInterval(model, id, intervalId, startDate, amount, payment) {
+        const data = await model.getById(id);
+        const updatedIntervals = data.intervals.map((interval) => {
+            if (String(interval._id) === String(intervalId)) {
+                if (new Date(payment.dueDate).getTime() ==
+                    new Date(interval.startDate).getTime()) {
+                    interval.startDate = startDate;
+                }
+                return {
+                    ...interval,
+                    amount: amount,
+                };
+            }
+            return interval;
+        });
         const result = await model.updateById(id, {
             intervals: updatedIntervals,
         });

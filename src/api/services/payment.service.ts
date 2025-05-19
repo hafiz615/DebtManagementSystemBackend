@@ -2124,6 +2124,7 @@ class PaymentService {
     req.body.creditorName = payment?.caseId
       ? payment?.caseId.creditor.basicInformation.fullName
       : '';
+    req.body._id = payment?.caseId ? payment?.caseId._id : null;
     req.body.debtor = debtor._id;
     if (updateAllPayments) {
       let updatedPayments = null;
@@ -2139,6 +2140,16 @@ class PaymentService {
             req.body.intervals[0]._id = interval;
             req.body.intervals[0].frequency = updatedPayments.modifiedCount;
             await caseUtil.createPayment(req.body);
+            await paymentUtil.updatePaymentInterval(
+              model.obj,
+              model.id,
+              interval,
+              req.body.intervals[0].startDate,
+              req.body.amount,
+              payment
+            );
+            req.body.intervals[0].startDate =
+              await paymentUtil.nextPaymentDate(interval);
           }
         }
         return updatedPayments
@@ -2153,6 +2164,14 @@ class PaymentService {
       req.body.intervals[0]._id = baseFilter.intervalId;
       req.body.intervals[0].frequency = updatedPayment.modifiedCount;
       await caseUtil.createPayment(req.body);
+      await paymentUtil.updatePaymentInterval(
+        model.obj,
+        model.id,
+        baseFilter.intervalId,
+        req.body.intervals[0].startDate,
+        req.body.amount,
+        payment
+      );
 
       return updatedPayment
         ? [true, constants.successUpdateMessage('Payments')]
