@@ -1509,16 +1509,19 @@ class PaymentService {
                 new Date(payment.dueDate).toDateString()) {
             if (updateAllPayments) {
                 let updatedPayments = null;
+                let intervalCheck = false;
                 if (updateAllIntervalPayments) {
                     const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
                     for (const interval of intervals) {
                         updatedPayments = await payment_util_1.default.updatePaymentAmount(baseFilter, interval, payment.dueDate, req.body.amount);
+                        await payment_util_1.default.updatePaymentAmountInterval(model.obj, model.id, interval, req.body.amount);
                     }
                     return updatedPayments
                         ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                         : [false, constants_util_1.default.failureUpdateMessage('payments.')];
                 }
                 const updatedPayment = await payment_util_1.default.updatePaymentAmount(baseFilter, '', payment.dueDate, req.body.amount);
+                await payment_util_1.default.updatePaymentAmountInterval(model.obj, model.id, baseFilter.intervalId, req.body.amount);
                 return updatedPayment
                     ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                     : [false, constants_util_1.default.failureUpdateMessage('payments.')];

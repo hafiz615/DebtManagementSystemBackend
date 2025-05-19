@@ -2051,6 +2051,7 @@ class PaymentService {
     ) {
       if (updateAllPayments) {
         let updatedPayments = null;
+        let intervalCheck = false;
         if (updateAllIntervalPayments) {
           const intervals = await paymentUtil.getIntervals(model.obj, model.id);
           for (const interval of intervals) {
@@ -2058,6 +2059,13 @@ class PaymentService {
               baseFilter,
               interval,
               payment.dueDate,
+              req.body.amount
+            );
+
+            await paymentUtil.updatePaymentAmountInterval(
+              model.obj,
+              model.id,
+              interval,
               req.body.amount
             );
           }
@@ -2071,6 +2079,14 @@ class PaymentService {
           payment.dueDate,
           req.body.amount
         );
+
+        await paymentUtil.updatePaymentAmountInterval(
+          model.obj,
+          model.id,
+          baseFilter.intervalId,
+          req.body.amount
+        );
+
         return updatedPayment
           ? [true, constants.successUpdateMessage('Payments')]
           : [false, constants.failureUpdateMessage('payments.')];

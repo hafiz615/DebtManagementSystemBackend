@@ -926,6 +926,22 @@ class PaymentUtil {
         });
         return result;
     }
+    async updatePaymentAmountInterval(model, id, intervalId, amount) {
+        const data = await model.getById(id);
+        const updatedIntervals = data.intervals.map((interval) => {
+            if (String(interval._id) === String(intervalId)) {
+                return {
+                    ...interval,
+                    amount: amount,
+                };
+            }
+            return interval;
+        });
+        const result = await model.updateById(id, {
+            intervals: updatedIntervals,
+        });
+        return result;
+    }
     async updatePaymentsDate(payments, date) {
         for (const payment of payments) {
         }
