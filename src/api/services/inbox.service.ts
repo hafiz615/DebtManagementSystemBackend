@@ -333,7 +333,7 @@ class InboxService {
       result = result.reduce((result: any, item: IInbox) => {
         if (item.caseCode) {
           if (!result[item.caseCode]) {
-            result[item.caseCode] = {data: [], to: ''};
+            result[item.caseCode] = {data: [], to: '', caseId: ''};
           }
 
           result[item.caseCode]?.data?.push(item);
@@ -341,6 +341,10 @@ class InboxService {
           if (!result[item.caseCode]?.to) {
             if (item.from === temp) result[item.caseCode].to = item.to;
             if (item.to === temp) result[item.caseCode].to = item.from;
+          }
+
+          if (!result[item.caseCode]?.caseId) {
+            result[item.caseCode].caseId = item.caseId;
           }
         }
         return result;
