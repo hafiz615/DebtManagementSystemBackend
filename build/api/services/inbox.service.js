@@ -197,8 +197,11 @@ class InboxService {
         medium === 'SMS'
             ? (filters['type'] = { $ne: 'draft' })
             : (filters['type'] = 'draft');
+        user = await this.userRepository.getById(reqTemp.id);
         if (req.query.all === 'false') {
-            user = await this.userRepository.getById(req.body?.userId || reqTemp.id);
+            if (req.body?.userId) {
+                user = await this.userRepository.getById(req.body?.userId);
+            }
             if (!user)
                 return [false, constants_util_1.default.notFoundMessage('user')];
             const cleanNumber = await common_util_1.default.cleanPhoneNumber(user.twilioNo);
@@ -211,6 +214,7 @@ class InboxService {
                 .filter(user => user.twilioNo)
                 .map(user => common_util_1.default.cleanPhoneNumber(user.twilioNo)));
         }
+        const temp = await common_util_1.default.cleanPhoneNumber(user.twilioNo);
         let result = null;
         result =
             await this.inboxRepository.getAllWithoutPagination(filters);
@@ -218,14 +222,28 @@ class InboxService {
             result = result.reduce((result, item) => {
                 if (item.caseCode) {
                     if (!result[item.caseCode]) {
-                        result[item.caseCode] = [];
+                        result[item.caseCode] = { data: [], to: '' };
                     }
-                    result[item.caseCode].push(item);
+                    result[item.caseCode]?.data?.push(item);
+                    if (!result[item.caseCode]?.to) {
+                        if (item.from === temp)
+                            result[item.caseCode].to = item.to;
+                        if (item.to === temp)
+                            result[item.caseCode].to = item.from;
+                    }
                 }
                 return result;
             }, {});
         }
-        return [true, { allSms: result, userName: user ? user.name : '', numbers }];
+        return [
+            true,
+            {
+                allSms: result,
+                userName: user ? user.name : '',
+                numbers,
+                from: temp,
+            },
+        ];
     }
 }
 exports.default = InboxService;
