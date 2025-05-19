@@ -304,10 +304,11 @@ class InboxService {
       ? (filters['type'] = {$ne: 'draft'})
       : (filters['type'] = 'draft');
 
+    user = await this.userRepository.getById<IUser>(reqTemp.id);
     if (req.query.all === 'false') {
-      user = await this.userRepository.getById<IUser>(
-        req.body?.userId || reqTemp.id
-      );
+      if (req.body?.userId) {
+        user = await this.userRepository.getById<IUser>(req.body?.userId);
+      }
       if (!user) return [false, constants.notFoundMessage('user')];
       const cleanNumber = await commonUtil.cleanPhoneNumber(user.twilioNo);
       filters['$or'] = [{from: cleanNumber}, {to: cleanNumber}];
@@ -324,6 +325,7 @@ class InboxService {
           .map(user => commonUtil.cleanPhoneNumber(user.twilioNo))
       );
     }
+    const temp = await commonUtil.cleanPhoneNumber(user.twilioNo);
     let result = null;
     result =
       await this.inboxRepository.getAllWithoutPagination<IInbox>(filters);
@@ -331,14 +333,28 @@ class InboxService {
       result = result.reduce((result: any, item: IInbox) => {
         if (item.caseCode) {
           if (!result[item.caseCode]) {
-            result[item.caseCode] = [];
+            result[item.caseCode] = {data: [], to: ''};
           }
-          result[item.caseCode].push(item);
+
+          result[item.caseCode]?.data?.push(item);
+
+          if (!result[item.caseCode]?.to) {
+            if (item.from === temp) result[item.caseCode].to = item.to;
+            if (item.to === temp) result[item.caseCode].to = item.from;
+          }
         }
         return result;
       }, {});
     }
-    return [true, {allSms: result, userName: user ? user.name : '', numbers}];
+    return [
+      true,
+      {
+        allSms: result,
+        userName: user ? user.name : '',
+        numbers,
+        from: temp,
+      },
+    ];
   }
 }
 
