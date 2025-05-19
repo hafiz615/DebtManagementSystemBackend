@@ -1550,6 +1550,7 @@ class PaymentService {
         req.body.debtor = debtor._id;
         if (updateAllPayments) {
             let updatedPayments = null;
+            let intervalCheck = false;
             if (updateAllIntervalPayments) {
                 const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
                 for (const interval of intervals) {
@@ -1558,7 +1559,8 @@ class PaymentService {
                         req.body.intervals[0]._id = interval;
                         req.body.intervals[0].frequency = updatedPayments.modifiedCount;
                         await case_util_1.default.createPayment(req.body);
-                        await payment_util_1.default.updatePaymentInterval(model.obj, model.id, interval, req.body.intervals[0].startDate, req.body.amount, payment);
+                        await payment_util_1.default.updatePaymentInterval(model.obj, model.id, interval, req.body.intervals[0].startDate, req.body.amount, payment, intervalCheck);
+                        intervalCheck = true;
                         req.body.intervals[0].startDate =
                             await payment_util_1.default.nextPaymentDate(interval);
                     }

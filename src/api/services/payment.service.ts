@@ -2128,6 +2128,7 @@ class PaymentService {
     req.body.debtor = debtor._id;
     if (updateAllPayments) {
       let updatedPayments = null;
+      let intervalCheck = false;
       if (updateAllIntervalPayments) {
         const intervals = await paymentUtil.getIntervals(model.obj, model.id);
         for (const interval of intervals) {
@@ -2146,8 +2147,10 @@ class PaymentService {
               interval,
               req.body.intervals[0].startDate,
               req.body.amount,
-              payment
+              payment,
+              intervalCheck
             );
+            intervalCheck = true;
             req.body.intervals[0].startDate =
               await paymentUtil.nextPaymentDate(interval);
           }

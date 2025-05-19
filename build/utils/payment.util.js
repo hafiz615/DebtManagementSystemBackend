@@ -905,13 +905,14 @@ class PaymentUtil {
         });
         return result;
     }
-    async updatePaymentInterval(model, id, intervalId, startDate, amount, payment) {
+    async updatePaymentInterval(model, id, intervalId, startDate, amount, payment, intervalCheck) {
         const data = await model.getById(id);
         const updatedIntervals = data.intervals.map((interval) => {
             if (String(interval._id) === String(intervalId)) {
                 if (new Date(payment.dueDate).getTime() ==
-                    new Date(interval.startDate).getTime()) {
-                    interval.startDate = startDate;
+                    new Date(interval.startDate).getTime() ||
+                    intervalCheck) {
+                    interval.startDate = new Date(startDate);
                 }
                 return {
                     ...interval,

@@ -1285,7 +1285,8 @@ class PaymentUtil {
     intervalId: string,
     startDate: string,
     amount: number,
-    payment: IPayment
+    payment: IPayment,
+    intervalCheck?: Boolean
   ) {
     const data: any = await model.getById(id);
 
@@ -1293,9 +1294,10 @@ class PaymentUtil {
       if (String(interval._id) === String(intervalId)) {
         if (
           new Date(payment.dueDate).getTime() ==
-          new Date(interval.startDate).getTime()
+            new Date(interval.startDate).getTime() ||
+          intervalCheck
         ) {
-          interval.startDate = startDate;
+          interval.startDate = new Date(startDate);
         }
         return {
           ...interval,
