@@ -2009,8 +2009,17 @@ class PaymentService {
     const updateAllPayments = req.query.allPayment === 'true';
     const updateAllIntervalPayments = req.query.allIntervals === 'true';
 
-    const payment = await this.paymentRepository.getById<IPayment>(
-      req.params.id
+    const payment: any = await this.paymentRepository.getById<IPayment>(
+      req.params.id,
+      undefined,
+      undefined,
+      {
+        path: 'caseId',
+        populate: [
+          {path: 'creditor', select: ['basicInformation']},
+          {path: 'debtor', select: ['basicInformation']},
+        ],
+      }
     );
     if (!payment) {
       return [false, constants.notFoundMessage('payment')];
@@ -2018,8 +2027,8 @@ class PaymentService {
 
     const intervalId = !updateAllIntervalPayments ? payment.intervalId : null;
 
-    const targetField = payment.caseId
-      ? {caseId: payment.caseId}
+    const targetField = payment.caseId?._id
+      ? {caseId: payment.caseId._id}
       : {debtorId: payment.debtorId, caseId: null};
 
     const baseFilter = {
@@ -2078,7 +2087,7 @@ class PaymentService {
     }
 
     if (req.body.date) {
-      await this.updateDatePayment(
+      return await this.updateDatePayment(
         req,
         updateAllPayments,
         updateAllIntervalPayments,
@@ -2096,9 +2105,26 @@ class PaymentService {
     updateAllPayments: boolean,
     updateAllIntervalPayments: boolean,
     baseFilter: any,
-    payment: IPayment,
+    payment: any,
     model: any
   ) {
+    req.body.intervals = [
+      {
+        amount: req.body.amount,
+        startDate: req.body.date,
+        timePeriod: req.body.timePeriod,
+      },
+    ];
+
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+      payment.debtorId
+    );
+
+    req.body.debtorName = debtor.basicInformation.fullName;
+    req.body.creditorName = payment?.caseId
+      ? payment?.caseId.creditor.basicInformation.fullName
+      : '';
+    req.body.debtor = debtor._id;
     if (updateAllPayments) {
       let updatedPayments = null;
       if (updateAllIntervalPayments) {
@@ -2109,6 +2135,11 @@ class PaymentService {
             interval,
             payment.dueDate
           );
+          if (updatedPayments.modifiedCount) {
+            req.body.intervals[0]._id = interval;
+            req.body.intervals[0].frequency = updatedPayments.modifiedCount;
+            await caseUtil.createPayment(req.body);
+          }
         }
         return updatedPayments
           ? [true, constants.successUpdateMessage('Payments')]
@@ -2119,6 +2150,9 @@ class PaymentService {
         '',
         payment.dueDate
       );
+      req.body.intervals[0]._id = baseFilter.intervalId;
+      req.body.intervals[0].frequency = updatedPayment.modifiedCount;
+      await caseUtil.createPayment(req.body);
 
       return updatedPayment
         ? [true, constants.successUpdateMessage('Payments')]
@@ -2128,7 +2162,7 @@ class PaymentService {
     const updatedPayment = await this.paymentRepository.updateById<IPayment>(
       req.params.id,
       {
-        amount: req.body.amout,
+        amount: req.body.amount,
         dueDate: req.body.date,
         timePeriod: req.body.timePeriod,
         updatedAt: commonUtil.getCurrentDate(),
