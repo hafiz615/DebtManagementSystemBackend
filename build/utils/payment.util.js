@@ -900,9 +900,11 @@ class PaymentUtil {
             return interval;
         })
             .filter((interval) => interval.frequency > 0);
+        console.log(updatedIntervals, 'updatedIntervals');
+        const isExempt = data.isExempt && updatedIntervals.length ? true : false;
         const result = await model.updateById(id, {
             intervals: updatedIntervals,
-            isExempt: updatedIntervals.length ? true : false,
+            isExempt: isExempt,
         });
         return result;
     }
