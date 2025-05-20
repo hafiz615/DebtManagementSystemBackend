@@ -200,20 +200,16 @@ class CronJob {
         }, {
             timezone: 'America/New_York',
         });
-        // cron.schedule(
-        //   '15 4 * * *',
-        //   async () => {
-        //     console.log('Running a task in a day for 4:15am');
-        //     this.processPayments();
-        //   },
-        //   {
-        //     timezone: 'America/New_York',
-        //   }
-        // );
+        node_cron_1.default.schedule('15 4 * * *', async () => {
+            console.log('Running a task in a day for 4:15am');
+            this.processPayments();
+        }, {
+            timezone: 'America/New_York',
+        });
         node_cron_1.default.schedule('30 * * * *', async () => {
             console.log('Running a task every 30 min of an hour');
             this.processCommissionRetryPayments();
-            // this.processRetryPayments();
+            this.processRetryPayments();
         }, {
             timezone: 'America/New_York',
         });
@@ -575,9 +571,13 @@ class CronJob {
     async processPayments() {
         const settings = await this.settingsRepository.getAllWithoutPagination();
         const cronId = (0, uuid_1.v4)();
-        const paymentsPendingAuthorized = await payment_util_1.default.getPendingAuthorized();
-        const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
-        await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
+        // const paymentsPendingAuthorized = await paymentUtil.getPendingAuthorized();
+        // const pendingAuthDocs = await this.pendingAuthorized(
+        //   settings,
+        //   paymentsPendingAuthorized,
+        //   cronId
+        // );
+        // await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
         await this.processCapture(pendingCaptureDocs, cronId, false, settings);
@@ -596,20 +596,9 @@ class CronJob {
         // const payments: any = await paymentUtil.getAllCronJobPayments();
         const settings = await this.settingsRepository.getAllWithoutPagination();
         const cronId = (0, uuid_1.v4)();
-        // const paymentsPendingAuthorized =
-        //   await paymentUtil.getPendingCommissionAuthorized();
-        // const pendingAuthDocs = await this.pendingAuthorized(
-        //   settings,
-        //   paymentsPendingAuthorized,
-        //   cronId
-        // );
-        // await this.processCommissionAuthorized(
-        //   pendingAuthDocs,
-        //   cronId,
-        //   false,
-        //   settings
-        // );
-        console.log('stopped');
+        const paymentsPendingAuthorized = await payment_util_1.default.getPendingCommissionAuthorized();
+        const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
+        await this.processCommissionAuthorized(pendingAuthDocs, cronId, false, settings);
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
         await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);

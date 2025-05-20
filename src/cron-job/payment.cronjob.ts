@@ -241,23 +241,23 @@ class CronJob {
       }
     );
 
-    // cron.schedule(
-    //   '15 4 * * *',
-    //   async () => {
-    //     console.log('Running a task in a day for 4:15am');
-    //     this.processPayments();
-    //   },
-    //   {
-    //     timezone: 'America/New_York',
-    //   }
-    // );
+    cron.schedule(
+      '15 4 * * *',
+      async () => {
+        console.log('Running a task in a day for 4:15am');
+        this.processPayments();
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
 
     cron.schedule(
       '30 * * * *',
       async () => {
         console.log('Running a task every 30 min of an hour');
         this.processCommissionRetryPayments();
-        // this.processRetryPayments();
+        this.processRetryPayments();
       },
       {
         timezone: 'America/New_York',
@@ -761,13 +761,13 @@ class CronJob {
     const settings =
       await this.settingsRepository.getAllWithoutPagination<ISettings>();
     const cronId = uuidv4();
-    const paymentsPendingAuthorized = await paymentUtil.getPendingAuthorized();
-    const pendingAuthDocs = await this.pendingAuthorized(
-      settings,
-      paymentsPendingAuthorized,
-      cronId
-    );
-    await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
+    // const paymentsPendingAuthorized = await paymentUtil.getPendingAuthorized();
+    // const pendingAuthDocs = await this.pendingAuthorized(
+    //   settings,
+    //   paymentsPendingAuthorized,
+    //   cronId
+    // );
+    // await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
     const paymentsPendingCaptured = await paymentUtil.getPendingCaptured();
     const pendingCaptureDocs = await this.pendingCaptured(
       paymentsPendingCaptured,
@@ -807,20 +807,19 @@ class CronJob {
     const settings =
       await this.settingsRepository.getAllWithoutPagination<ISettings>();
     const cronId = uuidv4();
-    // const paymentsPendingAuthorized =
-    //   await paymentUtil.getPendingCommissionAuthorized();
-    // const pendingAuthDocs = await this.pendingAuthorized(
-    //   settings,
-    //   paymentsPendingAuthorized,
-    //   cronId
-    // );
-    // await this.processCommissionAuthorized(
-    //   pendingAuthDocs,
-    //   cronId,
-    //   false,
-    //   settings
-    // );
-    console.log('stopped');
+    const paymentsPendingAuthorized =
+      await paymentUtil.getPendingCommissionAuthorized();
+    const pendingAuthDocs = await this.pendingAuthorized(
+      settings,
+      paymentsPendingAuthorized,
+      cronId
+    );
+    await this.processCommissionAuthorized(
+      pendingAuthDocs,
+      cronId,
+      false,
+      settings
+    );
     const paymentsPendingCaptured =
       await paymentUtil.getPendingCommissionCaptured();
     const pendingCaptureDocs = await this.pendingCaptured(
