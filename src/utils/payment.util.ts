@@ -1274,6 +1274,7 @@ class PaymentUtil {
 
     const result = await model.updateById(id, {
       intervals: updatedIntervals,
+      isExempt: updatedIntervals.length ? true : false,
     });
 
     return result;
