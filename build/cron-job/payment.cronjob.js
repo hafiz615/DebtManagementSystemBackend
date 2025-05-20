@@ -609,6 +609,7 @@ class CronJob {
         //   false,
         //   settings
         // );
+        console.log('stopped');
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
         await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);
