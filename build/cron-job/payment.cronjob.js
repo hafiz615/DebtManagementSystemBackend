@@ -760,7 +760,7 @@ class CronJob {
                 totalLegalFeeAmount;
             if (remainingAmount <= 0) {
                 email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
-                return;
+                continue;
             }
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
@@ -1068,8 +1068,7 @@ class CronJob {
     async processACHCaptureResponse(payment, response, retryPlus, cronId, settings, platform, serviceFee, legalFee
     // commision?: number
     ) {
-        if (response?.error)
-            return [false, response.message];
+        // if (response?.error) return [false, response.message];
         let result = false;
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations

@@ -1066,7 +1066,7 @@ class CronJob {
           payment._id,
           ''
         );
-        return;
+        continue;
       }
       const concatedPayments = otherPayments.concat(payment);
       const debtor = await this.debtorRepository.getById<IDebtor>(
@@ -1600,7 +1600,7 @@ class CronJob {
     legalFee?: number
     // commision?: number
   ) {
-    if (response?.error) return [false, response.message];
+    // if (response?.error) return [false, response.message];
     let result = false;
     const {retryInterval} = settings.length
       ? settings[0].paymentsAuthorizations
