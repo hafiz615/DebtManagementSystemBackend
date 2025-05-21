@@ -594,14 +594,19 @@ class CronJob {
     }
     async processCommissionPayments() {
         // const payments: any = await paymentUtil.getAllCronJobPayments();
-        const settings = await this.settingsRepository.getAllWithoutPagination();
-        const cronId = (0, uuid_1.v4)();
-        const paymentsPendingAuthorized = await payment_util_1.default.getPendingCommissionAuthorized();
-        const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
-        await this.processCommissionAuthorized(pendingAuthDocs, cronId, false, settings);
-        const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
-        const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
-        await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);
+        try {
+            const settings = await this.settingsRepository.getAllWithoutPagination();
+            const cronId = (0, uuid_1.v4)();
+            const paymentsPendingAuthorized = await payment_util_1.default.getPendingCommissionAuthorized();
+            const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
+            await this.processCommissionAuthorized(pendingAuthDocs, cronId, false, settings);
+            const paymentsPendingCaptured = await payment_util_1.default.getPendingCommissionCaptured();
+            const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
+            await this.processCommissionCapture(pendingCaptureDocs, cronId, false, settings);
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
     async processCommissionRetryPayments() {
         // const payments: any = await paymentUtil.getAllCronJobPayments();
@@ -747,6 +752,7 @@ class CronJob {
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
         let retryOriginalValue = retryPlus;
+        let i = 0;
         for (const payment of payments) {
             const otherPayments = retryPlus
                 ? await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference)
@@ -777,6 +783,8 @@ class CronJob {
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             const accounts = debtor.accounts;
+            console.log(i, ' i', debtor.accounts.length, '  debtor.accounts', payment.debtorId, '  payment.debtorId', String(payment._id), ' payment._id');
+            i += 1;
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId, account.platform);
