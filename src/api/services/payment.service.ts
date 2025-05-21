@@ -2043,7 +2043,10 @@ class PaymentService {
       ? {obj: new CaseRepository(), id: targetField.caseId}
       : {obj: new DebtorRepository(), id: targetField.debtorId};
 
+    const isExempt = await paymentUtil.getIsExemptStatus(model.obj, model.id);
+
     if (
+      isExempt &&
       req.body.amount != payment.amount &&
       req.body.timePeriod == payment.timePeriod &&
       new Date(req.body.date).toDateString() ===
@@ -2100,6 +2103,24 @@ class PaymentService {
       return updated
         ? [true, constants.successUpdateMessage('Payment')]
         : [false, constants.failureUpdateMessage('payment.')];
+    }
+
+    if (
+      !isExempt &&
+      req.body.amount != payment.amount &&
+      req.body.timePeriod == payment.timePeriod &&
+      new Date(req.body.date).toDateString() ===
+        new Date(payment.dueDate).toDateString()
+    ) {
+      return await this.updateIsExemptPayment(
+        req,
+        updateAllPayments,
+        updateAllIntervalPayments,
+        baseFilter,
+        payment,
+        model,
+        targetField
+      );
     }
 
     if (req.body.date) {
@@ -2208,6 +2229,87 @@ class PaymentService {
     );
 
     return updatedPayment
+      ? [true, constants.successUpdateMessage('Payment')]
+      : [false, constants.failureUpdateMessage('payment.')];
+  }
+
+  private async updateIsExemptPayment(
+    req: Request,
+    updateAllPayments: boolean,
+    updateAllIntervalPayments: boolean,
+    baseFilter: any,
+    payment: any,
+    model: any,
+    filter: any
+  ) {
+    if (updateAllPayments && payment.amount > req.body.amount) {
+      let updatedPayments = null;
+      if (updateAllIntervalPayments) {
+        const intervals = await paymentUtil.getIntervals(model.obj, model.id);
+        for (const interval of intervals) {
+          updatedPayments = await paymentUtil.updatePaymentAmountIsExempt(
+            baseFilter,
+            interval,
+            payment.dueDate,
+            req.body.amount,
+            model.obj,
+            model.id,
+            filter,
+            req
+          );
+
+          await paymentUtil.updatePaymentAmountInterval(
+            model.obj,
+            model.id,
+            interval,
+            req.body.amount
+          );
+        }
+        return updatedPayments
+          ? [true, constants.successUpdateMessage('Payments')]
+          : [false, constants.failureUpdateMessage('payments.')];
+      }
+      const updatedPayment = await paymentUtil.updatePaymentAmountIsExempt(
+        baseFilter,
+        '',
+        payment.dueDate,
+        req.body.amount,
+        model.obj,
+        model.id,
+        filter,
+        req
+      );
+
+      await paymentUtil.updatePaymentAmountInterval(
+        model.obj,
+        model.id,
+        baseFilter.intervalId,
+        req.body.amount
+      );
+
+      return updatedPayment
+        ? [true, constants.successUpdateMessage('Payments')]
+        : [false, constants.failureUpdateMessage('payments.')];
+    }
+
+    if (payment.amount <= req.body.amount)
+      return [false, 'Amount you are updating must be less.'];
+
+    await paymentUtil.createNewPayment(
+      model.obj,
+      model.id,
+      payment,
+      req.body.amount,
+      req,
+      filter
+    );
+
+    const updated = await this.paymentRepository.updateById<IPayment>(
+      req.params.id,
+      {amount: req.body.amount, updatedAt: commonUtil.getCurrentDate()}
+    );
+
+    return updated
       ? [true, constants.successUpdateMessage('Payment')]
       : [false, constants.failureUpdateMessage('payment.')];
   }

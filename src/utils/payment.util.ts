@@ -17,6 +17,8 @@ import lawsuitUtil from './lawsuit.util';
 import {ICase} from '../database/interfaces/case.interface';
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import caseUtil from './case.util';
+import {model, Types} from 'mongoose';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -579,6 +581,57 @@ class PaymentUtil {
       payments[0].dueDate,
       payments[0].timePeriod
     );
+  }
+
+  async createNewPayment(
+    model: any,
+    _id: string,
+    payment: any,
+    amount: number,
+    req: Request,
+    filter: any
+  ) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+      payment.debtorId
+    );
+
+    req.body.debtorName = debtor.basicInformation.fullName;
+    req.body.creditorName = payment?.caseId
+      ? payment?.caseId.creditor.basicInformation.fullName
+      : '';
+    req.body._id = payment?.caseId ? payment?.caseId._id : null;
+    req.body.debtor = debtor._id;
+
+    const remainingAmount = payment.amount - amount;
+    const id = payment?.caseId ? payment.caseId._id : payment?.debtorId;
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          ...filter,
+          isDeleted: false,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
+
+    const startDate = await this.addDaysBasedOnPeriod(
+      payments[0].dueDate,
+      payments[0].timePeriod
+    );
+    req.body.intervals = [
+      {
+        amount: remainingAmount,
+        startDate: startDate,
+        timePeriod: payment.timePeriod,
+        frequency: 1,
+        _id: payment.intervalId,
+      },
+    ];
+
+    await caseUtil.createPayment(req.body);
+
+    await this.updateFrequencyIntervalByOne(model, _id, payment.intervalId);
   }
 
   async getOtherPaymentsTotal(payment: IPayment) {
@@ -1338,6 +1391,31 @@ class PaymentUtil {
 
     const result = await model.updateById(id, {
       intervals: updatedIntervals,
+      isExempt: updatedIntervals.length ? true : false,
+    });
+
+    return result;
+  }
+
+  async updateFrequencyIntervalByOne(
+    model: any,
+    id: string,
+    intervalId: string
+  ) {
+    const data: any = await model.getById(id);
+
+    const updatedIntervals = data.intervals.map((interval: any) => {
+      if (String(interval._id) === String(intervalId)) {
+        return {
+          ...interval,
+          frequency: interval.frequency + 1,
+        };
+      }
+      return interval;
+    });
+
+    const result = await model.updateById(id, {
+      intervals: updatedIntervals,
     });
 
     return result;
@@ -1351,6 +1429,11 @@ class PaymentUtil {
   async getIntervals(model: any, id: string) {
     const data = await model.getById(id);
     return data.intervals.map((interval: any) => String(interval._id));
+  }
+
+  async getIsExemptStatus(model: any, id: string) {
+    const data = await model.getById(id);
+    return data.isExempt;
   }
 
   async updatePaymentAmount(
@@ -1372,6 +1455,52 @@ class PaymentUtil {
       amount: amount,
       updatedAt: commonUtil.getCurrentDate(),
     });
+  }
+
+  async updatePaymentAmountIsExempt(
+    basefilter: any,
+    interval: string,
+    dueDate: string,
+    amount: number,
+    model: any,
+    _id: string,
+    filter: any,
+    req: Request
+  ) {
+    const query: any = {
+      ...basefilter,
+      dueDate: {$gte: new Date(dueDate)},
+    };
+
+    if (interval) {
+      query.intervalId = interval;
+    }
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        query,
+        undefined,
+        undefined,
+        undefined,
+        {
+          path: 'caseId',
+          populate: [
+            {path: 'creditor', select: ['basicInformation']},
+            {path: 'debtor', select: ['basicInformation']},
+          ],
+        }
+      );
+
+    for (const payment of payments) {
+      if (payment.amount > req.body.amount) {
+        await this.createNewPayment(model, _id, payment, amount, req, filter);
+        await this.paymentRepository.updateById(payment._id, {
+          amount: amount,
+          updatedAt: commonUtil.getCurrentDate(),
+        });
+      }
+    }
+    return true;
   }
 
   async updatePaymentDate(filter: any, interval: string, dueDate: string) {
