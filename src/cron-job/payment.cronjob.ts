@@ -1044,30 +1044,30 @@ class CronJob {
             payment.paymentReference
           )
         : await paymentUtil.getOtherPayments(payment);
-      const totalLegalFeeAmount =
-        await lawsuitUtil.getTotalLegalFee(otherPayments);
-      const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
-        otherPayments.length ? [otherPayments[0]] : otherPayments
-      );
-      const totalAmount = otherPayments.reduce(
-        (sum, obj) => sum + obj.amount,
-        0
-      );
-      const remainingAmount =
-        payment.amount -
-        totalAmount +
-        totalServiceFeeAmount +
-        totalLegalFeeAmount;
+      // const totalLegalFeeAmount =
+      //   await lawsuitUtil.getTotalLegalFee(otherPayments);
+      // const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
+      //   otherPayments.length ? [otherPayments[0]] : otherPayments
+      // );
+      // const totalAmount = otherPayments.reduce(
+      //   (sum, obj) => sum + obj.amount,
+      //   0
+      // );
+      // const remainingAmount =
+      //   payment.amount -
+      //   totalAmount +
+      //   totalServiceFeeAmount +
+      //   totalLegalFeeAmount;
 
-      if (remainingAmount <= 0) {
-        emailUtil.sendEmailOrSmsByEvent(
-          'failed_authorization',
-          '',
-          payment._id,
-          ''
-        );
-        continue;
-      }
+      // if (remainingAmount <= 0) {
+      //   emailUtil.sendEmailOrSmsByEvent(
+      //     'failed_authorization',
+      //     '',
+      //     payment._id,
+      //     ''
+      //   );
+      //   continue;
+      // }
       const concatedPayments = otherPayments.concat(payment);
       const debtor = await this.debtorRepository.getById<IDebtor>(
         payment.debtorId

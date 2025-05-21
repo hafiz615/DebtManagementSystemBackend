@@ -751,17 +751,29 @@ class CronJob {
             const otherPayments = retryPlus
                 ? await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference)
                 : await payment_util_1.default.getOtherPayments(payment);
-            const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
-            const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments.length ? [otherPayments[0]] : otherPayments);
-            const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
-            const remainingAmount = payment.amount -
-                totalAmount +
-                totalServiceFeeAmount +
-                totalLegalFeeAmount;
-            if (remainingAmount <= 0) {
-                email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
-                continue;
-            }
+            // const totalLegalFeeAmount =
+            //   await lawsuitUtil.getTotalLegalFee(otherPayments);
+            // const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
+            //   otherPayments.length ? [otherPayments[0]] : otherPayments
+            // );
+            // const totalAmount = otherPayments.reduce(
+            //   (sum, obj) => sum + obj.amount,
+            //   0
+            // );
+            // const remainingAmount =
+            //   payment.amount -
+            //   totalAmount +
+            //   totalServiceFeeAmount +
+            //   totalLegalFeeAmount;
+            // if (remainingAmount <= 0) {
+            //   emailUtil.sendEmailOrSmsByEvent(
+            //     'failed_authorization',
+            //     '',
+            //     payment._id,
+            //     ''
+            //   );
+            //   continue;
+            // }
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             const accounts = debtor.accounts;
