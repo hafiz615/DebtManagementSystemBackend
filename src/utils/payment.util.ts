@@ -589,7 +589,8 @@ class PaymentUtil {
     payment: any,
     amount: number,
     req: Request,
-    filter: any
+    filter: any,
+    count: number
   ) {
     const debtor = await this.debtorRepository.getById<IDebtor>(
       payment.debtorId
@@ -624,14 +625,21 @@ class PaymentUtil {
         amount: remainingAmount,
         startDate: startDate,
         timePeriod: payment.timePeriod,
-        frequency: 1,
-        _id: payment.intervalId,
+        frequency: count,
       },
     ];
 
-    await caseUtil.createPayment(req.body);
+    await model.updateById(_id, {
+      $push: {
+        intervals: {$each: req.body.intervals},
+      },
+    });
 
-    await this.updateFrequencyIntervalByOne(model, _id, payment.intervalId);
+    const getData: any = await model.getById(id);
+
+    req.body.intervals[0]._id =
+      getData.intervals[getData.intervals.length - 1]._id;
+    await caseUtil.createPayment(req.body);
   }
 
   async getOtherPaymentsTotal(payment: IPayment) {
@@ -1388,10 +1396,11 @@ class PaymentUtil {
       }
       return interval;
     });
+    const isExempt = data.isExempt && updatedIntervals.length ? true : false;
 
     const result = await model.updateById(id, {
       intervals: updatedIntervals,
-      isExempt: updatedIntervals.length ? true : false,
+      isExempt: isExempt,
     });
 
     return result;
@@ -1491,14 +1500,20 @@ class PaymentUtil {
         }
       );
 
-    for (const payment of payments) {
-      if (payment.amount > req.body.amount) {
-        await this.createNewPayment(model, _id, payment, amount, req, filter);
-        await this.paymentRepository.updateById(payment._id, {
-          amount: amount,
-          updatedAt: commonUtil.getCurrentDate(),
-        });
-      }
+    if (payments[0].amount > req.body.amount) {
+      await this.createNewPayment(
+        model,
+        _id,
+        payments[0],
+        amount,
+        req,
+        filter,
+        payments.length
+      );
+      await this.paymentRepository.updateMany<IPayment>(query, {
+        amount: amount,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
     }
     return true;
   }

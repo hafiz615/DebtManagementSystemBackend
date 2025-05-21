@@ -1621,7 +1621,7 @@ class PaymentService {
         }
         if (payment.amount <= req.body.amount)
             return [false, 'Amount you are updating must be less.'];
-        await payment_util_1.default.createNewPayment(model.obj, model.id, payment, req.body.amount, req, filter);
+        await payment_util_1.default.createNewPayment(model.obj, model.id, payment, req.body.amount, req, filter, 1);
         const updated = await this.paymentRepository.updateById(req.params.id, { amount: req.body.amount, updatedAt: common_util_1.default.getCurrentDate() });
         return updated
             ? [true, constants_util_1.default.successUpdateMessage('Payment')]

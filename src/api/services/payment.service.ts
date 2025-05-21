@@ -2301,7 +2301,8 @@ class PaymentService {
       payment,
       req.body.amount,
       req,
-      filter
+      filter,
+      1
     );
 
     const updated = await this.paymentRepository.updateById<IPayment>(
