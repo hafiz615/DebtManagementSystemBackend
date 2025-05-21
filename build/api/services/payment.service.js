@@ -1601,6 +1601,8 @@ class PaymentService {
             : [false, constants_util_1.default.failureUpdateMessage('payment.')];
     }
     async updateIsExemptPayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model, filter) {
+        if (payment.amount <= req.body.amount)
+            return [false, 'Amount you are updating must be less.'];
         if (updateAllPayments && payment.amount > req.body.amount) {
             let updatedPayments = null;
             if (updateAllIntervalPayments) {
@@ -1619,8 +1621,6 @@ class PaymentService {
                 ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                 : [false, constants_util_1.default.failureUpdateMessage('payments.')];
         }
-        if (payment.amount <= req.body.amount)
-            return [false, 'Amount you are updating must be less.'];
         await payment_util_1.default.createNewPayment(model.obj, model.id, payment, req.body.amount, req, filter, 1);
         const updated = await this.paymentRepository.updateById(req.params.id, { amount: req.body.amount, updatedAt: common_util_1.default.getCurrentDate() });
         return updated

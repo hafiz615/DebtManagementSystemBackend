@@ -2242,6 +2242,9 @@ class PaymentService {
     model: any,
     filter: any
   ) {
+    if (payment.amount <= req.body.amount)
+      return [false, 'Amount you are updating must be less.'];
+
     if (updateAllPayments && payment.amount > req.body.amount) {
       let updatedPayments = null;
       if (updateAllIntervalPayments) {
@@ -2291,9 +2294,6 @@ class PaymentService {
         ? [true, constants.successUpdateMessage('Payments')]
         : [false, constants.failureUpdateMessage('payments.')];
     }
-
-    if (payment.amount <= req.body.amount)
-      return [false, 'Amount you are updating must be less.'];
 
     await paymentUtil.createNewPayment(
       model.obj,
