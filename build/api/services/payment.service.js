@@ -1479,13 +1479,19 @@ class PaymentService {
     async updatePayment(req) {
         const updateAllPayments = req.query.allPayment === 'true';
         const updateAllIntervalPayments = req.query.allIntervals === 'true';
-        const payment = await this.paymentRepository.getById(req.params.id);
+        const payment = await this.paymentRepository.getById(req.params.id, undefined, undefined, {
+            path: 'caseId',
+            populate: [
+                { path: 'creditor', select: ['basicInformation'] },
+                { path: 'debtor', select: ['basicInformation'] },
+            ],
+        });
         if (!payment) {
             return [false, constants_util_1.default.notFoundMessage('payment')];
         }
         const intervalId = !updateAllIntervalPayments ? payment.intervalId : null;
-        const targetField = payment.caseId
-            ? { caseId: payment.caseId }
+        const targetField = payment.caseId?._id
+            ? { caseId: payment.caseId._id }
             : { debtorId: payment.debtorId, caseId: null };
         const baseFilter = {
             ...targetField,
@@ -1497,22 +1503,27 @@ class PaymentService {
         const model = targetField.caseId
             ? { obj: new case_repository_1.CaseRepository(), id: targetField.caseId }
             : { obj: new debtor_repository_1.DebtorRepository(), id: targetField.debtorId };
-        if (req.body.amount != payment.amount &&
+        const isExempt = await payment_util_1.default.getIsExemptStatus(model.obj, model.id);
+        if (isExempt &&
+            req.body.amount != payment.amount &&
             req.body.timePeriod == payment.timePeriod &&
             new Date(req.body.date).toDateString() ===
                 new Date(payment.dueDate).toDateString()) {
             if (updateAllPayments) {
                 let updatedPayments = null;
+                let intervalCheck = false;
                 if (updateAllIntervalPayments) {
                     const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
                     for (const interval of intervals) {
                         updatedPayments = await payment_util_1.default.updatePaymentAmount(baseFilter, interval, payment.dueDate, req.body.amount);
+                        await payment_util_1.default.updatePaymentAmountInterval(model.obj, model.id, interval, req.body.amount);
                     }
                     return updatedPayments
                         ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                         : [false, constants_util_1.default.failureUpdateMessage('payments.')];
                 }
                 const updatedPayment = await payment_util_1.default.updatePaymentAmount(baseFilter, '', payment.dueDate, req.body.amount);
+                await payment_util_1.default.updatePaymentAmountInterval(model.obj, model.id, baseFilter.intervalId, req.body.amount);
                 return updatedPayment
                     ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                     : [false, constants_util_1.default.failureUpdateMessage('payments.')];
@@ -1522,35 +1533,97 @@ class PaymentService {
                 ? [true, constants_util_1.default.successUpdateMessage('Payment')]
                 : [false, constants_util_1.default.failureUpdateMessage('payment.')];
         }
+        if (!isExempt &&
+            req.body.amount != payment.amount &&
+            req.body.timePeriod == payment.timePeriod &&
+            new Date(req.body.date).toDateString() ===
+                new Date(payment.dueDate).toDateString()) {
+            return await this.updateIsExemptPayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model, targetField);
+        }
         if (req.body.date) {
-            await this.updateDatePayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model);
+            return await this.updateDatePayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model);
         }
         return 0;
     }
     async updateDatePayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model) {
+        req.body.intervals = [
+            {
+                amount: req.body.amount,
+                startDate: req.body.date,
+                timePeriod: req.body.timePeriod,
+            },
+        ];
+        const debtor = await this.debtorRepository.getById(payment.debtorId);
+        req.body.debtorName = debtor.basicInformation.fullName;
+        req.body.creditorName = payment?.caseId
+            ? payment?.caseId.creditor.basicInformation.fullName
+            : '';
+        req.body._id = payment?.caseId ? payment?.caseId._id : null;
+        req.body.debtor = debtor._id;
         if (updateAllPayments) {
             let updatedPayments = null;
+            let intervalCheck = false;
             if (updateAllIntervalPayments) {
                 const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
                 for (const interval of intervals) {
                     updatedPayments = await payment_util_1.default.updatePaymentDate(baseFilter, interval, payment.dueDate);
+                    if (updatedPayments.modifiedCount) {
+                        req.body.intervals[0]._id = interval;
+                        req.body.intervals[0].frequency = updatedPayments.modifiedCount;
+                        await case_util_1.default.createPayment(req.body);
+                        await payment_util_1.default.updatePaymentInterval(model.obj, model.id, interval, req.body.intervals[0].startDate, req.body.amount, payment, intervalCheck);
+                        intervalCheck = true;
+                        req.body.intervals[0].startDate =
+                            await payment_util_1.default.nextPaymentDate(interval);
+                    }
                 }
                 return updatedPayments
                     ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                     : [false, constants_util_1.default.failureUpdateMessage('payments.')];
             }
             const updatedPayment = await payment_util_1.default.updatePaymentDate(baseFilter, '', payment.dueDate);
+            req.body.intervals[0]._id = baseFilter.intervalId;
+            req.body.intervals[0].frequency = updatedPayment.modifiedCount;
+            await case_util_1.default.createPayment(req.body);
+            await payment_util_1.default.updatePaymentInterval(model.obj, model.id, baseFilter.intervalId, req.body.intervals[0].startDate, req.body.amount, payment);
             return updatedPayment
                 ? [true, constants_util_1.default.successUpdateMessage('Payments')]
                 : [false, constants_util_1.default.failureUpdateMessage('payments.')];
         }
         const updatedPayment = await this.paymentRepository.updateById(req.params.id, {
-            amount: req.body.amout,
+            amount: req.body.amount,
             dueDate: req.body.date,
             timePeriod: req.body.timePeriod,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         return updatedPayment
+            ? [true, constants_util_1.default.successUpdateMessage('Payment')]
+            : [false, constants_util_1.default.failureUpdateMessage('payment.')];
+    }
+    async updateIsExemptPayment(req, updateAllPayments, updateAllIntervalPayments, baseFilter, payment, model, filter) {
+        if (payment.amount <= req.body.amount)
+            return [false, 'Amount you are updating must be less.'];
+        if (updateAllPayments && payment.amount > req.body.amount) {
+            let updatedPayments = null;
+            if (updateAllIntervalPayments) {
+                const intervals = await payment_util_1.default.getIntervals(model.obj, model.id);
+                for (const interval of intervals) {
+                    updatedPayments = await payment_util_1.default.updatePaymentAmountIsExempt(baseFilter, interval, payment.dueDate, req.body.amount, model.obj, model.id, filter, req);
+                    await payment_util_1.default.updatePaymentAmountInterval(model.obj, model.id, interval, req.body.amount);
+                }
+                return updatedPayments
+                    ? [true, constants_util_1.default.successUpdateMessage('Payments')]
+                    : [false, constants_util_1.default.failureUpdateMessage('payments.')];
+            }
+            const updatedPayment = await payment_util_1.default.updatePaymentAmountIsExempt(baseFilter, '', payment.dueDate, req.body.amount, model.obj, model.id, filter, req);
+            await payment_util_1.default.updatePaymentAmountInterval(model.obj, model.id, baseFilter.intervalId, req.body.amount);
+            return updatedPayment
+                ? [true, constants_util_1.default.successUpdateMessage('Payments')]
+                : [false, constants_util_1.default.failureUpdateMessage('payments.')];
+        }
+        await payment_util_1.default.createNewPayment(model.obj, model.id, payment, req.body.amount, req, filter, 1);
+        const updated = await this.paymentRepository.updateById(req.params.id, { amount: req.body.amount, updatedAt: common_util_1.default.getCurrentDate() });
+        return updated
             ? [true, constants_util_1.default.successUpdateMessage('Payment')]
             : [false, constants_util_1.default.failureUpdateMessage('payment.')];
     }

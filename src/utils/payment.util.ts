@@ -17,6 +17,8 @@ import lawsuitUtil from './lawsuit.util';
 import {ICase} from '../database/interfaces/case.interface';
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import caseUtil from './case.util';
+import {model, Types} from 'mongoose';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -561,6 +563,83 @@ class PaymentUtil {
       totalCount++;
     }
     return totalCount;
+  }
+
+  async nextPaymentDate(id: string) {
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          intervalId: id,
+          isDeleted: false,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
+
+    return await this.addDaysBasedOnPeriod(
+      payments[0].dueDate,
+      payments[0].timePeriod
+    );
+  }
+
+  async createNewPayment(
+    model: any,
+    _id: string,
+    payment: any,
+    amount: number,
+    req: Request,
+    filter: any,
+    count: number
+  ) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+      payment.debtorId
+    );
+
+    req.body.debtorName = debtor.basicInformation.fullName;
+    req.body.creditorName = payment?.caseId
+      ? payment?.caseId.creditor.basicInformation.fullName
+      : '';
+    req.body._id = payment?.caseId ? payment?.caseId._id : null;
+    req.body.debtor = debtor._id;
+
+    const remainingAmount = payment.amount - amount;
+    const id = payment?.caseId ? payment.caseId._id : payment?.debtorId;
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        {
+          ...filter,
+          isDeleted: false,
+        },
+        undefined,
+        undefined,
+        {_id: -1}
+      );
+
+    const startDate = await this.addDaysBasedOnPeriod(
+      payments[0].dueDate,
+      payments[0].timePeriod
+    );
+    req.body.intervals = [
+      {
+        amount: remainingAmount,
+        startDate: startDate,
+        timePeriod: payment.timePeriod,
+        frequency: count,
+      },
+    ];
+
+    await model.updateById(_id, {
+      $push: {
+        intervals: {$each: req.body.intervals},
+      },
+    });
+
+    const getData: any = await model.getById(id);
+
+    req.body.intervals[0]._id =
+      getData.intervals[getData.intervals.length - 1]._id;
+    await caseUtil.createPayment(req.body);
   }
 
   async getOtherPaymentsTotal(payment: IPayment) {
@@ -1253,10 +1332,99 @@ class PaymentUtil {
         return interval;
       })
       .filter((interval: any) => interval.frequency > 0);
+    console.log(updatedIntervals, 'updatedIntervals');
+
+    const isExempt = data.isExempt && updatedIntervals.length ? true : false;
 
     const result = await model.updateById(id, {
       intervals: updatedIntervals,
-      isExempt: updatedIntervals.length ? true : false,
+      isExempt: isExempt,
+    });
+
+    return result;
+  }
+
+  async updatePaymentInterval(
+    model: any,
+    id: string,
+    intervalId: string,
+    startDate: string,
+    amount: number,
+    payment: IPayment,
+    intervalCheck?: Boolean
+  ) {
+    const data: any = await model.getById(id);
+
+    const updatedIntervals = data.intervals.map((interval: any) => {
+      if (String(interval._id) === String(intervalId)) {
+        if (
+          new Date(payment.dueDate).getTime() ===
+            new Date(interval.startDate).getTime() ||
+          intervalCheck
+        ) {
+          interval.startDate = new Date(startDate);
+        }
+        return {
+          ...interval,
+          amount: amount,
+        };
+      }
+      return interval;
+    });
+
+    const result = await model.updateById(id, {
+      intervals: updatedIntervals,
+    });
+
+    return result;
+  }
+
+  async updatePaymentAmountInterval(
+    model: any,
+    id: string,
+    intervalId: string,
+    amount: number
+  ) {
+    const data: any = await model.getById(id);
+
+    const updatedIntervals = data.intervals.map((interval: any) => {
+      if (String(interval._id) === String(intervalId)) {
+        return {
+          ...interval,
+          amount: amount,
+        };
+      }
+      return interval;
+    });
+    const isExempt = data.isExempt && updatedIntervals.length ? true : false;
+
+    const result = await model.updateById(id, {
+      intervals: updatedIntervals,
+      isExempt: isExempt,
+    });
+
+    return result;
+  }
+
+  async updateFrequencyIntervalByOne(
+    model: any,
+    id: string,
+    intervalId: string
+  ) {
+    const data: any = await model.getById(id);
+
+    const updatedIntervals = data.intervals.map((interval: any) => {
+      if (String(interval._id) === String(intervalId)) {
+        return {
+          ...interval,
+          frequency: interval.frequency + 1,
+        };
+      }
+      return interval;
+    });
+
+    const result = await model.updateById(id, {
+      intervals: updatedIntervals,
     });
 
     return result;
@@ -1270,6 +1438,11 @@ class PaymentUtil {
   async getIntervals(model: any, id: string) {
     const data = await model.getById(id);
     return data.intervals.map((interval: any) => String(interval._id));
+  }
+
+  async getIsExemptStatus(model: any, id: string) {
+    const data = await model.getById(id);
+    return data.isExempt;
   }
 
   async updatePaymentAmount(
@@ -1291,6 +1464,58 @@ class PaymentUtil {
       amount: amount,
       updatedAt: commonUtil.getCurrentDate(),
     });
+  }
+
+  async updatePaymentAmountIsExempt(
+    basefilter: any,
+    interval: string,
+    dueDate: string,
+    amount: number,
+    model: any,
+    _id: string,
+    filter: any,
+    req: Request
+  ) {
+    const query: any = {
+      ...basefilter,
+      dueDate: {$gte: new Date(dueDate)},
+    };
+
+    if (interval) {
+      query.intervalId = interval;
+    }
+
+    const payments =
+      await this.paymentRepository.getAllWithoutPagination<IPayment>(
+        query,
+        undefined,
+        undefined,
+        undefined,
+        {
+          path: 'caseId',
+          populate: [
+            {path: 'creditor', select: ['basicInformation']},
+            {path: 'debtor', select: ['basicInformation']},
+          ],
+        }
+      );
+
+    if (payments[0].amount > req.body.amount) {
+      await this.createNewPayment(
+        model,
+        _id,
+        payments[0],
+        amount,
+        req,
+        filter,
+        payments.length
+      );
+      await this.paymentRepository.updateMany<IPayment>(query, {
+        amount: amount,
+        updatedAt: commonUtil.getCurrentDate(),
+      });
+    }
+    return true;
   }
 
   async updatePaymentDate(filter: any, interval: string, dueDate: string) {

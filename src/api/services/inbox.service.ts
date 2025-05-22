@@ -338,9 +338,12 @@ class InboxService {
 
           result[item.caseCode]?.data?.push(item);
 
-          if (!result[item.caseCode]?.to) {
+          if (!result[item.caseCode]?.to && req.query.all === 'false') {
             if (item.from === temp) result[item.caseCode].to = item.to;
             if (item.to === temp) result[item.caseCode].to = item.from;
+          }
+          if (!result[item.caseCode]?.to && req.query.all === 'true') {
+            result[item.caseCode].to = item.from;
           }
 
           if (!result[item.caseCode]?.caseId) {
