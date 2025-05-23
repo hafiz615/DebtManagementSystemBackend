@@ -35,6 +35,7 @@ const token_service_1 = __importDefault(require("./token.service"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const creditor_service_1 = __importDefault(require("./creditor.service"));
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
+const serviceFee_repository_1 = require("../repository/serviceFee/serviceFee.repository");
 dotenv_1.default.config();
 class DebtorService {
     constructor() {
@@ -162,6 +163,7 @@ class DebtorService {
         this.syncPaymentMethodRepository = new syncPaymentMethod_repository_1.SyncPaymentMethodRepository();
         this.tokenService = new token_service_1.default();
         this.creditorService = new creditor_service_1.default();
+        this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -1579,9 +1581,13 @@ class DebtorService {
             isExempt: 1,
             serviceFee: 1,
         });
+        const serviceFee = await this.serviceFeeRepository.getOne({
+            type: 'serviceFee',
+        });
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
+        debtor.serviceFee = debtor?.serviceFee ? debtor.serviceFee : serviceFee.fee;
         const cases = await this.caseRepository.getAllWithoutPagination({ debtor: req.params.id, isDeleted: false }, {
             creditor: 1,
             totalDebt: 1,

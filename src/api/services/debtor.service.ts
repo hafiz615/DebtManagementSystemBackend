@@ -51,6 +51,8 @@ import {v4} from 'uuid';
 import dotenv from 'dotenv';
 import CreditorService from './creditor.service';
 import paynoteUtil from '../../utils/paynote.util';
+import {ServiceFeeRepository} from '../repository/serviceFee/serviceFee.repository';
+import {IFee} from '../../database/interfaces/serviceFee.interface';
 dotenv.config();
 
 class DebtorService {
@@ -66,6 +68,7 @@ class DebtorService {
   private syncPaymentMethodRepository: SyncPaymentMethodRepository;
   private tokenService: TokenService;
   private creditorService: CreditorService;
+  private serviceFeeRepository: ServiceFeeRepository;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -79,6 +82,7 @@ class DebtorService {
     this.syncPaymentMethodRepository = new SyncPaymentMethodRepository();
     this.tokenService = new TokenService();
     this.creditorService = new CreditorService();
+    this.serviceFeeRepository = new ServiceFeeRepository();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -2138,9 +2142,15 @@ class DebtorService {
       serviceFee: 1,
     });
 
+    const serviceFee = await this.serviceFeeRepository.getOne<IFee>({
+      type: 'serviceFee',
+    });
+
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
+
+    debtor.serviceFee = debtor?.serviceFee ? debtor.serviceFee : serviceFee.fee;
 
     const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
       {debtor: req.params.id, isDeleted: false},
