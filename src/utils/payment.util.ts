@@ -1186,7 +1186,7 @@ class PaymentUtil {
             payment['authorized'] = 'Success';
             payment['debtorTransId'] = transactionIdAuth;
             payment['paymentGateway'] = account.platform;
-            payment['transactionType'] = account.paymentType;
+            payment['transactionType'] = 'CC';
             customerVaultId = account.customerVaultId;
             platform = account.platform;
             break;
@@ -1196,7 +1196,7 @@ class PaymentUtil {
             payment['authorized'] = 'Failed';
             payment['failedReasonAuthorization'] = responseTextAuth;
             payment['paymentGateway'] = account.platform;
-            payment['transactionType'] = account.paymentType;
+            payment['transactionType'] = 'CC';
           }
         }
         if (account.paymentType === 'ck') {
@@ -1217,7 +1217,7 @@ class PaymentUtil {
             payment['captured'] = 'Success';
             payment['debtorTransId'] = transactionId;
             payment['paymentGateway'] = account.platform;
-            payment['transactionType'] = account.paymentType;
+            payment['transactionType'] = 'ACH';
             customerVaultId = account.customerVaultId;
             result = true;
             break;
@@ -1227,7 +1227,7 @@ class PaymentUtil {
             payment['captured'] = 'Failed';
             payment['failedReasonCaptured'] = responseText;
             payment['paymentGateway'] = account.platform;
-            payment['transactionType'] = account.paymentType;
+            payment['transactionType'] = 'ACH';
           }
         }
       }
@@ -1534,7 +1534,6 @@ class PaymentUtil {
     });
   }
 
-  async createPayment() {}
   async cancelCasePaymentPlan(caseId: string) {
     const updateCase = await this.caseRepository.updateById<ICase>(caseId, {
       intervals: [],

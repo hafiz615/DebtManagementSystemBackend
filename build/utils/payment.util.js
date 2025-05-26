@@ -834,7 +834,7 @@ class PaymentUtil {
                         payment['authorized'] = 'Success';
                         payment['debtorTransId'] = transactionIdAuth;
                         payment['paymentGateway'] = account.platform;
-                        payment['transactionType'] = account.paymentType;
+                        payment['transactionType'] = 'CC';
                         customerVaultId = account.customerVaultId;
                         platform = account.platform;
                         break;
@@ -844,7 +844,7 @@ class PaymentUtil {
                         payment['authorized'] = 'Failed';
                         payment['failedReasonAuthorization'] = responseTextAuth;
                         payment['paymentGateway'] = account.platform;
-                        payment['transactionType'] = account.paymentType;
+                        payment['transactionType'] = 'CC';
                     }
                 }
                 if (account.paymentType === 'ck') {
@@ -857,7 +857,7 @@ class PaymentUtil {
                         payment['captured'] = 'Success';
                         payment['debtorTransId'] = transactionId;
                         payment['paymentGateway'] = account.platform;
-                        payment['transactionType'] = account.paymentType;
+                        payment['transactionType'] = 'ACH';
                         customerVaultId = account.customerVaultId;
                         result = true;
                         break;
@@ -867,7 +867,7 @@ class PaymentUtil {
                         payment['captured'] = 'Failed';
                         payment['failedReasonCaptured'] = responseText;
                         payment['paymentGateway'] = account.platform;
-                        payment['transactionType'] = account.paymentType;
+                        payment['transactionType'] = 'ACH';
                     }
                 }
             }
@@ -1059,7 +1059,6 @@ class PaymentUtil {
             updatedAt: common_util_1.default.getCurrentDate(),
         });
     }
-    async createPayment() { }
     async cancelCasePaymentPlan(caseId) {
         const updateCase = await this.caseRepository.updateById(caseId, {
             intervals: [],

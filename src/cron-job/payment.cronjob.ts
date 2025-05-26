@@ -804,37 +804,39 @@ class CronJob {
 
   async processCommissionPayments() {
     // const payments: any = await paymentUtil.getAllCronJobPayments();
-    const settings =
-      await this.settingsRepository.getAllWithoutPagination<ISettings>();
-    const cronId = uuidv4();
-    const paymentsPendingAuthorized =
-      await paymentUtil.getPendingCommissionAuthorized();
-    const pendingAuthDocs = await this.pendingAuthorized(
-      settings,
-      paymentsPendingAuthorized,
-      cronId
-    );
-    console.log(pendingAuthDocs, 'pendingAuthDocs');
-    await this.processCommissionAuthorized(
-      pendingAuthDocs,
-      cronId,
-      false,
-      settings
-    );
-    const paymentsPendingCaptured =
-      await paymentUtil.getPendingCommissionCaptured();
-    const pendingCaptureDocs = await this.pendingCaptured(
-      paymentsPendingCaptured,
-      cronId,
-      settings
-    );
-    console.log(pendingCaptureDocs, 'pendingCaptureDocs');
-    await this.processCommissionCapture(
-      pendingCaptureDocs,
-      cronId,
-      false,
-      settings
-    );
+    try {
+      const settings =
+        await this.settingsRepository.getAllWithoutPagination<ISettings>();
+      const cronId = uuidv4();
+      const paymentsPendingAuthorized =
+        await paymentUtil.getPendingCommissionAuthorized();
+      const pendingAuthDocs = await this.pendingAuthorized(
+        settings,
+        paymentsPendingAuthorized,
+        cronId
+      );
+      await this.processCommissionAuthorized(
+        pendingAuthDocs,
+        cronId,
+        false,
+        settings
+      );
+      const paymentsPendingCaptured =
+        await paymentUtil.getPendingCommissionCaptured();
+      const pendingCaptureDocs = await this.pendingCaptured(
+        paymentsPendingCaptured,
+        cronId,
+        settings
+      );
+      await this.processCommissionCapture(
+        pendingCaptureDocs,
+        cronId,
+        false,
+        settings
+      );
+    } catch (error: any) {
+      console.log(error);
+    }
   }
 
   async processCommissionRetryPayments() {
@@ -1040,41 +1042,53 @@ class CronJob {
     settings: ISettings[]
   ) {
     let retryOriginalValue = retryPlus;
+    let i = 0;
     for (const payment of payments) {
       const otherPayments: IPayment[] = retryPlus
         ? await paymentUtil.getPaymentReferenceDocuments(
             payment.paymentReference
           )
         : await paymentUtil.getOtherPayments(payment);
-      const totalLegalFeeAmount =
-        await lawsuitUtil.getTotalLegalFee(otherPayments);
-      const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
-        otherPayments.length ? [otherPayments[0]] : otherPayments
-      );
-      const totalAmount = otherPayments.reduce(
-        (sum, obj) => sum + obj.amount,
-        0
-      );
-      const remainingAmount =
-        payment.amount -
-        totalAmount +
-        totalServiceFeeAmount +
-        totalLegalFeeAmount;
+      // const totalLegalFeeAmount =
+      //   await lawsuitUtil.getTotalLegalFee(otherPayments);
+      // const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
+      //   otherPayments.length ? [otherPayments[0]] : otherPayments
+      // );
+      // const totalAmount = otherPayments.reduce(
+      //   (sum, obj) => sum + obj.amount,
+      //   0
+      // );
+      // const remainingAmount =
+      //   payment.amount -
+      //   totalAmount +
+      //   totalServiceFeeAmount +
+      //   totalLegalFeeAmount;
 
-      if (remainingAmount <= 0) {
-        emailUtil.sendEmailOrSmsByEvent(
-          'failed_authorization',
-          '',
-          payment._id,
-          ''
-        );
-        return;
-      }
+      // if (remainingAmount <= 0) {
+      //   emailUtil.sendEmailOrSmsByEvent(
+      //     'failed_authorization',
+      //     '',
+      //     payment._id,
+      //     ''
+      //   );
+      //   continue;
+      // }
       const concatedPayments = otherPayments.concat(payment);
       const debtor = await this.debtorRepository.getById<IDebtor>(
         payment.debtorId
       );
       const accounts = debtor.accounts;
+      console.log(
+        i,
+        ' i',
+        debtor.accounts.length,
+        '  debtor.accounts',
+        payment.debtorId,
+        '  payment.debtorId',
+        String(payment._id),
+        ' payment._id'
+      );
+      i += 1;
       for (const account of accounts) {
         if (account.paymentType === 'cc') {
           const response = await this.paymentService.authorizeCreditCard(
@@ -1602,7 +1616,7 @@ class CronJob {
     legalFee?: number
     // commision?: number
   ) {
-    if (response?.error) return [false, response.message];
+    // if (response?.error) return [false, response.message];
     let result = false;
     const {retryInterval} = settings.length
       ? settings[0].paymentsAuthorizations
