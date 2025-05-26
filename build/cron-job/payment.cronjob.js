@@ -571,13 +571,9 @@ class CronJob {
     async processPayments() {
         const settings = await this.settingsRepository.getAllWithoutPagination();
         const cronId = (0, uuid_1.v4)();
-        // const paymentsPendingAuthorized = await paymentUtil.getPendingAuthorized();
-        // const pendingAuthDocs = await this.pendingAuthorized(
-        //   settings,
-        //   paymentsPendingAuthorized,
-        //   cronId
-        // );
-        // await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
+        const paymentsPendingAuthorized = await payment_util_1.default.getPendingAuthorized();
+        const pendingAuthDocs = await this.pendingAuthorized(settings, paymentsPendingAuthorized, cronId);
+        await this.processAuthorized(pendingAuthDocs, cronId, false, settings);
         const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptured();
         const pendingCaptureDocs = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
         await this.processCapture(pendingCaptureDocs, cronId, false, settings);

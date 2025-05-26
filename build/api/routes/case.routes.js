@@ -57,5 +57,6 @@ router.put('/update-case-plan/:id', authorize_middleware_1.default.validateAuth,
 router.get('/getAllUserCases', authorize_middleware_1.default.validateAuth, case_controller_1.default.getAllUserCases);
 router.post('/getScoresSettlementRangeDetails/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRangeDetails);
 router.post('/affiliate-cases-financial-summary', case_controller_1.default.affiliateCasesFinancialSummary);
+router.put('/updateLegalFee/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateLegalFee, case_controller_1.default.updateLegalFee);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

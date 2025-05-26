@@ -256,6 +256,9 @@ const debtorSchema = new mongoose_1.Schema({
     seamlesschexRountingIds: {
         type: (Array),
     },
+    serviceFee: {
+        type: Number,
+    },
     createdAt: {
         type: Date,
         required: true,

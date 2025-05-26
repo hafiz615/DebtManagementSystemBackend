@@ -1454,5 +1454,22 @@ class CaseValidate {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  async updateLegalFee(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      legalFee: Joi.number().strict().required().messages({
+        'number.base': 'Legal fee must be a number',
+        'any.required': 'Legal fee is required',
+      }),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 export default new CaseValidate();

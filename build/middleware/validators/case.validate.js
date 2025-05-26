@@ -1390,6 +1390,23 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async updateLegalFee(req, res, next) {
+        const schema = joi_1.default.object({
+            legalFee: joi_1.default.number().strict().required().messages({
+                'number.base': 'Legal fee must be a number',
+                'any.required': 'Legal fee is required',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
 }
 exports.default = new CaseValidate();
 //# sourceMappingURL=case.validate.js.map

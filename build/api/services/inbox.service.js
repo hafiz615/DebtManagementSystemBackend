@@ -186,6 +186,71 @@ class InboxService {
         email_util_1.default.createNewInbox(smsData, caseData, 'draft', threadId, reqTemp.id, reqTemp.name, null, null, 'SMS');
         return [true, `Draft created successfully`];
     }
+    async getSms(req) {
+        const reqTemp = req;
+        let user = null;
+        let numbers = [];
+        const filters = await inbox_utils_1.default.getAllInboxFilters(req);
+        filters['isDeleted'] = { $ne: true };
+        filters['medium'] = 'SMS';
+        const medium = req.query.medium;
+        medium === 'SMS'
+            ? (filters['type'] = { $ne: 'draft' })
+            : (filters['type'] = 'draft');
+        user = await this.userRepository.getById(reqTemp.id);
+        if (req.query.all === 'false') {
+            if (req.body?.userId) {
+                user = await this.userRepository.getById(req.body?.userId);
+            }
+            if (!user)
+                return [false, constants_util_1.default.notFoundMessage('user')];
+            const cleanNumber = await common_util_1.default.cleanPhoneNumber(user.twilioNo);
+            filters['$or'] = [{ from: cleanNumber }, { to: cleanNumber }];
+            numbers.push(cleanNumber);
+        }
+        if (req.query.all === 'true') {
+            let allUsers = await this.userRepository.getAll({ isActive: true }, 'twilioNo');
+            numbers = await Promise.all(allUsers
+                .filter(user => user.twilioNo)
+                .map(user => common_util_1.default.cleanPhoneNumber(user.twilioNo)));
+        }
+        const temp = await common_util_1.default.cleanPhoneNumber(user.twilioNo);
+        let result = null;
+        result =
+            await this.inboxRepository.getAllWithoutPagination(filters);
+        if (medium === 'SMS') {
+            result = result.reduce((result, item) => {
+                if (item.caseCode) {
+                    if (!result[item.caseCode]) {
+                        result[item.caseCode] = { data: [], to: '', caseId: '' };
+                    }
+                    result[item.caseCode]?.data?.push(item);
+                    if (!result[item.caseCode]?.to && req.query.all === 'false') {
+                        if (item.from === temp)
+                            result[item.caseCode].to = item.to;
+                        if (item.to === temp)
+                            result[item.caseCode].to = item.from;
+                    }
+                    if (!result[item.caseCode]?.to && req.query.all === 'true') {
+                        result[item.caseCode].to = item.from;
+                    }
+                    if (!result[item.caseCode]?.caseId) {
+                        result[item.caseCode].caseId = item.caseId;
+                    }
+                }
+                return result;
+            }, {});
+        }
+        return [
+            true,
+            {
+                allSms: result,
+                userName: user ? user.name : '',
+                numbers,
+                from: temp,
+            },
+        ];
+    }
 }
 exports.default = InboxService;
 //# sourceMappingURL=inbox.service.js.map

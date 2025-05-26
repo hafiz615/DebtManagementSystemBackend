@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import responseHelper from '../../utils/responseHelper.util';
 import constants from '../../utils/constants.util';
 import Joi from 'joi';
+import {strict} from 'assert';
 
 dotenv.config();
 class DebtorRequests {
@@ -892,7 +893,7 @@ class DebtorRequests {
     }
   };
 
-  deleteDebtorAccount = (
+  deleteDebtorAccountDebtorPortal = (
     req: Request | any,
     res: Response,
     next: NextFunction
@@ -1217,6 +1218,52 @@ class DebtorRequests {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  updateCommisionPercentage = (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const schema = Joi.object({
+      commission: Joi.number().strict().required().messages({
+        'number.base': 'Commission must be a number',
+        'any.required': 'Commission is required',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  };
+
+  updateServiceFee = (
+    req: Request | any,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const schema = Joi.object({
+      serviceFee: Joi.number().strict().required().messages({
+        'number.base': 'Service fee must be a number',
+        'any.required': 'Service fee is required',
+      }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  };
 }
 
 export default new DebtorRequests();

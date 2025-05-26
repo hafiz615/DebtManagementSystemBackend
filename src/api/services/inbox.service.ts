@@ -13,6 +13,7 @@ import {ICase} from '../../database/interfaces/case.interface';
 import commonUtil from '../../utils/common.util';
 import emailUtil from '../../utils/email.util';
 import {v4} from 'uuid';
+import {IUser} from '../../database/interfaces/user.interface';
 dotenv.config();
 
 class InboxService {
@@ -289,6 +290,79 @@ class InboxService {
     });
     return [true, updatedInbox];
   };
+
+  async getSms(req: Request) {
+    const reqTemp: any = req;
+
+    let user = null;
+    let numbers = [];
+    const filters: any = await inboxUtils.getAllInboxFilters(req);
+    filters['isDeleted'] = {$ne: true};
+    filters['medium'] = 'SMS';
+    const medium = req.query.medium;
+    medium === 'SMS'
+      ? (filters['type'] = {$ne: 'draft'})
+      : (filters['type'] = 'draft');
+
+    user = await this.userRepository.getById<IUser>(reqTemp.id);
+    if (req.query.all === 'false') {
+      if (req.body?.userId) {
+        user = await this.userRepository.getById<IUser>(req.body?.userId);
+      }
+      if (!user) return [false, constants.notFoundMessage('user')];
+      const cleanNumber = await commonUtil.cleanPhoneNumber(user.twilioNo);
+      filters['$or'] = [{from: cleanNumber}, {to: cleanNumber}];
+      numbers.push(cleanNumber);
+    }
+    if (req.query.all === 'true') {
+      let allUsers: IUser[] = await this.userRepository.getAll<IUser>(
+        {isActive: true},
+        'twilioNo'
+      );
+      numbers = await Promise.all(
+        allUsers
+          .filter(user => user.twilioNo)
+          .map(user => commonUtil.cleanPhoneNumber(user.twilioNo))
+      );
+    }
+    const temp = await commonUtil.cleanPhoneNumber(user.twilioNo);
+    let result = null;
+    result =
+      await this.inboxRepository.getAllWithoutPagination<IInbox>(filters);
+    if (medium === 'SMS') {
+      result = result.reduce((result: any, item: IInbox) => {
+        if (item.caseCode) {
+          if (!result[item.caseCode]) {
+            result[item.caseCode] = {data: [], to: '', caseId: ''};
+          }
+
+          result[item.caseCode]?.data?.push(item);
+
+          if (!result[item.caseCode]?.to && req.query.all === 'false') {
+            if (item.from === temp) result[item.caseCode].to = item.to;
+            if (item.to === temp) result[item.caseCode].to = item.from;
+          }
+          if (!result[item.caseCode]?.to && req.query.all === 'true') {
+            result[item.caseCode].to = item.from;
+          }
+
+          if (!result[item.caseCode]?.caseId) {
+            result[item.caseCode].caseId = item.caseId;
+          }
+        }
+        return result;
+      }, {});
+    }
+    return [
+      true,
+      {
+        allSms: result,
+        userName: user ? user.name : '',
+        numbers,
+        from: temp,
+      },
+    ];
+  }
 }
 
 export default InboxService;

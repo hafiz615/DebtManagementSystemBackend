@@ -795,7 +795,7 @@ class DebtorRequests {
                     .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
             }
         };
-        this.deleteDebtorAccount = (req, res, next) => {
+        this.deleteDebtorAccountDebtorPortal = (req, res, next) => {
             const schema = joi_1.default.object({
                 customerVaultId: joi_1.default.string().required().messages({
                     'string.base': 'Customer vault id must be a string',
@@ -1041,6 +1041,40 @@ class DebtorRequests {
                     'string.base': 'Platform must be a string',
                     'string.empty': 'Platform cannot be empty',
                     'any.required': 'Platform is required',
+                }),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            }
+        };
+        this.updateCommisionPercentage = (req, res, next) => {
+            const schema = joi_1.default.object({
+                commission: joi_1.default.number().strict().required().messages({
+                    'number.base': 'Commission must be a number',
+                    'any.required': 'Commission is required',
+                }),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            }
+        };
+        this.updateServiceFee = (req, res, next) => {
+            const schema = joi_1.default.object({
+                serviceFee: joi_1.default.number().strict().required().messages({
+                    'number.base': 'Service fee must be a number',
+                    'any.required': 'Service fee is required',
                 }),
             });
             const { error } = schema.validate(req.body);

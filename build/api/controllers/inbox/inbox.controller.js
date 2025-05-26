@@ -173,6 +173,71 @@ class InboxController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        //     try {
+        //       const response = await this.inboxService.markAsUnread(req.params.id);
+        //       if (!response[0]) {
+        //         return res
+        //           .status(constants.CODE.BAD_REQUEST)
+        //           .send(responseHelper.get4xxResponse(response[1]));
+        //       }
+        //       return res.status(constants.CODE.OK).send(
+        //         responseHelper.get2xxResponse({
+        //           statusCode: constants.CODE.OK,
+        //           data: response[1],
+        //           message: 'Inbox marked as unread',
+        //         })
+        //       );
+        //     } catch (error) {
+        //       console.log(error);
+        //       return res
+        //         .status(constants.CODE.BAD_REQUEST)
+        //         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+        //     }
+        //   };
+        //   // Method to send message to inbox
+        //   sendMessage = async (req: Request, res: Response) => {
+        //     try {
+        //       const response = await this.inboxService.sendMessage(req);
+        //       if (!response[0]) {
+        //         return res
+        //           .status(constants.CODE.BAD_REQUEST)
+        //           .send(responseHelper.get4xxResponse(response[1]));
+        //       }
+        //       return res.status(constants.CODE.CREATED).send(
+        //         responseHelper.get2xxResponse({
+        //           statusCode: constants.CODE.CREATED,
+        //           data: response[1],
+        //           message: 'Message sent to inbox',
+        //         })
+        //       );
+        //     } catch (error) {
+        //       console.log(error);
+        //       return res
+        //         .status(constants.CODE.BAD_REQUEST)
+        //         .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+        //     }
+        //   };
+        this.getSms = async (req, res) => {
+            try {
+                const response = await this.inboxService.getSms(req);
+                if (!response[0]) {
+                    return res
+                        .status(constants_util_1.default.CODE.OK)
+                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
+                }
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: response[1],
+                    message: constants_util_1.default.successFoundMessage('Inboxes'),
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.inboxService = new inbox_service_1.default();
     }
 }

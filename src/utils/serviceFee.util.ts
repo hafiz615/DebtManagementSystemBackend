@@ -19,9 +19,15 @@ class ServiceFeeUtil {
   }
 
   async getServiceFeeAmount(caseId: any) {
-    const caseData = await this.caseRepository.getById<ICase>(caseId);
-    if (caseData.serviceFee !== 0) {
-      return caseData.serviceFee;
+    const caseData: any = await this.caseRepository.getById<ICase>(
+      caseId,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+
+    if (caseData.debtor?.serviceFee) {
+      return caseData.debtor?.serviceFee;
     }
 
     const serviceFee = await this.serviceFeeRepository.getOne<IFee>({

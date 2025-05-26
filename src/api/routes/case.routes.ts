@@ -194,4 +194,11 @@ router.post(
   '/affiliate-cases-financial-summary',
   caseController.affiliateCasesFinancialSummary
 );
+
+router.put(
+  '/updateLegalFee/:id',
+  authorize.validateAuth,
+  caseValidate.updateLegalFee,
+  caseController.updateLegalFee
+);
 export default router;

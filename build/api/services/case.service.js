@@ -31,6 +31,7 @@ const settings_util_1 = __importDefault(require("../../utils/settings.util"));
 const pipelineStatus_repository_1 = require("../repository/pipelineStatus/pipelineStatus.repository");
 const call_repository_1 = require("../repository/call/call.repository");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
+const payment_util_1 = __importDefault(require("../../utils/payment.util"));
 const { jwt: { AccessToken }, } = require('twilio');
 const VoiceGrant = AccessToken.VoiceGrant;
 class CaseService {
@@ -759,47 +760,14 @@ class CaseService {
                 return [false, constants_util_1.default.notFoundMessage('case')];
             const getDebtor = findCase.debtor;
             const creditor = findCase.creditor;
-            if (req.body?.intervals &&
-                req.body?.intervals.length &&
-                findCase.intervals.length) {
-                return [false, 'Payment plan already exist!'];
-            }
-            // if (!findCase.lawsuitExist) {
-            //   const lawsuitFields =
-            //     findCase.debtor.lawsuitFields?.find(
-            //       lawsuit =>
-            //         lawsuit.plaintiff_company ===
-            //           findCase.creditor.businessInformation.companyName &&
-            //         lawsuit.defendant_company ===
-            //           findCase.debtor.businessInformation.companyName
-            //     ) || null;
-            //   if (lawsuitFields) {
-            //     if (findCase.dummyLawsuitExist) {
-            //       await lawsuitUtil.deleteLawsuit(
-            //         findCase.debtor._id,
-            //         findCase.creditor._id
-            //       );
-            //       req.body.dummyLawsuitExist = false;
-            //     }
-            //     const lawsuitDetails = await lawsuitUtil.lawsuitDetails(
-            //       lawsuitFields,
-            //       reqTemp.id
-            //     );
-            //     const lawfirmTemp = await lawsuitUtil.lawsuitFormation(
-            //       lawsuitDetails,
-            //       findCase
-            //     );
-            //     if (lawfirmTemp) req.body.lawsuitExist = true;
-            //   }
+            // if (
+            //   req.body?.intervals &&
+            //   req.body?.intervals.length &&
+            //   findCase.intervals.length
+            // ) {
+            //   return [false, 'Payment plan already exist!'];
             // }
-            // if (req.body?.commission) {
-            //   if (!getDebtor?.intervals && !getDebtor.intervals?.length) {
-            //     await this.debtorRepository.updateById<IDebtor>(findCase.debtor._id, {
-            //       weeklyCommission: req.body.commission,
-            //       updatedAt: commonUtil.getCurrentDate(),
-            //     });
-            //   }
-            // }
+            await payment_util_1.default.cancelCasePaymentPlan(req.params.id);
             if (req.body.intervals && req.body?.intervals?.length) {
                 findCase.intervals = req.body?.intervals;
                 findCase.isExempt = req.body.isExempt;
@@ -814,6 +782,7 @@ class CaseService {
             }
             caseUpdated['debtorName'] = getDebtor.basicInformation.fullName;
             caseUpdated['creditorName'] = creditor.basicInformation.fullName;
+            caseUpdated['lawsuitId'] = null;
             if (req.body.intervals && req.body.intervals.length) {
                 case_util_1.default.createPayment(caseUpdated);
             }
@@ -823,7 +792,7 @@ class CaseService {
                 'Updated By': reqTemp.name,
             }, caseUpdated._id);
             // this.sendCaseEmails(reqTemp.id, findCase, caseUpdated, false, true);
-            return [true, caseUpdated];
+            return [true, []];
         };
         this.updateCasePlanDebtorPortal = async (req) => {
             let reqTemp = req;
@@ -1006,6 +975,17 @@ class CaseService {
             await creditor_util_1.default.replaceSettlementRangeAndWeeksTillPaid(creditors, settlementRange, caseId, true);
             data['settlementRange'] = settlementRange;
             return [true, data];
+        };
+        this.updateLegalFee = async (req) => {
+            const reqTemp = req;
+            let caseTemp = await this.caseRepository.getById(req.params.id);
+            if (!caseTemp) {
+                return [false, constants_util_1.default.notFoundMessage('case')];
+            }
+            const updateCase = await this.caseRepository.updateById(req.params.id, { legalFee: req.body.legalFee });
+            if (!updateCase)
+                return [false, constants_util_1.default.failureUpdateMessage('legal fee.')];
+            return [true, constants_util_1.default.successUpdateMessage('legal fee.')];
         };
         this.twilioClient = new twilio_1.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         this.caseRepository = new case_repository_1.CaseRepository();
