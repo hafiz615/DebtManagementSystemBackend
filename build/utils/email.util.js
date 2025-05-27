@@ -19,6 +19,7 @@ const puppeteer_core_1 = __importDefault(require("puppeteer-core"));
 const case_util_1 = __importDefault(require("./case.util"));
 const common_util_1 = __importDefault(require("./common.util"));
 const client_1 = __importDefault(require("@sendgrid/client"));
+const dataCopier_util_1 = require("./dataCopier.util");
 const inbox_repository_1 = require("../api/repository/inbox/inbox.repository");
 const inbox_repomodel_1 = require("../database/repomodels/inbox.repomodel");
 const notification_repository_1 = require("../api/repository/notification/notification.repository");
@@ -28,6 +29,8 @@ const notificationCount_repository_1 = require("../api/repository/notificationCo
 const uuid_1 = require("uuid");
 const upload_util_1 = __importDefault(require("./upload.util"));
 const tasks_repository_1 = require("../api/repository/tasks/tasks.repository");
+const emailThreading_repository_1 = require("../api/repository/emailThreading/emailThreading.repository");
+const emailThreading_repomodel_1 = require("../database/repomodels/emailThreading.repomodel");
 // import {threadId} from 'worker_threads';
 dotenv_1.default.config();
 class EmailUtil {
@@ -47,6 +50,7 @@ class EmailUtil {
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
         this.uploadUtil = new upload_util_1.default();
         this.taskRepository = new tasks_repository_1.TasksRepository();
+        this.emailThreadingRepository = new emailThreading_repository_1.EmailThreadingRepository();
     }
     async sendInvitationLink(user, link) {
         const msg = {
@@ -249,7 +253,7 @@ class EmailUtil {
                         attachments: uniqueAttachments,
                     };
                     if (reqThreadId) {
-                        this.createInbox(caseData, 'received', emailData, threadId, userId, userName, 'EMAIL', true);
+                        this.createInbox(caseData, 'sent', emailData, threadId, userId, userName, 'EMAIL', true);
                     }
                     else {
                         this.createInbox(caseData, 'sent', emailData, threadId, userId, userName, 'EMAIL');
@@ -316,41 +320,60 @@ class EmailUtil {
         const newNotification = new notification_repomodel_1.Notification();
         const newNotificationCount = new notificationCount_repomodel_1.NotificationCount();
         let res = null;
-        if (type == 'received') {
+        if (type == 'received' || check) {
+            type = check ? 'sent' : 'received';
             console.log('ABC');
             const existingInbox = await this.inboxRepository.getAllWithoutPagination({
                 threadId,
-                type,
             }, undefined, undefined, { _id: -1 });
-            console.log('This is existing id', existingInbox[0]);
-            if (!existingInbox[0]) {
-                res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
-                console.log('Create New Inbox response when Received', res);
-            }
-            else {
-                const existingAttachments = existingInbox[0].attachments || [];
-                const mergedAttachments = [
-                    // ...existingAttachments,
-                    ...emailData.attachments,
-                ];
-                const previousMessages = [
-                    existingInbox[0]._id,
-                    ...existingInbox[0]?.previousMessages,
-                ];
-                // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
-                const uniqueAttachments = lodash_1.default.uniqBy(mergedAttachments, item => `${item.key}-${item.originalFileName}`);
-                // await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
-                //   text: existingInbox.text + emailData.text,
-                //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
-                //   attachments: uniqueAttachments,
-                // });
-                res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
-                console.log('Create New Inbox response when Response', res);
-            }
+            // console.log('This is existing id', existingInbox[0]);
+            // if (!existingInbox[0]) {
+            //   res = await this.createNewInbox(
+            //     emailData,
+            //     caseTemp,
+            //     type,
+            //     threadId,
+            //     userId,
+            //     userName,
+            //     [],
+            //     null,
+            //     medium
+            //   );
+            //   console.log('Create New Inbox response when Received', res);
+            // } else {
+            const existingAttachments = existingInbox[0].attachments || [];
+            const mergedAttachments = [
+                // ...existingAttachments,
+                ...emailData.attachments,
+            ];
+            const previousMessages = [
+                existingInbox[0]._id,
+                ...existingInbox[0]?.previousMessages,
+            ];
+            // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
+            const uniqueAttachments = lodash_1.default.uniqBy(mergedAttachments, item => `${item.key}-${item.originalFileName}`);
+            // await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
+            //   text: existingInbox.text + emailData.text,
+            //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
+            //   attachments: uniqueAttachments,
+            // });
+            res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, previousMessages, uniqueAttachments, medium);
+            const emailThreading = {
+                threadId: threadId,
+                previousMessages: res._id,
+            };
+            await this.upsertEmailThreading(emailThreading);
+            console.log('Create New Inbox response when Response', res);
         }
         else {
             res = await this.createNewInbox(emailData, caseTemp, type, threadId, userId, userName, [], null, medium);
             console.log('Create New Inbox response when Create', res);
+            const emailThreading = {
+                threadId: threadId,
+                firstInboxMessage: res._id,
+                previousMessages: [res._id],
+            };
+            await this.upsertEmailThreading(emailThreading);
             return res;
         }
         if (caseTemp) {
@@ -410,6 +433,7 @@ class EmailUtil {
     formatText(text) {
         return `EMAIL received for ${text}`;
     }
+    async emailThreading() { }
     async sendEmailOrSmsByEventForCommission(value, payment) {
         const event = await this.notificationConfigurationRepository.getOne({ value });
         if (event) {
@@ -847,6 +871,25 @@ class EmailUtil {
     async sendEmailPausePayment(userName, event, payments) {
         for (const payment of payments) {
             await this.sendEmailOrSmsByEvent(event, payment.caseId._id, '', userName);
+        }
+    }
+    async upsertEmailThreading(data) {
+        const existingThread = await this.emailThreadingRepository.getOne({
+            threadId: data.threadId,
+        });
+        if (existingThread) {
+            const updatedMessages = [
+                data.previousMessages,
+                ...existingThread.previousMessages,
+            ];
+            return await this.emailThreadingRepository.updateById(existingThread._id, {
+                previousMessages: updatedMessages,
+            });
+        }
+        else {
+            const emailThreading = new emailThreading_repomodel_1.EmailThreading();
+            const validatedDebtor = dataCopier_util_1.DataCopier.copy(emailThreading, data);
+            return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedDebtor);
         }
     }
 }
