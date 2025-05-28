@@ -22,6 +22,8 @@ import {NotificationCount} from '../../database/repomodels/notificationCount.rep
 import {IKeyFile} from '../../database/interfaces/debtor.interface';
 import {NotificationRepository} from '../repository/notification/notification.repository';
 import {INotification} from '../../database/interfaces/notification.interface';
+import {EmailThreadingRepository} from '../repository/emailThreading/emailThreading.repository';
+import {IEmailThreading} from '../../database/interfaces/emailThreading.interface';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -30,6 +32,7 @@ class EmailService {
   private notificationCountRepository: NotificationCountRepository;
   private uploadUtil: UploadUtil;
   private notificationRepository: NotificationRepository;
+  private emailThreadingRepository: EmailThreadingRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -38,6 +41,7 @@ class EmailService {
     this.notificationCountRepository = new NotificationCountRepository();
     this.uploadUtil = new UploadUtil();
     this.notificationRepository = new NotificationRepository();
+    this.emailThreadingRepository = new EmailThreadingRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -265,6 +269,38 @@ class EmailService {
       return [false, constantsUtil.failureDeleteMessage('link')];
     }
     return [true, ''];
+  }
+
+  async emailThreading(req: Request) {
+    const emailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        {isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        undefined,
+        ['firstInboxMessage']
+      );
+
+    if (!emailThreading)
+      return [false, constantsUtil.notFoundMessage('email.')];
+
+    return [true, emailThreading];
+  }
+
+  async eachThreadingMails(req: Request) {
+    const emailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        {threadId: req.params.id, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        undefined,
+        {path: 'previousMessages', populate: ['previousMessages']}
+      );
+
+    if (!emailThreading)
+      return [false, constantsUtil.notFoundMessage('email.')];
+
+    return [true, emailThreading];
   }
 }
 

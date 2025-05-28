@@ -24,5 +24,7 @@ router.post('/sendSmsEmailDebtorCreditor/:id', authorize_middleware_1.default.va
 router.post('/sendGridParseEmail', upload.any(), email_controller_1.default.sendGridEmail);
 router.get('/getAllLinks', authorize_middleware_1.default.validateAuth, email_controller_1.default.getAllLinks);
 router.delete('/deleteLink/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.linkVerified);
+router.get('/threading', authorize_middleware_1.default.validateAuth, email_controller_1.default.emailThreading);
+router.get('/eachThreadingMails/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.eachThreadingMails);
 exports.default = router;
 //# sourceMappingURL=email.routes.js.map

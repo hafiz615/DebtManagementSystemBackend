@@ -34,4 +34,16 @@ router.delete(
   emailController.linkVerified
 );
 
+router.get(
+  '/threading',
+  authorize.validateAuth,
+  emailController.emailThreading
+);
+
+router.get(
+  '/eachThreadingMails/:id',
+  authorize.validateAuth,
+  emailController.eachThreadingMails
+);
+
 export default router;
