@@ -50,6 +50,12 @@ const emailThreadingModel = new mongoose_1.Schema({
             ref: 'inbox',
         },
     ],
+    notificationStatus: {
+        type: Boolean,
+    },
+    followUpDate: {
+        type: Date,
+    },
     isDeleted: {
         type: Boolean,
     },

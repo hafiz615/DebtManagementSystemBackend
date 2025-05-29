@@ -23,6 +23,12 @@ const emailThreadingModel: Schema = new Schema({
       ref: 'inbox',
     },
   ],
+  notificationStatus: {
+    type: Boolean,
+  },
+  followUpDate: {
+    type: Date,
+  },
   isDeleted: {
     type: Boolean,
   },

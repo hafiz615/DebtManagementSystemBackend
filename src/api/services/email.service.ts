@@ -24,6 +24,7 @@ import {NotificationRepository} from '../repository/notification/notification.re
 import {INotification} from '../../database/interfaces/notification.interface';
 import {EmailThreadingRepository} from '../repository/emailThreading/emailThreading.repository';
 import {IEmailThreading} from '../../database/interfaces/emailThreading.interface';
+import inboxUtils from '../../utils/inbox.utils';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -272,20 +273,35 @@ class EmailService {
   }
 
   async emailThreading(req: Request) {
-    const id = req.query?.userId ? req.query?.userId : null;
-    const emailThreading =
+    const id = req.query?.userId ?? null;
+
+    const inboxFilters = await inboxUtils.getAllInboxFilters(req);
+
+    const threadFilters = {
+      isDeleted: {$ne: true},
+    };
+
+    let emailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
-        {userId: id, isDeleted: {$ne: true}},
+        threadFilters,
         undefined,
         undefined,
         undefined,
-        ['firstInboxMessage']
+        {
+          path: 'firstInboxMessage',
+          match: inboxFilters,
+        }
       );
 
-    if (!emailThreading)
-      return [false, constantsUtil.notFoundMessage('email.')];
+    let filteredThreads = emailThreading.filter(
+      (thread: any) => thread.firstInboxMessage
+    );
 
-    return [true, emailThreading];
+    if (!filteredThreads.length) {
+      return [false, constantsUtil.notFoundMessage('email')];
+    }
+
+    return [true, filteredThreads];
   }
 
   async eachThreadingMails(req: Request) {

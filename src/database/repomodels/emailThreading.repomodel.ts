@@ -5,6 +5,8 @@ export class EmailThreading {
   userId = '';
   firstInboxMessage = '';
   previousMessages: string[] = [];
+  notificationStatus = false;
+  followUpDate = '';
   isDeleted = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();

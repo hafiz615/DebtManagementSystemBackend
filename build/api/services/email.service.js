@@ -17,6 +17,7 @@ const app_1 = __importDefault(require("../../app"));
 const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
 const notification_repository_1 = require("../repository/notification/notification.repository");
 const emailThreading_repository_1 = require("../repository/emailThreading/emailThreading.repository");
+const inbox_utils_1 = __importDefault(require("../../utils/inbox.utils"));
 class EmailService {
     constructor() {
         this.extractThreadId = (header) => {
@@ -185,11 +186,20 @@ class EmailService {
         return [true, ''];
     }
     async emailThreading(req) {
-        const id = req.query?.userId ? req.query?.userId : null;
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ userId: id, isDeleted: { $ne: true } }, undefined, undefined, undefined, ['firstInboxMessage']);
-        if (!emailThreading)
-            return [false, constants_util_1.default.notFoundMessage('email.')];
-        return [true, emailThreading];
+        const id = req.query?.userId ?? null;
+        const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
+        const threadFilters = {
+            isDeleted: { $ne: true },
+        };
+        let emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, undefined, {
+            path: 'firstInboxMessage',
+            match: inboxFilters,
+        });
+        let filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
+        if (!filteredThreads.length) {
+            return [false, constants_util_1.default.notFoundMessage('email')];
+        }
+        return [true, filteredThreads];
     }
     async eachThreadingMails(req) {
         const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });

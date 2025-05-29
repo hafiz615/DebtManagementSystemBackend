@@ -11,6 +11,8 @@ class EmailThreading {
         this.userId = '';
         this.firstInboxMessage = '';
         this.previousMessages = [];
+        this.notificationStatus = false;
+        this.followUpDate = '';
         this.isDeleted = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();

@@ -34,7 +34,7 @@ router.delete(
   emailController.linkVerified
 );
 
-router.get(
+router.post(
   '/threading',
   authorize.validateAuth,
   emailController.emailThreading
