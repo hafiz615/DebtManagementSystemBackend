@@ -272,9 +272,10 @@ class EmailService {
   }
 
   async emailThreading(req: Request) {
+    const id = req.query?.userId ? req.query?.userId : null;
     const emailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
-        {isDeleted: {$ne: true}},
+        {userId: id, isDeleted: {$ne: true}},
         undefined,
         undefined,
         undefined,

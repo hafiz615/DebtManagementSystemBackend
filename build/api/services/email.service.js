@@ -185,7 +185,8 @@ class EmailService {
         return [true, ''];
     }
     async emailThreading(req) {
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ isDeleted: { $ne: true } }, undefined, undefined, undefined, ['firstInboxMessage']);
+        const id = req.query?.userId ? req.query?.userId : null;
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ userId: id, isDeleted: { $ne: true } }, undefined, undefined, undefined, ['firstInboxMessage']);
         if (!emailThreading)
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];

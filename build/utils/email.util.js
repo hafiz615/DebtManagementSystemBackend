@@ -372,6 +372,7 @@ class EmailUtil {
                 threadId: threadId,
                 firstInboxMessage: res._id,
                 previousMessages: [res._id],
+                userId: userId,
             };
             await this.upsertEmailThreading(emailThreading);
             return res;

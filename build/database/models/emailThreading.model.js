@@ -36,6 +36,10 @@ const emailThreadingModel = new mongoose_1.Schema({
     threadId: {
         type: String,
     },
+    userId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Users',
+    },
     firstInboxMessage: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'inbox',

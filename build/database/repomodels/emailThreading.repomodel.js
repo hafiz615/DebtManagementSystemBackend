@@ -8,6 +8,7 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class EmailThreading {
     constructor() {
         this.threadId = '';
+        this.userId = '';
         this.firstInboxMessage = '';
         this.previousMessages = [];
         this.isDeleted = false;
