@@ -306,10 +306,10 @@ class EmailUtil {
                     attachments: composeData,
                 };
                 if (reqThreadId) {
-                    const composeEmail = await this.createInbox(null, 'received', composeEmailData, threadId, userId, userName, 'EMAIL');
+                    const composeEmail = await this.createInbox(null, 'received', composeEmailData, threadId, userId, userName, 'EMAIL', true);
                 }
                 else {
-                    const composeEmail = await this.createInbox(null, 'sent', composeEmailData, reqThreadId, userId, userName, 'EMAIL');
+                    const composeEmail = await this.createInbox(null, 'sent', composeEmailData, threadId, userId, userName, 'EMAIL');
                 }
                 return resultCompose;
         }

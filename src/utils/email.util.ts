@@ -485,14 +485,15 @@ class EmailUtil {
             threadId,
             userId,
             userName,
-            'EMAIL'
+            'EMAIL',
+            true
           );
         } else {
           const composeEmail = await this.createInbox(
             null,
             'sent',
             composeEmailData,
-            reqThreadId,
+            threadId,
             userId,
             userName,
             'EMAIL'
