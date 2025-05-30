@@ -197,7 +197,7 @@ class EmailService {
         });
         const filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
         if (!filteredThreads.length) {
-            return [false, constants_util_1.default.notFoundMessage('email')];
+            return [true, []];
         }
         return [true, filteredThreads];
     }

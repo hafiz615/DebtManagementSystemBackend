@@ -298,7 +298,7 @@ class EmailService {
     );
 
     if (!filteredThreads.length) {
-      return [false, constantsUtil.notFoundMessage('email')];
+      return [true, []];
     }
 
     return [true, filteredThreads];
