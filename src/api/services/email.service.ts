@@ -286,7 +286,7 @@ class EmailService {
         threadFilters,
         undefined,
         undefined,
-        undefined,
+        {_id: -1},
         {
           path: 'firstInboxMessage',
           match: inboxFilters,

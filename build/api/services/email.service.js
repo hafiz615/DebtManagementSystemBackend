@@ -191,7 +191,7 @@ class EmailService {
         const threadFilters = {
             isDeleted: { $ne: true },
         };
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, undefined, {
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, {
             path: 'firstInboxMessage',
             match: inboxFilters,
         });
