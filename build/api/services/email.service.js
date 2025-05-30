@@ -191,18 +191,18 @@ class EmailService {
         const threadFilters = {
             isDeleted: { $ne: true },
         };
-        let emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, undefined, {
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, undefined, {
             path: 'firstInboxMessage',
             match: inboxFilters,
         });
-        let filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
+        const filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
         if (!filteredThreads.length) {
             return [false, constants_util_1.default.notFoundMessage('email')];
         }
         return [true, filteredThreads];
     }
     async eachThreadingMails(req) {
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
+        const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
         if (!emailThreading)
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];

@@ -281,7 +281,7 @@ class EmailService {
       isDeleted: {$ne: true},
     };
 
-    let emailThreading =
+    const emailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         threadFilters,
         undefined,
@@ -293,7 +293,7 @@ class EmailService {
         }
       );
 
-    let filteredThreads = emailThreading.filter(
+    const filteredThreads = emailThreading.filter(
       (thread: any) => thread.firstInboxMessage
     );
 
@@ -306,9 +306,8 @@ class EmailService {
 
   async eachThreadingMails(req: Request) {
     const emailThreading =
-      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+      await this.emailThreadingRepository.getOne<IEmailThreading>(
         {threadId: req.params.id, isDeleted: {$ne: true}},
-        undefined,
         undefined,
         undefined,
         {path: 'previousMessages', populate: ['previousMessages']}
