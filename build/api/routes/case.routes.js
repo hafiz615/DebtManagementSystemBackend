@@ -58,5 +58,7 @@ router.get('/getAllUserCases', authorize_middleware_1.default.validateAuth, case
 router.post('/getScoresSettlementRangeDetails/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.getScoresSettlementRangeDetails);
 router.post('/affiliate-cases-financial-summary', case_controller_1.default.affiliateCasesFinancialSummary);
 router.put('/updateLegalFee/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.updateLegalFee, case_controller_1.default.updateLegalFee);
+router.put('/updateCasePriority/:id', authorize_middleware_1.default.validateAuth, case_validate_1.default.validateCasePriority, case_controller_1.default.updateCasePriority);
+router.delete('/deleteCasePriority/:id', authorize_middleware_1.default.validateAuth, case_controller_1.default.deleteCasePriority);
 exports.default = router;
 //# sourceMappingURL=case.routes.js.map

@@ -2164,6 +2164,7 @@ class DebtorService {
         intervals: 1,
         isExempt: 1,
         legalFee: 1,
+        priority: 1,
       },
       undefined,
       undefined,

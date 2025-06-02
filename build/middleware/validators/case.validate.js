@@ -377,6 +377,24 @@ class CaseValidate {
                 .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
         }
     }
+    async validateCasePriority(req, res, next) {
+        const schema = joi_1.default.object({
+            priority: joi_1.default.number().strict().required().messages({
+                'number.base': 'priority must be a number',
+                'number.empty': 'priority cannot be empty',
+                'any.required': 'priority is required',
+            }),
+        });
+        const { error } = schema.validate(req.body);
+        if (!error) {
+            return next();
+        }
+        else {
+            return res
+                .status(constants_util_1.default.CODE.BAD_REQUEST)
+                .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+        }
+    }
     async updateCase(req, res, next) {
         const schema = joi_1.default.object({
             caseOwner: joi_1.default.string().optional().messages({

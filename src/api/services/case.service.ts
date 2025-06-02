@@ -1843,6 +1843,64 @@ class CaseService {
 
     return [true, constantsUtil.successUpdateMessage('legal fee.')];
   };
+
+  async updateCasePriority(req: Request) {
+    const caseTemp: any = await this.caseRepository.getById<ICase>(
+      req.params.id,
+      undefined,
+      undefined,
+      ['debtor']
+    );
+
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+
+    const debtorCases =
+      await this.caseRepository.getAllWithoutPagination<ICase>({
+        debtor: caseTemp.debtor._id,
+        isDeleted: {$ne: true},
+      });
+
+    if (req.body.priority > debtorCases.length) {
+      return [false, 'Priority No should be less.'];
+    }
+
+    const priorityNumbers = debtorCases.map(c => c.priority);
+
+    const priorityCheck = priorityNumbers.includes(req.body.priority);
+    if (priorityCheck) {
+      return [false, 'Priority No already associated with a case.'];
+    }
+
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {priority: req.body.priority}
+    );
+
+    if (!updateCase)
+      return [false, constantsUtil.failureUpdateMessage('Priority')];
+
+    return [true, constantsUtil.successUpdateMessage('Priority')];
+  }
+
+  async deleteCasePriority(req: Request) {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+
+    if (!caseTemp) {
+      return [false, constantsUtil.notFoundMessage('case')];
+    }
+
+    const updateCase = await this.caseRepository.updateById<ICase>(
+      req.params.id,
+      {priority: 0}
+    );
+
+    if (!updateCase)
+      return [false, constantsUtil.failureUpdateMessage('Priority')];
+
+    return [true, constantsUtil.successUpdateMessage('Priority')];
+  }
 }
 
 export default CaseService;
