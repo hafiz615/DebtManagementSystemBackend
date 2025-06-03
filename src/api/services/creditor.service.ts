@@ -424,6 +424,7 @@ class CreditorService {
         req.params.id,
         user.model
       );
+      await paynoteUtil.upsertPaynoteEmail(req.params.id, email);
       return resultSync;
     }
     let returnValue = null;
