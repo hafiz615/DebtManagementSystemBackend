@@ -36,6 +36,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const creditor_service_1 = __importDefault(require("./creditor.service"));
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const serviceFee_repository_1 = require("../repository/serviceFee/serviceFee.repository");
+const account_repository_1 = require("../repository/account/account.repository");
 dotenv_1.default.config();
 class DebtorService {
     constructor() {
@@ -164,6 +165,7 @@ class DebtorService {
         this.tokenService = new token_service_1.default();
         this.creditorService = new creditor_service_1.default();
         this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
+        this.accountRepository = new account_repository_1.AccountRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({
@@ -813,20 +815,21 @@ class DebtorService {
         const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, req.body.platform, debtorName, getDebtor.basicInformation.email);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
-        await this.debtorRepository.updateById(getDebtor._id, {
-            $push: {
-                accounts: {
-                    $each: [
-                        {
-                            paymentType: req.body.paymentType,
-                            customerVaultId: customerVaultResponse[1],
-                            platform: req.body.platform,
-                        },
-                    ],
-                },
-            },
-            updatedAt: common_util_1.default.getCurrentDate(),
-        });
+        // await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
+        //   $push: {
+        //     accounts: {
+        //       $each: [
+        //         {
+        //           paymentType: req.body.paymentType,
+        //           customerVaultId: customerVaultResponse[1],
+        //           platform: req.body.platform,
+        //         },
+        //       ],
+        //     },
+        //   },
+        //   updatedAt: commonUtil.getCurrentDate(),
+        // });
+        await debtor_util_1.default.createAccount(req.params.id, req.body.paymentType, req.body.platform, customerVaultResponse[1]);
         return [true, { customerVaultId: customerVaultResponse[1] }];
     }
     async updateDebtorAccount(req) {
@@ -1618,10 +1621,10 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        debtor.accounts.splice(req.body.index, 1);
-        const updatedDebtor = await this.debtorRepository.updateById(req.params.id, { accounts: debtor.accounts });
-        if (!updatedDebtor) {
-            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        // debtor.accounts.splice(req.body.index, 1);
+        const update = await this.accountRepository.updateById(req.body.accountId, { isDeleted: true });
+        if (!update) {
+            return [false, constants_util_1.default.failureDeleteMessage('debtor account')];
         }
         return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
     }
@@ -1635,6 +1638,17 @@ class DebtorService {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
         }
         return [true, constants_util_1.default.successUpdateMessage('Debtor service fee')];
+    }
+    async getDebtorAccounts(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const getAccounts = await this.accountRepository.getAll({
+            debtorId: debtor._id,
+            isDeleted: { $ne: true },
+        });
+        return [true, getAccounts];
     }
 }
 exports.default = DebtorService;
