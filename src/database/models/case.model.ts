@@ -190,6 +190,9 @@ const caseModel: Schema = new Schema({
   dummyLawsuitExist: {
     type: Boolean,
   },
+  priority: {
+    type: Number,
+  },
 });
 
 caseModel.pre('save', async function (next) {

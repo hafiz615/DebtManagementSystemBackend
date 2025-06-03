@@ -1598,6 +1598,7 @@ class DebtorService {
             intervals: 1,
             isExempt: 1,
             legalFee: 1,
+            priority: 1,
         }, undefined, undefined, [{ path: 'creditor', select: 'businessInformation aggression' }]);
         if (!cases) {
             return [false, constants_util_1.default.notFoundMessage('case')];

@@ -201,4 +201,16 @@ router.put(
   caseValidate.updateLegalFee,
   caseController.updateLegalFee
 );
+
+router.put(
+  '/updateCasePriority/:id',
+  authorize.validateAuth,
+  caseValidate.validateCasePriority,
+  caseController.updateCasePriority
+);
+router.delete(
+  '/deleteCasePriority/:id',
+  authorize.validateAuth,
+  caseController.deleteCasePriority
+);
 export default router;

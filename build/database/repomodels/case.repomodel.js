@@ -61,6 +61,7 @@ class Case {
         this.lawsuitExist = false;
         this.lawfirmId = null;
         this.dummyLawsuitExist = false;
+        this.priority = 0;
     }
 }
 exports.Case = Case;

@@ -376,6 +376,24 @@ class CaseValidate {
     }
   }
 
+  async validateCasePriority(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      priority: Joi.number().strict().required().messages({
+        'number.base': 'priority must be a number',
+        'number.empty': 'priority cannot be empty',
+        'any.required': 'priority is required',
+      }),
+    });
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
+
   async updateCase(req: Request, res: Response, next: NextFunction) {
     const schema = Joi.object({
       caseOwner: Joi.string().optional().messages({

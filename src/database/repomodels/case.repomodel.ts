@@ -63,4 +63,5 @@ export class Case {
   lawsuitExist = false;
   lawfirmId = null;
   dummyLawsuitExist = false;
+  priority = 0;
 }
