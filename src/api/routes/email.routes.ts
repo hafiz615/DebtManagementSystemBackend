@@ -6,7 +6,10 @@ import multer from 'multer';
 
 const router = Router();
 const storage = multer.memoryStorage();
-const upload = multer({storage});
+const upload = multer({
+  storage,
+  limits: {fileSize: 50 * 1024 * 1024, fieldSize: 50 * 1024 * 1024},
+});
 
 const sendEmailFields = upload.fields([
   {name: 'sendTo'},
@@ -26,11 +29,7 @@ router.post(
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use
 
-router.post(
-  '/sendGridParseEmail',
-  upload.single('email'),
-  emailController.sendGridEmail
-);
+router.post('/sendGridParseEmail', upload.any(), emailController.sendGridEmail);
 router.get('/getAllLinks', authorize.validateAuth, emailController.getAllLinks);
 router.delete(
   '/deleteLink/:id',
