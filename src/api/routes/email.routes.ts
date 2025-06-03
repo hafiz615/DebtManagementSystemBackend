@@ -26,7 +26,11 @@ router.post(
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use
 
-router.post('/sendGridParseEmail', emailController.sendGridEmail);
+router.post(
+  '/sendGridParseEmail',
+  upload.single('email'),
+  emailController.sendGridEmail
+);
 router.get('/getAllLinks', authorize.validateAuth, emailController.getAllLinks);
 router.delete(
   '/deleteLink/:id',
