@@ -282,6 +282,16 @@ class CronJob {
     );
 
     cron.schedule(
+      '0 10 * * *',
+      async () => {
+        this.cronSeamlesschex();
+      },
+      {
+        timezone: 'America/New_York',
+      }
+    );
+
+    cron.schedule(
       '0 15 * * *',
       async () => {
         const cases = await this.caseRepository.getAllWithoutPagination<ICase>(
@@ -511,16 +521,6 @@ class CronJob {
       }
     );
 
-    cron.schedule(
-      '0 10 * * *',
-      async () => {
-        this.cronSeamlesschex();
-      },
-      {
-        timezone: 'America/New_York',
-      }
-    );
-
     // cron.schedule(
     //   '45 4 * * *',
     //   async () => {
@@ -541,8 +541,7 @@ class CronJob {
     //       );
     //       if (!result) {
     //         await this.paymentRepository.updateById<IPayment>(payment._id, {
-    //           authorized: 'Success',
-    //           captured: 'Success',
+    //           waterfall: false,
     //         });
     //       }
     //     }
@@ -569,13 +568,11 @@ class CronJob {
           ),
         },
       });
-    console.log(paymentsCommission, 'paymentsCommission');
     for (const payment of paymentsCommission) {
       if (payment.debtorTransId) {
         const checkResponse = await seemlesschexUtil.getCheck(
           payment.debtorTransId
         );
-        console.log(checkResponse, 'checkResponse');
         if (checkResponse.success) {
           if (checkResponse.check.status !== 'in_process') {
             const data = {event: 'check.changed', data: checkResponse.check};
@@ -866,7 +863,6 @@ class CronJob {
         paymentsPendingAuthorized,
         cronId
       );
-      console.log(pendingAuthDocs, 'pendingAuthDocs');
       await this.processCommissionAuthorized(
         pendingAuthDocs,
         cronId,
@@ -880,7 +876,6 @@ class CronJob {
         cronId,
         settings
       );
-      console.log(pendingCaptureDocs, 'pendingCaptureDocs');
       await this.processCommissionCapture(
         pendingCaptureDocs,
         cronId,
@@ -904,7 +899,6 @@ class CronJob {
         cronId,
         settings
       );
-      console.log(pendingWaterfallPayments, 'pendingWaterfallPayments');
       await this.startWaterfall(
         pendingWaterfallPayments,
         cronId,
@@ -914,24 +908,20 @@ class CronJob {
 
       const paymentsPendingCaptured =
         await paymentUtil.getPendingCaptureWaterfallPayments();
-      console.log(paymentsPendingCaptured, 'paymentsPendingCapturedxx');
       const paymentsToCapture = await this.pendingCaptured(
         paymentsPendingCaptured,
         cronId,
         settings
       );
-      console.log(paymentsToCapture, 'paymentsToCapture');
       await this.processCapture(paymentsToCapture, cronId, true, settings);
 
       const paymentsFailedCaptured =
         await paymentUtil.getFailedCaptureWaterfallPayments();
-      console.log(paymentsFailedCaptured, 'paymentsFailedCaptured');
       const paymentsCaptureDocs = await this.pendingCaptured(
         paymentsFailedCaptured,
         cronId,
         settings
       );
-      console.log(paymentsCaptureDocs, 'paymentsCaptureDocs');
       await this.processCapture(paymentsCaptureDocs, cronId, true, settings);
     } catch (error: any) {
       console.log(error);
@@ -969,13 +959,11 @@ class CronJob {
     const cronId = uuidv4();
     const paymentsFailedAuthorized =
       await paymentUtil.getFailedCommissionAuthorized();
-    console.log(paymentsFailedAuthorized, 'paymentsFailedAuthorized');
     const pendingFailedAuthDocs = await this.failedAuthorized(
       paymentsFailedAuthorized,
       cronId,
       settings
     );
-    console.log(pendingFailedAuthDocs, 'pendingFailedAuthDocs');
     await this.processCommissionAuthorized(
       pendingFailedAuthDocs,
       cronId,
@@ -989,7 +977,6 @@ class CronJob {
       cronId,
       settings
     );
-    console.log(pendingFailedCaptureDocs, 'pendingFailedCaptureDocs');
     await this.processCommissionCapture(
       pendingFailedCaptureDocs,
       cronId,
@@ -1156,7 +1143,6 @@ class CronJob {
           await this.paymentRepository.updateById<IPayment>(payment._id, {
             ach: true,
           });
-          break;
         }
       }
       retryPlus = retryOriginalValue;
@@ -1171,64 +1157,19 @@ class CronJob {
     settings: ISettings[]
   ) {
     let retryOriginalValue = retryPlus;
-    // let i = 0;
     for (const payment of payments) {
       const otherPayments: IPayment[] = retryPlus
         ? await paymentUtil.getPaymentReferenceDocuments(
             payment.paymentReference
           )
         : await paymentUtil.getOtherPayments(payment);
-      // const totalLegalFeeAmount =
-      //   await lawsuitUtil.getTotalLegalFee(otherPayments);
-      // const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
-      //   otherPayments.length ? [otherPayments[0]] : otherPayments
-      // );
-      // const totalAmount = otherPayments.reduce(
-      //   (sum, obj) => sum + obj.amount,
-      //   0
-      // );
-      // const remainingAmount =
-      //   payment.amount -
-      //   totalAmount +
-      //   totalServiceFeeAmount +
-      //   totalLegalFeeAmount;
-
-      // if (remainingAmount <= 0) {
-      //   emailUtil.sendEmailOrSmsByEvent(
-      //     'failed_authorization',
-      //     '',
-      //     payment._id,
-      //     ''
-      //   );
-      //   continue;
-      // }
       const concatedPayments = otherPayments.concat(payment);
-      // const debtor = await this.debtorRepository.getById<IDebtor>(
-      //   payment.debtorId
-      // );
-      // const accounts = debtor.accounts;
-      // console.log(
-      //   i,
-      //   ' i',
-      //   debtor.accounts.length,
-      //   '  debtor.accounts',
-      //   payment.debtorId,
-      //   '  payment.debtorId',
-      //   String(payment._id),
-      //   ' payment._id'
-      // );
-      // i += 1;
-      console.log(otherPayments, 'otherPayments');
       const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
-      console.log(accountsTemp, 'accountsTemp');
       const waterfall = await this.waterfallRepository.getOne<IWaterfall>({
         debtorId: payment.debtorId,
         paymentId: payment._id,
       });
-      console.log(waterfall, 'waterfall');
-
       let startWaterfall = !waterfall ? false : waterfall.execute;
-      console.log(startWaterfall, 'startWaterfall');
       if (!startWaterfall) {
         for (const account of accountsTemp) {
           if (account.paymentType === 'cc') {
@@ -1275,7 +1216,6 @@ class CronJob {
           }
         }
       }
-      console.log(startWaterfall, 'startWaterfall');
       if (startWaterfall) {
         await this.startWaterfall([payment], cronId, false, settings);
       }
@@ -1307,13 +1247,9 @@ class CronJob {
         otherPayments.length ? [otherPayments[0]] : otherPayments
       );
       const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
-      console.log(accountsTemp, 'account temp');
       const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
-      console.log(ccPresent, 'ccPresent');
       if (ccPresent) {
         const data = await paymentUtil.getAllAmounts(payment);
-        console.log(data, 'data');
-        // let successCount = 0;
         for (const temp of data) {
           if (temp.authorized !== 'Success') {
             for (const account of accountsTemp) {
@@ -1323,11 +1259,6 @@ class CronJob {
                   account.vault,
                   account.platform
                 );
-                console.log(response, 'popopop');
-                if (temp.caseId) {
-                  response =
-                    'response=1&responsetext=Activity limit exceeded&authcode=&transactionid=10764191633&avsresponse=0&cvvresponse=&orderid=&type=auth&response_code=203&customer_vault_id=32144786';
-                }
                 let result = await this.processAuthorizedResponse(
                   temp.caseId === null ? payment : temp,
                   response,
@@ -1338,7 +1269,6 @@ class CronJob {
                   totalServiceFeeAmount,
                   totalLegalFeeAmount
                 );
-                console.log(result, 'result');
                 if (retryPlus) retryPlus = false;
                 if (result) {
                   temp.authorized = 'Success';
@@ -1348,8 +1278,6 @@ class CronJob {
                       payment._id,
                       true
                     );
-                  }
-                  if (temp.caseId === null) {
                     await this.paymentRepository.updateById<IPayment>(
                       temp.paymentId,
                       {
@@ -1368,31 +1296,15 @@ class CronJob {
                       );
                     }
                   }
-                  // if (temp.type === 'creditor') {
-                  //   await this.paymentRepository.updateById<IPayment>(
-                  //     temp.paymentId,
-                  //     {
-                  //       authorized: 'Success',
-                  //     }
-                  //   );
-                  // }
                   break;
                 }
               }
             }
           }
-          // if (temp.authorized === 'Success') successCount += 1;
-          console.log(temp.authorized, ' temp.authorized');
           if (temp.authorized !== 'Success') {
-            console.log('i am going to break now');
             break;
           }
         }
-        // if (successCount === data.length) {
-        //   await this.paymentRepository.updateById<IPayment>(payment._id, {
-        //     authorized: 'Success',
-        //   });
-        // }
       }
       retryPlus = retryOriginalValue;
       await commonUtil.sleep(5000);
@@ -1581,7 +1493,6 @@ class CronJob {
       }
     );
     return failedCaptured;
-    await this.processCapture(failedCaptured, cronId, true, settings);
   }
 
   async processCapture(
@@ -1604,8 +1515,6 @@ class CronJob {
               payment.debtorTransId,
               account.platform
             );
-            response =
-              'response=1&responsetext=Activity limit exceeded&authcode=&transactionid=10764191633&avsresponse=0&cvvresponse=&orderid=&type=auth&response_code=203&customer_vault_id=32144786';
             const result = await this.processCaptureResponse(
               payment,
               response,
@@ -1721,8 +1630,6 @@ class CronJob {
               payment.debtorTransId,
               account.platform
             );
-            response =
-              'response=1&responsetext=Activity limit exceeded&authcode=&transactionid=10764191633&avsresponse=0&cvvresponse=&orderid=&type=auth&response_code=203&customer_vault_id=32144786';
             const result = await this.processCaptureCommissionResponse(
               payment,
               concatedPayments,
@@ -1765,7 +1672,6 @@ class CronJob {
             payment,
             debtor
           );
-          console.log(response, 'response ACH');
           const result = await this.processACHCommissionResponse(
             payment,
             concatedPayments,
@@ -1794,7 +1700,6 @@ class CronJob {
             tokenResponse.tokenization.token,
             decryptedData
           );
-          console.log(response, 'response Seamlesschexxx');
           const result = await this.processACHCommissionResponse(
             payment,
             concatedPayments,
