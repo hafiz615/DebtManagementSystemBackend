@@ -22,6 +22,9 @@ import {NotificationCount} from '../../database/repomodels/notificationCount.rep
 import {IKeyFile} from '../../database/interfaces/debtor.interface';
 import {NotificationRepository} from '../repository/notification/notification.repository';
 import {INotification} from '../../database/interfaces/notification.interface';
+import {EmailThreadingRepository} from '../repository/emailThreading/emailThreading.repository';
+import {IEmailThreading} from '../../database/interfaces/emailThreading.interface';
+import inboxUtils from '../../utils/inbox.utils';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -30,6 +33,7 @@ class EmailService {
   private notificationCountRepository: NotificationCountRepository;
   private uploadUtil: UploadUtil;
   private notificationRepository: NotificationRepository;
+  private emailThreadingRepository: EmailThreadingRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -38,6 +42,7 @@ class EmailService {
     this.notificationCountRepository = new NotificationCountRepository();
     this.uploadUtil = new UploadUtil();
     this.notificationRepository = new NotificationRepository();
+    this.emailThreadingRepository = new EmailThreadingRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -265,6 +270,53 @@ class EmailService {
       return [false, constantsUtil.failureDeleteMessage('link')];
     }
     return [true, ''];
+  }
+
+  async emailThreading(req: Request) {
+    const id = req.query?.userId ?? null;
+
+    const inboxFilters = await inboxUtils.getAllInboxFilters(req);
+
+    const threadFilters = {
+      isDeleted: {$ne: true},
+    };
+
+    const emailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        threadFilters,
+        undefined,
+        undefined,
+        {_id: -1},
+        {
+          path: 'firstInboxMessage',
+          match: inboxFilters,
+        }
+      );
+
+    const filteredThreads = emailThreading.filter(
+      (thread: any) => thread.firstInboxMessage
+    );
+
+    if (!filteredThreads.length) {
+      return [true, []];
+    }
+
+    return [true, filteredThreads];
+  }
+
+  async eachThreadingMails(req: Request) {
+    const emailThreading =
+      await this.emailThreadingRepository.getOne<IEmailThreading>(
+        {threadId: req.params.id, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        {path: 'previousMessages', populate: ['previousMessages']}
+      );
+
+    if (!emailThreading)
+      return [false, constantsUtil.notFoundMessage('email.')];
+
+    return [true, emailThreading];
   }
 }
 
