@@ -12,7 +12,7 @@ const router = (0, express_1.Router)();
 const storage = multer_1.default.memoryStorage();
 const upload = (0, multer_1.default)({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024, fieldSize: 50 * 1024 * 1024 },
+    limits: { fieldSize: 50 * 1024 * 1024 },
 });
 const sendEmailFields = upload.fields([
     { name: 'sendTo' },

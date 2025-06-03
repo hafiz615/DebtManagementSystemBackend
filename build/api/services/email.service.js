@@ -64,7 +64,6 @@ class EmailService {
     }
     async sendGridEmail(req) {
         const reqTemp = req;
-        console.log(req, 'kokokoj');
         const parseData = await (0, mailparser_1.simpleParser)(req.body.email);
         // console.log(parseData, 'okoko');
         const subject = parseData.subject;

@@ -8,7 +8,7 @@ const router = Router();
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: {fileSize: 50 * 1024 * 1024, fieldSize: 50 * 1024 * 1024},
+  limits: {fieldSize: 50 * 1024 * 1024},
 });
 
 const sendEmailFields = upload.fields([
