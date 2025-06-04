@@ -186,11 +186,10 @@ class EmailService {
         return [true, ''];
     }
     async emailThreading(req) {
-        const userId = req.body?.filter?.userId
+        const userId = req.body?.filter?.userId && req.body.filter.userId !== ''
             ? req.body.filter.userId
             : { $ne: null };
         const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
-        const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const threadFilters = {
             isDeleted: { $ne: true },
             userId: userId,
@@ -199,15 +198,15 @@ class EmailService {
             path: 'firstInboxMessage',
         };
         if (Object.keys(inboxFilters).length) {
-            populateFilter['match'] = inboxFilters;
+            populateFilter.match = inboxFilters;
         }
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, populateFilter, undefined, pageLimit.page, pageLimit.limit);
-        const threads = emailThreading.filter((thread) => thread.firstInboxMessage);
-        if (!threads.length) {
-            return [true, []];
-        }
-        const count = await email_util_1.default.emailThreadingCount(populateFilter, userId);
-        return [true, { threads, count }];
+        const allEmailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, populateFilter);
+        const filteredThreads = allEmailThreading.filter((thread) => thread.firstInboxMessage);
+        const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
+        const startIndex = (pageLimit.page - 1) * pageLimit.limit;
+        const paginatedThreads = filteredThreads.slice(startIndex, startIndex + pageLimit.limit);
+        const count = filteredThreads.length;
+        return [true, { threads: paginatedThreads, count }];
     }
     async eachThreadingMails(req) {
         const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });

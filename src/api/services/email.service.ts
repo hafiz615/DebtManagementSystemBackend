@@ -273,45 +273,48 @@ class EmailService {
   }
 
   async emailThreading(req: Request) {
-    const userId = req.body?.filter?.userId
-      ? req.body.filter.userId
-      : {$ne: null};
+    const userId =
+      req.body?.filter?.userId && req.body.filter.userId !== ''
+        ? req.body.filter.userId
+        : {$ne: null};
 
     const inboxFilters = await inboxUtils.getAllInboxFilters(req);
-    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+
     const threadFilters = {
       isDeleted: {$ne: true},
       userId: userId,
     };
-    const populateFilter = {
+
+    const populateFilter: any = {
       path: 'firstInboxMessage',
     };
     if (Object.keys(inboxFilters).length) {
-      populateFilter['match'] = inboxFilters;
+      populateFilter.match = inboxFilters;
     }
-    const emailThreading =
+
+    const allEmailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         threadFilters,
         undefined,
         undefined,
         {_id: -1},
-        populateFilter,
-        undefined,
-        pageLimit.page,
-        pageLimit.limit
+        populateFilter
       );
 
-    const threads = emailThreading.filter(
+    const filteredThreads = allEmailThreading.filter(
       (thread: any) => thread.firstInboxMessage
     );
 
-    if (!threads.length) {
-      return [true, []];
-    }
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const startIndex = (pageLimit.page - 1) * pageLimit.limit;
+    const paginatedThreads = filteredThreads.slice(
+      startIndex,
+      startIndex + pageLimit.limit
+    );
 
-    const count = await emailUtil.emailThreadingCount(populateFilter, userId);
+    const count = filteredThreads.length;
 
-    return [true, {threads, count}];
+    return [true, {threads: paginatedThreads, count}];
   }
 
   async eachThreadingMails(req: Request) {
