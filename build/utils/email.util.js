@@ -893,6 +893,14 @@ class EmailUtil {
             return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedDebtor);
         }
     }
+    async emailThreadingCount(inboxFilters) {
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ isDeleted: { $ne: true } }, undefined, undefined, { _id: -1 }, {
+            path: 'firstInboxMessage',
+            match: inboxFilters,
+        });
+        const filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
+        return filteredThreads.length;
+    }
 }
 exports.default = new EmailUtil();
 //# sourceMappingURL=email.util.js.map

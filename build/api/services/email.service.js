@@ -188,18 +188,20 @@ class EmailService {
     async emailThreading(req) {
         const id = req.query?.userId ?? null;
         const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
+        const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const threadFilters = {
             isDeleted: { $ne: true },
         };
         const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, {
             path: 'firstInboxMessage',
             match: inboxFilters,
-        });
-        const filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
-        if (!filteredThreads.length) {
+        }, undefined, pageLimit.page, pageLimit.limit);
+        const threads = emailThreading.filter((thread) => thread.firstInboxMessage);
+        if (!threads.length) {
             return [true, []];
         }
-        return [true, filteredThreads];
+        const count = await email_util_1.default.emailThreadingCount(inboxFilters);
+        return [true, { threads, count }];
     }
     async eachThreadingMails(req) {
         const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
