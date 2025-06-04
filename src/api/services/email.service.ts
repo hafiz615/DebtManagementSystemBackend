@@ -273,24 +273,29 @@ class EmailService {
   }
 
   async emailThreading(req: Request) {
-    const id = req.query?.userId ?? null;
+    const userId = req.body?.filter?.userId
+      ? req.body.filter.userId
+      : {$ne: null};
 
     const inboxFilters = await inboxUtils.getAllInboxFilters(req);
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const threadFilters = {
       isDeleted: {$ne: true},
+      userId: userId,
     };
-
+    const populateFilter = {
+      path: 'firstInboxMessage',
+    };
+    if (Object.keys(inboxFilters).length) {
+      populateFilter['match'] = inboxFilters;
+    }
     const emailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         threadFilters,
         undefined,
         undefined,
         {_id: -1},
-        {
-          path: 'firstInboxMessage',
-          match: inboxFilters,
-        },
+        populateFilter,
         undefined,
         pageLimit.page,
         pageLimit.limit
@@ -304,7 +309,7 @@ class EmailService {
       return [true, []];
     }
 
-    const count = await emailUtil.emailThreadingCount(inboxFilters);
+    const count = await emailUtil.emailThreadingCount(populateFilter, userId);
 
     return [true, {threads, count}];
   }

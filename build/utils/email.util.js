@@ -893,11 +893,8 @@ class EmailUtil {
             return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedDebtor);
         }
     }
-    async emailThreadingCount(inboxFilters) {
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ isDeleted: { $ne: true } }, undefined, undefined, { _id: -1 }, {
-            path: 'firstInboxMessage',
-            match: inboxFilters,
-        });
+    async emailThreadingCount(populateFilter, userId) {
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ isDeleted: { $ne: true }, userId: userId }, undefined, undefined, { _id: -1 }, populateFilter);
         const filteredThreads = emailThreading.filter((thread) => thread.firstInboxMessage);
         return filteredThreads.length;
     }

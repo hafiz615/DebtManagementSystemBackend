@@ -186,21 +186,27 @@ class EmailService {
         return [true, ''];
     }
     async emailThreading(req) {
-        const id = req.query?.userId ?? null;
+        const userId = req.body?.filter?.userId
+            ? req.body.filter.userId
+            : { $ne: null };
         const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const threadFilters = {
             isDeleted: { $ne: true },
+            userId: userId,
         };
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, {
+        const populateFilter = {
             path: 'firstInboxMessage',
-            match: inboxFilters,
-        }, undefined, pageLimit.page, pageLimit.limit);
+        };
+        if (Object.keys(inboxFilters).length) {
+            populateFilter['match'] = inboxFilters;
+        }
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, populateFilter, undefined, pageLimit.page, pageLimit.limit);
         const threads = emailThreading.filter((thread) => thread.firstInboxMessage);
         if (!threads.length) {
             return [true, []];
         }
-        const count = await email_util_1.default.emailThreadingCount(inboxFilters);
+        const count = await email_util_1.default.emailThreadingCount(populateFilter, userId);
         return [true, { threads, count }];
     }
     async eachThreadingMails(req) {

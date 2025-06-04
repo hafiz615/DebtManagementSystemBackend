@@ -1316,17 +1316,14 @@ class EmailUtil {
     }
   }
 
-  async emailThreadingCount(inboxFilters: any) {
+  async emailThreadingCount(populateFilter: any, userId: string) {
     const emailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
-        {isDeleted: {$ne: true}},
+        {isDeleted: {$ne: true}, userId: userId},
         undefined,
         undefined,
         {_id: -1},
-        {
-          path: 'firstInboxMessage',
-          match: inboxFilters,
-        }
+        populateFilter
       );
 
     const filteredThreads = emailThreading.filter(
