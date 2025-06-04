@@ -1315,6 +1315,26 @@ class EmailUtil {
       );
     }
   }
+
+  async emailThreadingCount(inboxFilters: any) {
+    const emailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        {isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        {_id: -1},
+        {
+          path: 'firstInboxMessage',
+          match: inboxFilters,
+        }
+      );
+
+    const filteredThreads = emailThreading.filter(
+      (thread: any) => thread.firstInboxMessage
+    );
+
+    return filteredThreads.length;
+  }
 }
 
 export default new EmailUtil();

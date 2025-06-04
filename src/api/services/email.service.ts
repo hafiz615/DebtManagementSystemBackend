@@ -276,7 +276,7 @@ class EmailService {
     const id = req.query?.userId ?? null;
 
     const inboxFilters = await inboxUtils.getAllInboxFilters(req);
-
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const threadFilters = {
       isDeleted: {$ne: true},
     };
@@ -290,18 +290,23 @@ class EmailService {
         {
           path: 'firstInboxMessage',
           match: inboxFilters,
-        }
+        },
+        undefined,
+        pageLimit.page,
+        pageLimit.limit
       );
 
-    const filteredThreads = emailThreading.filter(
+    const threads = emailThreading.filter(
       (thread: any) => thread.firstInboxMessage
     );
 
-    if (!filteredThreads.length) {
+    if (!threads.length) {
       return [true, []];
     }
 
-    return [true, filteredThreads];
+    const count = await emailUtil.emailThreadingCount(inboxFilters);
+
+    return [true, {threads, count}];
   }
 
   async eachThreadingMails(req: Request) {
