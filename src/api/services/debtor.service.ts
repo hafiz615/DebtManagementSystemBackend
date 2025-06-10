@@ -456,12 +456,12 @@ class DebtorService {
       return [false, 'Payment already authorized'];
     }
     let payments: IPayment[] = [];
-    let debtor = null;
+    // let debtor = null;
     let amount = 0;
-    if (payment.caseId) debtor = payment.caseId?.debtor;
-    if (!payment.caseId) {
-      debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
-    }
+    // if (payment.caseId) debtor = payment.caseId?.debtor;
+    // if (!payment.caseId) {
+    //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+    // }
     if (payment.paymentReference) {
       payments = await paymentUtil.getAllPaymentReferenceDocuments(
         payment.paymentReference
@@ -478,13 +478,13 @@ class DebtorService {
       payments.push(payment);
     }
     let response: any;
-    const accounts = debtor.accounts;
+    const accounts = await debtorUtil.getDebtorAccounts(payment.debtorId);
     let responseNum = '';
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.authorizeCreditCard(
           amount,
-          account.customerVaultId,
+          account.vault,
           account.platform
         );
         responseNum = new URLSearchParams(response).get('response');
@@ -544,11 +544,11 @@ class DebtorService {
       return [false, 'Payment already captured'];
     }
     let payments: IPayment[] = [];
-    let debtor = null;
-    if (payment.caseId) debtor = payment.caseId.debtor;
-    if (!payment.caseId) {
-      debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
-    }
+    // let debtor = null;
+    // if (payment.caseId) debtor = payment.caseId.debtor;
+    // if (!payment.caseId) {
+    //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+    // }
     let amount = 0;
     if (payment.paymentReference) {
       payments = await paymentUtil.getAllPaymentReferenceDocuments(
@@ -567,18 +567,18 @@ class DebtorService {
     }
     let response: any;
     let responseNum = '';
-    const accounts = debtor.accounts;
+    const accounts = await debtorUtil.getDebtorAccounts(payment.debtorId);
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.captureCreditCard(
-          account.customerVaultId,
+          account.vault,
           payment.debtorTransId,
           account.platform
         );
       }
       if (account.paymentType === 'ck') {
         response = await this.paymentService.achCredit(
-          account.customerVaultId,
+          account.vault,
           payment.amount,
           account.platform
         );

@@ -708,6 +708,13 @@ class DebtorUtil {
             };
         return this.debtorRepository.updateById(debtorId, updatePayload);
     }
+    async getDebtorAccounts(debtorId) {
+        // const debtorAccounts: IAccount[] =
+        //   await this.accountRepository.getAll<IAccount>({
+        //     debtorId: debtorId,
+        //   });
+        return [];
+    }
 }
 exports.default = new DebtorUtil();
 //# sourceMappingURL=debtor.util.js.map

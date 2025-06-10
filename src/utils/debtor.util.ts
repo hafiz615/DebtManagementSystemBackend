@@ -939,6 +939,13 @@ class DebtorUtil {
 
     return this.debtorRepository.updateById<IDebtor>(debtorId, updatePayload);
   }
+  async getDebtorAccounts(debtorId: string) {
+    // const debtorAccounts: IAccount[] =
+    //   await this.accountRepository.getAll<IAccount>({
+    //     debtorId: debtorId,
+    //   });
+    return [] as any;
+  }
 }
 
 export default new DebtorUtil();

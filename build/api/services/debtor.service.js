@@ -421,13 +421,12 @@ class DebtorService {
             return [false, 'Payment already authorized'];
         }
         let payments = [];
-        let debtor = null;
+        // let debtor = null;
         let amount = 0;
-        if (payment.caseId)
-            debtor = payment.caseId?.debtor;
-        if (!payment.caseId) {
-            debtor = await this.debtorRepository.getById(payment.debtorId);
-        }
+        // if (payment.caseId) debtor = payment.caseId?.debtor;
+        // if (!payment.caseId) {
+        //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+        // }
         if (payment.paymentReference) {
             payments = await payment_util_1.default.getAllPaymentReferenceDocuments(payment.paymentReference);
             console.log(payments, 'getAllPaymentReferenceDocuments');
@@ -442,11 +441,11 @@ class DebtorService {
             payments.push(payment);
         }
         let response;
-        const accounts = debtor.accounts;
+        const accounts = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
         let responseNum = '';
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.authorizeCreditCard(amount, account.customerVaultId, account.platform);
+                response = await this.paymentService.authorizeCreditCard(amount, account.vault, account.platform);
                 responseNum = new url_1.URLSearchParams(response).get('response');
                 if (responseNum === '1')
                     break;
@@ -487,12 +486,11 @@ class DebtorService {
             return [false, 'Payment already captured'];
         }
         let payments = [];
-        let debtor = null;
-        if (payment.caseId)
-            debtor = payment.caseId.debtor;
-        if (!payment.caseId) {
-            debtor = await this.debtorRepository.getById(payment.debtorId);
-        }
+        // let debtor = null;
+        // if (payment.caseId) debtor = payment.caseId.debtor;
+        // if (!payment.caseId) {
+        //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+        // }
         let amount = 0;
         if (payment.paymentReference) {
             payments = await payment_util_1.default.getAllPaymentReferenceDocuments(payment.paymentReference);
@@ -509,13 +507,13 @@ class DebtorService {
         }
         let response;
         let responseNum = '';
-        const accounts = debtor.accounts;
+        const accounts = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
+                response = await this.paymentService.captureCreditCard(account.vault, payment.debtorTransId, account.platform);
             }
             if (account.paymentType === 'ck') {
-                response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
+                response = await this.paymentService.achCredit(account.vault, payment.amount, account.platform);
             }
             responseNum = new url_1.URLSearchParams(response).get('response');
             if (responseNum === '1')
