@@ -15,11 +15,16 @@ import {IPayment} from '../database/interfaces/payment.interface';
 import seemlesschexUtil from './seemlesschex.util';
 import paymentUtil from './payment.util';
 import constantsUtil from './constants.util';
+import {IAccount} from '../database/interfaces/account.interface';
+import {AccountRepository} from '../api/repository/account/account.repository';
+import {Account} from '../database/repomodels/account.repomodel';
+import {v4} from 'uuid';
 
 class DebtorUtil {
   private debtorRepository: DebtorRepository;
   private caseRepository: CaseRepository;
   private paymentRepository: PaymentRepository;
+  private accountRepository: AccountRepository;
 
   constructor() {
     this.debtorRepository = new DebtorRepository();
@@ -939,12 +944,31 @@ class DebtorUtil {
 
     return this.debtorRepository.updateById<IDebtor>(debtorId, updatePayload);
   }
+
   async getDebtorAccounts(debtorId: string) {
-    // const debtorAccounts: IAccount[] =
-    //   await this.accountRepository.getAll<IAccount>({
-    //     debtorId: debtorId,
-    //   });
-    return [] as any;
+    const debtorAccounts: IAccount[] =
+      await this.accountRepository.getAll<IAccount>({
+        debtorId: debtorId,
+      });
+    return debtorAccounts;
+  }
+
+  async createAccount(
+    id: string,
+    paymentType: string,
+    platform: string,
+    vault: string,
+    paynoteSourceId = ''
+  ) {
+    let validAccount = new Account();
+    validAccount.debtorId = id;
+    validAccount.paymentType = paymentType;
+    validAccount.platform = platform;
+    validAccount.logTrackingId = v4();
+    validAccount.vault = vault;
+    validAccount.paynoteSourceId = paynoteSourceId;
+
+    return await this.accountRepository.create<IAccount>(validAccount as any);
   }
 }
 

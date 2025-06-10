@@ -43,7 +43,7 @@ class EasypayUtil {
     async convertXmlToJson(xmlData) {
         return await (0, xml2js_1.parseStringPromise)(xmlData, { explicitArray: false });
     }
-    async checkClientExist(users, debtorEmail, platform, _id, existingDebtor) {
+    async checkClientExist(users, debtorEmail, platform, id, existingDebtor) {
         let update = { easyPayUserId: '' };
         const easyPayEmails = users.map(user => {
             return user.email.toLowerCase();
@@ -73,20 +73,21 @@ class EasypayUtil {
                 userIds.push(users[index].customer_vault_id);
                 continue;
             }
-            await this.debtorRepository.updateById(_id, {
-                $push: {
-                    accounts: {
-                        $each: [
-                            {
-                                paymentType: paymentType,
-                                customerVaultId: users[index].customer_vault_id,
-                                platform: platform,
-                            },
-                        ],
-                    },
-                },
-                updatedAt: common_util_1.default.getCurrentDate(),
-            });
+            // await this.debtorRepository.updateById<IDebtor>(_id, {
+            //   $push: {
+            //     accounts: {
+            //       $each: [
+            //         {
+            //           paymentType: paymentType,
+            //           customerVaultId: users[index].customer_vault_id,
+            //           platform: platform,
+            //         },
+            //       ],
+            //     },
+            //   },
+            //   updatedAt: commonUtil.getCurrentDate(),
+            // });
+            await debtor_util_1.default.createAccount(id, paymentType, platform, users[index].customer_vault_id);
             userIds.push(users[index].customer_vault_id);
         }
         update['userIds'] = userIds;

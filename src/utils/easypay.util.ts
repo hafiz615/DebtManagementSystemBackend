@@ -58,7 +58,7 @@ class EasypayUtil {
     users: any,
     debtorEmail: string,
     platform: string,
-    _id: string,
+    id: string,
     existingDebtor: any
   ) {
     let update = {easyPayUserId: ''};
@@ -102,20 +102,26 @@ class EasypayUtil {
         continue;
       }
 
-      await this.debtorRepository.updateById<IDebtor>(_id, {
-        $push: {
-          accounts: {
-            $each: [
-              {
-                paymentType: paymentType,
-                customerVaultId: users[index].customer_vault_id,
-                platform: platform,
-              },
-            ],
-          },
-        },
-        updatedAt: commonUtil.getCurrentDate(),
-      });
+      // await this.debtorRepository.updateById<IDebtor>(_id, {
+      //   $push: {
+      //     accounts: {
+      //       $each: [
+      //         {
+      //           paymentType: paymentType,
+      //           customerVaultId: users[index].customer_vault_id,
+      //           platform: platform,
+      //         },
+      //       ],
+      //     },
+      //   },
+      //   updatedAt: commonUtil.getCurrentDate(),
+      // });
+      await debtorUtil.createAccount(
+        id,
+        paymentType,
+        platform,
+        users[index].customer_vault_id
+      );
       userIds.push(users[index].customer_vault_id);
     }
     update['userIds'] = userIds;

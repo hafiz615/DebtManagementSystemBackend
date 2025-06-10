@@ -12,6 +12,7 @@ const common_util_1 = __importDefault(require("./common.util"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
 const check_repository_1 = require("../api/repository/check/check.repository");
+const debtor_util_1 = __importDefault(require("./debtor.util"));
 dotenv_1.default.config();
 class PaynoteUtil {
     constructor() {
@@ -432,18 +433,9 @@ class PaynoteUtil {
         });
     }
     async addPaynoteAccount(id, paynoteUserId, paynoteSourceId) {
+        await debtor_util_1.default.createAccount(id, 'ACH', 'Paynote', paynoteUserId, paynoteSourceId);
         return await this.debtorRepository.updateById(id, {
             $addToSet: {
-                accounts: {
-                    $each: [
-                        {
-                            paymentType: 'ACH',
-                            paynoteUserId: paynoteUserId,
-                            paynoteSourceId: paynoteSourceId,
-                            platform: 'Paynote',
-                        },
-                    ],
-                },
                 paynoteSourceIds: { $each: [paynoteSourceId] },
             },
             updatedAt: common_util_1.default.getCurrentDate(),
