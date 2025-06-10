@@ -16,11 +16,6 @@ export class EnvSetup {
         this.dbURI = `mongodb://${process.env.dbUsername_Prod}:${process.env.dbPassword_Prod}@18.208.220.253:27017/debt-settlement?authSource=admin`;
         this.invitationLink = constantsUtil.ACCOUNT_INVITATION_BASE_LINK;
         break;
-      case 'staging':
-        this.dbURI = `mongodb://${process.env.dbUsername_Staging}:${process.env.dbPassword_Staging}@165.227.188.235:27017/debt-settlement?authSource=admin`;
-        this.invitationLink =
-          constantsUtil.ACCOUNT_INVITATION_BASE_LINK_STAGING;
-        break;
     }
   }
 }
