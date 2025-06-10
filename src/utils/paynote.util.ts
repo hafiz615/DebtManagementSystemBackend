@@ -12,6 +12,7 @@ import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import {CheckRepository} from '../api/repository/check/check.repository';
 import {ICheck} from '../database/interfaces/check.interface';
+import debtorUtil from './debtor.util';
 dotenv.config();
 
 class PaynoteUtil {
@@ -475,18 +476,15 @@ class PaynoteUtil {
     paynoteUserId: string,
     paynoteSourceId: string
   ) {
+    await debtorUtil.createAccount(
+      id,
+      'ACH',
+      'Paynote',
+      paynoteUserId,
+      paynoteSourceId
+    );
     return await this.debtorRepository.updateById<IDebtor>(id, {
       $addToSet: {
-        accounts: {
-          $each: [
-            {
-              paymentType: 'ACH',
-              paynoteUserId: paynoteUserId,
-              paynoteSourceId: paynoteSourceId,
-              platform: 'Paynote',
-            },
-          ],
-        },
         paynoteSourceIds: {$each: [paynoteSourceId]},
       },
       updatedAt: commonUtil.getCurrentDate(),

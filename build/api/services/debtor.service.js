@@ -421,13 +421,12 @@ class DebtorService {
             return [false, 'Payment already authorized'];
         }
         let payments = [];
-        let debtor = null;
+        // let debtor = null;
         let amount = 0;
-        if (payment.caseId)
-            debtor = payment.caseId?.debtor;
-        if (!payment.caseId) {
-            debtor = await this.debtorRepository.getById(payment.debtorId);
-        }
+        // if (payment.caseId) debtor = payment.caseId?.debtor;
+        // if (!payment.caseId) {
+        //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+        // }
         if (payment.paymentReference) {
             payments = await payment_util_1.default.getAllPaymentReferenceDocuments(payment.paymentReference);
             console.log(payments, 'getAllPaymentReferenceDocuments');
@@ -442,11 +441,11 @@ class DebtorService {
             payments.push(payment);
         }
         let response;
-        const accounts = debtor.accounts;
+        const accounts = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
         let responseNum = '';
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.authorizeCreditCard(amount, account.customerVaultId, account.platform);
+                response = await this.paymentService.authorizeCreditCard(amount, account.vault, account.platform);
                 responseNum = new url_1.URLSearchParams(response).get('response');
                 if (responseNum === '1')
                     break;
@@ -487,12 +486,11 @@ class DebtorService {
             return [false, 'Payment already captured'];
         }
         let payments = [];
-        let debtor = null;
-        if (payment.caseId)
-            debtor = payment.caseId.debtor;
-        if (!payment.caseId) {
-            debtor = await this.debtorRepository.getById(payment.debtorId);
-        }
+        // let debtor = null;
+        // if (payment.caseId) debtor = payment.caseId.debtor;
+        // if (!payment.caseId) {
+        //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+        // }
         let amount = 0;
         if (payment.paymentReference) {
             payments = await payment_util_1.default.getAllPaymentReferenceDocuments(payment.paymentReference);
@@ -509,13 +507,13 @@ class DebtorService {
         }
         let response;
         let responseNum = '';
-        const accounts = debtor.accounts;
+        const accounts = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
         for (const account of accounts) {
             if (account.paymentType === 'cc') {
-                response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
+                response = await this.paymentService.captureCreditCard(account.vault, payment.debtorTransId, account.platform);
             }
             if (account.paymentType === 'ck') {
-                response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
+                response = await this.paymentService.achCredit(account.vault, payment.amount, account.platform);
             }
             responseNum = new url_1.URLSearchParams(response).get('response');
             if (responseNum === '1')
@@ -813,20 +811,21 @@ class DebtorService {
         const customerVaultResponse = await case_util_1.default.createVault(req.body.paymentToken, req.body.platform, debtorName, getDebtor.basicInformation.email);
         if (!customerVaultResponse[0])
             return customerVaultResponse;
-        await this.debtorRepository.updateById(getDebtor._id, {
-            $push: {
-                accounts: {
-                    $each: [
-                        {
-                            paymentType: req.body.paymentType,
-                            customerVaultId: customerVaultResponse[1],
-                            platform: req.body.platform,
-                        },
-                    ],
-                },
-            },
-            updatedAt: common_util_1.default.getCurrentDate(),
-        });
+        // await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
+        //   $push: {
+        //     accounts: {
+        //       $each: [
+        //         {
+        //           paymentType: req.body.paymentType,
+        //           customerVaultId: customerVaultResponse[1],
+        //           platform: req.body.platform,
+        //         },
+        //       ],
+        //     },
+        //   },
+        //   updatedAt: commonUtil.getCurrentDate(),
+        // });
+        await debtor_util_1.default.createAccount(req.params.id, req.body.paymentType, req.body.platform, customerVaultResponse[1]);
         return [true, { customerVaultId: customerVaultResponse[1] }];
     }
     async updateDebtorAccount(req) {
@@ -1598,6 +1597,7 @@ class DebtorService {
             intervals: 1,
             isExempt: 1,
             legalFee: 1,
+            priority: 1,
         }, undefined, undefined, [{ path: 'creditor', select: 'businessInformation aggression' }]);
         if (!cases) {
             return [false, constants_util_1.default.notFoundMessage('case')];
@@ -1617,10 +1617,10 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        debtor.accounts.splice(req.body.index, 1);
-        const updatedDebtor = await this.debtorRepository.updateById(req.params.id, { accounts: debtor.accounts });
-        if (!updatedDebtor) {
-            return [false, constants_util_1.default.failureUpdateMessage('debtor')];
+        // debtor.accounts.splice(req.body.index, 1);
+        const update = await this.accountRepository.updateById(req.body.accountId, { isDeleted: true });
+        if (!update) {
+            return [false, constants_util_1.default.failureDeleteMessage('debtor account')];
         }
         return [true, constants_util_1.default.successDeleteMessage('Debtor account')];
     }
@@ -1634,6 +1634,17 @@ class DebtorService {
             return [false, constants_util_1.default.failureUpdateMessage('debtor')];
         }
         return [true, constants_util_1.default.successUpdateMessage('Debtor service fee')];
+    }
+    async getDebtorAccounts(req) {
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const getAccounts = await this.accountRepository.getAll({
+            debtorId: debtor._id,
+            isDeleted: { $ne: true },
+        });
+        return [true, getAccounts];
     }
 }
 exports.default = DebtorService;

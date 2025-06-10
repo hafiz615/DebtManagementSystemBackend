@@ -16,6 +16,8 @@ const payment_repository_1 = require("../api/repository/payment/payment.reposito
 const seemlesschex_util_1 = __importDefault(require("./seemlesschex.util"));
 const payment_util_1 = __importDefault(require("./payment.util"));
 const constants_util_1 = __importDefault(require("./constants.util"));
+const account_repomodel_1 = require("../database/repomodels/account.repomodel");
+const uuid_1 = require("uuid");
 class DebtorUtil {
     constructor() {
         this.getAccountDetails = accountList => {
@@ -707,6 +709,23 @@ class DebtorUtil {
                 },
             };
         return this.debtorRepository.updateById(debtorId, updatePayload);
+    }
+    async getDebtorAccounts(debtorId) {
+        const debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+        });
+        return debtorAccounts;
+    }
+    async createAccount(id, paymentType, platform, vault, paynoteSourceId = '') {
+        let validAccount = new account_repomodel_1.Account();
+        validAccount.debtorId = id;
+        validAccount.paymentType = paymentType;
+        validAccount.platform = platform;
+        validAccount.logTrackingId = (0, uuid_1.v4)();
+        validAccount.vault = vault;
+        validAccount.paynoteSourceId = paynoteSourceId;
+        return await this.accountRepository.create(validAccount);
     }
 }
 exports.default = new DebtorUtil();

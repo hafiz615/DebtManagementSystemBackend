@@ -209,6 +209,9 @@ const caseModel = new mongoose_1.Schema({
     dummyLawsuitExist: {
         type: Boolean,
     },
+    priority: {
+        type: Number,
+    },
 });
 caseModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

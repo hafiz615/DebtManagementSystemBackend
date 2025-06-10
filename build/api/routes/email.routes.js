@@ -10,7 +10,10 @@ const email_controller_1 = __importDefault(require("../controllers/email/email.c
 const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
 const storage = multer_1.default.memoryStorage();
-const upload = (0, multer_1.default)({ storage });
+const upload = (0, multer_1.default)({
+    storage,
+    limits: { fieldSize: 50 * 1024 * 1024 },
+});
 const sendEmailFields = upload.fields([
     { name: 'sendTo' },
     { name: 'from' },
@@ -24,5 +27,7 @@ router.post('/sendSmsEmailDebtorCreditor/:id', authorize_middleware_1.default.va
 router.post('/sendGridParseEmail', upload.any(), email_controller_1.default.sendGridEmail);
 router.get('/getAllLinks', authorize_middleware_1.default.validateAuth, email_controller_1.default.getAllLinks);
 router.delete('/deleteLink/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.linkVerified);
+router.post('/threading', authorize_middleware_1.default.validateAuth, email_controller_1.default.emailThreading);
+router.get('/eachThreadingMails/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.eachThreadingMails);
 exports.default = router;
 //# sourceMappingURL=email.routes.js.map

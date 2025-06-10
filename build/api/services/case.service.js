@@ -1187,6 +1187,38 @@ class CaseService {
         }
         return [true, updateCase];
     }
+    async updateCasePriority(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id, undefined, undefined, ['debtor']);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const debtorCases = await this.caseRepository.getAllWithoutPagination({
+            debtor: caseTemp.debtor._id,
+            isDeleted: { $ne: true },
+        });
+        if (req.body.priority > debtorCases.length) {
+            return [false, 'Priority No should be less.'];
+        }
+        const priorityNumbers = debtorCases.map(c => c.priority);
+        const priorityCheck = priorityNumbers.includes(req.body.priority);
+        if (priorityCheck) {
+            return [false, 'Priority No already associated with a case.'];
+        }
+        const updateCase = await this.caseRepository.updateById(req.params.id, { priority: req.body.priority });
+        if (!updateCase)
+            return [false, constants_util_1.default.failureUpdateMessage('Priority')];
+        return [true, constants_util_1.default.successUpdateMessage('Priority')];
+    }
+    async deleteCasePriority(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp) {
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        }
+        const updateCase = await this.caseRepository.updateById(req.params.id, { priority: 0 });
+        if (!updateCase)
+            return [false, constants_util_1.default.failureUpdateMessage('Priority')];
+        return [true, constants_util_1.default.successUpdateMessage('Priority')];
+    }
 }
 exports.default = CaseService;
 //# sourceMappingURL=case.service.js.map

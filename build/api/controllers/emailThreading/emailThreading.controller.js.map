@@ -1,0 +1,1 @@
+{"version":3,"file":"emailThreading.controller.js","sourceRoot":"","sources":["../../../../src/api/controllers/emailThreading/emailThreading.controller.ts"],"names":[],"mappings":";;;;;AACA,0GAAiF;AAGjF,MAAM,wBAAwB;IAG5B;QACE,IAAI,CAAC,qBAAqB,GAAG,IAAI,gCAAqB,EAAE,CAAC;IAC3D,CAAC;CACF;AAED,kBAAe,IAAI,wBAAwB,EAAE,CAAC"}

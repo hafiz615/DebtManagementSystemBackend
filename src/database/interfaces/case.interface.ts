@@ -76,4 +76,5 @@ export interface ICase extends Document {
   lawsuitExist: boolean;
   lawfirmId: mongoose.Schema.Types.ObjectId;
   dummyLawsuitExist: boolean;
+  priority: number;
 }

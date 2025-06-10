@@ -27,6 +27,7 @@ import {ILawsuit} from '../../database/interfaces/lawsuit.interface';
 import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
 import lawsuitUtil from '../../utils/lawsuit.util';
 import {v4} from 'uuid';
+import debtorUtil from '../../utils/debtor.util';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -1092,19 +1093,16 @@ class PaymentService {
         );
         if (routingNoExist) return [false, 'Routing Number already Exist.'];
 
+        await debtorUtil.createAccount(
+          req.params.id,
+          'ACH',
+          'Seamlesschex',
+          data
+        );
         const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
           user.obj._id,
           {
             $push: {
-              accounts: {
-                $each: [
-                  {
-                    paymentType: 'ACH',
-                    customerAccount: data,
-                    platform: 'Seamlesschex',
-                  },
-                ],
-              },
               seamlesschexRountingIds: {$each: [decryptedData.bankRouting]},
             },
             updatedAt: commonUtil.getCurrentDate(),
