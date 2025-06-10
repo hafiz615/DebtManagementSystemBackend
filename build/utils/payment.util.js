@@ -14,7 +14,6 @@ const lawsuit_util_1 = __importDefault(require("./lawsuit.util"));
 const case_repository_1 = require("../api/repository/case/case.repository");
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const case_util_1 = __importDefault(require("./case.util"));
-const debtor_util_1 = __importDefault(require("./debtor.util"));
 class PaymentUtil {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -846,7 +845,7 @@ class PaymentUtil {
         return response;
     }
     async getInstantPayment(amount, debtor, paymentPass) {
-        const accounts = await debtor_util_1.default.getDebtorAccounts(debtor._id);
+        const accounts = debtor.accounts;
         let payment = {};
         let result = false;
         if (amount > 0) {
@@ -861,7 +860,7 @@ class PaymentUtil {
             let platform = '';
             for (const account of accounts) {
                 if (account.paymentType === 'cc') {
-                    const authCreditCard = await this.authorizeCreditCard(amount, account.vault, account.platform);
+                    const authCreditCard = await this.authorizeCreditCard(amount, account.customerVaultId, account.platform);
                     console.log(authCreditCard, 'authCreditCard');
                     const responseNumAuth = new URLSearchParams(authCreditCard).get('response');
                     const responseTextAuth = new URLSearchParams(authCreditCard).get('responsetext');
@@ -872,7 +871,7 @@ class PaymentUtil {
                         payment['debtorTransId'] = transactionIdAuth;
                         payment['paymentGateway'] = account.platform;
                         payment['transactionType'] = 'CC';
-                        customerVaultId = account.vault;
+                        customerVaultId = account.customerVaultId;
                         platform = account.platform;
                         break;
                     }
@@ -885,7 +884,7 @@ class PaymentUtil {
                     }
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.achCredit(account.vault, amount, account.platform);
+                    const response = await this.achCredit(account.customerVaultId, amount, account.platform);
                     const responseNum = new URLSearchParams(response).get('response');
                     const responseText = new URLSearchParams(response).get('responsetext');
                     const transactionId = new URLSearchParams(response).get('transactionid');
@@ -895,7 +894,7 @@ class PaymentUtil {
                         payment['debtorTransId'] = transactionId;
                         payment['paymentGateway'] = account.platform;
                         payment['transactionType'] = 'ACH';
-                        customerVaultId = account.vault;
+                        customerVaultId = account.customerVaultId;
                         result = true;
                         break;
                     }

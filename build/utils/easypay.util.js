@@ -67,8 +67,7 @@ class EasypayUtil {
                 paymentType = 'cc';
             if (users[index].check_account)
                 paymentType = 'ck';
-            const accounts = await debtor_util_1.default.getDebtorAccounts(String(existingDebtor._id));
-            const customerVaultExists = accounts?.some(account => account.vault === users[index].customer_vault_id);
+            const customerVaultExists = existingDebtor.accounts?.some(account => account.customerVaultId === users[index].customer_vault_id);
             if (customerVaultExists) {
                 userIds.push(users[index].customer_vault_id);
                 continue;
