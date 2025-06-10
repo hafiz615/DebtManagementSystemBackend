@@ -22,6 +22,9 @@ import {NotificationCount} from '../../database/repomodels/notificationCount.rep
 import {IKeyFile} from '../../database/interfaces/debtor.interface';
 import {NotificationRepository} from '../repository/notification/notification.repository';
 import {INotification} from '../../database/interfaces/notification.interface';
+import {EmailThreadingRepository} from '../repository/emailThreading/emailThreading.repository';
+import {IEmailThreading} from '../../database/interfaces/emailThreading.interface';
+import inboxUtils from '../../utils/inbox.utils';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -30,6 +33,7 @@ class EmailService {
   private notificationCountRepository: NotificationCountRepository;
   private uploadUtil: UploadUtil;
   private notificationRepository: NotificationRepository;
+  private emailThreadingRepository: EmailThreadingRepository;
 
   constructor() {
     this.caseRepository = new CaseRepository();
@@ -38,6 +42,7 @@ class EmailService {
     this.notificationCountRepository = new NotificationCountRepository();
     this.uploadUtil = new UploadUtil();
     this.notificationRepository = new NotificationRepository();
+    this.emailThreadingRepository = new EmailThreadingRepository();
   }
   async sendSmsEmailDebtorCreditor(req: Request) {
     const reqTemp: any = req;
@@ -265,6 +270,66 @@ class EmailService {
       return [false, constantsUtil.failureDeleteMessage('link')];
     }
     return [true, ''];
+  }
+
+  async emailThreading(req: Request) {
+    const userId =
+      req.body?.filter?.userId && req.body.filter.userId !== ''
+        ? req.body.filter.userId
+        : {$ne: null};
+
+    const inboxFilters = await inboxUtils.getAllInboxFilters(req);
+
+    const threadFilters = {
+      isDeleted: {$ne: true},
+      userId: userId,
+    };
+
+    const populateFilter: any = {
+      path: 'firstInboxMessage',
+    };
+    if (Object.keys(inboxFilters).length) {
+      populateFilter.match = inboxFilters;
+    }
+
+    const allEmailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        threadFilters,
+        undefined,
+        undefined,
+        {_id: -1},
+        populateFilter
+      );
+
+    const filteredThreads = allEmailThreading.filter(
+      (thread: any) => thread.firstInboxMessage
+    );
+
+    const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
+    const startIndex = (pageLimit.page - 1) * pageLimit.limit;
+    const paginatedThreads = filteredThreads.slice(
+      startIndex,
+      startIndex + pageLimit.limit
+    );
+
+    const count = filteredThreads.length;
+
+    return [true, {threads: paginatedThreads, count}];
+  }
+
+  async eachThreadingMails(req: Request) {
+    const emailThreading =
+      await this.emailThreadingRepository.getOne<IEmailThreading>(
+        {threadId: req.params.id, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        {path: 'previousMessages', populate: ['previousMessages']}
+      );
+
+    if (!emailThreading)
+      return [false, constantsUtil.notFoundMessage('email.')];
+
+    return [true, emailThreading];
   }
 }
 

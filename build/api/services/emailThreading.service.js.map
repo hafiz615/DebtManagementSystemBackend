@@ -1,0 +1,1 @@
+{"version":3,"file":"emailThreading.service.js","sourceRoot":"","sources":["../../../src/api/services/emailThreading.service.ts"],"names":[],"mappings":";;AACA,sGAAgG;AAGhG,MAAM,qBAAqB;IAGzB;QACE,IAAI,CAAC,wBAAwB,GAAG,IAAI,oDAAwB,EAAE,CAAC;IACjE,CAAC;CACF;AAED,kBAAe,qBAAqB,CAAC"}

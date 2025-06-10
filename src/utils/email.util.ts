@@ -41,6 +41,10 @@ import UploadUtil from './upload.util';
 import mime from 'mime-types';
 import {TasksRepository} from '../api/repository/tasks/tasks.repository';
 import {ITasks} from '../database/interfaces/tasks.interface';
+import {EmailThreadingRepository} from '../api/repository/emailThreading/emailThreading.repository';
+import {IEmailThreading} from '../database/interfaces/emailThreading.interface';
+import {EmailThreading} from '../database/repomodels/emailThreading.repomodel';
+import {threadId} from 'worker_threads';
 // import {threadId} from 'worker_threads';
 
 dotenv.config();
@@ -57,6 +61,7 @@ class EmailUtil {
   private client: Twilio;
   private uploadUtil: UploadUtil;
   private taskRepository: TasksRepository;
+  private emailThreadingRepository: EmailThreadingRepository;
   constructor() {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
     this.notificationConfigurationRepository =
@@ -76,6 +81,7 @@ class EmailUtil {
     clientSendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
     this.uploadUtil = new UploadUtil();
     this.taskRepository = new TasksRepository();
+    this.emailThreadingRepository = new EmailThreadingRepository();
   }
 
   async sendInvitationLink(user: IUser, link: string) {
@@ -369,7 +375,7 @@ class EmailUtil {
           if (reqThreadId) {
             this.createInbox(
               caseData,
-              'received',
+              'sent',
               emailData,
               threadId,
               userId,
@@ -479,14 +485,15 @@ class EmailUtil {
             threadId,
             userId,
             userName,
-            'EMAIL'
+            'EMAIL',
+            true
           );
         } else {
           const composeEmail = await this.createInbox(
             null,
             'sent',
             composeEmailData,
-            reqThreadId,
+            threadId,
             userId,
             userName,
             'EMAIL'
@@ -511,71 +518,74 @@ class EmailUtil {
     const newNotification = new Notification();
     const newNotificationCount = new NotificationCount();
     let res = null;
-
-    if (type == 'received') {
+    if (type == 'received' || check) {
+      type = check ? 'sent' : 'received';
       console.log('ABC');
       const existingInbox =
         await this.inboxRepository.getAllWithoutPagination<IInbox>(
           {
             threadId,
-            type,
           },
           undefined,
           undefined,
           {_id: -1}
         );
 
-      console.log('This is existing id', existingInbox[0]);
-      if (!existingInbox[0]) {
-        res = await this.createNewInbox(
-          emailData,
-          caseTemp,
-          type,
-          threadId,
-          userId,
-          userName,
-          [],
-          null,
-          medium
-        );
-        console.log('Create New Inbox response when Received', res);
-      } else {
-        const existingAttachments = existingInbox[0].attachments || [];
-        const mergedAttachments = [
-          // ...existingAttachments,
-          ...emailData.attachments,
-        ];
+      // console.log('This is existing id', existingInbox[0]);
+      // if (!existingInbox[0]) {
+      //   res = await this.createNewInbox(
+      //     emailData,
+      //     caseTemp,
+      //     type,
+      //     threadId,
+      //     userId,
+      //     userName,
+      //     [],
+      //     null,
+      //     medium
+      //   );
+      //   console.log('Create New Inbox response when Received', res);
+      // } else {
+      const existingAttachments = existingInbox[0].attachments || [];
+      const mergedAttachments = [
+        // ...existingAttachments,
+        ...emailData.attachments,
+      ];
 
-        const previousMessages = [
-          existingInbox[0]._id,
-          ...existingInbox[0]?.previousMessages,
-        ];
+      const previousMessages = [
+        existingInbox[0]._id,
+        ...existingInbox[0]?.previousMessages,
+      ];
 
-        // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
-        const uniqueAttachments = _.uniqBy(
-          mergedAttachments,
-          item => `${item.key}-${item.originalFileName}`
-        );
+      // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
+      const uniqueAttachments = _.uniqBy(
+        mergedAttachments,
+        item => `${item.key}-${item.originalFileName}`
+      );
 
-        // await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
-        //   text: existingInbox.text + emailData.text,
-        //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
-        //   attachments: uniqueAttachments,
-        // });
+      // await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
+      //   text: existingInbox.text + emailData.text,
+      //   textAsHtml: existingInbox.textAsHtml + emailData.textAsHtml,
+      //   attachments: uniqueAttachments,
+      // });
 
-        res = await this.createNewInbox(
-          emailData,
-          caseTemp,
-          type,
-          threadId,
-          userId,
-          userName,
-          previousMessages,
-          uniqueAttachments,
-          medium
-        );
-        console.log('Create New Inbox response when Response', res);
-      }
+      res = await this.createNewInbox(
+        emailData,
+        caseTemp,
+        type,
+        threadId,
+        userId,
+        userName,
+        previousMessages,
+        uniqueAttachments,
+        medium
+      );
+      const emailThreading = {
+        threadId: threadId,
+        previousMessages: res._id,
+      };
+      await this.upsertEmailThreading(emailThreading);
+      console.log('Create New Inbox response when Response', res);
     } else {
       res = await this.createNewInbox(
         emailData,
@@ -589,6 +599,16 @@ class EmailUtil {
         medium
       );
       console.log('Create New Inbox response when Create', res);
+
+      const emailThreading = {
+        threadId: threadId,
+        firstInboxMessage: res._id,
+        previousMessages: [res._id],
+        userId: userId,
+      };
+
+      await this.upsertEmailThreading(emailThreading);
+
       return res;
     }
     if (caseTemp) {
@@ -674,6 +694,7 @@ class EmailUtil {
     return `EMAIL received for ${text}`;
   }
 
+  async emailThreading() {}
   async sendEmailOrSmsByEventForCommission(value: string, payment: IPayment) {
     const event =
       await this.notificationConfigurationRepository.getOne<INotificationConfiguration>(
@@ -1261,6 +1282,55 @@ class EmailUtil {
     for (const payment of payments) {
       await this.sendEmailOrSmsByEvent(event, payment.caseId._id, '', userName);
     }
+  }
+
+  async upsertEmailThreading(data: any) {
+    const existingThread =
+      await this.emailThreadingRepository.getOne<IEmailThreading>({
+        threadId: data.threadId,
+      });
+
+    if (existingThread) {
+      const updatedMessages = [
+        data.previousMessages,
+        ...existingThread.previousMessages,
+      ];
+
+      return await this.emailThreadingRepository.updateById<IEmailThreading>(
+        existingThread._id,
+        {
+          previousMessages: updatedMessages,
+        }
+      );
+    } else {
+      const emailThreading = new EmailThreading();
+      const validatedDebtor = DataCopier.copy(
+        emailThreading,
+        data as IEmailThreading
+      );
+
+      return await this.emailThreadingRepository.upsert<IEmailThreading>(
+        {threadId: data.threadId},
+        validatedDebtor
+      );
+    }
+  }
+
+  async emailThreadingCount(populateFilter: any, userId: string) {
+    const emailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        {isDeleted: {$ne: true}, userId: userId},
+        undefined,
+        undefined,
+        {_id: -1},
+        populateFilter
+      );
+
+    const filteredThreads = emailThreading.filter(
+      (thread: any) => thread.firstInboxMessage
+    );
+
+    return filteredThreads.length;
   }
 }
 
