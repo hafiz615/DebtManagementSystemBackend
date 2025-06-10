@@ -293,10 +293,4 @@ router.put(
   debtorController.updateServiceFee
 );
 
-router.get(
-  '/getDebtorAccounts/:id',
-  authorize.validateAuth,
-  debtorController.getDebtorAccounts
-);
-
 export default router;

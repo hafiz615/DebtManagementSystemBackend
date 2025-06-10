@@ -12,7 +12,6 @@ const common_util_1 = __importDefault(require("./common.util"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
 const xml2js_1 = require("xml2js");
 const syncPaymentMethod_repository_1 = require("../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository");
-const debtor_util_1 = __importDefault(require("./debtor.util"));
 dotenv_1.default.config();
 class EasypayUtil {
     constructor() {
@@ -43,7 +42,7 @@ class EasypayUtil {
     async convertXmlToJson(xmlData) {
         return await (0, xml2js_1.parseStringPromise)(xmlData, { explicitArray: false });
     }
-    async checkClientExist(users, debtorEmail, platform, id, existingDebtor) {
+    async checkClientExist(users, debtorEmail, platform, _id, existingDebtor) {
         let update = { easyPayUserId: '' };
         const easyPayEmails = users.map(user => {
             return user.email.toLowerCase();
@@ -67,26 +66,29 @@ class EasypayUtil {
                 paymentType = 'cc';
             if (users[index].check_account)
                 paymentType = 'ck';
-            const customerVaultExists = existingDebtor.accounts?.some(account => account.customerVaultId === users[index].customer_vault_id);
+            console.log(email, 'user.email');
+            console.log(paymentType, 'paymentType');
+            console.log(users[index].customer_vault_id, 'user.customer_vault_id');
+            console.log(platform, 'platform');
+            const customerVaultExists = existingDebtor.accounts?.some((account) => account.customerVaultId === users[index].customer_vault_id);
             if (customerVaultExists) {
                 userIds.push(users[index].customer_vault_id);
                 continue;
             }
-            // await this.debtorRepository.updateById<IDebtor>(_id, {
-            //   $push: {
-            //     accounts: {
-            //       $each: [
-            //         {
-            //           paymentType: paymentType,
-            //           customerVaultId: users[index].customer_vault_id,
-            //           platform: platform,
-            //         },
-            //       ],
-            //     },
-            //   },
-            //   updatedAt: commonUtil.getCurrentDate(),
-            // });
-            await debtor_util_1.default.createAccount(id, paymentType, platform, users[index].customer_vault_id);
+            await this.debtorRepository.updateById(_id, {
+                $push: {
+                    accounts: {
+                        $each: [
+                            {
+                                paymentType: paymentType,
+                                customerVaultId: users[index].customer_vault_id,
+                                platform: platform,
+                            },
+                        ],
+                    },
+                },
+                updatedAt: common_util_1.default.getCurrentDate(),
+            });
             userIds.push(users[index].customer_vault_id);
         }
         update['userIds'] = userIds;
