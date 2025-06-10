@@ -950,7 +950,6 @@ class DebtorUtil {
     const debtorAccounts: IAccount[] =
       await this.accountRepository.getAll<IAccount>({
         debtorId: debtorId,
-        isDeleted: {$ne: true},
       });
     return debtorAccounts.sort((a, b) => {
       const getRank = account => {
