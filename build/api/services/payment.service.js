@@ -23,6 +23,7 @@ const attorney_repository_1 = require("../repository/attorney/attorney.repositor
 const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository");
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const uuid_1 = require("uuid");
+const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -809,17 +810,9 @@ class PaymentService {
                 const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(decryptedData.bankRouting);
                 if (routingNoExist)
                     return [false, 'Routing Number already Exist.'];
+                await debtor_util_1.default.createAccount(req.params.id, 'ACH', 'Seamlesschex', data);
                 const updatedDebtor = await this.debtorRepository.updateById(user.obj._id, {
                     $push: {
-                        accounts: {
-                            $each: [
-                                {
-                                    paymentType: 'ACH',
-                                    customerAccount: data,
-                                    platform: 'Seamlesschex',
-                                },
-                            ],
-                        },
                         seamlesschexRountingIds: { $each: [decryptedData.bankRouting] },
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),

@@ -9,6 +9,7 @@ import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {parseStringPromise} from 'xml2js';
 import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import {Constants} from 'authorizenet';
+import debtorUtil from './debtor.util';
 dotenv.config();
 
 class EasypayUtil {
@@ -57,15 +58,15 @@ class EasypayUtil {
     users: any,
     debtorEmail: string,
     platform: string,
-    _id: string,
-    existingDebtor: any,
+    id: string,
+    existingDebtor: any
   ) {
     let update = {easyPayUserId: ''};
 
     const easyPayEmails = users.map(user => {
       return user.email.toLowerCase();
     });
-    
+
     // const index = easyPayEmails.indexOf(debtorEmail);
 
     // if (index === -1) return [false, `Could Not Found the User in ${platform}`];
@@ -80,41 +81,47 @@ class EasypayUtil {
       return [false, `Could not find the user in ${platform}`];
     }
 
-    const userIds: string[] = []; 
+    const userIds: string[] = [];
 
-    for(const index of indices){
-      
+    for (const index of indices) {
       const email = users[index].email.toLowerCase();
 
       let paymentType = '';
 
       if (users[index].cc_number) paymentType = 'cc';
       if (users[index].check_account) paymentType = 'ck';
-      console.log(email, 'user.email');
-      console.log(paymentType, 'paymentType');
-      console.log(users[index].customer_vault_id, 'user.customer_vault_id');
-      console.log(platform, 'platform');
-
-      const customerVaultExists = existingDebtor.accounts?.some(
-        (account) => account.customerVaultId === users[index].customer_vault_id
+      const accounts = await debtorUtil.getDebtorAccounts(
+        String(existingDebtor._id)
+      );
+      const customerVaultExists = accounts?.some(
+        account => account.vault === users[index].customer_vault_id
       );
 
-      if(customerVaultExists) {userIds.push(users[index].customer_vault_id); continue;}
+      if (customerVaultExists) {
+        userIds.push(users[index].customer_vault_id);
+        continue;
+      }
 
-      await this.debtorRepository.updateById<IDebtor>(_id, {
-        $push: {
-          accounts: {
-            $each: [
-              {
-                paymentType: paymentType,
-                customerVaultId: users[index].customer_vault_id,
-                platform: platform,
-              },
-            ],
-          },
-        },
-        updatedAt: commonUtil.getCurrentDate(),
-      });
+      // await this.debtorRepository.updateById<IDebtor>(_id, {
+      //   $push: {
+      //     accounts: {
+      //       $each: [
+      //         {
+      //           paymentType: paymentType,
+      //           customerVaultId: users[index].customer_vault_id,
+      //           platform: platform,
+      //         },
+      //       ],
+      //     },
+      //   },
+      //   updatedAt: commonUtil.getCurrentDate(),
+      // });
+      await debtorUtil.createAccount(
+        id,
+        paymentType,
+        platform,
+        users[index].customer_vault_id
+      );
       userIds.push(users[index].customer_vault_id);
     }
     update['userIds'] = userIds;
@@ -127,9 +134,9 @@ class EasypayUtil {
     platform: string,
     customerVaultIds: string
   ) {
-    for(const customerVaultId of customerVaultIds){
+    for (const customerVaultId of customerVaultIds) {
       await this.syncPaymentMethodRepository.upsert(
-        {syncId: debtorId,platform: platform},
+        {syncId: debtorId, platform: platform},
         {
           email: email,
           updatedAt: commonUtil.getCurrentDate(),

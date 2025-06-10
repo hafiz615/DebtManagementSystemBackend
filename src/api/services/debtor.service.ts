@@ -53,6 +53,8 @@ import CreditorService from './creditor.service';
 import paynoteUtil from '../../utils/paynote.util';
 import {ServiceFeeRepository} from '../repository/serviceFee/serviceFee.repository';
 import {IFee} from '../../database/interfaces/serviceFee.interface';
+import {IAccount} from '../../database/interfaces/account.interface';
+import {AccountRepository} from '../repository/account/account.repository';
 dotenv.config();
 
 class DebtorService {
@@ -69,6 +71,7 @@ class DebtorService {
   private tokenService: TokenService;
   private creditorService: CreditorService;
   private serviceFeeRepository: ServiceFeeRepository;
+  private accountRepository: AccountRepository;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -456,12 +459,12 @@ class DebtorService {
       return [false, 'Payment already authorized'];
     }
     let payments: IPayment[] = [];
-    let debtor = null;
+    // let debtor = null;
     let amount = 0;
-    if (payment.caseId) debtor = payment.caseId?.debtor;
-    if (!payment.caseId) {
-      debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
-    }
+    // if (payment.caseId) debtor = payment.caseId?.debtor;
+    // if (!payment.caseId) {
+    //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+    // }
     if (payment.paymentReference) {
       payments = await paymentUtil.getAllPaymentReferenceDocuments(
         payment.paymentReference
@@ -478,13 +481,13 @@ class DebtorService {
       payments.push(payment);
     }
     let response: any;
-    const accounts = debtor.accounts;
+    const accounts = await debtorUtil.getDebtorAccounts(payment.debtorId);
     let responseNum = '';
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.authorizeCreditCard(
           amount,
-          account.customerVaultId,
+          account.vault,
           account.platform
         );
         responseNum = new URLSearchParams(response).get('response');
@@ -544,11 +547,11 @@ class DebtorService {
       return [false, 'Payment already captured'];
     }
     let payments: IPayment[] = [];
-    let debtor = null;
-    if (payment.caseId) debtor = payment.caseId.debtor;
-    if (!payment.caseId) {
-      debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
-    }
+    // let debtor = null;
+    // if (payment.caseId) debtor = payment.caseId.debtor;
+    // if (!payment.caseId) {
+    //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
+    // }
     let amount = 0;
     if (payment.paymentReference) {
       payments = await paymentUtil.getAllPaymentReferenceDocuments(
@@ -567,18 +570,18 @@ class DebtorService {
     }
     let response: any;
     let responseNum = '';
-    const accounts = debtor.accounts;
+    const accounts = await debtorUtil.getDebtorAccounts(payment.debtorId);
     for (const account of accounts) {
       if (account.paymentType === 'cc') {
         response = await this.paymentService.captureCreditCard(
-          account.customerVaultId,
+          account.vault,
           payment.debtorTransId,
           account.platform
         );
       }
       if (account.paymentType === 'ck') {
         response = await this.paymentService.achCredit(
-          account.customerVaultId,
+          account.vault,
           payment.amount,
           account.platform
         );
@@ -1066,20 +1069,26 @@ class DebtorService {
     );
     if (!customerVaultResponse[0]) return customerVaultResponse;
 
-    await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
-      $push: {
-        accounts: {
-          $each: [
-            {
-              paymentType: req.body.paymentType,
-              customerVaultId: customerVaultResponse[1],
-              platform: req.body.platform,
-            },
-          ],
-        },
-      },
-      updatedAt: commonUtil.getCurrentDate(),
-    });
+    // await this.debtorRepository.updateById<IDebtor>(getDebtor._id, {
+    //   $push: {
+    //     accounts: {
+    //       $each: [
+    //         {
+    //           paymentType: req.body.paymentType,
+    //           customerVaultId: customerVaultResponse[1],
+    //           platform: req.body.platform,
+    //         },
+    //       ],
+    //     },
+    //   },
+    //   updatedAt: commonUtil.getCurrentDate(),
+    // });
+    await debtorUtil.createAccount(
+      req.params.id,
+      req.body.paymentType,
+      req.body.platform,
+      customerVaultResponse[1]
+    );
     return [true, {customerVaultId: customerVaultResponse[1]}];
   }
 
@@ -2193,14 +2202,14 @@ class DebtorService {
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
     }
-    debtor.accounts.splice(req.body.index, 1);
-    const updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
-      req.params.id,
-      {accounts: debtor.accounts}
+    // debtor.accounts.splice(req.body.index, 1);
+    const update = await this.accountRepository.updateById<IAccount>(
+      req.body.accountId,
+      {isDeleted: true}
     );
 
-    if (!updatedDebtor) {
-      return [false, constants.failureUpdateMessage('debtor')];
+    if (!update) {
+      return [false, constants.failureDeleteMessage('debtor account')];
     }
 
     return [true, constants.successDeleteMessage('Debtor account')];
@@ -2222,6 +2231,20 @@ class DebtorService {
     }
 
     return [true, constants.successUpdateMessage('Debtor service fee')];
+  }
+
+  async getDebtorAccounts(req: Request) {
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+
+    if (!debtor) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const getAccounts = await this.accountRepository.getAll<IAccount>({
+      debtorId: debtor._id,
+      isDeleted: {$ne: true},
+    });
+    return [true, getAccounts];
   }
 }
 

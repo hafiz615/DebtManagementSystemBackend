@@ -17,6 +17,7 @@ const email_util_1 = __importDefault(require("../utils/email.util"));
 const payment_service_1 = __importDefault(require("../api/services/payment.service"));
 const case_repository_1 = require("../api/repository/case/case.repository");
 const creditor_util_1 = __importDefault(require("../utils/creditor.util"));
+const debtor_util_1 = __importDefault(require("../utils/debtor.util"));
 const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee.repository");
 const lawsuit_util_1 = __importDefault(require("../utils/lawsuit.util"));
 const lawsuit_repository_1 = require("../api/repository/lawsuit/lawsuit.repository");
@@ -716,16 +717,16 @@ class CronJob {
     async processAuthorized(payments, cronId, retryPlus, settings) {
         let retryOriginalValue = retryPlus;
         for (const payment of payments) {
-            const accounts = payment.caseId.debtor.accounts;
+            const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
             const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
             const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
             // const getCommission = await debtorUtil.getCommissionAmount(payment);
             // const sum = getCommission + payment.amount;
-            for (const account of accounts) {
+            for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
                     const response = await this.paymentService.authorizeCreditCard(
                     // payment.amount,
-                    payment.amount + serviceFeeAmount + legalFeeAmount, account.customerVaultId, account.platform);
+                    payment.amount + serviceFeeAmount + legalFeeAmount, account.vault, account.platform);
                     const result = await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
                     // getCommission,
                     account.platform, serviceFeeAmount, legalFeeAmount);
@@ -777,13 +778,24 @@ class CronJob {
             //   continue;
             // }
             const concatedPayments = otherPayments.concat(payment);
-            const debtor = await this.debtorRepository.getById(payment.debtorId);
-            const accounts = debtor.accounts;
-            console.log(i, ' i', debtor.accounts.length, '  debtor.accounts', payment.debtorId, '  payment.debtorId', String(payment._id), ' payment._id');
-            i += 1;
-            for (const account of accounts) {
+            // const debtor = await this.debtorRepository.getById<IDebtor>(
+            //   payment.debtorId
+            // );
+            const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
+            // console.log(
+            //   i,
+            //   ' i',
+            //   debtor.accounts.length,
+            //   '  debtor.accounts',
+            //   payment.debtorId,
+            //   '  payment.debtorId',
+            //   String(payment._id),
+            //   ' payment._id'
+            // );
+            // i += 1;
+            for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.authorizeCreditCard(payment.amount, account.customerVaultId, account.platform);
+                    const response = await this.paymentService.authorizeCreditCard(payment.amount, account.vault, account.platform);
                     const result = await this.processCommissionAuthorizedResponse(payment, concatedPayments, response, retryPlus, cronId, settings, account.platform);
                     if (retryPlus)
                         retryPlus = false;
@@ -930,12 +942,12 @@ class CronJob {
     async processCapture(payments, cronId, retryPlus, settings) {
         let retryOriginalValue = retryPlus;
         for (const payment of payments) {
-            const accounts = payment.caseId.debtor.accounts;
+            const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
             const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
             const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
-            for (const account of accounts) {
+            for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
+                    const response = await this.paymentService.captureCreditCard(account.vault, payment.debtorTransId, account.platform);
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc', account.platform);
                     if (retryPlus)
                         retryPlus = false;
@@ -943,7 +955,7 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount + serviceFeeAmount + legalFeeAmount, 
+                    const response = await this.paymentService.achCredit(account.vault, payment.amount + serviceFeeAmount + legalFeeAmount, 
                     // payment.amount,
                     account.platform);
                     const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform, serviceFeeAmount, legalFeeAmount);
@@ -953,7 +965,7 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ACH' && account.platform === 'Paynote') {
-                    const response = await paynote_util_1.default.directDebit(account.paynoteUserId, payment, payment.caseId?.debtor);
+                    const response = await paynote_util_1.default.directDebit(account.vault, payment, payment.caseId?.debtor);
                     const result = await this.processACHCaptureResponse(payment, response, retryPlus, cronId, settings, account.platform, serviceFeeAmount, legalFeeAmount);
                     if (retryPlus)
                         retryPlus = false;
@@ -962,7 +974,7 @@ class CronJob {
                 }
                 if (account.paymentType === 'ACH' &&
                     account.platform === 'Seamlesschex') {
-                    const decryptedData = common_util_1.default.getDecryptedData(account.customerAccount);
+                    const decryptedData = common_util_1.default.getDecryptedData(account.vault);
                     const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
                     const response = await seemlesschex_util_1.default.createCheck(payment.caseId.debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
                     const result = await this.processACHCaptureResponse(payment, response, retryPlus, cronId, settings, account.platform, serviceFeeAmount, legalFeeAmount);
@@ -983,10 +995,10 @@ class CronJob {
             const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
-            const accounts = debtor.accounts;
-            for (const account of accounts) {
+            const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
+            for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.captureCreditCard(account.customerVaultId, payment.debtorTransId, account.platform);
+                    const response = await this.paymentService.captureCreditCard(account.vault, payment.debtorTransId, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'cc', totalAmount, account.platform);
                     if (retryPlus)
                         retryPlus = false;
@@ -994,7 +1006,7 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ck') {
-                    const response = await this.paymentService.achCredit(account.customerVaultId, payment.amount, account.platform);
+                    const response = await this.paymentService.achCredit(account.vault, payment.amount, account.platform);
                     const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'ck', totalAmount, account.platform);
                     if (retryPlus)
                         retryPlus = false;
@@ -1002,7 +1014,7 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ACH' && account.platform === 'Paynote') {
-                    const response = await paynote_util_1.default.directDebit(account.paynoteUserId, payment, debtor);
+                    const response = await paynote_util_1.default.directDebit(account.vault, payment, debtor);
                     const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
                     if (retryPlus)
                         retryPlus = false;
@@ -1011,7 +1023,7 @@ class CronJob {
                 }
                 if (account.paymentType === 'ACH' &&
                     account.platform === 'Seamlesschex') {
-                    const decryptedData = common_util_1.default.getDecryptedData(account.customerAccount);
+                    const decryptedData = common_util_1.default.getDecryptedData(account.vault);
                     const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
                     const response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
                     console.log(response, 'response');
