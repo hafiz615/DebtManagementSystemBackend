@@ -19,6 +19,7 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import caseUtil from './case.util';
 import {model, Types} from 'mongoose';
+import debtorUtil from './debtor.util';
 
 class PaymentUtil {
   private paymentRepository: PaymentRepository;
@@ -1208,7 +1209,7 @@ class PaymentUtil {
     debtor: IDebtor,
     paymentPass: IPayment
   ) {
-    const accounts = debtor.accounts;
+    const accounts = await debtorUtil.getDebtorAccounts(debtor._id);
     let payment = {};
     let result = false;
     if (amount > 0) {
@@ -1225,7 +1226,7 @@ class PaymentUtil {
         if (account.paymentType === 'cc') {
           const authCreditCard = await this.authorizeCreditCard(
             amount,
-            account.customerVaultId,
+            account.vault,
             account.platform
           );
           console.log(authCreditCard, 'authCreditCard');
@@ -1244,7 +1245,7 @@ class PaymentUtil {
             payment['debtorTransId'] = transactionIdAuth;
             payment['paymentGateway'] = account.platform;
             payment['transactionType'] = 'CC';
-            customerVaultId = account.customerVaultId;
+            customerVaultId = account.vault;
             platform = account.platform;
             break;
           }
@@ -1258,7 +1259,7 @@ class PaymentUtil {
         }
         if (account.paymentType === 'ck') {
           const response = await this.achCredit(
-            account.customerVaultId,
+            account.vault,
             amount,
             account.platform
           );
@@ -1275,7 +1276,7 @@ class PaymentUtil {
             payment['debtorTransId'] = transactionId;
             payment['paymentGateway'] = account.platform;
             payment['transactionType'] = 'ACH';
-            customerVaultId = account.customerVaultId;
+            customerVaultId = account.vault;
             result = true;
             break;
           }
