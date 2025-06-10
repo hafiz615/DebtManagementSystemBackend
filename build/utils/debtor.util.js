@@ -713,6 +713,7 @@ class DebtorUtil {
     async getDebtorAccounts(debtorId) {
         const debtorAccounts = await this.accountRepository.getAll({
             debtorId: debtorId,
+            isDeleted: { $ne: true },
         });
         return debtorAccounts;
     }
