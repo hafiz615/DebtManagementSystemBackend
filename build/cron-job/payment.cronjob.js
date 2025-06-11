@@ -395,7 +395,7 @@ class CronJob {
     async cronSeamlesschex() {
         const paymentsCommission = await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Success',
-            captured: 'Pending',
+            captured: { $ne: 'Success' },
             paymentMode: { $eq: 'Direct Post' },
             isDeleted: false,
             paymentGateway: 'Seamlesschex',
@@ -417,7 +417,7 @@ class CronJob {
         }
         const payments = await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Success',
-            captured: 'Pending',
+            captured: { $ne: 'Success' },
             paymentMode: { $eq: 'Direct Post' },
             isDeleted: false,
             paymentGateway: 'Seamlesschex',
@@ -1110,8 +1110,8 @@ class CronJob {
             if (bv?.error)
                 updateObjPayment['authorized'] = 'Failed';
         }
-        await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, payment.caseId.debtor._id);
         if (response.success) {
+            await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, payment.caseId.debtor._id);
             const transactionId = response.check.check_id;
             updateObjPayment['status'] = 'Pending';
             updateObjPayment['checkStatus'] = 'Pending';
@@ -1215,8 +1215,8 @@ class CronJob {
         updateObjPayment['paymentGateway'] = platform;
         updateObjPayment['transactionType'] = 'ACH';
         let bv = null;
-        await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, debtor._id);
         if (response?.success) {
+            await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, debtor._id);
             if (platform === 'Seamlesschex') {
                 bv = await seemlesschex_util_1.default.checkBasicVerification(response);
                 if (bv?.error)
