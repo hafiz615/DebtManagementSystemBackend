@@ -96,4 +96,11 @@ router.post(
   callController.completeConference
 );
 
+//Telynex
+
+router.post('/telnyx/fallback', callController.telynexCallFallBack);
+router.post('/telnyx/call-status', callController.telynexCallStatus);
+router.post('/telynexVoice', callController.telynexCall);
+router.post('/telynexEvents', callController.telynexEvents);
+
 export default router;
