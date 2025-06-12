@@ -1074,18 +1074,13 @@ class PaymentService {
   async addAccount(req: Request) {
     const type = req.body.platform;
     const data = req.body.data;
+    const user: any = await commonUtil.getUserByType(req.params.id, 'debtor');
 
+    if (!user.obj) {
+      return [false, 'Debtor not found'];
+    }
     switch (type) {
       case 'Seamlesschex':
-        const user: any = await commonUtil.getUserByType(
-          req.params.id,
-          'debtor'
-        );
-
-        if (!user.obj) {
-          return [false, 'Debtor not found'];
-        }
-
         const decryptedData = commonUtil.getDecryptedData(data);
 
         const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(
@@ -1108,6 +1103,12 @@ class PaymentService {
             updatedAt: commonUtil.getCurrentDate(),
           }
         );
+        await debtorUtil.createAccount(
+          req.params.id,
+          'ACH',
+          'Seamlesschex',
+          data
+        );
 
         if (!updatedDebtor)
           return [false, constantsUtil.failureUpdateMessage('Debtor')];
@@ -1115,18 +1116,18 @@ class PaymentService {
 
       case 'Paynote':
         req.query.type = 'debtor';
-        const paynoteAccount = await this.addAccountACHDetails(req, true);
+        const paynoteAccount = await this.addAccountACHDetails(req, user, true);
         if (!paynoteAccount[0]) return [false, paynoteAccount[1]];
         return [true, 'Account added successfully'];
     }
     return [true, 'Account added successfully'];
   }
 
-  async addAccountACHDetails(req: Request, addAccount?: boolean) {
+  async addAccountACHDetails(req: Request, user: any, addAccount?: boolean) {
     const reqTemp: any = req;
-    const type = reqTemp.query.type;
-    const user: any = await commonUtil.getUserByType(req.params.id, type);
-    if (!user.obj) return [false, constants.notFoundMessage('user')];
+    // const type = reqTemp.query.type;
+    // const user: any = await commonUtil.getUserByType(req.params.id, type);
+    // if (!user.obj) return [false, constants.notFoundMessage('user')];
     const {name, email}: any = await commonUtil.getUserDetails(user.obj);
     const createCustomer = await paynoteUtil.createCustomer(
       user.obj._id,

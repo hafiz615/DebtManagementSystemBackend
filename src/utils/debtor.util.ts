@@ -30,6 +30,7 @@ class DebtorUtil {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
     this.paymentRepository = new PaymentRepository();
+    this.accountRepository = new AccountRepository();
   }
   async saveWeeklyBudget(caseTemp: any, body: any) {
     const strategy1Key = body.strategy1Choosen;
@@ -951,7 +952,40 @@ class DebtorUtil {
         debtorId: debtorId,
         isDeleted: {$ne: true},
       });
-    return debtorAccounts;
+    return debtorAccounts.sort((a, b) => {
+      const getRank = account => {
+        if (
+          account.platform === 'Easypay direct' &&
+          account.paymentType === 'cc'
+        )
+          return 1;
+        if (
+          account.platform === 'Seamlesschex merchant' &&
+          account.paymentType === 'cc'
+        )
+          return 2;
+        if (account.platform === 'Paynote') return 3;
+        if (account.platform === 'Seamlesschex') return 4;
+        if (
+          account.platform === 'Easypay direct' &&
+          account.paymentType === 'ck'
+        )
+          return 5;
+        if (
+          account.platform === 'Seamlesschex merchant' &&
+          account.paymentType === 'ck'
+        )
+          return 6;
+        return 99;
+      };
+
+      return getRank(a) - getRank(b);
+    });
+  }
+
+  async ifCCPresent(accounts: IAccount[]) {
+    const present = accounts.some(account => account.paymentType === 'cc');
+    return present;
   }
 
   async createAccount(

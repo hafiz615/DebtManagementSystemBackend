@@ -53,8 +53,9 @@ import CreditorService from './creditor.service';
 import paynoteUtil from '../../utils/paynote.util';
 import {ServiceFeeRepository} from '../repository/serviceFee/serviceFee.repository';
 import {IFee} from '../../database/interfaces/serviceFee.interface';
-import {IAccount} from '../../database/interfaces/account.interface';
 import {AccountRepository} from '../repository/account/account.repository';
+import {IAccount} from '../../database/interfaces/account.interface';
+import {Account} from '../../database/repomodels/account.repomodel';
 dotenv.config();
 
 class DebtorService {
@@ -86,6 +87,7 @@ class DebtorService {
     this.tokenService = new TokenService();
     this.creditorService = new CreditorService();
     this.serviceFeeRepository = new ServiceFeeRepository();
+    this.accountRepository = new AccountRepository();
   }
 
   getStatementsSummary = async (req: Request) => {
