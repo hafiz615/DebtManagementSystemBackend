@@ -98,6 +98,7 @@ class App {
             payment_cronjob_1.default.startCronJob();
             pausePayment_cronjob_1.default.startCronJob();
         }
+        console.log('partial');
         // paymentCronjob.cronSeamlesschex();
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
