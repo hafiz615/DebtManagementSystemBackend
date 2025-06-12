@@ -48,9 +48,6 @@ class Payment {
         this.paymentMode = '';
         this.calculateComission = false;
         this.checkStatus = '';
-        this.ach = false;
-        this.waterfall = false;
-        this.nonExecutable = false;
     }
 }
 exports.Payment = Payment;

@@ -12,8 +12,6 @@ import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import {IPayment} from '../database/interfaces/payment.interface';
 import commonUtil from './common.util';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
-import debtorUtil from './debtor.util';
-import waterfallUtil from './waterfall.util';
 dotenv.config();
 
 class SeemlesschexUtil {
@@ -224,9 +222,6 @@ class SeemlesschexUtil {
   }
 
   async saveCheckInfo(bv: any, fc: any, response: any, debtorId: string) {
-    if (response.error) {
-      return;
-    }
     const newCheck = new Check();
     newCheck.checkId = response.check.check_id;
     newCheck.number = response.check.number;
@@ -346,45 +341,22 @@ class SeemlesschexUtil {
     return [true, ''];
   }
 
-  async updateIfCheckFailed(
-    checkId: string,
-    status: string,
-    ccPresent: boolean
-  ) {
+  async updateIfCheckFailed(checkId: string, status: string) {
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: checkId,
-      isDeleted: false,
-      caseId: {$eq: null},
     });
     if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
       {checkId: checkId, isDeleted: false},
       {status: status}
     );
-    const updateObj = {
-      failedReasonCaptured: 'Check has been failed',
-      failedReasonAuthorized: 'Check has been failed',
-      updatedAt: commonUtil.getCurrentDate(),
-    };
-    updateObj['checkStatus'] = '';
-    if (ccPresent) {
-      if (payment.waterfall) {
-        // await waterfallUtil.upsertWaterfall(
-        //   payment.debtorId,
-        //   payment._id,
-        //   true
-        // );
-        updateObj['captured'] = 'Failed';
-      } else {
-        updateObj['authorized'] = 'Failed';
-      }
-    }
-    if (!ccPresent) {
-      updateObj['captured'] = 'Failed';
-    }
     await this.paymentRepository.updateMany<IPayment>(
       {debtorTransId: checkId},
-      updateObj
+      {
+        captured: 'Failed',
+        failedReasonCaptured: 'Check has been failed',
+        updatedAt: commonUtil.getCurrentDate(),
+      }
     );
     return [true, ''];
   }
@@ -392,11 +364,6 @@ class SeemlesschexUtil {
   async checkStatusWebhook(response: any) {
     if (response?.data) {
       const checkId = response.data.check_id;
-      const payment = await this.paymentRepository.getOne<IPayment>({
-        debtorTransId: checkId,
-      });
-      const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
-      const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
       switch (response.event) {
         case 'check.changed':
           switch (response.data.status) {
@@ -407,11 +374,7 @@ class SeemlesschexUtil {
               await this.updateIfCheckDeposited(checkId, response.data.status);
               break;
             case 'failed':
-              await this.updateIfCheckFailed(
-                checkId,
-                response.data.status,
-                ccPresent
-              );
+              await this.updateIfCheckFailed(checkId, response.data.status);
               break;
           }
           break;

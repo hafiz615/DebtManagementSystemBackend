@@ -27,7 +27,7 @@ class LawfirmUtil {
       {lawfirmCompanyName: data.lawfirmCompanyName},
       {
         $setOnInsert: {logTrackingId: v4()},
-        $set: {...validatedLawfirm, updatedAt: commonUtil.getCurrentDate()},
+        $set: {...validatedLawfirm, updatedAt: new Date()},
       }
     );
   }

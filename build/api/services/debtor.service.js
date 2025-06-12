@@ -36,7 +36,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const creditor_service_1 = __importDefault(require("./creditor.service"));
 const paynote_util_1 = __importDefault(require("../../utils/paynote.util"));
 const serviceFee_repository_1 = require("../repository/serviceFee/serviceFee.repository");
-const account_repository_1 = require("../repository/account/account.repository");
 dotenv_1.default.config();
 class DebtorService {
     constructor() {
@@ -165,7 +164,6 @@ class DebtorService {
         this.tokenService = new token_service_1.default();
         this.creditorService = new creditor_service_1.default();
         this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
-        this.accountRepository = new account_repository_1.AccountRepository();
     }
     async getDebtor(text) {
         const debtor = await this.debtorRepository.getAll({

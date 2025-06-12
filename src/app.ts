@@ -31,10 +31,6 @@ import {Server, Socket} from 'socket.io';
 import {createServer} from 'http';
 import dotenv from 'dotenv';
 import easypayUtil from './utils/easypay.util';
-import {AccountRepository} from './api/repository/account/account.repository';
-import {IAccount} from './database/interfaces/account.interface';
-import {Account} from './database/repomodels/account.repomodel';
-import {v4} from 'uuid';
 dotenv.config();
 
 class App {
@@ -128,9 +124,6 @@ class App {
     // await easypayUtil.syncClients('Easypay direct');
     // paymentCronjob.processPayments();
     // paymentCronjob.processCommissionPayments();
-    // paymentCronjob.processCommissionRetryPayments();
-    // paymentCronjob.cronSeamlesschex();
-    // paymentCronjob.processWaterfallPayments();
     if (process.env.environment === 'prod') {
       paymentCronjob.startCronJob();
       pausePayment.startCronJob();

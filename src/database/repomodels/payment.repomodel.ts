@@ -42,7 +42,4 @@ export class Payment {
   paymentMode = '';
   calculateComission = false;
   checkStatus = '';
-  ach = false;
-  waterfall = false;
-  nonExecutable = false;
 }

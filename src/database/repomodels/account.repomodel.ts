@@ -1,5 +1,4 @@
 import commonUtil from '../../utils/common.util';
-
 export class Account {
   debtorId = null;
   paymentType = '';

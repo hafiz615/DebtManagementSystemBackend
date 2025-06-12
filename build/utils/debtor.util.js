@@ -16,7 +16,6 @@ const payment_repository_1 = require("../api/repository/payment/payment.reposito
 const seemlesschex_util_1 = __importDefault(require("./seemlesschex.util"));
 const payment_util_1 = __importDefault(require("./payment.util"));
 const constants_util_1 = __importDefault(require("./constants.util"));
-const account_repository_1 = require("../api/repository/account/account.repository");
 const account_repomodel_1 = require("../database/repomodels/account.repomodel");
 const uuid_1 = require("uuid");
 class DebtorUtil {
@@ -175,7 +174,6 @@ class DebtorUtil {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
-        this.accountRepository = new account_repository_1.AccountRepository();
     }
     async saveWeeklyBudget(caseTemp, body) {
         const strategy1Key = body.strategy1Choosen;
@@ -717,32 +715,7 @@ class DebtorUtil {
             debtorId: debtorId,
             isDeleted: { $ne: true },
         });
-        return debtorAccounts.sort((a, b) => {
-            const getRank = account => {
-                if (account.platform === 'Easypay direct' &&
-                    account.paymentType === 'cc')
-                    return 1;
-                if (account.platform === 'Seamlesschex merchant' &&
-                    account.paymentType === 'cc')
-                    return 2;
-                if (account.platform === 'Paynote')
-                    return 3;
-                if (account.platform === 'Seamlesschex')
-                    return 4;
-                if (account.platform === 'Easypay direct' &&
-                    account.paymentType === 'ck')
-                    return 5;
-                if (account.platform === 'Seamlesschex merchant' &&
-                    account.paymentType === 'ck')
-                    return 6;
-                return 99;
-            };
-            return getRank(a) - getRank(b);
-        });
-    }
-    async ifCCPresent(accounts) {
-        const present = accounts.some(account => account.paymentType === 'cc');
-        return present;
+        return debtorAccounts;
     }
     async createAccount(id, paymentType, platform, vault, paynoteSourceId = '') {
         let validAccount = new account_repomodel_1.Account();

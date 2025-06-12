@@ -24,7 +24,7 @@ class LawfirmUtil {
         const validatedLawfirm = dataCopier_util_1.DataCopier.copy(newLawfirm, data);
         return await this.lawfirmRepository.upsert({ lawfirmCompanyName: data.lawfirmCompanyName }, {
             $setOnInsert: { logTrackingId: (0, uuid_1.v4)() },
-            $set: { ...validatedLawfirm, updatedAt: common_util_1.default.getCurrentDate() },
+            $set: { ...validatedLawfirm, updatedAt: new Date() },
         });
     }
     async lawfirmDetails(data, id) {

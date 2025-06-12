@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 export interface IAccount {
   _id?: string;
   debtorId: mongoose.Schema.Types.ObjectId;

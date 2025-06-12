@@ -330,7 +330,6 @@ class CreditorService {
             user.model;
             user.model;
             await paynote_util_1.default.updateSyncObject(resultSync[1], req.params.id, user.model);
-            await paynote_util_1.default.upsertPaynoteEmail(req.params.id, email);
             return resultSync;
         }
         let returnValue = null;

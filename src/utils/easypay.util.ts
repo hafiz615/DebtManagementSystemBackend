@@ -9,8 +9,6 @@ import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {parseStringPromise} from 'xml2js';
 import {SyncPaymentMethodRepository} from '../api/repository/ISyncPaymentMethod/syncPaymentMethod.repository';
 import {Constants} from 'authorizenet';
-import {Account} from '../database/repomodels/account.repomodel';
-import {v4} from 'uuid';
 import debtorUtil from './debtor.util';
 dotenv.config();
 

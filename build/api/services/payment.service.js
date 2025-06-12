@@ -800,40 +800,41 @@ class PaymentService {
     async addAccount(req) {
         const type = req.body.platform;
         const data = req.body.data;
-        const user = await common_util_1.default.getUserByType(req.params.id, 'debtor');
-        if (!user.obj) {
-            return [false, 'Debtor not found'];
-        }
         switch (type) {
             case 'Seamlesschex':
+                const user = await common_util_1.default.getUserByType(req.params.id, 'debtor');
+                if (!user.obj) {
+                    return [false, 'Debtor not found'];
+                }
                 const decryptedData = common_util_1.default.getDecryptedData(data);
                 const routingNoExist = user.obj?.seamlesschexRountingIds?.includes(decryptedData.bankRouting);
                 if (routingNoExist)
                     return [false, 'Routing Number already Exist.'];
+                await debtor_util_1.default.createAccount(req.params.id, 'ACH', 'Seamlesschex', data);
                 const updatedDebtor = await this.debtorRepository.updateById(user.obj._id, {
                     $push: {
                         seamlesschexRountingIds: { $each: [decryptedData.bankRouting] },
                     },
                     updatedAt: common_util_1.default.getCurrentDate(),
                 });
-                await debtor_util_1.default.createAccount(req.params.id, 'ACH', 'Seamlesschex', data);
                 if (!updatedDebtor)
                     return [false, constants_util_2.default.failureUpdateMessage('Debtor')];
                 return [true, 'Account added successfully'];
             case 'Paynote':
                 req.query.type = 'debtor';
-                const paynoteAccount = await this.addAccountACHDetails(req, user, true);
+                const paynoteAccount = await this.addAccountACHDetails(req, true);
                 if (!paynoteAccount[0])
                     return [false, paynoteAccount[1]];
                 return [true, 'Account added successfully'];
         }
         return [true, 'Account added successfully'];
     }
-    async addAccountACHDetails(req, user, addAccount) {
+    async addAccountACHDetails(req, addAccount) {
         const reqTemp = req;
-        // const type = reqTemp.query.type;
-        // const user: any = await commonUtil.getUserByType(req.params.id, type);
-        // if (!user.obj) return [false, constants.notFoundMessage('user')];
+        const type = reqTemp.query.type;
+        const user = await common_util_1.default.getUserByType(req.params.id, type);
+        if (!user.obj)
+            return [false, constants_util_1.default.notFoundMessage('user')];
         const { name, email } = await common_util_1.default.getUserDetails(user.obj);
         const createCustomer = await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model, true);
         if (createCustomer.error)

@@ -13,6 +13,10 @@ const emailThreadingModel: Schema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',
   },
+  caseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Cases',
+  },
   firstInboxMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'inbox',

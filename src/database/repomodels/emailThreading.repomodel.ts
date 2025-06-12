@@ -2,7 +2,8 @@ import commonUtil from '../../utils/common.util';
 
 export class EmailThreading {
   threadId = '';
-  userId = '';
+  userId = null;
+  caseId = null;
   firstInboxMessage = '';
   previousMessages: string[] = [];
   notificationStatus = false;
