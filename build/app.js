@@ -8,12 +8,10 @@ const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const database_config_1 = require("./config/database.config");
 const base_route_1 = __importDefault(require("./api/routes/base.route"));
-const payment_cronjob_1 = __importDefault(require("./cron-job/payment.cronjob"));
 const logs_middleware_1 = __importDefault(require("./middleware/logs.middleware")); // Import the logging middleware
 const localStorage_util_1 = __importDefault(require("./utils/localStorage.util"));
 const setEnv_1 = require("./utils/setEnv");
 const bulkUpload_cronjob_1 = __importDefault(require("./cron-job/bulkUpload.cronjob"));
-const pausePayment_cronjob_1 = __importDefault(require("./cron-job/pausePayment.cronjob"));
 const paynote_util_1 = __importDefault(require("./utils/paynote.util"));
 const socket_io_1 = require("socket.io");
 const http_1 = require("http");
@@ -94,10 +92,10 @@ class App {
         // await easypayUtil.syncClients('Easypay direct');
         // paymentCronjob.processPayments();
         // paymentCronjob.processCommissionPayments();
-        if (process.env.environment === 'prod') {
-            payment_cronjob_1.default.startCronJob();
-            pausePayment_cronjob_1.default.startCronJob();
-        }
+        // if (process.env.environment === 'prod') {
+        //   paymentCronjob.startCronJob();
+        //   pausePayment.startCronJob();
+        // }
         // paymentCronjob.cronSeamlesschex();
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
