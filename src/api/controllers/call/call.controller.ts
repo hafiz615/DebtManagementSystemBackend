@@ -543,7 +543,7 @@ class CallController {
     }
   };
 
-  telynexCallStatus = async (req: Request, res: Response) => {
+  telnyxCallStatus = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.telnyxCallStatus(req);
       if (!response[0]) {
@@ -566,7 +566,7 @@ class CallController {
     }
   };
 
-  telynexCallFallBack = async (req: Request, res: Response) => {
+  telnyxCallFallBack = async (req: Request, res: Response) => {
     try {
       const response = await this.callService.telnyxCallFallback(req);
       if (!response[0]) {
@@ -576,16 +576,16 @@ class CallController {
       }
       return res.status(constants.CODE.OK).send(response[1]);
     } catch (error) {
-      console.log('error', error);
+      // console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
     }
   };
 
-  telynexCall = async (req: Request, res: Response) => {
+  telnyxCall = async (req: Request, res: Response) => {
     try {
-      const response = await this.callService.telynexCall(req);
+      const response = await this.callService.telnyxCall(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -593,16 +593,18 @@ class CallController {
       }
       return res.status(constants.CODE.OK).send(response[1]);
     } catch (error) {
-      console.log('error', error);
+      console.log('error', error.response.data.errors);
       return res
         .status(constants.CODE.BAD_REQUEST)
-        .send(responseHelper.get4xxResponse(error.message));
+        .send(
+          responseHelper.get4xxResponse(error.response.data.errors[0].detail)
+        );
     }
   };
 
-  telynexEvents = async (req: Request, res: Response) => {
+  telnyxEvents = async (req: Request, res: Response) => {
     try {
-      const response = await this.callService.telynexEvents(req);
+      const response = await this.callService.telnyxEvents(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -610,7 +612,6 @@ class CallController {
       }
       return res.status(constants.CODE.OK).send(response[1]);
     } catch (error) {
-      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));

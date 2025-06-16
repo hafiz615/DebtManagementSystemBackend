@@ -16,6 +16,7 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import {UserRepository} from '../api/repository/user/user.repository';
 import {IUser} from '../database/interfaces/user.interface';
+import axios from 'axios';
 dotenv.config();
 
 class CallUtil {
@@ -26,6 +27,7 @@ class CallUtil {
   private creditorRepository: CreditorRepository;
   private userRepository: UserRepository;
   private uploadUtil: UploadUtil;
+  private telnyxLink: string;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -37,6 +39,7 @@ class CallUtil {
     this.callRepository = new CallRepository();
     this.debtorRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
+    this.telnyxLink = 'https://api.telnyx.com/v2';
   }
 
   async pollRecordingStatus(recordingSid: string) {
@@ -370,6 +373,19 @@ class CallUtil {
     const allCalls = {noAnswer: noAnswerCalls, busy: busyCalls};
 
     return allCalls;
+  }
+
+  // Telnyx
+
+  async telnyxPostRequest(url: string, data: any) {
+    const response = await axios.post(`${this.telnyxLink}${url}`, data, {
+      headers: {
+        Authorization: `Bearer ${process.env.telnyxApiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+    return response;
   }
 }
 export default new CallUtil();

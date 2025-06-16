@@ -32,9 +32,9 @@ router.delete('/deleteCall/:id', authorize_middleware_1.default.validateAuth, ca
 router.delete('/conference/removeParticipant', call_controller_1.default.removeParticipant);
 router.post('/conference/completeConference', call_controller_1.default.completeConference);
 //Telynex
-router.post('/telnyx/fallback', call_controller_1.default.telynexCallFallBack);
-router.post('/telnyx/call-status', call_controller_1.default.telynexCallStatus);
-router.post('/telynexVoice', call_controller_1.default.telynexCall);
-router.post('/telynexEvents', call_controller_1.default.telynexEvents);
+router.post('/telnyx/fallback', call_controller_1.default.telnyxCallFallBack);
+router.post('/telnyx/call-status', call_controller_1.default.telnyxCallStatus);
+router.post('/telnyxVoice', call_controller_1.default.telnyxCall);
+router.post('/telnyxEvents', call_controller_1.default.telnyxEvents);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

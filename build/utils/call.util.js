@@ -16,6 +16,7 @@ const axiosInstanceInterceptor_1 = __importDefault(require("./axiosInstanceInter
 const creditor_repository_1 = require("../api/repository/creditor/creditor.repository");
 const case_repository_1 = require("../api/repository/case/case.repository");
 const user_repository_1 = require("../api/repository/user/user.repository");
+const axios_1 = __importDefault(require("axios"));
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
@@ -26,6 +27,7 @@ class CallUtil {
         this.callRepository = new call_repository_1.CallRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.telnyxLink = 'https://api.telnyx.com/v2';
     }
     async pollRecordingStatus(recordingSid) {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -275,6 +277,17 @@ class CallUtil {
         const busyCalls = await this.fetchCallsByStatus(twilioNumber, 'busy');
         const allCalls = { noAnswer: noAnswerCalls, busy: busyCalls };
         return allCalls;
+    }
+    // Telnyx
+    async telnyxPostRequest(url, data) {
+        const response = await axios_1.default.post(`${this.telnyxLink}${url}`, data, {
+            headers: {
+                Authorization: `Bearer ${process.env.telnyxApiKey}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+        return response;
     }
 }
 exports.default = new CallUtil();
