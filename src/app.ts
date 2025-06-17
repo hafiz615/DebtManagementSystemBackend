@@ -131,11 +131,13 @@ class App {
     // paymentCronjob.processCommissionRetryPayments();
     // paymentCronjob.cronSeamlesschex();
     // paymentCronjob.processWaterfallPayments();
-    if (process.env.environment === 'prod') {
+    if (
+      process.env.environment === 'prod' ||
+      process.env.environment === 'staging'
+    ) {
       paymentCronjob.startCronJob();
       pausePayment.startCronJob();
     }
-    console.log('partial');
     // paymentCronjob.cronSeamlesschex();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
