@@ -1112,33 +1112,28 @@ class DebtorService {
 
     if (!customerVaultResponse[0]) return customerVaultResponse;
 
-    await this.debtorRepository.updateByOne(
-      {'accounts.customerVaultId': customerVaultId},
-      {
-        $set: {
-          'accounts.$.paymentType': paymentType,
-          updatedAt: commonUtil.getCurrentDate(),
-        },
-      }
+    const update = await this.accountRepository.updateById<IAccount>(
+      req.body.accountId,
+      {paymentType: paymentType}
     );
+
+    if (!update) {
+      return [false, constants.failureUpdateMessage('Debtor Account')];
+    }
 
     return [true, constants.successUpdateMessage('Debtor account')];
   }
 
-  async deleteDebtorAccountDebtorPortal(req: Request) {
-    const {id} = req.params;
-    const {customerVaultId} = req.body;
+  // async deleteDebtorAccountDebtorPortal(req: Request) {
+  //   const {id} = req.params;
+  //   const {customerVaultId} = req.body;
 
-    const updatedDebtor = await this.debtorRepository.updateById(id, {
-      $pull: {accounts: {customerVaultId: customerVaultId}},
-    });
+  //   const updatedDebtor = await this.debtorRepository.updateById(id, {
+  //     $pull: {accounts: {customerVaultId: customerVaultId}},
+  //   });
 
-    if (!updatedDebtor) {
-      return [false, 'Debtor not found'];
-    }
-
-    return [true, constants.successDeleteMessage('Debtor account')];
-  }
+  //   return [true, constants.successDeleteMessage('Debtor account')];
+  // }
 
   async getDebtorSummery(req: Request) {
     const reqTemp: any = req;
@@ -2208,6 +2203,8 @@ class DebtorService {
       req.body.accountId,
       {isDeleted: true}
     );
+
+    console.log('update', update);
 
     if (!update) {
       return [false, constants.failureDeleteMessage('debtor account')];

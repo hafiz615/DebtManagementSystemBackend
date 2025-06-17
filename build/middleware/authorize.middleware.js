@@ -100,6 +100,7 @@ class Authorize {
                     '/api/v1/debtor/add-debtor-account',
                     '/api/v1/debtor/update-debtor-account',
                     '/api/v1/debtor/delete-debtor-account',
+                    '/api/v1/debtor/get-debtor-accounts',
                     '/api/v1/debtor/get-extracted-data',
                     '/api/v1/debtor/get-debtor-extracted-data',
                     '/api/v1/debtor/client-financial-summary',
