@@ -30,6 +30,7 @@ class DebtorUtil {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
     this.paymentRepository = new PaymentRepository();
+    this.accountRepository = new AccountRepository();
   }
   async saveWeeklyBudget(caseTemp: any, body: any) {
     const strategy1Key = body.strategy1Choosen;
