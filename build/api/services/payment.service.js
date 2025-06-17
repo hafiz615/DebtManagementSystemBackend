@@ -494,9 +494,7 @@ class PaymentService {
             paidAmount: paidAmount,
             remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
         };
-        // mergedArray.sort(
-        //   (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-        // );
+        mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         // upcomingPaymentsObj.upcomingPayments.sort(
         //   (a: any, b: any) =>
         //     new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
@@ -1675,9 +1673,7 @@ class PaymentService {
             paidAmount: paidAmount,
             remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
         };
-        // mergedArray.sort(
-        //   (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-        // );
+        mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         // upcomingPaymentsObj.upcomingPayments.sort(
         //   (a: any, b: any) =>
         //     new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
