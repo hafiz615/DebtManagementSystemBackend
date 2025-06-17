@@ -171,6 +171,7 @@ class CallUtil {
     newCall.hangup_source = data.hangup_source;
     newCall.callStartTime = data.callStartTime;
     newCall.callStartTime = data.callEndTime;
+    newCall.callTo = [data.callTo];
 
     const validatedCall = DataCopier.copy(newCall, data as ICall);
     return await this.callRepository.create<ICall>(validatedCall);
