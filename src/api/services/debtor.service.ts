@@ -86,6 +86,7 @@ class DebtorService {
     this.tokenService = new TokenService();
     this.creditorService = new CreditorService();
     this.serviceFeeRepository = new ServiceFeeRepository();
+    this.accountRepository = new AccountRepository();
   }
 
   getStatementsSummary = async (req: Request) => {

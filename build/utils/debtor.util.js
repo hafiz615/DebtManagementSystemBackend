@@ -16,6 +16,7 @@ const payment_repository_1 = require("../api/repository/payment/payment.reposito
 const seemlesschex_util_1 = __importDefault(require("./seemlesschex.util"));
 const payment_util_1 = __importDefault(require("./payment.util"));
 const constants_util_1 = __importDefault(require("./constants.util"));
+const account_repository_1 = require("../api/repository/account/account.repository");
 const account_repomodel_1 = require("../database/repomodels/account.repomodel");
 const uuid_1 = require("uuid");
 class DebtorUtil {
@@ -174,6 +175,7 @@ class DebtorUtil {
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.caseRepository = new case_repository_1.CaseRepository();
         this.paymentRepository = new payment_repository_1.PaymentRepository();
+        this.accountRepository = new account_repository_1.AccountRepository();
     }
     async saveWeeklyBudget(caseTemp, body) {
         const strategy1Key = body.strategy1Choosen;
