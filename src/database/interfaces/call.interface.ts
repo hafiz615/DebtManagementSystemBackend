@@ -1,18 +1,18 @@
-import {Document} from 'mongoose';
+import mongoose, {Document} from 'mongoose';
 
 export interface ICall extends Document {
   callSid: string;
-  caseId: string;
-  debtorId: string;
-  creditorId: string;
-  userId: string;
+  caseId: mongoose.Schema.Types.ObjectId;
+  debtorId: mongoose.Schema.Types.ObjectId;
+  creditorId: mongoose.Schema.Types.ObjectId;
+  userId: mongoose.Schema.Types.ObjectId;
   callerName: string;
   accountSid: string;
   callTo: string[];
   callFrom: string;
   callStartTime: string;
   callDirection: string;
-  callDuration: string;
+  callDuration: number;
   callStatus: string;
   callRecordingSid: string;
   isDeleted: boolean;
