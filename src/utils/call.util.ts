@@ -147,8 +147,8 @@ class CallUtil {
     data: any,
     user: any,
     callerId: string,
-    debtorId: string,
-    creditorId: string
+    debtorId: any,
+    creditorId: any
   ) {
     const newCall = new Call();
     const {CaseId, CallSid, AccountSid, CallStatus, Direction, ConferenceName} =
@@ -159,13 +159,18 @@ class CallUtil {
     newCall.callSid = CallSid;
     if (user) {
       newCall.callerName = user.name;
-      newCall.userId = String(user._id);
+      newCall.userId = user?._id;
     }
     newCall.accountSid = AccountSid;
     newCall.conferenceName = ConferenceName;
     newCall.callDirection = Direction;
     newCall.callFrom = callerId;
-    newCall.callStatus = CallStatus;
+    newCall.callStatus = CallStatus; // hangup_cause
+    newCall.callDuration = data.callDuration; // hangup_cause
+    newCall.hangup_source = data.hangup_source;
+    newCall.callStartTime = data.callStartTime;
+    newCall.callStartTime = data.callEndTime;
+
     return await this.callRepository.create<ICall>(newCall as any);
   }
 

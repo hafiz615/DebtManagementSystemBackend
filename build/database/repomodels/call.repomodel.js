@@ -8,23 +8,26 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 class Call {
     constructor() {
         this.callSid = '';
-        this.caseId = '';
-        this.userId = '';
-        this.debtorId = '';
-        this.creditorId = '';
+        this.caseId = null;
+        this.userId = null;
+        this.debtorId = null;
+        this.creditorId = null;
         this.callerName = 'Unknown';
         this.accountSid = '';
         this.callTo = [];
         this.callFrom = '';
         this.callStartTime = '';
+        this.callEndTime = '';
         this.callDirection = '';
-        this.callDuration = '';
+        this.callDuration = 0;
         this.callStatus = '';
         this.callRecordingSid = '';
         this.isDeleted = false;
         this.transcriptUrl = '';
         this.type = 'Call';
         this.conferenceName = '';
+        this.hangup_cause = '';
+        this.hangup_source = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }

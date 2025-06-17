@@ -34,7 +34,6 @@ router.post('/conference/completeConference', call_controller_1.default.complete
 //Telynex
 router.post('/telnyx/fallback', call_controller_1.default.telnyxCallFallBack);
 router.post('/telnyx/call-status', call_controller_1.default.telnyxCallStatus);
-router.post('/telnyxVoice', call_controller_1.default.telnyxCall);
 router.post('/telnyxEvents', call_controller_1.default.telnyxEvents);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

@@ -32,17 +32,19 @@ const localStorage_util_1 = __importDefault(require("../../utils/localStorage.ut
 const updateLogs_model_1 = __importDefault(require("./updateLogs.model"));
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const callSchema = new mongoose_1.Schema({
-    callSid: { type: String },
-    caseId: { type: String },
-    creditorId: { type: String },
-    debtorId: { type: String },
-    userId: { type: String },
+    callSid: { type: String }, // call_control_id
+    callLegId: { type: String },
+    caseId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Cases' },
+    creditorId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Creditors' },
+    debtorId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Debtors' },
+    userId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Users' },
     callerName: { type: String, default: 'Unknown' },
-    accountSid: { type: String },
+    accountSid: { type: String }, // connectionId
     callTo: [{ type: String }],
     callFrom: { type: String },
     callStartTime: { type: Date },
-    callDirection: { type: String },
+    callEndTime: { type: Date },
+    callDirection: { type: Number },
     callDuration: { type: String },
     callStatus: { type: String },
     isDeleted: {

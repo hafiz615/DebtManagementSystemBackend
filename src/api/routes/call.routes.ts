@@ -100,7 +100,6 @@ router.post(
 
 router.post('/telnyx/fallback', callController.telnyxCallFallBack);
 router.post('/telnyx/call-status', callController.telnyxCallStatus);
-router.post('/telnyxVoice', callController.telnyxCall);
 router.post('/telnyxEvents', callController.telnyxEvents);
 
 export default router;

@@ -511,7 +511,7 @@ class CallController {
                 }));
             }
             catch (error) {
-                console.log('error', error);
+                // console.log('error', error);
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(error.message));
@@ -532,23 +532,6 @@ class CallController {
                 return res
                     .status(constants_util_1.default.CODE.BAD_REQUEST)
                     .send(responseHelper_util_1.default.get4xxResponse(error.message));
-            }
-        };
-        this.telnyxCall = async (req, res) => {
-            try {
-                const response = await this.callService.telnyxCall(req);
-                if (!response[0]) {
-                    return res
-                        .status(constants_util_1.default.CODE.BAD_REQUEST)
-                        .send(responseHelper_util_1.default.get4xxResponse(response[1]));
-                }
-                return res.status(constants_util_1.default.CODE.OK).send(response[1]);
-            }
-            catch (error) {
-                console.log('error', error.response.data.errors);
-                return res
-                    .status(constants_util_1.default.CODE.BAD_REQUEST)
-                    .send(responseHelper_util_1.default.get4xxResponse(error.response.data.errors[0].detail));
             }
         };
         this.telnyxEvents = async (req, res) => {
