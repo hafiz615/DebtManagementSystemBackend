@@ -18,8 +18,8 @@ const callSchema: Schema = new Schema({
   callFrom: {type: String},
   callStartTime: {type: Date},
   callEndTime: {type: Date},
-  callDirection: {type: Number},
-  callDuration: {type: String},
+  callDirection: {type: String},
+  callDuration: {type: Number},
   callStatus: {type: String},
   isDeleted: {
     type: Boolean,
