@@ -759,6 +759,11 @@ class DebtorRequests {
         };
         this.updateDebtorAccount = (req, res, next) => {
             const schema = joi_1.default.object({
+                accountId: joi_1.default.string().required().messages({
+                    'string.base': 'Account id must be a string',
+                    'any.required': 'Account id is required',
+                    'string.empty': 'Account id cannot be empty',
+                }),
                 customerVaultId: joi_1.default.string().required().messages({
                     'string.base': 'Customer vault id must be a string',
                     'any.required': 'Customer vault id is required',
@@ -797,10 +802,10 @@ class DebtorRequests {
         };
         this.deleteDebtorAccountDebtorPortal = (req, res, next) => {
             const schema = joi_1.default.object({
-                customerVaultId: joi_1.default.string().required().messages({
-                    'string.base': 'Customer vault id must be a string',
-                    'any.required': 'Customer vault id is required',
-                    'string.empty': 'Customer vault id cannot be empty',
+                accountId: joi_1.default.string().required().messages({
+                    'string.base': 'Account id must be a string',
+                    'any.required': 'Account id is required',
+                    'string.empty': 'Account id cannot be empty',
                 }),
             });
             const { error } = schema.validate(req.body);

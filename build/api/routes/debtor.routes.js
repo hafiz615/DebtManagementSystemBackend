@@ -37,9 +37,9 @@ router.get('/getStatementsSummaryWithPf/:id', authorize_middleware_1.default.val
 router.get('/getDailyCashFlows/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDailyCashFlows);
 router.put('/updateDebtorBulk/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorBulk, debtor_controller_1.default.updateDebtorBulk);
 router.post('/addDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
-router.post('/add-debtor-account/:id', authorize_middleware_1.default.validateDebtorToken, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
+router.post('/add-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.addDebtorAccount, debtor_controller_1.default.addDebtorAccount);
 router.put('/update-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateDebtorAccount, debtor_controller_1.default.updateDebtorAccount);
-router.delete('/delete-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.deleteDebtorAccountDebtorPortal, debtor_controller_1.default.deleteDebtorAccountDebtorPortal);
+router.delete('/delete-debtor-account/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.deleteDebtorAccountDebtorPortal, debtor_controller_1.default.deleteDebtorAccount);
 router.get('/getDebtorSummery', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorSummery);
 router.post('/saveWeeklyBudgetValues/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.saveWeeklyBudgetValues, debtor_controller_1.default.saveWeeklyBudgetValues);
 router.post('/getMcaAndFinancials', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getMcaAndFinancials);
@@ -72,5 +72,6 @@ router.get('/debtorCreditorPaymentPlanDetail/:id', authorize_middleware_1.defaul
 router.delete('/deleteDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.deleteDebtorAccount);
 router.put('/updateServiceFee/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateServiceFee, debtor_controller_1.default.updateServiceFee);
 router.get('/getDebtorAccounts/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorAccounts);
+router.get('/get-debtor-accounts/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorAccounts);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map
