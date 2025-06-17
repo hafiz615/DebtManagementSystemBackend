@@ -31,5 +31,10 @@ router.post('/twilio/voice-mail-recording-status', call_controller_1.default.voi
 router.delete('/deleteCall/:id', authorize_middleware_1.default.validateAuth, call_controller_1.default.deleteCall);
 router.delete('/conference/removeParticipant', call_controller_1.default.removeParticipant);
 router.post('/conference/completeConference', call_controller_1.default.completeConference);
+//Telynex
+router.post('/telnyx/fallback', call_controller_1.default.telnyxCallFallBack);
+router.post('/telnyx/call-status', call_controller_1.default.telnyxCallStatus);
+router.post('/telnyxEvents', call_controller_1.default.telnyxEvents);
+router.get('/telnyx/token', call_controller_1.default.telnyxToken);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

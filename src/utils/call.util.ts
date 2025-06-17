@@ -16,6 +16,8 @@ import {CaseRepository} from '../api/repository/case/case.repository';
 import {ICase} from '../database/interfaces/case.interface';
 import {UserRepository} from '../api/repository/user/user.repository';
 import {IUser} from '../database/interfaces/user.interface';
+import axios from 'axios';
+import {DataCopier} from './dataCopier.util';
 dotenv.config();
 
 class CallUtil {
@@ -26,6 +28,7 @@ class CallUtil {
   private creditorRepository: CreditorRepository;
   private userRepository: UserRepository;
   private uploadUtil: UploadUtil;
+  private telnyxLink: string;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -37,6 +40,7 @@ class CallUtil {
     this.callRepository = new CallRepository();
     this.debtorRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
+    this.telnyxLink = 'https://api.telnyx.com/v2';
   }
 
   async pollRecordingStatus(recordingSid: string) {
@@ -144,8 +148,8 @@ class CallUtil {
     data: any,
     user: any,
     callerId: string,
-    debtorId: string,
-    creditorId: string
+    debtorId: any,
+    creditorId: any
   ) {
     const newCall = new Call();
     const {CaseId, CallSid, AccountSid, CallStatus, Direction, ConferenceName} =
@@ -156,14 +160,21 @@ class CallUtil {
     newCall.callSid = CallSid;
     if (user) {
       newCall.callerName = user.name;
-      newCall.userId = String(user._id);
+      newCall.userId = user?._id;
     }
     newCall.accountSid = AccountSid;
     newCall.conferenceName = ConferenceName;
     newCall.callDirection = Direction;
     newCall.callFrom = callerId;
-    newCall.callStatus = CallStatus;
-    return await this.callRepository.create<ICall>(newCall as any);
+    newCall.callStatus = CallStatus; // hangup_cause
+    newCall.callDuration = data.callDuration;
+    newCall.hangup_source = data.hangup_source;
+    newCall.callStartTime = data.callStartTime;
+    newCall.callStartTime = data.callEndTime;
+    newCall.callTo = data.callTo;
+
+    const validatedCall = DataCopier.copy(newCall, data as ICall);
+    return await this.callRepository.create<ICall>(validatedCall);
   }
 
   async createIncomingCall(data: any, userId: string) {
@@ -370,6 +381,19 @@ class CallUtil {
     const allCalls = {noAnswer: noAnswerCalls, busy: busyCalls};
 
     return allCalls;
+  }
+
+  // Telnyx
+
+  async telnyxPostRequest(url: string, data: any) {
+    const response = await axios.post(`${this.telnyxLink}${url}`, data, {
+      headers: {
+        Authorization: `Bearer ${process.env.telnyxApiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+    return response.data;
   }
 }
 export default new CallUtil();

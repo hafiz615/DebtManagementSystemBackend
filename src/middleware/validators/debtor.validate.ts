@@ -854,6 +854,11 @@ class DebtorRequests {
     next: NextFunction
   ) => {
     const schema = Joi.object({
+      accountId: Joi.string().required().messages({
+        'string.base': 'Account id must be a string',
+        'any.required': 'Account id is required',
+        'string.empty': 'Account id cannot be empty',
+      }),
       customerVaultId: Joi.string().required().messages({
         'string.base': 'Customer vault id must be a string',
         'any.required': 'Customer vault id is required',
@@ -899,10 +904,10 @@ class DebtorRequests {
     next: NextFunction
   ) => {
     const schema = Joi.object({
-      customerVaultId: Joi.string().required().messages({
-        'string.base': 'Customer vault id must be a string',
-        'any.required': 'Customer vault id is required',
-        'string.empty': 'Customer vault id cannot be empty',
+      accountId: Joi.string().required().messages({
+        'string.base': 'Account id must be a string',
+        'any.required': 'Account id is required',
+        'string.empty': 'Account id cannot be empty',
       }),
     });
 

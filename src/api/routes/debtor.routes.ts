@@ -128,7 +128,7 @@ router.post(
 
 router.post(
   '/add-debtor-account/:id',
-  authorize.validateDebtorToken,
+  authorize.validateAuth,
   debtor.addDebtorAccount,
   debtorController.addDebtorAccount
 );
@@ -142,7 +142,7 @@ router.delete(
   '/delete-debtor-account/:id',
   authorize.validateAuth,
   debtor.deleteDebtorAccountDebtorPortal,
-  debtorController.deleteDebtorAccountDebtorPortal
+  debtorController.deleteDebtorAccount
 );
 router.get(
   '/getDebtorSummery',
@@ -295,6 +295,12 @@ router.put(
 
 router.get(
   '/getDebtorAccounts/:id',
+  authorize.validateAuth,
+  debtorController.getDebtorAccounts
+);
+
+router.get(
+  '/get-debtor-accounts/:id',
   authorize.validateAuth,
   debtorController.getDebtorAccounts
 );

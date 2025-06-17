@@ -6,18 +6,20 @@ import {v4} from 'uuid';
 import commonUtil from '../../utils/common.util';
 
 const callSchema: Schema = new Schema({
-  callSid: {type: String},
-  caseId: {type: String},
-  creditorId: {type: String},
-  debtorId: {type: String},
-  userId: {type: String},
+  callSid: {type: String}, // call_control_id
+  callLegId: {type: String},
+  caseId: {type: mongoose.Schema.Types.ObjectId, ref: 'Cases'},
+  creditorId: {type: mongoose.Schema.Types.ObjectId, ref: 'Creditors'},
+  debtorId: {type: mongoose.Schema.Types.ObjectId, ref: 'Debtors'},
+  userId: {type: mongoose.Schema.Types.ObjectId, ref: 'Users'},
   callerName: {type: String, default: 'Unknown'},
-  accountSid: {type: String},
+  accountSid: {type: String}, // connectionId
   callTo: [{type: String}],
   callFrom: {type: String},
   callStartTime: {type: Date},
+  callEndTime: {type: Date},
   callDirection: {type: String},
-  callDuration: {type: String},
+  callDuration: {type: Number},
   callStatus: {type: String},
   isDeleted: {
     type: Boolean,
