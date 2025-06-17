@@ -17,6 +17,7 @@ import {ICase} from '../database/interfaces/case.interface';
 import {UserRepository} from '../api/repository/user/user.repository';
 import {IUser} from '../database/interfaces/user.interface';
 import axios from 'axios';
+import {DataCopier} from './dataCopier.util';
 dotenv.config();
 
 class CallUtil {
@@ -171,7 +172,8 @@ class CallUtil {
     newCall.callStartTime = data.callStartTime;
     newCall.callStartTime = data.callEndTime;
 
-    return await this.callRepository.create<ICall>(newCall as any);
+    const validatedCall = DataCopier.copy(newCall, data as ICall);
+    return await this.callRepository.create<ICall>(validatedCall);
   }
 
   async createIncomingCall(data: any, userId: string) {

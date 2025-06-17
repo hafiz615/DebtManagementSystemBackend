@@ -17,6 +17,7 @@ const creditor_repository_1 = require("../api/repository/creditor/creditor.repos
 const case_repository_1 = require("../api/repository/case/case.repository");
 const user_repository_1 = require("../api/repository/user/user.repository");
 const axios_1 = __importDefault(require("axios"));
+const dataCopier_util_1 = require("./dataCopier.util");
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
@@ -127,7 +128,8 @@ class CallUtil {
         newCall.hangup_source = data.hangup_source;
         newCall.callStartTime = data.callStartTime;
         newCall.callStartTime = data.callEndTime;
-        return await this.callRepository.create(newCall);
+        const validatedCall = dataCopier_util_1.DataCopier.copy(newCall, data);
+        return await this.callRepository.create(validatedCall);
     }
     async createIncomingCall(data, userId) {
         const { CallSid, AccountSid, CallStatus, From, Direction, To } = data;
