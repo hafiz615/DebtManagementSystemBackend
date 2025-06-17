@@ -599,7 +599,7 @@ class CallController {
         })
       );
     } catch (error) {
-      // console.log('error', error);
+      console.log('error', error);
       return res
         .status(constants.CODE.BAD_REQUEST)
         .send(responseHelper.get4xxResponse(error.message));
