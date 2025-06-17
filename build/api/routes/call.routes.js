@@ -35,5 +35,6 @@ router.post('/conference/completeConference', call_controller_1.default.complete
 router.post('/telnyx/fallback', call_controller_1.default.telnyxCallFallBack);
 router.post('/telnyx/call-status', call_controller_1.default.telnyxCallStatus);
 router.post('/telnyxEvents', call_controller_1.default.telnyxEvents);
+router.get('/telnyx/token', call_controller_1.default.telnyxToken);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

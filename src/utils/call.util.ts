@@ -167,7 +167,7 @@ class CallUtil {
     newCall.callDirection = Direction;
     newCall.callFrom = callerId;
     newCall.callStatus = CallStatus; // hangup_cause
-    newCall.callDuration = data.callDuration; // hangup_cause
+    newCall.callDuration = data.callDuration;
     newCall.hangup_source = data.hangup_source;
     newCall.callStartTime = data.callStartTime;
     newCall.callStartTime = data.callEndTime;
@@ -393,7 +393,7 @@ class CallUtil {
         Accept: 'application/json',
       },
     });
-    return response;
+    return response.data;
   }
 }
 export default new CallUtil();
