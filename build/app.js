@@ -97,8 +97,7 @@ class App {
         // paymentCronjob.processCommissionRetryPayments();
         // paymentCronjob.cronSeamlesschex();
         // paymentCronjob.processWaterfallPayments();
-        if (process.env.environment === 'prod' ||
-            process.env.environment === 'staging') {
+        if (process.env.environment === 'prod') {
             payment_cronjob_1.default.startCronJob();
             pausePayment_cronjob_1.default.startCronJob();
         }
