@@ -623,7 +623,7 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_2.default.failureAddMessage('debtor')];
         }
-        if (lawsuitExtractedFields?.result) {
+        if (lawsuitExtractedFields && lawsuitExtractedFields?.result) {
             const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitExtractedFields, id);
             await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
         }
@@ -1184,9 +1184,11 @@ class DebtorService {
                     },
                 ];
             }
-            const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitFields, reqTemp.id);
-            await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
-            debtorBody['lawsuitFields'] = [lawsuitFields.result];
+            if (typeof lawsuitFields !== 'string') {
+                const lawfirmTemp = await lawfirm_util_1.default.lawfirmDetails(lawsuitFields, reqTemp.id);
+                await lawfirm_util_1.default.upsertLawfirm(lawfirmTemp);
+                debtorBody['lawsuitFields'] = [lawsuitFields.result];
+            }
             debtorBody['extractedFields'] = extractedFields.extracted_fields;
             debtorBody = await this.uploadAndAssignFiles(files, debtorBody);
         }
