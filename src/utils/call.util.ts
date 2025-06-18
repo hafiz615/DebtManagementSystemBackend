@@ -172,6 +172,7 @@ class CallUtil {
     newCall.callStartTime = data.callStartTime;
     newCall.callStartTime = data.callEndTime;
     newCall.callTo = data.callTo;
+    newCall.callLegId = data.callLegId;
 
     const validatedCall = DataCopier.copy(newCall, data as ICall);
     return await this.callRepository.create<ICall>(validatedCall);
