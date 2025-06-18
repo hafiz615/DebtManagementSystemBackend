@@ -11,6 +11,7 @@ export interface IUser extends Document {
   dateOfBirth: string;
   phone: string;
   twilioNo: string;
+  telnyxNo: string;
   gender: string;
   address: string;
   sessionIds: Array<string>;

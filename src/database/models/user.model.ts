@@ -42,6 +42,9 @@ const userModel: Schema = new Schema({
   twilioNo: {
     type: String,
   },
+  telnyxNo: {
+    type: String,
+  },
   gender: {
     type: String,
   },
