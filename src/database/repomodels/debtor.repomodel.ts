@@ -45,7 +45,7 @@ export class Debtor {
   otherDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
   lawsuitDocuments = Array<{key: ''; originalFileName: ''; url: ''}>();
   extractedFields = [];
-  lawsuitFields = null;
+  lawsuitFields = [];
   totalCommission = 0;
   commissionPaid = 0;
   // weeklyCommission = 0;

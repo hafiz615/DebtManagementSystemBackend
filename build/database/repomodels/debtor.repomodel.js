@@ -41,7 +41,7 @@ class Debtor {
         this.otherDocuments = Array();
         this.lawsuitDocuments = Array();
         this.extractedFields = [];
-        this.lawsuitFields = null;
+        this.lawsuitFields = [];
         this.totalCommission = 0;
         this.commissionPaid = 0;
         // weeklyCommission = 0;
