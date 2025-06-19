@@ -2,6 +2,7 @@ import mongoose, {Document} from 'mongoose';
 
 export interface ICall extends Document {
   callSid: string;
+  callLegId: string;
   caseId: mongoose.Schema.Types.ObjectId;
   debtorId: mongoose.Schema.Types.ObjectId;
   creditorId: mongoose.Schema.Types.ObjectId;

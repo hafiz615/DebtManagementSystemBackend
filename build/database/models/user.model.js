@@ -69,6 +69,9 @@ const userModel = new mongoose_1.Schema({
     twilioNo: {
         type: String,
     },
+    telnyxNo: {
+        type: String,
+    },
     gender: {
         type: String,
     },
