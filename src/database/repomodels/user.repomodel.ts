@@ -11,6 +11,7 @@ export class User {
   dateOfBirth = '';
   phone = '';
   twilioNo: '';
+  telnyxNo: '';
   gender = '';
   address = '';
   isDeleted = false;
