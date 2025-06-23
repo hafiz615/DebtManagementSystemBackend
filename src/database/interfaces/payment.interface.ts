@@ -42,6 +42,8 @@ export interface IPayment extends Document {
   calculateComission: boolean;
   checkStatus: string;
   ach: boolean;
-  waterfall: boolean;
+  ccWaterfall: boolean;
+  achWaterfall: boolean;
   nonExecutable: boolean;
+  ccVault: string;
 }

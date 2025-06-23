@@ -658,13 +658,13 @@ class PaymentService {
       paidAmount: paidAmount,
       remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
     };
-    mergedArray.sort(
-      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
-    );
-    upcomingPaymentsObj.upcomingPayments.sort(
-      (a: any, b: any) =>
-        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    );
+    // mergedArray.sort(
+    //   (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+    // );
+    // upcomingPaymentsObj.upcomingPayments.sort(
+    //   (a: any, b: any) =>
+    //     new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    // );
     const paginatedArray = mergedArray.slice(
       (pageLimit.page - 1) * pageLimit.limit,
       pageLimit.page * pageLimit.limit
@@ -827,7 +827,7 @@ class PaymentService {
       filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
       undefined,
-      {createdAt: -1},
+      {dueDate: -1},
       {
         path: 'caseId',
         select: ['_id', 'caseOwner', 'totalDebt'],
@@ -866,7 +866,7 @@ class PaymentService {
       filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName timePeriod',
       undefined,
-      {createdAt: -1},
+      {dueDate: 1},
       {
         path: 'caseId',
         select: ['_id', 'caseOwner', 'totalDebt'],
@@ -2383,8 +2383,8 @@ class PaymentService {
     // Merging the arrays
     const mergedArray = [
       ...successAuth,
-      ...failedAuth,
       ...successCapture,
+      ...failedAuth,
       ...failedCapture,
     ];
     const paymentCounts = {
@@ -2399,10 +2399,10 @@ class PaymentService {
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
-    upcomingPaymentsObj.upcomingPayments.sort(
-      (a: any, b: any) =>
-        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    );
+    // upcomingPaymentsObj.upcomingPayments.sort(
+    //   (a: any, b: any) =>
+    //     new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    // );
     const paginatedArray = mergedArray.slice(
       (pageLimit.page - 1) * pageLimit.limit,
       pageLimit.page * pageLimit.limit

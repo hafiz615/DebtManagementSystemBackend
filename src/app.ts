@@ -131,11 +131,15 @@ class App {
     // paymentCronjob.processCommissionRetryPayments();
     // paymentCronjob.cronSeamlesschex();
     // paymentCronjob.processWaterfallPayments();
+    // paymentCronjob.processWaterfallPaymentsCommission();
+    // paymentCronjob.processWaterfallPaymentsCreditor();
+    // paymentCronjob.processWaterfallPaymentsACH();
     if (process.env.environment === 'prod') {
       paymentCronjob.startCronJob();
       pausePayment.startCronJob();
     }
     // paymentCronjob.cronSeamlesschex();
+    // paymentCronjob.cronPaynote();
     // paymentCronjob.testCron();
     // paymentCronjob.testDebtor();
     // paymentCronjob.testPaynote();

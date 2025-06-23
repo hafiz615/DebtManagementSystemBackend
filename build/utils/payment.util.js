@@ -199,12 +199,15 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
-            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
-            waterfall: { $ne: true },
+            achWaterfall: { $ne: true },
+            ccWaterfall: { $ne: true },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionAuthorized() {
         return await this.paymentRepository.getAllWithoutPagination({
+            ccWaterfall: { $ne: true },
+            achWaterfall: { $ne: true },
             authorized: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
@@ -215,19 +218,43 @@ class PaymentUtil {
             authorized: 'Success',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
-            waterfall: true,
+            ccWaterfall: true,
             nonExecutable: { $ne: true },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
+    async getWaterfallPaymentsACH() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            isDeleted: { $ne: true },
+            caseId: null,
+            achWaterfall: true,
+            nonExecutable: { $ne: true },
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
+    }
+    // async getWaterfallPaymentsACHFailed() {
+    //   return await this.paymentRepository.getAllWithoutPagination<IPayment>(
+    //     {
+    //       isDeleted: {$ne: true},
+    //       caseId: {$eq: null},
+    //       achWaterfall: true,
+    //       nonExecutable: {$ne: true},
+    //       retriesCapture: {$gt: 0},
+    //     },
+    //     undefined,
+    //     undefined,
+    //     undefined,
+    //     [{path: 'caseId', populate: ['debtor', 'creditor']}]
+    //   );
+    // }
     async getPendingCaptureWaterfallPayments() {
         return await this.paymentRepository.getAllWithoutPagination({
             authorized: 'Success',
-            captured: { $ne: 'Success' },
+            captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
-            waterfall: true,
+            ccWaterfall: true,
             nonExecutable: { $ne: true },
-            retriesCapture: 0,
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCaptureWaterfallPayments() {
@@ -236,26 +263,56 @@ class PaymentUtil {
             captured: { $ne: 'Success' },
             isDeleted: { $ne: true },
             caseId: { $ne: null },
-            waterfall: true,
+            ccWaterfall: true,
             nonExecutable: { $ne: true },
-            retriesCapture: { $gt: 0 },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
+    }
+    async getPendingCaptureWaterfallPaymentsCommission() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: 'Pending',
+            isDeleted: { $ne: true },
+            caseId: null,
+            ccWaterfall: true,
+            nonExecutable: { $ne: true },
+        }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
+    }
+    async getFailedCaptureWaterfallPaymentsCommission() {
+        return await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: { $ne: 'Success' },
+            isDeleted: { $ne: true },
+            caseId: null,
+            ccWaterfall: true,
+            nonExecutable: { $ne: true },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
-            $nor: [{ authorized: 'Success' }, { ach: true }],
+            $and: [
+                {
+                    $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
+                },
+                {
+                    $or: [{ authorized: 'Success' }, { ach: true }],
+                },
+            ],
+            ccWaterfall: { $ne: true },
+            achWaterfall: { $ne: true },
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
-            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             checkStatus: { $nin: ['Pending', 'Completed'] },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getPendingCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
             $or: [{ authorized: 'Success' }, { ach: true }],
+            achWaterfall: { $ne: true },
+            ccWaterfall: { $ne: true },
             captured: 'Pending',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
@@ -269,8 +326,10 @@ class PaymentUtil {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             paymentMode: { $nin: ['Wire', 'Check', 'Cash', 'Additional Charge'] },
-            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             nonExecutable: { $ne: true },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
+            achWaterfall: { $ne: true },
+            ccWaterfall: { $ne: true },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionAuthorized() {
@@ -279,6 +338,8 @@ class PaymentUtil {
             isDeleted: { $ne: true },
             caseId: { $eq: null },
             nonExecutable: { $ne: true },
+            achWaterfall: { $ne: true },
+            ccWaterfall: { $ne: true },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCaptured() {
@@ -292,11 +353,15 @@ class PaymentUtil {
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             checkStatus: { $nin: ['Pending', 'Completed'] },
             nonExecutable: { $ne: true },
+            achWaterfall: { $ne: true },
+            ccWaterfall: { $ne: true },
         }, undefined, undefined, undefined, [{ path: 'caseId', populate: ['debtor', 'creditor'] }]);
     }
     async getFailedCommissionCaptured() {
         return await this.paymentRepository.getAllWithoutPagination({
-            authorized: 'Success',
+            $or: [{ authorized: 'Success' }, { ach: true }],
+            ccWaterfall: { $ne: true },
+            achWaterfall: { $ne: true },
             captured: 'Failed',
             isDeleted: { $ne: true },
             caseId: { $eq: null },
@@ -1133,20 +1198,26 @@ class PaymentUtil {
             return [false, 'Failed to cancel payment plan'];
         return [true, 'Payment plan cancelled successfully'];
     }
-    async getAllAmounts(payment) {
+    async getAllAmounts(payment, onlyFees) {
         const otherPayments = await this.getOtherPayments(payment);
         const totalAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
         const totalFees = payment.amount - totalAmount;
-        const sorted = otherPayments.sort((a, b) => a.caseId.priority - b.caseId.priority);
-        sorted.unshift({
+        let amounts = [];
+        let feeObject = {
             paymentId: String(payment._id),
             amount: totalFees || 0,
-            authorized: payment.commission ? 'Success' : 'Pending',
+            authorized: payment.authorized,
             captured: payment.captured,
             type: 'fee',
             caseId: null,
-        });
-        return sorted;
+        };
+        if (onlyFees) {
+            amounts.push(feeObject);
+            return amounts;
+        }
+        amounts = otherPayments.sort((a, b) => a.caseId.priority - b.caseId.priority);
+        amounts.unshift(feeObject);
+        return amounts;
     }
 }
 exports.default = new PaymentUtil();

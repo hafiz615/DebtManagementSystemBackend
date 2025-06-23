@@ -12,7 +12,6 @@ const check_repository_1 = require("../api/repository/check/check.repository");
 const payment_repository_1 = require("../api/repository/payment/payment.repository");
 const common_util_1 = __importDefault(require("./common.util"));
 const debtor_repository_1 = require("../api/repository/debtor/debtor.repository");
-const debtor_util_1 = __importDefault(require("./debtor.util"));
 dotenv_1.default.config();
 class SeemlesschexUtil {
     constructor() {
@@ -268,8 +267,9 @@ class SeemlesschexUtil {
         if (!payment)
             return [true, ''];
         await this.deleteCheckInfo(checkId, status);
-        await this.paymentRepository.updateMany({ debtorTransId: checkId }, {
+        await this.paymentRepository.updateMany({ debtorTransId: checkId, isDeleted: { $ne: true } }, {
             captured: 'Failed',
+            achWaterfall: false,
             failedReasonCaptured: 'Check has been deleted',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
@@ -291,6 +291,7 @@ class SeemlesschexUtil {
     async updateIfCheckDeposited(checkId, status) {
         const payment = await this.paymentRepository.getOne({
             debtorTransId: checkId,
+            isDeleted: { $ne: true },
         });
         if (!payment)
             return [true, ''];
@@ -307,11 +308,13 @@ class SeemlesschexUtil {
         // });
         return [true, ''];
     }
-    async updateIfCheckFailed(checkId, status, ccPresent) {
+    async updateIfCheckFailed(checkId, status
+    // ccPresent: boolean
+    ) {
         const payment = await this.paymentRepository.getOne({
             debtorTransId: checkId,
             isDeleted: false,
-            caseId: { $eq: null },
+            // caseId: {$eq: null},
         });
         if (!payment)
             return [true, ''];
@@ -322,33 +325,34 @@ class SeemlesschexUtil {
             updatedAt: common_util_1.default.getCurrentDate(),
         };
         updateObj['checkStatus'] = '';
-        if (ccPresent) {
-            if (payment.waterfall) {
-                // await waterfallUtil.upsertWaterfall(
-                //   payment.debtorId,
-                //   payment._id,
-                //   true
-                // );
-                updateObj['captured'] = 'Failed';
-            }
-            else {
-                updateObj['authorized'] = 'Failed';
-            }
-        }
-        if (!ccPresent) {
-            updateObj['captured'] = 'Failed';
-        }
-        await this.paymentRepository.updateMany({ debtorTransId: checkId }, updateObj);
+        updateObj['captured'] = 'Failed';
+        updateObj['authorized'] = 'Failed';
+        // if (ccPresent) {
+        //   if (payment.ccWaterfall) {
+        //     // await waterfallUtil.upsertWaterfall(
+        //     //   payment.debtorId,
+        //     //   payment._id,
+        //     //   true
+        //     // );
+        //     updateObj['captured'] = 'Failed';
+        //   } else {
+        //     updateObj['authorized'] = 'Failed';
+        //   }
+        // }
+        // if (!ccPresent) {
+        //   updateObj['captured'] = 'Failed';
+        // }
+        await this.paymentRepository.updateMany({ debtorTransId: checkId, isDeleted: { $ne: true } }, updateObj);
         return [true, ''];
     }
     async checkStatusWebhook(response) {
         if (response?.data) {
             const checkId = response.data.check_id;
-            const payment = await this.paymentRepository.getOne({
-                debtorTransId: checkId,
-            });
-            const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
-            const ccPresent = await debtor_util_1.default.ifCCPresent(accountsTemp);
+            // const payment = await this.paymentRepository.getOne<IPayment>({
+            //   debtorTransId: checkId,
+            // });
+            // const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
+            // const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
             switch (response.event) {
                 case 'check.changed':
                     switch (response.data.status) {
@@ -359,7 +363,9 @@ class SeemlesschexUtil {
                             await this.updateIfCheckDeposited(checkId, response.data.status);
                             break;
                         case 'failed':
-                            await this.updateIfCheckFailed(checkId, response.data.status, ccPresent);
+                            await this.updateIfCheckFailed(checkId, response.data.status
+                            // ccPresent
+                            );
                             break;
                     }
                     break;

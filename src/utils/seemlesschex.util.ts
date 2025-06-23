@@ -298,9 +298,10 @@ class SeemlesschexUtil {
     if (!payment) return [true, ''];
     await this.deleteCheckInfo(checkId, status);
     await this.paymentRepository.updateMany<IPayment>(
-      {debtorTransId: checkId},
+      {debtorTransId: checkId, isDeleted: {$ne: true}},
       {
         captured: 'Failed',
+        achWaterfall: false,
         failedReasonCaptured: 'Check has been deleted',
         updatedAt: commonUtil.getCurrentDate(),
       }
@@ -324,6 +325,7 @@ class SeemlesschexUtil {
   async updateIfCheckDeposited(checkId: string, status: string) {
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: checkId,
+      isDeleted: {$ne: true},
     });
     if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
@@ -348,13 +350,13 @@ class SeemlesschexUtil {
 
   async updateIfCheckFailed(
     checkId: string,
-    status: string,
-    ccPresent: boolean
+    status: string
+    // ccPresent: boolean
   ) {
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: checkId,
       isDeleted: false,
-      caseId: {$eq: null},
+      // caseId: {$eq: null},
     });
     if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
@@ -367,23 +369,26 @@ class SeemlesschexUtil {
       updatedAt: commonUtil.getCurrentDate(),
     };
     updateObj['checkStatus'] = '';
-    if (ccPresent) {
-      if (payment.waterfall) {
-        // await waterfallUtil.upsertWaterfall(
-        //   payment.debtorId,
-        //   payment._id,
-        //   true
-        // );
-        updateObj['captured'] = 'Failed';
-      } else {
-        updateObj['authorized'] = 'Failed';
-      }
-    }
-    if (!ccPresent) {
-      updateObj['captured'] = 'Failed';
-    }
+    updateObj['captured'] = 'Failed';
+    updateObj['authorized'] = 'Failed';
+
+    // if (ccPresent) {
+    //   if (payment.ccWaterfall) {
+    //     // await waterfallUtil.upsertWaterfall(
+    //     //   payment.debtorId,
+    //     //   payment._id,
+    //     //   true
+    //     // );
+    //     updateObj['captured'] = 'Failed';
+    //   } else {
+    //     updateObj['authorized'] = 'Failed';
+    //   }
+    // }
+    // if (!ccPresent) {
+    //   updateObj['captured'] = 'Failed';
+    // }
     await this.paymentRepository.updateMany<IPayment>(
-      {debtorTransId: checkId},
+      {debtorTransId: checkId, isDeleted: {$ne: true}},
       updateObj
     );
     return [true, ''];
@@ -392,11 +397,11 @@ class SeemlesschexUtil {
   async checkStatusWebhook(response: any) {
     if (response?.data) {
       const checkId = response.data.check_id;
-      const payment = await this.paymentRepository.getOne<IPayment>({
-        debtorTransId: checkId,
-      });
-      const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
-      const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
+      // const payment = await this.paymentRepository.getOne<IPayment>({
+      //   debtorTransId: checkId,
+      // });
+      // const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
+      // const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
       switch (response.event) {
         case 'check.changed':
           switch (response.data.status) {
@@ -409,8 +414,8 @@ class SeemlesschexUtil {
             case 'failed':
               await this.updateIfCheckFailed(
                 checkId,
-                response.data.status,
-                ccPresent
+                response.data.status
+                // ccPresent
               );
               break;
           }

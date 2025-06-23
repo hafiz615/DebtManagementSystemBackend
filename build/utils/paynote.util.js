@@ -96,6 +96,24 @@ class PaynoteUtil {
             return error?.response?.data;
         }
     }
+    async getCheck(checkId) {
+        const apiUrl = `${process.env.paynoteUrl}/check/:${checkId}`;
+        console.log('I am in getCheck');
+        console.log('URL: ', apiUrl);
+        console.log('Payload: ', {});
+        try {
+            const response = await axiosInstanceInterceptor_1.default.get(apiUrl, {
+                headers: {
+                    Authorization: process.env.paynoteSecretKey,
+                    'Content-Type': 'application/json',
+                },
+            });
+            return response.data;
+        }
+        catch (error) {
+            return error?.response?.data;
+        }
+    }
     async updateCustomer(creditor) {
         const creditorNames = creditor.basicInformation.fullName.split(' ');
         let lastName = '';
@@ -470,82 +488,71 @@ class PaynoteUtil {
         }
     }
     async paynoteWebhook(response) {
-        if (response?.event) {
-            const checkId = response.check.check_id;
-            const payment = await this.paymentRepository.getOne({
-                debtorTransId: checkId,
-                isDeleted: false,
-                caseId: { $eq: null },
-            });
-            const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
-            const ccPresent = await debtor_util_1.default.ifCCPresent(accountsTemp);
-            const updateObj = {
-                status: 'Pending',
-                updatedAt: common_util_1.default.getCurrentDate(),
-            };
-            if (response.check.status !== 'processed' && !ccPresent) {
+        const checkId = response.check.check_id;
+        // const payment = await this.paymentRepository.getOne<IPayment>({
+        //   debtorTransId: checkId,
+        //   isDeleted: false,
+        //   caseId: {$eq: null},
+        // });
+        // const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
+        // const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
+        const updateObj = {
+            status: 'Pending',
+            updatedAt: common_util_1.default.getCurrentDate(),
+        };
+        // if (response.check.status !== 'processed' && !ccPresent) {
+        //   updateObj['captured'] = 'Failed';
+        //   updateObj['failedReasonCaptured'] =
+        //     response.check.error_explanation ||
+        //     response.check.error_description ||
+        //     constantsUtil.Messages.CHECK_VOIDED;
+        // }
+        if (response.check.status !== 'processed') {
+            updateObj['captured'] = 'Failed';
+            updateObj['authorized'] = 'Failed';
+            const reason = response.check.error_explanation ||
+                response.check.error_description ||
+                constants_util_1.default.Messages.CHECK_VOIDED;
+            updateObj['failedReasonAuthorized'] = reason;
+            updateObj['failedReasonCaptured'] = reason;
+        }
+        switch (response.check.status) {
+            case 'processed':
+                updateObj['captured'] = 'Success';
+                updateObj['authorized'] = 'Success';
+                updateObj['checkStatus'] = 'Completed';
+                await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                break;
+            case 'cancelled':
                 updateObj['captured'] = 'Failed';
-                updateObj['failedReasonCaptured'] =
-                    response.check.error_explanation ||
-                        response.check.error_description ||
-                        constants_util_1.default.Messages.CHECK_VOIDED;
-            }
-            if (response.check.status !== 'processed' && ccPresent) {
-                if (payment.waterfall) {
-                    // await waterfallUtil.upsertWaterfall(
-                    //   payment.debtorId,
-                    //   payment._id,
-                    //   true
-                    // );
-                    updateObj['captured'] = 'Failed';
-                }
-                else {
-                    updateObj['authorized'] = 'Failed';
-                }
-                const reason = response.check.error_explanation ||
-                    response.check.error_description ||
-                    constants_util_1.default.Messages.CHECK_VOIDED;
-                updateObj['failedReasonAuthorized'] = reason;
-                updateObj['failedReasonCaptured'] = reason;
-            }
-            switch (response.event) {
-                case 'transaction.status':
-                    switch (response.check.status) {
-                        case 'processed':
-                            updateObj['captured'] = 'Success';
-                            updateObj['checkStatus'] = 'Completed';
-                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
-                            break;
-                        case 'cancelled':
-                            updateObj['captured'] = 'Failed';
-                            updateObj['authorized'] = 'Success';
-                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
-                            break;
-                        case 'declined':
-                            updateObj['checkStatus'] = '';
-                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
-                            break;
-                        case 'failed':
-                            updateObj['checkStatus'] = '';
-                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
-                            break;
-                        case 'expired':
-                            updateObj['checkStatus'] = '';
-                            await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
-                            break;
-                    }
-                    break;
-            }
+                updateObj['authorized'] = 'Success';
+                updateObj['achWaterfall'] = false;
+                await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                break;
+            case 'declined':
+                updateObj['checkStatus'] = '';
+                await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                break;
+            case 'failed':
+                updateObj['checkStatus'] = '';
+                await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                break;
+            case 'expired':
+                updateObj['checkStatus'] = '';
+                await this.updateCheckAndPayment(checkId, updateObj, response.check.status);
+                break;
         }
         return [true, ''];
     }
     async updateCheckAndPayment(checkId, updatePaymentObj, status) {
         const payment = await this.paymentRepository.getOne({
             debtorTransId: checkId,
+            isDeleted: { $ne: true },
         });
         if (!payment)
             return [true, ''];
         await this.checkRepository.updateByOne({ checkId: checkId, isDeleted: false }, { status: status });
+        console.log(updatePaymentObj, 'updatePaymentObj');
         await this.paymentRepository.updateMany({ debtorTransId: checkId }, updatePaymentObj);
         return [true, ''];
     }
