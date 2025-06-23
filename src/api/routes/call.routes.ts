@@ -103,6 +103,11 @@ router.post('/telnyx/call-status', callController.telnyxCallStatus);
 router.post('/telnyxEvents', callController.telnyxEvents);
 router.get('/telnyx/token', authorize.validateAuth, callController.telnyxToken);
 router.get(
+  '/telnyx/encryptToken',
+  authorize.validateAuth,
+  callController.telnyxCredentialsTokens
+);
+router.get(
   '/telnyx/phoneNo',
   authorize.validateAuth,
   callController.telnyxPhoneNo
