@@ -740,9 +740,61 @@ class DebtorUtil {
             return getRank(a) - getRank(b);
         });
     }
+    async getDebtorAccountsForCreditor(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+        });
+        const findPaynoteOrSeamlesschex = debtorAccounts.some(account => account.paymentType === 'ACH');
+        if (findPaynoteOrSeamlesschex) {
+            debtorAccounts = debtorAccounts.filter(account => account.paymentType === 'ACH');
+        }
+        else {
+            return debtorAccounts;
+        }
+        return debtorAccounts.sort((a, b) => {
+            const getRank = account => {
+                if (account.platform === 'Paynote')
+                    return 1;
+                if (account.platform === 'Seamlesschex')
+                    return 2;
+                return 99;
+            };
+            return getRank(a) - getRank(b);
+        });
+    }
+    async getACHAccounts(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+        });
+        let achAccounts = debtorAccounts.filter(account => account.paymentType === 'ACH');
+        return achAccounts.sort((a, b) => {
+            const getRank = account => {
+                if (account.platform === 'Paynote')
+                    return 1;
+                if (account.platform === 'Seamlesschex')
+                    return 2;
+                return 99;
+            };
+            return getRank(a) - getRank(b);
+        });
+    }
+    async getCCAccounts(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+        });
+        let ccAccounts = debtorAccounts.filter(account => account.paymentType === 'cc');
+        return ccAccounts;
+    }
     async ifCCPresent(accounts) {
         const present = accounts.some(account => account.paymentType === 'cc');
         return present;
+    }
+    async ifACHPresent(accounts) {
+        const findPaynoteOrSeamlesschex = accounts.some(account => account.paymentType === 'ACH');
+        return findPaynoteOrSeamlesschex;
     }
     async createAccount(id, paymentType, platform, vault, paynoteSourceId = '') {
         let validAccount = new account_repomodel_1.Account();

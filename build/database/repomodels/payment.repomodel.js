@@ -49,8 +49,10 @@ class Payment {
         this.calculateComission = false;
         this.checkStatus = '';
         this.ach = false;
-        this.waterfall = false;
+        this.ccWaterfall = false;
+        this.achWaterfall = false;
         this.nonExecutable = false;
+        this.ccVault = '';
     }
 }
 exports.Payment = Payment;

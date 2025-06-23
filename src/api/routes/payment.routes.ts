@@ -136,7 +136,7 @@ router.get(
   paymentController.getCaseAttorneyPayments
 );
 
-router.post('/paynote-webhook', paymentController.paynoteWebhook);
+// router.post('/paynote-webhook', paymentController.paynoteWebhook);
 
 router.post(
   '/getClientPendingChecks',
