@@ -316,7 +316,9 @@ class CallUtil {
     }
     async getCaseForIncoming(from) {
         const number = await common_util_1.default.extractLastTenDigits(from);
+        console.log('number: ', number);
         const name = await this.getDebtorOrCreditorName(number);
+        console.log('name: ', name);
         let caseData = null;
         if (name?.creditorId) {
             caseData = await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [{ path: 'debtor' }, { path: 'creditor' }]);

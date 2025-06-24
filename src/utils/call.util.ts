@@ -428,7 +428,9 @@ class CallUtil {
 
   async getCaseForIncoming(from: string) {
     const number = await commonUtil.extractLastTenDigits(from);
+    console.log('number: ', number);
     const name = await this.getDebtorOrCreditorName(number);
+    console.log('name: ', name);
     let caseData: any = null;
 
     if (name?.creditorId) {
