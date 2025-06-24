@@ -405,6 +405,7 @@ class CallUtil {
     userId?: string
   ) {
     if (direction == 'incoming') {
+      console.log('User and case incoming');
       const user = await this.userRepository.getOne<IUser>({
         twilioNo: to,
         isDeleted: false,
@@ -412,6 +413,7 @@ class CallUtil {
       const caseTemp = await this.getCaseForIncoming(from);
       return {user, caseTemp};
     } else {
+      console.log('User and case outgoing');
       const user = await this.userRepository.getById<IUser>(userId);
       const caseTemp = await this.caseRepository.getById<ICase>(
         caseId,

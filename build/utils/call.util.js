@@ -299,6 +299,7 @@ class CallUtil {
     }
     async userAndCaseDateForCalls(to, from, direction, caseId, userId) {
         if (direction == 'incoming') {
+            console.log('User and case incoming');
             const user = await this.userRepository.getOne({
                 twilioNo: to,
                 isDeleted: false,
@@ -307,6 +308,7 @@ class CallUtil {
             return { user, caseTemp };
         }
         else {
+            console.log('User and case outgoing');
             const user = await this.userRepository.getById(userId);
             const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, ['creditor', 'debtor']);
             return { user, caseTemp };
