@@ -74,6 +74,18 @@ router.get(
 );
 
 router.get(
+  '/firstChoiceRetryCommission',
+  authorize.validateAuth,
+  paymentController.firstChoiceRetryCommission
+);
+
+router.get(
+  '/waterfallPayments',
+  authorize.validateAuth,
+  paymentController.waterfallPayments
+);
+
+router.get(
   '/sendPaymentPaynote/:id',
   authorize.validateAuth,
   paymentController.sendPaymentPaynote
