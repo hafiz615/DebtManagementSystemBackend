@@ -194,6 +194,7 @@ class EmailService {
         const threadFilters = {
             isDeleted: { $ne: true },
             userId: userId,
+            isCompleted: completed,
         };
         const populateFilter = {
             path: 'firstInboxMessage',
@@ -201,7 +202,6 @@ class EmailService {
         if (Object.keys(inboxFilters).length) {
             populateFilter.match = inboxFilters;
         }
-        console.log(threadFilters, 'threadFilters');
         const allEmailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, populateFilter);
         const filteredThreads = allEmailThreading.filter((thread) => thread.firstInboxMessage);
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
@@ -222,14 +222,6 @@ class EmailService {
         if (!result.modifiedCount)
             return [false, constants_util_1.default.failureUpdateMessage('emails')];
         return [true, []];
-    }
-    async getThreadsCompleted(req) {
-        const result = await this.emailThreadingRepository.getAll({
-            isCompleted: true,
-        });
-        if (!result.length)
-            return [true, constants_util_1.default.notFoundMessage('emails')];
-        return [true, result];
     }
 }
 exports.default = EmailService;

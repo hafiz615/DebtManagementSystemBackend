@@ -30,6 +30,5 @@ router.delete('/deleteLink/:id', authorize_middleware_1.default.validateAuth, em
 router.post('/threading', authorize_middleware_1.default.validateAuth, email_controller_1.default.emailThreading);
 router.get('/eachThreadingMails/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.eachThreadingMails);
 router.post('/threadsCompleted', authorize_middleware_1.default.validateAuth, inbox_validate_1.default.threadsCompleted, email_controller_1.default.threadsCompleted);
-router.get('/threadsCompleted', authorize_middleware_1.default.validateAuth, email_controller_1.default.getThreadsCompleted);
 exports.default = router;
 //# sourceMappingURL=email.routes.js.map

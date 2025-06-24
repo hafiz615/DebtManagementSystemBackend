@@ -283,6 +283,7 @@ class EmailService {
     const threadFilters = {
       isDeleted: {$ne: true},
       userId: userId,
+      isCompleted: completed,
     };
 
     const populateFilter: any = {
@@ -291,7 +292,6 @@ class EmailService {
     if (Object.keys(inboxFilters).length) {
       populateFilter.match = inboxFilters;
     }
-    console.log(threadFilters, 'threadFilters');
     const allEmailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         threadFilters,
@@ -344,16 +344,6 @@ class EmailService {
       return [false, constantsUtil.failureUpdateMessage('emails')];
 
     return [true, []];
-  }
-
-  async getThreadsCompleted(req: Request) {
-    const result = await this.emailThreadingRepository.getAll<IEmailThreading>({
-      isCompleted: true,
-    });
-
-    if (!result.length) return [true, constantsUtil.notFoundMessage('emails')];
-
-    return [true, result];
   }
 }
 

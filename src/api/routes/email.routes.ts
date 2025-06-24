@@ -56,10 +56,4 @@ router.post(
   emailController.threadsCompleted
 );
 
-router.get(
-  '/threadsCompleted',
-  authorize.validateAuth,
-  emailController.getThreadsCompleted
-);
-
 export default router;
