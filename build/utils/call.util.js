@@ -297,6 +297,36 @@ class CallUtil {
         });
         return response.data;
     }
+    async userAndCaseDateForCalls(to, from, direction, caseId, userId) {
+        if (direction == 'incoming') {
+            const user = await this.userRepository.getOne({
+                twilioNo: to,
+                isDeleted: false,
+            });
+            const caseTemp = await this.getCaseForIncoming(from);
+            return { user, caseTemp };
+        }
+        else {
+            const user = await this.userRepository.getById(userId);
+            const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, ['creditor', 'debtor']);
+            return { user, caseTemp };
+        }
+    }
+    async getCaseForIncoming(from) {
+        const number = await common_util_1.default.extractLastTenDigits(from);
+        const name = await this.getDebtorOrCreditorName(number);
+        let caseData = null;
+        if (name?.creditorId) {
+            caseData = await this.caseRepository.getOne({ creditor: name.creditorId, isDeleted: { $ne: true } }, undefined, undefined, [{ path: 'debtor' }, { path: 'creditor' }]);
+        }
+        if (!caseData && name?.debtorId) {
+            const findCases = await this.caseRepository.getAllWithoutPagination({ debtor: name.debtorId, isDeleted: { $ne: true } }, undefined, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
+            if (findCases.length === 1) {
+                caseData = findCases[0];
+            }
+        }
+        return caseData;
+    }
 }
 exports.default = new CallUtil();
 //# sourceMappingURL=call.util.js.map
