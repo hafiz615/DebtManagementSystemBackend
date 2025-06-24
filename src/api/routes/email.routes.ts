@@ -1,8 +1,8 @@
 import {Router} from 'express';
 import authorize from '../../middleware/authorize.middleware';
-import caseValidate from '../../middleware/validators/case.validate';
 import emailController from '../controllers/email/email.controller';
 import multer from 'multer';
+import inboxValidate from '../../middleware/validators/inbox.validate';
 
 const router = Router();
 const storage = multer.memoryStorage();
@@ -25,7 +25,7 @@ router.post(
   '/sendSmsEmailDebtorCreditor/:id',
   authorize.validateAuth,
   sendEmailFields,
-  caseValidate.sendSmsEmailDebtorCreditor,
+  inboxValidate.sendSmsEmailDebtorCreditor,
   emailController.sendSmsEmailDebtorCreditor
 ); // not in current use
 
@@ -47,6 +47,19 @@ router.get(
   '/eachThreadingMails/:id',
   authorize.validateAuth,
   emailController.eachThreadingMails
+);
+
+router.post(
+  '/threadsCompleted',
+  authorize.validateAuth,
+  inboxValidate.threadsCompleted,
+  emailController.threadsCompleted
+);
+
+router.get(
+  '/threadsCompleted',
+  authorize.validateAuth,
+  emailController.getThreadsCompleted
 );
 
 export default router;

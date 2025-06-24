@@ -9,6 +9,7 @@ export interface IEmailThreading extends Document {
   notificationStatus: boolean;
   followUpDate: string;
   isDeleted: boolean;
+  isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

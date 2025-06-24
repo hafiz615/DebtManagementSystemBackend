@@ -190,6 +190,7 @@ class EmailService {
             ? req.body.filter.userId
             : { $ne: null };
         const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
+        const completed = req.query.completed === 'true' ? true : false;
         const threadFilters = {
             isDeleted: { $ne: true },
             userId: userId,
@@ -200,6 +201,7 @@ class EmailService {
         if (Object.keys(inboxFilters).length) {
             populateFilter.match = inboxFilters;
         }
+        console.log(threadFilters, 'threadFilters');
         const allEmailThreading = await this.emailThreadingRepository.getAllWithoutPagination(threadFilters, undefined, undefined, { _id: -1 }, populateFilter);
         const filteredThreads = allEmailThreading.filter((thread) => thread.firstInboxMessage);
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
@@ -213,6 +215,21 @@ class EmailService {
         if (!emailThreading)
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];
+    }
+    async threadsCompleted(req) {
+        const ids = req.body.threadIds;
+        const result = await this.emailThreadingRepository.updateMany({ _id: ids }, { isCompleted: true });
+        if (!result.modifiedCount)
+            return [false, constants_util_1.default.failureUpdateMessage('emails')];
+        return [true, []];
+    }
+    async getThreadsCompleted(req) {
+        const result = await this.emailThreadingRepository.getAll({
+            isCompleted: true,
+        });
+        if (!result.length)
+            return [true, constants_util_1.default.notFoundMessage('emails')];
+        return [true, result];
     }
 }
 exports.default = EmailService;

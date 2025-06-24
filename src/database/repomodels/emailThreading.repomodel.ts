@@ -9,6 +9,7 @@ export class EmailThreading {
   notificationStatus = false;
   followUpDate = '';
   isDeleted = false;
+  isCompleted = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
