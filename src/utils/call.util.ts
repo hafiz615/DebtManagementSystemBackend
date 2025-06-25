@@ -410,8 +410,8 @@ class CallUtil {
         twilioNo: to,
         isDeleted: false,
       });
-      const caseTemp = await this.getCaseForIncoming(from);
-      return {user, caseTemp};
+      const caseData: any = await this.getCaseForIncoming(from);
+      return {user, caseTemp: caseData.case};
     } else {
       console.log('User and case outgoing');
       const user = await this.userRepository.getById<IUser>(userId);
@@ -457,7 +457,7 @@ class CallUtil {
       }
     }
 
-    return caseData;
+    return {case: caseData, debtor: name?.debtorId || null};
   }
 }
 export default new CallUtil();
