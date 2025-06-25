@@ -134,7 +134,10 @@ class App {
     // paymentCronjob.processWaterfallPaymentsCommission();
     // paymentCronjob.processWaterfallPaymentsCreditor();
     // paymentCronjob.processWaterfallPaymentsACH();
-    if (process.env.environment === 'prod') {
+    if (
+      process.env.environment === 'prod' ||
+      process.env.environment === 'staging'
+    ) {
       paymentCronjob.startCronJob();
       pausePayment.startCronJob();
     }
