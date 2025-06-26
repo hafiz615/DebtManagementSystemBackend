@@ -740,45 +740,29 @@ class DebtorUtil {
             return getRank(a) - getRank(b);
         });
     }
-    async getDebtorAccountsForCreditor(debtorId) {
-        let debtorAccounts = await this.accountRepository.getAll({
-            debtorId: debtorId,
-            isDeleted: { $ne: true },
-        });
-        const findPaynoteOrSeamlesschex = debtorAccounts.some(account => account.paymentType === 'ACH');
-        if (findPaynoteOrSeamlesschex) {
-            debtorAccounts = debtorAccounts.filter(account => account.paymentType === 'ACH');
-        }
-        else {
-            return debtorAccounts;
-        }
-        return debtorAccounts.sort((a, b) => {
-            const getRank = account => {
-                if (account.platform === 'Paynote')
-                    return 1;
-                if (account.platform === 'Seamlesschex')
-                    return 2;
-                return 99;
-            };
-            return getRank(a) - getRank(b);
-        });
-    }
     async getACHAccounts(debtorId) {
         let debtorAccounts = await this.accountRepository.getAll({
             debtorId: debtorId,
             isDeleted: { $ne: true },
         });
-        let achAccounts = debtorAccounts.filter(account => account.paymentType === 'ACH');
-        return achAccounts.sort((a, b) => {
-            const getRank = account => {
-                if (account.platform === 'Paynote')
-                    return 1;
-                if (account.platform === 'Seamlesschex')
-                    return 2;
-                return 99;
-            };
-            return getRank(a) - getRank(b);
+        let achAccounts = debtorAccounts.filter(account => account.platform === 'Paynote');
+        // return achAccounts.sort((a, b) => {
+        //   const getRank = account => {
+        //     if (account.platform === 'Paynote') return 1;
+        //     if (account.platform === 'Seamlesschex') return 2;
+        //     return 99;
+        //   };
+        //   return getRank(a) - getRank(b);
+        // });
+        return achAccounts;
+    }
+    async getSeamlesschexAccounts(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
         });
+        let achAccounts = debtorAccounts.filter(account => account.platform === 'Seamlesschex');
+        return achAccounts;
     }
     async getCCAccounts(debtorId) {
         let debtorAccounts = await this.accountRepository.getAll({
