@@ -305,4 +305,10 @@ router.get(
   debtorController.getDebtorAccounts
 );
 
+router.post(
+  '/makeAccountPrimary/:id',
+  authorize.validateAuth,
+  debtorController.makeAccountPrimary
+);
+
 export default router;
