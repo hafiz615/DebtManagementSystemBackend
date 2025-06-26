@@ -404,26 +404,25 @@ class CallUtil {
     caseId?: string,
     userId?: string
   ) {
-    if (direction == 'incoming') {
-      console.log('User and case incoming');
-      const user = await this.userRepository.getOne<IUser>({
-        twilioNo: to,
-        isDeleted: false,
-      });
-      const caseData: any = await this.getCaseForIncoming(from);
-      return {user, caseTemp: caseData.case};
-    } else {
-      console.log('User and case outgoing');
-      const user = await this.userRepository.getById<IUser>(userId);
-      const caseTemp = await this.caseRepository.getById<ICase>(
-        caseId,
-        undefined,
-        undefined,
-        ['creditor', 'debtor']
-      );
+    const isIncoming = direction === 'incoming';
 
-      return {user, caseTemp};
-    }
+    const user = isIncoming
+      ? await this.userRepository.getOne<IUser>({
+          twilioNo: to,
+          isDeleted: false,
+        })
+      : await this.userRepository.getById<IUser>(userId);
+
+    const caseTemp = isIncoming
+      ? (await this.getCaseForIncoming(from)).case
+      : await this.caseRepository.getById<ICase>(caseId, undefined, undefined, [
+          'creditor',
+          'debtor',
+        ]);
+
+    console.log(`User and case ${isIncoming ? 'incoming' : 'outgoing'}`);
+
+    return {user, caseTemp};
   }
 
   async getCaseForIncoming(from: string) {

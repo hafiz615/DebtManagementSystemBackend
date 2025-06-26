@@ -298,21 +298,21 @@ class CallUtil {
         return response.data;
     }
     async userAndCaseDateForCalls(to, from, direction, caseId, userId) {
-        if (direction == 'incoming') {
-            console.log('User and case incoming');
-            const user = await this.userRepository.getOne({
+        const isIncoming = direction === 'incoming';
+        const user = isIncoming
+            ? await this.userRepository.getOne({
                 twilioNo: to,
                 isDeleted: false,
-            });
-            const caseData = await this.getCaseForIncoming(from);
-            return { user, caseTemp: caseData.case };
-        }
-        else {
-            console.log('User and case outgoing');
-            const user = await this.userRepository.getById(userId);
-            const caseTemp = await this.caseRepository.getById(caseId, undefined, undefined, ['creditor', 'debtor']);
-            return { user, caseTemp };
-        }
+            })
+            : await this.userRepository.getById(userId);
+        const caseTemp = isIncoming
+            ? (await this.getCaseForIncoming(from)).case
+            : await this.caseRepository.getById(caseId, undefined, undefined, [
+                'creditor',
+                'debtor',
+            ]);
+        console.log(`User and case ${isIncoming ? 'incoming' : 'outgoing'}`);
+        return { user, caseTemp };
     }
     async getCaseForIncoming(from) {
         const number = await common_util_1.default.extractLastTenDigits(from);
