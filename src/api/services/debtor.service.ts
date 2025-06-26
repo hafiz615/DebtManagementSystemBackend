@@ -2240,11 +2240,33 @@ class DebtorService {
       return [false, constants.notFoundMessage('Debtor')];
     }
 
-    const getAccounts = await this.accountRepository.getAll<IAccount>({
-      debtorId: debtor._id,
-      isDeleted: {$ne: true},
-    });
-    return [true, getAccounts];
+    const accounts = await debtorUtil.getDebtorAccounts(req.params.id);
+    return [true, accounts];
+  }
+
+  async makeAccountPrimary(req: Request) {
+    const account = await this.accountRepository.getById<IDebtor>(
+      req.params.id
+    );
+    if (!account) {
+      return [false, constants.notFoundMessage('Debtor')];
+    }
+
+    const updateAccount = await this.accountRepository.updateById<IAccount>(
+      req.params.id,
+      {priority: 1}
+    );
+    if (!updateAccount) {
+      return [false, constants.failureUpdateMessage('account')];
+    }
+
+    if (updateAccount) {
+      await this.accountRepository.updateMany<IAccount>(
+        {debtorId: updateAccount.debtorId, _id: {$ne: req.params.id}},
+        {priority: 0}
+      );
+    }
+    return [true, []];
   }
 }
 
