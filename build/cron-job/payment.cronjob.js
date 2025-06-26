@@ -1013,7 +1013,9 @@ class CronJob {
                     }
                 }
                 if (temp.authorized !== 'Success') {
-                    break;
+                    if (!temp.caseId) {
+                        break;
+                    }
                 }
             }
             retryPlus = retryOriginalValue;
@@ -1027,56 +1029,62 @@ class CronJob {
             const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
             const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments.length ? [otherPayments[0]] : otherPayments);
             let concatedPayments = otherPayments.concat(payment);
+            const creditorsAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
             const accountsTemp = await debtor_util_1.default.getACHAccounts(payment.debtorId);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             let data = await payment_util_1.default.getAllAmounts(payment, false);
+            let seamlesschexStart = false;
             for (const temp of data) {
                 if (temp.authorized !== 'Success') {
                     for (const account of accountsTemp) {
-                        if (account.paymentType === 'ACH' &&
-                            account.platform === 'Paynote') {
-                            const response = await paynote_util_1.default.directDebit(account.vault, payment, debtor);
-                            const result = await this.processACHCaptureResponse(temp.caseId === null ? payment : temp, response, retryPlus, cronId, settings, account.platform, totalServiceFeeAmount, totalLegalFeeAmount);
-                            if (retryPlus)
-                                retryPlus = false;
-                            if (result) {
-                                temp.authorized = 'Success';
-                                if (!retryPlus) {
-                                    const update = { achWaterfall: true, ccWaterfall: false };
-                                    if (!temp.caseId)
-                                        update['commission'] = temp.amount;
-                                    for (const payment of concatedPayments) {
-                                        await this.paymentRepository.updateById(payment._id, update);
-                                    }
+                        const response = await paynote_util_1.default.directDebit(account.vault, payment, debtor);
+                        const result = await this.processACHCaptureResponse(temp.caseId === null ? payment : temp, response, retryPlus, cronId, settings, account.platform, totalServiceFeeAmount, totalLegalFeeAmount);
+                        if (retryPlus)
+                            retryPlus = false;
+                        if (result) {
+                            temp.authorized = 'Success';
+                            if (!retryPlus) {
+                                const update = { achWaterfall: true, ccWaterfall: false };
+                                if (!temp.caseId)
+                                    update['commission'] = temp.amount;
+                                for (const payment of concatedPayments) {
+                                    await this.paymentRepository.updateById(payment._id, update);
                                 }
-                                break;
                             }
-                        }
-                        if (account.paymentType === 'ACH' &&
-                            account.platform === 'Seamlesschex') {
-                            const decryptedData = common_util_1.default.getDecryptedData(account.vault);
-                            const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
-                            const response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
-                            const result = await this.processACHCaptureResponse(temp.caseId === null ? payment : temp, response, retryPlus, cronId, settings, account.platform, totalServiceFeeAmount, totalLegalFeeAmount);
-                            if (retryPlus)
-                                retryPlus = false;
-                            if (result) {
-                                temp.authorized = 'Success';
-                                if (!retryPlus) {
-                                    const update = { achWaterfall: true, ccWaterfall: false };
-                                    if (!temp.caseId)
-                                        update['commission'] = temp.amount;
-                                    for (const payment of concatedPayments) {
-                                        await this.paymentRepository.updateById(payment._id, update);
-                                    }
-                                }
-                                break;
-                            }
+                            break;
                         }
                     }
                 }
                 if (temp.authorized !== 'Success') {
-                    break;
+                    seamlesschexStart = true;
+                    if (!temp.caseId) {
+                        break;
+                    }
+                    // break;
+                }
+            }
+            if (seamlesschexStart) {
+                const accountsSeamlesschex = await debtor_util_1.default.getSeamlesschexAccounts(payment.debtorId);
+                if (accountsSeamlesschex.length) {
+                    let totalAmount = 0;
+                    let data = await payment_util_1.default.getAllAmounts(payment, false);
+                    totalAmount = data.reduce((acc, curr) => {
+                        if (curr.authorized !== 'Success') {
+                            return acc + curr.amount;
+                        }
+                        return acc;
+                    }, 0);
+                    for (const account of accountsSeamlesschex) {
+                        const decryptedData = common_util_1.default.getDecryptedData(account.vault);
+                        const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+                        const response = await seemlesschex_util_1.default.createCheck(debtor, totalAmount, tokenResponse.tokenization.token, decryptedData);
+                        const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, creditorsAmount, account.platform, debtor);
+                        if (retryPlus)
+                            retryPlus = false;
+                        if (result) {
+                            break;
+                        }
+                    }
                 }
             }
             retryPlus = retryOriginalValue;
@@ -1305,21 +1313,37 @@ class CronJob {
                         break;
                     }
                 }
-                if (account.paymentType === 'ACH' &&
-                    account.platform === 'Seamlesschex') {
-                    const decryptedData = common_util_1.default.getDecryptedData(account.vault);
-                    const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
-                    let response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
-                    const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
-                    if (retryPlus)
-                        retryPlus = false;
-                    if (!result)
-                        startWaterfall = true;
-                    if (result) {
-                        startWaterfall = false;
-                        break;
-                    }
-                }
+                // if (
+                //   account.paymentType === 'ACH' &&
+                //   account.platform === 'Seamlesschex'
+                // ) {
+                //   const decryptedData = commonUtil.getDecryptedData(account.vault);
+                //   const tokenResponse =
+                //     await seemlesschexUtil.tokenization(decryptedData);
+                //   let response = await seemlesschexUtil.createCheck(
+                //     debtor,
+                //     payment.amount,
+                //     tokenResponse.tokenization.token,
+                //     decryptedData
+                //   );
+                //   const result = await this.processACHCommissionResponse(
+                //     payment,
+                //     concatedPayments,
+                //     response,
+                //     retryPlus,
+                //     cronId,
+                //     settings,
+                //     totalAmount,
+                //     account.platform,
+                //     debtor
+                //   );
+                //   if (retryPlus) retryPlus = false;
+                //   if (!result) startWaterfall = true;
+                //   if (result) {
+                //     startWaterfall = false;
+                //     break;
+                //   }
+                // }
             }
             if (startWaterfall) {
                 await this.startWaterfallACH([payment], cronId, false, settings);

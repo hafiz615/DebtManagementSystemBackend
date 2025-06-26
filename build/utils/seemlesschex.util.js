@@ -273,19 +273,6 @@ class SeemlesschexUtil {
             failedReasonCaptured: 'Check has been deleted',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        // await this.paymentRepository.updateMany<IPayment>(
-        //   {debtorTransId: checkId},
-        //   {
-        //     authorized: 'Pending',
-        //     captured: 'Failed',
-        //     status: 'Upcoming',
-        //     debtorTransId: '',
-        //     paymentMode: '',
-        //     paymentGateway: '',
-        //     manualCommission: 0,
-        //     updatedAt: commonUtil.getCurrentDate(),
-        //   }
-        // );
         return [true, ''];
     }
     async updateIfCheckDeposited(checkId, status) {
@@ -308,13 +295,10 @@ class SeemlesschexUtil {
         // });
         return [true, ''];
     }
-    async updateIfCheckFailed(checkId, status
-    // ccPresent: boolean
-    ) {
+    async updateIfCheckFailed(checkId, status) {
         const payment = await this.paymentRepository.getOne({
             debtorTransId: checkId,
             isDeleted: false,
-            // caseId: {$eq: null},
         });
         if (!payment)
             return [true, ''];
@@ -327,21 +311,6 @@ class SeemlesschexUtil {
         updateObj['checkStatus'] = '';
         updateObj['captured'] = 'Failed';
         updateObj['authorized'] = 'Failed';
-        // if (ccPresent) {
-        //   if (payment.ccWaterfall) {
-        //     // await waterfallUtil.upsertWaterfall(
-        //     //   payment.debtorId,
-        //     //   payment._id,
-        //     //   true
-        //     // );
-        //     updateObj['captured'] = 'Failed';
-        //   } else {
-        //     updateObj['authorized'] = 'Failed';
-        //   }
-        // }
-        // if (!ccPresent) {
-        //   updateObj['captured'] = 'Failed';
-        // }
         await this.paymentRepository.updateMany({ debtorTransId: checkId, isDeleted: { $ne: true } }, updateObj);
         return [true, ''];
     }
@@ -363,9 +332,7 @@ class SeemlesschexUtil {
                             await this.updateIfCheckDeposited(checkId, response.data.status);
                             break;
                         case 'failed':
-                            await this.updateIfCheckFailed(checkId, response.data.status
-                            // ccPresent
-                            );
+                            await this.updateIfCheckFailed(checkId, response.data.status);
                             break;
                     }
                     break;
