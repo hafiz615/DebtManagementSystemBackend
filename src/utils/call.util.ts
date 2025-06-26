@@ -396,5 +396,67 @@ class CallUtil {
     });
     return response.data;
   }
+
+  async userAndCaseDateForCalls(
+    to: string,
+    from: string,
+    direction: string,
+    caseId?: string,
+    userId?: string
+  ) {
+    const isIncoming = direction === 'incoming';
+
+    const user = isIncoming
+      ? await this.userRepository.getOne<IUser>({
+          twilioNo: to,
+          isDeleted: false,
+        })
+      : await this.userRepository.getById<IUser>(userId);
+
+    const caseTemp = isIncoming
+      ? (await this.getCaseForIncoming(from)).case
+      : await this.caseRepository.getById<ICase>(caseId, undefined, undefined, [
+          'creditor',
+          'debtor',
+        ]);
+
+    console.log(`User and case ${isIncoming ? 'incoming' : 'outgoing'}`);
+
+    return {user, caseTemp};
+  }
+
+  async getCaseForIncoming(from: string) {
+    const number = await commonUtil.extractLastTenDigits(from);
+    console.log('number: ', number);
+    const name = await this.getDebtorOrCreditorName(number);
+    console.log('name: ', name);
+    let caseData: any = null;
+
+    if (name?.creditorId) {
+      caseData = await this.caseRepository.getOne<ICase>(
+        {creditor: name.creditorId, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        [{path: 'debtor'}, {path: 'creditor'}]
+      );
+    }
+
+    if (!caseData && name?.debtorId) {
+      const findCases =
+        await this.caseRepository.getAllWithoutPagination<ICase>(
+          {debtor: name.debtorId, isDeleted: {$ne: true}},
+          undefined,
+          undefined,
+          undefined,
+          [{path: 'creditor'}, {path: 'debtor'}]
+        );
+
+      if (findCases.length === 1) {
+        caseData = findCases[0];
+      }
+    }
+
+    return {case: caseData, debtor: name?.debtorId || null};
+  }
 }
 export default new CallUtil();
