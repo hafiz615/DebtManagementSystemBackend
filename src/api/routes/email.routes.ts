@@ -49,4 +49,10 @@ router.get(
   emailController.eachThreadingMails
 );
 
+router.get(
+  '/emailThreadingByCase/:caseId',
+  authorize.validateAuth,
+  emailController.emailThreadingByCase
+);
+
 export default router;

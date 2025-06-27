@@ -29,5 +29,6 @@ router.get('/getAllLinks', authorize_middleware_1.default.validateAuth, email_co
 router.delete('/deleteLink/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.linkVerified);
 router.post('/threading', authorize_middleware_1.default.validateAuth, email_controller_1.default.emailThreading);
 router.get('/eachThreadingMails/:id', authorize_middleware_1.default.validateAuth, email_controller_1.default.eachThreadingMails);
+router.get('/emailThreadingByCase/:caseId', authorize_middleware_1.default.validateAuth, email_controller_1.default.emailThreadingByCase);
 exports.default = router;
 //# sourceMappingURL=email.routes.js.map

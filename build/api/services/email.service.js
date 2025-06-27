@@ -214,6 +214,12 @@ class EmailService {
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];
     }
+    async emailThreadingByCase(req) {
+        const emailThreading = await this.emailThreadingRepository.getOne({ caseId: req.params.caseId, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
+        if (!emailThreading)
+            return [true, []];
+        return [true, emailThreading];
+    }
 }
 exports.default = EmailService;
 //# sourceMappingURL=email.service.js.map
