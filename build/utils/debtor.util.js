@@ -717,7 +717,34 @@ class DebtorUtil {
             debtorId: debtorId,
             isDeleted: { $ne: true },
         });
-        return debtorAccounts;
+        return await this.getSortedAccounts(debtorAccounts);
+    }
+    async getSortedAccounts(accounts) {
+        const primaryAccount = accounts.filter(account => account.priority === 1);
+        const secondaryAccounts = accounts.filter(account => account.priority === 0);
+        const sortedAccounts = secondaryAccounts.sort((a, b) => {
+            const getRank = account => {
+                if (account.platform === 'Easypay direct' &&
+                    account.paymentType === 'cc')
+                    return 1;
+                if (account.platform === 'Seamlesschex merchant' &&
+                    account.paymentType === 'cc')
+                    return 2;
+                if (account.platform === 'Paynote')
+                    return 3;
+                if (account.platform === 'Seamlesschex')
+                    return 4;
+                if (account.platform === 'Easypay direct' &&
+                    account.paymentType === 'ck')
+                    return 5;
+                if (account.platform === 'Seamlesschex merchant' &&
+                    account.paymentType === 'ck')
+                    return 6;
+                return 99;
+            };
+            return getRank(a) - getRank(b);
+        });
+        return primaryAccount.concat(sortedAccounts);
     }
     async createAccount(id, paymentType, platform, vault, paynoteSourceId = '') {
         let validAccount = new account_repomodel_1.Account();
