@@ -299,4 +299,16 @@ router.get(
   debtorController.getDebtorAccounts
 );
 
+router.get(
+  '/get-debtor-accounts/:id',
+  authorize.validateAuth,
+  debtorController.getDebtorAccounts
+);
+
+router.post(
+  '/makeAccountPrimary/:id',
+  authorize.validateAuth,
+  debtorController.makeAccountPrimary
+);
+
 export default router;

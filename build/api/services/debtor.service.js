@@ -1642,11 +1642,22 @@ class DebtorService {
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
         }
-        const getAccounts = await this.accountRepository.getAll({
-            debtorId: debtor._id,
-            isDeleted: { $ne: true },
-        });
-        return [true, getAccounts];
+        const accounts = await debtor_util_1.default.getDebtorAccounts(req.params.id);
+        return [true, accounts];
+    }
+    async makeAccountPrimary(req) {
+        const account = await this.accountRepository.getById(req.params.id);
+        if (!account) {
+            return [false, constants_util_1.default.notFoundMessage('Debtor')];
+        }
+        const updateAccount = await this.accountRepository.updateById(req.params.id, { priority: 1 });
+        if (!updateAccount) {
+            return [false, constants_util_1.default.failureUpdateMessage('account')];
+        }
+        if (updateAccount) {
+            await this.accountRepository.updateMany({ debtorId: updateAccount.debtorId, _id: { $ne: req.params.id } }, { priority: 0 });
+        }
+        return [true, []];
     }
 }
 exports.default = DebtorService;

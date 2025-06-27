@@ -1518,30 +1518,32 @@ class CronJob {
             }
             return acc;
           }, 0);
-          for (const account of accountsSeamlesschex) {
-            const decryptedData = commonUtil.getDecryptedData(account.vault);
-            const tokenResponse =
-              await seemlesschexUtil.tokenization(decryptedData);
-            const response = await seemlesschexUtil.createCheck(
-              debtor,
-              totalAmount,
-              tokenResponse.tokenization.token,
-              decryptedData
-            );
-            const result = await this.processACHCommissionResponse(
-              payment,
-              concatedPayments,
-              response,
-              retryPlus,
-              cronId,
-              settings,
-              creditorsAmount,
-              account.platform,
-              debtor
-            );
-            if (retryPlus) retryPlus = false;
-            if (result) {
-              break;
+          if (totalAmount) {
+            for (const account of accountsSeamlesschex) {
+              const decryptedData = commonUtil.getDecryptedData(account.vault);
+              const tokenResponse =
+                await seemlesschexUtil.tokenization(decryptedData);
+              const response = await seemlesschexUtil.createCheck(
+                debtor,
+                totalAmount,
+                tokenResponse.tokenization.token,
+                decryptedData
+              );
+              const result = await this.processACHCommissionResponse(
+                payment,
+                concatedPayments,
+                response,
+                retryPlus,
+                cronId,
+                settings,
+                creditorsAmount,
+                account.platform,
+                debtor
+              );
+              if (retryPlus) retryPlus = false;
+              if (result) {
+                break;
+              }
             }
           }
         }
