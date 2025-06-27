@@ -332,6 +332,20 @@ class EmailService {
     return [true, emailThreading];
   }
 
+  async emailThreadingByCase(req: Request) {
+    const emailThreading =
+      await this.emailThreadingRepository.getOne<IEmailThreading>(
+        {caseId: req.params.caseId, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        {path: 'previousMessages', populate: ['previousMessages']}
+      );
+
+    if (!emailThreading) return [true, []];
+
+    return [true, emailThreading];
+  }
+
   async threadsCompleted(req: Request) {
     const ids = req.body.threadIds;
     const result =

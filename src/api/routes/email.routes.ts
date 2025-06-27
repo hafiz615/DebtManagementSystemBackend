@@ -49,6 +49,12 @@ router.get(
   emailController.eachThreadingMails
 );
 
+router.get(
+  '/emailThreadingByCase/:caseId',
+  authorize.validateAuth,
+  emailController.emailThreadingByCase
+);
+
 router.post(
   '/threadsCompleted',
   authorize.validateAuth,
