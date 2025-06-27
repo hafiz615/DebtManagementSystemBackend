@@ -885,12 +885,13 @@ class EmailUtil {
             ];
             return await this.emailThreadingRepository.updateById(existingThread._id, {
                 previousMessages: updatedMessages,
+                isCompleted: false,
             });
         }
         else {
             const emailThreading = new emailThreading_repomodel_1.EmailThreading();
-            const validatedDebtor = dataCopier_util_1.DataCopier.copy(emailThreading, data);
-            return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedDebtor);
+            const validatedEmail = dataCopier_util_1.DataCopier.copy(emailThreading, data);
+            return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedEmail);
         }
     }
     async emailThreadingCount(populateFilter, userId) {

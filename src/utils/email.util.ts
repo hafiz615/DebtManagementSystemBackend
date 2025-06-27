@@ -1300,18 +1300,19 @@ class EmailUtil {
         existingThread._id,
         {
           previousMessages: updatedMessages,
+          isCompleted: false,
         }
       );
     } else {
       const emailThreading = new EmailThreading();
-      const validatedDebtor = DataCopier.copy(
+      const validatedEmail = DataCopier.copy(
         emailThreading,
         data as IEmailThreading
       );
 
       return await this.emailThreadingRepository.upsert<IEmailThreading>(
         {threadId: data.threadId},
-        validatedDebtor
+        validatedEmail
       );
     }
   }
