@@ -34,6 +34,7 @@ const common_util_1 = __importDefault(require("../../utils/common.util"));
 const callSchema = new mongoose_1.Schema({
     callSid: { type: String }, // call_control_id
     callLegId: { type: String },
+    callSessionId: { type: String },
     caseId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Cases' },
     creditorId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Creditors' },
     debtorId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Debtors' },

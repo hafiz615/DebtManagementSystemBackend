@@ -8,6 +8,7 @@ import commonUtil from '../../utils/common.util';
 const callSchema: Schema = new Schema({
   callSid: {type: String}, // call_control_id
   callLegId: {type: String},
+  callSessionId: {type: String},
   caseId: {type: mongoose.Schema.Types.ObjectId, ref: 'Cases'},
   creditorId: {type: mongoose.Schema.Types.ObjectId, ref: 'Creditors'},
   debtorId: {type: mongoose.Schema.Types.ObjectId, ref: 'Debtors'},
