@@ -190,9 +190,11 @@ class EmailService {
             ? req.body.filter.userId
             : { $ne: null };
         const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
+        const completed = req.query.completed === 'true' ? true : false;
         const threadFilters = {
             isDeleted: { $ne: true },
             userId: userId,
+            isCompleted: completed,
         };
         const populateFilter = {
             path: 'firstInboxMessage',
@@ -213,6 +215,13 @@ class EmailService {
         if (!emailThreading)
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];
+    }
+    async threadsCompleted(req) {
+        const ids = req.body.threadIds;
+        const result = await this.emailThreadingRepository.updateMany({ _id: ids }, { isCompleted: true });
+        if (!result.modifiedCount)
+            return [false, constants_util_1.default.failureUpdateMessage('emails')];
+        return [true, []];
     }
 }
 exports.default = EmailService;
