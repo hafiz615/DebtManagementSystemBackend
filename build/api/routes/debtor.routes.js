@@ -72,5 +72,7 @@ router.get('/debtorCreditorPaymentPlanDetail/:id', authorize_middleware_1.defaul
 router.delete('/deleteDebtorAccount/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.deleteDebtorAccount);
 router.put('/updateServiceFee/:id', authorize_middleware_1.default.validateAuth, debtor_validate_1.default.updateServiceFee, debtor_controller_1.default.updateServiceFee);
 router.get('/getDebtorAccounts/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorAccounts);
+router.get('/get-debtor-accounts/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.getDebtorAccounts);
+router.post('/makeAccountPrimary/:id', authorize_middleware_1.default.validateAuth, debtor_controller_1.default.makeAccountPrimary);
 exports.default = router;
 //# sourceMappingURL=debtor.routes.js.map

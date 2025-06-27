@@ -717,7 +717,12 @@ class DebtorUtil {
             debtorId: debtorId,
             isDeleted: { $ne: true },
         });
-        return debtorAccounts.sort((a, b) => {
+        return await this.getSortedAccounts(debtorAccounts);
+    }
+    async getSortedAccounts(accounts) {
+        const primaryAccount = accounts.filter(account => account.priority === 1);
+        const secondaryAccounts = accounts.filter(account => account.priority === 0);
+        const sortedAccounts = secondaryAccounts.sort((a, b) => {
             const getRank = account => {
                 if (account.platform === 'Easypay direct' &&
                     account.paymentType === 'cc')
@@ -739,38 +744,30 @@ class DebtorUtil {
             };
             return getRank(a) - getRank(b);
         });
+        return primaryAccount.concat(sortedAccounts);
     }
     async getACHAccounts(debtorId) {
         let debtorAccounts = await this.accountRepository.getAll({
             debtorId: debtorId,
             isDeleted: { $ne: true },
+            platform: 'Paynote',
         });
-        let achAccounts = debtorAccounts.filter(account => account.platform === 'Paynote');
-        // return achAccounts.sort((a, b) => {
-        //   const getRank = account => {
-        //     if (account.platform === 'Paynote') return 1;
-        //     if (account.platform === 'Seamlesschex') return 2;
-        //     return 99;
-        //   };
-        //   return getRank(a) - getRank(b);
-        // });
-        return achAccounts;
+        return debtorAccounts.sort((a, b) => b.priority - a.priority);
     }
     async getSeamlesschexAccounts(debtorId) {
         let debtorAccounts = await this.accountRepository.getAll({
             debtorId: debtorId,
             isDeleted: { $ne: true },
+            platform: 'Seamlesschex',
         });
-        let achAccounts = debtorAccounts.filter(account => account.platform === 'Seamlesschex');
-        return achAccounts;
+        return debtorAccounts.sort((a, b) => b.priority - a.priority);
     }
     async getCCAccounts(debtorId) {
         let debtorAccounts = await this.accountRepository.getAll({
             debtorId: debtorId,
             isDeleted: { $ne: true },
         });
-        let ccAccounts = debtorAccounts.filter(account => account.paymentType === 'cc');
-        return ccAccounts;
+        return debtorAccounts.sort((a, b) => b.priority - a.priority);
     }
     async ifCCPresent(accounts) {
         const present = accounts.some(account => account.paymentType === 'cc');

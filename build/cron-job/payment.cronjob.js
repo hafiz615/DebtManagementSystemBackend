@@ -1074,15 +1074,17 @@ class CronJob {
                         }
                         return acc;
                     }, 0);
-                    for (const account of accountsSeamlesschex) {
-                        const decryptedData = common_util_1.default.getDecryptedData(account.vault);
-                        const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
-                        const response = await seemlesschex_util_1.default.createCheck(debtor, totalAmount, tokenResponse.tokenization.token, decryptedData);
-                        const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, creditorsAmount, account.platform, debtor);
-                        if (retryPlus)
-                            retryPlus = false;
-                        if (result) {
-                            break;
+                    if (totalAmount) {
+                        for (const account of accountsSeamlesschex) {
+                            const decryptedData = common_util_1.default.getDecryptedData(account.vault);
+                            const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+                            const response = await seemlesschex_util_1.default.createCheck(debtor, totalAmount, tokenResponse.tokenization.token, decryptedData);
+                            const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, creditorsAmount, account.platform, debtor);
+                            if (retryPlus)
+                                retryPlus = false;
+                            if (result) {
+                                break;
+                            }
                         }
                     }
                 }
