@@ -217,7 +217,7 @@ class EmailService {
         return [true, emailThreading];
     }
     async emailThreadingByCase(req) {
-        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ caseId: req.params.caseId, isDeleted: { $ne: true } }, undefined, undefined, undefined, ['firstInboxMessage']);
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ caseId: req.params.caseId, isDeleted: { $ne: true } }, undefined, undefined, { _id: -1 }, ['firstInboxMessage']);
         if (!emailThreading)
             return [true, []];
         return [true, emailThreading];

@@ -338,7 +338,7 @@ class EmailService {
         {caseId: req.params.caseId, isDeleted: {$ne: true}},
         undefined,
         undefined,
-        undefined,
+        {_id: -1},
         ['firstInboxMessage']
       );
 
