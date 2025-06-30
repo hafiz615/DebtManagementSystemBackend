@@ -94,11 +94,19 @@ class App {
         // await easypayUtil.syncClients('Easypay direct');
         // paymentCronjob.processPayments();
         // paymentCronjob.processCommissionPayments();
-        if (process.env.environment === 'prod') {
+        // paymentCronjob.processCommissionRetryPayments();
+        // paymentCronjob.cronSeamlesschex();
+        // paymentCronjob.processWaterfallPayments();
+        // paymentCronjob.processWaterfallPaymentsCommission();
+        // paymentCronjob.processWaterfallPaymentsCreditor();
+        // paymentCronjob.processWaterfallPaymentsACH();
+        if (process.env.environment === 'prod' ||
+            process.env.environment === 'staging') {
             payment_cronjob_1.default.startCronJob();
             pausePayment_cronjob_1.default.startCronJob();
         }
         // paymentCronjob.cronSeamlesschex();
+        // paymentCronjob.cronPaynote();
         // paymentCronjob.testCron();
         // paymentCronjob.testDebtor();
         // paymentCronjob.testPaynote();

@@ -12,6 +12,8 @@ import {PaymentRepository} from '../api/repository/payment/payment.repository';
 import {IPayment} from '../database/interfaces/payment.interface';
 import commonUtil from './common.util';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
+import debtorUtil from './debtor.util';
+import waterfallUtil from './waterfall.util';
 dotenv.config();
 
 class SeemlesschexUtil {
@@ -222,6 +224,9 @@ class SeemlesschexUtil {
   }
 
   async saveCheckInfo(bv: any, fc: any, response: any, debtorId: string) {
+    if (response.error) {
+      return;
+    }
     const newCheck = new Check();
     newCheck.checkId = response.check.check_id;
     newCheck.number = response.check.number;
@@ -293,32 +298,21 @@ class SeemlesschexUtil {
     if (!payment) return [true, ''];
     await this.deleteCheckInfo(checkId, status);
     await this.paymentRepository.updateMany<IPayment>(
-      {debtorTransId: checkId},
+      {debtorTransId: checkId, isDeleted: {$ne: true}},
       {
         captured: 'Failed',
+        achWaterfall: false,
         failedReasonCaptured: 'Check has been deleted',
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
-    // await this.paymentRepository.updateMany<IPayment>(
-    //   {debtorTransId: checkId},
-    //   {
-    //     authorized: 'Pending',
-    //     captured: 'Failed',
-    //     status: 'Upcoming',
-    //     debtorTransId: '',
-    //     paymentMode: '',
-    //     paymentGateway: '',
-    //     manualCommission: 0,
-    //     updatedAt: commonUtil.getCurrentDate(),
-    //   }
-    // );
     return [true, ''];
   }
 
   async updateIfCheckDeposited(checkId: string, status: string) {
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: checkId,
+      isDeleted: {$ne: true},
     });
     if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
@@ -344,19 +338,24 @@ class SeemlesschexUtil {
   async updateIfCheckFailed(checkId: string, status: string) {
     const payment = await this.paymentRepository.getOne<IPayment>({
       debtorTransId: checkId,
+      isDeleted: false,
     });
     if (!payment) return [true, ''];
     await this.checkRepository.updateByOne<ICheck>(
       {checkId: checkId, isDeleted: false},
       {status: status}
     );
+    const updateObj = {
+      failedReasonCaptured: 'Check has been failed',
+      failedReasonAuthorized: 'Check has been failed',
+      updatedAt: commonUtil.getCurrentDate(),
+    };
+    updateObj['checkStatus'] = '';
+    updateObj['captured'] = 'Failed';
+    updateObj['authorized'] = 'Failed';
     await this.paymentRepository.updateMany<IPayment>(
-      {debtorTransId: checkId},
-      {
-        captured: 'Failed',
-        failedReasonCaptured: 'Check has been failed',
-        updatedAt: commonUtil.getCurrentDate(),
-      }
+      {debtorTransId: checkId, isDeleted: {$ne: true}},
+      updateObj
     );
     return [true, ''];
   }
@@ -364,6 +363,11 @@ class SeemlesschexUtil {
   async checkStatusWebhook(response: any) {
     if (response?.data) {
       const checkId = response.data.check_id;
+      // const payment = await this.paymentRepository.getOne<IPayment>({
+      //   debtorTransId: checkId,
+      // });
+      // const accountsTemp = await debtorUtil.getDebtorAccounts(payment.debtorId);
+      // const ccPresent = await debtorUtil.ifCCPresent(accountsTemp);
       switch (response.event) {
         case 'check.changed':
           switch (response.data.status) {
