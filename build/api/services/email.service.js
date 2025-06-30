@@ -211,13 +211,13 @@ class EmailService {
         return [true, { threads: paginatedThreads, count }];
     }
     async eachThreadingMails(req) {
-        const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
+        const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, ['firstInboxMessage']);
         if (!emailThreading)
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];
     }
     async emailThreadingByCase(req) {
-        const emailThreading = await this.emailThreadingRepository.getOne({ caseId: req.params.caseId, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
+        const emailThreading = await this.emailThreadingRepository.getAllWithoutPagination({ caseId: req.params.caseId, isDeleted: { $ne: true } }, undefined, undefined, undefined, ['firstInboxMessage']);
         if (!emailThreading)
             return [true, []];
         return [true, emailThreading];

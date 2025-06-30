@@ -323,7 +323,7 @@ class EmailService {
         {threadId: req.params.id, isDeleted: {$ne: true}},
         undefined,
         undefined,
-        {path: 'previousMessages', populate: ['previousMessages']}
+        ['firstInboxMessage']
       );
 
     if (!emailThreading)
@@ -334,11 +334,12 @@ class EmailService {
 
   async emailThreadingByCase(req: Request) {
     const emailThreading =
-      await this.emailThreadingRepository.getOne<IEmailThreading>(
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         {caseId: req.params.caseId, isDeleted: {$ne: true}},
         undefined,
         undefined,
-        {path: 'previousMessages', populate: ['previousMessages']}
+        undefined,
+        ['firstInboxMessage']
       );
 
     if (!emailThreading) return [true, []];
