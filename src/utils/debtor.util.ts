@@ -992,6 +992,47 @@ class DebtorUtil {
     return primaryAccount.concat(sortedAccounts);
   }
 
+  async getACHAccounts(debtorId: string) {
+    let debtorAccounts: IAccount[] =
+      await this.accountRepository.getAll<IAccount>({
+        debtorId: debtorId,
+        isDeleted: {$ne: true},
+        platform: 'Paynote',
+      });
+    return debtorAccounts.sort((a, b) => b.priority - a.priority);
+  }
+
+  async getSeamlesschexAccounts(debtorId: string) {
+    let debtorAccounts: IAccount[] =
+      await this.accountRepository.getAll<IAccount>({
+        debtorId: debtorId,
+        isDeleted: {$ne: true},
+        platform: 'Seamlesschex',
+      });
+    return debtorAccounts.sort((a, b) => b.priority - a.priority);
+  }
+
+  async getCCAccounts(debtorId: string) {
+    let debtorAccounts: IAccount[] =
+      await this.accountRepository.getAll<IAccount>({
+        debtorId: debtorId,
+        isDeleted: {$ne: true},
+      });
+    return debtorAccounts.sort((a, b) => b.priority - a.priority);
+  }
+
+  async ifCCPresent(accounts: IAccount[]) {
+    const present = accounts.some(account => account.paymentType === 'cc');
+    return present;
+  }
+
+  async ifACHPresent(accounts: IAccount[]) {
+    const findPaynoteOrSeamlesschex = accounts.some(
+      account => account.paymentType === 'ACH'
+    );
+    return findPaynoteOrSeamlesschex;
+  }
+
   async createAccount(
     id: string,
     paymentType: string,

@@ -228,6 +228,39 @@ class PaymentController {
                     .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
             }
         };
+        this.firstChoiceRetryCommission = async (req, res) => {
+            try {
+                await payment_cronjob_1.default.processCommissionRetryPayments();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Cron-job for first choice commission is completed',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
+        this.waterfallPayments = async (req, res) => {
+            try {
+                await payment_cronjob_1.default.processWaterfallPayments();
+                await payment_cronjob_1.default.processWaterfallPaymentsACH();
+                return res.status(constants_util_1.default.CODE.OK).send(responseHelper_util_1.default.get2xxResponse({
+                    statusCode: constants_util_1.default.CODE.OK,
+                    data: [],
+                    message: 'Cron-job for first choice commission is completed',
+                }));
+            }
+            catch (error) {
+                console.log(error);
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(constants_util_1.default.Messages.EXCEPTION));
+            }
+        };
         this.cronSeamlesschex = async (req, res) => {
             try {
                 await payment_cronjob_1.default.cronSeamlesschex();

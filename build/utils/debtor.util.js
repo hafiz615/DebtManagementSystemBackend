@@ -746,6 +746,37 @@ class DebtorUtil {
         });
         return primaryAccount.concat(sortedAccounts);
     }
+    async getACHAccounts(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+            platform: 'Paynote',
+        });
+        return debtorAccounts.sort((a, b) => b.priority - a.priority);
+    }
+    async getSeamlesschexAccounts(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+            platform: 'Seamlesschex',
+        });
+        return debtorAccounts.sort((a, b) => b.priority - a.priority);
+    }
+    async getCCAccounts(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+        });
+        return debtorAccounts.sort((a, b) => b.priority - a.priority);
+    }
+    async ifCCPresent(accounts) {
+        const present = accounts.some(account => account.paymentType === 'cc');
+        return present;
+    }
+    async ifACHPresent(accounts) {
+        const findPaynoteOrSeamlesschex = accounts.some(account => account.paymentType === 'ACH');
+        return findPaynoteOrSeamlesschex;
+    }
     async createAccount(id, paymentType, platform, vault, paynoteSourceId = '') {
         let validAccount = new account_repomodel_1.Account();
         validAccount.debtorId = id;

@@ -140,6 +140,11 @@ const PaymentModel: Schema = new Schema({
     type: Boolean,
   },
   checkStatus: String,
+  ach: Boolean,
+  ccWaterfall: Boolean,
+  achWaterfall: Boolean,
+  nonExecutable: Boolean,
+  ccVault: String,
 });
 
 PaymentModel.pre('save', async function (next) {

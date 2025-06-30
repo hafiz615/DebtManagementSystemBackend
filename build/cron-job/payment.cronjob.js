@@ -22,6 +22,7 @@ const serviceFee_repository_1 = require("../api/repository/serviceFee/serviceFee
 const lawsuit_util_1 = __importDefault(require("../utils/lawsuit.util"));
 const lawsuit_repository_1 = require("../api/repository/lawsuit/lawsuit.repository");
 const seemlesschex_util_1 = __importDefault(require("../utils/seemlesschex.util"));
+const waterfall_repository_1 = require("../api/repository/waterfall/waterfall.repository");
 class CronJob {
     constructor() {
         this.paymentRepository = new payment_repository_1.PaymentRepository();
@@ -31,6 +32,7 @@ class CronJob {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.serviceFeeRepository = new serviceFee_repository_1.ServiceFeeRepository();
         this.lawsuitRepository = new lawsuit_repository_1.LawsuitRepository();
+        this.waterfallRepository = new waterfall_repository_1.WaterfallRepository();
     }
     async testCron() {
         let dbconfig = 'mongodb+srv://mohsin123:1732544m@cluster0.fyxwu.mongodb.net/debt-settlement?retryWrites=true&w=majority';
@@ -207,10 +209,40 @@ class CronJob {
         }, {
             timezone: 'America/New_York',
         });
-        node_cron_1.default.schedule('30 * * * *', async () => {
+        node_cron_1.default.schedule('25 * * * *', async () => {
             console.log('Running a task every 30 min of an hour');
             this.processCommissionRetryPayments();
             this.processRetryPayments();
+            this.processWaterfallPayments();
+            this.processWaterfallPaymentsACH();
+        }, {
+            timezone: 'America/New_York',
+        });
+        node_cron_1.default.schedule('40 * * * *', async () => {
+            console.log('Running a task every 45 min of an hour');
+            this.makePaymentsNonExecutable();
+            const paymentsCommission = await this.paymentRepository.getAllWithoutPagination({
+                isDeleted: false,
+                caseId: null,
+                commission: { $gt: 0 },
+                $or: [{ ccWaterfall: true }, { achWaterfall: true }],
+            });
+            for (const payment of paymentsCommission) {
+                let payments = await payment_util_1.default.getOtherPayments(payment);
+                const result = payments.some(payment => payment.captured === 'Failed' || payment.captured === 'Pending');
+                if (!result) {
+                    await this.paymentRepository.updateById(payment._id, {
+                        ccWaterfall: false,
+                        achWaterfall: false,
+                    });
+                }
+            }
+        }, {
+            timezone: 'America/New_York',
+        });
+        node_cron_1.default.schedule('0 10 * * *', async () => {
+            this.cronSeamlesschex();
+            this.cronPaynote();
         }, {
             timezone: 'America/New_York',
         });
@@ -386,11 +418,6 @@ class CronJob {
         }, {
             timezone: 'America/New_York',
         });
-        node_cron_1.default.schedule('0 10 * * *', async () => {
-            this.cronSeamlesschex();
-        }, {
-            timezone: 'America/New_York',
-        });
     }
     async cronSeamlesschex() {
         const paymentsCommission = await this.paymentRepository.getAllWithoutPagination({
@@ -400,6 +427,7 @@ class CronJob {
             isDeleted: false,
             paymentGateway: 'Seamlesschex',
             caseId: null,
+            checkStatus: 'Pending',
             dueDate: {
                 $lte: new Date(new Date(common_util_1.default.getCurrentDate()).setUTCHours(0, 0, 0, 0)),
             },
@@ -424,6 +452,7 @@ class CronJob {
             caseId: { $ne: null },
             paymentReferenceBool: { $ne: true },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
+            checkStatus: 'Pending',
             dueDate: {
                 $lte: new Date(new Date(common_util_1.default.getCurrentDate()).setUTCHours(0, 0, 0, 0)),
             },
@@ -435,6 +464,54 @@ class CronJob {
                     if (checkResponse.check.status !== 'in_process') {
                         const data = { event: 'check.changed', data: checkResponse.check };
                         await seemlesschex_util_1.default.checkStatusWebhook(data);
+                    }
+                }
+            }
+        }
+    }
+    async cronPaynote() {
+        const paymentsCommission = await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: { $ne: 'Success' },
+            paymentMode: { $eq: 'Direct Post' },
+            isDeleted: false,
+            paymentGateway: 'Paynote',
+            caseId: null,
+            checkStatus: 'Pending',
+            dueDate: {
+                $lte: new Date(new Date(common_util_1.default.getCurrentDate()).setUTCHours(0, 0, 0, 0)),
+            },
+        });
+        for (const payment of paymentsCommission) {
+            if (payment.debtorTransId) {
+                const checkResponse = await paynote_util_1.default.getCheck(payment.debtorTransId);
+                if (checkResponse.success) {
+                    if (checkResponse.check.status !== 'pending') {
+                        await paynote_util_1.default.paynoteWebhook(checkResponse);
+                    }
+                }
+            }
+        }
+        const payments = await this.paymentRepository.getAllWithoutPagination({
+            authorized: 'Success',
+            captured: { $ne: 'Success' },
+            paymentMode: { $eq: 'Direct Post' },
+            isDeleted: false,
+            paymentGateway: 'Paynote',
+            caseId: { $ne: null },
+            paymentReferenceBool: { $ne: true },
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
+            checkStatus: 'Pending',
+            dueDate: {
+                $lte: new Date(new Date(common_util_1.default.getCurrentDate()).setUTCHours(0, 0, 0, 0)),
+            },
+        });
+        for (const payment of payments) {
+            if (payment.debtorTransId) {
+                const checkResponse = await paynote_util_1.default.getCheck(payment.debtorTransId);
+                if (checkResponse.success) {
+                    if (checkResponse.check.status !== 'pending') {
+                        await paynote_util_1.default.paynoteWebhook(checkResponse);
                     }
                 }
             }
@@ -590,7 +667,6 @@ class CronJob {
         await this.processCapture(paymentsFailedCaptureorized, cronId, true, settings);
     }
     async processCommissionPayments() {
-        // const payments: any = await paymentUtil.getAllCronJobPayments();
         try {
             const settings = await this.settingsRepository.getAllWithoutPagination();
             const cronId = (0, uuid_1.v4)();
@@ -605,12 +681,101 @@ class CronJob {
             console.log(error);
         }
     }
+    async processWaterfallPayments() {
+        try {
+            const settings = await this.settingsRepository.getAllWithoutPagination();
+            const cronId = (0, uuid_1.v4)();
+            const waterfallPayments = await payment_util_1.default.getWaterfallPayments();
+            const pendingWaterfallPayments = await this.failedAuthorized(waterfallPayments, cronId, settings);
+            await this.startWaterfallCC(pendingWaterfallPayments, cronId, true, settings);
+            await this.processWaterfallPaymentsCommission();
+            await this.processWaterfallPaymentsCreditor();
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+    async processWaterfallPaymentsCommission() {
+        try {
+            const settings = await this.settingsRepository.getAllWithoutPagination();
+            const cronId = (0, uuid_1.v4)();
+            const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptureWaterfallPaymentsCommission();
+            const paymentsToCapture = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
+            await this.processCapture(paymentsToCapture, cronId, false, settings);
+            const paymentsFailedCaptured = await payment_util_1.default.getFailedCaptureWaterfallPaymentsCommission();
+            const paymentsCaptureDocs = await this.failedCaptured(paymentsFailedCaptured, cronId, settings);
+            await this.processCapture(paymentsCaptureDocs, cronId, true, settings);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+    async processWaterfallPaymentsCreditor() {
+        // const payments: any = await paymentUtil.getAllCronJobPayments();
+        try {
+            const settings = await this.settingsRepository.getAllWithoutPagination();
+            const cronId = (0, uuid_1.v4)();
+            const paymentsPendingCaptured = await payment_util_1.default.getPendingCaptureWaterfallPayments();
+            const paymentsToCapture = await this.pendingCaptured(paymentsPendingCaptured, cronId, settings);
+            console.log(paymentsToCapture, 'paymentsToCapture');
+            await this.processCapture(paymentsToCapture, cronId, false, settings);
+            const paymentsFailedCaptured = await payment_util_1.default.getFailedCaptureWaterfallPayments();
+            const paymentsCaptureDocs = await this.failedCaptured(paymentsFailedCaptured, cronId, settings);
+            console.log(paymentsCaptureDocs, 'paymentsCaptureDocs');
+            await this.processCapture(paymentsCaptureDocs, cronId, true, settings);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+    async processWaterfallPaymentsACH() {
+        // const payments: any = await paymentUtil.getAllCronJobPayments();
+        try {
+            const settings = await this.settingsRepository.getAllWithoutPagination();
+            const cronId = (0, uuid_1.v4)();
+            const waterfallPayments = await payment_util_1.default.getWaterfallPaymentsACH();
+            const pendingWaterfallPayments = await this.failedCaptured(waterfallPayments, cronId, settings);
+            console.log(pendingWaterfallPayments, 'pendingWaterfallPayments');
+            await this.startWaterfallACH(pendingWaterfallPayments, cronId, true, settings);
+            // const waterfallPaymentsFailed =
+            //   await paymentUtil.getWaterfallPaymentsACHFailed();
+            // const pendingWaterfallPaymentsFailed = await this.failedCaptured(
+            //   waterfallPaymentsFailed,
+            //   cronId,
+            //   settings
+            // );
+            // await this.startWaterfallACH(
+            //   pendingWaterfallPaymentsFailed,
+            //   cronId,
+            //   true,
+            //   settings
+            // );
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+    async makePaymentsNonExecutable() {
+        const settings = await this.settingsRepository.getAllWithoutPagination();
+        const { retryInterval } = settings.length
+            ? settings[0].paymentsAuthorizations
+            : this.defaultRetryInterval();
+        await this.paymentRepository.updateMany({
+            authorized: { $ne: 'Success' },
+            isDeleted: { $ne: true },
+            retriesAuth: retryInterval.failedAuthorization.maxRetry,
+        }, { nonExecutable: true, authorized: 'Failed' });
+        await this.paymentRepository.updateMany({
+            captured: { $ne: 'Success' },
+            isDeleted: { $ne: true },
+            retriesCapture: retryInterval.failedPayment.maxRetry,
+        }, { nonExecutable: true, captured: 'Failed' });
+    }
     async processCommissionRetryPayments() {
         // const payments: any = await paymentUtil.getAllCronJobPayments();
         const settings = await this.settingsRepository.getAllWithoutPagination();
         const cronId = (0, uuid_1.v4)();
         const paymentsFailedAuthorized = await payment_util_1.default.getFailedCommissionAuthorized();
-        console.log(paymentsFailedAuthorized, 'paymentsFailedAuthorized');
         const pendingFailedAuthDocs = await this.failedAuthorized(paymentsFailedAuthorized, cronId, settings);
         await this.processCommissionAuthorized(pendingFailedAuthDocs, cronId, true, settings);
         const paymentsFailedCaptured = await payment_util_1.default.getFailedCommissionCaptured();
@@ -717,6 +882,7 @@ class CronJob {
     async processAuthorized(payments, cronId, retryPlus, settings) {
         let retryOriginalValue = retryPlus;
         for (const payment of payments) {
+            // const accounts = payment.caseId.debtor.accounts;
             const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
             const legalFeeAmount = await lawsuit_util_1.default.getLegalFee(payment.caseId);
             const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
@@ -729,18 +895,20 @@ class CronJob {
                     payment.amount + serviceFeeAmount + legalFeeAmount, account.vault, account.platform);
                     const result = await this.processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
                     // getCommission,
-                    account.platform, serviceFeeAmount, legalFeeAmount);
+                    account.platform, serviceFeeAmount, legalFeeAmount, account.vault);
                     if (retryPlus)
                         retryPlus = false;
                     if (result)
                         break;
                 }
                 if (account.paymentType === 'ck' || account.paymentType === 'ACH') {
+                    // await this.paymentRepository.updateById<IPayment>(payment._id, {
+                    //   authorized: 'Success',
+                    //   paymentMode: 'Direct Post',
+                    // });
                     await this.paymentRepository.updateById(payment._id, {
-                        authorized: 'Success',
-                        paymentMode: 'Direct Post',
+                        ach: true,
                     });
-                    break;
                 }
             }
             retryPlus = retryOriginalValue;
@@ -749,71 +917,176 @@ class CronJob {
     }
     async processCommissionAuthorized(payments, cronId, retryPlus, settings) {
         let retryOriginalValue = retryPlus;
-        let i = 0;
         for (const payment of payments) {
             const otherPayments = retryPlus
                 ? await payment_util_1.default.getPaymentReferenceDocuments(payment.paymentReference)
                 : await payment_util_1.default.getOtherPayments(payment);
-            // const totalLegalFeeAmount =
-            //   await lawsuitUtil.getTotalLegalFee(otherPayments);
-            // const totalServiceFeeAmount = await lawsuitUtil.getTotalServiceFee(
-            //   otherPayments.length ? [otherPayments[0]] : otherPayments
-            // );
-            // const totalAmount = otherPayments.reduce(
-            //   (sum, obj) => sum + obj.amount,
-            //   0
-            // );
-            // const remainingAmount =
-            //   payment.amount -
-            //   totalAmount +
-            //   totalServiceFeeAmount +
-            //   totalLegalFeeAmount;
-            // if (remainingAmount <= 0) {
-            //   emailUtil.sendEmailOrSmsByEvent(
-            //     'failed_authorization',
-            //     '',
-            //     payment._id,
-            //     ''
-            //   );
-            //   continue;
-            // }
             const concatedPayments = otherPayments.concat(payment);
-            // const debtor = await this.debtorRepository.getById<IDebtor>(
-            //   payment.debtorId
-            // );
             const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
-            // console.log(
-            //   i,
-            //   ' i',
-            //   debtor.accounts.length,
-            //   '  debtor.accounts',
-            //   payment.debtorId,
-            //   '  payment.debtorId',
-            //   String(payment._id),
-            //   ' payment._id'
-            // );
-            // i += 1;
+            // const waterfall = await this.waterfallRepository.getOne<IWaterfall>({
+            //   debtorId: payment.debtorId,
+            //   paymentId: payment._id,
+            // });
+            // let startWaterfall = !waterfall ? false : waterfall.execute;
+            let startWaterfall = false;
             for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.authorizeCreditCard(payment.amount, account.vault, account.platform);
-                    const result = await this.processCommissionAuthorizedResponse(payment, concatedPayments, response, retryPlus, cronId, settings, account.platform);
+                    let response = await this.paymentService.authorizeCreditCard(payment.amount, account.vault, account.platform);
+                    const result = await this.processCommissionAuthorizedResponse(payment, concatedPayments, response, retryPlus, cronId, settings, account.platform, account.vault);
                     if (retryPlus)
                         retryPlus = false;
-                    if (result)
+                    if (!result)
+                        startWaterfall = true;
+                    if (result) {
+                        startWaterfall = false;
                         break;
+                    }
                 }
                 if (account.paymentType === 'ck' || account.paymentType === 'ACH') {
                     const reference = (0, uuid_1.v4)();
                     for (const payment of concatedPayments) {
                         await this.paymentRepository.updateById(payment._id, {
-                            authorized: 'Success',
-                            paymentMode: 'Direct Post',
-                            paymentGateway: account.platform,
+                            ach: true,
                             paymentReference: reference,
                             paymentReferenceBool: true,
                         });
                     }
-                    break;
+                }
+            }
+            if (startWaterfall) {
+                await this.startWaterfallCC([payment], cronId, false, settings);
+            }
+            retryPlus = retryOriginalValue;
+            await common_util_1.default.sleep(5000);
+        }
+    }
+    async startWaterfallCC(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
+        for (const payment of payments) {
+            const otherPayments = await payment_util_1.default.getOtherPayments(payment);
+            const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
+            const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments.length ? [otherPayments[0]] : otherPayments);
+            const accountsTemp = await debtor_util_1.default.getCCAccounts(payment.debtorId);
+            const allAccounts = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
+            const achPresent = await debtor_util_1.default.ifACHPresent(allAccounts);
+            let data = [];
+            let updateObj = {};
+            if (achPresent) {
+                data = await payment_util_1.default.getAllAmounts(payment, true);
+                updateObj['achWaterfall'] = true;
+            }
+            if (!achPresent) {
+                data = await payment_util_1.default.getAllAmounts(payment, false);
+                updateObj['ccWaterfall'] = true;
+            }
+            for (const temp of data) {
+                if (temp.authorized !== 'Success') {
+                    for (const account of accountsTemp) {
+                        if (account.paymentType === 'cc') {
+                            let response = await this.paymentService.authorizeCreditCard(temp.amount, account.vault, account.platform);
+                            let result = await this.processAuthorizedResponse(temp.caseId === null ? payment : temp, response, retryPlus, cronId, settings, account.platform, totalServiceFeeAmount, totalLegalFeeAmount, account.vault);
+                            if (retryPlus)
+                                retryPlus = false;
+                            if (result) {
+                                temp.authorized = 'Success';
+                                if (!temp.caseId) {
+                                    // await waterfallUtil.upsertWaterfall(
+                                    //   payment.debtorId,
+                                    //   payment._id,
+                                    //   true
+                                    // );
+                                    const readyUpdate = {
+                                        commission: temp.amount,
+                                        ccWaterfall: true,
+                                        ...updateObj,
+                                    };
+                                    await this.paymentRepository.updateById(temp.paymentId, readyUpdate);
+                                }
+                                if (!retryPlus) {
+                                    for (const payment of otherPayments) {
+                                        await this.paymentRepository.updateById(payment._id, updateObj);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (temp.authorized !== 'Success') {
+                    if (!temp.caseId) {
+                        break;
+                    }
+                }
+            }
+            retryPlus = retryOriginalValue;
+            await common_util_1.default.sleep(5000);
+        }
+    }
+    async startWaterfallACH(payments, cronId, retryPlus, settings) {
+        let retryOriginalValue = retryPlus;
+        for (const payment of payments) {
+            const otherPayments = await payment_util_1.default.getOtherPayments(payment);
+            const totalLegalFeeAmount = await lawsuit_util_1.default.getTotalLegalFee(otherPayments);
+            const totalServiceFeeAmount = await lawsuit_util_1.default.getTotalServiceFee(otherPayments.length ? [otherPayments[0]] : otherPayments);
+            let concatedPayments = otherPayments.concat(payment);
+            const creditorsAmount = otherPayments.reduce((sum, obj) => sum + obj.amount, 0);
+            const accountsTemp = await debtor_util_1.default.getACHAccounts(payment.debtorId);
+            const debtor = await this.debtorRepository.getById(payment.debtorId);
+            let data = await payment_util_1.default.getAllAmounts(payment, false);
+            let seamlesschexStart = false;
+            for (const temp of data) {
+                if (temp.authorized !== 'Success') {
+                    for (const account of accountsTemp) {
+                        const response = await paynote_util_1.default.directDebit(account.vault, payment, debtor);
+                        const result = await this.processACHCaptureResponse(temp.caseId === null ? payment : temp, response, retryPlus, cronId, settings, account.platform, totalServiceFeeAmount, totalLegalFeeAmount);
+                        if (retryPlus)
+                            retryPlus = false;
+                        if (result) {
+                            temp.authorized = 'Success';
+                            if (!retryPlus) {
+                                const update = { achWaterfall: true, ccWaterfall: false };
+                                if (!temp.caseId)
+                                    update['commission'] = temp.amount;
+                                for (const payment of concatedPayments) {
+                                    await this.paymentRepository.updateById(payment._id, update);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (temp.authorized !== 'Success') {
+                    seamlesschexStart = true;
+                    if (!temp.caseId) {
+                        break;
+                    }
+                    // break;
+                }
+            }
+            if (seamlesschexStart) {
+                const accountsSeamlesschex = await debtor_util_1.default.getSeamlesschexAccounts(payment.debtorId);
+                if (accountsSeamlesschex.length) {
+                    let totalAmount = 0;
+                    let data = await payment_util_1.default.getAllAmounts(payment, false);
+                    totalAmount = data.reduce((acc, curr) => {
+                        if (curr.authorized !== 'Success') {
+                            return acc + curr.amount;
+                        }
+                        return acc;
+                    }, 0);
+                    if (totalAmount) {
+                        for (const account of accountsSeamlesschex) {
+                            const decryptedData = common_util_1.default.getDecryptedData(account.vault);
+                            const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+                            const response = await seemlesschex_util_1.default.createCheck(debtor, totalAmount, tokenResponse.tokenization.token, decryptedData);
+                            const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, creditorsAmount, account.platform, debtor);
+                            if (retryPlus)
+                                retryPlus = false;
+                            if (result) {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             retryPlus = retryOriginalValue;
@@ -822,7 +1095,7 @@ class CronJob {
     }
     async processAuthorizedResponse(payment, response, retryPlus, cronId, settings, 
     // commission: number,
-    platform, serviceFee, legalFee) {
+    platform, serviceFee, legalFee, ccVault) {
         let result = false;
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
@@ -840,6 +1113,7 @@ class CronJob {
             updateObjPayment['authorized'] = 'Success';
             updateObjPayment['serviceFee'] = serviceFee;
             updateObjPayment['legalFee'] = legalFee;
+            updateObjPayment['ccVault'] = ccVault;
             // updateObjPayment['commission'] = commission;
             // updateObjPayment['status'] = 'Pending';
             result = true;
@@ -851,25 +1125,38 @@ class CronJob {
             // updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
-            const value = interval.value * retry;
-            const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
+            if (retry === interval.maxRetry)
+                updateObjPayment['nonExecutable'] = true;
+            // const value = interval.value * retry;
+            // const retryDate = this.getRetryDate(
+            //   interval.unit,
+            //   value,
+            //   commonUtil.getCurrentDate()
+            // );
+            const retryDate = await this.getRescheduledDate(settings, payment);
             updateObjPayment['rescheduled'] = retryDate;
             email_util_1.default.sendEmailOrSmsByEvent('failed_authorization', '', payment._id, '');
         }
         if (retryPlus)
             updateObjPayment['retriesAuth'] = payment.retriesAuth + 1;
-        const paymentLatest = await this.paymentRepository.getById(payment._id);
-        if (paymentLatest.authorized === 'Success') {
-            result = true;
-        }
-        else {
-            if (Object.keys(updateObjPayment).length) {
-                await this.paymentRepository.updateById(payment._id, updateObjPayment);
-            }
+        console.log(payment._id, ' payment._id');
+        console.log(updateObjPayment, 'updateObj');
+        if (Object.keys(updateObjPayment).length) {
+            await this.paymentRepository.updateById(payment._id, updateObjPayment);
         }
         return result;
     }
-    async processCommissionAuthorizedResponse(payment, payments, response, retryPlus, cronId, settings, platform) {
+    async getRescheduledDate(settings, payment) {
+        const { retryInterval } = settings.length
+            ? settings[0].paymentsAuthorizations
+            : this.defaultRetryInterval();
+        const interval = retryInterval.failedAuthorization;
+        const retry = payment.retriesAuth + 1;
+        const value = interval.value * retry;
+        const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
+        return retryDate;
+    }
+    async processCommissionAuthorizedResponse(payment, payments, response, retryPlus, cronId, settings, platform, ccVault) {
         let result = false;
         const { retryInterval } = settings.length
             ? settings[0].paymentsAuthorizations
@@ -886,6 +1173,7 @@ class CronJob {
             lawsuit_util_1.default.updateFee(payments);
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['authorized'] = 'Success';
+            updateObjPayment['ccVault'] = ccVault;
             // updateObjPayment['serviceFee'] = serviceFee;
             // updateObjPayment['status'] = 'Pending';
             result = true;
@@ -902,6 +1190,8 @@ class CronJob {
             // updateObjPayment['status'] = 'Pending';
             const interval = retryInterval.failedAuthorization;
             const retry = payment.retriesAuth + 1;
+            if (retry === interval.maxRetry)
+                updateObjPayment['nonExecutable'] = true;
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
@@ -937,7 +1227,6 @@ class CronJob {
             return this.retry(payment.rescheduled);
         });
         return failedCaptured;
-        await this.processCapture(failedCaptured, cronId, true, settings);
     }
     async processCapture(payments, cronId, retryPlus, settings) {
         let retryOriginalValue = retryPlus;
@@ -947,18 +1236,20 @@ class CronJob {
             const serviceFeeAmount = await lawsuit_util_1.default.getServiceFee(payment.caseId);
             for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.captureCreditCard(account.vault, payment.debtorTransId, account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc', account.platform);
-                    if (retryPlus)
-                        retryPlus = false;
-                    if (result)
+                    if (payment.debtorTransId) {
+                        let response = await this.paymentService.captureCreditCard(payment.ccVault, payment.debtorTransId, payment.paymentGateway);
+                        const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'cc', payment.paymentGateway, accountsTemp, serviceFeeAmount, legalFeeAmount);
+                        if (retryPlus)
+                            retryPlus = false;
                         break;
+                        // if (result) break;
+                    }
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.vault, payment.amount + serviceFeeAmount + legalFeeAmount, 
                     // payment.amount,
                     account.platform);
-                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform, serviceFeeAmount, legalFeeAmount);
+                    const result = await this.processCaptureResponse(payment, response, retryPlus, cronId, settings, 'ck', account.platform, accountsTemp, serviceFeeAmount, legalFeeAmount);
                     if (retryPlus)
                         retryPlus = false;
                     if (result)
@@ -996,14 +1287,17 @@ class CronJob {
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
+            let startWaterfall = false;
             for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
-                    const response = await this.paymentService.captureCreditCard(account.vault, payment.debtorTransId, account.platform);
-                    const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'cc', totalAmount, account.platform);
-                    if (retryPlus)
-                        retryPlus = false;
-                    if (result)
+                    if (payment.ccVault) {
+                        let response = await this.paymentService.captureCreditCard(payment.ccVault, payment.debtorTransId, payment.paymentGateway);
+                        const result = await this.processCaptureCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, 'cc', totalAmount, payment.paymentGateway);
+                        if (retryPlus)
+                            retryPlus = false;
                         break;
+                        // if (result) break;
+                    }
                 }
                 if (account.paymentType === 'ck') {
                     const response = await this.paymentService.achCredit(account.vault, payment.amount, account.platform);
@@ -1014,31 +1308,57 @@ class CronJob {
                         break;
                 }
                 if (account.paymentType === 'ACH' && account.platform === 'Paynote') {
-                    const response = await paynote_util_1.default.directDebit(account.vault, payment, debtor);
+                    let response = await paynote_util_1.default.directDebit(account.vault, payment, debtor);
                     const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
                     if (retryPlus)
                         retryPlus = false;
-                    if (result)
+                    if (!result)
+                        startWaterfall = true;
+                    if (result) {
+                        startWaterfall = false;
                         break;
+                    }
                 }
-                if (account.paymentType === 'ACH' &&
-                    account.platform === 'Seamlesschex') {
-                    const decryptedData = common_util_1.default.getDecryptedData(account.vault);
-                    const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
-                    const response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
-                    console.log(response, 'response');
-                    const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
-                    if (retryPlus)
-                        retryPlus = false;
-                    if (result)
-                        break;
-                }
+                // if (
+                //   account.paymentType === 'ACH' &&
+                //   account.platform === 'Seamlesschex'
+                // ) {
+                //   const decryptedData = commonUtil.getDecryptedData(account.vault);
+                //   const tokenResponse =
+                //     await seemlesschexUtil.tokenization(decryptedData);
+                //   let response = await seemlesschexUtil.createCheck(
+                //     debtor,
+                //     payment.amount,
+                //     tokenResponse.tokenization.token,
+                //     decryptedData
+                //   );
+                //   const result = await this.processACHCommissionResponse(
+                //     payment,
+                //     concatedPayments,
+                //     response,
+                //     retryPlus,
+                //     cronId,
+                //     settings,
+                //     totalAmount,
+                //     account.platform,
+                //     debtor
+                //   );
+                //   if (retryPlus) retryPlus = false;
+                //   if (!result) startWaterfall = true;
+                //   if (result) {
+                //     startWaterfall = false;
+                //     break;
+                //   }
+                // }
+            }
+            if (startWaterfall) {
+                await this.startWaterfallACH([payment], cronId, false, settings);
             }
             retryPlus = retryOriginalValue;
             await common_util_1.default.sleep(5000);
         }
     }
-    async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform, serviceFee, legalFee
+    async processCaptureResponse(payment, response, retryPlus, cronId, settings, type, platform, accounts, serviceFee, legalFee
     // commision?: number
     ) {
         let result = false;
@@ -1054,6 +1374,9 @@ class CronJob {
             const transactionId = new url_1.URLSearchParams(response).get('transactionid');
             updateObjPayment['captured'] = 'Success';
             updateObjPayment['status'] = 'Pending';
+            const ifACHPresent = await debtor_util_1.default.ifACHPresent(accounts);
+            if (ifACHPresent)
+                updateObjPayment['ccWaterfall'] = false;
             lawsuit_util_1.default.updatePaymentLawsuit([payment]);
             if (type === 'ck') {
                 updateObjPayment['authorized'] = 'Success';
@@ -1075,6 +1398,8 @@ class CronJob {
             updateObjPayment['failedReasonCaptured'] = responseText;
             const interval = retryInterval.failedPayment;
             const retry = payment.retriesCapture + 1;
+            if (retry === interval.maxRetry)
+                updateObjPayment['nonExecutable'] = true;
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
@@ -1105,16 +1430,17 @@ class CronJob {
         updateObjPayment['paymentGateway'] = platform;
         updateObjPayment['transactionType'] = 'ACH';
         let bv = null;
-        if (platform === 'Seamlesschex') {
-            bv = await seemlesschex_util_1.default.checkBasicVerification(response);
-            if (bv?.error)
-                updateObjPayment['authorized'] = 'Failed';
-        }
         if (response.success) {
-            await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, payment.caseId.debtor._id);
+            if (platform === 'Seamlesschex') {
+                bv = await seemlesschex_util_1.default.checkBasicVerification(response);
+                // if (bv?.error) updateObjPayment['authorized'] = 'Failed';
+            }
+            await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, payment.debtorId);
             const transactionId = response.check.check_id;
             updateObjPayment['status'] = 'Pending';
             updateObjPayment['checkStatus'] = 'Pending';
+            updateObjPayment['authorized'] = 'Success';
+            updateObjPayment['captured'] = 'Pending';
             lawsuit_util_1.default.updatePaymentLawsuit([payment]);
             updateObjPayment['debtorTransId'] = transactionId;
             updateObjPayment['serviceFee'] = serviceFee;
@@ -1133,6 +1459,8 @@ class CronJob {
             updateObjPayment['failedReasonCaptured'] = response.message;
             const interval = retryInterval.failedPayment;
             const retry = payment.retriesCapture + 1;
+            if (retry === interval.maxRetry)
+                updateObjPayment['nonExecutable'] = true;
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
@@ -1192,6 +1520,8 @@ class CronJob {
             updateObjPayment['failedReasonCaptured'] = responseText;
             const interval = retryInterval.failedPayment;
             const retry = payment.retriesCapture + 1;
+            if (retry === interval.maxRetry)
+                updateObjPayment['nonExecutable'] = true;
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
@@ -1214,27 +1544,27 @@ class CronJob {
         const updateObjPayment = {};
         updateObjPayment['paymentGateway'] = platform;
         updateObjPayment['transactionType'] = 'ACH';
+        updateObjPayment['paymentMode'] = 'Direct Post';
         let bv = null;
         if (response?.success) {
-            await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, debtor._id);
             if (platform === 'Seamlesschex') {
                 bv = await seemlesschex_util_1.default.checkBasicVerification(response);
-                if (bv?.error)
-                    updateObjPayment['authorized'] = 'Failed';
+                // if (bv?.error) updateObjPayment['authorized'] = 'Failed';
             }
+            await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, debtor._id);
             const transactionId = response.check.check_id;
             updateObjPayment['status'] = 'Pending';
             updateObjPayment['authorized'] = 'Success';
+            updateObjPayment['captured'] = 'Pending';
             updateObjPayment['checkStatus'] = 'Pending';
             updateObjPayment['debtorTransId'] = transactionId;
             lawsuit_util_1.default.updatePaymentLawsuit(payments);
             result = true;
             email_util_1.default.sendEmailOrSmsByEvent('successful_capture', '', payment._id, '');
-            console.log(amount, 'amount');
             if (response.check.status === 'processed' ||
                 response.check.status === 'deposited') {
                 updateObjPayment['captured'] = 'Success';
-                updateObjPayment['checkStatus'] = 'Success';
+                updateObjPayment['checkStatus'] = 'Completed';
                 if (amount) {
                     const commissionAmount = payment.amount - amount;
                     console.log(commissionAmount, 'commissionAmount');
@@ -1255,6 +1585,8 @@ class CronJob {
             updateObjPayment['failedReasonCaptured'] = response.message;
             const interval = retryInterval.failedPayment;
             const retry = payment.retriesCapture + 1;
+            if (retry === interval.maxRetry)
+                updateObjPayment['nonExecutable'] = true;
             const value = interval.value * retry;
             const retryDate = this.getRetryDate(interval.unit, value, common_util_1.default.getCurrentDate());
             updateObjPayment['rescheduled'] = retryDate;
