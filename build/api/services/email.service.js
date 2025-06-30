@@ -190,11 +190,11 @@ class EmailService {
             ? req.body.filter.userId
             : { $ne: null };
         const inboxFilters = await inbox_utils_1.default.getAllInboxFilters(req);
-        const completed = req.query.completed === 'true' ? true : false;
+        const completed = req.query.completed === 'true' ? false : true;
         const threadFilters = {
             isDeleted: { $ne: true },
             userId: userId,
-            isCompleted: completed,
+            isCompleted: { $ne: completed },
         };
         const populateFilter = {
             path: 'firstInboxMessage',
@@ -211,7 +211,7 @@ class EmailService {
         return [true, { threads: paginatedThreads, count }];
     }
     async eachThreadingMails(req) {
-        const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, ['firstInboxMessage']);
+        const emailThreading = await this.emailThreadingRepository.getOne({ threadId: req.params.id, isDeleted: { $ne: true } }, undefined, undefined, { path: 'previousMessages', populate: ['previousMessages'] });
         if (!emailThreading)
             return [false, constants_util_1.default.notFoundMessage('email.')];
         return [true, emailThreading];
