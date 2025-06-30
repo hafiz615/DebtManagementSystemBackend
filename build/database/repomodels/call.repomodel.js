@@ -9,6 +9,7 @@ class Call {
     constructor() {
         this.callSid = '';
         this.callLegId = '';
+        this.callSessionId = '';
         this.caseId = null;
         this.userId = null;
         this.debtorId = null;

@@ -63,6 +63,9 @@ const emailThreadingModel = new mongoose_1.Schema({
     isDeleted: {
         type: Boolean,
     },
+    isCompleted: {
+        type: Boolean,
+    },
     createdAt: {
         type: Date,
         default: common_util_1.default.getCurrentDate(),

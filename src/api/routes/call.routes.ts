@@ -112,5 +112,10 @@ router.get(
   authorize.validateAuth,
   callController.telnyxPhoneNo
 );
+router.get(
+  '/debtorAndCaseId/:phoneNo',
+  authorize.validateAuth,
+  callController.debtorAndCaseId
+);
 
 export default router;

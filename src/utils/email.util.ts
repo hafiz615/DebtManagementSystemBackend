@@ -531,22 +531,7 @@ class EmailUtil {
           {_id: -1}
         );
 
-      // console.log('This is existing id', existingInbox[0]);
-      // if (!existingInbox[0]) {
-      //   res = await this.createNewInbox(
-      //     emailData,
-      //     caseTemp,
-      //     type,
-      //     threadId,
-      //     userId,
-      //     userName,
-      //     [],
-      //     null,
-      //     medium
-      //   );
-      //   console.log('Create New Inbox response when Received', res);
-      // } else {
-      const existingAttachments = existingInbox[0].attachments || [];
+      // const existingAttachments = existingInbox[0].attachments || [];
       const mergedAttachments = [
         // ...existingAttachments,
         ...emailData.attachments,
@@ -605,6 +590,7 @@ class EmailUtil {
         firstInboxMessage: res._id,
         previousMessages: [res._id],
         userId: userId,
+        caseId: caseTemp?._id,
       };
 
       await this.upsertEmailThreading(emailThreading);
@@ -1300,18 +1286,19 @@ class EmailUtil {
         existingThread._id,
         {
           previousMessages: updatedMessages,
+          isCompleted: false,
         }
       );
     } else {
       const emailThreading = new EmailThreading();
-      const validatedDebtor = DataCopier.copy(
+      const validatedEmail = DataCopier.copy(
         emailThreading,
         data as IEmailThreading
       );
 
       return await this.emailThreadingRepository.upsert<IEmailThreading>(
         {threadId: data.threadId},
-        validatedDebtor
+        validatedEmail
       );
     }
   }

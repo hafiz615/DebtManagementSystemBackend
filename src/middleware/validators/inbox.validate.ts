@@ -110,6 +110,155 @@ class InboxRequests {
         .send(responseHelper.get4xxResponse(error.details[0].message));
     }
   }
+
+  async sendSmsEmailDebtorCreditor(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    const type = String(req.query.type);
+    let object = Joi.object({
+      sendTo: Joi.string().email().required().messages({
+        'string.empty': 'SendTo cannot be empty',
+        'any.required': 'SendTo is a required field',
+        'string.base': 'SendTo must be a string',
+        'string.email': 'SendTo must be a valid email',
+      }),
+      from: Joi.string().email().required().messages({
+        'string.empty': 'From cannot be empty',
+        'any.required': 'From is a required field',
+        'string.base': 'From must be a string',
+        'string.email': 'From must be a valid email',
+      }),
+      content: Joi.string().required().messages({
+        'string.empty': 'Content cannot be empty',
+        'any.required': 'Content is a required field',
+        'string.base': 'Content must be a string',
+      }),
+      subject: Joi.string().required().messages({
+        'string.empty': 'Subject cannot be empty',
+        'any.required': 'Subject is a required field',
+        'string.base': 'Subject must be a string',
+      }),
+      cc: Joi.string()
+        .required()
+        .messages({
+          'string.empty': 'CC cannot be empty',
+          'string.base': 'CC must be a string',
+        })
+        .optional(),
+      files: Joi.string().optional().messages({
+        'string.base': 'Files must be a string',
+      }),
+      signedUrls: Joi.string().optional().messages({
+        'string.base': 'SignedUrls must be a string',
+      }),
+    });
+
+    if (req.body?.cc && typeof req.body?.cc === 'string') {
+      try {
+        if (!Array.isArray(JSON.parse(req.body.cc))) {
+          return res
+            .status(constants.CODE.BAD_REQUEST)
+            .send(responseHelper.get4xxResponse('cc is invalid'));
+        }
+      } catch (err) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(responseHelper.get4xxResponse('cc format is incorrect'));
+      }
+    }
+
+    if (req.body?.signedUrls && typeof req.body?.signedUrls === 'string') {
+      try {
+        if (!Array.isArray(JSON.parse(req.body.signedUrls))) {
+          return res
+            .status(constants.CODE.BAD_REQUEST)
+            .send(responseHelper.get4xxResponse('signedUrls is invalid'));
+        }
+      } catch (err) {
+        return res
+          .status(constants.CODE.BAD_REQUEST)
+          .send(
+            responseHelper.get4xxResponse('signedUrls format is incorrect')
+          );
+      }
+    }
+
+    if (type === 'sms') {
+      object = Joi.object({
+        sendTo: Joi.string()
+          .pattern(/^\d{10}$/)
+          .required()
+          .messages({
+            'string.empty': 'SendTo cannot be empty',
+            'any.required': 'SendTo is a required field',
+            'string.base': 'SendTo must be a string',
+            'string.pattern.base':
+              'SendTo must be a valid 10-digit phone number',
+          }),
+        content: Joi.string().required().messages({
+          'string.empty': 'Content cannot be empty',
+          'any.required': 'Content is a required field',
+          'string.base': 'Content must be a string',
+        }),
+        subject: Joi.string().optional().messages({
+          'string.base': 'Subject must be a string',
+        }),
+        from: Joi.string()
+          .pattern(/^\d{10}$/)
+          .required()
+          .messages({
+            'string.empty': 'from cannot be empty',
+            'any.required': 'from is a required field',
+            'string.base': 'from must be a string',
+            'string.pattern.base': 'from must be a valid 10-digit phone number',
+          }),
+      });
+    }
+
+    const schema = object;
+    const {error} = schema.validate(req.body);
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
+
+  async threadsCompleted(req: Request, res: Response, next: NextFunction) {
+    const schema = Joi.object({
+      threadIds: Joi.array()
+        .items(
+          Joi.string()
+            .regex(/^[0-9a-fA-F]{24}$/)
+            .required()
+            .messages({
+              'string.pattern.base': 'Each Thread Id must be a valid id.',
+              'string.empty': 'Each Thread Id cannot be empty.',
+            })
+        )
+        .min(1)
+        .required()
+        .messages({
+          'array.base': 'Thread Ids must be an array.',
+          'array.min': 'At least one Thread Id is required.',
+          'any.required': 'Thread Ids are required.',
+        }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  }
 }
 
 export default new InboxRequests();

@@ -279,10 +279,11 @@ class EmailService {
         : {$ne: null};
 
     const inboxFilters = await inboxUtils.getAllInboxFilters(req);
-
+    const completed = req.query.completed === 'true' ? false : true;
     const threadFilters = {
       isDeleted: {$ne: true},
       userId: userId,
+      isCompleted: {$ne: completed},
     };
 
     const populateFilter: any = {
@@ -291,7 +292,6 @@ class EmailService {
     if (Object.keys(inboxFilters).length) {
       populateFilter.match = inboxFilters;
     }
-
     const allEmailThreading =
       await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         threadFilters,
@@ -330,6 +330,35 @@ class EmailService {
       return [false, constantsUtil.notFoundMessage('email.')];
 
     return [true, emailThreading];
+  }
+
+  async emailThreadingByCase(req: Request) {
+    const emailThreading =
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
+        {caseId: req.params.caseId, isDeleted: {$ne: true}},
+        undefined,
+        undefined,
+        {_id: -1},
+        ['firstInboxMessage']
+      );
+
+    if (!emailThreading) return [true, []];
+
+    return [true, emailThreading];
+  }
+
+  async threadsCompleted(req: Request) {
+    const ids = req.body.threadIds;
+    const result =
+      await this.emailThreadingRepository.updateMany<IEmailThreading>(
+        {_id: ids},
+        {isCompleted: true}
+      );
+
+    if (!result.modifiedCount)
+      return [false, constantsUtil.failureUpdateMessage('emails')];
+
+    return [true, []];
   }
 }
 

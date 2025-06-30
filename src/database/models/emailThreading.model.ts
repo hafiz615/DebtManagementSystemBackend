@@ -36,6 +36,9 @@ const emailThreadingModel: Schema = new Schema({
   isDeleted: {
     type: Boolean,
   },
+  isCompleted: {
+    type: Boolean,
+  },
   createdAt: {
     type: Date,
     default: commonUtil.getCurrentDate(),

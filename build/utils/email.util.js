@@ -326,22 +326,7 @@ class EmailUtil {
             const existingInbox = await this.inboxRepository.getAllWithoutPagination({
                 threadId,
             }, undefined, undefined, { _id: -1 });
-            // console.log('This is existing id', existingInbox[0]);
-            // if (!existingInbox[0]) {
-            //   res = await this.createNewInbox(
-            //     emailData,
-            //     caseTemp,
-            //     type,
-            //     threadId,
-            //     userId,
-            //     userName,
-            //     [],
-            //     null,
-            //     medium
-            //   );
-            //   console.log('Create New Inbox response when Received', res);
-            // } else {
-            const existingAttachments = existingInbox[0].attachments || [];
+            // const existingAttachments = existingInbox[0].attachments || [];
             const mergedAttachments = [
                 // ...existingAttachments,
                 ...emailData.attachments,
@@ -373,6 +358,7 @@ class EmailUtil {
                 firstInboxMessage: res._id,
                 previousMessages: [res._id],
                 userId: userId,
+                caseId: caseTemp?._id,
             };
             await this.upsertEmailThreading(emailThreading);
             return res;
@@ -885,12 +871,13 @@ class EmailUtil {
             ];
             return await this.emailThreadingRepository.updateById(existingThread._id, {
                 previousMessages: updatedMessages,
+                isCompleted: false,
             });
         }
         else {
             const emailThreading = new emailThreading_repomodel_1.EmailThreading();
-            const validatedDebtor = dataCopier_util_1.DataCopier.copy(emailThreading, data);
-            return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedDebtor);
+            const validatedEmail = dataCopier_util_1.DataCopier.copy(emailThreading, data);
+            return await this.emailThreadingRepository.upsert({ threadId: data.threadId }, validatedEmail);
         }
     }
     async emailThreadingCount(populateFilter, userId) {
