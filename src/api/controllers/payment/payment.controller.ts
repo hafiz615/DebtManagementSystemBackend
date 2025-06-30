@@ -287,6 +287,43 @@ class PaymentController {
     }
   };
 
+  firstChoiceRetryCommission = async (req: Request, res: Response) => {
+    try {
+      await paymentCronjob.processCommissionRetryPayments();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Cron-job for first choice commission is completed',
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
+  waterfallPayments = async (req: Request, res: Response) => {
+    try {
+      await paymentCronjob.processWaterfallPayments();
+      await paymentCronjob.processWaterfallPaymentsACH();
+      return res.status(constants.CODE.OK).send(
+        responseHelper.get2xxResponse({
+          statusCode: constants.CODE.OK,
+          data: [],
+          message: 'Cron-job for first choice commission is completed',
+        })
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(constants.Messages.EXCEPTION));
+    }
+  };
+
   cronSeamlesschex = async (req: Request, res: Response) => {
     try {
       await paymentCronjob.cronSeamlesschex();

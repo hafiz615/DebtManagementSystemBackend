@@ -19,6 +19,8 @@ router.put('/updateACHDetails/:id', authorize_middleware_1.default.validateAuth,
 router.get('/processAuthAndCapture', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processAuthAndCapture);
 router.get('/processPaynoteTransfer', authorize_middleware_1.default.validateAuth, payment_controller_1.default.processPaynoteTransfer);
 router.get('/firstChoiceCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceCommission);
+router.get('/firstChoiceRetryCommission', authorize_middleware_1.default.validateAuth, payment_controller_1.default.firstChoiceRetryCommission);
+router.get('/waterfallPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.waterfallPayments);
 router.get('/sendPaymentPaynote/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.sendPaymentPaynote);
 router.get('/cancelCasePaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelCasePaymentPlan);
 router.get('/cancelDebtorPaymentPlan/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cancelDebtorPaymentPlan);
@@ -30,7 +32,7 @@ router.post('/updatePaymentDate/:id', authorize_middleware_1.default.validateAut
 router.post('/checkInvoice', payment_controller_1.default.checkInvoice);
 router.get('/getInstantPayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getInstantPayment);
 router.get('/getCaseAttorneyPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCaseAttorneyPayments);
-router.post('/paynote-webhook', payment_controller_1.default.paynoteWebhook);
+// router.post('/paynote-webhook', paymentController.paynoteWebhook);
 router.post('/getClientPendingChecks', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getClientPendingChecks);
 router.get('/cronSeamlesschex', authorize_middleware_1.default.validateAuth, payment_controller_1.default.cronSeamlesschex);
 router.delete('/deletePayment/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.deletePayment);

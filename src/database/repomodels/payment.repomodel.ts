@@ -42,4 +42,9 @@ export class Payment {
   paymentMode = '';
   calculateComission = false;
   checkStatus = '';
+  ach = false;
+  ccWaterfall = false;
+  achWaterfall = false;
+  nonExecutable = false;
+  ccVault = '';
 }

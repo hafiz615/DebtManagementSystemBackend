@@ -74,6 +74,18 @@ router.get(
 );
 
 router.get(
+  '/firstChoiceRetryCommission',
+  authorize.validateAuth,
+  paymentController.firstChoiceRetryCommission
+);
+
+router.get(
+  '/waterfallPayments',
+  authorize.validateAuth,
+  paymentController.waterfallPayments
+);
+
+router.get(
   '/sendPaymentPaynote/:id',
   authorize.validateAuth,
   paymentController.sendPaymentPaynote
@@ -136,7 +148,7 @@ router.get(
   paymentController.getCaseAttorneyPayments
 );
 
-router.post('/paynote-webhook', paymentController.paynoteWebhook);
+// router.post('/paynote-webhook', paymentController.paynoteWebhook);
 
 router.post(
   '/getClientPendingChecks',
