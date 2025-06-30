@@ -1566,9 +1566,9 @@ class CronJob {
     ccVault: string
   ) {
     let result = false;
-    // const {retryInterval} = settings.length
-    //   ? settings[0].paymentsAuthorizations
-    //   : this.defaultRetryInterval();
+    const {retryInterval} = settings.length
+      ? settings[0].paymentsAuthorizations
+      : this.defaultRetryInterval();
     const responseNum = new URLSearchParams(response).get('response');
     const responseText = new URLSearchParams(response).get('responsetext');
     const updateObjPayment = {};
@@ -1602,8 +1602,9 @@ class CronJob {
       updateObjPayment['authorized'] = 'Failed';
       updateObjPayment['failedReasonAuthorization'] = responseText;
       // updateObjPayment['status'] = 'Pending';
-      // const interval = retryInterval.failedAuthorization;
-      // const retry = payment.retriesAuth + 1;
+      const interval = retryInterval.failedAuthorization;
+      const retry = payment.retriesAuth + 1;
+      if (retry === interval.maxRetry) updateObjPayment['nonExecutable'] = true;
       // const value = interval.value * retry;
       // const retryDate = this.getRetryDate(
       //   interval.unit,
@@ -1693,6 +1694,7 @@ class CronJob {
       // updateObjPayment['status'] = 'Pending';
       const interval = retryInterval.failedAuthorization;
       const retry = payment.retriesAuth + 1;
+      if (retry === interval.maxRetry) updateObjPayment['nonExecutable'] = true;
       const value = interval.value * retry;
       const retryDate = this.getRetryDate(
         interval.unit,
@@ -2035,6 +2037,7 @@ class CronJob {
       updateObjPayment['failedReasonCaptured'] = responseText;
       const interval = retryInterval.failedPayment;
       const retry = payment.retriesCapture + 1;
+      if (retry === interval.maxRetry) updateObjPayment['nonExecutable'] = true;
       const value = interval.value * retry;
       const retryDate = this.getRetryDate(
         interval.unit,
@@ -2124,6 +2127,7 @@ class CronJob {
       updateObjPayment['failedReasonCaptured'] = response.message;
       const interval = retryInterval.failedPayment;
       const retry = payment.retriesCapture + 1;
+      if (retry === interval.maxRetry) updateObjPayment['nonExecutable'] = true;
       const value = interval.value * retry;
       const retryDate = this.getRetryDate(
         interval.unit,
@@ -2207,6 +2211,7 @@ class CronJob {
       updateObjPayment['failedReasonCaptured'] = responseText;
       const interval = retryInterval.failedPayment;
       const retry = payment.retriesCapture + 1;
+      if (retry === interval.maxRetry) updateObjPayment['nonExecutable'] = true;
       const value = interval.value * retry;
       const retryDate = this.getRetryDate(
         interval.unit,
@@ -2296,6 +2301,7 @@ class CronJob {
       updateObjPayment['failedReasonCaptured'] = response.message;
       const interval = retryInterval.failedPayment;
       const retry = payment.retriesCapture + 1;
+      if (retry === interval.maxRetry) updateObjPayment['nonExecutable'] = true;
       const value = interval.value * retry;
       const retryDate = this.getRetryDate(
         interval.unit,
