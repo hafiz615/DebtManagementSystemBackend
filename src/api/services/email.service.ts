@@ -279,11 +279,11 @@ class EmailService {
         : {$ne: null};
 
     const inboxFilters = await inboxUtils.getAllInboxFilters(req);
-    const completed = req.query.completed === 'true' ? true : false;
+    const completed = req.query.completed === 'true' ? false : true;
     const threadFilters = {
       isDeleted: {$ne: true},
       userId: userId,
-      isCompleted: completed,
+      isCompleted: {$ne: completed},
     };
 
     const populateFilter: any = {
@@ -334,11 +334,12 @@ class EmailService {
 
   async emailThreadingByCase(req: Request) {
     const emailThreading =
-      await this.emailThreadingRepository.getOne<IEmailThreading>(
+      await this.emailThreadingRepository.getAllWithoutPagination<IEmailThreading>(
         {caseId: req.params.caseId, isDeleted: {$ne: true}},
         undefined,
         undefined,
-        {path: 'previousMessages', populate: ['previousMessages']}
+        {_id: -1},
+        ['firstInboxMessage']
       );
 
     if (!emailThreading) return [true, []];
