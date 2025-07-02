@@ -335,7 +335,6 @@ class EmailUtil {
                 existingInbox[0]._id,
                 ...existingInbox[0]?.previousMessages,
             ];
-            // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
             const uniqueAttachments = lodash_1.default.uniqBy(mergedAttachments, item => `${item.key}-${item.originalFileName}`);
             // await this.inboxRepository.updateById<IInbox>(existingInbox._id, {
             //   text: existingInbox.text + emailData.text,

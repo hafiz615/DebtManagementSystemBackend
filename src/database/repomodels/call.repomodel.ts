@@ -24,6 +24,7 @@ export class Call {
   conferenceName = '';
   hangup_cause = '';
   hangup_source = '';
+  isRead = false;
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

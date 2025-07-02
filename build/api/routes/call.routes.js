@@ -39,5 +39,6 @@ router.get('/telnyx/token', authorize_middleware_1.default.validateAuth, call_co
 router.get('/telnyx/encryptToken', authorize_middleware_1.default.validateAuth, call_controller_1.default.telnyxCredentialsTokens);
 router.get('/telnyx/phoneNo', authorize_middleware_1.default.validateAuth, call_controller_1.default.telnyxPhoneNo);
 router.get('/debtorAndCaseId/:phoneNo', authorize_middleware_1.default.validateAuth, call_controller_1.default.debtorAndCaseId);
+router.put('/markAsRead/:id', authorize_middleware_1.default.validateAuth, call_controller_1.default.markAsRead);
 exports.default = router;
 //# sourceMappingURL=call.routes.js.map

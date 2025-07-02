@@ -18,6 +18,13 @@ import {UserRepository} from '../api/repository/user/user.repository';
 import {IUser} from '../database/interfaces/user.interface';
 import axios from 'axios';
 import {DataCopier} from './dataCopier.util';
+import {Notification} from '../database/repomodels/notification.repomodel';
+import {NotificationRepository} from '../api/repository/notification/notification.repository';
+import {INotification} from '../database/interfaces/notification.interface';
+import {NotificationCountRepository} from '../api/repository/notificationCount/notificationCount.repository';
+import {INotificationCount} from '../database/interfaces/notificationCount.interface';
+import app from '../app';
+
 dotenv.config();
 
 class CallUtil {
@@ -29,6 +36,8 @@ class CallUtil {
   private userRepository: UserRepository;
   private uploadUtil: UploadUtil;
   private telnyxLink: string;
+  private notificationRepository: NotificationRepository;
+  private notificationCountRepository: NotificationCountRepository;
   constructor() {
     this.twilioClient = new Twilio(
       process.env.TWILIO_ACCOUNT_SID,
@@ -40,6 +49,8 @@ class CallUtil {
     this.callRepository = new CallRepository();
     this.debtorRepository = new DebtorRepository();
     this.creditorRepository = new CreditorRepository();
+    this.notificationRepository = new NotificationRepository();
+    this.notificationCountRepository = new NotificationCountRepository();
     this.telnyxLink = 'https://api.telnyx.com/v2';
   }
 
@@ -458,6 +469,90 @@ class CallUtil {
     }
 
     return {case: caseData, debtor: name?.debtorId || null};
+  }
+
+  async callStatus(
+    hangupCause: string,
+    hangupCauseStatus: string,
+    callData: ICall
+  ) {
+    switch (hangupCause) {
+      case 'user_busy':
+        console.log('Call Date', callData);
+
+        const data = {
+          caseId: callData?.caseId,
+          callId: callData?._id,
+          debtorId: callData?.debtorId,
+          userId: callData?.userId,
+          type: 'CALL',
+        };
+        await this.notificationSocket(data);
+        console.log('Call ended: User is busy.');
+        break;
+
+      case 'normal_clearing':
+        console.log('Call ended normally.');
+        break;
+
+      case 'no_answer':
+        console.log('Call ended: No answer.');
+        break;
+
+      case 'unspecified':
+        console.log('Call ended: Rejected by callee.');
+        break;
+
+      case 'unallocated_number':
+        console.log('Call ended: Unallocated number.');
+        break;
+
+      case 'call_rejected':
+        console.log('Call ended: Rejected.');
+        break;
+
+      case 'network_out_of_order':
+        console.log('Call ended: Network out of order.');
+        break;
+
+      default:
+        console.log(`Call ended with unknown cause: ${hangupCause}`);
+    }
+  }
+
+  async notificationSocket(data: any) {
+    const newNotification = new Notification();
+
+    const validatedData = DataCopier.copy(newNotification, data);
+
+    await this.notificationRepository.create<INotification>(
+      validatedData as any
+    );
+
+    let updatedCount;
+
+    await this.notificationCountRepository.upsert(
+      {userId: data?.userId},
+      {$inc: {callCount: 1, missCallCount: 1}}
+    );
+
+    updatedCount =
+      await this.notificationCountRepository.getOne<INotificationCount>({
+        userId: data?.userId,
+      });
+
+    console.log(
+      `new notification  ${data?.type}`,
+      validatedData,
+      updatedCount?.callCount || 0
+    );
+
+    app.socketInstance.emit('notify', {
+      notificationCount: updatedCount?.callCount || 0,
+      type: 'CALL',
+      missCallCount: updatedCount?.missCallCount,
+      notification: validatedData,
+    });
   }
 }
 export default new CallUtil();

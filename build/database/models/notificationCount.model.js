@@ -45,6 +45,15 @@ const notificationCount = new mongoose_1.Schema({
     taskCount: {
         type: Number,
     },
+    callCount: {
+        type: Number,
+    },
+    missCallCount: {
+        type: Number,
+    },
+    rejectCallCount: {
+        type: Number,
+    },
     userId: {
         type: String,
     },

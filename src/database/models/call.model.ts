@@ -26,6 +26,10 @@ const callSchema: Schema = new Schema({
     type: Boolean,
     default: false,
   },
+  isRead: {
+    type: Boolean,
+    default: false,
+  },
   callRecordingSid: {type: String},
   transcriptUrl: {type: String},
   type: {type: String, default: 'Call'},

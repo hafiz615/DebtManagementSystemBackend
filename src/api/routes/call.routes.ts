@@ -118,4 +118,10 @@ router.get(
   callController.debtorAndCaseId
 );
 
+router.put(
+  '/markAsRead/:id',
+  authorize.validateAuth,
+  callController.markAsRead
+);
+
 export default router;

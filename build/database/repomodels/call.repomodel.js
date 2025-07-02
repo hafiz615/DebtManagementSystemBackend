@@ -30,6 +30,7 @@ class Call {
         this.conferenceName = '';
         this.hangup_cause = '';
         this.hangup_source = '';
+        this.isRead = false;
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
