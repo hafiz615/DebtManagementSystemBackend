@@ -487,92 +487,98 @@ class CallUtil {
     hangupCauseStatus: string,
     callData: ICall
   ) {
-    const from =
-      callData?.callDirection === 'incoming'
-        ? callData?.callFrom
-        : callData?.callTo[0];
-    const number = await commonUtil.extractLastTenDigits(from);
-    const findData = await this.getDebtorOrCreditorName(number);
-    const name = findData ? findData?.fullName : `${from}`;
+    try {
+      const from =
+        callData?.callDirection === 'incoming'
+          ? callData?.callFrom
+          : callData?.callTo[0];
 
-    const data = {
-      caseId: callData?.caseId,
-      callId: callData?._id,
-      debtorId: callData?.debtorId,
-      userId: callData?.userId,
-      type: 'CALL',
-      text: `Missed call received from ${name}`,
-    };
-    switch (hangupCause) {
-      case 'user_busy':
-        console.log('Call Date', callData);
+      const number = await commonUtil.extractLastTenDigits(from);
+      const findData = await this.getDebtorOrCreditorName(number);
+      const name = findData ? findData?.fullName : `${from}`;
 
-        await this.notificationSocket(data);
-        console.log('Call ended: User is busy.');
-        break;
+      const data = {
+        caseId: callData?.caseId,
+        callId: callData?._id,
+        debtorId: callData?.debtorId,
+        userId: callData?.userId,
+        type: 'CALL',
+        text: `Missed call received from ${name}`,
+      };
 
-      case 'normal_clearing':
-        console.log('Call ended normally.');
-        break;
+      switch (hangupCause) {
+        case 'user_busy':
+          console.log('Call Data:', callData);
+          await this.notificationSocket(data);
+          console.log('Call ended: User is busy.');
+          break;
 
-      case 'no_answer':
-        console.log('Call ended: No answer.');
-        break;
+        case 'normal_clearing':
+          console.log('Call ended normally.');
+          break;
 
-      case 'unspecified':
-        console.log('Call ended: Rejected by callee.');
-        break;
+        case 'no_answer':
+          console.log('Call ended: No answer.');
+          break;
 
-      case 'unallocated_number':
-        console.log('Call ended: Unallocated number.');
-        break;
+        case 'unspecified':
+          console.log('Call ended: Rejected by callee.');
+          break;
 
-      case 'call_rejected':
-        console.log('Call ended: Rejected.');
-        break;
+        case 'unallocated_number':
+          console.log('Call ended: Unallocated number.');
+          break;
 
-      case 'network_out_of_order':
-        console.log('Call ended: Network out of order.');
-        break;
+        case 'call_rejected':
+          console.log('Call ended: Rejected.');
+          break;
 
-      default:
-        console.log(`Call ended with unknown cause: ${hangupCause}`);
+        case 'network_out_of_order':
+          console.log('Call ended: Network out of order.');
+          break;
+
+        default:
+          console.log(`Call ended with unknown cause: ${hangupCause}`);
+      }
+    } catch (error) {
+      console.error('Error in callStatus:', error);
     }
   }
 
   async notificationSocket(data: any) {
-    const newNotification = new Notification();
+    try {
+      const newNotification = new Notification();
+      const validatedData = DataCopier.copy(newNotification, data);
 
-    const validatedData = DataCopier.copy(newNotification, data);
+      await this.notificationRepository.create<INotification>(
+        validatedData as any
+      );
 
-    await this.notificationRepository.create<INotification>(
-      validatedData as any
-    );
+      await this.notificationCountRepository.upsert(
+        {userId: data?.userId},
+        {$inc: {callCount: 1, missCallCount: 1}}
+      );
 
-    let updatedCount;
+      const updatedCount =
+        await this.notificationCountRepository.getOne<INotificationCount>({
+          userId: data?.userId,
+        });
 
-    await this.notificationCountRepository.upsert(
-      {userId: data?.userId},
-      {$inc: {callCount: 1, missCallCount: 1}}
-    );
+      console.log(
+        `New notification ${data?.type}`,
+        validatedData,
+        updatedCount?.callCount || 0
+      );
 
-    updatedCount =
-      await this.notificationCountRepository.getOne<INotificationCount>({
-        userId: data?.userId,
+      app.socketInstance.emit('notify', {
+        notificationCount: updatedCount?.callCount || 0,
+        type: 'CALL',
+        missCallCount: updatedCount?.missCallCount,
+        notification: validatedData,
       });
-
-    console.log(
-      `new notification  ${data?.type}`,
-      validatedData,
-      updatedCount?.callCount || 0
-    );
-
-    app.socketInstance.emit('notify', {
-      notificationCount: updatedCount?.callCount || 0,
-      type: 'CALL',
-      missCallCount: updatedCount?.missCallCount,
-      notification: validatedData,
-    });
+    } catch (error) {
+      console.error('Error in notificationSocket:', error);
+    }
   }
 
   async getCallRecordingUrlTelnyx(sessionId: string) {
