@@ -522,6 +522,7 @@ class CallUtil {
           break;
 
         case 'unspecified':
+          await this.notificationSocket(data);
           console.log('Call ended: Rejected by callee.');
           break;
 
@@ -546,39 +547,38 @@ class CallUtil {
   }
 
   async notificationSocket(data: any) {
-    try {
-      const newNotification = new Notification();
-      const validatedData = DataCopier.copy(newNotification, data);
+    const newNotification = new Notification();
 
-      await this.notificationRepository.create<INotification>(
-        validatedData as any
-      );
+    const validatedData = DataCopier.copy(newNotification, data);
 
-      await this.notificationCountRepository.upsert(
-        {userId: data?.userId},
-        {$inc: {callCount: 1, missCallCount: 1}}
-      );
+    await this.notificationRepository.create<INotification>(
+      validatedData as any
+    );
 
-      const updatedCount =
-        await this.notificationCountRepository.getOne<INotificationCount>({
-          userId: data?.userId,
-        });
+    let updatedCount;
 
-      console.log(
-        `New notification ${data?.type}`,
-        validatedData,
-        updatedCount?.callCount || 0
-      );
+    await this.notificationCountRepository.upsert(
+      {userId: data?.userId},
+      {$inc: {callCount: 1, missCallCount: 1}}
+    );
 
-      app.socketInstance.emit('notify', {
-        notificationCount: updatedCount?.callCount || 0,
-        type: 'CALL',
-        missCallCount: updatedCount?.missCallCount,
-        notification: validatedData,
+    updatedCount =
+      await this.notificationCountRepository.getOne<INotificationCount>({
+        userId: data?.userId,
       });
-    } catch (error) {
-      console.error('Error in notificationSocket:', error);
-    }
+
+    console.log(
+      `new notification  ${data?.type}`,
+      validatedData,
+      updatedCount?.callCount || 0
+    );
+
+    app.socketInstance.emit('notify', {
+      notificationCount: updatedCount?.count || 0,
+      type: 'CALL',
+      missCallCount: updatedCount?.callCount,
+      notification: validatedData,
+    });
   }
 
   async getCallRecordingUrlTelnyx(sessionId: string) {

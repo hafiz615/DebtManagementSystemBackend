@@ -377,6 +377,7 @@ class CallUtil {
                     console.log('Call ended: No answer.');
                     break;
                 case 'unspecified':
+                    await this.notificationSocket(data);
                     console.log('Call ended: Rejected by callee.');
                     break;
                 case 'unallocated_number':
@@ -397,25 +398,22 @@ class CallUtil {
         }
     }
     async notificationSocket(data) {
-        try {
-            const newNotification = new notification_repomodel_1.Notification();
-            const validatedData = dataCopier_util_1.DataCopier.copy(newNotification, data);
-            await this.notificationRepository.create(validatedData);
-            await this.notificationCountRepository.upsert({ userId: data?.userId }, { $inc: { callCount: 1, missCallCount: 1 } });
-            const updatedCount = await this.notificationCountRepository.getOne({
+        const newNotification = new notification_repomodel_1.Notification();
+        const validatedData = dataCopier_util_1.DataCopier.copy(newNotification, data);
+        await this.notificationRepository.create(validatedData);
+        let updatedCount;
+        await this.notificationCountRepository.upsert({ userId: data?.userId }, { $inc: { callCount: 1, missCallCount: 1 } });
+        updatedCount =
+            await this.notificationCountRepository.getOne({
                 userId: data?.userId,
             });
-            console.log(`New notification ${data?.type}`, validatedData, updatedCount?.callCount || 0);
-            app_1.default.socketInstance.emit('notify', {
-                notificationCount: updatedCount?.callCount || 0,
-                type: 'CALL',
-                missCallCount: updatedCount?.missCallCount,
-                notification: validatedData,
-            });
-        }
-        catch (error) {
-            console.error('Error in notificationSocket:', error);
-        }
+        console.log(`new notification  ${data?.type}`, validatedData, updatedCount?.callCount || 0);
+        app_1.default.socketInstance.emit('notify', {
+            notificationCount: updatedCount?.count || 0,
+            type: 'CALL',
+            missCallCount: updatedCount?.callCount,
+            notification: validatedData,
+        });
     }
     async getCallRecordingUrlTelnyx(sessionId) {
         const response = await this.telnyxGetRequest(`/recordings?filter[call_session_id]=${sessionId}`);
