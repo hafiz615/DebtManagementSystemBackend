@@ -472,16 +472,10 @@ class CallUtil {
   }
 
   async getCallRecordingUrlTelnyx(sessionId: string) {
-    console.log(sessionId, 'sessionId');
     const response = await this.telnyxGetRequest(
       `/recordings?filter[call_session_id]=${sessionId}`
     );
-    console.log(response, 'response');
     if (response.data && response.data.length) {
-      console.log(
-        response.data[0].download_urls,
-        'response.data[0].download_urls'
-      );
       if (response.data[0].download_urls && response.data[0].download_urls.wav)
         return response.data[0].download_urls.wav;
     }
