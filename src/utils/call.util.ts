@@ -168,7 +168,7 @@ class CallUtil {
     newCall.callFrom = callerId;
     newCall.callStatus = CallStatus; // hangup_cause
     newCall.callDuration = data.callDuration;
-    newCall.hangup_source = data.hangup_source;
+    newCall.hangupSource = data.hangup_source;
     newCall.callStartTime = data.callStartTime;
     newCall.callStartTime = data.callEndTime;
     newCall.callTo = data.callTo;
@@ -398,6 +398,17 @@ class CallUtil {
     return response.data;
   }
 
+  async telnyxGetRequest(url: string) {
+    const response = await axios.get(`${this.telnyxLink}${url}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.telnyxApiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+    return response.data;
+  }
+
   async userAndCaseDateForCalls(
     to: string,
     from: string,
@@ -458,6 +469,17 @@ class CallUtil {
     }
 
     return {case: caseData, debtor: name?.debtorId || null};
+  }
+
+  async getCallRecordingUrlTelnyx(sessionId: string) {
+    const response = await this.telnyxGetRequest(
+      `/recordings?filter[call_session_id]=${sessionId}`
+    );
+    if (response.data && response.data.length) {
+      if (response.data[0].download_urls && response.data[0].download_urls.wav)
+        return response.data[0].download_urls.wav;
+    }
+    return '';
   }
 }
 export default new CallUtil();

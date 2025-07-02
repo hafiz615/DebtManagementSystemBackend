@@ -22,8 +22,9 @@ export class Call {
   transcriptUrl = '';
   type = 'Call';
   conferenceName = '';
-  hangup_cause = '';
-  hangup_source = '';
+  hangupSource = '';
+  recordingUrl = '';
+  sipHangupCause = '';
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
