@@ -34,6 +34,13 @@ const callSchema: Schema = new Schema({
   transcriptUrl: {type: String},
   type: {type: String, default: 'Call'},
   conferenceName: {type: String},
+  hangupSource: {type: String},
+  recordingUrl: {
+    type: String,
+  },
+  sipHangupCause: {
+    type: String,
+  },
   createdAt: {type: Date, required: true},
   updatedAt: {type: Date, required: true},
 });

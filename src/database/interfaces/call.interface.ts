@@ -22,6 +22,9 @@ export interface ICall extends Document {
   transcriptUrl: string;
   conferenceName: string;
   isRead: boolean;
+  hangupSource: string;
+  recordingUrl: string;
+  sipHangupCause: string;
   createdAt: Date;
   updatedAt: Date;
 }

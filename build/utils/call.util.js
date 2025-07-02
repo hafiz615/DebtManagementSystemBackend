@@ -131,7 +131,7 @@ class CallUtil {
         newCall.callFrom = callerId;
         newCall.callStatus = CallStatus; // hangup_cause
         newCall.callDuration = data.callDuration;
-        newCall.hangup_source = data.hangup_source;
+        newCall.hangupSource = data.hangup_source;
         newCall.callStartTime = data.callStartTime;
         newCall.callStartTime = data.callEndTime;
         newCall.callTo = data.callTo;
@@ -304,6 +304,16 @@ class CallUtil {
         });
         return response.data;
     }
+    async telnyxGetRequest(url) {
+        const response = await axios_1.default.get(`${this.telnyxLink}${url}`, {
+            headers: {
+                Authorization: `Bearer ${process.env.telnyxApiKey}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+        return response.data;
+    }
     async userAndCaseDateForCalls(to, from, direction, caseId, userId) {
         const isIncoming = direction === 'incoming';
         const user = isIncoming
@@ -339,16 +349,23 @@ class CallUtil {
         return { case: caseData, debtor: name?.debtorId || null };
     }
     async callStatus(hangupCause, hangupCauseStatus, callData) {
+        const from = callData?.callDirection === 'incoming'
+            ? callData?.callFrom
+            : callData?.callTo[0];
+        const number = await common_util_1.default.extractLastTenDigits(from);
+        const findData = await this.getDebtorOrCreditorName(number);
+        const name = findData ? findData?.fullName : `${from}`;
+        const data = {
+            caseId: callData?.caseId,
+            callId: callData?._id,
+            debtorId: callData?.debtorId,
+            userId: callData?.userId,
+            type: 'CALL',
+            text: `Missed call received from ${name}`,
+        };
         switch (hangupCause) {
             case 'user_busy':
                 console.log('Call Date', callData);
-                const data = {
-                    caseId: callData?.caseId,
-                    callId: callData?._id,
-                    debtorId: callData?.debtorId,
-                    userId: callData?.userId,
-                    type: 'CALL',
-                };
                 await this.notificationSocket(data);
                 console.log('Call ended: User is busy.');
                 break;
@@ -391,6 +408,14 @@ class CallUtil {
             missCallCount: updatedCount?.missCallCount,
             notification: validatedData,
         });
+    }
+    async getCallRecordingUrlTelnyx(sessionId) {
+        const response = await this.telnyxGetRequest(`/recordings?filter[call_session_id]=${sessionId}`);
+        if (response.data && response.data.length) {
+            if (response.data[0].download_urls && response.data[0].download_urls.wav)
+                return response.data[0].download_urls.wav;
+        }
+        return '';
     }
 }
 exports.default = new CallUtil();

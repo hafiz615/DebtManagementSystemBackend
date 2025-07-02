@@ -31,6 +31,9 @@ class Call {
         this.hangup_cause = '';
         this.hangup_source = '';
         this.isRead = false;
+        this.hangupSource = '';
+        this.recordingUrl = '';
+        this.sipHangupCause = '';
         this.createdAt = common_util_1.default.getCurrentDate();
         this.updatedAt = common_util_1.default.getCurrentDate();
     }
