@@ -41,6 +41,9 @@ const callSchema: Schema = new Schema({
   sipHangupCause: {
     type: String,
   },
+  transcription: {
+    type: Array<{}>,
+  },
   createdAt: {type: Date, required: true},
   updatedAt: {type: Date, required: true},
 });
