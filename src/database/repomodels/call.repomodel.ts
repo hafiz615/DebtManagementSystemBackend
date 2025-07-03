@@ -25,6 +25,7 @@ export class Call {
   hangupSource = '';
   recordingUrl = '';
   sipHangupCause = '';
+  transcription = Array<{}>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }

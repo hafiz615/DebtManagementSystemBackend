@@ -18,6 +18,7 @@ import {UserRepository} from '../api/repository/user/user.repository';
 import {IUser} from '../database/interfaces/user.interface';
 import axios from 'axios';
 import {DataCopier} from './dataCopier.util';
+import {v4} from 'uuid';
 dotenv.config();
 
 class CallUtil {
@@ -480,6 +481,24 @@ class CallUtil {
         return response.data[0].download_urls.wav;
     }
     return '';
+  }
+
+  async startTranscription(callControlId: string) {
+    console.log(callControlId, 'callControlId');
+    const data = {
+      ['transcription_engine']: 'B',
+      ['transcription_tracks']: 'both',
+      ['command_id']: callControlId,
+    };
+    console.log(data, 'dataaaaa');
+    const response = await this.telnyxPostRequest(
+      `/calls/${callControlId}/actions/transcription_start`,
+      data
+    );
+    console.log(response, 'response startTranscription');
+    if (response.data && response.data.result === 'ok') {
+      console.log('Successfully started transcription');
+    }
   }
 }
 export default new CallUtil();
