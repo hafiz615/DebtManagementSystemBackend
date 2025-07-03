@@ -63,8 +63,8 @@ const callSchema = new mongoose_1.Schema({
     sipHangupCause: {
         type: String,
     },
-    transcriptionId: {
-        type: String,
+    transcription: {
+        type: (Array),
     },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true },

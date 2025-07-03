@@ -24,7 +24,7 @@ export interface ICall extends Document {
   hangupSource: string;
   recordingUrl: string;
   sipHangupCause: string;
-  transcriptionId: string;
+  transcription: Array<any>;
   createdAt: Date;
   updatedAt: Date;
 }
