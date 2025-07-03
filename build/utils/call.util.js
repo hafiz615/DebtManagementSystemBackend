@@ -350,6 +350,22 @@ class CallUtil {
         }
         return '';
     }
+    async startTranscription(callControlId, sessionId) {
+        console.log(callControlId, 'callControlId');
+        console.log(sessionId, 'sessionId');
+        const data = {
+            transcription_engine: 'B',
+            transcription_tracks: 'both',
+            command_id: callControlId,
+            client_state: sessionId,
+        };
+        console.log(data, 'dataaaaa');
+        const response = await this.telnyxPostRequest(`/calls/:${callControlId}/actions/transcription_start`, data);
+        console.log(response, 'response startTranscription');
+        if (response.data && response.data.result === 'ok') {
+            console.log('Successfully started transcription');
+        }
+    }
 }
 exports.default = new CallUtil();
 //# sourceMappingURL=call.util.js.map
