@@ -353,7 +353,7 @@ class CallUtil {
     async startTranscription(callControlId) {
         console.log(callControlId, 'callControlId');
         const data = {
-            ['transcription_engine']: 'A',
+            ['transcription_engine']: 'B',
             ['transcription_tracks']: 'both',
             ['command_id']: callControlId,
         };
