@@ -483,14 +483,12 @@ class CallUtil {
     return '';
   }
 
-  async startTranscription(callControlId: string, sessionId: string) {
+  async startTranscription(callControlId: string) {
     console.log(callControlId, 'callControlId');
-    console.log(sessionId, 'sessionId');
     const data = {
       ['transcription_engine']: 'B',
       ['transcription_tracks']: 'both',
       ['command_id']: callControlId,
-      ['client_state']: sessionId,
     };
     console.log(data, 'dataaaaa');
     const response = await this.telnyxPostRequest(
