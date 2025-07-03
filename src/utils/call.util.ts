@@ -494,7 +494,7 @@ class CallUtil {
     };
     console.log(data, 'dataaaaa');
     const response = await this.telnyxPostRequest(
-      `/calls/:${callControlId}/actions/transcription_start`,
+      `/calls/${callControlId}/actions/transcription_start`,
       data
     );
     console.log(response, 'response startTranscription');

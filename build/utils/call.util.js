@@ -360,7 +360,7 @@ class CallUtil {
             client_state: sessionId,
         };
         console.log(data, 'dataaaaa');
-        const response = await this.telnyxPostRequest(`/calls/:${callControlId}/actions/transcription_start`, data);
+        const response = await this.telnyxPostRequest(`/calls/${callControlId}/actions/transcription_start`, data);
         console.log(response, 'response startTranscription');
         if (response.data && response.data.result === 'ok') {
             console.log('Successfully started transcription');
