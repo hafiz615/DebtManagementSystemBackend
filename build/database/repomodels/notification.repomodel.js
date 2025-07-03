@@ -9,6 +9,7 @@ class Notification {
     constructor() {
         this.caseId = '';
         this.inboxId = null;
+        this.callId = null;
         this.debtorId = '';
         this.userId = '';
         this.type = '';

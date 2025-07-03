@@ -22,6 +22,9 @@ export class Call {
   transcriptUrl = '';
   type = 'Call';
   conferenceName = '';
+  hangup_cause = '';
+  hangup_source = '';
+  isRead = false;
   hangupSource = '';
   recordingUrl = '';
   sipHangupCause = '';
