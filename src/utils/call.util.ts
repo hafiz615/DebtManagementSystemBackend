@@ -519,6 +519,7 @@ class CallUtil {
           break;
 
         case 'no_answer':
+          await this.notificationSocket(data);
           console.log('Call ended: No answer.');
           break;
 

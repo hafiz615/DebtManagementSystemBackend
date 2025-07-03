@@ -374,6 +374,7 @@ class CallUtil {
                     console.log('Call ended normally.');
                     break;
                 case 'no_answer':
+                    await this.notificationSocket(data);
                     console.log('Call ended: No answer.');
                     break;
                 case 'unspecified':

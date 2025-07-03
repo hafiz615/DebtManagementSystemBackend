@@ -118,6 +118,8 @@ router.get(
   callController.debtorAndCaseId
 );
 
+router.get('/missCalls', authorize.validateAuth, callController.missCalls);
+
 router.put(
   '/markAsRead/:id',
   authorize.validateAuth,
