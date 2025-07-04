@@ -813,9 +813,17 @@ class PaymentService {
   private async getPreviousPayments(id: string, debtor: boolean) {
     const filters = {
       isDeleted: false,
-      authorized: {$in: ['Success', 'Failed']},
-      captured: {$in: ['Success', 'Failed']},
-      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}],
+      $and: [
+        {
+          $or: [
+            {authorized: 'Success'},
+            {authorized: 'Failed'},
+            {captured: 'Success'},
+            {captured: 'Failed'},
+          ],
+        },
+        {$or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}]},
+      ],
     };
     if (debtor) {
       filters['debtorId'] = id;
@@ -823,6 +831,7 @@ class PaymentService {
     } else {
       filters['caseId'] = id;
     }
+    console.log(filters, 'filterss');
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
@@ -2322,6 +2331,7 @@ class PaymentService {
       req.params.id,
       true
     );
+    console.log(paymentsPrevious, 'paymentsPrevious');
     const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(
       req.params.id,
       pageLimit.page,

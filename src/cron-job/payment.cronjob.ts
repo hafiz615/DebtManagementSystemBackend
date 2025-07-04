@@ -1067,17 +1067,19 @@ class CronJob {
       {
         authorized: {$ne: 'Success'},
         isDeleted: {$ne: true},
-        retriesAuth: retryInterval.failedAuthorization.maxRetry,
+        retriesAuth: {$gte: retryInterval.failedAuthorization.maxRetry},
+        nonExecutable: {$ne: true},
       },
-      {nonExecutable: true, authorized: 'Failed'}
+      {nonExecutable: true, authorized: 'Failed', status: 'Pending'}
     );
     await this.paymentRepository.updateMany<IPayment>(
       {
         captured: {$ne: 'Success'},
         isDeleted: {$ne: true},
-        retriesCapture: retryInterval.failedPayment.maxRetry,
+        retriesCapture: {$gte: retryInterval.failedPayment.maxRetry},
+        nonExecutable: {$ne: true},
       },
-      {nonExecutable: true, captured: 'Failed'}
+      {nonExecutable: true, captured: 'Failed', status: 'Pending'}
     );
   }
 

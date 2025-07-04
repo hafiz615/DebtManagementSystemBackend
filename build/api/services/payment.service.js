@@ -606,9 +606,17 @@ class PaymentService {
     async getPreviousPayments(id, debtor) {
         const filters = {
             isDeleted: false,
-            authorized: { $in: ['Success', 'Failed'] },
-            captured: { $in: ['Success', 'Failed'] },
-            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }],
+            $and: [
+                {
+                    $or: [
+                        { authorized: 'Success' },
+                        { authorized: 'Failed' },
+                        { captured: 'Success' },
+                        { captured: 'Failed' },
+                    ],
+                },
+                { $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }] },
+            ],
         };
         if (debtor) {
             filters['debtorId'] = id;
@@ -617,6 +625,7 @@ class PaymentService {
         else {
             filters['caseId'] = id;
         }
+        console.log(filters, 'filterss');
         return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod', undefined, { dueDate: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
@@ -1629,6 +1638,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('case')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
         const paymentsPrevious = await this.getPreviousPayments(req.params.id, true);
+        console.log(paymentsPrevious, 'paymentsPrevious');
         const paymentsUpcoming = await this.getUpcomingPayments(req.params.id, pageLimit.page, pageLimit.limit, true);
         const paymentsUpcomingCount = await this.getUpcomingPaymentsCount(req.params.id, true);
         const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
