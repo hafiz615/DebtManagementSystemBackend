@@ -1336,7 +1336,7 @@ class CronJob {
           }
         }
       }
-      if (startWaterfall) {
+      if (startWaterfall && otherPayments.length) {
         await this.startWaterfallCC([payment], cronId, false, settings);
       }
       retryPlus = retryOriginalValue;
@@ -1976,7 +1976,7 @@ class CronJob {
         //   }
         // }
       }
-      if (startWaterfall) {
+      if (startWaterfall && otherPayments.length) {
         await this.startWaterfallACH([payment], cronId, false, settings);
       }
       retryPlus = retryOriginalValue;
