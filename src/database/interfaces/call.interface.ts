@@ -24,6 +24,7 @@ export interface ICall extends Document {
   isRead: boolean;
   hangupSource: string;
   recordingUrl: string;
+  voicemailUrl: string;
   sipHangupCause: string;
   transcription: Array<any>;
   createdAt: Date;

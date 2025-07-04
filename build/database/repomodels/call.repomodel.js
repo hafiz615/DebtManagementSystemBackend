@@ -33,6 +33,7 @@ class Call {
         this.isRead = false;
         this.hangupSource = '';
         this.recordingUrl = '';
+        this.voicemailUrl = '';
         this.sipHangupCause = '';
         this.transcription = Array();
         this.createdAt = common_util_1.default.getCurrentDate();
