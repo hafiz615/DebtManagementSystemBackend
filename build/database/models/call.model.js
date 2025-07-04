@@ -52,6 +52,10 @@ const callSchema = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    isRead: {
+        type: Boolean,
+        default: false,
+    },
     callRecordingSid: { type: String },
     transcriptUrl: { type: String },
     type: { type: String, default: 'Call' },

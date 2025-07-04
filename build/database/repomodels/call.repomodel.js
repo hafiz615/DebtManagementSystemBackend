@@ -28,6 +28,9 @@ class Call {
         this.transcriptUrl = '';
         this.type = 'Call';
         this.conferenceName = '';
+        this.hangup_cause = '';
+        this.hangup_source = '';
+        this.isRead = false;
         this.hangupSource = '';
         this.recordingUrl = '';
         this.sipHangupCause = '';

@@ -43,6 +43,10 @@ const notification = new mongoose_1.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'inbox',
     },
+    callId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Call',
+    },
     debtorId: {
         type: String,
     },
