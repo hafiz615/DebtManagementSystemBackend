@@ -1323,37 +1323,22 @@ class CronJob {
                         break;
                     }
                 }
-                // if (
-                //   account.paymentType === 'ACH' &&
-                //   account.platform === 'Seamlesschex'
-                // ) {
-                //   const decryptedData = commonUtil.getDecryptedData(account.vault);
-                //   const tokenResponse =
-                //     await seemlesschexUtil.tokenization(decryptedData);
-                //   let response = await seemlesschexUtil.createCheck(
-                //     debtor,
-                //     payment.amount,
-                //     tokenResponse.tokenization.token,
-                //     decryptedData
-                //   );
-                //   const result = await this.processACHCommissionResponse(
-                //     payment,
-                //     concatedPayments,
-                //     response,
-                //     retryPlus,
-                //     cronId,
-                //     settings,
-                //     totalAmount,
-                //     account.platform,
-                //     debtor
-                //   );
-                //   if (retryPlus) retryPlus = false;
-                //   if (!result) startWaterfall = true;
-                //   if (result) {
-                //     startWaterfall = false;
-                //     break;
-                //   }
-                // }
+            }
+            if (startWaterfall && !otherPayments.length) {
+                for (const account of accountsTemp) {
+                    if (account.paymentType === 'ACH' &&
+                        account.platform === 'Seamlesschex') {
+                        const decryptedData = common_util_1.default.getDecryptedData(account.vault);
+                        const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+                        let response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
+                        const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
+                        if (retryPlus)
+                            retryPlus = false;
+                        if (result) {
+                            break;
+                        }
+                    }
+                }
             }
             if (startWaterfall && otherPayments.length) {
                 await this.startWaterfallACH([payment], cronId, false, settings);
