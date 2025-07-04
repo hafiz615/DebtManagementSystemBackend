@@ -1289,6 +1289,7 @@ class CronJob {
             const concatedPayments = otherPayments.concat(payment);
             const debtor = await this.debtorRepository.getById(payment.debtorId);
             const accountsTemp = await debtor_util_1.default.getDebtorAccounts(payment.debtorId);
+            const seamlessOnly = await debtor_util_1.default.ifOnlySeamlesschex(payment.debtorId);
             let startWaterfall = false;
             for (const account of accountsTemp) {
                 if (account.paymentType === 'cc') {
@@ -1321,20 +1322,18 @@ class CronJob {
                         break;
                     }
                 }
-            }
-            if (startWaterfall && !otherPayments.length) {
-                for (const account of accountsTemp) {
-                    if (account.paymentType === 'ACH' &&
-                        account.platform === 'Seamlesschex') {
-                        const decryptedData = common_util_1.default.getDecryptedData(account.vault);
-                        const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
-                        let response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
-                        const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
-                        if (retryPlus)
-                            retryPlus = false;
-                        if (result) {
-                            break;
-                        }
+                if (account.paymentType === 'ACH' &&
+                    account.platform === 'Seamlesschex' &&
+                    seamlessOnly) {
+                    const decryptedData = common_util_1.default.getDecryptedData(account.vault);
+                    const tokenResponse = await seemlesschex_util_1.default.tokenization(decryptedData);
+                    let response = await seemlesschex_util_1.default.createCheck(debtor, payment.amount, tokenResponse.tokenization.token, decryptedData);
+                    const result = await this.processACHCommissionResponse(payment, concatedPayments, response, retryPlus, cronId, settings, totalAmount, account.platform, debtor);
+                    if (retryPlus)
+                        retryPlus = false;
+                    if (result) {
+                        startWaterfall = false;
+                        break;
                     }
                 }
             }
