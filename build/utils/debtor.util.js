@@ -787,6 +787,18 @@ class DebtorUtil {
         validAccount.paynoteSourceId = paynoteSourceId;
         return await this.accountRepository.create(validAccount);
     }
+    async ifOnlySeamlesschex(debtorId) {
+        let debtorAccounts = await this.accountRepository.getAll({
+            debtorId: debtorId,
+            isDeleted: { $ne: true },
+        });
+        const totalLength = debtorAccounts.length;
+        const seamlessAccounts = debtorAccounts.filter(account => account.platform === 'Seamlesschex');
+        if (totalLength === seamlessAccounts.length) {
+            return true;
+        }
+        return false;
+    }
 }
 exports.default = new DebtorUtil();
 //# sourceMappingURL=debtor.util.js.map

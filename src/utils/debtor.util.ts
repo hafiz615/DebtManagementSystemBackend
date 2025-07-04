@@ -1050,6 +1050,22 @@ class DebtorUtil {
 
     return await this.accountRepository.create<IAccount>(validAccount as any);
   }
+
+  async ifOnlySeamlesschex(debtorId: string) {
+    let debtorAccounts: IAccount[] =
+      await this.accountRepository.getAll<IAccount>({
+        debtorId: debtorId,
+        isDeleted: {$ne: true},
+      });
+    const totalLength = debtorAccounts.length;
+    const seamlessAccounts = debtorAccounts.filter(
+      account => account.platform === 'Seamlesschex'
+    );
+    if (totalLength === seamlessAccounts.length) {
+      return true;
+    }
+    return false;
+  }
 }
 
 export default new DebtorUtil();
