@@ -64,6 +64,9 @@ const callSchema = new mongoose_1.Schema({
     recordingUrl: {
         type: String,
     },
+    voicemailUrl: {
+        type: String,
+    },
     sipHangupCause: {
         type: String,
     },

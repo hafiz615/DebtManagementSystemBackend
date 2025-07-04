@@ -27,6 +27,7 @@ export class Call {
   isRead = false;
   hangupSource = '';
   recordingUrl = '';
+  voicemailUrl = '';
   sipHangupCause = '';
   transcription = Array<{}>();
   createdAt = commonUtil.getCurrentDate();

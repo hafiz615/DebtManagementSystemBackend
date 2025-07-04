@@ -366,7 +366,7 @@ class CallUtil {
             };
             switch (hangupCause) {
                 case 'user_busy':
-                    console.log('Call Data:', callData);
+                    // console.log('Call Data:', callData);
                     await this.notificationSocket(data);
                     console.log('Call ended: User is busy.');
                     break;

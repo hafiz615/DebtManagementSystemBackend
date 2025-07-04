@@ -38,6 +38,9 @@ const callSchema: Schema = new Schema({
   recordingUrl: {
     type: String,
   },
+  voicemailUrl: {
+    type: String,
+  },
   sipHangupCause: {
     type: String,
   },
