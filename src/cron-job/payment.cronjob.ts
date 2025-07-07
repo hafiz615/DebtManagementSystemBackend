@@ -258,19 +258,19 @@ class CronJob {
       }
     );
 
-    cron.schedule(
-      '25 * * * *',
-      async () => {
-        console.log('Running a task every 30 min of an hour');
-        this.processCommissionRetryPayments();
-        this.processRetryPayments();
-        this.processWaterfallPayments();
-        this.processWaterfallPaymentsACH();
-      },
-      {
-        timezone: 'America/New_York',
-      }
-    );
+    // cron.schedule(
+    //   '25 * * * *',
+    //   async () => {
+    //     console.log('Running a task every 30 min of an hour');
+    //     this.processCommissionRetryPayments();
+    //     this.processRetryPayments();
+    //     this.processWaterfallPayments();
+    //     this.processWaterfallPaymentsACH();
+    //   },
+    //   {
+    //     timezone: 'America/New_York',
+    //   }
+    // );
 
     cron.schedule(
       '40 * * * *',
