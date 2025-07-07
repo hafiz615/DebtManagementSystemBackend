@@ -767,13 +767,15 @@ class CronJob {
         await this.paymentRepository.updateMany({
             authorized: { $ne: 'Success' },
             isDeleted: { $ne: true },
-            retriesAuth: retryInterval.failedAuthorization.maxRetry,
-        }, { nonExecutable: true, authorized: 'Failed' });
+            retriesAuth: { $gte: retryInterval.failedAuthorization.maxRetry },
+            nonExecutable: { $ne: true },
+        }, { nonExecutable: true, authorized: 'Failed', status: 'Pending' });
         await this.paymentRepository.updateMany({
             captured: { $ne: 'Success' },
             isDeleted: { $ne: true },
-            retriesCapture: retryInterval.failedPayment.maxRetry,
-        }, { nonExecutable: true, captured: 'Failed' });
+            retriesCapture: { $gte: retryInterval.failedPayment.maxRetry },
+            nonExecutable: { $ne: true },
+        }, { nonExecutable: true, captured: 'Failed', status: 'Pending' });
     }
     async processCommissionRetryPayments() {
         // const payments: any = await paymentUtil.getAllCronJobPayments();

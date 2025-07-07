@@ -4,6 +4,7 @@ export interface INotification extends Document {
   text: string;
   caseId: string;
   inboxId: mongoose.Schema.Types.ObjectId;
+  callId: mongoose.Schema.Types.ObjectId;
   userId: string;
   debtorId: string;
   isRead: boolean;

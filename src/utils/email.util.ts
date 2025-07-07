@@ -542,7 +542,6 @@ class EmailUtil {
         ...existingInbox[0]?.previousMessages,
       ];
 
-      // Step 3: Filter for uniqueness (by 'key' and 'originalFileName')
       const uniqueAttachments = _.uniqBy(
         mergedAttachments,
         item => `${item.key}-${item.originalFileName}`

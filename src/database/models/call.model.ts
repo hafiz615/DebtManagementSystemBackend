@@ -26,10 +26,27 @@ const callSchema: Schema = new Schema({
     type: Boolean,
     default: false,
   },
+  isRead: {
+    type: Boolean,
+    default: false,
+  },
   callRecordingSid: {type: String},
   transcriptUrl: {type: String},
   type: {type: String, default: 'Call'},
   conferenceName: {type: String},
+  hangupSource: {type: String},
+  recordingUrl: {
+    type: String,
+  },
+  voicemailUrl: {
+    type: String,
+  },
+  sipHangupCause: {
+    type: String,
+  },
+  transcription: {
+    type: Array<{}>,
+  },
   createdAt: {type: Date, required: true},
   updatedAt: {type: Date, required: true},
 });

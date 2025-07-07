@@ -18,6 +18,15 @@ const notificationCount: Schema = new Schema({
   taskCount: {
     type: Number,
   },
+  callCount: {
+    type: Number,
+  },
+  missCallCount: {
+    type: Number,
+  },
+  rejectCallCount: {
+    type: Number,
+  },
   userId: {
     type: String,
   },

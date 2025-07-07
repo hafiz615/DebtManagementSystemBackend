@@ -18,6 +18,10 @@ const case_repository_1 = require("../api/repository/case/case.repository");
 const user_repository_1 = require("../api/repository/user/user.repository");
 const axios_1 = __importDefault(require("axios"));
 const dataCopier_util_1 = require("./dataCopier.util");
+const notification_repomodel_1 = require("../database/repomodels/notification.repomodel");
+const notification_repository_1 = require("../api/repository/notification/notification.repository");
+const notificationCount_repository_1 = require("../api/repository/notificationCount/notificationCount.repository");
+const app_1 = __importDefault(require("../app"));
 dotenv_1.default.config();
 class CallUtil {
     constructor() {
@@ -28,6 +32,8 @@ class CallUtil {
         this.callRepository = new call_repository_1.CallRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.creditorRepository = new creditor_repository_1.CreditorRepository();
+        this.notificationRepository = new notification_repository_1.NotificationRepository();
+        this.notificationCountRepository = new notificationCount_repository_1.NotificationCountRepository();
         this.telnyxLink = 'https://api.telnyx.com/v2';
     }
     async pollRecordingStatus(recordingSid) {
@@ -125,7 +131,7 @@ class CallUtil {
         newCall.callFrom = callerId;
         newCall.callStatus = CallStatus; // hangup_cause
         newCall.callDuration = data.callDuration;
-        newCall.hangup_source = data.hangup_source;
+        newCall.hangupSource = data.hangup_source;
         newCall.callStartTime = data.callStartTime;
         newCall.callStartTime = data.callEndTime;
         newCall.callTo = data.callTo;
@@ -298,6 +304,16 @@ class CallUtil {
         });
         return response.data;
     }
+    async telnyxGetRequest(url) {
+        const response = await axios_1.default.get(`${this.telnyxLink}${url}`, {
+            headers: {
+                Authorization: `Bearer ${process.env.telnyxApiKey}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
+        return response.data;
+    }
     async userAndCaseDateForCalls(to, from, direction, caseId, userId) {
         const isIncoming = direction === 'incoming';
         const user = isIncoming
@@ -331,6 +347,100 @@ class CallUtil {
             }
         }
         return { case: caseData, debtor: name?.debtorId || null };
+    }
+    async callStatus(hangupCause, hangupCauseStatus, callData) {
+        try {
+            const from = callData?.callDirection === 'incoming'
+                ? callData?.callFrom
+                : callData?.callTo[0];
+            const number = await common_util_1.default.extractLastTenDigits(from);
+            const findData = await this.getDebtorOrCreditorName(number);
+            const name = findData ? findData?.fullName : `${from}`;
+            const data = {
+                caseId: callData?.caseId,
+                callId: callData?._id,
+                debtorId: callData?.debtorId,
+                userId: callData?.userId,
+                type: 'CALL',
+                text: `Missed call received from ${name}`,
+            };
+            switch (hangupCause) {
+                case 'user_busy':
+                    // console.log('Call Data:', callData);
+                    await this.notificationSocket(data);
+                    console.log('Call ended: User is busy.');
+                    break;
+                case 'normal_clearing':
+                    console.log('Call ended normally.');
+                    break;
+                case 'no_answer':
+                    await this.notificationSocket(data);
+                    console.log('Call ended: No answer.');
+                    break;
+                case 'unspecified':
+                    await this.notificationSocket(data);
+                    console.log('Call ended: Rejected by callee.');
+                    break;
+                case 'timeout':
+                    await this.notificationSocket(data);
+                    console.log('Call ended: timeout cause.');
+                    break;
+                case 'unallocated_number':
+                    console.log('Call ended: Unallocated number.');
+                    break;
+                case 'call_rejected':
+                    console.log('Call ended: Rejected.');
+                    break;
+                case 'network_out_of_order':
+                    console.log('Call ended: Network out of order.');
+                    break;
+                default:
+                    console.log(`Call ended with unknown cause: ${hangupCause}`);
+            }
+        }
+        catch (error) {
+            console.error('Error in callStatus:', error);
+        }
+    }
+    async notificationSocket(data) {
+        const newNotification = new notification_repomodel_1.Notification();
+        const validatedData = dataCopier_util_1.DataCopier.copy(newNotification, data);
+        await this.notificationRepository.create(validatedData);
+        let updatedCount;
+        await this.notificationCountRepository.upsert({ userId: data?.userId }, { $inc: { callCount: 1, missCallCount: 1 } });
+        updatedCount =
+            await this.notificationCountRepository.getOne({
+                userId: data?.userId,
+            });
+        console.log(`new notification  ${data?.type}`, validatedData, updatedCount?.callCount || 0);
+        app_1.default.socketInstance.emit('notify', {
+            notificationCount: updatedCount?.count || 0,
+            type: 'CALL',
+            missCallCount: updatedCount?.callCount,
+            notification: validatedData,
+        });
+    }
+    async getCallRecordingUrlTelnyx(sessionId) {
+        const response = await this.telnyxGetRequest(`/recordings?filter[call_session_id]=${sessionId}`);
+        if (response.data && response.data.length) {
+            if (response.data[0].download_urls && response.data[0].download_urls.wav)
+                return response.data[0].download_urls.wav;
+        }
+        return '';
+    }
+    async startTranscription(callControlId) {
+        console.log(callControlId, 'callControlId');
+        const data = {
+            ['transcription_engine']: 'B',
+            ['transcription_tracks']: 'both',
+            ['command_id']: callControlId,
+        };
+        console.log(data, 'dataaaaa');
+        const response = await this.telnyxPostRequest(`/calls/${callControlId}/actions/transcription_start`, data);
+        console.log(response, 'response startTranscription');
+        if (response.data && response.data.result === 'ok') {
+            console.log('Successfully started transcription');
+        }
     }
 }
 exports.default = new CallUtil();

@@ -24,6 +24,12 @@ export class Call {
   conferenceName = '';
   hangup_cause = '';
   hangup_source = '';
+  isRead = false;
+  hangupSource = '';
+  recordingUrl = '';
+  voicemailUrl = '';
+  sipHangupCause = '';
+  transcription = Array<{}>();
   createdAt = commonUtil.getCurrentDate();
   updatedAt = commonUtil.getCurrentDate();
 }
