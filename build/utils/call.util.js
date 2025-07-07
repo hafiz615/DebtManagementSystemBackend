@@ -381,6 +381,10 @@ class CallUtil {
                     await this.notificationSocket(data);
                     console.log('Call ended: Rejected by callee.');
                     break;
+                case 'timeout':
+                    await this.notificationSocket(data);
+                    console.log('Call ended: timeout cause.');
+                    break;
                 case 'unallocated_number':
                     console.log('Call ended: Unallocated number.');
                     break;
