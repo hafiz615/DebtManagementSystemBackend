@@ -684,15 +684,23 @@ class PaymentService {
   }
 
   async getAllUpcomingPayments(req: Request): Promise<[boolean, {} | string]> {
+    const type = String(req.query.type);
+    if (type !== 'client' && type !== 'creditor') {
+      return [false, constants.notFoundMessage('query type is invalid')];
+    }
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
-    if (!debtor) return [false, constants.notFoundMessage('case')];
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const payments: IPayment[] = await this.getAllPaymentsByDebtor(
       req.params.id,
       pageLimit.page,
-      pageLimit.limit
+      pageLimit.limit,
+      type
     );
-    const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id);
+    const paymentsCount = await this.getAllPaymentsByDebtorCount(
+      req.params.id,
+      type
+    );
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -780,16 +788,23 @@ class PaymentService {
   private async getAllPaymentsByDebtor(
     id: string,
     page: number,
-    limit: number
+    limit: number,
+    type: string
   ) {
+    const filter = {
+      debtorId: id,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
+      isDeleted: false,
+      status: 'Upcoming',
+    };
+    if (type === 'creditor') {
+      filter['caseId'] = {$ne: null};
+    }
+    if (type === 'client') {
+      filter['caseId'] = null;
+    }
     return await this.paymentRepository.getAll<IPayment>(
-      {
-        debtorId: id,
-        caseId: {$ne: null},
-        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
-        isDeleted: false,
-        status: 'Upcoming',
-      },
+      filter,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName',
       undefined,
       {createdAt: -1},
@@ -800,14 +815,20 @@ class PaymentService {
     );
   }
 
-  private async getAllPaymentsByDebtorCount(id: string) {
-    return await this.paymentRepository.getCount<IPayment>({
+  private async getAllPaymentsByDebtorCount(id: string, type: string) {
+    const filter = {
       debtorId: id,
-      caseId: {$ne: null},
       $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       isDeleted: false,
       status: 'Upcoming',
-    });
+    };
+    if (type === 'creditor') {
+      filter['caseId'] = {$ne: null};
+    }
+    if (type === 'client') {
+      filter['caseId'] = null;
+    }
+    return await this.paymentRepository.getCount<IPayment>(filter);
   }
 
   private async getPreviousPayments(id: string, debtor: boolean) {

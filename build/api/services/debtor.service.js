@@ -1050,6 +1050,10 @@ class DebtorService {
         return [true, constants_util_1.default.successAddMessage('Payment plan')];
     }
     async addManualPayment(req) {
+        const type = String(req.query.type);
+        if (type !== 'client' && type !== 'creditor') {
+            return [false, constants_util_1.default.notFoundMessage('query type is invalid')];
+        }
         let debtor = await this.debtorRepository.getById(req.body.debtorId);
         if (!debtor) {
             return [false, constants_util_1.default.notFoundMessage('Debtor')];
@@ -1059,7 +1063,19 @@ class DebtorService {
         });
         if (foundPayment)
             return [false, constants_util_1.default.alreadyExistsMessage('Reference id')];
-        let updatedPayment = await this.paymentRepository.updateMany({ _id: req.body.transactionIds }, {
+        const transactionIds = req.body.transactionIds;
+        const additionalIds = [];
+        if (type === 'client') {
+            for (const transactionId of transactionIds) {
+                const payment = await this.paymentRepository.getById(transactionId);
+                const otherPayments = await payment_util_1.default.getOtherPayments(payment);
+                otherPayments.forEach(payment => {
+                    additionalIds.push(String(payment._id));
+                });
+            }
+        }
+        const mergedIds = transactionIds.concat(additionalIds);
+        let updatedPayment = await this.paymentRepository.updateMany({ _id: mergedIds }, {
             authorized: 'Success',
             captured: 'Success',
             status: 'Pending',
@@ -1070,16 +1086,13 @@ class DebtorService {
             manualCommission: req.body.commission,
             updatedAt: common_util_1.default.getCurrentDate(),
         });
-        if (!updatedPayment) {
+        if (!updatedPayment.modifiedCount) {
             return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
         }
-        if (updatedPayment) {
-            let updatedDebtor = await this.debtorRepository.updateById(req.body.debtorId, {
-                $inc: { commissionPaid: req.body.commission },
+        if (type === 'client') {
+            await this.debtorRepository.updateById(req.body.debtorId, {
+                $inc: { commissionPaid: req.body.amount },
             });
-            if (!updatedDebtor) {
-                return [false, constants_util_1.default.failureAddMessage('Manual Payment')];
-            }
         }
         return [true, constants_util_1.default.successAddMessage('Manual Payment')];
     }

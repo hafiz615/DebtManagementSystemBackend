@@ -514,12 +514,16 @@ class PaymentService {
         ];
     }
     async getAllUpcomingPayments(req) {
+        const type = String(req.query.type);
+        if (type !== 'client' && type !== 'creditor') {
+            return [false, constants_util_1.default.notFoundMessage('query type is invalid')];
+        }
         const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
-            return [false, constants_util_1.default.notFoundMessage('case')];
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
-        const payments = await this.getAllPaymentsByDebtor(req.params.id, pageLimit.page, pageLimit.limit);
-        const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id);
+        const payments = await this.getAllPaymentsByDebtor(req.params.id, pageLimit.page, pageLimit.limit, type);
+        const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id, type);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -585,23 +589,35 @@ class PaymentService {
             },
         ];
     }
-    async getAllPaymentsByDebtor(id, page, limit) {
-        return await this.paymentRepository.getAll({
+    async getAllPaymentsByDebtor(id, page, limit, type) {
+        const filter = {
             debtorId: id,
-            caseId: { $ne: null },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             isDeleted: false,
             status: 'Upcoming',
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
+        };
+        if (type === 'creditor') {
+            filter['caseId'] = { $ne: null };
+        }
+        if (type === 'client') {
+            filter['caseId'] = null;
+        }
+        return await this.paymentRepository.getAll(filter, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
     }
-    async getAllPaymentsByDebtorCount(id) {
-        return await this.paymentRepository.getCount({
+    async getAllPaymentsByDebtorCount(id, type) {
+        const filter = {
             debtorId: id,
-            caseId: { $ne: null },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             isDeleted: false,
             status: 'Upcoming',
-        });
+        };
+        if (type === 'creditor') {
+            filter['caseId'] = { $ne: null };
+        }
+        if (type === 'client') {
+            filter['caseId'] = null;
+        }
+        return await this.paymentRepository.getCount(filter);
     }
     async getPreviousPayments(id, debtor) {
         const filters = {
