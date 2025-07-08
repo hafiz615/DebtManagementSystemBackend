@@ -1168,7 +1168,9 @@ class DebtorService {
             const lawsuitFields = await case_util_1.default.getExtractionLawsuitBuffer(files.lawsuitDocuments);
             if (typeof extractedFields === 'string')
                 return [false, extractedFields];
-            debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
+            debtorBody = await debtor_util_1.default.mapDebtor([
+                ...extractedFields.extracted_fields,
+            ]);
             const checkDebtorAlreadyExist = await this.checkDebtorAlreadyExist(debtorBody);
             if (checkDebtorAlreadyExist[0]) {
                 previousMca = checkDebtorAlreadyExist[1].mcaDocuments.map(obj => {

@@ -1552,7 +1552,9 @@ class DebtorService {
       );
       if (typeof extractedFields === 'string') return [false, extractedFields];
 
-      debtorBody = await debtorUtil.mapDebtor(extractedFields.extracted_fields);
+      debtorBody = await debtorUtil.mapDebtor([
+        ...extractedFields.extracted_fields,
+      ]);
 
       const checkDebtorAlreadyExist: any =
         await this.checkDebtorAlreadyExist(debtorBody);
