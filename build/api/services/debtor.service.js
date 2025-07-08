@@ -1293,13 +1293,20 @@ class DebtorService {
         return debtor ? [true, debtor] : false;
     }
     async checkDebtorAlreadyExist(body) {
+        const filter = [];
+        if (body.businessInformation?.EIN) {
+            filter.push({ 'businessInformation.EIN': body.businessInformation.EIN });
+        }
+        if (body.businessInformation?.companyName) {
+            filter.push({
+                'businessInformation.companyName': body.businessInformation.companyName,
+            });
+        }
+        if (!filter.length) {
+            return [false];
+        }
         const debtor = await this.debtorRepository.getOne({
-            $or: [
-                { 'businessInformation.EIN': body.businessInformation.EIN },
-                {
-                    'businessInformation.companyName': body.businessInformation.companyName,
-                },
-            ],
+            $or: filter,
         });
         return debtor ? [true, debtor] : [false];
     }
