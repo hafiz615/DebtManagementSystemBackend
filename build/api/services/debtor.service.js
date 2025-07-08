@@ -1168,7 +1168,9 @@ class DebtorService {
             const lawsuitFields = await case_util_1.default.getExtractionLawsuitBuffer(files.lawsuitDocuments);
             if (typeof extractedFields === 'string')
                 return [false, extractedFields];
-            debtorBody = await debtor_util_1.default.mapDebtor(extractedFields.extracted_fields);
+            debtorBody = await debtor_util_1.default.mapDebtor([
+                ...extractedFields.extracted_fields,
+            ]);
             const checkDebtorAlreadyExist = await this.checkDebtorAlreadyExist(debtorBody);
             if (checkDebtorAlreadyExist[0]) {
                 previousMca = checkDebtorAlreadyExist[1].mcaDocuments.map(obj => {
@@ -1293,13 +1295,20 @@ class DebtorService {
         return debtor ? [true, debtor] : false;
     }
     async checkDebtorAlreadyExist(body) {
+        const filter = [];
+        if (body.businessInformation?.EIN) {
+            filter.push({ 'businessInformation.EIN': body.businessInformation.EIN });
+        }
+        if (body.businessInformation?.companyName) {
+            filter.push({
+                'businessInformation.companyName': body.businessInformation.companyName,
+            });
+        }
+        if (!filter.length) {
+            return [false];
+        }
         const debtor = await this.debtorRepository.getOne({
-            $or: [
-                { 'businessInformation.EIN': body.businessInformation.EIN },
-                {
-                    'businessInformation.companyName': body.businessInformation.companyName,
-                },
-            ],
+            $or: filter,
         });
         return debtor ? [true, debtor] : [false];
     }

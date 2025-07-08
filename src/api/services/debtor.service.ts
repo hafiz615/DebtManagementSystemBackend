@@ -1552,7 +1552,9 @@ class DebtorService {
       );
       if (typeof extractedFields === 'string') return [false, extractedFields];
 
-      debtorBody = await debtorUtil.mapDebtor(extractedFields.extracted_fields);
+      debtorBody = await debtorUtil.mapDebtor([
+        ...extractedFields.extracted_fields,
+      ]);
 
       const checkDebtorAlreadyExist: any =
         await this.checkDebtorAlreadyExist(debtorBody);
@@ -1727,15 +1729,26 @@ class DebtorService {
   }
 
   async checkDebtorAlreadyExist(body: any) {
+    const filter = [];
+
+    if (body.businessInformation?.EIN) {
+      filter.push({'businessInformation.EIN': body.businessInformation.EIN});
+    }
+
+    if (body.businessInformation?.companyName) {
+      filter.push({
+        'businessInformation.companyName': body.businessInformation.companyName,
+      });
+    }
+
+    if (!filter.length) {
+      return [false];
+    }
+
     const debtor = await this.debtorRepository.getOne({
-      $or: [
-        {'businessInformation.EIN': body.businessInformation.EIN},
-        {
-          'businessInformation.companyName':
-            body.businessInformation.companyName,
-        },
-      ],
+      $or: filter,
     });
+
     return debtor ? [true, debtor] : [false];
   }
 

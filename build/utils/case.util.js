@@ -1896,7 +1896,7 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        if (!documents.length)
+        if (!documents?.length)
             return 'No MCA found';
         const extractedFields = await this.getExtractionMCA_AIBuffer(documents, global_1.AIAuth.auth_token);
         return extractedFields;
@@ -1916,7 +1916,7 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        if (!documents.length)
+        if (!documents?.length)
             return 'No Lawsuit found';
         const extractedFields = await this.getExtractionLawsiut(documents, global_1.AIAuth.auth_token);
         return extractedFields;
