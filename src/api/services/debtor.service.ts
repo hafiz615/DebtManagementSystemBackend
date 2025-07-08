@@ -1396,6 +1396,10 @@ class DebtorService {
   }
 
   async addManualPayment(req: Request) {
+    const type = String(req.query.type);
+    if (type !== 'client' && type !== 'creditor') {
+      return [false, constants.notFoundMessage('query type is invalid')];
+    }
     let debtor = await this.debtorRepository.getById(req.body.debtorId);
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
@@ -1407,8 +1411,23 @@ class DebtorService {
     if (foundPayment)
       return [false, constants.alreadyExistsMessage('Reference id')];
 
+    const transactionIds = req.body.transactionIds;
+    const additionalIds = [];
+    if (type === 'client') {
+      for (const transactionId of transactionIds) {
+        const payment =
+          await this.paymentRepository.getById<IPayment>(transactionId);
+        const otherPayments: IPayment[] =
+          await paymentUtil.getOtherPayments(payment);
+        otherPayments.forEach(payment => {
+          additionalIds.push(String(payment._id));
+        });
+      }
+    }
+    const mergedIds = transactionIds.concat(additionalIds);
+
     let updatedPayment = await this.paymentRepository.updateMany<IPayment>(
-      {_id: req.body.transactionIds},
+      {_id: mergedIds},
       {
         authorized: 'Success',
         captured: 'Success',
@@ -1422,20 +1441,13 @@ class DebtorService {
       }
     );
 
-    if (!updatedPayment) {
+    if (!updatedPayment.modifiedCount) {
       return [false, constants.failureAddMessage('Manual Payment')];
     }
-    if (updatedPayment) {
-      let updatedDebtor = await this.debtorRepository.updateById<IDebtor>(
-        req.body.debtorId,
-        {
-          $inc: {commissionPaid: req.body.commission},
-        }
-      );
-
-      if (!updatedDebtor) {
-        return [false, constants.failureAddMessage('Manual Payment')];
-      }
+    if (type === 'client') {
+      await this.debtorRepository.updateById<IDebtor>(req.body.debtorId, {
+        $inc: {commissionPaid: req.body.amount},
+      });
     }
     return [true, constants.successAddMessage('Manual Payment')];
   }

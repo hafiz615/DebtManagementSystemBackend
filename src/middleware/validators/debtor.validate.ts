@@ -989,7 +989,7 @@ class DebtorRequests {
         'number.base': 'Amount must be a number',
         'any.required': 'Amount is required',
       }),
-      commission: Joi.number().required().messages({
+      commission: Joi.number().allow(0).messages({
         'number.base': 'Commission must be a number',
         'any.required': 'Commission is required',
       }),
