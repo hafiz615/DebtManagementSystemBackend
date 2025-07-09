@@ -11,6 +11,7 @@ const seemlesschex_util_1 = __importDefault(require("../../utils/seemlesschex.ut
 const common_util_1 = __importDefault(require("../../utils/common.util"));
 const check_repository_1 = require("../repository/check/check.repository");
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
+const payment_util_1 = __importDefault(require("../../utils/payment.util"));
 dotenv_1.default.config();
 class SeemlesschexService {
     constructor() {
@@ -19,6 +20,10 @@ class SeemlesschexService {
         this.checkRepository = new check_repository_1.CheckRepository();
     }
     async createCheck(req) {
+        const type = String(req.query.type);
+        if (type !== 'client' && type !== 'creditor') {
+            return [false, constants_util_1.default.notFoundMessage('query type is invalid')];
+        }
         const debtor = await this.debtorRepository.getById(req.body.debtorId);
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('debtor')];
@@ -37,14 +42,25 @@ class SeemlesschexService {
         if (bv?.error)
             authorized = 'Failed';
         await seemlesschex_util_1.default.saveCheckInfo(bv, null, response, req.body.debtorId);
-        await this.paymentRepository.updateMany({ _id: transactionIds }, {
+        const additionalIds = [];
+        if (type === 'client') {
+            for (const transactionId of transactionIds) {
+                const payment = await this.paymentRepository.getById(transactionId);
+                const otherPayments = await payment_util_1.default.getOtherPayments(payment);
+                otherPayments.forEach(payment => {
+                    additionalIds.push(String(payment._id));
+                });
+            }
+        }
+        const mergedIds = transactionIds.concat(additionalIds);
+        await this.paymentRepository.updateMany({ _id: mergedIds }, {
             authorized: authorized,
             debtorTransId: response.check.check_id,
             paymentMode: transactionType,
             manualCommission: commission,
             dueDate: transactionDate,
-            paymentGateway: 'Seemlesschex',
-            paymentType: 'ACH',
+            paymentGateway: 'Seamlesschex',
+            transactionType: 'ACH',
             updatedAt: common_util_1.default.getCurrentDate(),
         });
         return [true, response.check];
