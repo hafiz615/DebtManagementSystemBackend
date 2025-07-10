@@ -56,6 +56,10 @@ import {IFee} from '../../database/interfaces/serviceFee.interface';
 import {AccountRepository} from '../repository/account/account.repository';
 import {IAccount} from '../../database/interfaces/account.interface';
 import {Account} from '../../database/repomodels/account.repomodel';
+import paymentCronjob from '../../cron-job/payment.cronjob';
+import {SettingsRepository} from '../repository/setting/settings.repository';
+import {ISettings} from '../../database/interfaces/settings.interface';
+import seemlesschexUtil from '../../utils/seemlesschex.util';
 dotenv.config();
 
 class DebtorService {
@@ -73,6 +77,7 @@ class DebtorService {
   private creditorService: CreditorService;
   private serviceFeeRepository: ServiceFeeRepository;
   private accountRepository: AccountRepository;
+  private settingsRepository: SettingsRepository;
   constructor() {
     this.debtorRepository = new DebtorRepository();
     this.caseRepository = new CaseRepository();
@@ -88,6 +93,7 @@ class DebtorService {
     this.creditorService = new CreditorService();
     this.serviceFeeRepository = new ServiceFeeRepository();
     this.accountRepository = new AccountRepository();
+    this.settingsRepository = new SettingsRepository();
   }
 
   getStatementsSummary = async (req: Request) => {
@@ -444,10 +450,10 @@ class DebtorService {
     return [true, debtor];
   }
 
-  async retryAuth(paymentId: string): Promise<[boolean, string]> {
-    let result = false;
+  async retryAuth(req: Request): Promise<[boolean, string]> {
+    // let result = false;
     let payment: any = await this.paymentRepository.getById<IPayment>(
-      paymentId,
+      req.params.id,
       undefined,
       undefined,
       {path: 'caseId', populate: 'debtor'}
@@ -455,23 +461,25 @@ class DebtorService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
-    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
-    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     if (payment.authorized === 'Success') {
       return [false, 'Payment already authorized'];
     }
+    const account = await this.accountRepository.getById<IAccount>(
+      req.body.accountId
+    );
+    if (account.paymentType !== 'cc') {
+      return [false, 'Amount can only be authorized by credit card'];
+    }
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const legalFeeAmount = await lawsuitUtil.getLegalFee(payment.caseId);
+    const serviceFeeAmount = await lawsuitUtil.getServiceFee(payment.caseId);
     let payments: IPayment[] = [];
-    // let debtor = null;
     let amount = 0;
-    // if (payment.caseId) debtor = payment.caseId?.debtor;
-    // if (!payment.caseId) {
-    //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
-    // }
     if (payment.paymentReference) {
       payments = await paymentUtil.getAllPaymentReferenceDocuments(
         payment.paymentReference
       );
-      console.log(payments, 'getAllPaymentReferenceDocuments');
       payment = payments.find(payment => {
         return payment.caseId === null;
       });
@@ -482,62 +490,29 @@ class DebtorService {
       // amount = payment.amount;
       payments.push(payment);
     }
-    let response: any;
-    const accounts = await debtorUtil.getDebtorAccounts(payment.debtorId);
-    let responseNum = '';
-    for (const account of accounts) {
-      if (account.paymentType === 'cc') {
-        response = await this.paymentService.authorizeCreditCard(
-          amount,
-          account.vault,
-          account.platform
-        );
-        responseNum = new URLSearchParams(response).get('response');
-        if (responseNum === '1') break;
-      }
-    }
-    const responseText = new URLSearchParams(response).get('responsetext');
-    const updateObjPayment = {};
-    if (responseNum === '1') {
-      const transactionId = new URLSearchParams(response).get('transactionid');
-
-      updateObjPayment['debtorTransId'] = transactionId;
-      updateObjPayment['authorized'] = 'Success';
-      updateObjPayment['serviceFee'] = serviceFeeAmount;
-      updateObjPayment['legalFee'] = legalFeeAmount;
-      // updateObjPayment['status'] = 'Pending';
-      result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_authorization',
-        '',
-        paymentId,
-        ''
-      );
-    } else {
-      updateObjPayment['failedReasonAuthorization'] = responseText;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_authorization',
-        '',
-        paymentId,
-        ''
-      );
-    }
-    if (Object.keys(updateObjPayment).length) {
-      for (const payment of payments) {
-        await this.paymentRepository.updateById<IPayment>(
-          payment._id,
-          updateObjPayment
-        );
-      }
-    }
+    let response = await this.paymentService.authorizeCreditCard(
+      amount,
+      account.vault,
+      account.platform
+    );
+    const result = await paymentCronjob.processCommissionAuthorizedResponse(
+      payment,
+      payments,
+      response,
+      false,
+      '',
+      settings,
+      account.platform,
+      account.vault
+    );
     if (result) return [true, 'Payment authorized successfully!'];
     return [false, 'Unable to authorize payment!'];
   }
 
-  async retryCapture(paymentId: string) {
+  async retryCapture(req: Request) {
     let result = false;
     let payment: any = await this.paymentRepository.getById<IPayment>(
-      paymentId,
+      req.params.id,
       undefined,
       undefined,
       {path: 'caseId', populate: [{path: 'debtor'}, {path: 'creditor'}]}
@@ -548,13 +523,13 @@ class DebtorService {
     if (payment.captured === 'Success') {
       return [false, 'Payment already captured'];
     }
+    const settings =
+      await this.settingsRepository.getAllWithoutPagination<ISettings>();
+    const account = await this.accountRepository.getById<IAccount>(
+      req.body.accountId
+    );
     let payments: IPayment[] = [];
-    // let debtor = null;
-    // if (payment.caseId) debtor = payment.caseId.debtor;
-    // if (!payment.caseId) {
-    //   debtor = await this.debtorRepository.getById<IDebtor>(payment.debtorId);
-    // }
-    let amount = 0;
+    let totalAmount = 0;
     if (payment.paymentReference) {
       payments = await paymentUtil.getAllPaymentReferenceDocuments(
         payment.paymentReference
@@ -563,94 +538,107 @@ class DebtorService {
         return payment.caseId === null;
       });
       if (payments.length > 1) {
-        const total = payments.reduce((sum, obj) => sum + obj.amount, 0);
-        amount = total - payment.amount;
+        totalAmount = payments.reduce((sum, obj) => sum + obj.amount, 0);
       }
     }
     if (!payment.paymentReference) {
       payments.push(payment);
     }
-    let response: any;
-    let responseNum = '';
-    const accounts = await debtorUtil.getDebtorAccounts(payment.debtorId);
-    for (const account of accounts) {
-      if (account.paymentType === 'cc') {
-        response = await this.paymentService.captureCreditCard(
-          account.vault,
-          payment.debtorTransId,
-          account.platform
-        );
-      }
-      if (account.paymentType === 'ck') {
-        response = await this.paymentService.achCredit(
-          account.vault,
+    const debtor = await this.debtorRepository.getById<IDebtor>(
+      payment.debtorId
+    );
+    let message = '';
+    if (account.paymentType === 'cc') {
+      if (payment.authorized !== 'Success') {
+        let response = await this.paymentService.authorizeCreditCard(
           payment.amount,
+          account.vault,
           account.platform
         );
+        result = await paymentCronjob.processCommissionAuthorizedResponse(
+          payment,
+          payments,
+          response,
+          false,
+          '',
+          settings,
+          account.platform,
+          account.vault
+        );
+        if (result) {
+          payment = await this.paymentRepository.getById<IPayment>(
+            payment._id,
+            undefined,
+            undefined,
+            {path: 'caseId', populate: [{path: 'debtor'}, {path: 'creditor'}]}
+          );
+        }
       }
-      responseNum = new URLSearchParams(response).get('response');
-      if (responseNum === '1') break;
+      if (payment.ccVault) {
+        let response = await this.paymentService.captureCreditCard(
+          payment.ccVault,
+          payment.debtorTransId,
+          payment.paymentGateway
+        );
+        result = await paymentCronjob.processCaptureCommissionResponse(
+          payment,
+          payments,
+          response,
+          false,
+          '',
+          settings,
+          'cc',
+          totalAmount,
+          payment.paymentGateway
+        );
+        if (result) message = 'Payment captured successfully';
+      }
     }
 
-    const responseText = new URLSearchParams(response).get('responsetext');
-    // const paymentLogging = new PaymentLogging();
-    const updateObjPayment = {};
-    if (responseNum === '1') {
-      const transactionId = new URLSearchParams(response).get('transactionid');
-      updateObjPayment['captured'] = 'Success';
-      updateObjPayment['status'] = 'Pending';
-      lawsuitUtil.updatePaymentLawsuit(payments);
-      if (!payment.debtorTransId) {
-        updateObjPayment['debtorTransId'] = transactionId;
-      }
-      result = true;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'successful_capture',
-        '',
-        paymentId,
-        ''
+    if (account.paymentType === 'ACH' && account.platform === 'Paynote') {
+      let response = await paynoteUtil.directDebit(
+        account.vault,
+        payment,
+        debtor
       );
-      console.log(amount, 'amounttttt');
-      if (amount) {
-        const commissionAmount = parseFloat(
-          (payment.amount - amount).toFixed(2)
-        );
-        // await this.paymentRepository.updateById<IPayment>(payment._id, {
-        //   amount: commissionAmount,
-        // });
-        await this.debtorRepository.updateById(payment.debtorId, {
-          $inc: {commissionPaid: commissionAmount},
-        });
-      }
-      if (!amount && payment.caseId === null) {
-        await this.debtorRepository.updateById(payment.debtorId, {
-          $inc: {commissionPaid: payment.amount},
-        });
-      }
-      // if (!amount && payment.caseId !== null && payment.commision) {
-      //   await this.debtorRepository.updateById(payment.debtorId, {
-      //     $inc: {commissionPaid: payment.commision},
-      //   });
-      // }
-    } else {
-      updateObjPayment['failedReasonCaptured'] = responseText;
-      await emailUtil.sendEmailOrSmsByEvent(
-        'failed_capture',
+      result = await paymentCronjob.processACHCommissionResponse(
+        payment,
+        payments,
+        response,
+        false,
         '',
-        paymentId,
-        ''
+        settings,
+        totalAmount,
+        account.platform,
+        debtor
       );
+      if (result) message = 'Check created successfully';
     }
-    if (Object.keys(updateObjPayment).length) {
-      for (const payment of payments) {
-        await this.paymentRepository.updateById<IPayment>(
-          payment._id,
-          updateObjPayment
-        );
-      }
+
+    if (account.paymentType === 'ACH' && account.platform === 'Seamlesschex') {
+      const decryptedData = commonUtil.getDecryptedData(account.vault);
+      const tokenResponse = await seemlesschexUtil.tokenization(decryptedData);
+      let response = await seemlesschexUtil.createCheck(
+        debtor,
+        payment.amount,
+        tokenResponse.tokenization.token,
+        decryptedData
+      );
+      result = await paymentCronjob.processACHCommissionResponse(
+        payment,
+        payments,
+        response,
+        false,
+        '',
+        settings,
+        totalAmount,
+        account.platform,
+        debtor
+      );
+      if (result) message = 'Check created successfully';
     }
-    if (result) return [true, 'Payment captured successfully!'];
-    return [false, 'Unable to capture payment!'];
+    if (result) return [true, message];
+    return [false, 'Unable to process payment!'];
   }
 
   getAllDebtors = async (
