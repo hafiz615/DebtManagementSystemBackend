@@ -31,13 +31,13 @@ router.put(
 //   authorize.validateAuth,
 //   debtorController.createVault
 // );
-router.get(
+router.post(
   '/retryAuth/:id',
   authorize.validateAuth,
   debtor.retryPayment,
   debtorController.retryAuth
 );
-router.get(
+router.post(
   '/retryCapture/:id',
   authorize.validateAuth,
   debtor.retryPayment,
