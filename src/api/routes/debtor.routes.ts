@@ -34,11 +34,13 @@ router.put(
 router.get(
   '/retryAuth/:id',
   authorize.validateAuth,
+  debtor.retryPayment,
   debtorController.retryAuth
 );
 router.get(
   '/retryCapture/:id',
   authorize.validateAuth,
+  debtor.retryPayment,
   debtorController.retryCapture
 );
 router.get(
