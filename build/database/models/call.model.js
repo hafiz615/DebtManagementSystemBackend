@@ -40,6 +40,7 @@ const callSchema = new mongoose_1.Schema({
     debtorId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Debtors' },
     userId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Users' },
     callerName: { type: String, default: 'Unknown' },
+    calleeName: { type: String, default: 'Unknown' },
     accountSid: { type: String }, // connectionId
     callTo: [{ type: String }],
     callFrom: { type: String },
