@@ -2260,7 +2260,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    if (!documents.length) return null;
+    if (!documents?.length) return null;
     const extractedFields = await this.getExtractionLawsuit_AI(
       documents,
       AIAuth.auth_token
