@@ -30,6 +30,12 @@ router.get(
 );
 
 router.get(
+  '/getCasePaymentsAnalytics/:id',
+  authorize.validateAuth,
+  paymentController.getCasePaymentsAnalytics
+);
+
+router.get(
   '/getAllUpcomingPayments/:id',
   authorize.validateAuth,
   paymentController.getAllUpcomingPayments
