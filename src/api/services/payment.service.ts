@@ -582,7 +582,7 @@ class PaymentService {
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
       req.params.id,
-      false
+      '1'
     );
     const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(
       req.params.id,
@@ -661,17 +661,17 @@ class PaymentService {
   async getCasePaymentsAnalytics(
     req: Request
   ): Promise<[boolean, {} | string]> {
-    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
-    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
       req.params.id,
-      false
+      '3'
     );
     const filtersUpcoming = {
       isDeleted: false,
       $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       status: 'Upcoming',
-      caseId: req.params.id,
+      debtorId: req.params.id,
     };
     const upcomingPayments: IPayment[] =
       await this.paymentRepository.getAll<IPayment>(filtersUpcoming);
@@ -856,7 +856,7 @@ class PaymentService {
     return await this.paymentRepository.getCount<IPayment>(filter);
   }
 
-  private async getPreviousPayments(id: string, debtor: boolean) {
+  private async getPreviousPayments(id: string, query: string) {
     const filters = {
       isDeleted: false,
       $and: [
@@ -870,11 +870,19 @@ class PaymentService {
         {$or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}]},
       ],
     };
-    if (debtor) {
-      filters['debtorId'] = id;
-      filters['caseId'] = null;
-    } else {
-      filters['caseId'] = id;
+    switch (query) {
+      case '1':
+        filters['caseId'] = id;
+        break;
+      case '2':
+        filters['debtorId'] = id;
+        filters['caseId'] = null;
+        break;
+      case '3':
+        filters['debtorId'] = id;
+        break;
+      default:
+        filters['caseId'] = id;
     }
     console.log(filters, 'filterss');
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
@@ -2374,7 +2382,7 @@ class PaymentService {
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
       req.params.id,
-      true
+      '2'
     );
     console.log(paymentsPrevious, 'paymentsPrevious');
     const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(
