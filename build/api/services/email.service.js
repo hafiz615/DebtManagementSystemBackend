@@ -18,6 +18,7 @@ const notificationCount_repository_1 = require("../repository/notificationCount/
 const notification_repository_1 = require("../repository/notification/notification.repository");
 const emailThreading_repository_1 = require("../repository/emailThreading/emailThreading.repository");
 const inbox_utils_1 = __importDefault(require("../../utils/inbox.utils"));
+const mongoose_1 = __importDefault(require("mongoose"));
 class EmailService {
     constructor() {
         this.extractThreadId = (header) => {
@@ -104,7 +105,7 @@ class EmailService {
             const extractedHtml = splitParts[0] + (splitParts[1] || '');
             console.log('extractedHtml: ', extractedHtml);
             let caseData = null;
-            if (caseId) {
+            if (caseId && mongoose_1.default.Types.ObjectId.isValid(caseId)) {
                 console.log('caseId Check in caseID: ', caseId);
                 const historyObj = {
                     Username: userName,

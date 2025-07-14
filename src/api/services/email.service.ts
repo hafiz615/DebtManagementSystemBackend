@@ -25,6 +25,7 @@ import {INotification} from '../../database/interfaces/notification.interface';
 import {EmailThreadingRepository} from '../repository/emailThreading/emailThreading.repository';
 import {IEmailThreading} from '../../database/interfaces/emailThreading.interface';
 import inboxUtils from '../../utils/inbox.utils';
+import mongoose from 'mongoose';
 
 class EmailService {
   private caseRepository: CaseRepository;
@@ -129,7 +130,7 @@ class EmailService {
       console.log('extractedHtml: ', extractedHtml);
 
       let caseData = null;
-      if (caseId) {
+      if (caseId && mongoose.Types.ObjectId.isValid(caseId)) {
         console.log('caseId Check in caseID: ', caseId);
         const historyObj = {
           Username: userName,
