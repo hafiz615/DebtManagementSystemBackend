@@ -582,7 +582,7 @@ class PaymentService {
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
       req.params.id,
-      false
+      '1'
     );
     const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(
       req.params.id,
@@ -602,21 +602,6 @@ class PaymentService {
     const upcomingPaymentsObj = await paymentUtil.getFilteredPayments(
       paymentsUpcoming,
       'upcomingPayments'
-    );
-    let paidAmount = 0,
-      upcomingAmount = 0,
-      failedAmount = 0;
-    paidAmount = paymentsObj.successPayments.reduce(
-      (acc: any, payment: {amount: any}) => acc + payment.amount,
-      0
-    );
-    upcomingAmount = paymentsObj.upcomingPayments.reduce(
-      (acc: any, payment: {amount: any}) => acc + payment.amount,
-      0
-    );
-    failedAmount = paymentsObj.failedCaptures.reduce(
-      (acc: any, payment: {amount: any}) => acc + payment.amount,
-      0
     );
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
       ...obj,
@@ -649,15 +634,6 @@ class PaymentService {
       ...successCapture,
       ...failedCapture,
     ];
-    const paymentCounts = {
-      failedCaptures: paymentsObj.failedCaptures.length,
-      successCaptures: paymentsObj.successCaptures.length,
-      failedAuthorizations: paymentsObj.failedAuthorizations.length,
-      successAuthorizations: successAuth.length,
-      successPayments: paymentsObj.successPayments.length,
-      paidAmount: paidAmount,
-      remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
-    };
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
@@ -678,21 +654,78 @@ class PaymentService {
           previousCount: mergedArray.length,
           upcomingCount: paymentsUpcomingCount,
         },
-        paymentCounts: paymentCounts,
       },
     ];
   }
 
-  async getAllUpcomingPayments(req: Request): Promise<[boolean, {} | string]> {
+  async getCasePaymentsAnalytics(
+    req: Request
+  ): Promise<[boolean, {} | string]> {
     const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
-    if (!debtor) return [false, constants.notFoundMessage('case')];
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
+    const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
+      req.params.id,
+      '3'
+    );
+    const filtersUpcoming = {
+      isDeleted: false,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
+      status: 'Upcoming',
+      debtorId: req.params.id,
+    };
+    const upcomingPayments: IPayment[] =
+      await this.paymentRepository.getAll<IPayment>(filtersUpcoming);
+
+    const paymentsObj = await paymentUtil.getFilteredPayments(
+      paymentsPrevious,
+      'default'
+    );
+    let paidAmount = 0,
+      upcomingAmount = 0,
+      failedAmount = 0;
+    paidAmount = paymentsObj.successPayments.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    upcomingAmount = upcomingPayments.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    failedAmount = paymentsObj.failedAuthorizations.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+
+    const paymentCounts = {
+      failedCaptures: paymentsObj.failedCaptures.length,
+      successCaptures: paymentsObj.successCaptures.length,
+      failedAuthorizations: paymentsObj.failedAuthorizations.length,
+      successAuthorizations: paymentsObj.successAuthorizations.length,
+      successPayments: paymentsObj.successPayments.length,
+      paidAmount: parseFloat(paidAmount.toFixed(2)),
+      remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
+    };
+    return [true, paymentCounts];
+  }
+
+  async getAllUpcomingPayments(req: Request): Promise<[boolean, {} | string]> {
+    const type = String(req.query.type);
+    if (type !== 'client' && type !== 'creditor') {
+      return [false, constants.notFoundMessage('query type is invalid')];
+    }
+    const debtor = await this.debtorRepository.getById<IDebtor>(req.params.id);
+    if (!debtor) return [false, constants.notFoundMessage('debtor')];
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const payments: IPayment[] = await this.getAllPaymentsByDebtor(
       req.params.id,
       pageLimit.page,
-      pageLimit.limit
+      pageLimit.limit,
+      type
     );
-    const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id);
+    const paymentsCount = await this.getAllPaymentsByDebtorCount(
+      req.params.id,
+      type
+    );
     if (!payments.length) {
       return [false, constants.notFoundMessage('Payments')];
     }
@@ -780,16 +813,23 @@ class PaymentService {
   private async getAllPaymentsByDebtor(
     id: string,
     page: number,
-    limit: number
+    limit: number,
+    type: string
   ) {
+    const filter = {
+      debtorId: id,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
+      isDeleted: false,
+      status: 'Upcoming',
+    };
+    if (type === 'creditor') {
+      filter['caseId'] = {$ne: null};
+    }
+    if (type === 'client') {
+      filter['caseId'] = null;
+    }
     return await this.paymentRepository.getAll<IPayment>(
-      {
-        debtorId: id,
-        caseId: {$ne: null},
-        $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
-        isDeleted: false,
-        status: 'Upcoming',
-      },
+      filter,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName',
       undefined,
       {createdAt: -1},
@@ -800,41 +840,54 @@ class PaymentService {
     );
   }
 
-  private async getAllPaymentsByDebtorCount(id: string) {
-    return await this.paymentRepository.getCount<IPayment>({
+  private async getAllPaymentsByDebtorCount(id: string, type: string) {
+    const filter = {
       debtorId: id,
-      caseId: {$ne: null},
       $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
       isDeleted: false,
       status: 'Upcoming',
-    });
+    };
+    if (type === 'creditor') {
+      filter['caseId'] = {$ne: null};
+    }
+    if (type === 'client') {
+      filter['caseId'] = null;
+    }
+    return await this.paymentRepository.getCount<IPayment>(filter);
   }
 
-  private async getPreviousPayments(id: string, debtor: boolean) {
+  private async getPreviousPayments(id: string, query: string) {
     const filters = {
       isDeleted: false,
       $and: [
         {
           $or: [
-            {authorized: 'Success'},
-            {authorized: 'Failed'},
-            {captured: 'Success'},
-            {captured: 'Failed'},
+            {authorized: {$ne: 'Pending'}},
+            {captured: {$ne: 'Pending'}},
+            {sendViaPaynote: 'Success'},
           ],
         },
         {$or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}]},
       ],
     };
-    if (debtor) {
-      filters['debtorId'] = id;
-      filters['caseId'] = null;
-    } else {
-      filters['caseId'] = id;
+    switch (query) {
+      case '1':
+        filters['caseId'] = id;
+        break;
+      case '2':
+        filters['debtorId'] = id;
+        filters['caseId'] = null;
+        break;
+      case '3':
+        filters['debtorId'] = id;
+        break;
+      default:
+        filters['caseId'] = id;
     }
     console.log(filters, 'filterss');
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
+      'authorized captured sendViaPaynote amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
       undefined,
       {dueDate: -1},
       {
@@ -2329,7 +2382,7 @@ class PaymentService {
     const pageLimit = await commonUtil.getPageAndLimit(1, 10, req);
     const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
       req.params.id,
-      true
+      '2'
     );
     console.log(paymentsPrevious, 'paymentsPrevious');
     const paymentsUpcoming: IPayment[] = await this.getUpcomingPayments(

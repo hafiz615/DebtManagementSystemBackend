@@ -15,6 +15,7 @@ class Call {
         this.debtorId = null;
         this.creditorId = null;
         this.callerName = 'Unknown';
+        this.calleeName = 'Unknown';
         this.accountSid = '';
         this.callTo = [];
         this.callFrom = '';

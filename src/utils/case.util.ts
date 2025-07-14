@@ -2245,7 +2245,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    if (!documents.length) return 'No MCA found';
+    if (!documents?.length) return 'No MCA found';
     const extractedFields = await this.getExtractionMCA_AIBuffer(
       documents,
       AIAuth.auth_token
@@ -2260,7 +2260,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    if (!documents.length) return null;
+    if (!documents?.length) return null;
     const extractedFields = await this.getExtractionLawsuit_AI(
       documents,
       AIAuth.auth_token
@@ -2275,7 +2275,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    if (!documents.length) return 'No Lawsuit found';
+    if (!documents?.length) return 'No Lawsuit found';
     const extractedFields = await this.getExtractionLawsiut(
       documents,
       AIAuth.auth_token

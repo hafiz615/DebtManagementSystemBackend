@@ -9,6 +9,7 @@ export class Call {
   debtorId = null;
   creditorId = null;
   callerName = 'Unknown';
+  calleeName = 'Unknown';
   accountSid = '';
   callTo: string[] = [];
   callFrom = '';
