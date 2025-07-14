@@ -454,10 +454,6 @@ class PaymentService {
         const paymentsUpcomingCount = await this.getUpcomingPaymentsCount(req.params.id, false);
         const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
         const upcomingPaymentsObj = await payment_util_1.default.getFilteredPayments(paymentsUpcoming, 'upcomingPayments');
-        let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
-        paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
-        upcomingAmount = paymentsObj.upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
-        failedAmount = paymentsObj.failedCaptures.reduce((acc, payment) => acc + payment.amount, 0);
         const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
             ...obj,
             type: 'authorization',
@@ -485,15 +481,6 @@ class PaymentService {
             ...successCapture,
             ...failedCapture,
         ];
-        const paymentCounts = {
-            failedCaptures: paymentsObj.failedCaptures.length,
-            successCaptures: paymentsObj.successCaptures.length,
-            failedAuthorizations: paymentsObj.failedAuthorizations.length,
-            successAuthorizations: successAuth.length,
-            successPayments: paymentsObj.successPayments.length,
-            paidAmount: paidAmount,
-            remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
-        };
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         // upcomingPaymentsObj.upcomingPayments.sort(
         //   (a: any, b: any) =>
@@ -509,9 +496,36 @@ class PaymentService {
                     previousCount: mergedArray.length,
                     upcomingCount: paymentsUpcomingCount,
                 },
-                paymentCounts: paymentCounts,
             },
         ];
+    }
+    async getCasePaymentsAnalytics(req) {
+        const caseTemp = await this.caseRepository.getById(req.params.id);
+        if (!caseTemp)
+            return [false, constants_util_1.default.notFoundMessage('case')];
+        const paymentsPrevious = await this.getPreviousPayments(req.params.id, false);
+        const filtersUpcoming = {
+            isDeleted: false,
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
+            status: 'Upcoming',
+            caseId: req.params.id,
+        };
+        const upcomingPayments = await this.paymentRepository.getAll(filtersUpcoming);
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
+        let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
+        paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        upcomingAmount = upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        failedAmount = paymentsObj.failedAuthorizations.reduce((acc, payment) => acc + payment.amount, 0);
+        const paymentCounts = {
+            failedCaptures: paymentsObj.failedCaptures.length,
+            successCaptures: paymentsObj.successCaptures.length,
+            failedAuthorizations: paymentsObj.failedAuthorizations.length,
+            successAuthorizations: paymentsObj.successAuthorizations.length,
+            successPayments: paymentsObj.successPayments.length,
+            paidAmount: parseFloat(paidAmount.toFixed(2)),
+            remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
+        };
+        return [true, paymentCounts];
     }
     async getAllUpcomingPayments(req) {
         const type = String(req.query.type);
@@ -625,10 +639,9 @@ class PaymentService {
             $and: [
                 {
                     $or: [
-                        { authorized: 'Success' },
-                        { authorized: 'Failed' },
-                        { captured: 'Success' },
-                        { captured: 'Failed' },
+                        { authorized: { $ne: 'Pending' } },
+                        { captured: { $ne: 'Pending' } },
+                        { sendViaPaynote: 'Success' },
                     ],
                 },
                 { $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }] },
@@ -642,7 +655,7 @@ class PaymentService {
             filters['caseId'] = id;
         }
         console.log(filters, 'filterss');
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod', undefined, { dueDate: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured sendViaPaynote amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod', undefined, { dueDate: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [

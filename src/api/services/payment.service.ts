@@ -603,21 +603,6 @@ class PaymentService {
       paymentsUpcoming,
       'upcomingPayments'
     );
-    let paidAmount = 0,
-      upcomingAmount = 0,
-      failedAmount = 0;
-    paidAmount = paymentsObj.successPayments.reduce(
-      (acc: any, payment: {amount: any}) => acc + payment.amount,
-      0
-    );
-    upcomingAmount = paymentsObj.upcomingPayments.reduce(
-      (acc: any, payment: {amount: any}) => acc + payment.amount,
-      0
-    );
-    failedAmount = paymentsObj.failedCaptures.reduce(
-      (acc: any, payment: {amount: any}) => acc + payment.amount,
-      0
-    );
     const failedAuth = paymentsObj.failedAuthorizations.map((obj: any) => ({
       ...obj,
       type: 'authorization',
@@ -649,15 +634,6 @@ class PaymentService {
       ...successCapture,
       ...failedCapture,
     ];
-    const paymentCounts = {
-      failedCaptures: paymentsObj.failedCaptures.length,
-      successCaptures: paymentsObj.successCaptures.length,
-      failedAuthorizations: paymentsObj.failedAuthorizations.length,
-      successAuthorizations: successAuth.length,
-      successPayments: paymentsObj.successPayments.length,
-      paidAmount: paidAmount,
-      remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
-    };
     mergedArray.sort(
       (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
@@ -678,9 +654,58 @@ class PaymentService {
           previousCount: mergedArray.length,
           upcomingCount: paymentsUpcomingCount,
         },
-        paymentCounts: paymentCounts,
       },
     ];
+  }
+
+  async getCasePaymentsAnalytics(
+    req: Request
+  ): Promise<[boolean, {} | string]> {
+    const caseTemp = await this.caseRepository.getById<ICase>(req.params.id);
+    if (!caseTemp) return [false, constants.notFoundMessage('case')];
+    const paymentsPrevious: IPayment[] = await this.getPreviousPayments(
+      req.params.id,
+      false
+    );
+    const filtersUpcoming = {
+      isDeleted: false,
+      $or: [{lawsuitId: {$exists: false}}, {lawsuitId: {$eq: null}}],
+      status: 'Upcoming',
+      caseId: req.params.id,
+    };
+    const upcomingPayments: IPayment[] =
+      await this.paymentRepository.getAll<IPayment>(filtersUpcoming);
+
+    const paymentsObj = await paymentUtil.getFilteredPayments(
+      paymentsPrevious,
+      'default'
+    );
+    let paidAmount = 0,
+      upcomingAmount = 0,
+      failedAmount = 0;
+    paidAmount = paymentsObj.successPayments.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    upcomingAmount = upcomingPayments.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+    failedAmount = paymentsObj.failedAuthorizations.reduce(
+      (acc: any, payment: {amount: any}) => acc + payment.amount,
+      0
+    );
+
+    const paymentCounts = {
+      failedCaptures: paymentsObj.failedCaptures.length,
+      successCaptures: paymentsObj.successCaptures.length,
+      failedAuthorizations: paymentsObj.failedAuthorizations.length,
+      successAuthorizations: paymentsObj.successAuthorizations.length,
+      successPayments: paymentsObj.successPayments.length,
+      paidAmount: parseFloat(paidAmount.toFixed(2)),
+      remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
+    };
+    return [true, paymentCounts];
   }
 
   async getAllUpcomingPayments(req: Request): Promise<[boolean, {} | string]> {
@@ -837,10 +862,9 @@ class PaymentService {
       $and: [
         {
           $or: [
-            {authorized: 'Success'},
-            {authorized: 'Failed'},
-            {captured: 'Success'},
-            {captured: 'Failed'},
+            {authorized: {$ne: 'Pending'}},
+            {captured: {$ne: 'Pending'}},
+            {sendViaPaynote: 'Success'},
           ],
         },
         {$or: [{lawsuitId: {$exists: false}}, {lawsuitId: null}]},
@@ -855,7 +879,7 @@ class PaymentService {
     console.log(filters, 'filterss');
     return await this.paymentRepository.getAllWithoutPagination<IPayment>(
       filters,
-      'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
+      'authorized captured sendViaPaynote amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod',
       undefined,
       {dueDate: -1},
       {

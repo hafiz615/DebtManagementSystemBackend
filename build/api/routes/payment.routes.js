@@ -12,6 +12,7 @@ router.post('/getHomePayments', authorize_middleware_1.default.validateAuth, pay
 router.post('/getCreditorSuccessfulPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCreditorSuccessfulPayments);
 router.post('/creditorUpcomingPayments', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCreditorUpcomingPayments);
 router.get('/getCasePayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePayments);
+router.get('/getCasePaymentsAnalytics/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getCasePaymentsAnalytics);
 router.get('/getAllUpcomingPayments/:id', authorize_middleware_1.default.validateAuth, payment_controller_1.default.getAllUpcomingPayments);
 router.post('/addACHDetails/:id', authorize_middleware_1.default.validateAuth, payment_validate_1.default.addACHDetails, payment_controller_1.default.addACHDetails);
 router.post('/addAccount/:id', payment_validate_1.default.addAccount, payment_controller_1.default.addAccount);
