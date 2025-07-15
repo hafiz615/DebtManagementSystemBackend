@@ -64,4 +64,8 @@ export class Case {
   lawfirmId = null;
   dummyLawsuitExist = false;
   priority = 0;
+  paynoteUserId = '';
+  paynoteUserFound = false;
+  paynoteSourceId = '';
+  paynoteSourceVerified = false;
 }

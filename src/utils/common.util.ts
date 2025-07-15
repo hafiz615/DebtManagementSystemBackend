@@ -15,18 +15,22 @@ import {ILawfirm} from '../database/interfaces/lawfirm.interface';
 import mongoose from 'mongoose';
 import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {IDebtor} from '../database/interfaces/debtor.interface';
+import {CaseRepository} from '../api/repository/case/case.repository';
+import {ICase} from '../database/interfaces/case.interface';
 dotnev.config();
 class CommonUtil {
   private creditorRepository: CreditorRepository;
   private attorneyRepository: AttorneyRepository;
   private lawfirmRepository: LawfirmRepository;
   private debtorRepository: DebtorRepository;
+  private caseRepository: CaseRepository;
 
   constructor() {
     this.creditorRepository = new CreditorRepository();
     this.attorneyRepository = new AttorneyRepository();
     this.lawfirmRepository = new LawfirmRepository();
     this.debtorRepository = new DebtorRepository();
+    this.caseRepository = new CaseRepository();
   }
   getCurrentDate() {
     let date = new Date().toUTCString();
@@ -53,6 +57,17 @@ class CommonUtil {
         return {
           obj: await this.debtorRepository.getById<IDebtor>(id),
           model: new DebtorRepository(),
+        };
+
+      case 'case':
+        return {
+          obj: await this.caseRepository.getById<ICase>(
+            id,
+            undefined,
+            undefined,
+            ['creditor', 'debtor']
+          ),
+          model: new CaseRepository(),
         };
       default:
         return null;

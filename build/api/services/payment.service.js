@@ -924,7 +924,7 @@ class PaymentService {
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user.obj)
             return [false, constants_util_1.default.notFoundMessage('user')];
-        const { name, email } = await common_util_1.default.getUserDetails(user.obj);
+        const { name, email } = await common_util_1.default.getUserDetails(user.obj.creditor);
         if (!user.obj.paynoteUserId) {
             const data = await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model);
             if (data.error)

@@ -1253,7 +1253,9 @@ class PaymentService {
     const type = reqTemp.query.type;
     const user: any = await commonUtil.getUserByType(req.params.id, type);
     if (!user.obj) return [false, constants.notFoundMessage('user')];
-    const {name, email}: any = await commonUtil.getUserDetails(user.obj);
+    const {name, email}: any = await commonUtil.getUserDetails(
+      user.obj.creditor
+    );
     if (!user.obj.paynoteUserId) {
       const data = await paynoteUtil.createCustomer(
         user.obj._id,
