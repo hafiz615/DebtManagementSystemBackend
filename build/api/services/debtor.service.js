@@ -512,16 +512,8 @@ class DebtorService {
     }
     async createDebtor(body, id) {
         // const reqTemp: any = req;
-        const getDebtor = await this.debtorRepository.getOne({
-            $or: [
-                {
-                    'businessInformation.companyName': body.businessInformation.companyName,
-                },
-                {
-                    'businessInformation.EIN': body.businessInformation.EIN,
-                },
-            ],
-        });
+        const debtorCheck = await this.checkDebtorAlreadyExist(body);
+        const getDebtor = debtorCheck[0] ? debtorCheck[1] : null;
         let debtor = null;
         let lawsuitExtractedFields = {};
         if (!getDebtor) {
@@ -536,7 +528,7 @@ class DebtorService {
         }
         else {
             const newFiles = await this.updateDebtorIdExist(getDebtor, body);
-            if (newFiles?.lawsuitDocuments.length) {
+            if (newFiles?.lawsuitDocuments?.length) {
                 lawsuitExtractedFields = await case_util_1.default.getExtractionLawsuit(newFiles?.lawsuitDocuments);
                 if (lawsuitExtractedFields?.result) {
                     body.lawsuitFields = getDebtor?.lawsuitFields
@@ -544,19 +536,19 @@ class DebtorService {
                         : [lawsuitExtractedFields.result];
                 }
             }
-            body.lawsuitDocuments = getDebtor?.lawsuitDocuments.length
+            body.lawsuitDocuments = getDebtor?.lawsuitDocuments?.length
                 ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
                 : newFiles.lawsuitDocuments;
-            body.bankStatementDocuments = getDebtor?.bankStatementDocuments.length
+            body.bankStatementDocuments = getDebtor?.bankStatementDocuments?.length
                 ? [
                     ...getDebtor.bankStatementDocuments,
                     ...newFiles.bankStatementDocuments,
                 ]
                 : newFiles.bankStatementDocuments;
-            body.mcaDocuments = getDebtor?.mcaDocuments.length
+            body.mcaDocuments = getDebtor?.mcaDocuments?.length
                 ? [...getDebtor.mcaDocuments, ...newFiles.mcaDocuments]
                 : newFiles.mcaDocuments;
-            body.otherDocuments = getDebtor?.otherDocuments.length
+            body.otherDocuments = getDebtor?.otherDocuments?.length
                 ? [...getDebtor.otherDocuments, ...newFiles.otherDocuments]
                 : newFiles.otherDocuments;
             body.updatedAt = common_util_1.default.getCurrentDate();
