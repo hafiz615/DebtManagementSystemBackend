@@ -190,7 +190,7 @@ class DebtorController {
               'You do not have permission to perform this operation'
             )
           );
-      const response = await this.debtorService.retryAuth(req.params.id);
+      const response = await this.debtorService.retryAuth(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)
@@ -225,7 +225,7 @@ class DebtorController {
               'You do not have permission to perform this operation'
             )
           );
-      const response = await this.debtorService.retryCapture(req.params.id);
+      const response = await this.debtorService.retryCapture(req);
       if (!response[0]) {
         return res
           .status(constants.CODE.BAD_REQUEST)

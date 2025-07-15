@@ -959,6 +959,9 @@ class EmailUtil {
     userName?: string
   ) {
     let headers = {};
+    const threadCheck = await this.inboxRepository.getOne<IInbox>({
+      threadId: threadId,
+    });
     if (Array.isArray(cc) && cc.includes(String(to)))
       return [
         false,
@@ -993,14 +996,16 @@ class EmailUtil {
       console.log('This is Reference: ', headers['References']);
     }
     if (bin === 'user') {
-      const user = await this.userRepository.getOne<IUser>(
-        {email: from},
-        '_id name',
-        undefined
-      );
-      user
-        ? (subject += ` First Choice-DMS ${user.name}`)
-        : (subject += ` First Choice-DMS`);
+      if (!threadCheck) {
+        const user = await this.userRepository.getOne<IUser>(
+          {email: from},
+          '_id name',
+          undefined
+        );
+        user
+          ? (subject += ` First Choice-DMS ${user.name}`)
+          : (subject += ` First Choice-DMS`);
+      }
       const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
       headers['References'] = referenceHeader;
       // headers['In-Reply-To'] = referenceHeader;

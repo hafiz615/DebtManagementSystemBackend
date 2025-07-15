@@ -449,15 +449,11 @@ class PaymentService {
         if (!caseTemp)
             return [false, constants_util_1.default.notFoundMessage('case')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
-        const paymentsPrevious = await this.getPreviousPayments(req.params.id, false);
+        const paymentsPrevious = await this.getPreviousPayments(req.params.id, '1');
         const paymentsUpcoming = await this.getUpcomingPayments(req.params.id, pageLimit.page, pageLimit.limit, false);
         const paymentsUpcomingCount = await this.getUpcomingPaymentsCount(req.params.id, false);
         const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
         const upcomingPaymentsObj = await payment_util_1.default.getFilteredPayments(paymentsUpcoming, 'upcomingPayments');
-        let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
-        paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
-        upcomingAmount = paymentsObj.upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
-        failedAmount = paymentsObj.failedCaptures.reduce((acc, payment) => acc + payment.amount, 0);
         const failedAuth = paymentsObj.failedAuthorizations.map((obj) => ({
             ...obj,
             type: 'authorization',
@@ -485,15 +481,6 @@ class PaymentService {
             ...successCapture,
             ...failedCapture,
         ];
-        const paymentCounts = {
-            failedCaptures: paymentsObj.failedCaptures.length,
-            successCaptures: paymentsObj.successCaptures.length,
-            failedAuthorizations: paymentsObj.failedAuthorizations.length,
-            successAuthorizations: successAuth.length,
-            successPayments: paymentsObj.successPayments.length,
-            paidAmount: paidAmount,
-            remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
-        };
         mergedArray.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         // upcomingPaymentsObj.upcomingPayments.sort(
         //   (a: any, b: any) =>
@@ -509,17 +496,48 @@ class PaymentService {
                     previousCount: mergedArray.length,
                     upcomingCount: paymentsUpcomingCount,
                 },
-                paymentCounts: paymentCounts,
             },
         ];
     }
-    async getAllUpcomingPayments(req) {
+    async getCasePaymentsAnalytics(req) {
         const debtor = await this.debtorRepository.getById(req.params.id);
         if (!debtor)
-            return [false, constants_util_1.default.notFoundMessage('case')];
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
+        const paymentsPrevious = await this.getPreviousPayments(req.params.id, '3');
+        const filtersUpcoming = {
+            isDeleted: false,
+            $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
+            status: 'Upcoming',
+            debtorId: req.params.id,
+        };
+        const upcomingPayments = await this.paymentRepository.getAll(filtersUpcoming);
+        const paymentsObj = await payment_util_1.default.getFilteredPayments(paymentsPrevious, 'default');
+        let paidAmount = 0, upcomingAmount = 0, failedAmount = 0;
+        paidAmount = paymentsObj.successPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        upcomingAmount = upcomingPayments.reduce((acc, payment) => acc + payment.amount, 0);
+        failedAmount = paymentsObj.failedAuthorizations.reduce((acc, payment) => acc + payment.amount, 0);
+        const paymentCounts = {
+            failedCaptures: paymentsObj.failedCaptures.length,
+            successCaptures: paymentsObj.successCaptures.length,
+            failedAuthorizations: paymentsObj.failedAuthorizations.length,
+            successAuthorizations: paymentsObj.successAuthorizations.length,
+            successPayments: paymentsObj.successPayments.length,
+            paidAmount: parseFloat(paidAmount.toFixed(2)),
+            remainingAmount: parseFloat((upcomingAmount + failedAmount).toFixed(2)),
+        };
+        return [true, paymentCounts];
+    }
+    async getAllUpcomingPayments(req) {
+        const type = String(req.query.type);
+        if (type !== 'client' && type !== 'creditor') {
+            return [false, constants_util_1.default.notFoundMessage('query type is invalid')];
+        }
+        const debtor = await this.debtorRepository.getById(req.params.id);
+        if (!debtor)
+            return [false, constants_util_1.default.notFoundMessage('debtor')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
-        const payments = await this.getAllPaymentsByDebtor(req.params.id, pageLimit.page, pageLimit.limit);
-        const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id);
+        const payments = await this.getAllPaymentsByDebtor(req.params.id, pageLimit.page, pageLimit.limit, type);
+        const paymentsCount = await this.getAllPaymentsByDebtorCount(req.params.id, type);
         if (!payments.length) {
             return [false, constants_util_1.default.notFoundMessage('Payments')];
         }
@@ -585,48 +603,66 @@ class PaymentService {
             },
         ];
     }
-    async getAllPaymentsByDebtor(id, page, limit) {
-        return await this.paymentRepository.getAll({
+    async getAllPaymentsByDebtor(id, page, limit, type) {
+        const filter = {
             debtorId: id,
-            caseId: { $ne: null },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             isDeleted: false,
             status: 'Upcoming',
-        }, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
+        };
+        if (type === 'creditor') {
+            filter['caseId'] = { $ne: null };
+        }
+        if (type === 'client') {
+            filter['caseId'] = null;
+        }
+        return await this.paymentRepository.getAll(filter, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
     }
-    async getAllPaymentsByDebtorCount(id) {
-        return await this.paymentRepository.getCount({
+    async getAllPaymentsByDebtorCount(id, type) {
+        const filter = {
             debtorId: id,
-            caseId: { $ne: null },
             $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: { $eq: null } }],
             isDeleted: false,
             status: 'Upcoming',
-        });
+        };
+        if (type === 'creditor') {
+            filter['caseId'] = { $ne: null };
+        }
+        if (type === 'client') {
+            filter['caseId'] = null;
+        }
+        return await this.paymentRepository.getCount(filter);
     }
-    async getPreviousPayments(id, debtor) {
+    async getPreviousPayments(id, query) {
         const filters = {
             isDeleted: false,
             $and: [
                 {
                     $or: [
-                        { authorized: 'Success' },
-                        { authorized: 'Failed' },
-                        { captured: 'Success' },
-                        { captured: 'Failed' },
+                        { authorized: { $ne: 'Pending' } },
+                        { captured: { $ne: 'Pending' } },
+                        { sendViaPaynote: 'Success' },
                     ],
                 },
                 { $or: [{ lawsuitId: { $exists: false } }, { lawsuitId: null }] },
             ],
         };
-        if (debtor) {
-            filters['debtorId'] = id;
-            filters['caseId'] = null;
-        }
-        else {
-            filters['caseId'] = id;
+        switch (query) {
+            case '1':
+                filters['caseId'] = id;
+                break;
+            case '2':
+                filters['debtorId'] = id;
+                filters['caseId'] = null;
+                break;
+            case '3':
+                filters['debtorId'] = id;
+                break;
+            default:
+                filters['caseId'] = id;
         }
         console.log(filters, 'filterss');
-        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod', undefined, { dueDate: -1 }, {
+        return await this.paymentRepository.getAllWithoutPagination(filters, 'authorized captured sendViaPaynote amount dueDate failedReasonAuthorization failedReasonCaptured failedReasonPaynote rescheduled status debtorTransId transactionType paymentGateway debtorName paymentMode timePeriod', undefined, { dueDate: -1 }, {
             path: 'caseId',
             select: ['_id', 'caseOwner', 'totalDebt'],
             populate: [
@@ -1637,7 +1673,7 @@ class PaymentService {
         if (!debtor)
             return [false, constants_util_1.default.notFoundMessage('case')];
         const pageLimit = await common_util_1.default.getPageAndLimit(1, 10, req);
-        const paymentsPrevious = await this.getPreviousPayments(req.params.id, true);
+        const paymentsPrevious = await this.getPreviousPayments(req.params.id, '2');
         console.log(paymentsPrevious, 'paymentsPrevious');
         const paymentsUpcoming = await this.getUpcomingPayments(req.params.id, pageLimit.page, pageLimit.limit, true);
         const paymentsUpcomingCount = await this.getUpcomingPaymentsCount(req.params.id, true);

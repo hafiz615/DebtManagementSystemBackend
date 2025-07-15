@@ -159,7 +159,7 @@ class CallUtil {
   async createCall(
     data: any,
     user: any,
-    callerId: string,
+    from: string,
     debtorId: any,
     creditorId: any
   ) {
@@ -174,10 +174,11 @@ class CallUtil {
       newCall.callerName = user.name;
       newCall.userId = user?._id;
     }
+    newCall.calleeName = data.calleeName;
     newCall.accountSid = AccountSid;
     newCall.conferenceName = ConferenceName;
     newCall.callDirection = Direction;
-    newCall.callFrom = callerId;
+    newCall.callFrom = from;
     newCall.callStatus = CallStatus; // hangup_cause
     newCall.callDuration = data.callDuration;
     newCall.hangupSource = data.hangup_source;
@@ -483,6 +484,12 @@ class CallUtil {
     return {case: caseData, debtor: name?.debtorId || null};
   }
 
+  async calleeName(from: string) {
+    const number = await commonUtil.extractLastTenDigits(from);
+    const findData = await this.getDebtorOrCreditorName(number);
+    return findData ? findData?.fullName : 'Unknown';
+  }
+
   async callStatus(
     hangupCause: string,
     hangupCauseStatus: string,
@@ -494,9 +501,8 @@ class CallUtil {
           ? callData?.callFrom
           : callData?.callTo[0];
 
-      const number = await commonUtil.extractLastTenDigits(from);
-      const findData = await this.getDebtorOrCreditorName(number);
-      const name = findData ? findData?.fullName : `${from}`;
+      const calleeName = await this.calleeName(from);
+      const name = calleeName === 'Unknown' ? from : calleeName;
 
       const data = {
         caseId: callData?.caseId,

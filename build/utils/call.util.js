@@ -114,7 +114,7 @@ class CallUtil {
         }
         return null;
     }
-    async createCall(data, user, callerId, debtorId, creditorId) {
+    async createCall(data, user, from, debtorId, creditorId) {
         const newCall = new call_repomodel_1.Call();
         const { CaseId, CallSid, AccountSid, CallStatus, Direction, ConferenceName } = data;
         newCall.caseId = CaseId;
@@ -125,10 +125,11 @@ class CallUtil {
             newCall.callerName = user.name;
             newCall.userId = user?._id;
         }
+        newCall.calleeName = data.calleeName;
         newCall.accountSid = AccountSid;
         newCall.conferenceName = ConferenceName;
         newCall.callDirection = Direction;
-        newCall.callFrom = callerId;
+        newCall.callFrom = from;
         newCall.callStatus = CallStatus; // hangup_cause
         newCall.callDuration = data.callDuration;
         newCall.hangupSource = data.hangup_source;
@@ -348,14 +349,18 @@ class CallUtil {
         }
         return { case: caseData, debtor: name?.debtorId || null };
     }
+    async calleeName(from) {
+        const number = await common_util_1.default.extractLastTenDigits(from);
+        const findData = await this.getDebtorOrCreditorName(number);
+        return findData ? findData?.fullName : 'Unknown';
+    }
     async callStatus(hangupCause, hangupCauseStatus, callData) {
         try {
             const from = callData?.callDirection === 'incoming'
                 ? callData?.callFrom
                 : callData?.callTo[0];
-            const number = await common_util_1.default.extractLastTenDigits(from);
-            const findData = await this.getDebtorOrCreditorName(number);
-            const name = findData ? findData?.fullName : `${from}`;
+            const calleeName = await this.calleeName(from);
+            const name = calleeName === 'Unknown' ? from : calleeName;
             const data = {
                 caseId: callData?.caseId,
                 callId: callData?._id,

@@ -879,7 +879,7 @@ class DebtorRequests {
                     'number.base': 'Amount must be a number',
                     'any.required': 'Amount is required',
                 }),
-                commission: joi_1.default.number().required().messages({
+                commission: joi_1.default.number().allow(0).messages({
                     'number.base': 'Commission must be a number',
                     'any.required': 'Commission is required',
                 }),
@@ -1080,6 +1080,27 @@ class DebtorRequests {
                 serviceFee: joi_1.default.number().strict().required().messages({
                     'number.base': 'Service fee must be a number',
                     'any.required': 'Service fee is required',
+                }),
+            });
+            const { error } = schema.validate(req.body);
+            if (!error) {
+                return next();
+            }
+            else {
+                return res
+                    .status(constants_util_1.default.CODE.BAD_REQUEST)
+                    .send(responseHelper_util_1.default.get4xxResponse(error.details[0].message));
+            }
+        };
+        this.retryPayment = (req, res, next) => {
+            const schema = joi_1.default.object({
+                accountId: joi_1.default.string()
+                    .regex(/^[0-9a-fA-F]{24}$/)
+                    .required()
+                    .messages({
+                    'any.required': 'Account ID is required.',
+                    'string.pattern.base': 'Account ID is invalid.',
+                    'string.empty': 'Account ID cannot be empty.',
                 }),
             });
             const { error } = schema.validate(req.body);

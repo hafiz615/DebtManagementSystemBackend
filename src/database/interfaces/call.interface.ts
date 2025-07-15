@@ -9,6 +9,7 @@ export interface ICall extends Document {
   creditorId: mongoose.Schema.Types.ObjectId;
   userId: mongoose.Schema.Types.ObjectId;
   callerName: string;
+  calleeName: string;
   accountSid: string;
   callTo: string[];
   callFrom: string;

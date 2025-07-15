@@ -989,7 +989,7 @@ class DebtorRequests {
         'number.base': 'Amount must be a number',
         'any.required': 'Amount is required',
       }),
-      commission: Joi.number().required().messages({
+      commission: Joi.number().allow(0).messages({
         'number.base': 'Commission must be a number',
         'any.required': 'Commission is required',
       }),
@@ -1225,7 +1225,7 @@ class DebtorRequests {
   }
 
   updateCommisionPercentage = (
-    req: Request | any,
+    req: Request,
     res: Response,
     next: NextFunction
   ) => {
@@ -1247,16 +1247,35 @@ class DebtorRequests {
     }
   };
 
-  updateServiceFee = (
-    req: Request | any,
-    res: Response,
-    next: NextFunction
-  ) => {
+  updateServiceFee = (req: Request, res: Response, next: NextFunction) => {
     const schema = Joi.object({
       serviceFee: Joi.number().strict().required().messages({
         'number.base': 'Service fee must be a number',
         'any.required': 'Service fee is required',
       }),
+    });
+
+    const {error} = schema.validate(req.body);
+
+    if (!error) {
+      return next();
+    } else {
+      return res
+        .status(constants.CODE.BAD_REQUEST)
+        .send(responseHelper.get4xxResponse(error.details[0].message));
+    }
+  };
+
+  retryPayment = (req: Request, res: Response, next: NextFunction) => {
+    const schema = Joi.object({
+      accountId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required()
+        .messages({
+          'any.required': 'Account ID is required.',
+          'string.pattern.base': 'Account ID is invalid.',
+          'string.empty': 'Account ID cannot be empty.',
+        }),
     });
 
     const {error} = schema.validate(req.body);
