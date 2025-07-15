@@ -658,17 +658,8 @@ class DebtorService {
 
   async createDebtor(body: any, id: string) {
     // const reqTemp: any = req;
-    const getDebtor = await this.debtorRepository.getOne<IDebtor>({
-      $or: [
-        {
-          'businessInformation.companyName':
-            body.businessInformation.companyName,
-        },
-        {
-          'businessInformation.EIN': body.businessInformation.EIN,
-        },
-      ],
-    });
+    const debtorCheck = await this.checkDebtorAlreadyExist(body);
+    const getDebtor: any = debtorCheck[0] ? debtorCheck[1] : null;
     let debtor: IDebtor = null;
 
     let lawsuitExtractedFields: any = {};
@@ -686,7 +677,7 @@ class DebtorService {
       debtor = await caseUtil.createDebtor(body, id);
     } else {
       const newFiles = await this.updateDebtorIdExist(getDebtor, body);
-      if (newFiles?.lawsuitDocuments.length) {
+      if (newFiles?.lawsuitDocuments?.length) {
         lawsuitExtractedFields = await caseUtil.getExtractionLawsuit(
           newFiles?.lawsuitDocuments
         );
@@ -696,19 +687,19 @@ class DebtorService {
             : [lawsuitExtractedFields.result];
         }
       }
-      body.lawsuitDocuments = getDebtor?.lawsuitDocuments.length
+      body.lawsuitDocuments = getDebtor?.lawsuitDocuments?.length
         ? [...getDebtor.lawsuitDocuments, ...newFiles.lawsuitDocuments]
         : newFiles.lawsuitDocuments;
-      body.bankStatementDocuments = getDebtor?.bankStatementDocuments.length
+      body.bankStatementDocuments = getDebtor?.bankStatementDocuments?.length
         ? [
             ...getDebtor.bankStatementDocuments,
             ...newFiles.bankStatementDocuments,
           ]
         : newFiles.bankStatementDocuments;
-      body.mcaDocuments = getDebtor?.mcaDocuments.length
+      body.mcaDocuments = getDebtor?.mcaDocuments?.length
         ? [...getDebtor.mcaDocuments, ...newFiles.mcaDocuments]
         : newFiles.mcaDocuments;
-      body.otherDocuments = getDebtor?.otherDocuments.length
+      body.otherDocuments = getDebtor?.otherDocuments?.length
         ? [...getDebtor.otherDocuments, ...newFiles.otherDocuments]
         : newFiles.otherDocuments;
 
