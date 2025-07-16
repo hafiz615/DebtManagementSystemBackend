@@ -132,7 +132,7 @@ class EmailService {
       console.log('userId: ', userId);
       const userName = this.extractUserName(
         referencesHeader.toString()
-      ).replace('%', ' ');
+      ).replace(/%/g, ' ');
       console.log('userName: ', userName);
       const threadId = this.extractThreadId(referencesHeader.toString());
       console.log('threadId: ', threadId);
