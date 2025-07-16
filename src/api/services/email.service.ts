@@ -188,12 +188,14 @@ class EmailService {
             undefined,
             undefined
           );
+        console.log('Email Notification emit');
         app.socketInstance.emit('notify', {
           notificationCount: notificationCount.count,
           type: 'EMAIL',
           emailCount: notificationCount.emailCount,
           notification: notification,
         });
+        console.log('Email Notification emit');
 
         return true;
       }
