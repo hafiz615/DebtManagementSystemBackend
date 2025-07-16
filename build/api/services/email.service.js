@@ -78,8 +78,6 @@ class EmailService {
             ? parseData.cc[0].text.split(',')
             : parseData.cc?.text.split(',') || [];
         const attachments = parseData.attachments;
-        console.log(parseData.headers, 'parseData.headers');
-        console.log(parseData.headerLines, 'parseData.headerLines');
         const referencesHeader = parseData.headers.get('references');
         console.log('referencesHeader: ', referencesHeader);
         if (referencesHeader) {
@@ -92,7 +90,7 @@ class EmailService {
             console.log('caseId: ', caseId);
             const userId = this.extractUserId(referencesHeader.toString());
             console.log('userId: ', userId);
-            const userName = this.extractUserName(referencesHeader.toString());
+            const userName = this.extractUserName(referencesHeader.toString()).replace('%', ' ');
             console.log('userName: ', userName);
             const threadId = this.extractThreadId(referencesHeader.toString());
             console.log('threadId: ', threadId);
