@@ -17,6 +17,7 @@ import {DebtorRepository} from '../api/repository/debtor/debtor.repository';
 import {IDebtor} from '../database/interfaces/debtor.interface';
 import {CaseRepository} from '../api/repository/case/case.repository';
 import {ICase} from '../database/interfaces/case.interface';
+import {INotificationCount} from '../database/interfaces/notificationCount.interface';
 dotnev.config();
 class CommonUtil {
   private creditorRepository: CreditorRepository;
@@ -256,6 +257,29 @@ class CommonUtil {
 
   sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async notificationCount(notificationCount: INotificationCount, type: string) {
+    let field = null;
+
+    switch (type) {
+      case 'EMAIL':
+        field = 'emailCount';
+        break;
+      case 'SMS':
+        field = 'smsCount';
+        break;
+      case 'TASK':
+        field = 'taskCount';
+        break;
+      default:
+        return null;
+    }
+
+    notificationCount.count -= notificationCount[field];
+    notificationCount[field] = 0;
+
+    return notificationCount;
   }
 }
 export default new CommonUtil();

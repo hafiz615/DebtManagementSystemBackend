@@ -217,6 +217,25 @@ class CommonUtil {
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+    async notificationCount(notificationCount, type) {
+        let field = null;
+        switch (type) {
+            case 'EMAIL':
+                field = 'emailCount';
+                break;
+            case 'SMS':
+                field = 'smsCount';
+                break;
+            case 'TASK':
+                field = 'taskCount';
+                break;
+            default:
+                return null;
+        }
+        notificationCount.count -= notificationCount[field];
+        notificationCount[field] = 0;
+        return notificationCount;
+    }
 }
 exports.default = new CommonUtil();
 //# sourceMappingURL=common.util.js.map
