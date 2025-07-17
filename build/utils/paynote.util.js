@@ -151,7 +151,7 @@ class PaynoteUtil {
             payment.lawsuitId?.lawfirmId?.lawfirmCompanyName;
         const desc = companyName + ' - ' + creditorName;
         var data = {
-            recipient: payment.caseId?.creditor?.paynoteUserId ||
+            recipient: payment.caseId?.paynoteUserId ||
                 payment.lawsuitId?.lawfirmId?.paynoteUserId,
             name: creditorName,
             amount: payment.amount,
