@@ -79,6 +79,19 @@ class EmailService {
             : parseData.cc?.text.split(',') || [];
         const attachments = parseData.attachments;
         const referencesHeader = parseData.headers.get('references');
+        if (from === 'forwarding-noreply@google.com') {
+            const link = await email_util_1.default.getConfirmationLinkFromEmailText(text);
+            console.log(link, 'link');
+            if (link) {
+                const newDomainVerify = new domainVerify_repomodel_1.DomainVerify();
+                newDomainVerify.link = link;
+                newDomainVerify.from = from;
+                newDomainVerify.subject = subject;
+                // newDomainVerify.text = text;
+                await this.domainVerifyRepository.create(newDomainVerify);
+            }
+            return true;
+        }
         console.log('referencesHeader: ', referencesHeader);
         if (referencesHeader) {
             const data = await this.uploadUtil.sendGridAwsS3FileUpload(attachments, false);
@@ -90,7 +103,7 @@ class EmailService {
             console.log('caseId: ', caseId);
             const userId = this.extractUserId(referencesHeader.toString());
             console.log('userId: ', userId);
-            const userName = this.extractUserName(referencesHeader.toString());
+            const userName = this.extractUserName(referencesHeader.toString()).replace(/%/g, ' ');
             console.log('userName: ', userName);
             const threadId = this.extractThreadId(referencesHeader.toString());
             console.log('threadId: ', threadId);
@@ -151,21 +164,6 @@ class EmailService {
                 console.log('Email Notification emit');
                 return true;
             }
-        }
-        const checkIfConfirmationEmail = await email_util_1.default.checkIfConfirmationEmail(subject, text);
-        console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
-        if (checkIfConfirmationEmail) {
-            const link = await email_util_1.default.getConfirmationLinkFromEmailText(text);
-            console.log(link, 'link');
-            if (link) {
-                const newDomainVerify = new domainVerify_repomodel_1.DomainVerify();
-                newDomainVerify.link = link;
-                newDomainVerify.from = from;
-                newDomainVerify.subject = subject;
-                newDomainVerify.text = text;
-                await this.domainVerifyRepository.create(newDomainVerify);
-            }
-            return true;
         }
         return true;
     }

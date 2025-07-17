@@ -92,7 +92,25 @@ class EmailService {
       ? parseData.cc[0].text.split(',')
       : parseData.cc?.text.split(',') || [];
     const attachments = parseData.attachments;
+
     const referencesHeader = parseData.headers.get('references');
+
+    if (from === 'forwarding-noreply@google.com') {
+      const link = await emailUtil.getConfirmationLinkFromEmailText(text);
+      console.log(link, 'link');
+      if (link) {
+        const newDomainVerify = new DomainVerify();
+        newDomainVerify.link = link;
+        newDomainVerify.from = from;
+        newDomainVerify.subject = subject;
+        // newDomainVerify.text = text;
+        await this.domainVerifyRepository.create<IDomainVerify>(
+          newDomainVerify as any
+        );
+      }
+      return true;
+    }
+
     console.log('referencesHeader: ', referencesHeader);
     if (referencesHeader) {
       const data: IKeyFile[] = await this.uploadUtil.sendGridAwsS3FileUpload(
@@ -112,7 +130,9 @@ class EmailService {
       console.log('caseId: ', caseId);
       const userId = this.extractUserId(referencesHeader.toString());
       console.log('userId: ', userId);
-      const userName = this.extractUserName(referencesHeader.toString());
+      const userName = this.extractUserName(
+        referencesHeader.toString()
+      ).replace(/%/g, ' ');
       console.log('userName: ', userName);
       const threadId = this.extractThreadId(referencesHeader.toString());
       console.log('threadId: ', threadId);
@@ -199,27 +219,6 @@ class EmailService {
 
         return true;
       }
-    }
-
-    const checkIfConfirmationEmail = await emailUtil.checkIfConfirmationEmail(
-      subject,
-      text
-    );
-    console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
-    if (checkIfConfirmationEmail) {
-      const link = await emailUtil.getConfirmationLinkFromEmailText(text);
-      console.log(link, 'link');
-      if (link) {
-        const newDomainVerify = new DomainVerify();
-        newDomainVerify.link = link;
-        newDomainVerify.from = from;
-        newDomainVerify.subject = subject;
-        newDomainVerify.text = text;
-        await this.domainVerifyRepository.create<IDomainVerify>(
-          newDomainVerify as any
-        );
-      }
-      return true;
     }
     return true;
   }
