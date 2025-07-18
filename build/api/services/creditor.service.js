@@ -361,7 +361,7 @@ class CreditorService {
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user)
             return [false, constants_util_1.default.notFoundMessage('user')];
-        const email = await common_util_1.default.getUserDetails(user.obj);
+        const email = await common_util_1.default.getUserDetails(user.obj.creditor);
         const result = await this.syncPaymentMethodRepository.getOne({
             syncId: req.params.id,
         });

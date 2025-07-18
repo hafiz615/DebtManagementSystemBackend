@@ -8,6 +8,7 @@ import {INotification} from '../../database/interfaces/notification.interface';
 import {NotificationCountRepository} from '../repository/notificationCount/notificationCount.repository';
 import {INotificationCount} from '../../database/interfaces/notificationCount.interface';
 import {NotificationCount} from '../../database/repomodels/notificationCount.repomodel';
+import commonUtil from '../../utils/common.util';
 // import notificationUtils from '../../utils/notification.utils';
 dotenv.config();
 
@@ -26,6 +27,7 @@ class InboxService {
     const {type, status} = req.body;
     const userId = reqTemp.id;
     let notifications = null;
+    let notificationCount = null;
     if (status) {
       const updateField =
         type === 'EMAIL'
@@ -56,13 +58,23 @@ class InboxService {
         return [false, constantsUtil.notFoundMessage('Notification')];
       }
 
-      await this.notificationCountRepository.upsert<INotificationCount>(
-        {userId},
-        {$set: {count: 0}}
-      );
-    }
+      const getNotificationCount =
+        await this.notificationCountRepository.getOne<INotificationCount>({
+          userId,
+        });
 
-    return [true, notifications];
+      const updatedNotificationCount = await commonUtil.notificationCount(
+        getNotificationCount,
+        type
+      );
+
+      notificationCount =
+        await this.notificationCountRepository.updateByOne<INotificationCount>(
+          {userId},
+          {...updatedNotificationCount}
+        );
+    }
+    return [true, {notifications, notificationCount}];
   }
 
   async markAsRead(id: string): Promise<[boolean, INotification | string]> {

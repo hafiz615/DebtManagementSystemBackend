@@ -212,6 +212,18 @@ const caseModel = new mongoose_1.Schema({
     priority: {
         type: Number,
     },
+    paynoteSourceVerified: {
+        type: Boolean,
+    },
+    paynoteUserFound: {
+        type: Boolean,
+    },
+    paynoteUserId: {
+        type: String,
+    },
+    paynoteSourceId: {
+        type: String,
+    },
 });
 caseModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

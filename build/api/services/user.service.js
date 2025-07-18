@@ -22,6 +22,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const debtor_repository_1 = require("../repository/debtor/debtor.repository");
 const signature_repository_1 = require("../repository/signature/signature.repository");
 const signature_repomodel_1 = require("../../database/repomodels/signature.repomodel");
+const rolesPermissions_repository_1 = require("../repository/rolesPermissions/rolesPermissions.repository");
 dotenv_1.default.config();
 class UserService {
     constructor() {
@@ -266,6 +267,7 @@ class UserService {
         this.caseRepository = new case_repository_1.CaseRepository();
         this.debtorRepository = new debtor_repository_1.DebtorRepository();
         this.signatureRepository = new signature_repository_1.SignatureRepository();
+        this.rolesRepository = new rolesPermissions_repository_1.RolesPermissionsRepository();
         client_1.default.setApiKey(process.env.SENDGRID_API_KEY);
     }
     async createUser(req) {
@@ -334,12 +336,12 @@ class UserService {
     }
     async getUsersByRole() {
         const users = await this.userRepository.getAll({});
-        const predefinedRoles = [
-            'Negotiator',
-            'CSM',
-            'Payment Department',
-            'Manager',
-        ];
+        const roles = await this.rolesRepository.getAllWithoutPagination({
+            isDeleted: { $ne: true },
+        });
+        const predefinedRoles = roles
+            .map(role => role.name)
+            .filter(name => name !== 'Super User');
         const usersByRole = users.reduce((acc, curr) => {
             if (predefinedRoles.includes(curr.role)) {
                 acc[curr.role] = acc[curr.role] || [];

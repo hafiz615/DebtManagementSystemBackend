@@ -2230,7 +2230,7 @@ class CaseUtil {
     ) {
       await this.storeAuthToken('test', 'test');
     }
-    if (!debtor.mcaDocuments.length) return null;
+    if (!debtor?.mcaDocuments?.length) return null;
     const extractedFields = await this.getExtractionMCA_AI(
       debtor.mcaDocuments,
       AIAuth.auth_token
