@@ -466,7 +466,7 @@ class CreditorService {
     const type = reqTemp.query.type;
     const user: any = await commonUtil.getUserByType(req.params.id, type);
     if (!user) return [false, constants.notFoundMessage('user')];
-    const email = await commonUtil.getUserDetails(user.obj);
+    const email = await commonUtil.getUserDetails(user.obj.creditor);
     const result =
       await this.syncPaymentMethodRepository.getOne<ISyncPaymentMethod>({
         syncId: req.params.id,

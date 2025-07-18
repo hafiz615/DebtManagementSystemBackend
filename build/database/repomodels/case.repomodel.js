@@ -62,6 +62,10 @@ class Case {
         this.lawfirmId = null;
         this.dummyLawsuitExist = false;
         this.priority = 0;
+        this.paynoteUserId = '';
+        this.paynoteUserFound = false;
+        this.paynoteSourceId = '';
+        this.paynoteSourceVerified = false;
     }
 }
 exports.Case = Case;

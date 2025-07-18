@@ -94,6 +94,23 @@ class EmailService {
     const attachments = parseData.attachments;
 
     const referencesHeader = parseData.headers.get('references');
+
+    if (from === 'forwarding-noreply@google.com') {
+      const link = await emailUtil.getConfirmationLinkFromEmailText(text);
+      console.log(link, 'link');
+      if (link) {
+        const newDomainVerify = new DomainVerify();
+        newDomainVerify.link = link;
+        newDomainVerify.from = from;
+        newDomainVerify.subject = subject;
+        // newDomainVerify.text = text;
+        await this.domainVerifyRepository.create<IDomainVerify>(
+          newDomainVerify as any
+        );
+      }
+      return true;
+    }
+
     console.log('referencesHeader: ', referencesHeader);
     if (referencesHeader) {
       const data: IKeyFile[] = await this.uploadUtil.sendGridAwsS3FileUpload(
@@ -191,36 +208,17 @@ class EmailService {
             undefined,
             undefined
           );
+        console.log('Email Notification emit');
         app.socketInstance.emit('notify', {
           notificationCount: notificationCount.count,
           type: 'EMAIL',
           emailCount: notificationCount.emailCount,
           notification: notification,
         });
+        console.log('Email Notification emit');
 
         return true;
       }
-    }
-
-    const checkIfConfirmationEmail = await emailUtil.checkIfConfirmationEmail(
-      subject,
-      text
-    );
-    console.log(checkIfConfirmationEmail, 'checkIfConfirmationEmail');
-    if (checkIfConfirmationEmail) {
-      const link = await emailUtil.getConfirmationLinkFromEmailText(text);
-      console.log(link, 'link');
-      if (link) {
-        const newDomainVerify = new DomainVerify();
-        newDomainVerify.link = link;
-        newDomainVerify.from = from;
-        newDomainVerify.subject = subject;
-        newDomainVerify.text = text;
-        await this.domainVerifyRepository.create<IDomainVerify>(
-          newDomainVerify as any
-        );
-      }
-      return true;
     }
     return true;
   }

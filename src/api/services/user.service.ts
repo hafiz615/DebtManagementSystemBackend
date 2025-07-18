@@ -26,6 +26,8 @@ import {DebtorRepository} from '../repository/debtor/debtor.repository';
 import {SignatureRepository} from '../repository/signature/signature.repository';
 import {ISignature} from '../../database/interfaces/signature.interface';
 import {Signature} from '../../database/repomodels/signature.repomodel';
+import {RolesPermissionsRepository} from '../repository/rolesPermissions/rolesPermissions.repository';
+import {IRolesPermissions} from '../../database/interfaces/rolesPermissions.interface';
 dotenv.config();
 class UserService {
   private userRepository: UserRepository;
@@ -33,6 +35,7 @@ class UserService {
   private caseRepository: CaseRepository;
   private debtorRepository: DebtorRepository;
   private signatureRepository: SignatureRepository;
+  private rolesRepository: RolesPermissionsRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
@@ -40,6 +43,7 @@ class UserService {
     this.caseRepository = new CaseRepository();
     this.debtorRepository = new DebtorRepository();
     this.signatureRepository = new SignatureRepository();
+    this.rolesRepository = new RolesPermissionsRepository();
     client.setApiKey(process.env.SENDGRID_API_KEY as string);
   }
 
@@ -127,12 +131,14 @@ class UserService {
   async getUsersByRole(): Promise<[boolean, {[key: string]: string[]}]> {
     const users: IUser[] = await this.userRepository.getAll({});
 
-    const predefinedRoles = [
-      'Negotiator',
-      'CSM',
-      'Payment Department',
-      'Manager',
-    ];
+    const roles =
+      await this.rolesRepository.getAllWithoutPagination<IRolesPermissions>({
+        isDeleted: {$ne: true},
+      });
+
+    const predefinedRoles = roles
+      .map(role => role.name)
+      .filter(name => name !== 'Super User');
 
     const usersByRole = users.reduce(
       (acc: {[key: string]: string[]}, curr: IUser) => {

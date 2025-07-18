@@ -1253,7 +1253,9 @@ class PaymentService {
     const type = reqTemp.query.type;
     const user: any = await commonUtil.getUserByType(req.params.id, type);
     if (!user.obj) return [false, constants.notFoundMessage('user')];
-    const {name, email}: any = await commonUtil.getUserDetails(user.obj);
+    const {name, email}: any = await commonUtil.getUserDetails(
+      user.obj.creditor
+    );
     if (!user.obj.paynoteUserId) {
       const data = await paynoteUtil.createCustomer(
         user.obj._id,
@@ -1331,13 +1333,18 @@ class PaymentService {
       undefined,
       {
         path: 'caseId',
-        select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+        select: [
+          '_id',
+          'caseCode',
+          'remaining',
+          'creditorPaymentsProceed',
+          'paynoteSourceId',
+          'paynoteUserId',
+        ],
         populate: [
           {
             path: 'creditor',
             select: [
-              'paynoteSourceId',
-              'paynoteUserId',
               'basicInformation.fullName',
               'businessInformation.companyName',
             ],
@@ -1361,7 +1368,7 @@ class PaymentService {
     if (!payment) {
       return [false, constantsUtil.notFoundMessage('payment')];
     }
-    if (!payment.caseId?.creditor?.paynoteUserId) {
+    if (!payment.caseId?.paynoteUserId) {
       return [false, 'User not added in paynote!'];
     }
     if (!payment.caseId?.creditorPaymentsProceed) {
@@ -1376,7 +1383,7 @@ class PaymentService {
     if (payment.status === 'Success') {
       return [false, 'Payment already send'];
     }
-    if (payment.caseId.creditor.paynoteUserId) {
+    if (payment.caseId.paynoteUserId) {
       // const paynoteCustomer = await paynoteUtil.getCustomer(
       //   payment.caseId.creditor
       // );

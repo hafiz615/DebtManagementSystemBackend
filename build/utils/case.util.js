@@ -1886,7 +1886,7 @@ class CaseUtil {
             new Date(global_1.AIAuth.expires_in) <= new Date(common_util_1.default.getCurrentDate())) {
             await this.storeAuthToken('test', 'test');
         }
-        if (!debtor.mcaDocuments.length)
+        if (!debtor?.mcaDocuments?.length)
             return null;
         const extractedFields = await this.getExtractionMCA_AI(debtor.mcaDocuments, global_1.AIAuth.auth_token);
         return extractedFields;
