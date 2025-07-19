@@ -924,7 +924,7 @@ class PaymentService {
         const user = await common_util_1.default.getUserByType(req.params.id, type);
         if (!user.obj)
             return [false, constants_util_1.default.notFoundMessage('user')];
-        const { name, email } = await common_util_1.default.getUserDetails(user.obj);
+        const { name, email } = await common_util_1.default.getUserDetails(user.obj.creditor);
         if (!user.obj.paynoteUserId) {
             const data = await paynote_util_1.default.createCustomer(user.obj._id, name, email, user.model);
             if (data.error)
@@ -982,13 +982,18 @@ class PaymentService {
         const paymentId = req.params.id;
         const payment = await this.paymentRepository.getById(paymentId, undefined, undefined, {
             path: 'caseId',
-            select: ['_id', 'caseCode', 'remaining', 'creditorPaymentsProceed'],
+            select: [
+                '_id',
+                'caseCode',
+                'remaining',
+                'creditorPaymentsProceed',
+                'paynoteSourceId',
+                'paynoteUserId',
+            ],
             populate: [
                 {
                     path: 'creditor',
                     select: [
-                        'paynoteSourceId',
-                        'paynoteUserId',
                         'basicInformation.fullName',
                         'businessInformation.companyName',
                     ],
@@ -1011,7 +1016,7 @@ class PaymentService {
         if (!payment) {
             return [false, constants_util_2.default.notFoundMessage('payment')];
         }
-        if (!payment.caseId?.creditor?.paynoteUserId) {
+        if (!payment.caseId?.paynoteUserId) {
             return [false, 'User not added in paynote!'];
         }
         if (!payment.caseId?.creditorPaymentsProceed) {
@@ -1026,7 +1031,7 @@ class PaymentService {
         if (payment.status === 'Success') {
             return [false, 'Payment already send'];
         }
-        if (payment.caseId.creditor.paynoteUserId) {
+        if (payment.caseId.paynoteUserId) {
             // const paynoteCustomer = await paynoteUtil.getCustomer(
             //   payment.caseId.creditor
             // );

@@ -269,13 +269,13 @@ class CronJob {
                     'caseCode',
                     'remaining',
                     'creditorPaymentsProceed',
+                    'paynoteSourceId',
+                    'paynoteUserId',
                 ],
                 populate: [
                     {
                         path: 'creditor',
                         select: [
-                            'paynoteSourceId',
-                            'paynoteUserId',
                             'basicInformation.fullName',
                             'businessInformation.companyName',
                         ],
@@ -304,13 +304,13 @@ class CronJob {
                     'caseCode',
                     'remaining',
                     'creditorPaymentsProceed',
+                    'paynoteSourceId',
+                    'paynoteUserId',
                 ],
                 populate: [
                     {
                         path: 'creditor',
                         select: [
-                            'paynoteSourceId',
-                            'paynoteUserId',
                             'basicInformation.fullName',
                             'businessInformation.companyName',
                         ],
@@ -552,7 +552,7 @@ class CronJob {
             if (!payment?.caseId?.creditorPaymentsProceed) {
                 continue;
             }
-            if (payment.caseId.creditor.paynoteUserId) {
+            if (payment.caseId?.paynoteUserId) {
                 // const paynoteCustomer = await paynoteUtil.getCustomer(
                 //   payment.caseId.creditor
                 // );

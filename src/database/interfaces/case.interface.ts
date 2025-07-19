@@ -77,4 +77,8 @@ export interface ICase extends Document {
   lawfirmId: mongoose.Schema.Types.ObjectId;
   dummyLawsuitExist: boolean;
   priority: number;
+  paynoteUserId: string;
+  paynoteUserFound: boolean;
+  paynoteSourceId: string;
+  paynoteSourceVerified: boolean;
 }

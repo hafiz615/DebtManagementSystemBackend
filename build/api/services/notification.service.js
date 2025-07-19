@@ -9,6 +9,7 @@ const constants_util_2 = __importDefault(require("../../utils/constants.util"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const notification_repository_1 = require("../repository/notification/notification.repository");
 const notificationCount_repository_1 = require("../repository/notificationCount/notificationCount.repository");
+const common_util_1 = __importDefault(require("../../utils/common.util"));
 // import notificationUtils from '../../utils/notification.utils';
 dotenv_1.default.config();
 class InboxService {
@@ -22,6 +23,7 @@ class InboxService {
         const { type, status } = req.body;
         const userId = reqTemp.id;
         let notifications = null;
+        let notificationCount = null;
         if (status) {
             const updateField = type === 'EMAIL'
                 ? { emailCount: 0 }
@@ -40,9 +42,14 @@ class InboxService {
             if (!notifications) {
                 return [false, constants_util_2.default.notFoundMessage('Notification')];
             }
-            await this.notificationCountRepository.upsert({ userId }, { $set: { count: 0 } });
+            const getNotificationCount = await this.notificationCountRepository.getOne({
+                userId,
+            });
+            const updatedNotificationCount = await common_util_1.default.notificationCount(getNotificationCount, type);
+            notificationCount =
+                await this.notificationCountRepository.updateByOne({ userId }, { ...updatedNotificationCount });
         }
-        return [true, notifications];
+        return [true, { notifications, notificationCount }];
     }
     async markAsRead(id) {
         const notification = await this.notificationRepository.getById(id);

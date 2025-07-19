@@ -988,7 +988,10 @@ class EmailUtil {
         subject += ` ${caseTemp.debtor.businessInformation.companyName}`;
       if (caseTemp.debtor?.businessInformation?.EIN)
         subject += ` ${caseTemp.debtor.businessInformation.EIN}`;
-      const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+      const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName.replace(
+        / /g,
+        '%'
+      )}&threadId-${threadId}@yourdomain.com>`;
       headers['References'] = referenceHeader;
       // headers['In-Reply-To'] = referenceHeader;
       headers['Message-ID'] = referenceHeader;
@@ -1006,7 +1009,10 @@ class EmailUtil {
           ? (subject += ` First Choice-DMS ${user.name}`)
           : (subject += ` First Choice-DMS`);
       }
-      const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName}&threadId-${threadId}@yourdomain.com>`;
+      const referenceHeader = `<caseId-${caseId}&userId-${userId}&userName-${userName.replace(
+        / /g,
+        '%'
+      )}&threadId-${threadId}@yourdomain.com>`;
       headers['References'] = referenceHeader;
       // headers['In-Reply-To'] = referenceHeader;
       headers['Message-ID'] = referenceHeader;
