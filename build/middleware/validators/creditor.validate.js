@@ -48,22 +48,16 @@ class CreditorRequests {
                     'string.base': 'Account title must be a string.',
                 }),
                 contact: joi_1.default.object({
-                    name: joi_1.default.string().required().messages({
-                        'any.required': 'Contact name is required.',
-                        'string.empty': 'Contact name cannot be empty.',
+                    name: joi_1.default.string().allow('').messages({
                         'string.base': 'Contact name must be a string.',
                     }),
-                    title: joi_1.default.string().required().messages({
-                        'any.required': 'Contact title is required.',
-                        'string.empty': 'Contact title cannot be empty.',
+                    title: joi_1.default.string().allow('').messages({
                         'string.base': 'Contact title must be a string.',
                     }),
                     phone: joi_1.default.string()
                         .pattern(/^\d{10}$/)
-                        .required()
+                        .allow('')
                         .messages({
-                        'any.required': 'Contact phone number is required.',
-                        'string.empty': 'Contact phone number cannot be empty.',
                         'string.base': 'Contact phone number must be a string.',
                         'string.pattern.base': 'Contact phone number must be 10 digits.',
                     }),

@@ -839,25 +839,19 @@ class CaseValidate {
             }),
             contacts: Joi.array().items(
               Joi.object({
-                name: Joi.string().required().messages({
+                name: Joi.string().allow('').messages({
                   'string.base': 'Contact name must be a string.',
-                  'string.empty': 'Contact name cannot be empty.',
-                  'any.required': 'Contact name is required.',
                 }),
-                title: Joi.string().required().messages({
+                title: Joi.string().allow('').messages({
                   'string.base': 'Title must be a string.',
-                  'string.empty': 'Title cannot be empty.',
-                  'any.required': 'Title is required.',
                 }),
                 phone: Joi.string()
                   .pattern(/^\d{10}$/)
-                  .required()
+                  .allow('')
                   .messages({
                     'string.base': 'Phone number must be a string.',
-                    'string.empty': 'Phone number cannot be empty.',
                     'string.pattern.base':
                       'Phone number must be exactly 10 digits.',
-                    'any.required': 'Phone number is required.',
                   }),
                 email: Joi.string().email().allow('').messages({
                   'string.base': 'Email must be a string.',
