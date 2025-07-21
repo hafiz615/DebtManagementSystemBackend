@@ -6,6 +6,9 @@ export class NotificationCount {
   emailCount = 0;
   taskCount = 0;
   callCount = 0;
+  smsNotificationCount = 0;
+  emailNotificationCount = 0;
+  taskNotificationCount = 0;
   missCallCount = 0;
   rejectCallCount = 0;
   userId = '';

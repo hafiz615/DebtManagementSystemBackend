@@ -383,6 +383,9 @@ class EmailUtil {
             newNotificationCount.emailCount = currentCount
                 ? (currentCount?.emailCount || 0) + 1
                 : 1;
+            newNotificationCount.emailNotificationCount = currentCount
+                ? (currentCount?.emailNotificationCount || 0) + 1
+                : 1;
             await this.notificationCountRepository.upsert({ userId }, newNotificationCount);
         }
         return newNotification;

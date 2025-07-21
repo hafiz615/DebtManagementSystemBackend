@@ -158,7 +158,7 @@ class EmailService {
                 app_1.default.socketInstance.emit('notify', {
                     notificationCount: notificationCount.count,
                     type: 'EMAIL',
-                    emailCount: notificationCount.emailCount,
+                    emailNotificationCount: notificationCount.emailNotificationCount,
                     notification: notification,
                 });
                 console.log('Email Notification emit');
