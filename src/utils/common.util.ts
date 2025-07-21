@@ -264,13 +264,13 @@ class CommonUtil {
 
     switch (type) {
       case 'EMAIL':
-        field = 'emailCount';
+        field = 'emailNotificationCount';
         break;
       case 'SMS':
-        field = 'smsCount';
+        field = 'smsNotificationCount';
         break;
       case 'TASK':
-        field = 'taskCount';
+        field = 'taskNotificationCount';
         break;
       default:
         return null;
