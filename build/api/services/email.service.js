@@ -161,6 +161,12 @@ class EmailService {
                     emailNotificationCount: notificationCount.emailNotificationCount,
                     notification: notification,
                 });
+                console.log({
+                    notificationCount: notificationCount.count,
+                    type: 'EMAIL',
+                    emailNotificationCount: notificationCount.emailNotificationCount,
+                    notification: notification,
+                });
                 console.log('Email Notification emit');
                 return true;
             }
