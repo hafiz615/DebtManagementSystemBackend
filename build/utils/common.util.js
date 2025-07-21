@@ -232,7 +232,7 @@ class CommonUtil {
             default:
                 return null;
         }
-        notificationCount.count -= notificationCount[field];
+        notificationCount.count -= notificationCount[field] || 0;
         notificationCount[field] = 0;
         return notificationCount;
     }
