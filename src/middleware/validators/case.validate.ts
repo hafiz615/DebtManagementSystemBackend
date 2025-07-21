@@ -843,13 +843,13 @@ class CaseValidate {
                   'string.base': 'Contact name must be a string.',
                 }),
                 title: Joi.string().allow('').messages({
-                  'string.base': 'Title must be a string.',
+                  'string.base': 'Contact title must be a string.',
                 }),
                 phone: Joi.string()
                   .pattern(/^\d{10}$/)
                   .allow('')
                   .messages({
-                    'string.base': 'Phone number must be a string.',
+                    'string.base': 'Contact phone number must be a string.',
                     'string.pattern.base':
                       'Phone number must be exactly 10 digits.',
                   }),

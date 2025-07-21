@@ -116,17 +116,17 @@ class DebtorRequests {
                 }),
                 contact: joi_1.default.object({
                     name: joi_1.default.string().allow('').messages({
-                        'string.base': 'Name must be a string.',
+                        'string.base': 'Contact name must be a string.',
                     }),
                     title: joi_1.default.string().allow('').messages({
-                        'string.base': 'Name must be a string.',
+                        'string.base': 'Contact title must be a string.',
                     }),
                     phone: joi_1.default.string()
                         .pattern(/^\d{10}$/)
                         .allow('')
                         .messages({
                         'string.pattern.base': 'Contact Phone number must be a 10-digit number.',
-                        'string.base': 'Name must be a string.',
+                        'string.base': 'Contact phone must be a string.',
                     }),
                     email: joi_1.default.string().email().allow('').messages({
                         'string.email': 'Contact Email must be a valid email address.',
@@ -313,21 +313,18 @@ class DebtorRequests {
                     }),
                 }),
                 contacts: joi_1.default.array().items(joi_1.default.object({
-                    name: joi_1.default.string().required().messages({
-                        'any.required': 'Contact Name is a required field.',
-                        'string.empty': 'Contact Name cannot be empty.',
+                    name: joi_1.default.string().allow('').messages({
+                        'string.base': 'Contact name must be a string.',
                     }),
-                    title: joi_1.default.string().required().messages({
-                        'any.required': 'Title is a required field.',
-                        'string.empty': 'Title cannot be empty.',
+                    title: joi_1.default.string().allow('').messages({
+                        'string.base': 'Contact title must be a string.',
                     }),
                     phone: joi_1.default.string()
                         .pattern(/^\d{10}$/)
-                        .required()
+                        .allow('')
                         .messages({
-                        'any.required': 'Contact Phone number is a required field.',
                         'string.pattern.base': 'Contact Phone number must be a 10-digit number.',
-                        'string.empty': 'Contact Phone number cannot be empty.',
+                        'string.base': 'Contact phone must be a string.',
                     }),
                     email: joi_1.default.string().email().allow('').messages({
                         'string.email': 'Contact Email must be a valid email address.',

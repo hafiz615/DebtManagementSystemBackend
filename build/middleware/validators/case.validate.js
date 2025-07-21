@@ -807,13 +807,13 @@ class CaseValidate {
                             'string.base': 'Contact name must be a string.',
                         }),
                         title: joi_1.default.string().allow('').messages({
-                            'string.base': 'Title must be a string.',
+                            'string.base': 'Contact title must be a string.',
                         }),
                         phone: joi_1.default.string()
                             .pattern(/^\d{10}$/)
                             .allow('')
                             .messages({
-                            'string.base': 'Phone number must be a string.',
+                            'string.base': 'Contact phone number must be a string.',
                             'string.pattern.base': 'Phone number must be exactly 10 digits.',
                         }),
                         email: joi_1.default.string().email().allow('').messages({
