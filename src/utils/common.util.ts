@@ -276,7 +276,16 @@ class CommonUtil {
         return null;
     }
 
-    notificationCount.count -= notificationCount[field] || 0;
+    if (
+      notificationCount?.smsNotificationCount == 0 &&
+      notificationCount?.emailNotificationCount == 0 &&
+      notificationCount?.taskNotificationCount == 0 &&
+      notificationCount?.count > 0
+    ) {
+      notificationCount.count = 0;
+    } else {
+      notificationCount.count -= notificationCount[field] || 0;
+    }
     notificationCount[field] = 0;
 
     return notificationCount;

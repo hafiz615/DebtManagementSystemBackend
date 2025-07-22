@@ -599,7 +599,7 @@ class EmailUtil {
     if (caseTemp) {
       newNotification.caseId = caseTemp._id;
       newNotification.text = this.formatText(
-        caseTemp.creditor.businessInformation.companyName
+        caseTemp.debtor.businessInformation.companyName
       );
     }
     newNotification.type = 'EMAIL';

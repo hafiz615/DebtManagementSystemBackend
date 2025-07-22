@@ -364,7 +364,7 @@ class EmailUtil {
         }
         if (caseTemp) {
             newNotification.caseId = caseTemp._id;
-            newNotification.text = this.formatText(caseTemp.creditor.businessInformation.companyName);
+            newNotification.text = this.formatText(caseTemp.debtor.businessInformation.companyName);
         }
         newNotification.type = 'EMAIL';
         newNotification.userId = userId;
