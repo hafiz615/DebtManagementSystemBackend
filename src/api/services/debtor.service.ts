@@ -1749,6 +1749,12 @@ class DebtorService {
 
     body.status = 'Pending';
     const debtor = await caseUtil.createDebtor(body, source);
+    moneyThumbUtil.run(
+      debtor,
+      await debtorUtil.normalizeCompanyName(
+        debtor.businessInformation.companyName
+      )
+    );
     newMca = debtor.mcaDocuments.map(obj => {
       return obj.originalFileName;
     });
@@ -1780,6 +1786,9 @@ class DebtorService {
     const otherDocuments = debtor.otherDocuments.map(obj => {
       return obj.originalFileName;
     });
+    const lawsuitDocuments = debtor.lawsuitDocuments.map(obj => {
+      return obj.originalFileName;
+    });
 
     return [
       true,
@@ -1787,6 +1796,8 @@ class DebtorService {
         extractedFields: debtor.extractedFields,
         mcaDocuments: mcaDocuments,
         bankStatementDocuments: bankStatementDocuments,
+        lawsuitDocuments: lawsuitDocuments,
+        lawsuitFields: debtor.lawsuitFields,
         otherDocuments: otherDocuments,
       },
     ];
