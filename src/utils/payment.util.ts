@@ -870,8 +870,8 @@ class PaymentUtil {
   async createPaymentDoc(
     amount: number,
     token: string,
-    debtorId: string,
     paymentGateway: string,
+    debtorId: string,
     debtorName?: string,
     link?: string
   ) {

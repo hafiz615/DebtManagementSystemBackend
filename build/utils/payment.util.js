@@ -618,7 +618,7 @@ class PaymentUtil {
         alignedDate.setUTCHours(0, 0, 0, 0);
         return alignedDate;
     }
-    async createPaymentDoc(amount, token, debtorId, paymentGateway, debtorName, link) {
+    async createPaymentDoc(amount, token, paymentGateway, debtorId, debtorName, link) {
         const payment = new payment_repomodel_1.Payment();
         payment.amount = amount;
         payment.debtorTransId = token;
