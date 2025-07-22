@@ -24,6 +24,7 @@ const lawsuit_repository_1 = require("../repository/lawsuit/lawsuit.repository")
 const lawsuit_util_1 = __importDefault(require("../../utils/lawsuit.util"));
 const uuid_1 = require("uuid");
 const debtor_util_1 = __importDefault(require("../../utils/debtor.util"));
+const webhook_model_1 = __importDefault(require("../../database/models/webhook.model"));
 dotenv_1.default.config();
 class PaymentService {
     constructor() {
@@ -1202,7 +1203,7 @@ class PaymentService {
             return [false, constants_util_1.default.notFoundMessage('payment Invoice')];
         await this.paymentRepository.updateByOne({ debtorTransId: req.params.token }, { status: req.body.status });
         let results = null;
-        let caseIds = null;
+        // let caseIds = null;
         if (req.body.status === 'Success') {
             const debtor = await this.debtorRepository.getOne({
                 _id: payment.debtorId,
@@ -1215,14 +1216,41 @@ class PaymentService {
             }
             results = await case_util_1.default.createCreditorsCases({ data: caseTemp }, '', '', payment.debtorId);
             const caseList = Array.isArray(results[1]) ? results[1] : results;
-            caseIds = caseList.map(result => ({
-                caseId: result._id,
-                caseCode: result.caseCode,
-                debtorId: result.debtor,
-                creditorId: result.creditor,
-            }));
+            // caseIds = caseList.map(result => ({
+            //   caseId: result._id,
+            //   caseCode: result.caseCode,
+            //   debtorId: result.debtor,
+            //   creditorId: result.creditor,
+            // }));
+            let caseIdTemp = caseList.map(result => result._id);
+            let caseData = await case_util_1.default.getCaseCreditorPartialData(caseIdTemp);
+            return [
+                true,
+                {
+                    casesCreated: caseData,
+                    invoiceData: {
+                        invoiceId: payment.debtorTransId,
+                        transactionType: payment.transactionType,
+                        paymentGateway: payment.paymentGateway,
+                        status: 'Success',
+                    },
+                    debtorId: payment.debtorId,
+                },
+            ];
         }
-        return [true, caseIds];
+        return [
+            true,
+            {
+                casesCreated: [],
+                invoiceData: {
+                    invoiceId: payment.debtorTransId,
+                    transactionType: payment.transactionType,
+                    paymentGateway: payment.paymentGateway,
+                    status: 'Failed',
+                },
+                debtorId: payment.debtorId,
+            },
+        ];
     }
     async addPaymentPlan(req) {
         let findCase = await this.caseRepository.getById(req.body.caseId, undefined, undefined, [{ path: 'creditor' }, { path: 'debtor' }]);
@@ -1271,6 +1299,13 @@ class PaymentService {
         return [true, []];
     }
     async checkInvoice(req) {
+        const logEntry = new webhook_model_1.default({
+            data: req.body,
+            createdAt: common_util_1.default.getCurrentDate(),
+        });
+        logEntry.save().catch(err => {
+            console.error('Error saving log entry', err);
+        });
         if (req.body.event_type === 'transaction.sale.success') {
             const payment = await this.paymentRepository.getOne({
                 debtorTransId: req.body.event_body.transaction_id,
@@ -1282,7 +1317,7 @@ class PaymentService {
                 transactionType: req.body.event_body.transaction_type,
             }, { status: 'Success' });
             let results = null;
-            let caseIds = null;
+            // let caseIds = null;
             const debtor = await this.debtorRepository.getOne({
                 _id: payment.debtorId,
             });
@@ -1294,18 +1329,15 @@ class PaymentService {
             }
             results = await case_util_1.default.createCreditorsCases({ data: caseTemp }, '', '', payment.debtorId);
             const caseList = Array.isArray(results[1]) ? results[1] : [];
-            console.log(caseList, 'caseList');
-            caseIds = caseList.map(result => ({
-                caseId: result._id,
-                caseCode: result.caseCode,
-                debtorId: result.debtor,
-                creditorId: result.creditor,
-            }));
-            console.log(caseIds, 'caseIds');
+            // caseIds = caseList.map(result => ({
+            //   caseId: result._id,
+            //   caseCode: result.caseCode,
+            //   debtorId: result.debtor,
+            //   creditorId: result.creditor,
+            // }));
+            // console.log(caseIds, 'caseIds');
             let caseIdTemp = caseList.map(result => result._id);
-            console.log(caseIdTemp, 'caseIdTemp');
             let caseData = await case_util_1.default.getCaseCreditorPartialData(caseIdTemp);
-            console.log(caseData);
             return [
                 true,
                 {
