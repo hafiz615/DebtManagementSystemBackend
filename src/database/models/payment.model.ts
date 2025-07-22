@@ -145,6 +145,7 @@ const PaymentModel: Schema = new Schema({
   achWaterfall: Boolean,
   nonExecutable: Boolean,
   ccVault: String,
+  manualAmount: Number,
 });
 
 PaymentModel.pre('save', async function (next) {
