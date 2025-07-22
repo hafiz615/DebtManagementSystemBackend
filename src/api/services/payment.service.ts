@@ -28,6 +28,7 @@ import {LawsuitRepository} from '../repository/lawsuit/lawsuit.repository';
 import lawsuitUtil from '../../utils/lawsuit.util';
 import {v4} from 'uuid';
 import debtorUtil from '../../utils/debtor.util';
+import WebhookLog from '../../database/models/webhook.model';
 dotenv.config();
 class PaymentService {
   private paymentRepository: PaymentRepository;
@@ -1623,7 +1624,7 @@ class PaymentService {
       {status: req.body.status}
     );
     let results = null;
-    let caseIds = null;
+    // let caseIds = null;
     if (req.body.status === 'Success') {
       const debtor = await this.debtorRepository.getOne<IDebtor>({
         _id: payment.debtorId,
@@ -1651,15 +1652,43 @@ class PaymentService {
         payment.debtorId
       );
       const caseList = Array.isArray(results[1]) ? results[1] : results;
-      caseIds = caseList.map(result => ({
-        caseId: result._id,
-        caseCode: result.caseCode,
-        debtorId: result.debtor,
-        creditorId: result.creditor,
-      }));
+      // caseIds = caseList.map(result => ({
+      //   caseId: result._id,
+      //   caseCode: result.caseCode,
+      //   debtorId: result.debtor,
+      //   creditorId: result.creditor,
+      // }));
+      let caseIdTemp = caseList.map(result => result._id);
+      let caseData = await caseUtil.getCaseCreditorPartialData(caseIdTemp);
+
+      return [
+        true,
+        {
+          casesCreated: caseData,
+          invoiceData: {
+            invoiceId: payment.debtorTransId,
+            transactionType: payment.transactionType,
+            paymentGateway: payment.paymentGateway,
+            status: 'Success',
+          },
+          debtorId: payment.debtorId,
+        },
+      ];
     }
 
-    return [true, caseIds];
+    return [
+      true,
+      {
+        casesCreated: [],
+        invoiceData: {
+          invoiceId: payment.debtorTransId,
+          transactionType: payment.transactionType,
+          paymentGateway: payment.paymentGateway,
+          status: 'Failed',
+        },
+        debtorId: payment.debtorId,
+      },
+    ];
   }
 
   async addPaymentPlan(req: Request) {
@@ -1729,6 +1758,13 @@ class PaymentService {
   }
 
   async checkInvoice(req: Request) {
+    const logEntry = new WebhookLog({
+      data: req.body,
+      createdAt: commonUtil.getCurrentDate(),
+    });
+    logEntry.save().catch(err => {
+      console.error('Error saving log entry', err);
+    });
     if (req.body.event_type === 'transaction.sale.success') {
       const payment = await this.paymentRepository.getOne<IPayment>({
         debtorTransId: req.body.event_body.transaction_id,
@@ -1743,7 +1779,7 @@ class PaymentService {
         {status: 'Success'}
       );
       let results = null;
-      let caseIds = null;
+      // let caseIds = null;
       const debtor = await this.debtorRepository.getOne<IDebtor>({
         _id: payment.debtorId,
       });
@@ -1770,18 +1806,15 @@ class PaymentService {
         payment.debtorId
       );
       const caseList = Array.isArray(results[1]) ? results[1] : [];
-      console.log(caseList, 'caseList');
-      caseIds = caseList.map(result => ({
-        caseId: result._id,
-        caseCode: result.caseCode,
-        debtorId: result.debtor,
-        creditorId: result.creditor,
-      }));
-      console.log(caseIds, 'caseIds');
+      // caseIds = caseList.map(result => ({
+      //   caseId: result._id,
+      //   caseCode: result.caseCode,
+      //   debtorId: result.debtor,
+      //   creditorId: result.creditor,
+      // }));
+      // console.log(caseIds, 'caseIds');
       let caseIdTemp = caseList.map(result => result._id);
-      console.log(caseIdTemp, 'caseIdTemp');
       let caseData = await caseUtil.getCaseCreditorPartialData(caseIdTemp);
-      console.log(caseData);
 
       return [
         true,
