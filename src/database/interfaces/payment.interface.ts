@@ -46,4 +46,5 @@ export interface IPayment extends Document {
   achWaterfall: boolean;
   nonExecutable: boolean;
   ccVault: string;
+  manualAmount: number;
 }

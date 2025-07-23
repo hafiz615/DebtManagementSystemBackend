@@ -47,4 +47,5 @@ export class Payment {
   achWaterfall = false;
   nonExecutable = false;
   ccVault = '';
+  manualAmount = 0;
 }
