@@ -91,6 +91,12 @@ class TasksService {
         {userId: task.assigneeId},
         {$inc: {count: 1, taskCount: 1, taskNotificationCount: 1}}
       );
+    console.log({
+      notificationCount: count?.count || 0,
+      type: 'TASK',
+      taskCount: count.taskCount,
+      notification: notification,
+    });
     app.socketInstance.emit('notify', {
       notificationCount: count?.count || 0,
       type: 'TASK',

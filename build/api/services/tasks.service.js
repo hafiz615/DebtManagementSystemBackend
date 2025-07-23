@@ -77,6 +77,12 @@ class TasksService {
         notification.text = `Hey ${task.assignee}, You have a new task!`;
         await this.notificationRepository.create(notification);
         const count = await this.notificationCountRepository.upsert({ userId: task.assigneeId }, { $inc: { count: 1, taskCount: 1, taskNotificationCount: 1 } });
+        console.log({
+            notificationCount: count?.count || 0,
+            type: 'TASK',
+            taskCount: count.taskCount,
+            notification: notification,
+        });
         app_1.default.socketInstance.emit('notify', {
             notificationCount: count?.count || 0,
             type: 'TASK',

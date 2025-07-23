@@ -235,7 +235,7 @@ class CommonUtil {
         if (notificationCount?.smsNotificationCount == 0 &&
             notificationCount?.emailNotificationCount == 0 &&
             notificationCount?.taskNotificationCount == 0 &&
-            notificationCount?.count > 0) {
+            (notificationCount?.count > 0 || notificationCount?.count < 0)) {
             notificationCount.count = 0;
         }
         else {

@@ -1375,10 +1375,6 @@ class DebtorService {
   }
 
   async addManualPayment(req: Request) {
-    const type = String(req.query.type);
-    if (type !== 'client' && type !== 'creditor') {
-      return [false, constants.notFoundMessage('query type is invalid')];
-    }
     let debtor = await this.debtorRepository.getById(req.body.debtorId);
     if (!debtor) {
       return [false, constants.notFoundMessage('Debtor')];
@@ -1391,22 +1387,9 @@ class DebtorService {
       return [false, constants.alreadyExistsMessage('Reference id')];
 
     const transactionIds = req.body.transactionIds;
-    const additionalIds = [];
-    if (type === 'client') {
-      for (const transactionId of transactionIds) {
-        const payment =
-          await this.paymentRepository.getById<IPayment>(transactionId);
-        const otherPayments: IPayment[] =
-          await paymentUtil.getOtherPayments(payment);
-        otherPayments.forEach(payment => {
-          additionalIds.push(String(payment._id));
-        });
-      }
-    }
-    const mergedIds = transactionIds.concat(additionalIds);
 
     let updatedPayment = await this.paymentRepository.updateMany<IPayment>(
-      {_id: mergedIds},
+      {_id: transactionIds},
       {
         authorized: 'Success',
         captured: 'Success',
@@ -1415,18 +1398,13 @@ class DebtorService {
         debtorTransId: req.body.referenceId,
         paymentMode: req.body.transactionType,
         paymentGateway: 'Manual',
-        manualCommission: req.body.commission,
+        manualAmount: req.body.amount,
         updatedAt: commonUtil.getCurrentDate(),
       }
     );
 
     if (!updatedPayment.modifiedCount) {
       return [false, constants.failureAddMessage('Manual Payment')];
-    }
-    if (type === 'client') {
-      await this.debtorRepository.updateById<IDebtor>(req.body.debtorId, {
-        $inc: {commissionPaid: req.body.amount},
-      });
     }
     return [true, constants.successAddMessage('Manual Payment')];
   }

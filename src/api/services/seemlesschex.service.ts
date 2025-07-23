@@ -28,10 +28,10 @@ class SeemlesschexService {
   }
 
   async createCheck(req: Request) {
-    const type = String(req.query.type);
-    if (type !== 'client' && type !== 'creditor') {
-      return [false, constants.notFoundMessage('query type is invalid')];
-    }
+    // const type = String(req.query.type);
+    // if (type !== 'client' && type !== 'creditor') {
+    //   return [false, constants.notFoundMessage('query type is invalid')];
+    // }
     const debtor = await this.debtorRepository.getById<IDebtor>(
       req.body.debtorId
     );
@@ -61,27 +61,27 @@ class SeemlesschexService {
     // if (fc?.error || bv?.error) authorized = 'Failed'
     if (bv?.error) authorized = 'Failed';
     await seemlesschexUtil.saveCheckInfo(bv, null, response, req.body.debtorId);
-    const additionalIds = [];
-    if (type === 'client') {
-      for (const transactionId of transactionIds) {
-        const payment =
-          await this.paymentRepository.getById<IPayment>(transactionId);
-        const otherPayments: IPayment[] =
-          await paymentUtil.getOtherPayments(payment);
-        otherPayments.forEach(payment => {
-          additionalIds.push(String(payment._id));
-        });
-      }
-    }
-    const mergedIds = transactionIds.concat(additionalIds);
+    // const additionalIds = [];
+    // if (type === 'client') {
+    //   for (const transactionId of transactionIds) {
+    //     const payment =
+    //       await this.paymentRepository.getById<IPayment>(transactionId);
+    //     const otherPayments: IPayment[] =
+    //       await paymentUtil.getOtherPayments(payment);
+    //     otherPayments.forEach(payment => {
+    //       additionalIds.push(String(payment._id));
+    //     });
+    //   }
+    // }
+    // const mergedIds = transactionIds.concat(additionalIds);
 
     await this.paymentRepository.updateMany<IPayment>(
-      {_id: mergedIds},
+      {_id: transactionIds},
       {
         authorized: authorized,
         debtorTransId: response.check.check_id,
         paymentMode: transactionType,
-        manualCommission: commission,
+        manualAmount: amount,
         dueDate: transactionDate,
         paymentGateway: 'Seamlesschex',
         transactionType: 'ACH',
