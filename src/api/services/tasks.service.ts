@@ -89,7 +89,7 @@ class TasksService {
     const count =
       await this.notificationCountRepository.upsert<INotificationCount>(
         {userId: task.assigneeId},
-        {$inc: {count: 1, taskCount: 1}}
+        {$inc: {count: 1, taskCount: 1, taskNotificationCount: 1}}
       );
     console.log({
       notificationCount: count?.count || 0,
@@ -100,7 +100,7 @@ class TasksService {
     app.socketInstance.emit('notify', {
       notificationCount: count?.count || 0,
       type: 'TASK',
-      taskCount: count.taskCount,
+      taskNotificationCount: count.taskNotificationCount,
       notification: notification,
     });
 
@@ -143,7 +143,7 @@ class TasksService {
       const count =
         await this.notificationCountRepository.upsert<INotificationCount>(
           {userId: updatedTask.assigneeId},
-          {$inc: {count: 1, taskCount: 1}}
+          {$inc: {count: 1, taskCount: 1, taskNotificationCount: 1}}
         );
       const notification = new Notification();
       notification.caseId = updatedTask.caseId;
@@ -156,7 +156,7 @@ class TasksService {
       app.socketInstance.emit('notify', {
         notificationCount: count?.count || 0,
         type: 'TASK',
-        taskCount: count.taskCount,
+        taskNotificationCount: count.taskNotificationCount,
         notification: notification,
       });
       emailUtil.sendEmailOrSmsByEvent(
