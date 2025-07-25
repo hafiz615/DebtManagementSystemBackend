@@ -833,7 +833,7 @@ class PaymentService {
       filter,
       'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName',
       undefined,
-      {createdAt: -1},
+      {dueDate: 1},
       undefined,
       undefined,
       page,

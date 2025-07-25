@@ -598,9 +598,8 @@ class CaseValidate {
                 .messages({
                 'array.base': 'Intervals must be an array.',
             }),
-            lawsuitExist: joi_1.default.boolean().required().messages({
+            lawsuitExist: joi_1.default.boolean().messages({
                 'boolean.base': 'Lawsuit Exist must be a boolean value.',
-                'any.required': 'Lawsuit Exist is a required field.',
             }),
             lawsuit: joi_1.default.object({
                 balance: joi_1.default.number().required().messages({

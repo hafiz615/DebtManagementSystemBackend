@@ -53,6 +53,7 @@ class Payment {
         this.achWaterfall = false;
         this.nonExecutable = false;
         this.ccVault = '';
+        this.manualAmount = 0;
     }
 }
 exports.Payment = Payment;

@@ -6,6 +6,9 @@ export interface INotificationCount extends Document {
   smsCount: number;
   emailCount: number;
   taskCount: number;
+  smsNotificationCount: number;
+  emailNotificationCount: number;
+  taskNotificationCount: number;
   callCount: number;
   missCallCount: number;
   rejectCallCount: number;

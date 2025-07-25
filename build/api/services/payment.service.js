@@ -617,7 +617,7 @@ class PaymentService {
         if (type === 'client') {
             filter['caseId'] = null;
         }
-        return await this.paymentRepository.getAll(filter, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { createdAt: -1 }, undefined, undefined, page, limit);
+        return await this.paymentRepository.getAll(filter, 'authorized captured amount dueDate failedReasonAuthorization failedReasonCaptured rescheduled status creditorName debtorName', undefined, { dueDate: 1 }, undefined, undefined, page, limit);
     }
     async getAllPaymentsByDebtorCount(id, type) {
         const filter = {

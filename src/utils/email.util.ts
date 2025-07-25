@@ -599,7 +599,7 @@ class EmailUtil {
     if (caseTemp) {
       newNotification.caseId = caseTemp._id;
       newNotification.text = this.formatText(
-        caseTemp.creditor.businessInformation.companyName
+        caseTemp.debtor.businessInformation.companyName
       );
     }
     newNotification.type = 'EMAIL';
@@ -620,6 +620,10 @@ class EmailUtil {
 
       newNotificationCount.emailCount = currentCount
         ? (currentCount?.emailCount || 0) + 1
+        : 1;
+
+      newNotificationCount.emailNotificationCount = currentCount
+        ? (currentCount?.emailNotificationCount || 0) + 1
         : 1;
 
       await this.notificationCountRepository.upsert<INotificationCount>(

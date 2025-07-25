@@ -12,6 +12,9 @@ class NotificationCount {
         this.emailCount = 0;
         this.taskCount = 0;
         this.callCount = 0;
+        this.smsNotificationCount = 0;
+        this.emailNotificationCount = 0;
+        this.taskNotificationCount = 0;
         this.missCallCount = 0;
         this.rejectCallCount = 0;
         this.userId = '';

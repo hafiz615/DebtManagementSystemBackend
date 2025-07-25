@@ -172,6 +172,7 @@ const PaymentModel = new mongoose_1.Schema({
     achWaterfall: Boolean,
     nonExecutable: Boolean,
     ccVault: String,
+    manualAmount: Number,
 });
 PaymentModel.pre('save', async function (next) {
     this.logTrackingId = (0, uuid_1.v4)();

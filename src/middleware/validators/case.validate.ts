@@ -609,9 +609,8 @@ class CaseValidate {
           'array.base': 'Intervals must be an array.',
         }),
 
-      lawsuitExist: Joi.boolean().required().messages({
+      lawsuitExist: Joi.boolean().messages({
         'boolean.base': 'Lawsuit Exist must be a boolean value.',
-        'any.required': 'Lawsuit Exist is a required field.',
       }),
 
       lawsuit: Joi.object({
