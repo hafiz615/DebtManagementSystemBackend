@@ -75,7 +75,7 @@ class SmsService {
             await this.notificationRepository.create(newNotification);
             let updatedCount;
             if (findUser) {
-                await this.notificationCountRepository.upsert({ userId: findUser._id }, { $inc: { count: 1, smsCount: 1 } });
+                await this.notificationCountRepository.upsert({ userId: findUser._id }, { $inc: { count: 1, smsCount: 1, smsNotificationCount: 1 } });
                 updatedCount =
                     await this.notificationCountRepository.getOne({
                         userId: findUser._id,
@@ -85,7 +85,7 @@ class SmsService {
             app_1.default.socketInstance.emit('notify', {
                 notificationCount: updatedCount?.count || 0,
                 type: 'SMS',
-                smsCount: updatedCount?.smsCount,
+                smsNotificationCount: updatedCount?.smsNotificationCount,
                 notification: newNotification,
             });
             // const twiml = new MessagingResponse();

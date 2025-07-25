@@ -139,7 +139,7 @@ class SmsService {
     if (findUser) {
       await this.notificationCountRepository.upsert(
         {userId: findUser._id},
-        {$inc: {count: 1, smsCount: 1}}
+        {$inc: {count: 1, smsCount: 1, smsNotificationCount: 1}}
       );
 
       updatedCount =
@@ -152,7 +152,7 @@ class SmsService {
     app.socketInstance.emit('notify', {
       notificationCount: updatedCount?.count || 0,
       type: 'SMS',
-      smsCount: updatedCount?.smsCount,
+      smsNotificationCount: updatedCount?.smsNotificationCount,
       notification: newNotification,
     });
 

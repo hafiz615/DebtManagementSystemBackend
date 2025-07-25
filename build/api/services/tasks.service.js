@@ -76,11 +76,17 @@ class TasksService {
         notification.userId = task.assigneeId;
         notification.text = `Hey ${task.assignee}, You have a new task!`;
         await this.notificationRepository.create(notification);
-        const count = await this.notificationCountRepository.upsert({ userId: task.assigneeId }, { $inc: { count: 1, taskCount: 1 } });
-        app_1.default.socketInstance.emit('notify', {
+        const count = await this.notificationCountRepository.upsert({ userId: task.assigneeId }, { $inc: { count: 1, taskCount: 1, taskNotificationCount: 1 } });
+        console.log({
             notificationCount: count?.count || 0,
             type: 'TASK',
             taskCount: count.taskCount,
+            notification: notification,
+        });
+        app_1.default.socketInstance.emit('notify', {
+            notificationCount: count?.count || 0,
+            type: 'TASK',
+            taskNotificationCount: count.taskNotificationCount,
             notification: notification,
         });
         console.log('I have emit task noti');
@@ -109,7 +115,7 @@ class TasksService {
             history['Notes'] = req.body.notes;
         await case_util_1.default.addInHistory(history, updatedTask.caseId);
         if (task.assigneeId !== updatedTask.assigneeId) {
-            const count = await this.notificationCountRepository.upsert({ userId: updatedTask.assigneeId }, { $inc: { count: 1, taskCount: 1 } });
+            const count = await this.notificationCountRepository.upsert({ userId: updatedTask.assigneeId }, { $inc: { count: 1, taskCount: 1, taskNotificationCount: 1 } });
             const notification = new notification_repomodel_1.Notification();
             notification.caseId = updatedTask.caseId;
             notification.type = 'TASK';
@@ -119,7 +125,7 @@ class TasksService {
             app_1.default.socketInstance.emit('notify', {
                 notificationCount: count?.count || 0,
                 type: 'TASK',
-                taskCount: count.taskCount,
+                taskNotificationCount: count.taskNotificationCount,
                 notification: notification,
             });
             email_util_1.default.sendEmailOrSmsByEvent('case_task_added', task.caseId, null, reqTemp.id, String(task._id));

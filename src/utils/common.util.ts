@@ -264,19 +264,28 @@ class CommonUtil {
 
     switch (type) {
       case 'EMAIL':
-        field = 'emailCount';
+        field = 'emailNotificationCount';
         break;
       case 'SMS':
-        field = 'smsCount';
+        field = 'smsNotificationCount';
         break;
       case 'TASK':
-        field = 'taskCount';
+        field = 'taskNotificationCount';
         break;
       default:
         return null;
     }
 
-    notificationCount.count -= notificationCount[field];
+    if (
+      notificationCount?.smsNotificationCount == 0 &&
+      notificationCount?.emailNotificationCount == 0 &&
+      notificationCount?.taskNotificationCount == 0 &&
+      (notificationCount?.count > 0 || notificationCount?.count < 0)
+    ) {
+      notificationCount.count = 0;
+    } else {
+      notificationCount.count -= notificationCount[field] || 0;
+    }
     notificationCount[field] = 0;
 
     return notificationCount;
