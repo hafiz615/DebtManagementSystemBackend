@@ -2640,7 +2640,7 @@ class CaseUtil {
     debtorId: string
   ) {
     let creditor: ICreditor = null;
-    let dataArray = body.data;
+    let dataArray = [...body.data];
     const createdCases = [];
     const debtor = await this.debtRepository.getById<IDebtor>(debtorId);
     if (!debtor) return [false, constantsUtil.notFoundMessage('debtor')];
