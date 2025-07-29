@@ -2225,7 +2225,7 @@ class CaseUtil {
     }
     async createCreditorsCases(body, name, id, debtorId) {
         let creditor = null;
-        let dataArray = body.data;
+        let dataArray = [...body.data];
         const createdCases = [];
         const debtor = await this.debtRepository.getById(debtorId);
         if (!debtor)
