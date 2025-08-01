@@ -943,6 +943,7 @@ class CaseUtil {
                         },
                     },
                     creditorDetails: { $first: '$creditorDetails' },
+                    totalRemaining: { $sum: { $ifNull: ['$remaining', 0] } }, // Handle null cases for 'remaining'
                     failedCaptures: {
                         $sum: {
                             $size: {
@@ -1013,6 +1014,7 @@ class CaseUtil {
                         totalDebt: {
                             $sum: '$caseHistory.totalDebt',
                         },
+                        totalRemaining: '$totalRemaining',
                     },
                     paymentCounts: {
                         failedCaptures: '$failedCaptures',
