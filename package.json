@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node build/src/app.js",
-    "dev": "nodemon src/app.ts",
+    "start": "node api.js && node build/src/app.js",
+    "dev": "node api.js && nodemon src/app.ts",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
